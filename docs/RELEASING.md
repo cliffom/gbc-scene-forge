@@ -50,7 +50,8 @@ work before manually running the workflow for `pypi`. The workflow rebuilds and
 checks the distributions, checks the tag against the package version, then uploads
 only those verified artifacts. Pushing a tag alone does not publish.
 
-Once a real release is available, consumers can pin `gbc-scene-forge==0.1.0`.
-Until then, Settlement uses a sibling editable path dependency, so clone both
-repositories beside one another. Its CI also checks out the sibling repository;
-it needs this repository's initial commit pushed before it can run successfully.
+Version 0.1.0 is published on [PyPI](https://pypi.org/project/gbc-scene-forge/0.1.0/)
+from tag `v0.1.0`, including the MIT license, wheel and source archive. Its
+publication workflow and clean installation from public PyPI passed, including all
+15 Python contracts against the downloaded package. Consumers can pin
+`gbc-scene-forge==0.1.0`; editable sibling checkouts remain an option for development.

@@ -6,6 +6,15 @@ service, browser UI, document storage, task runner and durable transaction store
 Atlas decoding, rendering, source translation and game builds belong to the host
 connector. No connector is discovered or executed automatically.
 
+## Installation
+
+```sh
+python -m pip install gbc-scene-forge==0.1.0
+```
+
+The [PyPI package](https://pypi.org/project/gbc-scene-forge/0.1.0/) includes the
+browser UI and service. A host game supplies the connector and launcher described below.
+
 ## Development
 
 ```sh
@@ -16,7 +25,7 @@ make lint test build
 The build creates `dist/gbc_scene_forge-0.1.0-py3-none-any.whl` and a source
 archive, and tests the wheel in a clean environment. See
 [building and releasing](docs/RELEASING.md) for tooling and manual PyPI publication.
-There is no published release yet. Local hosts can install this checkout with
+For local development, hosts can install this checkout with
 `python -m pip install -e ../gbc-scene-forge` or use their dependency manager's
 editable path support.
 
