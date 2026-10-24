@@ -1,6 +1,6 @@
 # GBC Scene Forge
 
-Version 0.1.1 is a local browser editor with an explicitly supplied Python game
+Version 0.1.2 is a local browser editor with an explicitly supplied Python game
 connector. It has no runtime Python dependencies. The package contains its HTTP
 service, browser UI, document storage, task runner and durable transaction store.
 Atlas decoding, rendering, source translation and game builds belong to the host
@@ -9,25 +9,80 @@ connector. No connector is discovered or executed automatically.
 ## Installation
 
 ```sh
-python -m pip install gbc-scene-forge==0.1.1
+python -m pip install gbc-scene-forge==0.1.2
 ```
 
-The [PyPI package](https://pypi.org/project/gbc-scene-forge/0.1.1/) includes the
+The [PyPI package](https://pypi.org/project/gbc-scene-forge/0.1.2/) includes the
 browser UI and service. A host game supplies the connector and launcher described below.
 
 ## Development
+
+Install Python 3.10+, Poetry 2.4–2.x, Node 24.12+, npm, and Make, with their
+executables on `PATH`. Follow the [Poetry installation guide](https://python-poetry.org/docs/#installation)
+if needed. `make setup` checks prerequisites, uses Poetry to manage `.venv`,
+installs locked dependencies, and bundles the frontend. It does not install Poetry.
 
 ```sh
 make setup PYTHON=python3.12
 make lint test build
 ```
 
-The build creates `dist/gbc_scene_forge-0.1.1-py3-none-any.whl` and a source
-archive, and tests the wheel in a clean environment. See
+`make check-deps` checks tool availability and Poetry/project compatibility without
+installing dependencies. Override executable paths with `PYTHON`, `POETRY`, or
+`NPM` when needed. Poetry checks Python compatibility; `npm ci --engine-strict`
+enforces the frontend's Node requirement during setup.
+
+The build creates `dist/gbc_scene_forge-0.1.2-py3-none-any.whl` and a source
+archive, then checks metadata with Twine. Run `make check-dist` afterward to install
+the wheel without dependencies in a fresh environment and run the small
+`tests/package_smoke.py` suite. CI runs this installed-wheel check explicitly. See
 [building and releasing](docs/RELEASING.md) for tooling and manual PyPI publication.
 For local development, hosts can install this checkout with
 `python -m pip install -e ../gbc-scene-forge` or use their dependency manager's
 editable path support.
+
+### Frontend workflow
+
+Edit TypeScript in `frontend/`: `app.ts` composes controllers, `render.mts` owns
+preview/drawing state, `interactions.mts` handles pointer and keyboard editing,
+`documents.mts` owns drafts and document lifecycle, and `apply.mts` supervises
+reviewed builds. `session.mts` holds shared scene/interaction state; controller
+closures keep their transient state private. `assets.mts`, `model.mts`, and
+`progress.mts` cover the palette, editing model, and progress presentation.
+`api.mts`, `decode.mts`, `errors.mts`, `dom.mts`, and `types.ts` define transport,
+runtime decoding, errors, DOM access, and shared types.
+Connector-specific scene extensions remain opaque and survive decoding.
+Server validation remains authoritative for game rules and imported documents.
+
+- `make frontend`: type-check, then bundle the browser entry point with esbuild.
+- `make typecheck`: check browser and test code with TypeScript strict mode.
+- `make lint`: check Python plus TypeScript-aware ESLint, Prettier, and types.
+- `make format`: format Python and frontend sources/configuration in place.
+- `make test`: run Python contracts, typed editor-model tests, and API decoder tests.
+
+Frontend formatting uses two spaces, single quotes, semicolons, and a 100-character
+print width. Use explicit shared types and checked `unknown` values at JSON
+boundaries; avoid `any`, unchecked casts, and type-check suppressions. Node runs
+the TypeScript tests using built-in type stripping; `make typecheck` enforces types.
+
+Generated JavaScript is Git-ignored; do not edit it. `make demo` and `make build`
+run `npm run build`, which runs `tsc --noEmit` before esbuild. esbuild follows
+imports, including nested modules, and produces one ES2022 module, `static/app.js`,
+with an external source map. `static/app.meta.json` records esbuild's complete
+runtime dependency graph and output sizes. Type errors stop the build before
+existing assets are replaced. Bundles are readable and unminified.
+
+After changing frontend code while a server is running, run `make frontend` and
+reload the page. Use `make build` for releases so assets are always rebuilt first.
+When invoking Python build tools directly from a checkout, run `npm ci` and
+`npm run build` first. Hatchling packages the required bundle and source map using
+declarative file inclusion and rejects missing assets. Wheels and source archives
+include prebuilt assets, so installing and running a release needs no Node.
+
+Configured API deadlines cover headers and body reads, including downloads and
+HTTP error bodies. Incompatible JSON/task responses stop automatic polling with
+an actionable message; the task may still have completed, and Reconnect retries
+status retrieval explicitly. Temporary connection failures continue to retry.
 
 ## Run the demo
 
@@ -49,9 +104,11 @@ It copies bundled seed scenes into `.demo/levels/` on first launch. Subsequent
 launches preserve edits. Drafts (including original snapshots), sources, compiled
 files, reviews, and transaction history stay inside the Git-ignored `.demo/`
 workspace. To start fresh, stop the server and run `make clean-demo`; this deletes
-the checkout's `.demo/` directory and all saved demo work. `make clean` only removes
-build artifacts and preserves the demo workspace. Custom `DEMO_ROOT` directories
-must be removed separately.
+the checkout's `.demo/` directory and all saved demo work. `make clean` removes
+`build/`, `dist/`, `node_modules/`, and the generated bundle/map/metadata while
+preserving the demo workspace. Run
+`npm ci` or `make setup` to reinstall frontend dependencies afterward. Custom
+`DEMO_ROOT` directories must be removed separately.
 
 Use `make demo PORT=8777 DEMO_ROOT=/tmp/forge-demo` to change the port or workspace.
 Custom workspace paths outside `.demo/` need their own Git ignore rule if placed
@@ -185,7 +242,7 @@ It imports no host game, atlas library or imaging library. Run:
 ```sh
 .venv/bin/python -m unittest discover -s tests -p 'test_*.py'
 .venv/bin/python tests/serve_fixture.py --root /tmp/forge-fixture --port 8777
-node tests/browser.mjs http://127.0.0.1:8777/
+npm run test:browser -- http://127.0.0.1:8777/
 ```
 
 The browser check requires a local Chrome installation; its third argument can

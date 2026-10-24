@@ -2,22 +2,24 @@
 
 ## Project Structure & Module Organization
 
-`src/gbc_scene_forge/` contains the Python package: connector contracts, HTTP service, document storage, Apply orchestration, progress tracking, and durable transactions. Browser HTML, CSS, and JavaScript live in `src/gbc_scene_forge/static/`. `tests/` contains Python contracts, JavaScript model checks, an independent fixture connector, and optional Chrome acceptance checks. `tools/` provides environment bootstrap and distribution validation; `docs/RELEASING.md` documents releases.
+`src/gbc_scene_forge/` contains the Python package: connector contracts, HTTP service, document storage, Apply orchestration, progress tracking, and durable transactions. Browser HTML, CSS, and generated JavaScript live in `src/gbc_scene_forge/static/`; editable TypeScript lives in `frontend/`. `tests/` contains Python contracts, TypeScript model checks, an independent fixture connector, Chrome acceptance checks, and a separate installed-package smoke test. `docs/RELEASING.md` documents releases.
 
 ## Build, Test, and Development Commands
 
-Use Python 3.10+; Node 24 runs the JavaScript checks.
+Install Python 3.10+, Poetry 2.4–2.x, Node 24.12+, npm, and Make on `PATH`.
 
-- `make setup PYTHON=python3.12`: bootstrap pinned Poetry and install locked dependencies into `.venv`.
-- `make lint`: run Ruff linting and formatting checks.
-- `make test`: run Python `unittest` discovery and `node tests/model.mjs`.
-- `make build`: build source/wheel distributions, check metadata, and validate the installed wheel in a clean environment.
+- `make check-deps`: check installed tools and Poetry/project compatibility.
+- `make setup PYTHON=python3.12`: use Poetry to manage `.venv`, install locked dependencies, and bundle the frontend.
+- `make lint`: run Ruff, ESLint, Prettier, and strict TypeScript checks.
+- `make test`: run Python `unittest` discovery and TypeScript model/API/build checks.
+- `make build`: bundle the frontend, build source/wheel distributions, and check metadata.
+- `make check-dist`: install the built wheel in a fresh environment and run `tests/package_smoke.py`.
 - `.venv/bin/python tests/serve_fixture.py --root /tmp/forge-fixture --port 8777`: launch a disposable local editor fixture.
-- `node tests/browser.mjs http://127.0.0.1:8777/`: exercise the running fixture with local Chrome.
+- `npm run test:browser -- http://127.0.0.1:8777/`: exercise the running fixture with local Chrome.
 
 ## Coding Style & Naming Conventions
 
-Use four-space Python indentation, `snake_case` functions/modules, and `PascalCase` classes. Ruff targets Python 3.10, uses a 100-character line length, and checks import ordering. Format Python with `.tools/poetry/bin/poetry run ruff format .`. Match surrounding JavaScript conventions, including `camelCase` identifiers and ES modules where used. Keep runtime Python dependencies absent unless a change explicitly requires them.
+Use four-space Python indentation, `snake_case` functions/modules, and `PascalCase` classes. Ruff targets Python 3.10, uses a 100-character line length, and checks import ordering. `make format` applies Ruff and Prettier. TypeScript uses strict checking, two-space indentation, single quotes, semicolons, `camelCase` identifiers, and ES modules. Keep runtime Python dependencies absent unless a change explicitly requires them.
 
 ## Testing Guidelines
 

@@ -1,26 +1,47 @@
 # Building and releasing
 
 Python 3.10+ and Make are required. The commands below select Python 3.12;
-set `PYTHON` to another supported interpreter if needed. Node 24 runs the browser-model tests; the
-editor itself needs no Node installation. Development dependencies are locked in
-`poetry.lock`; `make setup` bootstraps Poetry 2.4.2 into `.tools/poetry` and installs
-the development environment into `.venv`.
+set `PYTHON` to another supported interpreter if needed. Node 24.12+ and npm compile
+the TypeScript frontend and run its tests; the installed editor needs no Node.
+Install Poetry 2.4–2.x on `PATH` before running setup; CI installs Poetry 2.4.2
+with pip. Development dependencies are locked in `poetry.lock` and
+`package-lock.json`. `make setup` checks required tools and project compatibility,
+uses `poetry env use` to create/select `.venv`, installs locked dependencies, and
+compiles the frontend. `make check-deps` checks prerequisites without installing.
 
 ```sh
 make setup PYTHON=python3.12
 make lint test
 make build
+make check-dist
 ```
 
-`make build` uses the standard isolated Python build frontend: it creates the
-source distribution, then builds the wheel from that source distribution. It
-checks metadata with Twine, installs the wheel without dependencies into a clean
-environment, verifies bundled browser files and runs the Python contracts against
-that installed wheel. Artifacts appear in `dist/`. Use `make clean` before building
-a different version. No command above uploads packages.
+`make lint` includes ESLint, Prettier, and strict TypeScript checks alongside Ruff.
+Use `make format` to apply formatting, and `make typecheck` for a standalone type check.
 
-CI runs these checks on Python 3.10, 3.12 and 3.14. The independent browser
-acceptance check is optional and requires Chrome; see the README.
+`make build` runs strict TypeScript checking, bundles `frontend/app.ts` and its
+imports with esbuild, then uses the
+standard isolated Python build frontend: it creates the
+source distribution, then builds the wheel from that source distribution and
+checks metadata with Twine. Artifacts appear in `dist/`. Before building a different
+version, run `make clean` followed by `npm ci` to reinstall the frontend dependencies
+removed by cleanup. The source archive includes TypeScript sources, frontend
+configuration, the npm lockfile, esbuild dependency metadata, and the prebuilt
+bundle and source map. Hatchling is the standard Python build backend; its
+declarative file inclusion requires the bundle and map to exist. No custom Python
+frontend build hooks are used. Building a wheel from the source archive uses those
+assets without Node. Direct Python builds from a checkout must follow
+`npm ci` and `npm run build`; use `make build` to rebuild assets automatically.
+`make check-dist` is a separate installed-wheel smoke test. It recreates
+`build/package-smoke`, installs the wheel with `pip --no-index --no-deps`, and runs
+`tests/package_smoke.py` with Python's `-I` isolation flag. The small suite checks
+imports, version consistency, absent runtime dependencies, bundled browser assets,
+and demo scene loading. It is intentionally excluded from source-test discovery.
+CI and release workflows perform the same steps with standard venv/pip commands
+before accepting artifacts. No command above uploads packages.
+
+CI runs these checks on Python 3.10, 3.12 and 3.14, with Chrome acceptance checks
+on Python 3.12. The browser suite can also be run locally; see the README.
 
 ## Publication
 
@@ -43,21 +64,21 @@ publishing page. Use the official [trusted publisher setup guide](https://docs.p
 The workflow follows the [Python Packaging User Guide](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/)
 and uses short-lived OIDC credentials; no PyPI API token is stored in the repository.
 
-After reviewing and committing a release, create and push an annotated `v0.1.1`
+After reviewing and committing a release, create and push an annotated `v0.1.2`
 tag (or the matching next version). Run **Publish package** manually against that
 tag, selecting `testpypi` first. Check that installation and the host connector
 work before manually running the workflow for `pypi`. The workflow rebuilds and
 checks the distributions, checks the tag against the package version, then uploads
 only those verified artifacts. Pushing a tag alone does not publish.
 
-The current release version is 0.1.1, tagged `v0.1.1`. It adds first-save original
-scene snapshots and Open original, including draft-independent restoration and
-contextual button availability. The package includes the MIT license, wheel and
-source archive. Release checks run 21 Python contracts both from source and
-against the installed wheel, plus browser-model checks. The independent Chrome
-acceptance check covers Apply/Undo, snapshot persistence across reload and draft
-deletion, original restoration controls and unsaved-change confirmation.
+The current release version is 0.1.2, tagged `v0.1.2`. It adds the opt-in demo
+connector and `make demo`, with two scenes and a Git-ignored persistent workspace.
+The browser code and acceptance scripts use strict TypeScript, ESLint, Prettier,
+and an esbuild bundle with source maps. Hatchling packages the prebuilt assets;
+installed users still need only Python. Setup uses installed Poetry and native
+dependency checks. Release verification uses a small installed-wheel smoke suite
+alongside Python contracts, frontend tests, and Chrome acceptance checks.
 
-After successful publication, consumers can pin `gbc-scene-forge==0.1.1` from
-[PyPI](https://pypi.org/project/gbc-scene-forge/0.1.1/). Editable sibling checkouts
+After successful publication, consumers can pin `gbc-scene-forge==0.1.2` from
+[PyPI](https://pypi.org/project/gbc-scene-forge/0.1.2/). Editable sibling checkouts
 remain an option for development.
