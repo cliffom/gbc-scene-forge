@@ -1,0 +1,25 @@
+{
+  "name": "gbc-scene-forge-frontend",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.12.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint frontend tests/*.ts --max-warnings=0",
+    "format": "prettier --write frontend tests/*.ts *.json eslint.config.mjs .prettierrc.json",
+    "format:check": "prettier --check frontend tests/*.ts *.json eslint.config.mjs .prettierrc.json",
+    "test": "node tests/model.ts && node tests/contracts.ts",
+    "test:browser": "node tests/browser.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.19.2",
+    "eslint": "10.13.0",
+    "prettier": "3.9.10",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.72.0"
+  }
+}

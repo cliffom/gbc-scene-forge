@@ -17,6 +17,9 @@ browser UI and service. A host game supplies the connector and launcher describe
 
 ## Development
 
+Use Python 3.10+, Node 24.12+, npm, and Make for development. `make setup` installs
+the locked Python and frontend dependencies and compiles the browser assets.
+
 ```sh
 make setup PYTHON=python3.12
 make lint test build
@@ -28,6 +31,30 @@ archive, and tests the wheel in a clean environment. See
 For local development, hosts can install this checkout with
 `python -m pip install -e ../gbc-scene-forge` or use their dependency manager's
 editable path support.
+
+### Frontend workflow
+
+Edit TypeScript in `frontend/`: `app.ts` wires the UI, `model.mts` implements scene
+editing, `progress.mts` describes task status, and `api.mts`, `decode.mts`,
+`dom.mts`, and `types.ts` define transport, runtime decoding, DOM access, and shared
+types. Connector-specific scene extensions remain opaque and survive decoding.
+Server validation remains authoritative for game rules and imported documents.
+
+- `make frontend`: compile ES modules into `src/gbc_scene_forge/static/`.
+- `make typecheck`: check browser and test code with TypeScript strict mode.
+- `make lint`: check Python plus TypeScript-aware ESLint, Prettier, and types.
+- `make format`: format Python and frontend sources/configuration in place.
+- `make test`: run Python contracts, typed editor-model tests, and API decoder tests.
+
+Frontend formatting uses two spaces, single quotes, semicolons, and a 100-character
+print width. Use explicit shared types and checked `unknown` values at JSON
+boundaries; avoid `any`, unchecked casts, and type-check suppressions. Node runs
+the TypeScript tests using built-in type stripping; `make typecheck` enforces types.
+
+Generated JavaScript is Git-ignored; do not edit it. `make demo` and `make build`
+compile it automatically. After changing frontend code while a server is running,
+run `make frontend` and reload the page. Wheels and source distributions include
+the compiled assets, so installing and running a released package needs no Node.
 
 ## Run the demo
 
@@ -185,7 +212,7 @@ It imports no host game, atlas library or imaging library. Run:
 ```sh
 .venv/bin/python -m unittest discover -s tests -p 'test_*.py'
 .venv/bin/python tests/serve_fixture.py --root /tmp/forge-fixture --port 8777
-node tests/browser.mjs http://127.0.0.1:8777/
+npm run test:browser -- http://127.0.0.1:8777/
 ```
 
 The browser check requires a local Chrome installation; its third argument can

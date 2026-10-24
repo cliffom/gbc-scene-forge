@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "rewriteRelativeImportExtensions": true,
+    "noEmit": true,
+    "types": ["node"],
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["frontend/**/*.ts", "frontend/**/*.mts", "tests/*.ts"]
+}

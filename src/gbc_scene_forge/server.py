@@ -109,7 +109,16 @@ def make_handler(token, connector):
                     self.reply(manager.active())
                 elif route.startswith("/art/"):
                     self.reply(connector.asset(route[5:]), "image/png")
-                elif route in ("/", "/app.js", "/model.mjs", "/progress.mjs", "/style.css"):
+                elif route in (
+                    "/",
+                    "/app.js",
+                    "/model.mjs",
+                    "/progress.mjs",
+                    "/api.mjs",
+                    "/decode.mjs",
+                    "/dom.mjs",
+                    "/style.css",
+                ):
                     name = "index.html" if route == "/" else route[1:]
                     mime = (
                         "text/html"

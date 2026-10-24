@@ -1,10 +1,11 @@
 # Building and releasing
 
 Python 3.10+ and Make are required. The commands below select Python 3.12;
-set `PYTHON` to another supported interpreter if needed. Node 24 runs the browser-model tests; the
-editor itself needs no Node installation. Development dependencies are locked in
-`poetry.lock`; `make setup` bootstraps Poetry 2.4.2 into `.tools/poetry` and installs
-the development environment into `.venv`.
+set `PYTHON` to another supported interpreter if needed. Node 24.12+ and npm compile
+the TypeScript frontend and run its tests; the installed editor needs no Node.
+Development dependencies are locked in `poetry.lock` and `package-lock.json`.
+`make setup` bootstraps Poetry 2.4.2 into `.tools/poetry`, installs the Python
+environment into `.venv`, runs `npm ci`, and compiles the frontend.
 
 ```sh
 make setup PYTHON=python3.12
@@ -12,15 +13,22 @@ make lint test
 make build
 ```
 
-`make build` uses the standard isolated Python build frontend: it creates the
+`make lint` includes ESLint, Prettier, and strict TypeScript checks alongside Ruff.
+Use `make format` to apply formatting, and `make typecheck` for a standalone type check.
+
+`make build` compiles `frontend/` into Git-ignored browser assets, then uses the
+standard isolated Python build frontend: it creates the
 source distribution, then builds the wheel from that source distribution. It
 checks metadata with Twine, installs the wheel without dependencies into a clean
 environment, verifies bundled browser files and runs the Python contracts against
 that installed wheel. Artifacts appear in `dist/`. Use `make clean` before building
-a different version. No command above uploads packages.
+a different version. The source archive includes TypeScript sources, frontend
+configuration, the npm lockfile, and precompiled assets. Building a wheel from
+that archive uses those assets without running Node. When invoking Python build
+tools directly from a checkout, run `make frontend` first. No command above uploads packages.
 
-CI runs these checks on Python 3.10, 3.12 and 3.14. The independent browser
-acceptance check is optional and requires Chrome; see the README.
+CI runs these checks on Python 3.10, 3.12 and 3.14, with Chrome acceptance checks
+on Python 3.12. The browser suite can also be run locally; see the README.
 
 ## Publication
 

@@ -19,5 +19,13 @@ jobs:
       - uses: actions/setup-node@v7.1.0
         with:
           node-version: '24'
+          cache: npm
       - run: make setup
       - run: make lint test build
+      - name: Browser acceptance checks
+        if: matrix.python == '3.12'
+        run: |
+          .venv/bin/python tests/serve_fixture.py --root "$RUNNER_TEMP/forge-fixture" --port 8777 &
+          fixture_pid=$!
+          trap 'kill "$fixture_pid"' EXIT
+          npm run test:browser -- http://127.0.0.1:8777/ /usr/bin/google-chrome

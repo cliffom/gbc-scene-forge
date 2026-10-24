@@ -30,6 +30,12 @@ include = [
     { path = "tools", format = "sdist" },
     { path = "Makefile", format = "sdist" },
     { path = "poetry.lock", format = "sdist" },
+    { path = "frontend", format = "sdist" },
+    { path = "package.json", format = "sdist" },
+    { path = "package-lock.json", format = "sdist" },
+    { path = "tsconfig*.json", format = "sdist" },
+    { path = "eslint.config.mjs", format = "sdist" },
+    { path = ".prettierrc.json", format = "sdist" },
 ]
 
 [tool.poetry.group.dev.dependencies]
@@ -40,7 +46,7 @@ twine = ">=6,<7"
 [tool.ruff]
 target-version = "py310"
 line-length = 100
-extend-exclude = ["build", ".tools", "dist"]
+extend-exclude = ["build", ".tools", "dist", "node_modules"]
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "I"]

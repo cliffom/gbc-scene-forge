@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "rootDir": "frontend",
+    "outDir": "src/gbc_scene_forge/static",
+    "types": []
+  },
+  "include": ["frontend/**/*.ts", "frontend/**/*.mts"]
+}
