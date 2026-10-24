@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as decode from '../frontend/decode.mts';
-import { ApiClient, HttpError } from '../frontend/api.mts';
+import { ApiClient, HttpError, ProtocolError, errorDetails } from '../frontend/api.mts';
 
 const scene = {
   version: 1,
@@ -134,5 +134,64 @@ await test('API sends the session token, decodes unknown JSON and preserves HTTP
   await assert.rejects(
     client.request('catalog'),
     (error) => error instanceof HttpError && error.status === 503,
+  );
+});
+
+await test('nullable optional fields retain connector-v1 behavior for tiles, stamps and references', () => {
+  const decoded = decode.catalog({
+    ...catalog,
+    profiles: {
+      room: {
+        ...profile,
+        animation_frames: null,
+        animation_interval_ms: null,
+        animation_label: null,
+      },
+    },
+    capabilities: { apply: null, export: true },
+    entries: [
+      {
+        ...catalog.entries[0],
+        reference: null,
+        cells: null,
+        rect: { ...catalog.entries[0].rect, origin: null },
+      },
+      {
+        id: 'stamp',
+        label: 'Stamp',
+        family: 'tiles',
+        profiles: ['room'],
+        rect: null,
+        cells: [['floor']],
+      },
+      {
+        ...catalog.entries[0],
+        id: 'actor',
+        reference: true,
+        rect: { ...catalog.entries[0].rect, origin: [4, 7] },
+      },
+    ],
+  });
+  assert.equal(decoded.profiles.room.animation_frames, undefined);
+  assert.equal(decoded.profiles.room.animation_label, undefined);
+  assert.deepEqual(decoded.entries[1].cells, [['floor']]);
+  assert.equal(decoded.entries[1].rect, undefined);
+  assert.deepEqual(decoded.entries[2].rect?.origin, [4, 7]);
+});
+
+await test('protocol failures remain distinct from retryable transport errors', async (t) => {
+  const request = t.mock.method(globalThis, 'fetch', () =>
+    Promise.resolve(Response.json({ status: 'complete', started_at: 'invalid' })),
+  );
+  await assert.rejects(
+    new ApiClient().json('apply-status/job', decode.job),
+    (error) => error instanceof ProtocolError && errorDetails(error) instanceof ProtocolError,
+  );
+  request.mock.mockImplementation(() => Promise.resolve(new Response('{invalid JSON')));
+  await assert.rejects(new ApiClient().json('apply-active', decode.activeApply), ProtocolError);
+  request.mock.mockImplementation(() => Promise.reject(new TypeError('Connection refused')));
+  await assert.rejects(
+    new ApiClient().json('apply-active', decode.activeApply),
+    (error) => error instanceof HttpError && error.status === 0,
   );
 });

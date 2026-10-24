@@ -14,9 +14,9 @@ deps:
 	test -x .venv/bin/python || .tools/poetry/bin/python -m venv .venv
 	$(POETRY) config virtualenvs.in-project true --local
 	$(POETRY) check --lock --strict
-	$(POETRY) sync
 	$(NPM) ci
 	$(MAKE) frontend
+	$(POETRY) sync
 
 frontend:
 	$(NPM) run build

@@ -115,8 +115,17 @@ def make_handler(token, connector):
                     "/model.mjs",
                     "/progress.mjs",
                     "/api.mjs",
+                    "/apply.mjs",
+                    "/assets.mjs",
                     "/decode.mjs",
+                    "/documents.mjs",
                     "/dom.mjs",
+                    "/errors.mjs",
+                    "/interactions.mjs",
+                    "/render.mjs",
+                    "/session.mjs",
+                    "/types.js",
+                    "/ui.mjs",
                     "/style.css",
                 ):
                     name = "index.html" if route == "/" else route[1:]

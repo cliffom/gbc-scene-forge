@@ -6,12 +6,12 @@
     "node": ">=24.12.0"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "python3 tools/frontend_build.py",
     "typecheck": "tsc --noEmit",
     "lint": "eslint frontend tests/*.ts --max-warnings=0",
     "format": "prettier --write frontend tests/*.ts *.json eslint.config.mjs .prettierrc.json",
     "format:check": "prettier --check frontend tests/*.ts *.json eslint.config.mjs .prettierrc.json",
-    "test": "node tests/model.ts && node tests/contracts.ts",
+    "test": "node tests/model.ts && node tests/contracts.ts && node tests/timeouts.ts && node tests/frontend-build.ts",
     "test:browser": "node tests/browser.ts"
   },
   "devDependencies": {

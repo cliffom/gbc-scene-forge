@@ -54,7 +54,7 @@ export function array<T>(value: unknown, decode: Decoder<T>): T[] {
   return value.map((item: unknown) => decode(item));
 }
 function optional<T>(value: unknown, decode: Decoder<T>): T | undefined {
-  return value === undefined ? undefined : decode(value);
+  return value == null ? undefined : decode(value);
 }
 function coordinate(value: unknown): Coordinate {
   const items = array(value, number);

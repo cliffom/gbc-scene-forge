@@ -30,6 +30,7 @@ include = [
     { path = "tools", format = "sdist" },
     { path = "Makefile", format = "sdist" },
     { path = "poetry.lock", format = "sdist" },
+    { path = "build_backend.py", format = "sdist" },
     { path = "frontend", format = "sdist" },
     { path = "package.json", format = "sdist" },
     { path = "package-lock.json", format = "sdist" },
@@ -53,4 +54,5 @@ select = ["E4", "E7", "E9", "F", "I"]
 
 [build-system]
 requires = ["poetry-core>=2.2,<3.0"]
-build-backend = "poetry.core.masonry.api"
+build-backend = "build_backend"
+backend-path = ["."]

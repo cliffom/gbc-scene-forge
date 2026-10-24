@@ -30,6 +30,23 @@ try {
     deviceScaleFactor: 1,
     mobile: false,
   });
+  // Python connectors may serialize disabled optional preview fields as null.
+  await call('Page.addScriptToEvaluateOnNewDocument', {
+    source: `(() => {
+    const originalFetch = window.fetch.bind(window);
+    window.fetch = async (...args) => {
+      const response = await originalFetch(...args);
+      if (String(args[0]) === '/api/catalog') {
+        const data = await response.json();
+        for (const profile of Object.values(data.profiles)) {
+          profile.animation_frames = null; profile.animation_interval_ms = null; profile.animation_label = null;
+        }
+        return Response.json(data);
+      }
+      return response;
+    };
+  })();`,
+  });
   await call('Page.navigate', { url });
   await wait("document.getElementById('status')?.textContent.includes('Scene loaded')");
   await evaluate(
@@ -133,9 +150,51 @@ try {
   );
   const restored = sceneData(await evaluate("fetch('/api/scene/workbench').then(r=>r.json())"));
   assert.deepEqual(restored.scene.cells, original.cells);
+  // Permanent protocol failures stop polling without claiming the build failed.
+  await evaluate(`(() => {
+    const originalFetch = window.fetch.bind(window);
+    window.statusPolls = 0;
+    window.restoreStatusFetch = () => { window.fetch = originalFetch; };
+    window.fetch = async (...args) => {
+      const response = await originalFetch(...args);
+      if (String(args[0]).includes('/api/apply-status/')) {
+        window.statusPolls++;
+        const data = await response.json(); data.started_at = 'invalid';
+        return Response.json(data);
+      }
+      return response;
+    };
+  })();`);
+  await click("[...document.querySelectorAll('.asset')].find(b=>b.textContent.includes('Stone'))");
+  await pointer(10, 10);
+  await pointer(10, 10, 'mouseReleased');
+  await wait("document.getElementById('apply').disabled===false");
+  await click("document.getElementById('apply')");
+  await wait("document.getElementById('apply-review').open");
+  await click("document.getElementById('approve-layout')");
+  await click("document.getElementById('apply-confirm')");
+  await wait(
+    "document.getElementById('apply-result').textContent.includes('Automatic retries stopped') && !document.getElementById('apply-close').disabled",
+  );
+  await evaluate('new Promise(resolve => setTimeout(resolve, 2300))');
+  assert.equal(await evaluate('window.statusPolls'), 1);
+  assert.match(
+    string(await evaluate("document.getElementById('apply-result').textContent")),
+    /not a confirmed build failure/,
+  );
+  await evaluate('window.restoreStatusFetch()');
+  await click("document.getElementById('apply-reconnect')");
+  await wait(
+    "document.getElementById('apply-result').textContent.includes('Reviewed project files updated') && !document.getElementById('apply-close').disabled",
+  );
+  await click("document.getElementById('apply-close')");
+  await click("document.getElementById('undo-apply')");
+  await wait(
+    "document.getElementById('status').textContent.includes('Previous project files restored')",
+  );
   assert.deepEqual(chrome.errors, []);
   console.log(
-    'Independent connector browser QA passed: descriptors, opaque cells, non-grid comparison, draft save, real compile/apply and rollback.',
+    'Independent connector browser QA passed: descriptors, opaque cells, non-grid comparison, draft save, real compile/apply and rollback, nullable profiles, and protocol-error recovery.',
   );
 } finally {
   await chrome.close();

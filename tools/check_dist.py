@@ -2,6 +2,7 @@
 
 import os
 import subprocess
+import sys
 import tarfile
 import tempfile
 import venv
@@ -17,6 +18,9 @@ if len(archives) != 1:
 with tarfile.open(archives[0]) as archive:
     members = {Path(*Path(name).parts[1:]) for name in archive.getnames()}
     for name in (
+        "build_backend.py",
+        "tools/frontend_build.py",
+        "src/gbc_scene_forge/static/frontend-manifest.json",
         "frontend/app.ts",
         "frontend/types.ts",
         "frontend/model.mts",
@@ -29,6 +33,47 @@ with tarfile.open(archives[0]) as archive:
         ".prettierrc.json",
     ):
         assert Path(name) in members, name
+# Reproduce both supported precompiled-source builds and a fresh checkout with no assets.
+with tempfile.TemporaryDirectory() as folder:
+    temporary = Path(folder)
+    source = temporary / "source"
+    source.mkdir()
+    with tarfile.open(archives[0]) as archive:
+        for member in archive.getmembers():
+            if not member.isfile():
+                continue
+            relative = Path(*Path(member.name).parts[1:])
+            if relative.is_absolute() or ".." in relative.parts:
+                raise ValueError("Source archive contains an escaping path")
+            target = source / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            stream = archive.extractfile(member)
+            if stream is None:
+                raise ValueError("Missing source archive contents")
+            target.write_bytes(stream.read())
+    command = [
+        sys.executable,
+        "-m",
+        "build",
+        "--wheel",
+        "--outdir",
+        str(temporary / "dist"),
+        str(source),
+    ]
+    environment = os.environ | {"PATH": str(temporary / "no-node")}
+    result = subprocess.run(command, env=environment, capture_output=True, text=True)
+    if result.returncode:
+        raise RuntimeError(
+            "Precompiled source build failed without Node:\n" + result.stdout + result.stderr
+        )
+    static = source / "src/gbc_scene_forge/static"
+    for path in (*static.glob("*.js"), *static.glob("*.mjs"), static / "frontend-manifest.json"):
+        path.unlink()
+    result = subprocess.run(command, env=environment, capture_output=True, text=True)
+    assert result.returncode != 0, "A source checkout with missing assets must not produce a wheel"
+    assert "Browser assets are missing or stale" in result.stdout + result.stderr
+    print("PEP 517: precompiled source builds without Node; missing assets fail explicitly")
+
 with tempfile.TemporaryDirectory() as folder:
     temporary = Path(folder)
     environment = temporary / "venv"
@@ -59,7 +104,8 @@ assert package.metadata.get_all('License-File') == ['LICENSE']
 license_file = next(path for path in package.files if str(path).endswith('.dist-info/licenses/LICENSE'))
 assert 'Copyright (c) 2026 Michael Clifford' in package.locate_file(license_file).read_text()
 static = files('gbc_scene_forge').joinpath('static')
-assets = ('index.html', 'app.js', 'model.mjs', 'progress.mjs', 'api.mjs', 'decode.mjs', 'dom.mjs', 'style.css')
+modules = json.loads(static.joinpath('frontend-manifest.json').read_text())['outputs']
+assets = ('index.html', 'style.css', *sorted(modules))
 for name in assets:
     assert static.joinpath(name).read_bytes(), name
 assert shutil.which('node') is None

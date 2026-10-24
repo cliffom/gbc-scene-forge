@@ -2,6 +2,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": false,
+    "noEmitOnError": true,
     "rootDir": "frontend",
     "outDir": "src/gbc_scene_forge/static",
     "types": []

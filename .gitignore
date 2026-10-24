@@ -17,3 +17,5 @@ node_modules/
 # Generated from frontend/; bundled in distributions by Poetry's explicit include.
 /src/gbc_scene_forge/static/*.js
 /src/gbc_scene_forge/static/*.mjs
+
+/src/gbc_scene_forge/static/frontend-manifest.json

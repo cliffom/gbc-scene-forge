@@ -34,10 +34,15 @@ editable path support.
 
 ### Frontend workflow
 
-Edit TypeScript in `frontend/`: `app.ts` wires the UI, `model.mts` implements scene
-editing, `progress.mts` describes task status, and `api.mts`, `decode.mts`,
-`dom.mts`, and `types.ts` define transport, runtime decoding, DOM access, and shared
-types. Connector-specific scene extensions remain opaque and survive decoding.
+Edit TypeScript in `frontend/`: `app.ts` composes controllers, `render.mts` owns
+preview/drawing state, `interactions.mts` handles pointer and keyboard editing,
+`documents.mts` owns drafts and document lifecycle, and `apply.mts` supervises
+reviewed builds. `session.mts` holds shared scene/interaction state; controller
+closures keep their transient state private. `assets.mts`, `model.mts`, and
+`progress.mts` cover the palette, editing model, and progress presentation.
+`api.mts`, `decode.mts`, `errors.mts`, `dom.mts`, and `types.ts` define transport,
+runtime decoding, errors, DOM access, and shared types.
+Connector-specific scene extensions remain opaque and survive decoding.
 Server validation remains authoritative for game rules and imported documents.
 
 - `make frontend`: compile ES modules into `src/gbc_scene_forge/static/`.
@@ -52,9 +57,19 @@ boundaries; avoid `any`, unchecked casts, and type-check suppressions. Node runs
 the TypeScript tests using built-in type stripping; `make typecheck` enforces types.
 
 Generated JavaScript is Git-ignored; do not edit it. `make demo` and `make build`
-compile it automatically. After changing frontend code while a server is running,
+compile it automatically. Compilation uses staging and `noEmitOnError`; failed
+type checks preserve the last successful assets. A manifest fingerprints inputs
+and outputs, and the Python build backend verifies it for wheels, source archives,
+and editable installs. A checkout without valid assets needs `npm ci` before it
+can build; it fails explicitly when compilation tools are unavailable.
+After changing frontend code while a server is running,
 run `make frontend` and reload the page. Wheels and source distributions include
 the compiled assets, so installing and running a released package needs no Node.
+
+Configured API deadlines cover headers and body reads, including downloads and
+HTTP error bodies. Incompatible JSON/task responses stop automatic polling with
+an actionable message; the task may still have completed, and Reconnect retries
+status retrieval explicitly. Temporary connection failures continue to retry.
 
 ## Run the demo
 

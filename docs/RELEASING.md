@@ -25,8 +25,13 @@ that installed wheel. Artifacts appear in `dist/`. Before building a different
 version, run `make clean` followed by `npm ci` to reinstall the frontend dependencies
 removed by cleanup. The source archive includes TypeScript sources, frontend
 configuration, the npm lockfile, and precompiled assets. Building a wheel from
-that archive uses those assets without running Node. When invoking Python build
-tools directly from a checkout, run `make frontend` first. No command above uploads packages.
+that archive verifies the asset manifest and uses those assets without running Node.
+The PEP 517/660 backend checks assets for direct wheel, source, and editable builds
+too: it recompiles stale/missing assets when local tooling is installed and fails
+with setup instructions otherwise. `make frontend` stages compiler output and only
+publishes after success. Distribution checks also build from a precompiled source
+archive without Node and verify that a checkout missing assets cannot silently
+produce a wheel. No command above uploads packages.
 
 CI runs these checks on Python 3.10, 3.12 and 3.14, with Chrome acceptance checks
 on Python 3.12. The browser suite can also be run locally; see the README.
