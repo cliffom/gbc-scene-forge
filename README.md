@@ -2,7 +2,7 @@
 
 ![GBC Scene Forge — Build a world. One tile at a time.](assets/branding/hero.png)
 
-Version 0.1.4 is a local browser editor with an explicitly supplied Python game
+Version 0.1.5 is a local browser editor with an explicitly supplied Python game
 connector. It has no runtime Python dependencies. The package contains its HTTP
 service, browser UI, document storage, task runner and durable transaction store.
 Atlas decoding, rendering, source translation and game builds belong to the host
@@ -11,10 +11,10 @@ connector. No connector is discovered or executed automatically.
 ## Installation
 
 ```sh
-python -m pip install gbc-scene-forge==0.1.4
+python -m pip install gbc-scene-forge==0.1.5
 ```
 
-The [PyPI package](https://pypi.org/project/gbc-scene-forge/0.1.4/) includes the
+The [PyPI package](https://pypi.org/project/gbc-scene-forge/0.1.5/) includes the
 browser UI and service. A host game supplies the connector and launcher described below.
 
 ## Development
@@ -34,7 +34,7 @@ installing dependencies. Override executable paths with `PYTHON`, `POETRY`, or
 `NPM` when needed. Poetry checks Python compatibility; `npm ci --engine-strict`
 enforces the frontend's Node requirement during setup.
 
-The build creates `dist/gbc_scene_forge-0.1.4-py3-none-any.whl` and a source
+The build creates `dist/gbc_scene_forge-0.1.5-py3-none-any.whl` and a source
 archive, then checks metadata with Twine. Run `make check-dist` afterward to install
 the wheel without dependencies in a fresh environment and run the small
 `tests/package_smoke.py` suite. CI runs this installed-wheel check explicitly. See
