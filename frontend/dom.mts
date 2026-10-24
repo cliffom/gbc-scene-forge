@@ -45,6 +45,7 @@ const elements = {
   zoom: element('zoom', HTMLSelectElement),
   viewport: element('viewport', HTMLElement),
   scene: element('scene', HTMLCanvasElement),
+  'empty-scene': element('empty-scene', HTMLElement),
   coordinates: element('coordinates', HTMLElement),
   dimensions: element('dimensions', HTMLElement),
   'selected-brush': element('selected-brush', HTMLElement),

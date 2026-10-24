@@ -64,19 +64,22 @@ publishing page. Use the official [trusted publisher setup guide](https://docs.p
 The workflow follows the [Python Packaging User Guide](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/)
 and uses short-lived OIDC credentials; no PyPI API token is stored in the repository.
 
-After reviewing and committing a release, create and push an annotated `v0.1.4`
+After reviewing and committing a release, create and push an annotated `v0.1.5`
 tag (or the matching next version). Run **Publish package** manually against that
-tag, selecting `testpypi` first. Check that installation and the host connector
-work before manually running the workflow for `pypi`. The workflow rebuilds and
+tag, selecting `testpypi` first when its trusted publisher is configured. TestPyPI
+is currently unconfigured; its 0.1.4 upload failed with `invalid-publisher`. Until
+that publisher is set up, validate the built wheel with `make check-dist` and the
+Chrome fixture suite, then run the workflow for `pypi`. Verify a fresh PyPI install
+with `tests/package_smoke.py` after publication. The workflow rebuilds and
 checks the distributions, checks the tag against the package version, then uploads
 only those verified artifacts. Pushing a tag alone does not publish.
 
-The current release version is 0.1.4, tagged `v0.1.4`. It makes draft creation
-explicit with a required name prompt, reserves Save draft for existing drafts,
-and keeps draft names and IDs fixed through Undo/Redo. Read-only properties use
-matching dimmed styling without focus highlights. The header places the app title
-above the project name.
+The current release version is 0.1.5, tagged `v0.1.5`. The editor starts with no
+scene open and displays a prominent empty-state message. Choosing a scene opens
+its current version, with Keep editing / Discard and open confirmation before
+replacing unsaved changes. Scene-dependent controls stay disabled until a scene
+is open, and recovered Apply tasks do not implicitly open a scene.
 
-After successful publication, consumers can pin `gbc-scene-forge==0.1.4` from
-[PyPI](https://pypi.org/project/gbc-scene-forge/0.1.4/). Editable sibling checkouts
+After successful publication, consumers can pin `gbc-scene-forge==0.1.5` from
+[PyPI](https://pypi.org/project/gbc-scene-forge/0.1.5/). Editable sibling checkouts
 remain an option for development.

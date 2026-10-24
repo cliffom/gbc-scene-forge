@@ -16,7 +16,7 @@
   </header>
   <nav class="document-bar" aria-label="Document controls">
     <label>Scene <select id="profile"></select></label>
-    <button id="open">Open current version</button><button id="original" hidden title="Load the game layout preserved when this scene's first draft was saved">Open original</button><button id="new">New from template</button>
+    <button id="open" disabled>Open current version</button><button id="original" hidden title="Load the game layout preserved when this scene's first draft was saved">Open original</button><button id="new" disabled>New from template</button>
     <select id="drafts" aria-label="Saved drafts"><option value="">Saved drafts…</option></select>
     <button id="delete-drafts">Delete drafts</button>
     <button id="import">Import JSON</button><input id="file" type="file" accept=".json,application/json" hidden>
@@ -45,13 +45,14 @@
         <span class="spacer"></span><label>Zoom <select id="zoom"><option value="2">2×</option><option value="3">3×</option><option value="4" selected>4×</option><option value="6">6×</option><option value="8">8×</option></select></label>
       </div>
       <div id="viewport" class="viewport" tabindex="0" aria-label="Scene workspace. Use the toolbar to select a tool.">
-        <div class="canvas-surround"><canvas id="scene" aria-label="Editable scene, on a tile grid"></canvas></div>
+        <div id="empty-scene"><h2>No scene open</h2><p>Choose a scene to open its current version, or open a saved draft.</p></div>
+        <div class="canvas-surround" hidden><canvas id="scene" hidden aria-label="Editable scene, on a tile grid"></canvas></div>
       </div>
-      <div class="canvas-footer"><span id="coordinates">X — &nbsp; Y —</span><span id="dimensions">Loading scene…</span><span id="selected-brush">Select a brush</span></div>
+      <div class="canvas-footer"><span id="coordinates">X — &nbsp; Y —</span><span id="dimensions">No scene open</span><span id="selected-brush">Select a brush</span></div>
       <div class="review-bar"><span class="eyebrow">REVIEW</span><label><input id="grid" type="checkbox" checked> Grid</label><label><input id="markers" type="checkbox" checked> Markers</label><label><input id="collision" type="checkbox"> Collision</label><label><input id="protected" type="checkbox"> Protected cells</label><label><input id="guides" type="checkbox"> Viewport / HUD</label><label><input id="animate" type="checkbox"> <span id="animation-label">Animate</span></label></div>
     </section>
     <aside class="inspector">
-      <div class="panel-heading"><h2>Scene properties</h2><span id="dirty" class="tag">CURRENT</span></div>
+      <div class="panel-heading"><h2>Scene properties</h2><span id="dirty" class="tag">NO SCENE</span></div>
       <label class="field">Draft name<input id="name" readonly></label>
       <label class="field">Draft ID<input id="scene-id" readonly placeholder="Assigned when created" aria-describedby="draft-id-help"></label>
       <p id="draft-id-help" class="hint">Create draft saves a named copy of the current canvas with a new ID.</p>
@@ -68,7 +69,7 @@
       <button id="remove-reference" disabled>Remove selected reference</button></div>
       <div class="divider"></div>
       <div class="panel-heading"><h3>Game handoff</h3><button id="validate" class="small">Check scene</button></div>
-      <div id="validation" class="validation">Check the layout before exporting.</div>
+      <div id="validation" class="validation">Open a scene to begin.</div>
       <p class="hint">Apply reviews this layout, updates its editable preview, runs project verification before updating your game.</p>
       <button id="undo-apply" disabled>Undo last apply</button>
     </aside>
