@@ -29,6 +29,35 @@ For local development, hosts can install this checkout with
 `python -m pip install -e ../gbc-scene-forge` or use their dependency manager's
 editable path support.
 
+## Run the demo
+
+After `make setup`, launch the bundled demo connector:
+
+```sh
+make demo
+```
+
+Open <http://127.0.0.1:8765/>. Choose **Village square** or **Riverside crossing**
+and click **Open current version**. Paint terrain from the palette, switch between
+day/night previews, and toggle the collision overlay. Save drafts, export a scene,
+or review and Apply edits to the demo sources; **Undo Apply** restores the previous
+version. Stop with Ctrl+C.
+This example compiles tile indexes into binary files; it does not build a game ROM.
+
+The connector in `src/gbc_scene_forge/demo/` is explicitly launched by this target.
+It copies bundled seed scenes into `.demo/levels/` on first launch. Subsequent
+launches preserve edits. Drafts (including original snapshots), sources, compiled
+files, reviews, and transaction history stay inside the Git-ignored `.demo/`
+workspace. To start fresh, stop the server and run `make clean-demo`; this deletes
+the checkout's `.demo/` directory and all saved demo work. `make clean` only removes
+build artifacts and preserves the demo workspace. Custom `DEMO_ROOT` directories
+must be removed separately.
+
+Use `make demo PORT=8777 DEMO_ROOT=/tmp/forge-demo` to change the port or workspace.
+Custom workspace paths outside `.demo/` need their own Git ignore rule if placed
+inside a checkout. Installed packages can launch the same demo with
+`python -m gbc_scene_forge.demo --root /tmp/forge-demo --port 8777`.
+
 ## Launching
 
 Install the package through the host project's locked dependencies. A host launcher
