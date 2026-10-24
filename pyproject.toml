@@ -24,6 +24,7 @@ requires-poetry = ">=2.4,<3.0"
 packages = [{ include = "gbc_scene_forge", from = "src" }]
 include = [
     { path = "src/gbc_scene_forge/static/*", format = ["sdist", "wheel"] },
+    { path = "src/gbc_scene_forge/demo/scenes/*.json", format = ["sdist", "wheel"] },
     { path = "tests", format = "sdist" },
     { path = "docs", format = "sdist" },
     { path = "tools", format = "sdist" },

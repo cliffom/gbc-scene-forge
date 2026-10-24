@@ -1,0 +1,17 @@
+{
+  "name": "Riverside crossing",
+  "cells": [
+    ["tree", "tree", "tree", "tree", "tree", "tree", "water", "water", "water", "water", "tree", "tree", "tree", "tree", "tree", "tree"],
+    ["tree", "grass", "grass", "grass", "grass", "grass", "water", "water", "water", "water", "grass", "grass", "grass", "flowers", "grass", "tree"],
+    ["tree", "grass", "flowers", "grass", "grass", "grass", "water", "water", "water", "water", "grass", "grass", "grass", "grass", "grass", "tree"],
+    ["tree", "grass", "grass", "grass", "grass", "grass", "water", "water", "water", "water", "grass", "tree", "tree", "grass", "grass", "tree"],
+    ["tree", "grass", "grass", "grass", "grass", "grass", "water", "water", "water", "water", "grass", "tree", "tree", "grass", "grass", "tree"],
+    ["tree", "path", "path", "path", "path", "path", "bridge", "bridge", "bridge", "bridge", "path", "path", "path", "path", "path", "tree"],
+    ["tree", "path", "path", "path", "path", "path", "bridge", "bridge", "bridge", "bridge", "path", "path", "path", "path", "path", "tree"],
+    ["tree", "grass", "grass", "grass", "flowers", "grass", "water", "water", "water", "water", "grass", "grass", "grass", "grass", "grass", "tree"],
+    ["tree", "grass", "tree", "tree", "grass", "grass", "water", "water", "water", "water", "grass", "grass", "flowers", "grass", "grass", "tree"],
+    ["tree", "grass", "tree", "tree", "grass", "grass", "water", "water", "water", "water", "grass", "grass", "grass", "grass", "grass", "tree"],
+    ["tree", "grass", "grass", "grass", "flowers", "grass", "water", "water", "water", "water", "grass", "grass", "grass", "flowers", "grass", "tree"],
+    ["tree", "tree", "tree", "tree", "tree", "tree", "water", "water", "water", "water", "tree", "tree", "tree", "tree", "tree", "tree"]
+  ]
+}
