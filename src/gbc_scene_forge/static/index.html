@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>GBC Scene Forge</title>
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <header class="masthead">
+    <div class="brand"><span class="mark" aria-hidden="true">▦</span><div><span id="project-name" class="eyebrow">LOCAL PROJECT</span><h1>GBC Scene Forge</h1></div></div>
+    <div class="connection"><span class="dot"></span> LOCAL WORKSPACE <span class="tag">V1</span></div>
+  </header>
+  <nav class="document-bar" aria-label="Document controls">
+    <label>Scene <select id="profile"></select></label>
+    <button id="open">Open current version</button><button id="new">New from template</button>
+    <select id="drafts" aria-label="Saved drafts"><option value="">Saved drafts…</option></select>
+    <button id="delete-drafts">Delete drafts</button>
+    <button id="import">Import JSON</button><input id="file" type="file" accept=".json,application/json" hidden>
+    <span class="spacer"></span><button id="download">Download JSON</button><button id="export">Export handoff ↗</button><button id="save-new" hidden>Save as new draft</button><button id="save" disabled>Save draft</button><button id="apply" class="primary" disabled>Apply to game</button>
+  </nav>
+  <main>
+    <aside class="library">
+      <div class="panel-heading"><h2>Asset library</h2><span id="asset-count" class="muted"></span></div>
+      <input id="search" type="search" placeholder="Search tiles, furniture, sprites…" aria-label="Search assets">
+      <div class="filters"><select id="family" aria-label="Filter asset family"><option value="">All families</option></select><select id="kind" aria-label="Filter asset kind"><option value="placeable">Scene set</option><option value="tile">All tiles</option><option value="sprite">Sprite references</option><option value="all">Everything</option></select></div>
+      <p class="hint">Drag onto the scene, or select a tile and paint. Dimmed tiles need a different scene loader.</p>
+      <div id="assets" class="assets" aria-label="Available assets"></div>
+    </aside>
+    <section class="workbench" aria-label="Scene canvas">
+      <div class="canvas-toolbar">
+        <div class="tool-group" role="group" aria-label="Editing tools">
+          <button data-tool="select" title="Select and move (S)" aria-pressed="true">⌖ <span>Select</span></button>
+          <button data-tool="paint" title="Paint (P)" aria-pressed="false"><svg class="tool-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m14 6 4-4a2.8 2.8 0 0 1 4 4l-9 9-4-4 5-5Z"/><path d="M9 11c-3-1-5 1-5 4 0 2-1 4-2 5 5 1 10-1 10-5"/></svg> <span>Paint</span></button>
+          <button data-tool="fill" title="Fill (F)" aria-pressed="false"><svg class="tool-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 2 5 5M19 11l-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2a2 2 0 0 0 2.8 0L19 11ZM2 12h16"/><path d="M20 15s-2 2.5-2 4a2 2 0 0 0 4 0c0-1.5-2-4-2-4Z"/></svg> <span>Fill</span></button>
+          <button data-tool="erase" title="Erase (E)" aria-pressed="false">⌫ <span>Erase</span></button>
+          <button data-tool="pan" title="Pan (H)" aria-pressed="false">✥ <span>Pan</span></button>
+        </div>
+        <button id="deselect" title="Deselect (Escape)" disabled>Deselect</button>
+        <div class="tool-group"><button id="undo" title="Undo (⌘/Ctrl Z)">↶</button><button id="redo" title="Redo (⌘/Ctrl Shift Z)">↷</button></div>
+        <button id="revert" disabled>Revert changes</button>
+        <span class="spacer"></span><label>Zoom <select id="zoom"><option value="2">2×</option><option value="3">3×</option><option value="4" selected>4×</option><option value="6">6×</option><option value="8">8×</option></select></label>
+      </div>
+      <div id="viewport" class="viewport" tabindex="0" aria-label="Scene workspace. Use the toolbar to select a tool.">
+        <div class="canvas-surround"><canvas id="scene" aria-label="Editable scene, on a tile grid"></canvas></div>
+      </div>
+      <div class="canvas-footer"><span id="coordinates">X — &nbsp; Y —</span><span id="dimensions">Loading scene…</span><span id="selected-brush">Select a brush</span></div>
+      <div class="review-bar"><span class="eyebrow">REVIEW</span><label><input id="grid" type="checkbox" checked> Grid</label><label><input id="markers" type="checkbox" checked> Markers</label><label><input id="collision" type="checkbox"> Collision</label><label><input id="protected" type="checkbox"> Protected cells</label><label><input id="guides" type="checkbox"> Viewport / HUD</label><label><input id="animate" type="checkbox"> <span id="animation-label">Animate</span></label></div>
+    </section>
+    <aside class="inspector">
+      <div class="panel-heading"><h2>Scene properties</h2><span id="dirty" class="tag">CURRENT</span></div>
+      <label class="field">Draft name<input id="name" maxlength="100"></label>
+      <label class="field">Draft ID<input id="scene-id" readonly placeholder="Assigned on first save" aria-describedby="draft-id-help"></label>
+      <p id="draft-id-help" class="hint">Generated from the name when saved. Save as new draft creates a new ID.</p>
+      <p id="scene-type" class="meta"></p>
+      <div class="divider"></div>
+      <h3>Lighting &amp; state</h3>
+      <label class="field">Lighting<select id="lighting"></select></label>
+      <label class="field" id="state-field">Scene state<select id="state"></select></label>
+      <p class="hint">Lighting and state are preview controls. They do not change campaign progress.</p>
+      <div class="divider"></div>
+      <div id="reference-panel"><div class="panel-heading"><h3>Composition references</h3><span id="reference-count" class="muted">0</span></div>
+      <p class="hint">Drop sprites to check scale and composition. Use Select to move them; runtime actors stay in place.</p>
+      <div id="references"></div>
+      <button id="remove-reference" disabled>Remove selected reference</button></div>
+      <div class="divider"></div>
+      <div class="panel-heading"><h3>Game handoff</h3><button id="validate" class="small">Check scene</button></div>
+      <div id="validation" class="validation">Check the layout before exporting.</div>
+      <p class="hint">Apply reviews this layout, updates its editable preview, runs project verification before updating your game.</p>
+      <button id="undo-apply" disabled>Undo last apply</button>
+    </aside>
+  </main>
+  <footer class="status-bar"><span id="status" role="status" aria-live="polite">Reading approved atlas sources…</span><span id="source-label">SOURCE PREVIEW</span></footer>
+  <dialog id="discard"><form method="dialog"><h2>Keep your current edits?</h2><p>Save or download the draft before opening another scene.</p><div class="dialog-actions"><button value="cancel">Keep editing</button><button value="discard" class="primary">Discard and open</button></div></form></dialog>
+  <dialog id="revert-dialog" aria-labelledby="revert-heading"><form method="dialog"><h2 id="revert-heading">Revert unsaved changes?</h2><p>Discard edits since this scene was last saved or opened, including its name and sprite references? Saved drafts and game files stay unchanged.</p><div class="dialog-actions"><button value="cancel" autofocus>Keep editing</button><button value="revert">Revert changes</button></div></form></dialog>
+  <dialog id="delete-drafts-dialog" aria-labelledby="delete-drafts-heading">
+    <h2 id="delete-drafts-heading">Delete saved drafts</h2>
+    <p>Select drafts to permanently delete from disk. The current canvas and game files stay unchanged.</p>
+    <div id="delete-drafts-list"></div>
+    <p id="delete-drafts-error" class="error" role="alert"></p>
+    <div class="dialog-actions"><button id="delete-drafts-cancel">Cancel</button><button id="delete-drafts-confirm" disabled>Delete selected drafts</button></div>
+  </dialog>
+  <dialog id="apply-review" class="apply-dialog" aria-labelledby="apply-heading">
+    <h2 id="apply-heading">Review layout changes</h2>
+    <p id="apply-summary"></p>
+    <section id="review-content">
+      <p class="hint">Compare the current game with your proposed layout at native size and 4×. Check floor and wall joins, furniture backings, lighting, actor scale and access. Composition-only sprite references are excluded.</p>
+      <div id="apply-views"></div>
+      <details><summary>Files being updated</summary><ul id="apply-files"></ul></details>
+    </section>
+    <section id="apply-progress" hidden>
+      <div id="apply-health" class="task-health" data-state="running">
+        <span id="apply-indicator" class="task-indicator" aria-hidden="true"></span>
+        <div><p id="apply-step" role="status" aria-live="polite"></p><p id="apply-activity"></p></div>
+      </div>
+      <p id="apply-timing" class="task-timing"></p>
+      <p id="apply-result" role="status" aria-live="polite"></p>
+      <button id="apply-reconnect" hidden>Check status now</button>
+      <details id="apply-details"><summary>Live build and test output</summary><pre id="apply-log"></pre></details>
+      <button id="apply-download-log">Download task log</button>
+    </section>
+    <div class="review-actions">
+      <label id="approve-label"><input id="approve-layout" type="checkbox"> I approve the proposed layout for this existing game scene.</label>
+      <div class="dialog-actions"><button id="apply-close">Cancel</button><button id="apply-confirm" class="primary" disabled>Approve and apply</button></div>
+    </div>
+  </dialog>
+</body>
+</html>
