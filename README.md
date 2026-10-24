@@ -17,13 +17,20 @@ browser UI and service. A host game supplies the connector and launcher describe
 
 ## Development
 
-Use Python 3.10+, Node 24.12+, npm, and Make for development. `make setup` installs
-the locked Python and frontend dependencies and compiles the browser assets.
+Install Python 3.10+, Poetry 2.4–2.x, Node 24.12+, npm, and Make, with their
+executables on `PATH`. Follow the [Poetry installation guide](https://python-poetry.org/docs/#installation)
+if needed. `make setup` checks prerequisites, uses Poetry to manage `.venv`,
+installs locked dependencies, and bundles the frontend. It does not install Poetry.
 
 ```sh
 make setup PYTHON=python3.12
 make lint test build
 ```
+
+`make check-deps` checks tool availability and Poetry/project compatibility without
+installing dependencies. Override executable paths with `PYTHON`, `POETRY`, or
+`NPM` when needed. Poetry checks Python compatibility; `npm ci --engine-strict`
+enforces the frontend's Node requirement during setup.
 
 The build creates `dist/gbc_scene_forge-0.1.1-py3-none-any.whl` and a source
 archive, and tests the wheel in a clean environment. See

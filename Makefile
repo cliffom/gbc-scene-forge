@@ -1,20 +1,25 @@
 PYTHON ?= python3
-POETRY ?= .tools/poetry/bin/poetry
+POETRY ?= poetry
 NPM ?= npm
 PORT ?= 8765
 DEMO_ROOT ?= .demo
 .DEFAULT_GOAL := test
 
-.PHONY: setup deps frontend demo test lint typecheck format build check-dist clean clean-demo
-setup:
-	$(PYTHON) tools/bootstrap_poetry.py
-	$(MAKE) deps
+.PHONY: setup check-deps deps frontend demo test lint typecheck format build check-dist clean clean-demo
+setup: deps
 
-deps:
-	test -x .venv/bin/python || .tools/poetry/bin/python -m venv .venv
-	$(POETRY) config virtualenvs.in-project true --local
+check-deps:
+	@for tool in "$(POETRY)" "$(PYTHON)" "$(NPM)" node; do \
+		command -v "$$tool" >/dev/null 2>&1 || { \
+			echo "Missing required tool: $$tool. See README.md for prerequisites." >&2; exit 1; \
+		}; \
+	done
 	$(POETRY) check --lock --strict
-	$(NPM) ci
+
+deps: check-deps
+	$(POETRY) config virtualenvs.in-project true --local
+	$(POETRY) env use $(PYTHON)
+	$(NPM) ci --engine-strict
 	$(MAKE) frontend
 	$(POETRY) sync
 
