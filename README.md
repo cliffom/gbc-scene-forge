@@ -34,7 +34,7 @@ editable path support.
 After `make setup`, launch the bundled demo connector:
 
 ```sh
-make run
+make demo
 ```
 
 Open <http://127.0.0.1:8765/>. Choose **Village square** or **Riverside crossing**
@@ -53,7 +53,7 @@ the checkout's `.demo/` directory and all saved demo work. `make clean` only rem
 build artifacts and preserves the demo workspace. Custom `DEMO_ROOT` directories
 must be removed separately.
 
-Use `make run PORT=8777 DEMO_ROOT=/tmp/forge-demo` to change the port or workspace.
+Use `make demo PORT=8777 DEMO_ROOT=/tmp/forge-demo` to change the port or workspace.
 Custom workspace paths outside `.demo/` need their own Git ignore rule if placed
 inside a checkout. Installed packages can launch the same demo with
 `python -m gbc_scene_forge.demo --root /tmp/forge-demo --port 8777`.

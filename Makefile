@@ -5,7 +5,7 @@ PORT ?= 8765
 DEMO_ROOT ?= .demo
 .DEFAULT_GOAL := test
 
-.PHONY: setup deps run test lint build check-dist clean clean-demo
+.PHONY: setup deps demo test lint build check-dist clean clean-demo
 setup:
 	$(PYTHON) tools/bootstrap_poetry.py
 	$(MAKE) deps
@@ -16,7 +16,7 @@ deps:
 	$(POETRY) check --lock --strict
 	$(POETRY) sync
 
-run:
+demo:
 	$(POETRY) run python -m gbc_scene_forge.demo --root "$(DEMO_ROOT)" --port "$(PORT)"
 
 test:
