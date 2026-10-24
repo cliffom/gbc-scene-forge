@@ -64,18 +64,19 @@ publishing page. Use the official [trusted publisher setup guide](https://docs.p
 The workflow follows the [Python Packaging User Guide](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/)
 and uses short-lived OIDC credentials; no PyPI API token is stored in the repository.
 
-After reviewing and committing a release, create and push an annotated `v0.1.3`
+After reviewing and committing a release, create and push an annotated `v0.1.4`
 tag (or the matching next version). Run **Publish package** manually against that
 tag, selecting `testpypi` first. Check that installation and the host connector
 work before manually running the workflow for `pypi`. The workflow rebuilds and
 checks the distributions, checks the tag against the package version, then uploads
 only those verified artifacts. Pushing a tag alone does not publish.
 
-The current release version is 0.1.3, tagged `v0.1.3`. It adds pixel-art
-branding: layered Aseprite logo and hero masters, a README banner, native 16px/32px
-favicons, and a logo in the browser editor header. Branding routes are explicitly
-allowlisted and the installed-wheel smoke suite checks the packaged images.
+The current release version is 0.1.4, tagged `v0.1.4`. It makes draft creation
+explicit with a required name prompt, reserves Save draft for existing drafts,
+and keeps draft names and IDs fixed through Undo/Redo. Read-only properties use
+matching dimmed styling without focus highlights. The header places the app title
+above the project name.
 
-After successful publication, consumers can pin `gbc-scene-forge==0.1.3` from
-[PyPI](https://pypi.org/project/gbc-scene-forge/0.1.3/). Editable sibling checkouts
+After successful publication, consumers can pin `gbc-scene-forge==0.1.4` from
+[PyPI](https://pypi.org/project/gbc-scene-forge/0.1.4/). Editable sibling checkouts
 remain an option for development.
