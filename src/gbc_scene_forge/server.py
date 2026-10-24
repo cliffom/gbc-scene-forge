@@ -109,31 +109,15 @@ def make_handler(token, connector):
                     self.reply(manager.active())
                 elif route.startswith("/art/"):
                     self.reply(connector.asset(route[5:]), "image/png")
-                elif route in (
-                    "/",
-                    "/app.js",
-                    "/model.mjs",
-                    "/progress.mjs",
-                    "/api.mjs",
-                    "/apply.mjs",
-                    "/assets.mjs",
-                    "/decode.mjs",
-                    "/documents.mjs",
-                    "/dom.mjs",
-                    "/errors.mjs",
-                    "/interactions.mjs",
-                    "/render.mjs",
-                    "/session.mjs",
-                    "/types.js",
-                    "/ui.mjs",
-                    "/style.css",
-                ):
+                elif route in ("/", "/app.js", "/app.js.map", "/style.css"):
                     name = "index.html" if route == "/" else route[1:]
                     mime = (
                         "text/html"
                         if name.endswith("html")
                         else "text/css"
                         if name.endswith("css")
+                        else "application/json"
+                        if name.endswith(".map")
                         else "text/javascript"
                     )
                     self.reply((STATIC / name).read_bytes(), mime + "; charset=utf-8")

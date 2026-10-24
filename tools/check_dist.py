@@ -18,9 +18,9 @@ if len(archives) != 1:
 with tarfile.open(archives[0]) as archive:
     members = {Path(*Path(name).parts[1:]) for name in archive.getnames()}
     for name in (
-        "build_backend.py",
-        "tools/frontend_build.py",
-        "src/gbc_scene_forge/static/frontend-manifest.json",
+        "src/gbc_scene_forge/static/app.js",
+        "src/gbc_scene_forge/static/app.js.map",
+        "src/gbc_scene_forge/static/app.meta.json",
         "frontend/app.ts",
         "frontend/types.ts",
         "frontend/model.mts",
@@ -28,7 +28,6 @@ with tarfile.open(archives[0]) as archive:
         "package.json",
         "package-lock.json",
         "tsconfig.json",
-        "tsconfig.build.json",
         "eslint.config.mjs",
         ".prettierrc.json",
     ):
@@ -67,11 +66,11 @@ with tempfile.TemporaryDirectory() as folder:
             "Precompiled source build failed without Node:\n" + result.stdout + result.stderr
         )
     static = source / "src/gbc_scene_forge/static"
-    for path in (*static.glob("*.js"), *static.glob("*.mjs"), static / "frontend-manifest.json"):
+    for path in (static / "app.js", static / "app.js.map", static / "app.meta.json"):
         path.unlink()
     result = subprocess.run(command, env=environment, capture_output=True, text=True)
     assert result.returncode != 0, "A source checkout with missing assets must not produce a wheel"
-    assert "Browser assets are missing or stale" in result.stdout + result.stderr
+    assert "app.js" in result.stdout + result.stderr, result.stdout + result.stderr
     print("PEP 517: precompiled source builds without Node; missing assets fail explicitly")
 
 with tempfile.TemporaryDirectory() as folder:
@@ -104,8 +103,10 @@ assert package.metadata.get_all('License-File') == ['LICENSE']
 license_file = next(path for path in package.files if str(path).endswith('.dist-info/licenses/LICENSE'))
 assert 'Copyright (c) 2026 Michael Clifford' in package.locate_file(license_file).read_text()
 static = files('gbc_scene_forge').joinpath('static')
-modules = json.loads(static.joinpath('frontend-manifest.json').read_text())['outputs']
-assets = ('index.html', 'style.css', *sorted(modules))
+assets = ('index.html', 'style.css', 'app.js', 'app.js.map')
+source_map = json.loads(static.joinpath('app.js.map').read_text())
+assert any(name.endswith('frontend/app.ts') for name in source_map['sources'])
+assert len(source_map['sourcesContent']) == len(source_map['sources'])
 for name in assets:
     assert static.joinpath(name).read_bytes(), name
 assert shutil.which('node') is None
@@ -120,8 +121,10 @@ with TemporaryDirectory() as workspace:
                 route = '/' if name == 'index.html' else '/' + name
                 with urlopen(base + route) as response:
                     assert response.read() == static.joinpath(name).read_bytes(), name
-                    if name.endswith(('.js', '.mjs')):
+                    if name.endswith('.js'):
                         assert response.headers.get_content_type() == 'text/javascript'
+                    elif name.endswith('.map'):
+                        assert response.headers.get_content_type() == 'application/json'
             with urlopen(base + '/api/catalog') as response:
                 assert json.load(response)['connector'] == 'scene-forge-demo'
         finally:

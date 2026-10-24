@@ -51,6 +51,7 @@ check-dist: build
 
 clean:
 	rm -rf build dist node_modules
+	rm -f src/gbc_scene_forge/static/app.js src/gbc_scene_forge/static/app.js.map src/gbc_scene_forge/static/app.meta.json
 
 clean-demo:
 	rm -rf .demo

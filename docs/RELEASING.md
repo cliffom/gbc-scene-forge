@@ -16,7 +16,8 @@ make build
 `make lint` includes ESLint, Prettier, and strict TypeScript checks alongside Ruff.
 Use `make format` to apply formatting, and `make typecheck` for a standalone type check.
 
-`make build` compiles `frontend/` into Git-ignored browser assets, then uses the
+`make build` runs strict TypeScript checking, bundles `frontend/app.ts` and its
+imports with esbuild, then uses the
 standard isolated Python build frontend: it creates the
 source distribution, then builds the wheel from that source distribution. It
 checks metadata with Twine, installs the wheel without dependencies into a clean
@@ -24,14 +25,14 @@ environment, verifies bundled browser files and runs the Python contracts agains
 that installed wheel. Artifacts appear in `dist/`. Before building a different
 version, run `make clean` followed by `npm ci` to reinstall the frontend dependencies
 removed by cleanup. The source archive includes TypeScript sources, frontend
-configuration, the npm lockfile, and precompiled assets. Building a wheel from
-that archive verifies the asset manifest and uses those assets without running Node.
-The PEP 517/660 backend checks assets for direct wheel, source, and editable builds
-too: it recompiles stale/missing assets when local tooling is installed and fails
-with setup instructions otherwise. `make frontend` stages compiler output and only
-publishes after success. Distribution checks also build from a precompiled source
-archive without Node and verify that a checkout missing assets cannot silently
-produce a wheel. No command above uploads packages.
+configuration, the npm lockfile, esbuild dependency metadata, and the prebuilt
+bundle and source map. Hatchling is the standard Python build backend; its
+declarative file inclusion requires the bundle and map to exist. No custom Python
+frontend build hooks are used. Building a wheel from the source archive uses those
+assets without Node. Direct Python builds from a checkout must follow
+`npm ci` and `npm run build`; use `make build` to rebuild assets automatically.
+Distribution checks verify Node-free source-archive builds, required-asset
+failures, source maps, and the installed editor. No command above uploads packages.
 
 CI runs these checks on Python 3.10, 3.12 and 3.14, with Chrome acceptance checks
 on Python 3.12. The browser suite can also be run locally; see the README.

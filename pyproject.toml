@@ -22,22 +22,27 @@ Issues = "https://github.com/cliffom/gbc-scene-forge/issues"
 [tool.poetry]
 requires-poetry = ">=2.4,<3.0"
 packages = [{ include = "gbc_scene_forge", from = "src" }]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/gbc_scene_forge"]
+core-metadata-version = "2.4"
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/gbc_scene_forge/static/app.js" = "gbc_scene_forge/static/app.js"
+"src/gbc_scene_forge/static/app.js.map" = "gbc_scene_forge/static/app.js.map"
+
+[tool.hatch.build.targets.sdist]
+core-metadata-version = "2.4"
 include = [
-    { path = "src/gbc_scene_forge/static/*", format = ["sdist", "wheel"] },
-    { path = "src/gbc_scene_forge/demo/scenes/*.json", format = ["sdist", "wheel"] },
-    { path = "tests", format = "sdist" },
-    { path = "docs", format = "sdist" },
-    { path = "tools", format = "sdist" },
-    { path = "Makefile", format = "sdist" },
-    { path = "poetry.lock", format = "sdist" },
-    { path = "build_backend.py", format = "sdist" },
-    { path = "frontend", format = "sdist" },
-    { path = "package.json", format = "sdist" },
-    { path = "package-lock.json", format = "sdist" },
-    { path = "tsconfig*.json", format = "sdist" },
-    { path = "eslint.config.mjs", format = "sdist" },
-    { path = ".prettierrc.json", format = "sdist" },
+    "/src", "/frontend", "/tests", "/docs", "/tools", "/Makefile", "/README.md",
+    "/LICENSE", "/pyproject.toml", "/poetry.lock", "/package.json", "/package-lock.json",
+    "/tsconfig.json", "/eslint.config.mjs", "/.prettierrc.json", "/.gitignore",
 ]
+
+[tool.hatch.build.targets.sdist.force-include]
+"src/gbc_scene_forge/static/app.js" = "src/gbc_scene_forge/static/app.js"
+"src/gbc_scene_forge/static/app.js.map" = "src/gbc_scene_forge/static/app.js.map"
+"src/gbc_scene_forge/static/app.meta.json" = "src/gbc_scene_forge/static/app.meta.json"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.15.13"
@@ -53,6 +58,5 @@ extend-exclude = ["build", ".tools", "dist", "node_modules"]
 select = ["E4", "E7", "E9", "F", "I"]
 
 [build-system]
-requires = ["poetry-core>=2.2,<3.0"]
-build-backend = "build_backend"
-backend-path = ["."]
+requires = ["hatchling==1.32.4"]
+build-backend = "hatchling.build"

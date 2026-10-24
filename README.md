@@ -45,7 +45,7 @@ runtime decoding, errors, DOM access, and shared types.
 Connector-specific scene extensions remain opaque and survive decoding.
 Server validation remains authoritative for game rules and imported documents.
 
-- `make frontend`: compile ES modules into `src/gbc_scene_forge/static/`.
+- `make frontend`: type-check, then bundle the browser entry point with esbuild.
 - `make typecheck`: check browser and test code with TypeScript strict mode.
 - `make lint`: check Python plus TypeScript-aware ESLint, Prettier, and types.
 - `make format`: format Python and frontend sources/configuration in place.
@@ -57,14 +57,18 @@ boundaries; avoid `any`, unchecked casts, and type-check suppressions. Node runs
 the TypeScript tests using built-in type stripping; `make typecheck` enforces types.
 
 Generated JavaScript is Git-ignored; do not edit it. `make demo` and `make build`
-compile it automatically. Compilation uses staging and `noEmitOnError`; failed
-type checks preserve the last successful assets. A manifest fingerprints inputs
-and outputs, and the Python build backend verifies it for wheels, source archives,
-and editable installs. A checkout without valid assets needs `npm ci` before it
-can build; it fails explicitly when compilation tools are unavailable.
-After changing frontend code while a server is running,
-run `make frontend` and reload the page. Wheels and source distributions include
-the compiled assets, so installing and running a released package needs no Node.
+run `npm run build`, which runs `tsc --noEmit` before esbuild. esbuild follows
+imports, including nested modules, and produces one ES2022 module, `static/app.js`,
+with an external source map. `static/app.meta.json` records esbuild's complete
+runtime dependency graph and output sizes. Type errors stop the build before
+existing assets are replaced. Bundles are readable and unminified.
+
+After changing frontend code while a server is running, run `make frontend` and
+reload the page. Use `make build` for releases so assets are always rebuilt first.
+When invoking Python build tools directly from a checkout, run `npm ci` and
+`npm run build` first. Hatchling packages the required bundle and source map using
+declarative file inclusion and rejects missing assets. Wheels and source archives
+include prebuilt assets, so installing and running a release needs no Node.
 
 Configured API deadlines cover headers and body reads, including downloads and
 HTTP error bodies. Incompatible JSON/task responses stop automatic polling with
@@ -92,7 +96,8 @@ launches preserve edits. Drafts (including original snapshots), sources, compile
 files, reviews, and transaction history stay inside the Git-ignored `.demo/`
 workspace. To start fresh, stop the server and run `make clean-demo`; this deletes
 the checkout's `.demo/` directory and all saved demo work. `make clean` removes
-`build/`, `dist/`, and `node_modules/` while preserving the demo workspace. Run
+`build/`, `dist/`, `node_modules/`, and the generated bundle/map/metadata while
+preserving the demo workspace. Run
 `npm ci` or `make setup` to reinstall frontend dependencies afterward. Custom
 `DEMO_ROOT` directories must be removed separately.
 
