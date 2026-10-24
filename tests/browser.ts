@@ -84,7 +84,11 @@ try {
   })()`);
   assert.deepEqual(await evaluate('window.sceneRequests'), []);
   await screenshot('browser-no-scene');
-  await click("document.getElementById('open')");
+  assert.equal(await evaluate("document.getElementById('profile').value"), '');
+  assert.equal(await evaluate("document.getElementById('open').disabled"), true);
+  await evaluate(
+    "document.getElementById('profile').value='workbench';document.getElementById('profile').dispatchEvent(new Event('change'))",
+  );
   await wait("document.getElementById('status')?.textContent.includes('Scene loaded')");
   await wait("document.querySelector('.brand img')?.naturalWidth === 64");
   assert.equal(
@@ -116,7 +120,21 @@ try {
   await wait("document.getElementById('status').textContent.includes('JSON imported')");
   await wait("document.getElementById('apply').disabled===false");
   assert.deepEqual((await scene()).cells, original.cells);
-  await click("document.getElementById('open')");
+  const unsavedScene = await scene();
+  const requestsBeforeCancel = await evaluate('window.sceneRequests.length');
+  // Keep editing restores the selector and leaves the canvas and network untouched.
+  await evaluate(
+    "const profile=document.getElementById('profile');profile.add(new Option('Other scene','other-scene'));profile.value='other-scene';profile.dispatchEvent(new Event('change'))",
+  );
+  await wait("document.getElementById('discard').open");
+  await click("document.querySelector('#discard button[value=cancel]')");
+  await wait(
+    "!document.getElementById('discard').open && document.getElementById('profile').value==='workbench'",
+  );
+  assert.deepEqual(await scene(), unsavedScene);
+  assert.equal(await evaluate('window.sceneRequests.length'), requestsBeforeCancel);
+  // Selecting the scene again opens its current version only after confirmation.
+  await evaluate("document.getElementById('profile').dispatchEvent(new Event('change'))");
   await wait("document.getElementById('discard').open");
   await click("document.querySelector('#discard button[value=discard]')");
   await wait("document.getElementById('status').textContent.includes('Scene loaded')");
@@ -215,6 +233,10 @@ try {
   await call('Page.reload');
   await wait("document.getElementById('status')?.textContent.includes('Choose a scene')");
   assert.deepEqual(await evaluate('window.sceneRequests'), []);
+  await evaluate(
+    "document.getElementById('profile').value='workbench';document.getElementById('profile').dispatchEvent(new Event('change'))",
+  );
+  await wait("document.getElementById('dirty').textContent==='CURRENT'");
   await wait("document.getElementById('original').hidden===false");
   await evaluate(
     'window.__download=null;URL.createObjectURL=blob=>{window.__download=blob;return "blob:test"};HTMLAnchorElement.prototype.click=function(){}',
@@ -330,7 +352,11 @@ try {
   );
   await click("document.getElementById('apply-close')");
   await evaluate("sessionStorage.removeItem('test-resume')");
-  // Templates and imports can each be the first document explicitly opened.
+  // Templates use the selected scene; imports can be the first document opened.
+  await evaluate(
+    "document.getElementById('profile').value='workbench';document.getElementById('profile').dispatchEvent(new Event('change'))",
+  );
+  await wait("document.getElementById('dirty').textContent==='CURRENT'");
   await click("document.getElementById('new')");
   await wait("document.getElementById('status').textContent.includes('Template loaded')");
   assert.equal(await evaluate("document.getElementById('scene').hidden"), false);

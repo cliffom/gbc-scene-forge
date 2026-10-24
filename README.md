@@ -95,9 +95,10 @@ make demo
 ```
 
 Open <http://127.0.0.1:8765/>. Choose **Village square** or **Riverside crossing**
-and click **Open current version**. The editor starts with no scene open; selecting
-a scene alone does not load it. You can also open a saved draft, start from a
-template, or import JSON explicitly. Paint terrain from the palette, switch between
+to open its current version. The editor starts with no scene open. Switching scenes
+prompts you to keep or discard unsaved edits. Use **Open current version** to reload
+the selected scene. You can also open a saved draft, start from a template, or
+import JSON explicitly. Paint terrain from the palette, switch between
 day/night previews, and toggle the collision overlay. Click **Create draft**, enter
 a name, and confirm to save a copy of the current canvas. Use **Save draft** to
 update that draft, or **Create draft** again to save a separate copy. Export a scene

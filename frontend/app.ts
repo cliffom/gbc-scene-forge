@@ -40,6 +40,7 @@ void guarded(async () => {
     ...state.catalog.families.map((f) => new Option(f.id.replaceAll('-', ' '), f.id)),
   );
   $('profile').replaceChildren(
+    new Option('Choose a scene…', ''),
     ...Object.entries(state.catalog.profiles).map(([id, p]) => new Option(p.label, id)),
   );
   $('project-name').textContent = state.catalog.project.name;
@@ -52,6 +53,6 @@ void guarded(async () => {
     !state.catalog.capabilities.references;
   await documents.refreshDrafts();
   await apply.refreshLastApply();
-  status('Choose a scene and click Open current version, or open a saved draft.');
+  status('Choose a scene to open its current version, or open a saved draft.');
   await apply.resume();
 })();

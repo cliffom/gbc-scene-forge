@@ -81,6 +81,7 @@ export function createDocuments(
       return true;
     }
     const dialog = $('discard');
+    dialog.returnValue = '';
     dialog.showModal();
     return new Promise((resolve) =>
       dialog.addEventListener('close', () => resolve(dialog.returnValue === 'discard'), {
@@ -240,18 +241,35 @@ export function createDocuments(
     state.selection = null;
     changed();
   };
-  $('open').onclick = guarded(async () => {
-    if (await mayReplace()) {
-      await activate(await json(`scene/${$('profile').value}`, decode.sceneData));
+  async function openCurrentVersion() {
+    const target = $('profile').value;
+    if (!target) {
+      return;
     }
-  });
+    const previous = state.ready ? state.editor.scene.profile : '';
+    try {
+      if (await mayReplace()) {
+        await activate(await json(`scene/${target}`, decode.sceneData));
+      } else {
+        $('profile').value = previous;
+      }
+    } catch (cause) {
+      $('profile').value = previous;
+      throw cause;
+    } finally {
+      updateOriginalAvailability();
+    }
+  }
+  $('open').onclick = guarded(openCurrentVersion);
   function updateOriginalAvailability() {
     const target = $('profile').value;
+    $('open').disabled = !target;
+    $('new').disabled = !target;
     $('original').hidden = !originals.has(target);
     $('original').disabled =
       state.ready && target === state.editor.scene.profile && openedOriginal && !savedId && !dirty;
   }
-  $('profile').onchange = updateOriginalAvailability;
+  $('profile').onchange = guarded(openCurrentVersion);
   $('original').onclick = guarded(async () => {
     if (await mayReplace()) {
       await activate(await json(`original/${$('profile').value}`, decode.loadedDocument));
