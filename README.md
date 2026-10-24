@@ -1,5 +1,7 @@
 # GBC Scene Forge
 
+![GBC Scene Forge — Build a world. One tile at a time.](assets/branding/hero.png)
+
 Version 0.1.2 is a local browser editor with an explicitly supplied Python game
 connector. It has no runtime Python dependencies. The package contains its HTTP
 service, browser UI, document storage, task runner and durable transaction store.

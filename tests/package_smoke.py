@@ -19,7 +19,15 @@ class InstalledPackageSmokeTests(unittest.TestCase):
 
     def test_browser_assets_are_bundled(self):
         static = files("gbc_scene_forge").joinpath("static")
-        for name in ("index.html", "style.css", "app.js", "app.js.map"):
+        for name in (
+            "index.html",
+            "style.css",
+            "app.js",
+            "app.js.map",
+            "branding/logo-64.png",
+            "branding/favicon-32.png",
+            "branding/favicon-16.png",
+        ):
             with self.subTest(asset=name):
                 self.assertTrue(static.joinpath(name).read_bytes())
 

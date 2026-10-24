@@ -174,6 +174,25 @@ class ContractTests(unittest.TestCase):
         handler.do_POST()
         self.assertEqual(handler.reply.call_args.args[0]["scene"], self.scene)
 
+    def test_branding_is_served_without_exposing_other_package_files(self):
+        handler = object.__new__(make_handler("fixture-token", self.connector))
+        handler.server = SimpleNamespace(server_port=8777)
+        handler.reply = Mock()
+        handler.headers = {"Host": "127.0.0.1:8777"}
+        for name, size in (("logo-64.png", 64), ("favicon-32.png", 32), ("favicon-16.png", 16)):
+            with self.subTest(asset=name):
+                handler.path = "/branding/" + name
+                handler.do_GET()
+                data, mime = handler.reply.call_args.args
+                self.assertEqual(mime, "image/png")
+                self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n")
+                self.assertEqual(int.from_bytes(data[16:20], "big"), size)
+                self.assertEqual(int.from_bytes(data[20:24], "big"), size)
+        for route in ("/branding/../server.py", "/branding/unknown.png"):
+            handler.path = route
+            handler.do_GET()
+            self.assertEqual(handler.reply.call_args.kwargs["status"], 404)
+
     def test_core_has_no_game_imports_and_loads_in_isolation(self):
         import gbc_scene_forge
 

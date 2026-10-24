@@ -49,6 +49,17 @@ try {
   });
   await call('Page.navigate', { url });
   await wait("document.getElementById('status')?.textContent.includes('Scene loaded')");
+  await wait("document.querySelector('.brand img')?.naturalWidth === 64");
+  assert.equal(
+    await evaluate("getComputedStyle(document.querySelector('.brand img')).imageRendering"),
+    'pixelated',
+  );
+  for (const size of [16, 32]) {
+    const icon = await fetch(new URL(`/branding/favicon-${size}.png`, url));
+    assert.equal(icon.status, 200);
+    assert.equal(icon.headers.get('content-type'), 'image/png');
+  }
+  await screenshot('browser-branding');
   await evaluate(
     'window.__download=null;URL.createObjectURL=blob=>{window.__download=blob;return "blob:test"};HTMLAnchorElement.prototype.click=function(){}',
   );
