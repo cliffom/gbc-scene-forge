@@ -126,6 +126,10 @@ try {
   assert.equal((await scene()).name, 'Named draft');
   const firstDraftId = (await scene()).id;
   assert.equal(await evaluate("document.getElementById('name').readOnly"), true);
+  assert.equal(
+    await evaluate("getComputedStyle(document.getElementById('name')).color"),
+    await evaluate("getComputedStyle(document.getElementById('scene-id'), '::placeholder').color"),
+  );
   await click("document.getElementById('undo')");
   assert.equal((await scene()).name, 'Named draft');
   assert.equal((await scene()).id, firstDraftId);

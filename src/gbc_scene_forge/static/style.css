@@ -48,5 +48,6 @@ select {
 select,.filters select,.canvas-toolbar select {padding-right:32px}
 @media(forced-colors:active) {select {appearance:auto;background-image:none}}
 
-.field input[readonly] {color:var(--muted);background:var(--panel)}
+.field input[readonly] {color:#757575;background:var(--panel)}
+.field input[readonly]::placeholder {color:inherit;opacity:1}
 input[readonly]:focus {outline:none}
