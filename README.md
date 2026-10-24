@@ -2,7 +2,7 @@
 
 ![GBC Scene Forge — Build a world. One tile at a time.](assets/branding/hero.png)
 
-Version 0.1.3 is a local browser editor with an explicitly supplied Python game
+Version 0.1.4 is a local browser editor with an explicitly supplied Python game
 connector. It has no runtime Python dependencies. The package contains its HTTP
 service, browser UI, document storage, task runner and durable transaction store.
 Atlas decoding, rendering, source translation and game builds belong to the host
@@ -11,10 +11,10 @@ connector. No connector is discovered or executed automatically.
 ## Installation
 
 ```sh
-python -m pip install gbc-scene-forge==0.1.3
+python -m pip install gbc-scene-forge==0.1.4
 ```
 
-The [PyPI package](https://pypi.org/project/gbc-scene-forge/0.1.3/) includes the
+The [PyPI package](https://pypi.org/project/gbc-scene-forge/0.1.4/) includes the
 browser UI and service. A host game supplies the connector and launcher described below.
 
 ## Development
@@ -34,7 +34,7 @@ installing dependencies. Override executable paths with `PYTHON`, `POETRY`, or
 `NPM` when needed. Poetry checks Python compatibility; `npm ci --engine-strict`
 enforces the frontend's Node requirement during setup.
 
-The build creates `dist/gbc_scene_forge-0.1.3-py3-none-any.whl` and a source
+The build creates `dist/gbc_scene_forge-0.1.4-py3-none-any.whl` and a source
 archive, then checks metadata with Twine. Run `make check-dist` afterward to install
 the wheel without dependencies in a fresh environment and run the small
 `tests/package_smoke.py` suite. CI runs this installed-wheel check explicitly. See
@@ -96,7 +96,9 @@ make demo
 
 Open <http://127.0.0.1:8765/>. Choose **Village square** or **Riverside crossing**
 and click **Open current version**. Paint terrain from the palette, switch between
-day/night previews, and toggle the collision overlay. Save drafts, export a scene,
+day/night previews, and toggle the collision overlay. Click **Create draft**, enter
+a name, and confirm to save a copy of the current canvas. Use **Save draft** to
+update that draft, or **Create draft** again to save a separate copy. Export a scene
 or review and Apply edits to the demo sources; **Undo Apply** restores the previous
 version. Stop with Ctrl+C.
 This example compiles tile indexes into binary files; it does not build a game ROM.

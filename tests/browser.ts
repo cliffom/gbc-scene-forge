@@ -88,9 +88,69 @@ try {
   await pointer(10, 10, 'mouseReleased');
   assert.equal((await scene()).cells[2][2], 'solid');
   await wait("document.getElementById('apply').disabled===false");
-  await click("document.getElementById('save')");
+  assert.equal(await evaluate("document.getElementById('save').disabled"), true);
+  // Canceling creation preserves the canvas and never writes a draft.
+  await click("document.getElementById('create-draft')");
+  await wait("document.getElementById('create-draft-dialog').open");
+  await screenshot('browser-create-draft');
+  await evaluate("document.getElementById('create-draft-name').value='Canceled draft'");
+  await click("document.getElementById('create-draft-cancel')");
+  assert.equal((await scene()).name, original.name);
+  assert.deepEqual(await evaluate("fetch('/api/drafts').then(r=>r.json())"), []);
+  await click("document.getElementById('create-draft')");
+  await wait("document.getElementById('create-draft-dialog').open");
+  await evaluate("document.getElementById('create-draft-name').value='   '");
+  await click("document.getElementById('create-draft-confirm')");
+  assert.equal(await evaluate("document.getElementById('create-draft-dialog').open"), true);
+  assert.deepEqual(await evaluate("fetch('/api/drafts').then(r=>r.json())"), []);
+  await evaluate(`(() => {
+    const input = document.getElementById('create-draft-name');
+    input.value = 'Named draft'; input.dispatchEvent(new Event('input'));
+    const originalFetch = window.fetch.bind(window);
+    window.fetch = async (...args) => {
+      if (String(args[0]) === '/api/save') {
+        window.fetch = originalFetch;
+        return Response.json({error: 'Temporary save failure'}, {status: 500});
+      }
+      return originalFetch(...args);
+    };
+  })()`);
+  await click("document.getElementById('create-draft-confirm')");
+  await wait(
+    "document.getElementById('create-draft-error').textContent.includes('Temporary save failure')",
+  );
+  assert.equal((await scene()).name, original.name);
+  await click("document.getElementById('create-draft-confirm')");
   await wait("document.getElementById('dirty').textContent==='SAVED'");
   await wait("document.getElementById('original').hidden===false");
+  assert.equal((await scene()).name, 'Named draft');
+  const firstDraftId = (await scene()).id;
+  assert.equal(await evaluate("document.getElementById('name').readOnly"), true);
+  assert.equal(
+    await evaluate("getComputedStyle(document.getElementById('name')).color"),
+    await evaluate("getComputedStyle(document.getElementById('scene-id'), '::placeholder').color"),
+  );
+  await click("document.getElementById('undo')");
+  assert.equal((await scene()).name, 'Named draft');
+  assert.equal((await scene()).id, firstDraftId);
+  await click("document.getElementById('redo')");
+  assert.equal((await scene()).name, 'Named draft');
+  assert.equal((await scene()).id, firstDraftId);
+  // Saving edits updates this draft; creation from it always makes a new copy.
+  await click("[...document.querySelectorAll('.asset')].find(b=>b.textContent.includes('Stone'))");
+  await pointer(14, 10);
+  await pointer(14, 10, 'mouseReleased');
+  await click("document.getElementById('save')");
+  await wait("document.getElementById('dirty').textContent==='SAVED'");
+  assert.equal((await scene()).id, firstDraftId);
+  await click("document.getElementById('create-draft')");
+  await wait("document.getElementById('create-draft-dialog').open");
+  await evaluate("document.getElementById('create-draft-name').value='Copied draft'");
+  await click("document.getElementById('create-draft-confirm')");
+  await wait("!document.getElementById('create-draft-dialog').open");
+  assert.notEqual((await scene()).id, firstDraftId);
+  assert.equal((await scene()).name, 'Copied draft');
+  assert.deepEqual((await scene()).cells[2][2], 'solid');
   await click("document.getElementById('apply')");
   await wait("document.getElementById('apply-review').open");
   await click("document.getElementById('approve-layout')");
@@ -116,9 +176,9 @@ try {
   await wait("document.getElementById('dirty').textContent==='ORIGINAL'");
   assert.deepEqual((await scene()).cells, original.cells);
   assert.equal(await evaluate("document.getElementById('original').disabled"), true);
-  await evaluate(
-    "document.getElementById('name').value='Edited original';document.getElementById('name').dispatchEvent(new Event('change'))",
-  );
+  await click("[...document.querySelectorAll('.asset')].find(b=>b.textContent.includes('Stone'))");
+  await pointer(14, 10);
+  await pointer(14, 10, 'mouseReleased');
   assert.equal(await evaluate("document.getElementById('original').disabled"), false);
   await click("document.getElementById('undo')");
   assert.equal(await evaluate("document.getElementById('original').disabled"), true);
@@ -127,7 +187,9 @@ try {
     `(()=>{const doc=${JSON.stringify(original)};const data=new DataTransfer();data.items.add(new File([JSON.stringify(doc)],'same-original.json',{type:'application/json'}));const file=document.getElementById('file');file.files=data.files;file.dispatchEvent(new Event('change'));})()`,
   );
   await wait("document.getElementById('status').textContent.includes('JSON imported')");
-  await click("document.getElementById('save')");
+  await click("document.getElementById('create-draft')");
+  await wait("document.getElementById('create-draft-dialog').open");
+  await click("document.getElementById('create-draft-confirm')");
   await wait("document.getElementById('dirty').textContent==='SAVED'");
   assert.deepEqual((await scene()).cells, original.cells);
   assert.equal(await evaluate("document.getElementById('original').disabled"), false);
@@ -144,12 +206,12 @@ try {
     "document.querySelectorAll('#delete-drafts-list input').forEach(input=>input.click())",
   );
   await click("document.getElementById('delete-drafts-confirm')");
-  await wait("document.getElementById('status').textContent.includes('Deleted 2')");
+  await wait("document.getElementById('status').textContent.includes('Deleted 3')");
   assert.equal(await evaluate("document.getElementById('original').hidden"), false);
   // Original loading follows the same unsaved-change confirmation as other opens.
-  await evaluate(
-    "document.getElementById('name').value='Unsaved';document.getElementById('name').dispatchEvent(new Event('change'))",
-  );
+  await click("[...document.querySelectorAll('.asset')].find(b=>b.textContent.includes('Stone'))");
+  await pointer(14, 10);
+  await pointer(14, 10, 'mouseReleased');
   await click("document.getElementById('original')");
   await wait("document.getElementById('discard').open");
   await click("document.querySelector('#discard button[value=discard]')");
