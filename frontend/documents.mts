@@ -31,9 +31,8 @@ export function createDocuments(
   let dirty = false;
   function markChanged() {
     $('scene-id').value = savedId || '';
-    $('save-new').hidden = !savedId;
     dirty = JSON.stringify(state.editor.scene) !== saved;
-    $('save').disabled = savingDraft || !dirty;
+    $('save').disabled = savingDraft || !savedId || !dirty;
     $('revert').disabled =
       savingDraft || !dirty || JSON.stringify(state.editor.scene) === JSON.stringify(revertScene);
     $('dirty').textContent = dirty
@@ -250,7 +249,7 @@ export function createDocuments(
       await activate(await json('new', decode.sceneData, { profile: $('profile').value }));
       saved = '';
       markChanged();
-      status('Template created. Name your draft before saving.');
+      status('Template loaded. Choose Create draft to name and save it.');
     }
   });
   $('drafts').onchange = guarded(async () => {
@@ -275,31 +274,37 @@ export function createDocuments(
     await activate(await json('import', decode.sceneData, { scene }));
     saved = '';
     markChanged();
-    status('JSON imported. Saving creates a separate draft.');
+    status('JSON imported. Choose Create draft to name and save a separate copy.');
   });
-  $('name').onchange = () => {
-    state.editor.change((scene) => {
-      scene.name = $('name').value;
-    });
-    changed();
-  };
   let savingDraft = false;
-  async function saveDraft(asNew = false) {
+  async function saveDraft(name?: string) {
     if (savingDraft) {
       return;
     }
     savingDraft = true;
     $('save').disabled = true;
-    $('save-new').disabled = true;
+    $('create-draft').disabled = true;
     const documentEditor = state.editor,
       snapshot = clone(state.editor.scene);
+    if (name !== undefined) {
+      snapshot.name = name;
+    }
     try {
       const result = await json('save', decode.savedDraft, {
         scene: snapshot,
-        saved_id: asNew ? null : savedId,
-        revision: asNew ? null : revision,
+        saved_id: name !== undefined ? null : savedId,
+        revision: name !== undefined ? null : revision,
       });
       if (state.editor === documentEditor) {
+        if (name !== undefined) {
+          state.editor.scene.name = name;
+          $('name').value = name;
+        }
+        // History belongs to the newly saved draft, including edits made before creation.
+        for (const scene of [...state.editor.undoStack, ...state.editor.redoStack]) {
+          scene.id = result.id;
+          scene.name = snapshot.name;
+        }
         state.editor.scene.id = result.id;
         snapshot.id = result.id;
         revision = result.revision;
@@ -312,12 +317,51 @@ export function createDocuments(
       status(`Saved ${result.path}`);
     } finally {
       savingDraft = false;
-      $('save-new').disabled = false;
+      $('create-draft').disabled = false;
       markChanged();
     }
   }
   $('save').onclick = guarded(() => saveDraft());
-  $('save-new').onclick = guarded(() => saveDraft(true));
+  $('create-draft').onclick = () => {
+    $('create-draft-name').value = state.editor.scene.name;
+    $('create-draft-name').setCustomValidity('');
+    $('create-draft-error').textContent = '';
+    $('create-draft-dialog').showModal();
+    $('create-draft-name').select();
+  };
+  $('create-draft-name').oninput = () => $('create-draft-name').setCustomValidity('');
+  $('create-draft-cancel').onclick = () => $('create-draft-dialog').close();
+  $('create-draft-dialog').oncancel = (event) => {
+    if (savingDraft) {
+      event.preventDefault();
+    }
+  };
+  $('create-draft-form').onsubmit = async (event) => {
+    event.preventDefault();
+    if (savingDraft) {
+      return;
+    }
+    const name = $('create-draft-name').value.trim();
+    if (!name) {
+      $('create-draft-name').setCustomValidity('Enter a draft name.');
+      $('create-draft-name').reportValidity();
+      return;
+    }
+    $('create-draft-error').textContent = '';
+    $('create-draft-confirm').disabled = true;
+    $('create-draft-cancel').disabled = true;
+    $('create-draft-name').disabled = true;
+    try {
+      await saveDraft(name);
+      $('create-draft-dialog').close();
+    } catch (cause) {
+      $('create-draft-error').textContent = errorDetails(cause).message;
+    } finally {
+      $('create-draft-confirm').disabled = false;
+      $('create-draft-cancel').disabled = false;
+      $('create-draft-name').disabled = false;
+    }
+  };
   $('revert').onclick = guarded(async () => {
     if ($('revert').disabled) {
       return;

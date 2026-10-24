@@ -96,7 +96,9 @@ make demo
 
 Open <http://127.0.0.1:8765/>. Choose **Village square** or **Riverside crossing**
 and click **Open current version**. Paint terrain from the palette, switch between
-day/night previews, and toggle the collision overlay. Save drafts, export a scene,
+day/night previews, and toggle the collision overlay. Click **Create draft**, enter
+a name, and confirm to save a copy of the current canvas. Use **Save draft** to
+update that draft, or **Create draft** again to save a separate copy. Export a scene
 or review and Apply edits to the demo sources; **Undo Apply** restores the previous
 version. Stop with Ctrl+C.
 This example compiles tile indexes into binary files; it does not build a game ROM.
