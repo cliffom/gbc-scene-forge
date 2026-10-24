@@ -3,6 +3,7 @@
 import copy
 import hashlib
 import json
+import os
 import re
 import tempfile
 import unicodedata
@@ -108,6 +109,54 @@ class DraftStore:
         self.root = connector.workspace.drafts
         self.workspace = connector.workspace.root
 
+    def original_path(self, target):
+        if target not in self.connector.catalog()["profiles"]:
+            raise ValueError("Choose a supported scene")
+        self.path("check")
+        key = hashlib.sha256((self.connector.identity + "\0" + target).encode()).hexdigest()
+        path = self.root / ".originals" / (key + ".scene.json")
+        reject_symlinks(path, self.root)
+        return path
+
+    def has_original(self, target):
+        path = self.original_path(target)
+        if path.exists() and not path.is_file():
+            raise ValueError("Original scene snapshot must be a file")
+        return path.is_file()
+
+    def capture_original(self, target):
+        """Preserve live game content, never the edited draft or a template."""
+        path = self.original_path(target)
+        if self.has_original(target):
+            return
+        current = decode_document(self.connector.load(target)["scene"], self.connector)
+        if current["profile"] != target:
+            raise ValueError("Current scene does not match the requested original")
+        if current["source_digest"] != self.connector.source_revision(target):
+            raise Conflict("Project changed while capturing the original. Restart the editor.")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as stream:
+            temporary = type(path)(stream.name)
+            stream.write(json_text(encode_document(current)).encode())
+            stream.flush()
+            os.fsync(stream.fileno())
+        try:
+            # Publish complete bytes exclusively, including across server processes.
+            # An existing baseline is never replaced by a later save.
+            os.link(temporary, path)
+        except FileExistsError:
+            pass
+        finally:
+            temporary.unlink(missing_ok=True)
+
+    def load_original(self, target):
+        scene = decode_document(json.loads(self.original_path(target).read_bytes()), self.connector)
+        if scene["profile"] != target:
+            raise ValueError("Original scene does not match its target")
+        # The layout is historical; export/apply must validate against today's sources.
+        scene["source_digest"] = self.connector.source_revision(target)
+        return {"scene": scene, "original": True, "revision": None}
+
     def path(self, scene_id):
         if not isinstance(scene_id, str) or not re.fullmatch(r"[a-z][a-z0-9-]{0,63}", scene_id):
             raise ValueError("Invalid draft id")
@@ -171,6 +220,7 @@ class DraftStore:
                 raise Conflict(
                     "This draft changed on disk. Load it again, or use Save as new draft."
                 )
+            self.capture_original(scene["profile"])
             self.root.mkdir(parents=True, exist_ok=True)
             data = json_text(encode_document(scene)).encode()
             with tempfile.NamedTemporaryFile(dir=self.root, delete=False) as stream:

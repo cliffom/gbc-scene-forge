@@ -1,6 +1,6 @@
 # GBC Scene Forge
 
-Version 0.1.0 is a local browser editor with an explicitly supplied Python game
+Version 0.1.1 is a local browser editor with an explicitly supplied Python game
 connector. It has no runtime Python dependencies. The package contains its HTTP
 service, browser UI, document storage, task runner and durable transaction store.
 Atlas decoding, rendering, source translation and game builds belong to the host
@@ -9,10 +9,10 @@ connector. No connector is discovered or executed automatically.
 ## Installation
 
 ```sh
-python -m pip install gbc-scene-forge==0.1.0
+python -m pip install gbc-scene-forge==0.1.1
 ```
 
-The [PyPI package](https://pypi.org/project/gbc-scene-forge/0.1.0/) includes the
+The [PyPI package](https://pypi.org/project/gbc-scene-forge/0.1.1/) includes the
 browser UI and service. A host game supplies the connector and launcher described below.
 
 ## Development
@@ -22,7 +22,7 @@ make setup PYTHON=python3.12
 make lint test build
 ```
 
-The build creates `dist/gbc_scene_forge-0.1.0-py3-none-any.whl` and a source
+The build creates `dist/gbc_scene_forge-0.1.1-py3-none-any.whl` and a source
 archive, and tests the wheel in a clean environment. See
 [building and releasing](docs/RELEASING.md) for tooling and manual PyPI publication.
 For local development, hosts can install this checkout with
@@ -109,6 +109,29 @@ their original bytes untouched; saving migrates that file with its existing ID
 and raw-byte revision guard. Unsupported versions, connector identities and
 unrecognized envelope fields are rejected without rewriting files. Existing
 source-staleness checks still apply to migrated drafts.
+
+## Original scene snapshots
+
+The first successful draft save for each scene preserves the connector's current
+game document in `Workspace.drafts/.originals/`. It captures the live scene before
+draft edits, including when the first saved draft came from a template or import.
+The key includes connector identity and target, without interpreting target IDs.
+Later saves, Apply, Undo and draft deletion never overwrite or remove that file.
+
+**Open original** appears for the selected scene when its snapshot exists. It loads
+the preserved content into the editor with an **ORIGINAL** tag. The button is
+disabled while that original is open without edits; editing re-enables it, and
+loaded drafts always allow opening the original even when their content matches.
+Restoration uses the current
+source revision for normal validation and reviewed Apply. Loading changes no game
+files. **Open current version** continues to load today's game sources; **Revert
+changes** still restores the last opened/saved canvas. Unsupported historical
+content or changed fixed cells still fail connector validation rather than bypass
+it. Original snapshot bytes remain unchanged when loaded.
+
+Snapshots start with the game state at the first save after this feature is
+installed; earlier game changes cannot be reconstructed from existing drafts.
+Keep the `.originals/` files with the workspace for long-term restoration.
 
 ## Apply and recovery
 

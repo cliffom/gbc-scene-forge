@@ -43,15 +43,21 @@ publishing page. Use the official [trusted publisher setup guide](https://docs.p
 The workflow follows the [Python Packaging User Guide](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/)
 and uses short-lived OIDC credentials; no PyPI API token is stored in the repository.
 
-After reviewing and committing a release, create and push an annotated `v0.1.0`
+After reviewing and committing a release, create and push an annotated `v0.1.1`
 tag (or the matching next version). Run **Publish package** manually against that
 tag, selecting `testpypi` first. Check that installation and the host connector
 work before manually running the workflow for `pypi`. The workflow rebuilds and
 checks the distributions, checks the tag against the package version, then uploads
 only those verified artifacts. Pushing a tag alone does not publish.
 
-Version 0.1.0 is published on [PyPI](https://pypi.org/project/gbc-scene-forge/0.1.0/)
-from tag `v0.1.0`, including the MIT license, wheel and source archive. Its
-publication workflow and clean installation from public PyPI passed, including all
-15 Python contracts against the downloaded package. Consumers can pin
-`gbc-scene-forge==0.1.0`; editable sibling checkouts remain an option for development.
+The current release version is 0.1.1, tagged `v0.1.1`. It adds first-save original
+scene snapshots and Open original, including draft-independent restoration and
+contextual button availability. The package includes the MIT license, wheel and
+source archive. Release checks run 21 Python contracts both from source and
+against the installed wheel, plus browser-model checks. The independent Chrome
+acceptance check covers Apply/Undo, snapshot persistence across reload and draft
+deletion, original restoration controls and unsaved-change confirmation.
+
+After successful publication, consumers can pin `gbc-scene-forge==0.1.1` from
+[PyPI](https://pypi.org/project/gbc-scene-forge/0.1.1/). Editable sibling checkouts
+remain an option for development.

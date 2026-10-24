@@ -5,6 +5,7 @@ const $ = id => document.getElementById(id);
 const canvas = $('scene'), ctx = canvas.getContext('2d');
 let catalog, editor, token, revision = null, saved = '', savedId = null;
 let gameScene = null;
+let originals = new Set(), openedOriginal = false;
 let cellSize = 1, annotations = [], comparison = null;
 let revertScene = null;
 let tool = 'select', brush, selection = null, selectedReference = null, gesture = null;
@@ -49,10 +50,10 @@ function markChanged() {
   dirty = JSON.stringify(editor.scene) !== saved;
   $('save').disabled = savingDraft || !dirty;
   $('revert').disabled = savingDraft || !dirty || JSON.stringify(editor.scene) === JSON.stringify(revertScene);
-  $('dirty').textContent = dirty ? 'UNSAVED' : revision ? 'SAVED' : 'CURRENT';
+  $('dirty').textContent = dirty ? 'UNSAVED' : revision ? 'SAVED' : openedOriginal ? 'ORIGINAL' : 'CURRENT';
   $('undo').disabled = !editor.undoStack.length;
   $('redo').disabled = !editor.redoStack.length;
-  updateApplyAvailability();
+  updateApplyAvailability(); updateOriginalAvailability();
 }
 
 function updateApplyAvailability() {
@@ -359,10 +360,12 @@ async function activate(data) {
   cellSize = descriptor.cell_size; annotations = current.markers || []; comparison = null;
   gameScene = current.scene;
   editor = new Editor(data.scene, locked, descriptor); revision = data.revision || null;
+  openedOriginal = data.original === true;
   revertScene = clone(editor.scene);
   savedId = revision ? data.scene.id : null; saved = JSON.stringify(editor.scene);
   selection = null; selectedReference = null; background = null; gesture = null;
   $('profile').value = editor.scene.profile;
+  updateOriginalAvailability();
   $('name').value = editor.scene.name;
   const profile = catalog.profiles[editor.scene.profile];
   clearInterval(animationTimer); frame = 0;
@@ -383,7 +386,8 @@ async function activate(data) {
 }
 
 async function refreshDrafts() {
-  const drafts = await json('drafts');
+  const [drafts, available] = await Promise.all([json('drafts'), json('originals')]);
+  originals = new Set(available); updateOriginalAvailability();
   $('drafts').replaceChildren(new Option('Saved drafts…', ''), ...drafts.map(d => new Option(d.name, d.id)));
   $('delete-drafts').disabled = !drafts.length;
 }
@@ -440,6 +444,18 @@ for (const id of ['lighting', 'state']) $(id).onchange = guarded(refreshPreview)
 $('undo').onclick = () => { editor.undo(); selection = null; changed(); };
 $('redo').onclick = () => { editor.redo(); selection = null; changed(); };
 $('open').onclick = guarded(async () => { if (await mayReplace()) await activate(await json('scene/' + $('profile').value)); });
+function updateOriginalAvailability() {
+  const target = $('profile').value;
+  $('original').hidden = !originals.has(target);
+  $('original').disabled = !!editor && target === editor.scene.profile && openedOriginal && !savedId && !dirty;
+}
+$('profile').onchange = updateOriginalAvailability;
+$('original').onclick = guarded(async () => {
+  if (await mayReplace()) {
+    await activate(await json('original/' + $('profile').value));
+    status('Original layout loaded. Review and Apply to game to restore it; game files are unchanged.');
+  }
+});
 $('new').onclick = guarded(async () => { if (await mayReplace()) { await activate(await json('new', {profile: $('profile').value})); saved = ''; markChanged(); status('Template created. Name your draft before saving.'); } });
 $('drafts').onchange = guarded(async () => { const id = $('drafts').value; if (id && await mayReplace()) await activate(await json('draft/' + id)); $('drafts').value = ''; });
 $('import').onclick = () => $('file').click();

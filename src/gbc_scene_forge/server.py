@@ -78,6 +78,12 @@ def make_handler(token, connector):
                     self.reply(dict(connector.catalog(), token=token))
                 elif route == "/api/drafts":
                     self.reply(store.list())
+                elif route == "/api/originals":
+                    self.reply([target for target in profiles if store.has_original(target)])
+                elif route.startswith("/api/original/"):
+                    target = route.rsplit("/", 1)[1]
+                    require_current(target)
+                    self.reply(store.load_original(target))
                 elif route.startswith("/api/draft/"):
                     self.reply(store.load(route.rsplit("/", 1)[1]))
                 elif route.startswith("/api/scene/"):
@@ -153,7 +159,10 @@ def make_handler(token, connector):
                 if route == "/api/new":
                     self.reply(connector.load(data.get("profile"), template=True))
                 elif route == "/api/save":
-                    self.reply(store.save(scene, data.get("saved_id"), data.get("revision")))
+                    with manager.lock:
+                        if not store.has_original(scene["profile"]):
+                            require_current(scene["profile"])
+                        self.reply(store.save(scene, data.get("saved_id"), data.get("revision")))
                 elif route == "/api/delete-drafts":
                     self.reply(store.delete(data.get("drafts")))
                 elif route == "/api/import":
