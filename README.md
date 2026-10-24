@@ -131,3 +131,7 @@ The browser check requires a local Chrome installation; its third argument can
 override the default macOS executable. The fixture proves this contract is
 independent of one game. Additional real games may require explicit future
 capabilities rather than game-specific branches in the editor.
+
+## License
+
+[MIT](LICENSE). Copyright (c) 2026 Michael Clifford.

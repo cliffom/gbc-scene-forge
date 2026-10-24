@@ -24,8 +24,8 @@ acceptance check is optional and requires Chrome; see the README.
 
 ## Publication
 
-The package is not published yet. Before a first release, choose and record the
-project's license and confirm the package name is available on the intended index.
+The project uses the MIT license, included in both distribution formats. Before a
+first release, confirm the package name is available on the intended index.
 Keep the version in `pyproject.toml` and `src/gbc_scene_forge/__init__.py` in sync;
 the installed-wheel check enforces this.
 

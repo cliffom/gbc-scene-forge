@@ -26,6 +26,10 @@ import gbc_scene_forge
 package = distribution('gbc-scene-forge')
 assert package.version == gbc_scene_forge.__version__
 assert not package.requires, package.requires
+assert package.metadata['License-Expression'] == 'MIT'
+assert package.metadata.get_all('License-File') == ['LICENSE']
+license_file = next(path for path in package.files if str(path).endswith('.dist-info/licenses/LICENSE'))
+assert 'Copyright (c) 2026 Michael Clifford' in package.locate_file(license_file).read_text()
 static = files('gbc_scene_forge').joinpath('static')
 for name in ('index.html', 'app.js', 'model.mjs', 'progress.mjs', 'style.css'):
     assert static.joinpath(name).read_bytes(), name

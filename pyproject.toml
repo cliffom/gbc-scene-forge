@@ -3,6 +3,8 @@ name = "gbc-scene-forge"
 version = "0.1.0"
 description = "Local browser scene editor with game-owned connectors"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.10"
 keywords = ["game-boy-color", "scene-editor", "tilemap"]
 classifiers = [
@@ -43,5 +45,5 @@ extend-exclude = ["build", ".tools", "dist"]
 select = ["E4", "E7", "E9", "F", "I"]
 
 [build-system]
-requires = ["poetry-core>=2.0,<3.0"]
+requires = ["poetry-core>=2.2,<3.0"]
 build-backend = "poetry.core.masonry.api"
