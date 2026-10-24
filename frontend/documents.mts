@@ -22,6 +22,22 @@ export function createDocuments(
   const { entries, chooseBrush } = assets;
   const { setTool, renderReferences } = interactions;
   const { draw, refreshPreview } = renderer;
+  const sceneControls = document.querySelectorAll<
+    HTMLButtonElement | HTMLInputElement | HTMLSelectElement
+  >(
+    '.library input, .library select, .canvas-toolbar button, .canvas-toolbar select, ' +
+      '.review-bar input, .inspector input, .inspector select, .inspector button, ' +
+      '#download, #export, #create-draft, #save, #apply',
+  );
+  function setSceneControlsEnabled(enabled: boolean) {
+    for (const control of sceneControls) {
+      control.disabled = !enabled;
+    }
+    $('scene').hidden = !enabled;
+    requireValue($('scene').parentElement).hidden = !enabled;
+    $('empty-scene').hidden = enabled;
+  }
+  setSceneControlsEnabled(false);
   let revision: string | null = null,
     saved = '',
     savedId: string | null = null;
@@ -30,6 +46,9 @@ export function createDocuments(
   let revertScene: Scene | null = null;
   let dirty = false;
   function markChanged() {
+    if (!state.ready) {
+      return;
+    }
     $('scene-id').value = savedId || '';
     dirty = JSON.stringify(state.editor.scene) !== saved;
     $('save').disabled = savingDraft || !savedId || !dirty;
@@ -82,6 +101,7 @@ export function createDocuments(
     state.comparison = null;
     state.gameScene = current.scene;
     state.editor = new Editor(data.scene, locked, descriptor);
+    setSceneControlsEnabled(true);
     revision = data.revision || null;
     openedOriginal = data.original === true;
     revertScene = clone(state.editor.scene);
@@ -229,11 +249,7 @@ export function createDocuments(
     const target = $('profile').value;
     $('original').hidden = !originals.has(target);
     $('original').disabled =
-      !!state.editor &&
-      target === state.editor.scene.profile &&
-      openedOriginal &&
-      !savedId &&
-      !dirty;
+      state.ready && target === state.editor.scene.profile && openedOriginal && !savedId && !dirty;
   }
   $('profile').onchange = updateOriginalAvailability;
   $('original').onclick = guarded(async () => {

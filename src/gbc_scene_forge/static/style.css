@@ -51,3 +51,4 @@ select,.filters select,.canvas-toolbar select {padding-right:32px}
 .field input[readonly] {color:#757575;background:var(--panel)}
 .field input[readonly]::placeholder {color:inherit;opacity:1}
 input[readonly]:focus {outline:none}
+#empty-scene {position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:32px}

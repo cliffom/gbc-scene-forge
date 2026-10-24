@@ -74,6 +74,9 @@ export function createInteractions(
   canvas.addEventListener(
     'pointerdown',
     guarded((event) => {
+      if (!state.ready) {
+        return;
+      }
       if (event.button !== 0 && event.button !== 1) {
         return;
       }
@@ -134,6 +137,9 @@ export function createInteractions(
   canvas.addEventListener(
     'pointermove',
     guarded((event) => {
+      if (!state.ready) {
+        return;
+      }
       const p = point(event);
       state.hover = p;
       if (state.gesture) {
@@ -177,6 +183,9 @@ export function createInteractions(
   canvas.addEventListener(
     'pointerup',
     guarded((event) => {
+      if (!state.ready) {
+        return;
+      }
       const g = state.gesture;
       state.gesture = null;
       state.editor.end();
@@ -207,6 +216,9 @@ export function createInteractions(
     }),
   );
   canvas.addEventListener('pointercancel', () => {
+    if (!state.ready) {
+      return;
+    }
     state.gesture = null;
     state.editor.cancel();
     changed();
@@ -219,6 +231,9 @@ export function createInteractions(
   canvas.addEventListener(
     'drop',
     guarded((event) => {
+      if (!state.ready) {
+        return;
+      }
       event.preventDefault();
       const id = requireValue(event.dataTransfer).getData('text/plain');
       const entry = entries().find((e) => e.id === id && e.available);
@@ -257,6 +272,9 @@ export function createInteractions(
   document.addEventListener(
     'keydown',
     guarded((event) => {
+      if (!state.ready) {
+        return;
+      }
       if (
         ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName || '') ||
         document.querySelector('dialog[open]')

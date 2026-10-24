@@ -1,7 +1,7 @@
 /** Compose controllers; behavior and transient state live with their owning feature. */
 import { $, requireValue } from './dom.mts';
 import { ApiClient } from './api.mts';
-import { guarded } from './ui.mts';
+import { guarded, status } from './ui.mts';
 import { EditorSession } from './session.mts';
 import { createAssets } from './assets.mts';
 import { createRenderer } from './render.mts';
@@ -50,10 +50,8 @@ void guarded(async () => {
   $('reference-panel').hidden = !state.catalog.capabilities.references;
   requireValue(document.querySelector<HTMLOptionElement>('#kind option[value="sprite"]')).hidden =
     !state.catalog.capabilities.references;
-  await documents.activate(
-    await json(`scene/${Object.keys(state.catalog.profiles)[0]}`, decode.sceneData),
-  );
   await documents.refreshDrafts();
   await apply.refreshLastApply();
+  status('Choose a scene and click Open current version, or open a saved draft.');
   await apply.resume();
 })();

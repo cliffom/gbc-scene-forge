@@ -34,7 +34,19 @@ try {
   await call('Page.addScriptToEvaluateOnNewDocument', {
     source: `(() => {
     const originalFetch = window.fetch.bind(window);
+    window.sceneRequests = [];
+    let recoveryPolls = 0;
     window.fetch = async (...args) => {
+      const path = String(args[0]);
+      if (path.startsWith('/api/scene/') || path === '/api/preview') window.sceneRequests.push(path);
+      if (sessionStorage.getItem('test-resume')) {
+        if (path === '/api/apply-active') return Response.json({id: 'recovered-job'});
+        if (path === '/api/apply-status/recovered-job') {
+          recoveryPolls++;
+          return Response.json({status: recoveryPolls === 1 ? 'running' : 'complete', started_at: 1, message: 'Recovered Apply completed'});
+        }
+        if (path === '/api/apply-dismiss') return Response.json({});
+      }
       const response = await originalFetch(...args);
       if (String(args[0]) === '/api/catalog') {
         const data = await response.json();
@@ -48,6 +60,31 @@ try {
   })();`,
   });
   await call('Page.navigate', { url });
+  await wait("document.getElementById('status')?.textContent.includes('Choose a scene')");
+  assert.equal(await evaluate("document.getElementById('scene').hidden"), true);
+  assert.equal(await evaluate("document.getElementById('empty-scene').hidden"), false);
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'NO SCENE');
+  for (const id of [
+    'create-draft',
+    'save',
+    'download',
+    'export',
+    'apply',
+    'undo',
+    'redo',
+    'validate',
+    'lighting',
+    'search',
+  ]) {
+    assert.equal(await evaluate(`document.getElementById('${id}').disabled`), true);
+  }
+  await evaluate(`(() => {
+    document.getElementById('profile').dispatchEvent(new Event('change'));
+    for (const key of ['Escape', 'Delete', 'p', 'z', 's']) document.dispatchEvent(new KeyboardEvent('keydown', {key, ctrlKey: true}));
+  })()`);
+  assert.deepEqual(await evaluate('window.sceneRequests'), []);
+  await screenshot('browser-no-scene');
+  await click("document.getElementById('open')");
   await wait("document.getElementById('status')?.textContent.includes('Scene loaded')");
   await wait("document.querySelector('.brand img')?.naturalWidth === 64");
   assert.equal(
@@ -167,7 +204,17 @@ try {
   await click("document.querySelector('#discard button[value=discard]')");
   await wait("document.getElementById('dirty').textContent==='CURRENT'");
   await call('Page.reload');
-  await wait("document.getElementById('status')?.textContent.includes('Scene loaded')");
+  await wait("document.getElementById('status')?.textContent.includes('Choose a scene')");
+  assert.equal(await evaluate("document.getElementById('scene').hidden"), true);
+  assert.deepEqual(await evaluate('window.sceneRequests'), []);
+  await evaluate(
+    "const drafts=document.getElementById('drafts');drafts.value=drafts.options[1].value;drafts.dispatchEvent(new Event('change'))",
+  );
+  await wait("document.getElementById('dirty').textContent==='SAVED'");
+  assert.equal(await evaluate("document.getElementById('scene').hidden"), false);
+  await call('Page.reload');
+  await wait("document.getElementById('status')?.textContent.includes('Choose a scene')");
+  assert.deepEqual(await evaluate('window.sceneRequests'), []);
   await wait("document.getElementById('original').hidden===false");
   await evaluate(
     'window.__download=null;URL.createObjectURL=blob=>{window.__download=blob;return "blob:test"};HTMLAnchorElement.prototype.click=function(){}',
@@ -265,9 +312,42 @@ try {
   await wait(
     "document.getElementById('status').textContent.includes('Previous project files restored')",
   );
+  // Recovery may show a running task, but must leave the editor empty on completion.
+  await click("document.getElementById('open')");
+  await wait("document.getElementById('discard').open");
+  await click("document.querySelector('#discard button[value=discard]')");
+  await wait("document.getElementById('dirty').textContent==='CURRENT'");
+  await evaluate("sessionStorage.setItem('test-resume', '1')");
+  await call('Page.reload');
+  await wait(
+    "document.getElementById('apply-result').textContent.includes('Recovered Apply completed') && !document.getElementById('apply-close').disabled",
+  );
+  assert.equal(await evaluate("document.getElementById('scene').hidden"), true);
+  assert.deepEqual(await evaluate('window.sceneRequests'), []);
+  assert.doesNotMatch(
+    string(await evaluate("document.getElementById('apply-result').textContent")),
+    /could not refresh/,
+  );
+  await click("document.getElementById('apply-close')");
+  await evaluate("sessionStorage.removeItem('test-resume')");
+  // Templates and imports can each be the first document explicitly opened.
+  await click("document.getElementById('new')");
+  await wait("document.getElementById('status').textContent.includes('Template loaded')");
+  assert.equal(await evaluate("document.getElementById('scene').hidden"), false);
+  await click("document.getElementById('open')");
+  await wait("document.getElementById('discard').open");
+  await click("document.querySelector('#discard button[value=discard]')");
+  await wait("document.getElementById('dirty').textContent==='CURRENT'");
+  await call('Page.reload');
+  await wait("document.getElementById('status')?.textContent.includes('Choose a scene')");
+  await evaluate(
+    `(()=>{const doc=${JSON.stringify(original)};const data=new DataTransfer();data.items.add(new File([JSON.stringify(doc)],'first-import.json',{type:'application/json'}));const file=document.getElementById('file');file.files=data.files;file.dispatchEvent(new Event('change'));})()`,
+  );
+  await wait("document.getElementById('status').textContent.includes('JSON imported')");
+  assert.equal(await evaluate("document.getElementById('scene').hidden"), false);
   assert.deepEqual(chrome.errors, []);
   console.log(
-    'Independent connector browser QA passed: descriptors, opaque cells, non-grid comparison, draft save, real compile/apply and rollback, nullable profiles, and protocol-error recovery.',
+    'Independent connector browser QA passed: descriptors, opaque cells, non-grid comparison, draft save, real compile/apply and rollback, nullable profiles, and protocol-error recovery, and explicit scene loading from an empty editor.',
   );
 } finally {
   await chrome.close();

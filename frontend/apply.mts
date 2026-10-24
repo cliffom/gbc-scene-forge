@@ -28,7 +28,9 @@ export function createApply(
     receivedAt = 0;
   function updateApplyAvailability() {
     const differs = state.comparison?.differs;
-    $('apply').disabled = applyRunning || !differs || !state.catalog?.capabilities.apply;
+    $('apply').disabled =
+      !state.ready || applyRunning || !differs || !state.catalog.capabilities.apply;
+    $('undo-apply').disabled = !state.ready || !lastApply?.transaction || applyRunning;
     $('apply').title = applyRunning
       ? 'Apply is running'
       : differs
@@ -37,7 +39,7 @@ export function createApply(
   }
   async function refreshLastApply() {
     lastApply = await json('last-apply', decode.lastApply, undefined, { timeoutMs: 8000 });
-    $('undo-apply').disabled = !lastApply.transaction || applyRunning;
+    $('undo-apply').disabled = !state.ready || !lastApply.transaction || applyRunning;
     $('undo-apply').title = lastApply.label
       ? `Restore the game before ${lastApply.label}`
       : 'No scene has been applied';
@@ -126,6 +128,10 @@ export function createApply(
           $('apply-result').textContent = job.message || '';
           // Rebase the open draft without replacing edits made while disconnected.
           try {
+            if (!state.ready) {
+              status(job.message || 'Reviewed changes applied.');
+              break;
+            }
             const baseline =
               state.editor.scene.profile === job.profile
                 ? job.scene

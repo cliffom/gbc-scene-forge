@@ -83,6 +83,9 @@ export function createAssets(state: EditorSession, selectTool: (tool: Tool) => v
     renderAssets();
   }
   function renderAssets() {
+    if (!state.ready) {
+      return;
+    }
     const query = $('search').value.toLowerCase(),
       kind = $('kind').value,
       family = $('family').value;

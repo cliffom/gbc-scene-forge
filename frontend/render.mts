@@ -21,6 +21,9 @@ export function createRenderer(
     previewSerial = 0;
   let animationTimer: ReturnType<typeof setInterval> | undefined;
   async function refreshPreview() {
+    if (!state.ready) {
+      return;
+    }
     const serial = ++previewSerial;
     const data = await json('preview', decode.preview, {
       scene: state.editor.scene,
