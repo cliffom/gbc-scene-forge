@@ -64,21 +64,21 @@ publishing page. Use the official [trusted publisher setup guide](https://docs.p
 The workflow follows the [Python Packaging User Guide](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/)
 and uses short-lived OIDC credentials; no PyPI API token is stored in the repository.
 
-After reviewing and committing a release, create and push an annotated `v0.1.1`
+After reviewing and committing a release, create and push an annotated `v0.1.2`
 tag (or the matching next version). Run **Publish package** manually against that
 tag, selecting `testpypi` first. Check that installation and the host connector
 work before manually running the workflow for `pypi`. The workflow rebuilds and
 checks the distributions, checks the tag against the package version, then uploads
 only those verified artifacts. Pushing a tag alone does not publish.
 
-The current release version is 0.1.1, tagged `v0.1.1`. It adds first-save original
-scene snapshots and Open original, including draft-independent restoration and
-contextual button availability. The package includes the MIT license, wheel and
-source archive. Release checks cover Python contracts, browser-model checks,
-and installed-package smoke tests. The independent Chrome
-acceptance check covers Apply/Undo, snapshot persistence across reload and draft
-deletion, original restoration controls and unsaved-change confirmation.
+The current release version is 0.1.2, tagged `v0.1.2`. It adds the opt-in demo
+connector and `make demo`, with two scenes and a Git-ignored persistent workspace.
+The browser code and acceptance scripts use strict TypeScript, ESLint, Prettier,
+and an esbuild bundle with source maps. Hatchling packages the prebuilt assets;
+installed users still need only Python. Setup uses installed Poetry and native
+dependency checks. Release verification uses a small installed-wheel smoke suite
+alongside Python contracts, frontend tests, and Chrome acceptance checks.
 
-After successful publication, consumers can pin `gbc-scene-forge==0.1.1` from
-[PyPI](https://pypi.org/project/gbc-scene-forge/0.1.1/). Editable sibling checkouts
+After successful publication, consumers can pin `gbc-scene-forge==0.1.2` from
+[PyPI](https://pypi.org/project/gbc-scene-forge/0.1.2/). Editable sibling checkouts
 remain an option for development.
