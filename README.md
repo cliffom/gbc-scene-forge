@@ -33,7 +33,9 @@ installing dependencies. Override executable paths with `PYTHON`, `POETRY`, or
 enforces the frontend's Node requirement during setup.
 
 The build creates `dist/gbc_scene_forge-0.1.1-py3-none-any.whl` and a source
-archive, and tests the wheel in a clean environment. See
+archive, then checks metadata with Twine. Run `make check-dist` afterward to install
+the wheel without dependencies in a fresh environment and run the small
+`tests/package_smoke.py` suite. CI runs this installed-wheel check explicitly. See
 [building and releasing](docs/RELEASING.md) for tooling and manual PyPI publication.
 For local development, hosts can install this checkout with
 `python -m pip install -e ../gbc-scene-forge` or use their dependency manager's

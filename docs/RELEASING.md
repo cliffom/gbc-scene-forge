@@ -13,6 +13,7 @@ compiles the frontend. `make check-deps` checks prerequisites without installing
 make setup PYTHON=python3.12
 make lint test
 make build
+make check-dist
 ```
 
 `make lint` includes ESLint, Prettier, and strict TypeScript checks alongside Ruff.
@@ -21,10 +22,8 @@ Use `make format` to apply formatting, and `make typecheck` for a standalone typ
 `make build` runs strict TypeScript checking, bundles `frontend/app.ts` and its
 imports with esbuild, then uses the
 standard isolated Python build frontend: it creates the
-source distribution, then builds the wheel from that source distribution. It
-checks metadata with Twine, installs the wheel without dependencies into a clean
-environment, verifies bundled browser files and runs the Python contracts against
-that installed wheel. Artifacts appear in `dist/`. Before building a different
+source distribution, then builds the wheel from that source distribution and
+checks metadata with Twine. Artifacts appear in `dist/`. Before building a different
 version, run `make clean` followed by `npm ci` to reinstall the frontend dependencies
 removed by cleanup. The source archive includes TypeScript sources, frontend
 configuration, the npm lockfile, esbuild dependency metadata, and the prebuilt
@@ -33,8 +32,13 @@ declarative file inclusion requires the bundle and map to exist. No custom Pytho
 frontend build hooks are used. Building a wheel from the source archive uses those
 assets without Node. Direct Python builds from a checkout must follow
 `npm ci` and `npm run build`; use `make build` to rebuild assets automatically.
-Distribution checks verify Node-free source-archive builds, required-asset
-failures, source maps, and the installed editor. No command above uploads packages.
+`make check-dist` is a separate installed-wheel smoke test. It recreates
+`build/package-smoke`, installs the wheel with `pip --no-index --no-deps`, and runs
+`tests/package_smoke.py` with Python's `-I` isolation flag. The small suite checks
+imports, version consistency, absent runtime dependencies, bundled browser assets,
+and demo scene loading. It is intentionally excluded from source-test discovery.
+CI and release workflows perform the same steps with standard venv/pip commands
+before accepting artifacts. No command above uploads packages.
 
 CI runs these checks on Python 3.10, 3.12 and 3.14, with Chrome acceptance checks
 on Python 3.12. The browser suite can also be run locally; see the README.
@@ -70,8 +74,8 @@ only those verified artifacts. Pushing a tag alone does not publish.
 The current release version is 0.1.1, tagged `v0.1.1`. It adds first-save original
 scene snapshots and Open original, including draft-independent restoration and
 contextual button availability. The package includes the MIT license, wheel and
-source archive. Release checks run 21 Python contracts both from source and
-against the installed wheel, plus browser-model checks. The independent Chrome
+source archive. Release checks cover Python contracts, browser-model checks,
+and installed-package smoke tests. The independent Chrome
 acceptance check covers Apply/Undo, snapshot persistence across reload and draft
 deletion, original restoration controls and unsaved-change confirmation.
 

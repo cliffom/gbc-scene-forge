@@ -29,6 +29,11 @@ jobs:
         run: |
           poetry run python -c 'import os, gbc_scene_forge; assert os.environ["GITHUB_REF_NAME"] == "v" + gbc_scene_forge.__version__'
       - run: make lint test build
+      - name: Installed-wheel smoke test
+        run: |
+          python -m venv "$RUNNER_TEMP/package-smoke"
+          "$RUNNER_TEMP/package-smoke/bin/python" -m pip install --no-index --no-deps dist/*.whl
+          "$RUNNER_TEMP/package-smoke/bin/python" -I tests/package_smoke.py
       - uses: actions/upload-artifact@v7.0.2
         with:
           name: distributions

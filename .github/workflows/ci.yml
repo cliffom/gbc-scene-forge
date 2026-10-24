@@ -24,6 +24,11 @@ jobs:
           cache: npm
       - run: make setup
       - run: make lint test build
+      - name: Installed-wheel smoke test
+        run: |
+          python -m venv "$RUNNER_TEMP/package-smoke"
+          "$RUNNER_TEMP/package-smoke/bin/python" -m pip install --no-index --no-deps dist/*.whl
+          "$RUNNER_TEMP/package-smoke/bin/python" -I tests/package_smoke.py
       - name: Browser acceptance checks
         if: matrix.python == '3.12'
         run: |

@@ -50,9 +50,11 @@ format:
 build: frontend
 	$(POETRY) run python -m build
 	$(POETRY) run twine check --strict dist/*
-	$(POETRY) run python tools/check_dist.py
 
-check-dist: build
+check-dist:
+	$(PYTHON) -m venv --clear build/package-smoke
+	build/package-smoke/bin/python -m pip install --no-index --no-deps dist/*.whl
+	build/package-smoke/bin/python -I tests/package_smoke.py
 
 clean:
 	rm -rf build dist node_modules

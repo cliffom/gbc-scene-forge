@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-`src/gbc_scene_forge/` contains the Python package: connector contracts, HTTP service, document storage, Apply orchestration, progress tracking, and durable transactions. Browser HTML, CSS, and generated JavaScript live in `src/gbc_scene_forge/static/`; editable TypeScript lives in `frontend/`. `tests/` contains Python contracts, TypeScript model checks, an independent fixture connector, and Chrome acceptance checks. `tools/` provides distribution validation; `docs/RELEASING.md` documents releases.
+`src/gbc_scene_forge/` contains the Python package: connector contracts, HTTP service, document storage, Apply orchestration, progress tracking, and durable transactions. Browser HTML, CSS, and generated JavaScript live in `src/gbc_scene_forge/static/`; editable TypeScript lives in `frontend/`. `tests/` contains Python contracts, TypeScript model checks, an independent fixture connector, Chrome acceptance checks, and a separate installed-package smoke test. `docs/RELEASING.md` documents releases.
 
 ## Build, Test, and Development Commands
 
@@ -12,7 +12,8 @@ Install Python 3.10+, Poetry 2.4–2.x, Node 24.12+, npm, and Make on `PATH`.
 - `make setup PYTHON=python3.12`: use Poetry to manage `.venv`, install locked dependencies, and bundle the frontend.
 - `make lint`: run Ruff, ESLint, Prettier, and strict TypeScript checks.
 - `make test`: run Python `unittest` discovery and TypeScript model/API/build checks.
-- `make build`: build source/wheel distributions, check metadata, and validate the installed wheel in a clean environment.
+- `make build`: bundle the frontend, build source/wheel distributions, and check metadata.
+- `make check-dist`: install the built wheel in a fresh environment and run `tests/package_smoke.py`.
 - `.venv/bin/python tests/serve_fixture.py --root /tmp/forge-fixture --port 8777`: launch a disposable local editor fixture.
 - `npm run test:browser -- http://127.0.0.1:8777/`: exercise the running fixture with local Chrome.
 
