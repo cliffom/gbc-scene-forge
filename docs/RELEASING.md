@@ -21,8 +21,9 @@ standard isolated Python build frontend: it creates the
 source distribution, then builds the wheel from that source distribution. It
 checks metadata with Twine, installs the wheel without dependencies into a clean
 environment, verifies bundled browser files and runs the Python contracts against
-that installed wheel. Artifacts appear in `dist/`. Use `make clean` before building
-a different version. The source archive includes TypeScript sources, frontend
+that installed wheel. Artifacts appear in `dist/`. Before building a different
+version, run `make clean` followed by `npm ci` to reinstall the frontend dependencies
+removed by cleanup. The source archive includes TypeScript sources, frontend
 configuration, the npm lockfile, and precompiled assets. Building a wheel from
 that archive uses those assets without running Node. When invoking Python build
 tools directly from a checkout, run `make frontend` first. No command above uploads packages.

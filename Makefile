@@ -50,7 +50,7 @@ build: frontend
 check-dist: build
 
 clean:
-	rm -rf build dist
+	rm -rf build dist node_modules
 
 clean-demo:
 	rm -rf .demo
