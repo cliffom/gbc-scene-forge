@@ -1,5 +1,6 @@
 /** Standalone project controller for atlas, layer and object authoring. */
 import { DraftWriter } from './drafts.mts';
+import { HttpError } from './errors.mts';
 import { decodePreviewSettings, prunePreviewSettings } from './preview-settings.mts';
 import { sceneOverlaps } from './movement-preview.mts';
 import type { PreviewRect } from './movement-preview.mts';
@@ -357,7 +358,7 @@ async function request(
   });
   if (!response.ok && !(route === 'palette-preflight' && response.status === 422)) {
     const body: unknown = await response.json();
-    throw Error(string(record(body).error));
+    throw new HttpError(string(record(body).error), response.status);
   }
   return response;
 }
@@ -2359,6 +2360,9 @@ form('delete-atlas-form').onsubmit = (event) => {
     revision = string(result.revision);
     if (loaded) {
       loaded = { ...loaded, revision: string(record(result.scene_revisions)[loaded.id]) };
+      if (committed?.id === loaded.id) {
+        committed = { ...committed, revision: loaded.revision };
+      }
     }
     if (editor && atlasInHistory(candidate.id)) {
       editor.undoStack = [];

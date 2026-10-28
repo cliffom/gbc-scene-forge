@@ -1,6 +1,7 @@
 /** Checkpoint races, retries and cleanup must preserve the most recent authored edits. */
 import assert from 'node:assert/strict';
 import { DraftWriter } from '../frontend/drafts.mts';
+import { HttpError } from '../frontend/errors.mts';
 
 const calls: { route: string; data: Record<string, unknown> }[] = [];
 const messages: string[] = [];
@@ -73,4 +74,46 @@ await other.flush();
 assert.equal(calls.at(-1)?.route, 'delete-draft');
 assert.equal(calls.at(-1)?.data.id, other.id);
 await other.clear();
+// A size rejection must not pin an oversized snapshot after the author reduces it.
+const rejectedCalls: Record<string, unknown>[] = [];
+const rejected = new DraftWriter(
+  async (_route, data) => {
+    rejectedCalls.push(data);
+    if (data.scene === 'oversized') {
+      throw new HttpError('Draft exceeds 4 MiB', 400);
+    }
+    return Promise.resolve({ revision: 'smaller' });
+  },
+  () => {},
+);
+rejected.observe({ scene: 'oversized' });
+await rejected.flush();
+rejected.observe({ scene: 'smaller' });
+await rejected.flush();
+assert.equal(rejectedCalls.at(-1)?.scene, 'smaller');
+assert.equal(rejected.revision, 'smaller');
+await rejected.clear();
+// A lost acknowledgement still requires replaying the old payload before newer edits.
+for (const failure of [Error('response lost'), new HttpError('server failure', 500)]) {
+  const uncertainCalls: Record<string, unknown>[] = [];
+  const uncertain = new DraftWriter(
+    async (_route, data) => {
+      uncertainCalls.push(data);
+      if (uncertainCalls.length === 1) {
+        throw failure;
+      }
+      return Promise.resolve({ revision: `ack-${uncertainCalls.length}` });
+    },
+    () => {},
+  );
+  uncertain.observe({ scene: 'unacknowledged' });
+  await uncertain.flush();
+  uncertain.observe({ scene: 'newer' });
+  await uncertain.flush();
+  assert.deepEqual(uncertainCalls[1], uncertainCalls[0]);
+  await uncertain.flush();
+  assert.equal(uncertainCalls[2].scene, 'newer');
+  assert.equal(uncertainCalls[2].revision, 'ack-2');
+  await uncertain.clear();
+}
 console.log('Draft checkpoint ordering, retries, tab isolation and cleanup passed.');

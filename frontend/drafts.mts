@@ -1,3 +1,5 @@
+import { HttpError } from './errors.mts';
+
 /** Serializes checkpoint writes and cleanup, including edits made during a request. */
 export class DraftWriter {
   readonly id = crypto.randomUUID();
@@ -67,7 +69,12 @@ export class DraftWriter {
         this.saved = key;
         this.retryValue = undefined;
       } catch (error) {
-        this.retryValue = value;
+        // A rejected request can be replaced by newer edits. An uncertain acknowledgement
+        // must replay the same payload so the server can recognize an idempotent retry.
+        this.retryValue =
+          error instanceof HttpError && error.status >= 400 && error.status < 500
+            ? undefined
+            : value;
         this.report(
           `Draft recovery unavailable: ${error instanceof Error ? error.message : String(error)}. Save or export your work. Retrying automatically.`,
         );
