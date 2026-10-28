@@ -748,3 +748,107 @@ object-template files or a runtime engine schema. Preserve the manifest/library
 and reserved properties when round-tripping inheritance through other tools.
 Existing projects without the library remain supported; projects using definition
 links require a Forge version that supports this feature.
+
+## World view and scene connections
+
+![World layout with a two-way scene connection](screenshots/world-view/world.png)
+
+Choose **World view…** in the document bar to arrange the project's scenes and
+connect their exit/trigger and entrance objects. Drag a scene card, or select it
+and enter whole X/Y coordinates, then choose **Set position**. Keyboard users can
+Tab to a scene card and select it with Enter or Space. Coordinates describe the
+world diagram, independently of scene dimensions, tile grids and runtime units.
+Choose **Save world** to commit the layout and connections. Closing or following
+a link with unsaved world changes asks before discarding them.
+
+Give a connection a name, choose its source scene/object and destination
+scene/object, and select **One-way** or **Two-way**. **Add connection** stages the
+link; **Save world** commits it. **Edit** updates an existing connection without
+changing its identity; **Remove** stages its removal. A one-way link describes
+travel from source to destination; a two-way link describes both directions
+between those same objects. An object may belong to several links. A scene may
+connect to itself using two different objects. Forge does not execute transitions
+or infer collision, reachability, facing, runtime spawn rules or special object
+classes from these links.
+
+Use instances of reusable object definitions for endpoints. Points, rectangles
+and sprites are supported. Endpoint findings identify missing scenes, missing
+objects, missing definitions and incompatible kinds or field values using the
+same rules as object validation. Checks include hidden layers and the current
+unsaved canvas. Unattached objects can be selected, but report a missing definition
+until attached. Broken connections remain editable; use **Edit** to select a
+replacement endpoint, or remove the connection explicitly.
+
+**Source** inspects a connection's source; **Follow →** follows its destination.
+**Follow ↔** follows the destination of a two-way connection; **Source** follows
+the reverse direction. Finding buttons navigate to the affected endpoint when
+its scene exists. Navigation selects its object layer and object. Hidden layers
+remain hidden; the inspector identifies the object, and **Show layer** makes it
+editable. Switching away from a dirty scene uses the existing Save / Discard /
+Cancel dialog. World changes have their own explicit save and do not reset open
+scene edits or their Undo/Redo history. Newly created or edited endpoints still
+need **Save scene**; saving the world alone does not save their scene.
+
+Scene and object renames retain links because endpoints use identities rather
+than names. Moving objects between layers retains links when their object IDs
+are preserved. Scene duplication creates a new scene identity; it copies the
+objects but does not copy world positions or connections. Place and link the new
+scene explicitly. Clipboard duplication creates new object IDs and does not
+retarget connections. Scene deletion names the affected connections before its
+confirmation. Saving a scene that removes linked objects (including layer
+removal or resize/crop) requires confirmation naming the affected connections.
+The connections are retained with navigable findings for repair. Undo followed
+by Save can restore a removed endpoint with its original object ID. Deleting a
+scene also removes its diagram position.
+
+### Portable world format
+
+The optional `world` member in `forge.project.json` uses version 1:
+
+```json
+{
+  "version": 1,
+  "positions": {
+    "05ae1587-ad83-436d-9dbd-0dd736314a52": { "x": -240, "y": 80 },
+    "8514a733-e439-4fb9-99e9-aeaa05da8664": { "x": 120, "y": 80 }
+  },
+  "connections": [
+    {
+      "id": "a61681c8-11e0-41e3-b5df-e2b6a0bc9995",
+      "name": "Forest passage",
+      "source": { "scene": "05ae1587-ad83-436d-9dbd-0dd736314a52", "object": 1 },
+      "destination": { "scene": "8514a733-e439-4fb9-99e9-aeaa05da8664", "object": 2 },
+      "direction": "two-way"
+    }
+  ]
+}
+```
+
+Scene references are the UUIDs from the manifest scene catalog. Object references
+are scene-wide positive Tiled object IDs, independent of layer and object names.
+Connection IDs are canonical UUIDs. Positions use integers within
+`-100000..100000`, with at most 4096 positions and 4096 connections. Names contain
+1–100 nonblank characters. An absent `world` means an empty diagram with no
+connections; opening existing projects does not migrate or rewrite them.
+Unpositioned scenes initially appear in catalog order; saving a changed world
+materializes the displayed positions. Missing endpoints are valid stored
+references with diagnostic errors, allowing repair without silently dropping
+intent. The format contains no filesystem paths or runtime commands.
+
+Project export preserves `world` in its manifest and includes `world.json`.
+Scene-only export includes `world.json` with the full graph for identity/context;
+other scene maps are **not** implicitly included. Use project export for a
+self-contained connected world. Tiled opens the ordinary `.tmj` maps and retains
+their object IDs; the world graph is a Forge sidecar, not a native Tiled `.world`
+file or executable Tiled transition behavior. Moving or extracting the entire
+project preserves the diagram and links without absolute paths.
+
+`POST /api/world-report` takes `project_revision` and optionally `scene_id`,
+`scene_revision` and an unsaved `scene`. Its deterministic version-1 result has
+scene/object summaries, saved `scene_revisions`, endpoint findings and a pass/fail
+status. Findings include connection UUID, endpoint side, scene/object/layer,
+severity, code and field. `POST /api/save-world` takes `world`, `project_revision`
+and the report's complete saved `scene_revisions` map. Both routes require the
+local mutation token. A stale manifest or scene snapshot rejects the operation;
+reopen World view after reviewing external changes. Saves use the existing
+conflict-checked durable project transaction. Reports are read-only.

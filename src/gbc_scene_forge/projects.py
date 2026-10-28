@@ -14,6 +14,7 @@ from . import (
     preview_settings,
     tile_metadata,
     tiled,
+    world,
 )
 from .documents import Conflict, json_text
 from .transactions import Transactions, digest, read_optional, safe_path
@@ -134,6 +135,7 @@ class Project:
                 "gbc_palette_profile",
                 "stamps",
                 "object_definitions",
+                "world",
             },
             "Unsupported project manifest fields",
         )
@@ -209,6 +211,7 @@ class Project:
             document.get("object_definitions", {"version": 1, "definitions": []}),
             tiled.sprite_regions(document),
         )
+        world.check(document.get("world", world.empty()))
         if "sprite" in document["preview"]:
             preview_settings.validate(document["preview"]["sprite"], document)
         for path, revision in document["files"].items():
@@ -293,6 +296,47 @@ class Project:
             key = (layer["type"], layer["name"])
             atlas.require(slot > previous.get(key, -1), "Invalid stamp layer mapping order")
             previous[key] = slot
+
+    def world_report(self, revision, scene_id=None, scene_revision=None, scene=None):
+        with self.transactions.locked():
+            document = self._current(revision)
+            scenes = {s["id"]: self._load_scene(s["id"], document) for s in document["scenes"]}
+            guards = {s["id"]: s["revision"] for s in scenes.values()}
+            if scene is not None:
+                atlas.require(scene_id in scenes, "Choose a project scene")
+                if guards[scene_id] != scene_revision:
+                    raise Conflict("Scene changed on disk. Reopen it before inspecting the world.")
+                tiled.check_scene(scene, document)
+                scenes[scene_id] = {**scenes[scene_id], "scene": scene}
+            result = world.report(document, scenes)
+            self._current(revision)
+            self._world_guards(document, guards)
+            return {**result, "project_revision": revision, "scene_revisions": guards}
+
+    def _world_guards(self, document, revisions):
+        atlas.require(
+            isinstance(revisions, dict) and set(revisions) == {s["id"] for s in document["scenes"]},
+            "World edits require revisions for every saved scene; reopen the world view",
+        )
+        guards = {}
+        for entry in document["scenes"]:
+            expected = revisions[entry["id"]]
+            if digest(read_optional(safe_path(self.root, entry["path"]))) != expected:
+                raise Conflict("Scene changed on disk. Reopen the world view before saving.")
+            guards[entry["path"]] = expected
+        return guards
+
+    def save_world(self, value, revision, scene_revisions):
+        document = self._current(revision)
+        world.check(value)
+        atlas.require(
+            set(value["positions"]) <= {s["id"] for s in document["scenes"]},
+            "World positions must refer to existing scenes",
+        )
+        guards = self._world_guards(document, scene_revisions)
+        document["world"] = copy.deepcopy(value)
+        self._commit(document, revision, {}, guards, "Save world layout and connections")
+        return self.catalog()
 
     def save_object_definition(self, definition, revision):
         document = self._current(revision)
@@ -479,11 +523,21 @@ class Project:
             "scene": tiled.decode(json.loads(encoded), document),
         }
 
-    def save_scene(self, scene_id, scene, revision, project_revision):
+    def save_scene(
+        self, scene_id, scene, revision, project_revision, *, confirm_broken_links=False
+    ):
         document = self._current(project_revision)
         current = self.load_scene(scene_id, document)
         if current["revision"] != revision:
             raise Conflict("Scene changed on disk. Reopen it before saving.")
+        tiled.check_scene(scene, document)
+        broken = world.removed_links(
+            document.get("world", world.empty()), scene_id, current["scene"], scene
+        )
+        atlas.require(
+            not broken or confirm_broken_links is True,
+            "Saving removes linked objects. Confirm broken connections before saving.",
+        )
         path = f"scenes/{scene_id}.tmj"
         encoded = json_text(tiled.encode(scene, document)).encode()
         self._commit(document, project_revision, {path: encoded}, {path: revision}, "Save scene")
@@ -527,7 +581,7 @@ class Project:
         )
         return {"duplicated": new_id, **self.catalog()}
 
-    def delete_scene(self, scene_id, revision, project_revision):
+    def delete_scene(self, scene_id, revision, project_revision, *, confirm_broken_links=False):
         document = self._current(project_revision)
         entry = next((item for item in document["scenes"] if item["id"] == scene_id), None)
         atlas.require(entry is not None, "Choose a project scene")
@@ -535,6 +589,13 @@ class Project:
         current = digest(read_optional(safe_path(self.root, path)))
         if not isinstance(revision, str) or current != revision:
             raise Conflict("Scene changed on disk. Reopen the delete dialog before trying again.")
+        atlas.require(
+            not world.references(document.get("world", world.empty()), scene_id)
+            or confirm_broken_links is True,
+            "Deleting this scene breaks connections. Confirm before deleting.",
+        )
+        if "world" in document:
+            document["world"]["positions"].pop(scene_id, None)
         document["scenes"] = [item for item in document["scenes"] if item["id"] != scene_id]
         self._commit(document, project_revision, {path: None}, {path: revision}, "Delete scene")
         return {"deleted": scene_id, **self.catalog()}

@@ -1,4 +1,7 @@
 /** Standalone project controller for atlas, layer and object authoring. */
+import { createWorldView } from './world-view.mts';
+import { decodeWorld, decodeWorldSnapshot } from './world.mts';
+import type { World, Endpoint } from './world.mts';
 import { createDefinitionLibrary } from './definition-library.mts';
 import {
   describeFinding,
@@ -65,6 +68,7 @@ interface Project {
   name: string;
   paletteProfile: PaletteProfile | null;
   definitions: ObjectDefinition[];
+  world: World;
   stamps: { id: string; name: string; composition: Composition }[];
   scenes: { id: string; name: string }[];
   atlases: Record<string, Atlas>;
@@ -537,6 +541,78 @@ async function definitionMutation(route: string, payload: Record<string, unknown
     update();
   }
 }
+let pendingWorldEndpoint: Endpoint | null = null;
+function focusWorldEndpoint() {
+  const endpoint = pendingWorldEndpoint;
+  pendingWorldEndpoint = null;
+  if (!endpoint || !editor || loaded?.id !== endpoint.scene || !endpoint.object) {
+    return;
+  }
+  const layer = editor.layers.find(
+    (l) => l.type === 'objectgroup' && l.objects.some((o) => Number(o.id) === endpoint.object),
+  );
+  if (!layer) {
+    status.textContent =
+      'Connection endpoint object is missing. Choose a replacement in World view.';
+    return;
+  }
+  editor.activate(layer.id);
+  selectedObject = String(endpoint.object);
+  selectedObjects.clear();
+  selection = null;
+  draw();
+  status.textContent = layer.visible
+    ? 'Connection endpoint selected.'
+    : 'Connection endpoint selected on a hidden layer. Show its layer to edit it.';
+}
+const worldView = createWorldView(
+  async () => {
+    const report = await api('world-report', record, {
+      project_revision: revision,
+      ...(loaded && editor
+        ? { scene_id: loaded.id, scene_revision: loaded.revision, scene: sceneSnapshot() }
+        : {}),
+    });
+    return {
+      world: project?.world ?? decodeWorld(undefined),
+      snapshot: decodeWorldSnapshot(report),
+    };
+  },
+  async (world, sceneRevisions) => {
+    if (busy) {
+      throw Error('Wait for the current operation.');
+    }
+    busy = true;
+    update();
+    try {
+      const result = await api('save-world', record, {
+        world,
+        scene_revisions: sceneRevisions,
+        project_revision: revision,
+      });
+      project = decodeProject(result.project);
+      revision = string(result.revision);
+      status.textContent = 'World saved. Open scene edits and history are preserved.';
+    } finally {
+      busy = false;
+      update();
+    }
+  },
+  (endpoint) => {
+    pendingWorldEndpoint = endpoint;
+    if (endpoint.scene === loaded?.id) {
+      focusWorldEndpoint();
+      return;
+    }
+    if (!project?.scenes.some((s) => s.id === endpoint.scene)) {
+      pendingWorldEndpoint = null;
+      status.textContent = 'Connection destination scene is missing.';
+      return;
+    }
+    requestSceneOpen(endpoint.scene);
+  },
+);
+button('show-world').onclick = () => void run(() => worldView.open());
 const definitionLibrary = createDefinitionLibrary(
   () => project?.definitions ?? [],
   () =>
@@ -807,6 +883,7 @@ function decodeProject(value: unknown): Project {
     name: string(data.name),
     paletteProfile: decodePaletteProfile(data.gbc_palette_profile),
     definitions: decodeDefinitions(data.object_definitions),
+    world: decodeWorld(data.world),
     stamps: array(data.stamps ?? [], (value) => {
       const stamp = record(value);
       const loaded = decodeLoaded({
@@ -871,6 +948,7 @@ async function discard(): Promise<boolean> {
 }
 function update() {
   renderObjectValidation();
+  button('show-world').disabled = busy || !project || anchor !== null;
   button('manage-definitions').disabled = busy || !project || anchor !== null;
   button('place-definition').disabled =
     busy || !editor || !select('object-definition-brush').value || anchor !== null;
@@ -1131,7 +1209,8 @@ function inspect() {
     loaded && editor
       ? `${loaded.width * loaded.grid} × ${loaded.height * loaded.grid} pixels · ${objectCount} ${objectCount === 1 ? 'object' : 'objects'}`
       : 'Open a scene to inspect its dimensions and placed sprites.';
-  const item = editor?.objects.find((r) => r.id === selectedObject);
+  const inspectedObjects = editor?.active.type === 'objectgroup' ? editor.active.objects : [];
+  const item = inspectedObjects.find((r) => r.id === selectedObject);
   const inspector = document.querySelector('.inspector');
   const hasSelection = Boolean(item || selection || selectedObjects.size);
   if (inspector instanceof HTMLElement) {
@@ -1142,7 +1221,7 @@ function inspect() {
     }
   }
   select('object-list').replaceChildren(
-    ...(editor?.objects.map(
+    ...(inspectedObjects.map(
       (item) =>
         new Option(
           `${item.name || item.class || item.kind} · #${item.id}`,
@@ -1620,7 +1699,13 @@ function draw(refreshUI = true) {
   if (!editor || !loaded) {
     return;
   }
-  if (selectedObject && !editor.objects.some((item) => item.id === selectedObject)) {
+  if (
+    selectedObject &&
+    !(
+      editor.active.type === 'objectgroup' &&
+      editor.active.objects.some((item) => item.id === selectedObject)
+    )
+  ) {
     selectedObject = null;
     selectedObjects.clear();
   }
@@ -2311,10 +2396,15 @@ async function openSavedScene(id: string) {
   open(data);
   status.textContent = 'Scene opened.';
   await showRecovery(id);
+  focusWorldEndpoint();
 }
 select('scenes').onchange = () => {
   const id = select('scenes').value;
   select('scenes').value = loaded?.id || '';
+  pendingWorldEndpoint = null;
+  requestSceneOpen(id);
+};
+function requestSceneOpen(id: string) {
   if (busy || anchor || !id || id === loaded?.id) {
     return;
   }
@@ -2329,7 +2419,7 @@ select('scenes').onchange = () => {
   } else {
     void run(() => openSavedScene(id));
   }
-};
+}
 function confirmSceneSwitch(save: boolean) {
   if (!pendingScene || busy) {
     return;
@@ -2412,11 +2502,36 @@ async function saveScene() {
   if (!editor || !loaded) {
     return;
   }
+  const ids = new Set(
+    editor.layers.flatMap((l) =>
+      l.type === 'objectgroup' ? l.objects.map((o) => Number(o.id)) : [],
+    ),
+  );
+  const savedIds = new Set(
+    committed?.layers.flatMap((l) =>
+      l.type === 'objectgroup' ? l.objects.map((o) => Number(o.id)) : [],
+    ) ?? [],
+  );
+  const broken =
+    project?.world.connections.filter((link) =>
+      [link.source, link.destination].some(
+        (e) => e.scene === loaded?.id && savedIds.has(e.object) && !ids.has(e.object),
+      ),
+    ) ?? [];
+  if (
+    broken.length &&
+    !window.confirm(
+      `Saving removes endpoints for ${broken.length} connection(s): ${broken.map((l) => l.name).join(', ')}. Keep these connections as broken links and save? Undo can restore the objects.`,
+    )
+  ) {
+    throw Error('Scene save cancelled. Restore the endpoints or update their world connections.');
+  }
   const data = await api('save-scene', decodeLoaded, {
     id: loaded.id,
     scene: sceneSnapshot(),
     revision: loaded.revision,
     project_revision: revision,
+    confirm_broken_links: broken.length > 0,
   });
   await clearDraft();
   loaded = data;
@@ -2711,7 +2826,7 @@ function showSceneManagement(action: 'rename' | 'duplicate') {
   element('duplicate-canvas-field', HTMLElement).hidden = !duplicate || !dirty();
   input('duplicate-canvas').checked = false;
   element('scene-manage-hint', HTMLElement).textContent = duplicate
-    ? 'Creates a saved, independent scene sharing this project’s artwork. The source stays open with its edits and history. Unchecked copies the saved scene.'
+    ? 'Creates a saved, independent scene sharing this project’s artwork. The source stays open with its edits and history. World positions and connections are not copied. Unchecked copies the saved scene.'
     : 'Updates the project name for this scene immediately, preserving its identity and current edits. Scene Undo does not undo a rename.';
   form('scene-manage-form').querySelector('.form-error')?.replaceChildren();
   element('scene-manage-dialog', HTMLDialogElement).showModal();
@@ -2884,6 +2999,13 @@ button('show-delete').onclick = () => {
     deleteCandidate = { id, name: scene.name, revision: scene.revision, projectRevision: revision };
     element('delete-scene-description', HTMLElement).textContent =
       `Delete “${scene.name}” (${scene.width} × ${scene.height} cells, ${scene.grid}px grid)?`;
+    const links =
+      project?.world.connections.filter(
+        (l) => l.source.scene === id || l.destination.scene === id,
+      ) ?? [];
+    element('delete-scene-links', HTMLElement).textContent = links.length
+      ? `This breaks ${links.length} connection(s): ${links.map((l) => l.name).join(', ')}. Connections will be retained for repair in World view. Deleting confirms these broken links.`
+      : '';
     element('delete-scene-unsaved', HTMLElement).hidden = loaded?.id !== id || !dirty();
     form('delete-scene-form').querySelector('.form-error')?.replaceChildren();
     element('delete-scene-dialog', HTMLDialogElement).showModal();
@@ -2900,6 +3022,7 @@ form('delete-scene-form').onsubmit = (event) => {
       id: candidate.id,
       revision: candidate.revision,
       project_revision: candidate.projectRevision,
+      confirm_broken_links: true,
     });
     if (string(result.deleted) !== candidate.id) {
       throw Error('Unexpected deleted scene response');

@@ -153,6 +153,7 @@ def make_handler(root, token):
                             data.get("scene"),
                             data.get("revision"),
                             data.get("project_revision"),
+                            confirm_broken_links=data.get("confirm_broken_links", False),
                         )
                     )
                 elif route == "/api/checkpoint-draft":
@@ -186,6 +187,23 @@ def make_handler(root, token):
                         status=422
                         if route.endswith("preflight") and report["status"] != "pass"
                         else 200,
+                    )
+                elif route == "/api/world-report":
+                    self.reply(
+                        project.world_report(
+                            data.get("project_revision"),
+                            data.get("scene_id"),
+                            data.get("scene_revision"),
+                            data.get("scene"),
+                        )
+                    )
+                elif route == "/api/save-world":
+                    self.reply(
+                        project.save_world(
+                            data.get("world"),
+                            data.get("project_revision"),
+                            data.get("scene_revisions"),
+                        )
                     )
                 elif route == "/api/save-object-definition":
                     self.reply(
@@ -263,7 +281,10 @@ def make_handler(root, token):
                 elif route == "/api/delete-scene":
                     self.reply(
                         project.delete_scene(
-                            data.get("id"), data.get("revision"), data.get("project_revision")
+                            data.get("id"),
+                            data.get("revision"),
+                            data.get("project_revision"),
+                            confirm_broken_links=data.get("confirm_broken_links", False),
                         )
                     )
                 elif route == "/api/delete-atlas":
