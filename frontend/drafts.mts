@@ -2,7 +2,10 @@ import { HttpError } from './errors.mts';
 
 /** Serializes checkpoint writes and cleanup, including edits made during a request. */
 export class DraftWriter {
-  readonly id = crypto.randomUUID();
+  private draftId = crypto.randomUUID();
+  get id() {
+    return this.draftId;
+  }
   revision: string | null = null;
   private desired: Record<string, unknown> | null = null;
   private saved = '';
@@ -12,6 +15,45 @@ export class DraftWriter {
   private stopped = false;
   private send: (route: string, data: Record<string, unknown>) => Promise<Record<string, unknown>>;
   private report: (message: string) => void;
+  private async persist(value: Record<string, unknown> | null): Promise<void> {
+    if (value) {
+      let result: Record<string, unknown>;
+      try {
+        result = await this.send('checkpoint-draft', {
+          ...value,
+          id: this.id,
+          revision: this.revision,
+        });
+      } catch (error) {
+        if (!(error instanceof HttpError) || error.status !== 409) {
+          throw error;
+        }
+        const listing = await this.send('list-drafts', {});
+        if (
+          !Array.isArray(listing.drafts) ||
+          listing.drafts.some(
+            (draft: unknown) =>
+              !draft || typeof draft !== 'object' || !('id' in draft) || draft.id === this.id,
+          )
+        ) {
+          throw error;
+        }
+        // Another tab removed our checkpoint. Use a fresh identity so a concurrent
+        // recreation of the old identity can never be overwritten.
+        this.draftId = crypto.randomUUID();
+        this.revision = null;
+        this.saved = '';
+        result = await this.send('checkpoint-draft', { ...value, id: this.id, revision: null });
+      }
+      if (typeof result.revision !== 'string') {
+        throw Error('Invalid checkpoint response');
+      }
+      this.revision = result.revision;
+    } else if (this.revision) {
+      await this.send('delete-draft', { id: this.id, revision: this.revision });
+      this.revision = null;
+    }
+  }
   constructor(
     send: (route: string, data: Record<string, unknown>) => Promise<Record<string, unknown>>,
     report: (message: string) => void,
@@ -50,20 +92,10 @@ export class DraftWriter {
         return;
       }
       try {
+        await this.persist(value);
         if (value) {
-          const result = await this.send('checkpoint-draft', {
-            ...value,
-            id: this.id,
-            revision: this.revision,
-          });
-          if (typeof result.revision !== 'string') {
-            throw Error('Invalid checkpoint response');
-          }
-          this.revision = result.revision;
           this.report('Draft checkpoint saved');
-        } else if (this.revision) {
-          await this.send('delete-draft', { id: this.id, revision: this.revision });
-          this.revision = null;
+        } else {
           this.report('');
         }
         this.saved = key;
@@ -87,6 +119,12 @@ export class DraftWriter {
     // Fence queued writes before deleting; a late response cannot recreate a draft.
     this.stopped = true;
     await this.pending;
+    // Recover a lost acknowledgement before deleting, including the first write
+    // whose revision we have never received. Failure must be reported to the caller.
+    if (this.retryValue !== undefined) {
+      await this.persist(this.retryValue);
+      this.retryValue = undefined;
+    }
     if (this.revision) {
       await this.send('delete-draft', { id: this.id, revision: this.revision });
       this.revision = null;

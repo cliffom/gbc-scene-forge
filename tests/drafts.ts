@@ -117,3 +117,83 @@ for (const failure of [Error('response lost'), new HttpError('server failure', 5
   await uncertain.clear();
 }
 console.log('Draft checkpoint ordering, retries, tab isolation and cleanup passed.');
+
+// Model the server's revision guards, idempotent replay and cross-tab removal.
+const stored = new Map<string, { revision: string; scene: unknown }>();
+let loseResponse = false;
+let offline = false;
+let serial = 0;
+const lifecycleCalls: { route: string; data: Record<string, unknown> }[] = [];
+async function sendLifecycle(route: string, data: Record<string, unknown>) {
+  lifecycleCalls.push({ route, data });
+  if (offline) {
+    throw Error('offline');
+  }
+  if (route === 'list-drafts') {
+    return Promise.resolve({ drafts: [...stored.keys()].map((id) => ({ id })) });
+  }
+  const id = String(data.id);
+  const existing = stored.get(id);
+  if (route === 'delete-draft') {
+    if (existing && existing.revision !== data.revision) {
+      throw new HttpError('newer checkpoint preserved', 409);
+    }
+    stored.delete(id);
+    return Promise.resolve({ deleted: id });
+  }
+  if ((existing?.revision ?? null) !== data.revision && existing?.scene !== data.scene) {
+    throw new HttpError('newer checkpoint preserved', 409);
+  }
+  const revision =
+    existing && existing.scene === data.scene ? existing.revision : `stored-${++serial}`;
+  stored.set(id, { revision, scene: data.scene });
+  if (loseResponse) {
+    loseResponse = false;
+    throw Error('acknowledgement lost');
+  }
+  return Promise.resolve({ revision });
+}
+const live = new DraftWriter(sendLifecycle, () => {});
+live.observe({ scene: 'initial' });
+await live.flush();
+const removedId = live.id;
+stored.delete(removedId); // Another tab restores, then saves or reverts this draft.
+live.observe({ scene: 'new work' });
+await live.flush();
+assert.notEqual(live.id, removedId);
+assert.equal(stored.get(live.id)?.scene, 'new work');
+// An existing newer checkpoint must keep its identity and content on conflict.
+const liveId = live.id;
+stored.set(liveId, { revision: 'external', scene: 'external work' });
+live.observe({ scene: 'conflicting work' });
+await live.flush();
+assert.equal(live.id, liveId);
+assert.deepEqual(stored.get(liveId), { revision: 'external', scene: 'external work' });
+await assert.rejects(live.clear(), /newer checkpoint preserved/);
+stored.clear();
+
+// Cleanup resolves uncertain first and subsequent writes before guarded deletion.
+for (const firstWrite of [true, false]) {
+  const cleanup = new DraftWriter(sendLifecycle, () => {});
+  if (!firstWrite) {
+    cleanup.observe({ scene: 'acknowledged' });
+    await cleanup.flush();
+  }
+  cleanup.observe({ scene: 'discard me' });
+  loseResponse = true;
+  await cleanup.flush();
+  const failedWrite = lifecycleCalls.at(-1);
+  assert.equal(stored.get(cleanup.id)?.scene, 'discard me');
+  cleanup.observe({ scene: 'newer unsent work' });
+  offline = true;
+  await assert.rejects(cleanup.clear(), /offline/);
+  assert(stored.has(cleanup.id));
+  offline = false;
+  await cleanup.clear();
+  assert.deepEqual(lifecycleCalls.at(-2), failedWrite);
+  assert.equal(lifecycleCalls.at(-1)?.route, 'delete-draft');
+  assert.equal(stored.has(cleanup.id), false);
+  await cleanup.flush();
+  assert.equal(stored.size, 0);
+}
+console.log('Draft cross-tab deletion recovery and unacknowledged-write cleanup passed.');

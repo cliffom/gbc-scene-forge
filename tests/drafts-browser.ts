@@ -116,6 +116,7 @@ print(json.dumps({'first': a['id'], 'second': b['id']}))
     );
   }
   async function paint(x = 4, y = 4) {
+    await evaluate("document.getElementById('draft-status').textContent = ''");
     await chrome.click('document.querySelector(\'[data-asset="terrain/earth"]\')');
     await chrome.pointer(x, y);
     await chrome.pointer(x, y, 'mouseReleased');
@@ -169,6 +170,41 @@ print(json.dumps({'first': a['id'], 'second': b['id']}))
   await chrome.click("document.querySelector('#discard-dialog button[value=discard]')");
   await wait("document.getElementById('dirty').textContent === 'SAVED'");
   assert.equal(array((await post('list-drafts')).drafts, record).length, 0);
+  // A live tab resumes under a new identity after another tab removes its checkpoint.
+  await paint(12, 12);
+  const removed = array((await post('list-drafts')).drafts, record)[0];
+  await post('delete-draft', removed);
+  await paint(20, 12);
+  const replacement = array((await post('list-drafts')).drafts, record);
+  assert.equal(replacement.length, 1);
+  assert.notEqual(replacement[0].id, removed.id);
+  await click('revert');
+  await wait("document.getElementById('discard-dialog').open");
+  await chrome.click("document.querySelector('#discard-dialog button[value=discard]')");
+  await wait("document.getElementById('dirty').textContent === 'SAVED'");
+  // Persist a first write but lose its acknowledgement, then explicitly discard it.
+  await evaluate(`window.__cleanupFetch = window.fetch; window.__loseCheckpoint = true;
+    window.fetch = async (...args) => {
+      const response = await window.__cleanupFetch(...args);
+      if (String(args[0]).endsWith('/api/checkpoint-draft') && window.__loseCheckpoint) {
+        window.__loseCheckpoint = false;
+        throw Error('simulated lost acknowledgement');
+      }
+      return response;
+    };`);
+  await chrome.click('document.querySelector(\'[data-asset="terrain/earth"]\')');
+  await chrome.pointer(28, 12);
+  await chrome.pointer(28, 12, 'mouseReleased');
+  await wait(
+    "document.getElementById('draft-status').textContent.includes('lost acknowledgement')",
+  );
+  assert.equal(array((await post('list-drafts')).drafts, record).length, 1);
+  await click('revert');
+  await wait("document.getElementById('discard-dialog').open");
+  await chrome.click("document.querySelector('#discard-dialog button[value=discard]')");
+  await wait("document.getElementById('dirty').textContent === 'SAVED'");
+  assert.equal(array((await post('list-drafts')).drafts, record).length, 0);
+  await evaluate('window.fetch = window.__cleanupFetch');
   // New draft, failed writes and automatic retries; preview remains transient.
   await evaluate(
     `window.__draftFetch = window.fetch; window.fetch = (...args) => String(args[0]).endsWith('/api/checkpoint-draft') ? Promise.resolve(new Response(JSON.stringify({error:'simulated disk full'}), {status:400, headers:{'Content-Type':'application/json'}})) : window.__draftFetch(...args);`,
