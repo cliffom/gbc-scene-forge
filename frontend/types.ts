@@ -1,4 +1,4 @@
-/** Browser-facing parts of connector contract v1. Connector extensions stay opaque. */
+/** Shared tile editing types and the remaining legacy connector transport types. */
 export interface SceneReference {
   id: string;
   asset: string;

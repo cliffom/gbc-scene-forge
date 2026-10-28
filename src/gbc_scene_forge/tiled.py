@@ -1,9 +1,9 @@
-"""Strict Tiled ground layer and native-size sprite objects with semantic references."""
+"""Strict ordered Tiled layers and native-size sprite objects with semantic references."""
 
-import math
 from pathlib import PurePosixPath
 
 from .atlas import GRIDS, integer, require, sprite_mapping
+from .objects import check_object, decode_object, encode_object
 
 EMPTY = ""
 
@@ -31,7 +31,7 @@ def tilesets(project, size):
     return result
 
 
-def check_scene(scene, project):
+def _check_flat(scene, project):
     require(
         isinstance(scene, dict)
         and {"width", "height", "grid", "cells"} <= set(scene)
@@ -63,36 +63,24 @@ def check_scene(scene, project):
         "Invalid scene cells or unknown asset reference",
     )
     objects = scene.get("objects", [])
-    require(isinstance(objects, list) and len(objects) <= 4096, "Invalid sprite objects")
+    require(isinstance(objects, list) and len(objects) <= 4096, "Invalid objects")
     seen = set()
     for item in objects:
-        require(
-            isinstance(item, dict) and set(item) == {"id", "asset", "x", "y"},
-            "Unsupported sprite object fields",
-        )
-        require(
-            integer(item["id"], 1, 2147483646) and item["id"] not in seen,
-            "Invalid or duplicate sprite object ID",
-        )
+        check_object(item, scene["width"] * scene["grid"], scene["height"] * scene["grid"], sprites)
+        require(item["id"] not in seen, "Duplicate object ID")
         seen.add(item["id"])
-        require(isinstance(item["asset"], str) and item["asset"] in sprites, "Unknown sprite asset")
-        require(
-            integer(item["x"], 0, scene["width"] * scene["grid"] - 1)
-            and integer(item["y"], 0, scene["height"] * scene["grid"] - 1),
-            "Sprite origin must be inside the scene",
-        )
     require(
         integer(
             scene.get("next_object_id", max(seen, default=0) + 1),
             max(seen, default=0) + 1,
             2147483647,
         ),
-        "Invalid next sprite object ID",
+        "Invalid next object ID",
     )
 
 
-def encode(scene, project):
-    check_scene(scene, project)
+def _encode_flat(scene, project):
+    _check_flat(scene, project)
     gids, sources = {EMPTY: 0}, []
     for first, source, mapping in tilesets(project, scene["grid"]):
         gids.update({key: first + local for key, local in mapping.items()})
@@ -113,23 +101,7 @@ def encode(scene, project):
     ]
     regions, objects = sprite_regions(project), []
     for item in scene.get("objects", []):
-        region = regions[item["asset"]]
-        ox, oy = region.get("origin", [0, 0])
-        objects.append(
-            {
-                "id": item["id"],
-                "name": "",
-                "type": "",
-                "gid": gids[item["asset"]],
-                "x": item["x"] - ox,
-                "y": item["y"] - oy + region["height"],
-                "width": region["width"],
-                "height": region["height"],
-                "rotation": 0,
-                "visible": True,
-                "opacity": 1,
-            }
-        )
+        objects.append(encode_object(item, regions, gids))
     if objects:
         layers.append(
             {
@@ -161,13 +133,9 @@ def encode(scene, project):
     }
 
 
-def whole_pixel(value):
-    return type(value) in (int, float) and math.isfinite(value) and int(value) == value
-
-
-def decode(document, project):
+def _decode_flat(document, project):
     require(isinstance(document, dict), "Expected a Tiled map")
-    allowed = set(encode({"width": 1, "height": 1, "grid": 8, "cells": [[EMPTY]]}, project))
+    allowed = set(_encode_flat({"width": 1, "height": 1, "grid": 8, "cells": [[EMPTY]]}, project))
     require(
         not set(document) - allowed - {"tiledversion", "compressionlevel"},
         "Unsupported Tiled map fields; refusing to discard data",
@@ -279,51 +247,7 @@ def decode(document, project):
         )
         require(isinstance(layer.get("objects"), list), "Expected sprite objects")
         for item in layer["objects"]:
-            require(
-                isinstance(item, dict)
-                and not set(item)
-                - {
-                    "id",
-                    "name",
-                    "type",
-                    "gid",
-                    "x",
-                    "y",
-                    "width",
-                    "height",
-                    "rotation",
-                    "visible",
-                    "opacity",
-                },
-                "Unsupported sprite object fields",
-            )
-            gid = item.get("gid")
-            require(
-                type(gid) is int and gid in gids and gids[gid] in sprites,
-                "Unknown or transformed sprite GID",
-            )
-            region = sprites[gids[gid]]
-            require(
-                item.get("rotation", 0) == 0
-                and item.get("opacity", 1) == 1
-                and item.get("visible", True) is True
-                and item.get("width") == region["width"]
-                and item.get("height") == region["height"]
-                and not item.get("name")
-                and not item.get("type")
-                and whole_pixel(item.get("x"))
-                and whole_pixel(item.get("y")),
-                "Only unscaled, unrotated sprites at whole pixels are supported",
-            )
-            ox, oy = region.get("origin", [0, 0])
-            objects.append(
-                {
-                    "id": item.get("id"),
-                    "asset": gids[gid],
-                    "x": int(item["x"]) + ox,
-                    "y": int(item["y"]) + oy - region["height"],
-                }
-            )
+            objects.append(decode_object(item, sprites, gids))
     scene = {
         "width": width,
         "height": height,
@@ -332,5 +256,196 @@ def decode(document, project):
         "objects": objects,
         "next_object_id": document.get("nextobjectid", 1),
     }
+    _check_flat(scene, project)
+    return scene
+
+
+def scene_layers(scene):
+    """Read the ordered model, including maps written before named layers."""
+    if "layers" in scene:
+        return scene["layers"]
+    layers = [
+        {"id": 1, "name": "Ground", "type": "tilelayer", "visible": True, "cells": scene["cells"]}
+    ]
+    if scene.get("objects"):
+        layers.append(
+            {
+                "id": 2,
+                "name": "Sprites",
+                "type": "objectgroup",
+                "visible": True,
+                "objects": scene["objects"],
+            }
+        )
+    return layers
+
+
+def _flat_layer(scene, layer):
+    return {
+        "width": scene["width"],
+        "height": scene["height"],
+        "grid": scene["grid"],
+        "cells": layer.get("cells", [[EMPTY] * scene["width"] for _ in range(scene["height"])]),
+        "objects": layer.get("objects", []),
+        "next_object_id": scene.get("next_object_id", 2147483647),
+    }
+
+
+def check_scene(scene, project):
+    if isinstance(scene, dict) and "layers" not in scene:
+        _check_flat(scene, project)
+        return
+    require(
+        isinstance(scene, dict)
+        and {"width", "height", "grid", "layers"} <= set(scene)
+        and not set(scene)
+        - {"width", "height", "grid", "layers", "next_layer_id", "next_object_id"},
+        "Unsupported layered scene fields",
+    )
+    require(
+        integer(scene["width"], 1, 256) and integer(scene["height"], 1, 256),
+        "Scene dimensions must be within 1..256",
+    )
+    require(type(scene["grid"]) is int and scene["grid"] in GRIDS, "Unsupported grid")
+    layers = scene["layers"]
+    require(isinstance(layers, list) and 1 <= len(layers) <= 128, "Use 1..128 layers")
+    ids, object_ids = set(), set()
+    for layer in layers:
+        require(
+            isinstance(layer, dict) and layer.get("type") in ("tilelayer", "objectgroup"),
+            "Unsupported layer type",
+        )
+        payload = "cells" if layer["type"] == "tilelayer" else "objects"
+        require(
+            set(layer) == {"id", "name", "type", "visible", payload}, "Unsupported layer fields"
+        )
+        require(
+            integer(layer["id"], 1, 2147483646) and layer["id"] not in ids,
+            "Invalid or duplicate layer ID",
+        )
+        ids.add(layer["id"])
+        require(
+            isinstance(layer["name"], str) and 1 <= len(layer["name"].strip()) <= 100,
+            "Layer name must contain 1..100 characters",
+        )
+        require(type(layer["visible"]) is bool, "Invalid layer visibility")
+        _check_flat(_flat_layer(scene, layer), project)
+        for item in layer.get("objects", []):
+            require(item["id"] not in object_ids, "Duplicate sprite object ID across layers")
+            object_ids.add(item["id"])
+    require(
+        integer(scene.get("next_layer_id", max(ids) + 1), max(ids) + 1, 2147483647),
+        "Invalid next layer ID",
+    )
+    require(
+        integer(
+            scene.get("next_object_id", max(object_ids, default=0) + 1),
+            max(object_ids, default=0) + 1,
+            2147483647,
+        ),
+        "Invalid next object ID",
+    )
+
+
+def encode(scene, project):
     check_scene(scene, project)
+    if "layers" not in scene:
+        return _encode_flat(scene, project)
+    result = _encode_flat(_flat_layer(scene, {}), project)
+    result["layers"] = []
+    for layer in scene["layers"]:
+        encoded = _encode_flat(_flat_layer(scene, layer), project)
+        if layer["type"] == "tilelayer":
+            item = encoded["layers"][0]
+        else:
+            item = {
+                "type": "objectgroup",
+                "draworder": "index",
+                "x": 0,
+                "y": 0,
+                "opacity": 1,
+                "objects": encoded["layers"][-1].get("objects", []),
+            }
+        item.update({key: layer[key] for key in ("id", "name", "visible")})
+        result["layers"].append(item)
+    result["nextlayerid"] = scene.get(
+        "next_layer_id", max(layer["id"] for layer in scene["layers"]) + 1
+    )
+    result["nextobjectid"] = scene.get(
+        "next_object_id",
+        max((obj["id"] for layer in scene["layers"] for obj in layer.get("objects", [])), default=0)
+        + 1,
+    )
+    return result
+
+
+def decode(document, project):
+    require(isinstance(document, dict), "Expected a Tiled map")
+    require(
+        integer(document.get("width"), 1, 256) and integer(document.get("height"), 1, 256),
+        "Invalid Tiled dimensions",
+    )
+    layers = document.get("layers")
+    require(isinstance(layers, list) and 1 <= len(layers) <= 128, "Use 1..128 layers")
+    decoded = []
+    for layer in layers:
+        require(
+            isinstance(layer, dict) and layer.get("type") in ("tilelayer", "objectgroup"),
+            "Unsupported layer type",
+        )
+        require(integer(layer.get("id"), 1, 2147483646), "Invalid layer ID")
+        require(type(layer.get("visible", True)) is bool, "Invalid layer visibility")
+        candidate = dict(document, nextlayerid=2)
+        normalized = dict(layer, id=1, name="Ground", visible=True)
+        if layer["type"] == "tilelayer":
+            candidate["layers"] = [normalized]
+        else:
+            ground = {
+                "id": 1,
+                "name": "Ground",
+                "type": "tilelayer",
+                "x": 0,
+                "y": 0,
+                "width": document.get("width"),
+                "height": document.get("height"),
+                "data": [0] * (document.get("width", 0) * document.get("height", 0)),
+            }
+            normalized.update(id=2, name="Sprites")
+            candidate.update(layers=[ground, normalized], nextlayerid=3)
+        flat = _decode_flat(candidate, project)
+        payload = "cells" if layer["type"] == "tilelayer" else "objects"
+        decoded.append(
+            {
+                "id": layer.get("id"),
+                "name": layer.get("name"),
+                "type": layer["type"],
+                "visible": layer.get("visible", True),
+                payload: flat[payload],
+            }
+        )
+    scene = {
+        "width": document["width"],
+        "height": document["height"],
+        "grid": document["tilewidth"],
+        "layers": decoded,
+        "next_layer_id": document.get("nextlayerid", max(layer["id"] for layer in decoded) + 1),
+        "next_object_id": document.get("nextobjectid", 1),
+    }
+    check_scene(scene, project)
+    # Keep the original flat API for the original Ground/Sprites subset.
+    legacy = {
+        "width": scene["width"],
+        "height": scene["height"],
+        "grid": scene["grid"],
+        "cells": decoded[0].get("cells", []),
+        "objects": decoded[1].get("objects", []) if len(decoded) == 2 else [],
+        "next_object_id": scene["next_object_id"],
+    }
+    expected = scene_layers(legacy)
+    if len(decoded) == 2 and not legacy["objects"]:
+        expected.append(
+            {"id": 2, "name": "Sprites", "type": "objectgroup", "visible": True, "objects": []}
+        )
+    if expected == decoded and scene["next_layer_id"] == len(decoded) + 1:
+        return legacy
     return scene

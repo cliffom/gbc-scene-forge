@@ -86,3 +86,25 @@
   #selected-brush {display:none}
   .standalone .canvas-footer {font-size:9px}
 }
+
+#layers { width: 100%; height: 145px; min-height: 145px; flex-shrink: 0; background-image: none; padding: 4px; }
+.layer-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+#layers option { padding: 5px; }
+
+#object-list { width: 100%; min-height: 85px; flex-shrink: 0; background-image: none; padding: 4px; }
+#object-list option { padding: 4px; }
+.object-tools .hint { margin-top: 6px; }
+#object-dialog { width: min(640px, 94vw); max-width: 640px; max-height: 90vh; overflow: auto; }
+.object-property { display: grid; grid-template-columns: minmax(80px, 1fr) 85px minmax(80px, 1fr) auto; gap: 6px; margin: 8px 0; align-items: center; }
+.object-property input,.object-property select { min-width: 0; width: 100%; }
+.object-property input[type=checkbox] { width: auto; justify-self: start; }
+#object-error { white-space: pre-wrap; }
+
+#tile-dialog { width: min(760px, 94vw); max-width: 760px; max-height: 90vh; overflow: auto; }
+.tile-editor-layout { display: grid; grid-template-columns: minmax(128px, 1fr) minmax(240px, 1fr); gap: 20px; margin: 16px 0; }
+.tile-preview-wrap { background: #181b17; padding: 16px; display: flex; align-items: center; justify-content: center; }
+#tile-preview { image-rendering: pixelated; max-width: 100%; object-fit: contain; }
+#tile-shapes { background-image: none; padding: 4px; }
+#tile-points { width: 100%; resize: vertical; font: 12px ui-monospace, monospace; color: var(--text); background: #2b2e28; border: 1px solid var(--line); padding: 8px; }
+#tile-error { white-space: pre-wrap; }
+@media (max-width: 620px) { .tile-editor-layout { grid-template-columns: 1fr; } }

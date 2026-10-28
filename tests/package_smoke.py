@@ -1,7 +1,9 @@
 """Run explicitly with an isolated interpreter after installing the built wheel."""
 
+import io
 import tempfile
 import unittest
+import zipfile
 from importlib.metadata import distribution
 from importlib.resources import files
 from pathlib import Path
@@ -52,6 +54,10 @@ class InstalledPackageSmokeTests(unittest.TestCase):
             scene = project.create_scene("Village", 7, 5, 8, project.catalog()["revision"])
             reopened = Project(project.root)
             self.assertEqual(reopened.load_scene(scene["id"])["scene"]["width"], 7)
+            payload, _ = reopened.export_bundle("project", reopened.catalog()["revision"])
+            with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+                self.assertIn("forge.project.json", archive.namelist())
+                self.assertIn(f"scenes/{scene['id']}.tmj", archive.namelist())
 
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@ import re
 import tempfile
 from pathlib import Path
 
-from . import png
+from . import png, tile_metadata
 from .documents import json_text
 from .paths import reject_symlinks
 
@@ -331,5 +331,9 @@ def build_assets(manifest, image, width, pixels, previous=None):
         normalized.pop(key, None)
     changes[f"{base}/{atlas_id}.atlas.json"] = json_text(normalized).encode()
     entry = {"manifest": manifest, "tiles": tiles, "png": f"{base}/atlas.png"}
+    if "metadata" in old:
+        entry["metadata"] = copy.deepcopy(old["metadata"])
     changes.update(build_sprites(entry, width, pixels))
+    tile_metadata.check_entry(entry)
+    tile_metadata.decorate_changes(entry, changes)
     return entry, changes

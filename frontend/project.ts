@@ -1,10 +1,19 @@
-/** Standalone project controller; editing operations share the connector editor model. */
-import { Editor } from './model.mts';
+/** Standalone project controller for atlas, layer and object authoring. */
+import { downloadArchive } from './export.mts';
+import { createTileInspector } from './tile-inspector.mts';
+import type { TileChoice } from './tile-inspector.mts';
+import { decodeMetadataSets, drawCollision, terrainColor } from './tile-metadata.mts';
+import type { MetadataSets, TileMetadata } from './tile-metadata.mts';
+import { createObjectInspector } from './object-inspector.mts';
+import { LayerEditor } from './layers.mts';
+import type { LayerScene, SceneLayer } from './layers.mts';
+import { decodeObject, encodeObject, objectBounds } from './objects.mts';
+import type { SceneObject } from './objects.mts';
 import { chooseFolder, readBundle } from './atlas-import.mts';
 import type { AtlasFolder } from './atlas-import.mts';
 import { array, boolean, number, record, string } from './decode.mts';
 import type { Decoder } from './decode.mts';
-import type { Scene, SceneReference, Selection } from './types.ts';
+import type { Selection } from './types.ts';
 
 interface Region {
   name: string;
@@ -19,6 +28,7 @@ interface Atlas {
   png: string;
   regions: Region[];
   mappings: Record<string, Record<string, number>>;
+  metadata: MetadataSets;
 }
 interface Project {
   name: string;
@@ -32,8 +42,8 @@ interface Loaded {
   width: number;
   height: number;
   grid: number;
-  cells: string[][];
-  objects: { id: number; asset: string; x: number; y: number }[];
+  layers: SceneLayer[];
+  nextLayerId: number;
   nextObjectId: number;
 }
 function element<T extends HTMLElement>(id: string, type: new () => T): T {
@@ -59,12 +69,13 @@ let atlasFolder: AtlasFolder | null = null;
 let revision = '';
 let project: Project | null = null;
 let loaded: Loaded | null = null;
-let editor: Editor | null = null;
+let editor: LayerEditor | null = null;
 let baseline = '';
 let brush: string[][] | null = null;
 let spriteBrush: string | null = null;
-let selectedSprite: string | null = null;
-let spriteDrag: { id: string; x: number; y: number } | null = null;
+let objectBrush: 'point' | 'rectangle' | null = null;
+let selectedObject: string | null = null;
+let objectDrag: { id: string; x: number; y: number } | null = null;
 let selection: Selection | null = null;
 let anchor: { x: number; y: number; px: number; py: number } | null = null;
 let hover: ReturnType<typeof point> | null = null;
@@ -81,19 +92,137 @@ const images = new Map<string, HTMLImageElement>();
 const regions = new Map<string, { image: HTMLImageElement; x: number; y: number }>();
 const sprites = new Map<string, { image: HTMLImageElement; region: Region }>();
 
-async function api<T>(route: string, decode: Decoder<T>, data?: unknown): Promise<T> {
+function tileMetadata(group: string, asset: string): TileMetadata | undefined {
+  return project?.atlases[asset.split('/')[0]]?.metadata[group]?.[asset];
+}
+const tileInspector = createTileInspector(
+  (tile) => tileMetadata(tile.group, tile.asset),
+  async (tile, metadata) => {
+    if (busy) {
+      throw Error('Finish the current operation before saving tile metadata.');
+    }
+    busy = true;
+    update();
+    try {
+      const result = await api('save-tile-metadata', record, {
+        atlas: tile.atlas,
+        group: tile.group,
+        asset: tile.asset,
+        metadata,
+        project_revision: revision,
+      });
+      project = decodeProject(result.project);
+      revision = string(result.revision);
+      draw();
+      status.textContent =
+        'Tile metadata saved. Shared instances use the new terrain and collision.';
+    } finally {
+      busy = false;
+      update();
+    }
+  },
+);
+button('edit-tile').onclick = () => {
+  if (!loaded || busy) {
+    return;
+  }
+  const choices: TileChoice[] = [];
+  if (spriteBrush) {
+    const sprite = sprites.get(spriteBrush);
+    if (sprite) {
+      choices.push({
+        atlas: spriteBrush.split('/')[0],
+        group: 'sprites',
+        asset: spriteBrush,
+        image: sprite.image,
+        sx: sprite.region.x,
+        sy: sprite.region.y,
+        width: sprite.region.width,
+        height: sprite.region.height,
+      });
+    }
+  } else if (brush) {
+    for (const asset of brush.flat()) {
+      const region = regions.get(asset);
+      if (region) {
+        choices.push({
+          atlas: asset.split('/')[0],
+          group: String(loaded.grid),
+          asset,
+          image: region.image,
+          sx: region.x,
+          sy: region.y,
+          width: loaded.grid,
+          height: loaded.grid,
+        });
+      }
+    }
+  }
+  tileInspector.open(choices);
+};
+const objectInspector = createObjectInspector(() => {
+  const item = editor?.objects.find((item) => item.id === selectedObject);
+  return editor && item ? { editor, item } : null;
+}, draw);
+button('edit-object').onclick = objectInspector.open;
+for (const kind of ['point', 'rectangle'] as const) {
+  button(`place-${kind}`).onclick = () => {
+    if (!editor || busy) {
+      return;
+    }
+    const layer =
+      editor.active.type === 'objectgroup'
+        ? editor.active
+        : editor.layers.find((layer) => layer.visible && layer.type === 'objectgroup');
+    if (!layer) {
+      status.textContent = 'Add an object layer before placing objects.';
+      return;
+    }
+    layerAction((editor) => editor.activate(layer.id));
+    objectBrush = kind;
+    brush = null;
+    spriteBrush = null;
+    element('palette', HTMLElement)
+      .querySelectorAll('button')
+      .forEach((button) => button.setAttribute('aria-pressed', 'false'));
+    const paintTool = document.querySelector<HTMLInputElement>('input[value="paint"]');
+    if (paintTool) {
+      paintTool.checked = true;
+    }
+    element('viewport', HTMLElement).dataset.pan = 'false';
+    element('paint-label', HTMLElement).textContent = 'Place object';
+    element('selected-brush', HTMLElement).textContent =
+      kind === 'point' ? 'Spawn point' : 'Trigger area';
+    status.textContent =
+      'Click to place an object. Select it to edit its name, class, dimensions and properties.';
+    draw();
+  };
+}
+select('object-list').onchange = () => {
+  selectedObject = select('object-list').value || null;
+  selection = null;
+  const control = document.querySelector<HTMLInputElement>('input[value="select"]');
+  if (control) {
+    control.checked = true;
+  }
+  draw();
+};
+async function request(route: string, data?: unknown, timeout = 30000): Promise<Response> {
   const response = await fetch(`/api/${route}`, {
     method: data === undefined ? 'GET' : 'POST',
     headers:
       data === undefined ? {} : { 'Content-Type': 'application/json', 'X-Scene-Token': token },
     body: data === undefined ? undefined : JSON.stringify(data),
-    signal: AbortSignal.timeout(30000),
+    signal: AbortSignal.timeout(timeout),
   });
-  const body: unknown = await response.json();
   if (!response.ok) {
+    const body: unknown = await response.json();
     throw Error(string(record(body).error));
   }
-  return decode(body);
+  return response;
+}
+async function api<T>(route: string, decode: Decoder<T>, data?: unknown): Promise<T> {
+  return decode(await (await request(route, data)).json());
 }
 function decodeLoaded(value: unknown): Loaded {
   const data = record(value);
@@ -105,16 +234,52 @@ function decodeLoaded(value: unknown): Loaded {
     width: number(scene.width),
     height: number(scene.height),
     grid: number(scene.grid),
-    cells: array(scene.cells, (row) => array(row, string)),
-    objects: array(scene.objects ?? [], (value) => {
-      const item = record(value);
-      return {
-        id: number(item.id),
-        asset: string(item.asset),
-        x: number(item.x),
-        y: number(item.y),
-      };
-    }),
+    layers:
+      scene.layers === undefined
+        ? [
+            {
+              id: 1,
+              name: 'Ground',
+              type: 'tilelayer' as const,
+              visible: true,
+              cells: array(scene.cells, (row) => array(row, string)).map((row) =>
+                row.map((cell) => cell || 'empty'),
+              ),
+            },
+            {
+              id: 2,
+              name: 'Sprites',
+              type: 'objectgroup' as const,
+              visible: true,
+              objects: array(scene.objects ?? [], decodeObject),
+            },
+          ]
+        : array(scene.layers, (value): SceneLayer => {
+            const layer = record(value);
+            const common = {
+              id: number(layer.id),
+              name: string(layer.name),
+              visible: boolean(layer.visible),
+            };
+            if (layer.type === 'tilelayer') {
+              return {
+                ...common,
+                type: 'tilelayer',
+                cells: array(layer.cells, (row) => array(row, string)).map((row) =>
+                  row.map((cell) => cell || 'empty'),
+                ),
+              };
+            }
+            if (layer.type !== 'objectgroup') {
+              throw Error('Unsupported layer type');
+            }
+            return {
+              ...common,
+              type: 'objectgroup',
+              objects: array(layer.objects, decodeObject),
+            };
+          }),
+    nextLayerId: number(scene.next_layer_id ?? 3),
     nextObjectId: number(scene.next_object_id ?? 1),
   };
   if (
@@ -125,8 +290,13 @@ function decodeLoaded(value: unknown): Loaded {
     result.height < 1 ||
     result.height > 256 ||
     ![8, 16, 32].includes(result.grid) ||
-    result.cells.length !== result.height ||
-    result.cells.some((row) => row.length !== result.width)
+    !result.layers.length ||
+    result.layers.some(
+      (layer) =>
+        layer.type === 'tilelayer' &&
+        (layer.cells.length !== result.height ||
+          layer.cells.some((row) => row.length !== result.width)),
+    )
   ) {
     throw Error('Invalid scene response');
   }
@@ -145,6 +315,7 @@ function decodeProject(value: unknown): Project {
     }
     atlases[id] = {
       png: string(entry.png),
+      metadata: decodeMetadataSets(entry.metadata),
       mappings,
       regions: array(record(entry.manifest).regions, (value) => {
         const r = record(value);
@@ -176,8 +347,8 @@ function decodeProject(value: unknown): Project {
 function snapshot() {
   return editor
     ? JSON.stringify({
-        cells: editor.scene.cells,
-        objects: editor.scene.references,
+        layers: editor.layers,
+        nextLayer: editor.scene.next_layer_id,
         next: editor.scene.next_object_id,
       })
     : '';
@@ -205,16 +376,35 @@ function update() {
   element('dirty', HTMLElement).textContent = !editor ? 'NO SCENE' : dirty() ? 'UNSAVED' : 'SAVED';
   element('dirty', HTMLElement).dataset.dirty = String(dirty());
   button('save').disabled = busy || !editor || !dirty();
+  button('show-export').disabled = busy || !project || anchor !== null;
+  button('export-confirm').disabled = button('export-cancel').disabled = busy;
+  select('export-scope').disabled = busy;
+  input('export-canvas').disabled = busy || !editor || !dirty();
   button('undo').disabled = busy || !editor?.undoStack.length;
   button('redo').disabled = busy || !editor?.redoStack.length;
   button('revert').disabled = busy || !dirty();
-  button('deselect').disabled = busy || (!selection && !selectedSprite);
+  button('deselect').disabled = busy || (!selection && !selectedObject);
+  button('edit-tile').disabled = busy || !loaded || (!brush && !spriteBrush) || anchor !== null;
+  button('edit-object').disabled =
+    busy ||
+    !editor ||
+    !selectedObject ||
+    !editor.objects.some((item) => item.id === selectedObject);
+  for (const kind of ['point', 'rectangle']) {
+    button(`place-${kind}`).setAttribute('aria-pressed', String(objectBrush === kind));
+  }
+  button('place-point').disabled = button('place-rectangle').disabled =
+    busy || !editor || anchor !== null;
   button('remove-sprite').disabled =
-    busy || !selectedSprite || !editor?.scene.references.some((r) => r.id === selectedSprite);
+    busy || !selectedObject || !editor?.objects.some((r) => r.id === selectedObject);
   for (const id of ['paint', 'erase', 'fill', 'select', 'pan']) {
     const control = document.querySelector<HTMLInputElement>(`input[value="${id}"]`);
     if (control) {
-      control.disabled = busy || !editor || (id === 'fill' && spriteBrush !== null);
+      control.disabled =
+        busy ||
+        !editor ||
+        (id === 'fill' &&
+          (spriteBrush !== null || objectBrush !== null || editor?.active.type !== 'tilelayer'));
     }
   }
   for (const control of document.querySelectorAll<
@@ -236,25 +426,110 @@ function update() {
     .forEach((button) => {
       button.disabled = busy;
     });
+  renderLayers();
   inspect();
 }
+function renderLayers() {
+  const list = select('layers');
+  list.replaceChildren(
+    ...(editor
+      ? [...editor.layers]
+          .reverse()
+          .map(
+            (layer) =>
+              new Option(
+                `${layer.visible ? '●' : '○'} ${layer.name} · ${layer.type === 'tilelayer' ? 'Tiles' : 'Objects'}`,
+                String(layer.id),
+                false,
+                layer.id === editor?.active.id,
+              ),
+          )
+      : []),
+  );
+  const disabled = busy || !editor || anchor !== null;
+  list.disabled = disabled;
+  input('layer-name').disabled = disabled;
+  if (document.activeElement !== input('layer-name')) {
+    input('layer-name').value = editor?.active.name || '';
+  }
+  for (const id of [
+    'layer-up',
+    'layer-down',
+    'layer-visible',
+    'layer-remove',
+    'layer-tile',
+    'layer-object',
+  ]) {
+    button(id).disabled = disabled;
+  }
+  if (editor) {
+    const index = editor.layers.indexOf(editor.active);
+    button('layer-up').disabled ||= index === editor.layers.length - 1;
+    button('layer-down').disabled ||= index === 0;
+    button('layer-remove').disabled ||= editor.layers.length === 1;
+    button('layer-visible').textContent = editor.active.visible ? 'Hide' : 'Show';
+  }
+}
+function layerAction(work: (editor: LayerEditor) => void) {
+  if (!editor || busy || anchor) {
+    return;
+  }
+  try {
+    work(editor);
+    selection = null;
+    selectedObject = null;
+    objectDrag = null;
+    input('layer-name').value = editor.active.name;
+    draw();
+  } catch (error) {
+    status.textContent = error instanceof Error ? error.message : String(error);
+  }
+}
+select('layers').onchange = () =>
+  layerAction((editor) => editor.activate(Number(select('layers').value)));
+input('layer-name').onchange = () =>
+  layerAction((editor) => editor.rename(input('layer-name').value));
+button('layer-tile').onclick = () => layerAction((editor) => editor.add('tilelayer'));
+button('layer-object').onclick = () => layerAction((editor) => editor.add('objectgroup'));
+button('layer-up').onclick = () => layerAction((editor) => editor.reorder(1));
+button('layer-down').onclick = () => layerAction((editor) => editor.reorder(-1));
+button('layer-visible').onclick = () => layerAction((editor) => editor.visibility());
+button('layer-remove').onclick = () => layerAction((editor) => editor.remove());
 function inspect() {
   input('inspector-name').value = loaded?.name || '';
   input('inspector-size').value = loaded ? `${loaded.width} × ${loaded.height} cells` : '';
   input('inspector-grid').value = loaded ? `${loaded.grid} px` : '';
+  const objectCount =
+    editor?.layers.reduce(
+      (count, layer) => count + (layer.type === 'objectgroup' ? layer.objects.length : 0),
+      0,
+    ) || 0;
   element('scene-summary', HTMLElement).textContent =
     loaded && editor
-      ? `${loaded.width * loaded.grid} × ${loaded.height * loaded.grid} pixels · ${editor.scene.references.length} ${editor.scene.references.length === 1 ? 'sprite' : 'sprites'}`
+      ? `${loaded.width * loaded.grid} × ${loaded.height * loaded.grid} pixels · ${objectCount} ${objectCount === 1 ? 'object' : 'objects'}`
       : 'Open a scene to inspect its dimensions and placed sprites.';
-  const item = editor?.scene.references.find((r) => r.id === selectedSprite);
-  const sprite = item && sprites.get(item.asset);
+  const item = editor?.objects.find((r) => r.id === selectedObject);
+  select('object-list').replaceChildren(
+    ...(editor?.objects.map(
+      (item) =>
+        new Option(
+          `${item.name || item.class || item.kind} · #${item.id}`,
+          item.id,
+          false,
+          item.id === selectedObject,
+        ),
+    ) || []),
+  );
+  select('object-list').disabled = busy || !editor?.objects.length || anchor !== null;
+  const sprite = item?.kind === 'sprite' && sprites.get(item.asset);
   element('selection-preview', HTMLElement).hidden = !sprite;
-  if (item && sprite) {
+  if (item?.kind === 'sprite' && sprite) {
     const r = sprite.region;
     element('selection-kind', HTMLElement).textContent = 'SPRITE';
-    element('selection-name', HTMLElement).textContent = item.asset.replace('/', ' / ');
+    element('selection-name', HTMLElement).textContent =
+      item.name || item.asset.replace('/', ' / ');
     element('selection-detail', HTMLElement).textContent =
-      `${r.width} × ${r.height}px · X ${item.x}, Y ${item.y} · Origin ${r.origin[0]}, ${r.origin[1]}`;
+      `${r.width} × ${r.height}px · X ${item.x}, Y ${item.y} · Origin ${(item.origin || r.origin)[0]}, ${(item.origin || r.origin)[1]} · #${item.id}`;
     const preview = element('selection-image', HTMLCanvasElement);
     preview.width = r.width;
     preview.height = r.height;
@@ -263,6 +538,11 @@ function inspect() {
     preview
       .getContext('2d')
       ?.drawImage(sprite.image, r.x, r.y, r.width, r.height, 0, 0, r.width, r.height);
+  } else if (item) {
+    element('selection-kind', HTMLElement).textContent = item.kind.toUpperCase();
+    element('selection-name', HTMLElement).textContent = item.name || item.class || item.kind;
+    element('selection-detail', HTMLElement).textContent =
+      `#${item.id} · ${item.class || 'No class'} · X ${item.x}, Y ${item.y}${item.kind === 'rectangle' ? ` · ${item.width} × ${item.height}px` : ''} · ${item.properties.length} properties`;
   } else if (selection) {
     element('selection-kind', HTMLElement).textContent = 'TILES';
     element('selection-name', HTMLElement).textContent = `${selection.w} × ${selection.h} cells`;
@@ -272,7 +552,7 @@ function inspect() {
     element('selection-kind', HTMLElement).textContent = '—';
     element('selection-name', HTMLElement).textContent = 'Nothing selected';
     element('selection-detail', HTMLElement).textContent =
-      'Select a sprite on the canvas to inspect it, or drag a rectangle to select tiles.';
+      'Select an object on the canvas or in the list to edit it, or select tiles on a tile layer.';
   }
 }
 async function run(work: () => Promise<void>) {
@@ -395,10 +675,12 @@ function palette() {
   sprites.clear();
   brush = null;
   spriteBrush = null;
+  objectBrush = null;
   if (!project) {
     return;
   }
   const size = loaded?.grid ?? 8;
+  let initialBrush: HTMLButtonElement | null = null;
   for (const [id, atlas] of Object.entries(project.atlases)) {
     const image = images.get(id);
     if (!image) {
@@ -473,6 +755,17 @@ function palette() {
       type.textContent = `${id} · ${region.kind}`;
       item.append(thumb, label, type);
       item.onclick = () => {
+        if (editor && editor.active.type !== (sprite ? 'objectgroup' : 'tilelayer')) {
+          const layer = editor.layers.find(
+            (layer) => layer.visible && layer.type === (sprite ? 'objectgroup' : 'tilelayer'),
+          );
+          if (layer) {
+            editor.activate(layer.id);
+            selection = null;
+            selectedObject = null;
+          }
+        }
+        objectBrush = null;
         brush = sprite ? null : cells;
         spriteBrush = sprite ? asset : null;
         paletteElement
@@ -489,14 +782,15 @@ function palette() {
         status.textContent = sprite
           ? `Click the canvas to place ${region.name}. Select to drag it; Delete removes it.`
           : `Paint ${region.name}.`;
-        update();
+        draw();
       };
       paletteElement.append(item);
-      if (!brush && !spriteBrush && !item.disabled) {
-        item.click();
+      if (!initialBrush && !item.disabled) {
+        initialBrush = item;
       }
     }
   }
+  initialBrush?.click();
   if (!paletteElement.children.length) {
     const empty = document.createElement('div');
     empty.className = 'library-empty';
@@ -512,24 +806,21 @@ function palette() {
 }
 function open(data: Loaded) {
   loaded = data;
-  const scene: Scene = {
-    version: 1,
-    connector: 'forge',
-    id: data.id,
-    name: data.name,
-    profile: 'standalone',
-    source_digest: data.revision,
+  const scene: LayerScene = {
     width: data.width,
     height: data.height,
-    cells: data.cells.map((row) => row.map((cell) => cell || 'empty')),
-    references: data.objects.map((item) => ({ ...item, id: String(item.id) })),
+    layers: data.layers,
+    next_layer_id: data.nextLayerId,
+    active_layer_id: data.layers[0].id,
     next_object_id: data.nextObjectId,
+    grid: data.grid,
   };
-  editor = new Editor(scene, [], { erase_cell: 'empty' });
+  editor = new LayerEditor(scene, [], { erase_cell: 'empty' });
+  editor.spriteRegion = (asset) => sprites.get(asset)?.region;
   baseline = snapshot();
   selection = null;
-  selectedSprite = null;
-  spriteDrag = null;
+  selectedObject = null;
+  objectDrag = null;
   anchor = null;
   hover = null;
   element('coordinates', HTMLElement).textContent = 'Cell —, — · Pixel —, —';
@@ -546,8 +837,8 @@ function draw() {
   if (!editor || !loaded) {
     return;
   }
-  if (selectedSprite && !editor.scene.references.some((item) => item.id === selectedSprite)) {
-    selectedSprite = null;
+  if (selectedObject && !editor.objects.some((item) => item.id === selectedObject)) {
+    selectedObject = null;
   }
   const size = loaded.grid;
   canvas.width = loaded.width * size;
@@ -557,39 +848,110 @@ function draw() {
   context.imageSmoothingEnabled = false;
   context.fillStyle = '#242820';
   context.fillRect(0, 0, canvas.width, canvas.height);
-  editor.scene.cells.forEach((row, y) =>
-    row.forEach((cell, x) => {
-      const region = regions.get(cell);
-      if (region) {
-        context.drawImage(
-          region.image,
-          region.x,
-          region.y,
-          size,
-          size,
-          x * size,
-          y * size,
-          size,
-          size,
-        );
-      }
-    }),
-  );
-  for (const item of editor.scene.references) {
-    const sprite = sprites.get(item.asset);
-    if (sprite) {
-      const r = sprite.region;
-      context.drawImage(
-        sprite.image,
-        r.x,
-        r.y,
-        r.width,
-        r.height,
-        item.x - r.origin[0],
-        item.y - r.origin[1],
-        r.width,
-        r.height,
+  for (const layer of editor.layers) {
+    if (!layer.visible) {
+      continue;
+    }
+    if (layer.type === 'tilelayer') {
+      layer.cells.forEach((row, y) =>
+        row.forEach((cell, x) => {
+          const region = regions.get(cell);
+          if (region) {
+            context.drawImage(
+              region.image,
+              region.x,
+              region.y,
+              size,
+              size,
+              x * size,
+              y * size,
+              size,
+              size,
+            );
+          }
+        }),
       );
+    }
+    if (layer.type === 'objectgroup') {
+      for (const item of layer.objects) {
+        const sprite = item.kind === 'sprite' && sprites.get(item.asset);
+        if (sprite) {
+          const r = sprite.region;
+          context.drawImage(
+            sprite.image,
+            r.x,
+            r.y,
+            r.width,
+            r.height,
+            bounds(item).x,
+            bounds(item).y,
+            r.width,
+            r.height,
+          );
+        } else {
+          const r = bounds(item);
+          context.strokeStyle = '#83cfc1';
+          context.fillStyle = '#83cfc133';
+          context.lineWidth = 0.75;
+          if (item.kind === 'point') {
+            context.beginPath();
+            context.arc(item.x, item.y, 3, 0, Math.PI * 2);
+            context.stroke();
+            context.beginPath();
+            context.moveTo(item.x - 4, item.y);
+            context.lineTo(item.x + 4, item.y);
+            context.moveTo(item.x, item.y - 4);
+            context.lineTo(item.x, item.y + 4);
+            context.stroke();
+          } else {
+            context.fillRect(r.x, r.y, r.width, r.height);
+            context.strokeRect(r.x + 0.25, r.y + 0.25, r.width - 0.5, r.height - 0.5);
+          }
+        }
+      }
+    }
+  }
+  if (input('terrain-overlay').checked || input('collision-overlay').checked) {
+    const overlay = (
+      group: string,
+      asset: string,
+      x: number,
+      y: number,
+      width: number,
+      height: number,
+    ) => {
+      const value = tileMetadata(group, asset);
+      if (!value) {
+        return;
+      }
+      context.save();
+      context.translate(x, y);
+      if (input('terrain-overlay').checked && value.terrain) {
+        context.fillStyle = terrainColor(value.terrain);
+        context.fillRect(0, 0, width, height);
+      }
+      if (input('collision-overlay').checked) {
+        drawCollision(context, value, width, height);
+      }
+      context.restore();
+    };
+    for (const layer of editor.layers) {
+      if (!layer.visible) {
+        continue;
+      }
+      if (layer.type === 'tilelayer') {
+        layer.cells.forEach((row, y) =>
+          row.forEach((cell, x) => overlay(String(size), cell, x * size, y * size, size, size)),
+        );
+      } else {
+        for (const item of layer.objects) {
+          if (item.kind !== 'sprite') {
+            continue;
+          }
+          const r = bounds(item);
+          overlay('sprites', item.asset, r.x, r.y, r.width, r.height);
+        }
+      }
     }
   }
   if (input('grid').checked) {
@@ -615,13 +977,12 @@ function draw() {
       selection.h * size,
     );
   }
-  const selected = editor.scene.references.find((r) => r.id === selectedSprite);
-  const sprite = selected && sprites.get(selected.asset);
-  if (selected && sprite) {
-    const r = sprite.region;
+  const selected = editor.objects.find((r) => r.id === selectedObject);
+  if (selected) {
+    const r = bounds(selected);
     context.strokeStyle = '#f2d67b';
     context.lineWidth = 0.75;
-    context.strokeRect(selected.x - r.origin[0], selected.y - r.origin[1], r.width, r.height);
+    context.strokeRect(r.x, r.y, r.width, r.height);
     context.fillStyle = '#f2d67b';
     context.fillRect(selected.x - 1, selected.y - 1, 2, 2);
   }
@@ -657,23 +1018,23 @@ function trackHover(event: { clientX: number; clientY: number }) {
     ? `Cell ${hover.x}, ${hover.y} · Pixel ${hover.px}, ${hover.py}`
     : 'Cell —, — · Pixel —, —';
 }
-function hitSprite(px: number, py: number): SceneReference | undefined {
-  return editor?.scene.references.findLast((item) => {
-    const r = sprites.get(item.asset)?.region;
-    return (
-      r !== undefined &&
-      px >= item.x - r.origin[0] &&
-      px < item.x - r.origin[0] + r.width &&
-      py >= item.y - r.origin[1] &&
-      py < item.y - r.origin[1] + r.height
-    );
+function bounds(item: SceneObject) {
+  return objectBounds(item, item.kind === 'sprite' ? sprites.get(item.asset)?.region : undefined);
+}
+function hitObject(px: number, py: number): SceneObject | undefined {
+  return editor?.objects.findLast((item) => {
+    const r = bounds(item);
+    return px >= r.x && px < r.x + r.width && py >= r.y && py < r.y + r.height;
   });
 }
-function spritePosition(x: number, y: number, altKey: boolean) {
+function spritePosition(x: number, y: number, altKey: boolean, item?: SceneObject) {
   const step = input('snap').checked && !altKey && loaded ? loaded.grid : 1;
   const coordinate = (value: number, extent: number) =>
     Math.max(0, Math.min(Math.floor((extent - 1) / step) * step, Math.round(value / step) * step));
-  return { x: coordinate(x, canvas.width), y: coordinate(y, canvas.height) };
+  return {
+    x: coordinate(x, canvas.width - (item?.kind === 'rectangle' ? item.width - 1 : 0)),
+    y: coordinate(y, canvas.height - (item?.kind === 'rectangle' ? item.height - 1 : 0)),
+  };
 }
 function paint(event: PointerEvent) {
   if (!editor || busy || !anchor) {
@@ -682,8 +1043,9 @@ function paint(event: PointerEvent) {
   const p = point(event);
   const tool = document.querySelector<HTMLInputElement>('input[name="tool"]:checked')?.value;
   try {
-    if (spriteDrag) {
-      const drag = spriteDrag;
+    editor.editable();
+    if (objectDrag) {
+      const drag = objectDrag;
       const origin = anchor;
       // Selecting an off-grid sprite must not move it before an actual drag.
       if (event.type === 'pointerdown') {
@@ -693,15 +1055,24 @@ function paint(event: PointerEvent) {
       const position =
         p.px === origin.px && p.py === origin.py
           ? drag
-          : spritePosition(drag.x + p.px - origin.px, drag.y + p.py - origin.py, event.altKey);
-      editor.change((scene) => {
-        const item = scene.references.find((ref) => ref.id === drag.id);
+          : spritePosition(
+              drag.x + p.px - origin.px,
+              drag.y + p.py - origin.py,
+              event.altKey,
+              editor.objects.find((item) => item.id === drag.id),
+            );
+      editor.change(() => {
+        editor?.editable('objectgroup');
+        const item = editor?.objects.find((ref) => ref.id === drag.id);
         if (item) {
           item.x = position.x;
           item.y = position.y;
         }
       });
     } else if (tool === 'select') {
+      if (editor.active.type !== 'tilelayer') {
+        return;
+      }
       editor.check(p.x, p.y);
       selection = {
         x: Math.min(anchor.x, p.x),
@@ -710,25 +1081,49 @@ function paint(event: PointerEvent) {
         h: Math.abs(p.y - anchor.y) + 1,
       };
     } else if (tool === 'erase') {
-      const hit = hitSprite(p.px, p.py);
+      const hit = hitObject(p.px, p.py);
       if (hit) {
-        editor.change((scene) => {
-          scene.references = scene.references.filter((r) => r.id !== hit.id);
+        editor.change(() => {
+          if (editor) {
+            editor.objects = editor.objects.filter((r) => r.id !== hit.id);
+          }
         });
-      } else {
+      } else if (editor.active.type === 'tilelayer') {
         editor.stamp(p.x, p.y, [['empty']]);
       }
+    } else if (objectBrush && tool === 'paint' && event.type === 'pointerdown') {
+      if (p.px < 0 || p.py < 0 || p.px >= canvas.width || p.py >= canvas.height) {
+        throw Error('Place the object inside the scene.');
+      }
+      const position = spritePosition(p.px, p.py, event.altKey);
+      const common = { x: position.x, y: position.y, name: '', properties: [] };
+      selectedObject = editor.createObject(
+        objectBrush === 'point'
+          ? { ...common, kind: 'point', class: 'spawn' }
+          : {
+              ...common,
+              kind: 'rectangle',
+              class: 'trigger',
+              width: Math.min(loaded?.grid || 8, canvas.width - position.x),
+              height: Math.min(loaded?.grid || 8, canvas.height - position.y),
+            },
+      );
+      selection = null;
     } else if (spriteBrush && tool === 'paint' && event.type === 'pointerdown') {
+      editor.editable('objectgroup');
       const asset = spriteBrush;
       if (p.px < 0 || p.py < 0 || p.px >= canvas.width || p.py >= canvas.height) {
         throw Error('Place the sprite origin inside the scene.');
       }
       const position = spritePosition(p.px, p.py, event.altKey);
-      editor.change((scene) => {
-        const id = number(scene.next_object_id);
-        scene.references.push({ id: String(id), asset, x: position.x, y: position.y });
-        scene.next_object_id = id + 1;
-        selectedSprite = String(id);
+      selectedObject = editor.createObject({
+        kind: 'sprite',
+        asset,
+        x: position.x,
+        y: position.y,
+        name: '',
+        class: '',
+        properties: [],
       });
       selection = null;
     } else if (brush && tool === 'paint') {
@@ -766,10 +1161,10 @@ canvas.onpointerdown = (event) => {
   }
   editor.begin();
   if (tool === 'select') {
-    const hit = hitSprite(anchor.px, anchor.py);
-    selectedSprite = hit?.id ?? null;
+    const hit = hitObject(anchor.px, anchor.py);
+    selectedObject = hit?.id ?? null;
     selection = null;
-    spriteDrag = hit ? { id: hit.id, x: hit.x, y: hit.y } : null;
+    objectDrag = hit ? { id: hit.id, x: hit.x, y: hit.y } : null;
   }
   paint(event);
 };
@@ -796,7 +1191,7 @@ canvas.onpointerleave = () => {
 canvas.onpointerup = () => {
   editor?.end();
   anchor = null;
-  spriteDrag = null;
+  objectDrag = null;
   pan = null;
   element('viewport', HTMLElement).dataset.panning = 'false';
   update();
@@ -804,7 +1199,7 @@ canvas.onpointerup = () => {
 canvas.onpointercancel = () => {
   editor?.cancel();
   anchor = null;
-  spriteDrag = null;
+  objectDrag = null;
   pan = null;
   element('viewport', HTMLElement).dataset.panning = 'false';
   draw();
@@ -812,7 +1207,7 @@ canvas.onpointercancel = () => {
 canvas.onlostpointercapture = () => {
   editor?.end();
   anchor = null;
-  spriteDrag = null;
+  objectDrag = null;
   pan = null;
   element('viewport', HTMLElement).dataset.panning = 'false';
   update();
@@ -931,19 +1326,33 @@ button('open').onclick = async () => {
     status.textContent = 'Scene opened.';
   });
 };
+function sceneSnapshot() {
+  if (!editor || !loaded) {
+    throw Error('Open a scene first.');
+  }
+  return {
+    width: loaded.width,
+    height: loaded.height,
+    grid: loaded.grid,
+    layers: editor.layers.map((layer) => ({
+      id: layer.id,
+      name: layer.name,
+      type: layer.type,
+      visible: layer.visible,
+      ...(layer.type === 'tilelayer'
+        ? { cells: layer.cells.map((row) => row.map((cell) => (cell === 'empty' ? '' : cell))) }
+        : { objects: layer.objects.map(encodeObject) }),
+    })),
+    next_layer_id: number(editor.scene.next_layer_id),
+    next_object_id: number(editor.scene.next_object_id),
+  };
+}
 button('save').onclick = () => {
   if (!editor || !loaded) {
     return;
   }
   const current = loaded;
-  const scene = {
-    width: loaded.width,
-    height: loaded.height,
-    grid: loaded.grid,
-    cells: editor.scene.cells.map((row) => row.map((cell) => (cell === 'empty' ? '' : cell))),
-    objects: editor.scene.references.map((item) => ({ ...item, id: Number(item.id) })),
-    next_object_id: number(editor.scene.next_object_id),
-  };
+  const scene = sceneSnapshot();
   void run(async () => {
     const data = await api('save-scene', decodeLoaded, {
       id: current.id,
@@ -959,11 +1368,68 @@ button('save').onclick = () => {
     status.textContent = 'Scene saved.';
   });
 };
+function exportDetails() {
+  const projectScope = select('export-scope').value === 'project';
+  element('export-details', HTMLElement).textContent = projectScope
+    ? `Export all ${project?.scenes.length || 0} saved scene(s) and managed assets. The ZIP can be reopened in Forge or Tiled.`
+    : `Export “${loaded?.name || ''}” and all referenced tilesets and PNGs for Tiled.`;
+  element('export-canvas-field', HTMLElement).hidden = !editor || !dirty();
+}
+button('show-export').onclick = () => {
+  if (!project || busy || anchor) {
+    return;
+  }
+  select('export-scope').replaceChildren(
+    ...(loaded ? [new Option('Open scene', 'scene')] : []),
+    new Option('Whole project', 'project'),
+  );
+  input('export-canvas').checked = !!editor && dirty();
+  exportDetails();
+  element('export-form', HTMLFormElement).querySelector('.form-error')?.replaceChildren();
+  element('export-dialog', HTMLDialogElement).showModal();
+};
+select('export-scope').onchange = exportDetails;
+button('export-cancel').onclick = () => {
+  if (!busy) {
+    element('export-dialog', HTMLDialogElement).close();
+  }
+};
+element('export-dialog', HTMLDialogElement).oncancel = (event) => {
+  if (busy) {
+    event.preventDefault();
+  }
+};
+form('export-form').onsubmit = (event) => {
+  event.preventDefault();
+  if (!project || busy) {
+    return;
+  }
+  const scope = select('export-scope').value;
+  const includeCanvas = !!editor && dirty() && input('export-canvas').checked;
+  const payload = {
+    scope,
+    project_revision: revision,
+    ...(loaded && (scope === 'scene' || includeCanvas)
+      ? { scene_id: loaded.id, scene_revision: loaded.revision }
+      : {}),
+    ...(includeCanvas ? { scene: sceneSnapshot() } : {}),
+  };
+  void run(async () => {
+    status.textContent = 'Preparing portable export…';
+    await downloadArchive(await request('export', payload, 120000));
+    element('export-dialog', HTMLDialogElement).close();
+    status.textContent = includeCanvas
+      ? 'Export downloaded with open scene edits. Those edits are still unsaved in this project.'
+      : 'Portable export downloaded.';
+  });
+};
 button('undo').onclick = () => {
+  selection = null;
   editor?.undo();
   draw();
 };
 button('redo').onclick = () => {
+  selection = null;
   editor?.redo();
   draw();
 };
@@ -974,6 +1440,8 @@ button('revert').onclick = async () => {
 };
 select('zoom').onchange = draw;
 input('grid').onchange = draw;
+input('terrain-overlay').onchange = draw;
+input('collision-overlay').onchange = draw;
 input('snap').onchange = draw;
 button('browse-atlas').onclick = () => {
   void run(async () => {
@@ -1051,12 +1519,13 @@ form('delete-scene-form').onsubmit = (event) => {
       editor = null;
       baseline = '';
       selection = null;
-      selectedSprite = null;
-      spriteDrag = null;
+      selectedObject = null;
+      objectDrag = null;
       anchor = null;
       hover = null;
       brush = null;
       spriteBrush = null;
+      objectBrush = null;
       canvas.hidden = true;
       element('canvas-surround', HTMLElement).hidden = true;
       element('empty-scene', HTMLElement).hidden = false;
@@ -1082,11 +1551,12 @@ function showImport(reimport = false) {
   form('import-form').querySelector('.form-error')?.replaceChildren();
   element('import-atlas-dialog', HTMLDialogElement).showModal();
 }
-function usesAtlas(scene: Scene, id: string) {
+function usesAtlas(scene: LayerScene, id: string) {
   const prefix = id + '/';
-  return (
-    scene.cells.some((row) => row.some((cell) => cell.startsWith(prefix))) ||
-    scene.references.some((ref) => ref.asset.startsWith(prefix))
+  return (scene.layers || []).some((layer) =>
+    layer.type === 'tilelayer'
+      ? layer.cells.some((row) => row.some((cell) => cell.startsWith(prefix)))
+      : layer.objects.some((item) => item.kind === 'sprite' && item.asset.startsWith(prefix)),
   );
 }
 function atlasInHistory(id: string) {
@@ -1171,15 +1641,17 @@ select('atlas-filter').onchange = filterPalette;
 select('kind-filter').onchange = filterPalette;
 button('deselect').onclick = () => {
   selection = null;
-  selectedSprite = null;
+  selectedObject = null;
   draw();
 };
 button('remove-sprite').onclick = () => {
-  const id = selectedSprite;
-  editor?.change((scene) => {
-    scene.references = scene.references.filter((r) => r.id !== id);
+  const id = selectedObject;
+  editor?.change(() => {
+    if (editor) {
+      editor.objects = editor.objects.filter((r) => r.id !== id);
+    }
   });
-  selectedSprite = null;
+  selectedObject = null;
   draw();
 };
 for (const control of document.querySelectorAll<HTMLInputElement>('input[name="tool"]')) {
@@ -1230,16 +1702,18 @@ document.addEventListener('keydown', (event) => {
         control.checked = true;
         control.dispatchEvent(new Event('change'));
       }
-    } else if (selectedSprite && editor) {
-      const id = selectedSprite;
+    } else if (selectedObject && editor) {
+      const id = selectedObject;
       if (event.key === 'Delete' || event.key === 'Backspace') {
         event.preventDefault();
-        editor.change((scene) => {
-          scene.references = scene.references.filter((r) => r.id !== id);
+        editor.change(() => {
+          if (editor) {
+            editor.objects = editor.objects.filter((r) => r.id !== id);
+          }
         });
-        selectedSprite = null;
+        selectedObject = null;
       } else if (event.key === 'Escape') {
-        selectedSprite = null;
+        selectedObject = null;
       } else {
         const move: Record<string, [number, number]> = {
           ArrowLeft: [-1, 0],
@@ -1250,11 +1724,23 @@ document.addEventListener('keydown', (event) => {
         const delta = move[event.key];
         if (delta) {
           event.preventDefault();
-          editor.change((scene) => {
-            const item = scene.references.find((r) => r.id === id);
+          editor.change(() => {
+            const item = editor?.objects.find((r) => r.id === id);
             if (item) {
-              item.x = Math.max(0, Math.min(canvas.width - 1, item.x + delta[0]));
-              item.y = Math.max(0, Math.min(canvas.height - 1, item.y + delta[1]));
+              item.x = Math.max(
+                0,
+                Math.min(
+                  canvas.width - (item.kind === 'rectangle' ? item.width : 1),
+                  item.x + delta[0],
+                ),
+              );
+              item.y = Math.max(
+                0,
+                Math.min(
+                  canvas.height - (item.kind === 'rectangle' ? item.height : 1),
+                  item.y + delta[1],
+                ),
+              );
             }
           });
         }

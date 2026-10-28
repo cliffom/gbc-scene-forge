@@ -31,6 +31,7 @@
       <button id="show-delete" disabled>Delete scene</button>
       <span class="spacer"></span>
       <button id="show-import">Import atlas</button>
+      <button id="show-export" disabled>Export…</button>
       <button id="save" class="primary" disabled title="Save scene (⌘/Ctrl S)">Save scene</button>
     </nav>
     <main>
@@ -42,6 +43,8 @@
           <select id="atlas-filter" aria-label="Filter atlas"><option value="">All atlases</option></select>
           <select id="kind-filter" aria-label="Filter asset kind"><option value="">All kinds</option><option value="tile">Tiles</option><option value="sprite">Sprites</option></select>
         </div>
+        <button id="edit-tile" class="small" disabled>Tile terrain &amp; collision…</button>
+        <div class="object-tools"><h3>Objects</h3><div class="layer-actions"><button id="place-point" class="small" disabled>Spawn point</button><button id="place-rectangle" class="small" disabled>Trigger area</button></div><p class="hint">Place markers or areas on the active object layer. Edit their class and properties for your project.</p></div>
         <p id="library-hint" class="hint">Choose a tile to paint or a sprite to place. Imported artwork keeps its native size.</p>
         <div id="palette" class="assets" aria-label="Available assets"></div>
       </aside>
@@ -64,7 +67,7 @@
           <div id="canvas-surround" class="canvas-surround" hidden><canvas id="scene" hidden tabindex="0" aria-label="Editable scene on a tile grid"></canvas></div>
         </div>
         <div class="canvas-footer"><span id="coordinates" title="Cell column and row, followed by pixel X and Y. All coordinates start at zero.">Cell —, — · Pixel —, —</span><span id="scene-name">No scene open</span><span id="selected-brush">Select a brush</span></div>
-        <div class="review-bar"><span class="eyebrow">VIEW</span><label><input id="grid" type="checkbox" checked> Grid</label><label title="Snap sprite origins to grid intersections. Hold Alt to bypass; arrow keys nudge one pixel."><input id="snap" type="checkbox" checked> Snap to grid</label><span class="hint">Alt: free placement · Arrow keys: 1 px</span></div>
+        <div class="review-bar"><span class="eyebrow">VIEW</span><label><input id="grid" type="checkbox" checked> Grid</label><label title="Snap sprite origins to grid intersections. Hold Alt to bypass; arrow keys nudge one pixel."><input id="snap" type="checkbox" checked> Snap to grid</label><label><input id="terrain-overlay" type="checkbox"> Terrain</label><label><input id="collision-overlay" type="checkbox"> Collision</label><span class="hint">Alt: free placement · Arrow keys: 1 px</span></div>
       </section>
       <aside class="inspector">
         <div class="panel-heading"><h2>Scene properties</h2><span id="dirty" class="tag">NO SCENE</span></div>
@@ -72,11 +75,23 @@
         <div class="property-grid"><label class="field">Dimensions<input id="inspector-size" readonly placeholder="—"></label><label class="field">Grid<input id="inspector-grid" readonly placeholder="—"></label></div>
         <p id="scene-summary" class="hint">Open a scene to inspect its dimensions and placed sprites.</p>
         <div class="divider"></div>
+        <div class="panel-heading"><h3>Layers</h3><span class="muted">TOP FIRST</span></div>
+        <select id="layers" size="5" aria-label="Active layer" disabled></select>
+        <label class="field">Layer name<input id="layer-name" maxlength="100" disabled></label>
+        <div class="layer-actions">
+          <button id="layer-up" class="small" disabled>Up</button><button id="layer-down" class="small" disabled>Down</button><button id="layer-visible" class="small" disabled>Hide</button>
+          <button id="layer-remove" class="small" disabled>Delete layer</button>
+          <button id="layer-tile" class="small" disabled>+ Tile layer</button><button id="layer-object" class="small" disabled>+ Object layer</button>
+        </div>
+        <p class="hint">Edits affect the active layer. Hidden layers cannot be edited. Layer changes and deletion can be undone.</p>
+        <div class="divider"></div>
         <div class="panel-heading"><h3>Selection</h3><span id="selection-kind" class="muted">—</span></div>
         <div id="selection-preview" class="selection-preview" hidden><canvas id="selection-image"></canvas></div>
         <p id="selection-name" class="selection-name muted">Nothing selected</p>
-        <p id="selection-detail" class="hint">Select a sprite on the canvas to inspect it, or drag a rectangle to select tiles.</p>
-        <button id="remove-sprite" class="selection-remove" disabled>Remove selected sprite</button>
+        <p id="selection-detail" class="hint">Select an object on the canvas or in the list to edit it, or select tiles on a tile layer.</p>
+        <select id="object-list" size="3" aria-label="Objects in active layer" disabled></select>
+        <button id="edit-object" class="selection-remove" disabled>Edit selected object</button>
+        <button id="remove-sprite" class="selection-remove" disabled>Remove selected object</button>
         <div class="divider"></div>
         <h3>Project assets</h3>
         <div id="atlas-list" class="atlas-list"><p class="hint">No atlases imported yet.</p></div>
@@ -86,6 +101,52 @@
     </main>
   </div>
   <footer class="status-bar"><span id="status" role="status" aria-live="polite">Opening local workspace…</span><span>LOCAL PROJECT · TILED JSON</span></footer>
+  <dialog id="export-dialog" aria-labelledby="export-heading">
+    <form id="export-form">
+      <h2 id="export-heading">Portable Tiled export</h2>
+      <p>Download a ZIP containing maps, tilesets and images with portable relative paths.</p>
+      <label class="field">Export<select id="export-scope"><option value="project">Whole project</option></select></label>
+      <p id="export-details" class="hint"></p>
+      <label id="export-canvas-field"><input id="export-canvas" type="checkbox" checked> Include unsaved edits from the open scene</label>
+      <p class="hint">Export creates a snapshot. Project files and editor undo history stay unchanged.</p>
+      <p class="form-error error" role="alert"></p>
+      <div class="dialog-actions"><button id="export-cancel" type="button">Cancel</button><button id="export-confirm" class="primary">Download ZIP</button></div>
+    </form>
+  </dialog>
+  <dialog id="tile-dialog" aria-labelledby="tile-heading">
+    <form id="tile-form">
+      <h2 id="tile-heading">Tile terrain &amp; collision</h2>
+      <p class="hint">Shared tileset metadata affects every instance of this tile. Atlas artwork stays unchanged. Save or undo changes before choosing another cell.</p>
+      <label class="field">Cell<select id="tile-cell"></select></label><p id="tile-identity" class="hint"></p>
+      <div class="tile-editor-layout"><div class="tile-preview-wrap"><canvas id="tile-preview" aria-label="Terrain and collision preview"></canvas></div><div>
+        <label class="field">Terrain classification<input id="tile-terrain" maxlength="100" placeholder="grass, water, wall…"></label>
+        <label><input id="tile-solid" type="checkbox"> Solid</label><p class="hint">Solid without custom shapes uses the full tile. Custom shapes define their own footprint.</p>
+        <div class="layer-actions"><button id="tile-undo" type="button" class="small">Undo draft edit</button><button id="tile-redo" type="button" class="small">Redo draft edit</button></div>
+        <label class="field">Collision shapes<select id="tile-shapes" size="3"></select></label>
+        <div class="layer-actions"><select id="tile-shape-kind" aria-label="New collision shape"><option value="rectangle">Rectangle</option><option value="ellipse">Ellipse</option><option value="polygon">Polygon</option></select><button id="tile-add-shape" type="button" class="small">Add shape</button><button id="tile-remove-shape" type="button" class="small">Remove shape</button></div>
+        <div id="tile-shape-bounds" class="property-grid"><label class="field">X<input id="tile-x" type="number" min="0" step="1" required></label><label class="field">Y<input id="tile-y" type="number" min="0" step="1" required></label><label class="field">Width<input id="tile-width" type="number" min="1" step="1" required></label><label class="field">Height<input id="tile-height" type="number" min="1" step="1" required></label></div>
+        <label id="tile-polygon-field" class="field">Polygon points<textarea id="tile-points" rows="3" required placeholder="0,8 8,8 8,0"></textarea></label>
+        <p class="hint">Shape coordinates use whole pixels from the tile's top-left. Polygon points are x,y pairs separated by spaces. Keep shapes inside the tile, including its edges.</p>
+      </div></div>
+      <p id="tile-error" class="error form-error" role="alert"></p>
+      <div class="dialog-actions"><button id="tile-cancel" type="button">Cancel</button><button id="tile-save" class="primary">Save shared tile metadata</button></div>
+    </form>
+  </dialog>
+  <dialog id="object-dialog" aria-labelledby="object-heading">
+    <form id="object-form">
+      <h2 id="object-heading">Edit object</h2>
+      <div class="property-grid"><label class="field">ID<input id="object-id" readonly></label><label class="field">Shape<input id="object-kind" readonly></label></div>
+      <label class="field">Name<input id="object-name" maxlength="100"></label>
+      <label class="field">Class<input id="object-class" maxlength="100" placeholder="spawn, trigger, NPC…"></label>
+      <div class="property-grid"><label class="field">X (px)<input id="object-x" type="number" min="0" step="1" required></label><label class="field">Y (px)<input id="object-y" type="number" min="0" step="1" required></label></div>
+      <div id="object-dimensions" class="property-grid"><label class="field">Width (px)<input id="object-width" type="number" min="1" max="8192" step="1" required></label><label class="field">Height (px)<input id="object-height" type="number" min="1" max="8192" step="1" required></label></div>
+      <div id="object-origin"><label><input id="object-default-origin" type="checkbox" checked> Use atlas origin</label><div class="property-grid"><label class="field">Origin X (px)<input id="object-origin-x" type="number" min="0" step="1" required disabled></label><label class="field">Origin Y (px)<input id="object-origin-y" type="number" min="0" step="1" required disabled></label></div></div>
+      <h3>Custom properties</h3><p class="hint">Choose a type for each value. Property names must be unique. Changing a type resets its draft value.</p>
+      <div id="object-properties"></div><button id="object-add-property" type="button" class="small">Add property</button>
+      <p id="object-error" class="error" role="alert"></p>
+      <div class="dialog-actions"><button id="object-cancel" type="button">Cancel</button><button id="object-apply" class="primary">Apply object changes</button></div>
+    </form>
+  </dialog>
   <dialog id="create-scene-dialog" aria-labelledby="create-heading">
     <form id="scene-form">
       <h2 id="create-heading">Create scene</h2>

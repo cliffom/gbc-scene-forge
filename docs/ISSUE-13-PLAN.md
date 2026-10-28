@@ -6,8 +6,8 @@ the first milestone of [#12](https://github.com/cliffom/gbc-scene-forge/issues/1
 ## Decisions
 
 - Forge owns standalone project storage, atlas import, rendering and Tiled files.
-  Existing connector v1 launchers and document formats remain supported without
-  automatic migration. Apply and game builds remain connector features.
+  Standalone projects are the supported direction. Connector v1 compatibility
+  and game-specific Apply/build integration are no longer requirements.
 - A version-1 `forge.project.json` records a persistent project UUID, display name,
   scene UUIDs and relative paths, imported atlas metadata and preview settings.
   The project directory is the declared workspace; imports are explicit inputs.
@@ -53,7 +53,7 @@ Verify the complete create → import → create scene → paint → save → re
 reopen workflow; independent scenes sharing assets; moving the project; unchanged
 and changed reimports; invalid paths/imports; stale revisions and interrupted
 transactions; and Tiled compatibility. Run `make lint test build check-dist` and
-both standalone and existing connector Chrome acceptance checks.
+standalone Chrome acceptance checks. Connector compatibility is not a requirement.
 
 ## Progress
 
