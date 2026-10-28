@@ -1273,7 +1273,14 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
       "Array.from(document.querySelectorAll('#layers .layer-row'), row => row.dataset.layerId)",
     );
   const startLayerDrag = async (id: string, target: string, after = false) => {
-    await evaluate("document.getElementById('layers').scrollIntoView({block:'center'})");
+    await evaluate(`document.querySelector('#layers [data-layer-id="${id}"] .layer-grip')
+      .scrollIntoView({block:'center', inline:'nearest', behavior:'instant'})`);
+    await wait(`(() => {
+      const grip = document.querySelector('#layers [data-layer-id="${id}"] .layer-grip');
+      const rect = grip.getBoundingClientRect();
+      return document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)
+        ?.closest('.layer-grip') === grip;
+    })()`);
     const points = array(
       await evaluate(`(() => {
       const handle = document.querySelector('#layers [data-layer-id="${id}"] .layer-grip').getBoundingClientRect();
