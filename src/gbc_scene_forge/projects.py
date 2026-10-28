@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from uuid import UUID, uuid4
 
-from . import atlas, exporting, png, tile_metadata, tiled
+from . import atlas, exporting, png, preview_settings, tile_metadata, tiled
 from .documents import Conflict, json_text
 from .transactions import Transactions, digest, read_optional, safe_path
 
@@ -146,6 +146,8 @@ class Project:
                     "Invalid tile identities",
                 )
             tile_metadata.check_entry(entry)
+        if "sprite" in document["preview"]:
+            preview_settings.validate(document["preview"]["sprite"], document)
         for path, revision in document["files"].items():
             atlas.require(
                 isinstance(path, str)
@@ -169,6 +171,7 @@ class Project:
         return document
 
     def _commit(self, document, revision, changes, expected, label):
+        preview_settings.prune(document)
         # Materialize sprite tilesets for previously imported projects on an explicit
         # mutation, guarded and committed together with that operation's other files.
         for atlas_id, entry in document["atlases"].items():
@@ -212,6 +215,12 @@ class Project:
 
     def export_bundle(self, scope, revision, scene_id=None, scene=None, scene_revision=None):
         return exporting.export_bundle(self, scope, revision, scene_id, scene, scene_revision)
+
+    def save_preview_settings(self, value, revision):
+        document = self._current(revision)
+        document["preview"]["sprite"] = preview_settings.validate(value, document)
+        self._commit(document, revision, {}, {}, "Save sprite preview settings")
+        return self.catalog()
 
     def save_tile_metadata(self, atlas_id, group, asset, value, revision):
         document = self._current(revision)

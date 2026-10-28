@@ -30,8 +30,23 @@ typed custom properties. Object and layer edits share undo/redo and save as Tile
 objects. Author terrain classifications and collision flags/shapes per shared
 tile, then review terrain and collision overlays. **Export…** downloads a portable
 scene or project ZIP for Tiled, with an option to include unsaved canvas edits.
-Whole-project exports can also be reopened in Forge. Animation metadata is
-retained for later playback features.
+Whole-project exports can also be reopened in Forge. Select a placed sprite to preview imported sprite animations, play or pause,
+step frames, change playback speed, and inspect the origin marker. Assign explicit
+idle/walk sequences for up, down, left, and right under **Sequence mappings**, then
+choose a preview action and direction. Mappings are shared by instances of the same
+sprite asset. **Save preview settings** stores mappings, animation choices, speeds,
+origin display, footprint and collision preference in the project. Playback is
+transient: it does not change saved assets, positions, scene dirty state, or undo history.
+Under **Movement preview**, enable movement, click the scene, and use arrow keys or
+WASD, or enter pixel waypoints and choose **Follow path**. Movement uses the mapped
+idle/walk directions and an adjustable footprint relative to the sprite origin.
+Optional collision checks use visible tile/sprite collision metadata; scene edges
+always stop movement. **Pause movement** holds the pose and path; resume continues it.
+**Reset position** restores the saved starting position;
+Escape exits movement preview. Reopening restores saved preferences with playback
+paused and movement disabled. Supported atlas sequences export as native Tiled
+animations with their original timing. `export.json` reports sequences skipped
+because they share a starting tile or do not fit an exported grid.
 
 Projects contain `forge.project.json`, native `scenes/*.tmj` maps and shared
 `assets/` tilesets/PNGs. Move the entire directory to relocate a project. The

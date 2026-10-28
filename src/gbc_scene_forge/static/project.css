@@ -108,3 +108,9 @@
 #tile-points { width: 100%; resize: vertical; font: 12px ui-monospace, monospace; color: var(--text); background: #2b2e28; border: 1px solid var(--line); padding: 8px; }
 #tile-error { white-space: pre-wrap; }
 @media (max-width: 620px) { .tile-editor-layout { grid-template-columns: 1fr; } }
+#preview-mappings {margin:12px 0}
+#preview-mappings table {width:100%;table-layout:fixed;border-collapse:collapse;font-size:11px}
+#preview-mappings th {text-align:left;font-weight:normal;color:var(--muted);padding:4px 2px}
+#preview-mappings th:first-child {width:23%}
+#preview-mappings td {padding:4px 2px}
+#preview-mappings select {width:100%;min-width:0;padding:6px 2px;font-size:11px}

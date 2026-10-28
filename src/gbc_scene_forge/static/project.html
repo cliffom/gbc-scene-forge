@@ -89,6 +89,48 @@
         <div id="selection-preview" class="selection-preview" hidden><canvas id="selection-image"></canvas></div>
         <p id="selection-name" class="selection-name muted">Nothing selected</p>
         <p id="selection-detail" class="hint">Select an object on the canvas or in the list to edit it, or select tiles on a tile layer.</p>
+        <section id="animation-preview" aria-label="Sprite animation preview" hidden>
+          <div class="property-grid">
+            <label class="field">Preview action<select id="preview-action"><option value="manual">Manual</option><option value="idle">Idle</option><option value="walk">Walk</option></select></label>
+            <label class="field">Direction<select id="preview-direction"><option value="down">Down</option><option value="left">Left</option><option value="right">Right</option><option value="up">Up</option></select></label>
+          </div>
+          <label class="field">Animation<select id="preview-animation"><option value="">Static frame</option></select></label>
+          <div class="layer-actions"><button id="preview-previous" class="small" aria-label="Previous animation frame">Previous</button><button id="preview-play" class="small">Play</button><button id="preview-next" class="small" aria-label="Next animation frame">Next</button></div>
+          <label class="field">Playback speed<select id="preview-speed"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
+          <label><input id="preview-origin" type="checkbox" checked> Show origin in preview</label>
+          <p id="preview-frame" class="hint"></p>
+          <p id="preview-mapping-status" class="hint"></p>
+          <details id="preview-mappings"><summary>Sequence mappings</summary>
+            <p class="hint">Assign imported sequences explicitly for this sprite asset. Mappings are shared by its instances.</p>
+            <table><thead><tr><th scope="col">Direction</th><th scope="col">Idle</th><th scope="col">Walk</th></tr></thead><tbody>
+              <tr><th scope="row">Down</th><td><select id="preview-map-idle-down" aria-label="Idle down sequence"><option value="">Unmapped</option></select></td><td><select id="preview-map-walk-down" aria-label="Walk down sequence"><option value="">Unmapped</option></select></td></tr>
+              <tr><th scope="row">Left</th><td><select id="preview-map-idle-left" aria-label="Idle left sequence"><option value="">Unmapped</option></select></td><td><select id="preview-map-walk-left" aria-label="Walk left sequence"><option value="">Unmapped</option></select></td></tr>
+              <tr><th scope="row">Right</th><td><select id="preview-map-idle-right" aria-label="Idle right sequence"><option value="">Unmapped</option></select></td><td><select id="preview-map-walk-right" aria-label="Walk right sequence"><option value="">Unmapped</option></select></td></tr>
+              <tr><th scope="row">Up</th><td><select id="preview-map-idle-up" aria-label="Idle up sequence"><option value="">Unmapped</option></select></td><td><select id="preview-map-walk-up" aria-label="Walk up sequence"><option value="">Unmapped</option></select></td></tr>
+            </tbody></table>
+            <p class="hint">Unmapped directions show the saved sprite.</p>
+          </details>
+          <details id="preview-movement-settings"><summary>Movement preview</summary>
+            <label><input id="preview-movement" type="checkbox"> Enable movement preview</label>
+            <p class="hint">Click the scene, then use arrow keys or WASD. Escape exits. The gold outline marks the saved position; the cyan box is the collision footprint. Scene edges always stop movement.</p>
+            <label class="field">Movement speed (px/s)<input id="preview-move-speed" type="number" min="1" max="512" value="48"></label>
+            <p class="hint">Footprint offsets are relative to the sprite origin, independent of its artwork.</p>
+            <div class="property-grid">
+              <label class="field">Offset X<input id="preview-footprint-x" type="number" value="-4" min="-4096" max="4096"></label>
+              <label class="field">Offset Y<input id="preview-footprint-y" type="number" value="-4" min="-4096" max="4096"></label>
+              <label class="field">Width<input id="preview-footprint-width" type="number" value="8" min="0.1" max="4096" step="any"></label>
+              <label class="field">Height<input id="preview-footprint-height" type="number" value="8" min="0.1" max="4096" step="any"></label>
+            </div>
+            <label><input id="preview-check-collision" type="checkbox"> Check collisions</label>
+            <p class="hint">Checks visible tiles and other sprites with authored collision metadata. Markers and trigger areas do not block movement.</p>
+            <label class="field">Path waypoints (pixel X, Y per line)<textarea id="preview-path" rows="3" placeholder="32, 32&#10;48, 32"></textarea></label>
+            <div class="layer-actions"><button id="preview-follow-path" class="small" disabled>Follow path</button><button id="preview-pause-movement" class="small" disabled>Pause movement</button><button id="preview-reset-position" class="small" disabled>Reset position</button></div>
+            <p id="preview-position" class="hint" aria-live="off"></p>
+          </details>
+          <button id="save-preview-settings" class="selection-remove">Save preview settings</button>
+          <p class="hint">Save mappings, choices, speeds, footprint and collision preference in this project. Playback progress and temporary positions are never saved.</p>
+          <p class="hint">Preview only. Playback does not edit the scene or its starting positions.</p>
+        </section>
         <select id="object-list" size="3" aria-label="Objects in active layer" disabled></select>
         <button id="edit-object" class="selection-remove" disabled>Edit selected object</button>
         <button id="remove-sprite" class="selection-remove" disabled>Remove selected object</button>

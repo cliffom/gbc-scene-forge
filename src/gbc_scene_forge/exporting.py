@@ -6,7 +6,7 @@ import posixpath
 import zipfile
 from pathlib import PurePosixPath
 
-from . import png, tile_metadata, tiled
+from . import animations, png, tile_metadata, tiled
 from .atlas import require
 from .documents import Conflict, json_text
 from .transactions import digest, safe_path
@@ -42,7 +42,16 @@ simple polygons retain collision geometry; a solid tile with no custom geometry
 has a full-bounds rectangle. forge:next_shape_id retains the next authored ID.
 Terrain classifications are custom labels, not Wang sets or automatic terrain.
 Grid/collision view overlays are not baked into artwork. Export performs no game
-build, sprite playback, movement simulation or collision simulation.
+build, movement simulation or collision simulation.
+
+Supported atlas sequences become native Tiled tile animations with original frame
+milliseconds and local tile IDs. A sequence animates its first region (each cell
+for a grid-split region). forge:animation retains its name. Sequences sharing a
+starting tile are skipped because Tiled supports one loop per tile; export.json
+reports exported and skipped sequences. Named action/direction mappings remain
+Forge project preferences, not Tiled actor behavior. Playback speed preferences
+never alter exported timing. Source project files remain unchanged.
+
 """
 
 
@@ -108,7 +117,15 @@ def tileset_images(document, path):
         require(
             isinstance(tile, dict)
             and not set(tile)
-            - {"id", "image", "imagewidth", "imageheight", "properties", "objectgroup"},
+            - {
+                "id",
+                "image",
+                "imagewidth",
+                "imageheight",
+                "properties",
+                "objectgroup",
+                "animation",
+            },
             f"Unsupported tile fields in {path}; refusing to omit dependencies",
         )
         local = tile.get("id")
@@ -137,7 +154,14 @@ def tileset_images(document, path):
             require(
                 isinstance(name, str)
                 and name not in names
-                and name in {"forge:asset", "forge:terrain", "forge:solid", "forge:next_shape_id"},
+                and name
+                in {
+                    "forge:asset",
+                    "forge:terrain",
+                    "forge:solid",
+                    "forge:next_shape_id",
+                    "forge:animation",
+                },
                 f"Unsupported or duplicate tile property in {path}",
             )
             names.add(name)
@@ -249,6 +273,24 @@ def tileset_images(document, path):
                 )
             except ValueError as error:
                 raise ValueError(f"Invalid collision geometry in {path}: {error}") from error
+    for tile in tiles:
+        if "animation" not in tile:
+            continue
+        frames = tile["animation"]
+        require(
+            isinstance(frames, list) and 1 <= len(frames) <= 255,
+            f"Invalid tile animation in {path}",
+        )
+        for frame in frames:
+            require(
+                isinstance(frame, dict)
+                and set(frame) == {"tileid", "duration"}
+                and type(frame["tileid"]) is int
+                and frame["tileid"] in seen
+                and type(frame["duration"]) is int
+                and 1 <= frame["duration"] <= 65535,
+                f"Invalid animation frame in {path}",
+            )
     return images
 
 
@@ -293,6 +335,7 @@ def export_bundle(project, scope, revision, scene_id=None, scene=None, scene_rev
         )
         files, guards, snapshots, sets = {}, {MANIFEST: revision}, [], set()
         total = 0
+        animation_report = {}
 
         def include(path, data):
             nonlocal total
@@ -313,6 +356,11 @@ def export_bundle(project, scope, revision, scene_id=None, scene=None, scene_rev
                 "Export exceeds 256 MiB. Export one scene or reduce imported assets.",
             )
             files[path] = data
+
+        def replace(path, data):
+            nonlocal total
+            total -= len(files.pop(path))
+            include(path, data)
 
         def asset(path):
             if path in files:
@@ -367,7 +415,18 @@ def export_bundle(project, scope, revision, scene_id=None, scene=None, scene_rev
             sets.update(path for path in files if path.endswith(".tsj"))
         for path in sorted(sets):
             require(path.endswith(".tsj"), f"Expected an external Tiled tileset: {path}")
-            images = tileset_images(parse_json(asset(path), path), path)
+            tileset = parse_json(asset(path), path)
+            # Validate source data before adding generated animation metadata.
+            tileset_images(tileset, path)
+            for atlas_id, entry in document["atlases"].items():
+                for group in entry["tiles"]:
+                    filename = "sprites" if group == "sprites" else f"grid-{group}"
+                    if path == f"assets/{atlas_id}/{filename}.tsj":
+                        animation_report[path] = animations.decorate(entry, group, tileset)
+            encoded_tileset = json_text(tileset).encode()
+            if any(item["status"] == "exported" for item in animation_report.get(path, [])):
+                replace(path, encoded_tileset)
+            images = tileset_images(tileset, path)
             for image, expected_size in images.items():
                 raw = asset(image)
                 try:
@@ -385,6 +444,10 @@ def export_bundle(project, scope, revision, scene_id=None, scene=None, scene_rev
                 raise Conflict(
                     f"File changed while exporting: {path}. Try again after reviewing it."
                 )
+        if scope == "project":
+            for path in document["files"]:
+                document["files"][path] = digest(files[path])
+            replace(MANIFEST, json_text(document).encode())
         include("EXPORT.md", GUIDE.encode())
         include(
             "export.json",
@@ -394,6 +457,7 @@ def export_bundle(project, scope, revision, scene_id=None, scene=None, scene_rev
                     "scope": scope,
                     "project": {"id": document["id"], "name": document["name"]},
                     "scenes": snapshots,
+                    "animations": animation_report,
                     "files": {path: digest(data) for path, data in sorted(files.items())},
                 }
             ).encode(),

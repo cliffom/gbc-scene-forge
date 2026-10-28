@@ -136,7 +136,15 @@ class ExportTests(unittest.TestCase):
         self.assertNotIn("assets/terrain/grid-16.tsj", files)
         self.assertFalse(any(path.startswith(".forge/") for path in files))
         self.assertEqual(files[f"scenes/{self.loaded['id']}.tmj"], self.map_path.read_bytes())
-        self.assertEqual(files["assets/terrain/grid-8.tsj"], self.tile_path.read_bytes())
+        exported_tileset = json.loads(files["assets/terrain/grid-8.tsj"])
+        self.assertEqual(
+            exported_tileset["tiles"][0].pop("animation"),
+            [{"tileid": 0, "duration": 100}, {"tileid": 1, "duration": 200}],
+        )
+        exported_tileset["tiles"][0]["properties"] = [
+            p for p in exported_tileset["tiles"][0]["properties"] if p["name"] != "forge:animation"
+        ]
+        self.assertEqual(exported_tileset, json.loads(self.tile_path.read_bytes()))
         report = json.loads(files["export.json"])
         self.assertFalse(report["scenes"][0]["canvas_override"])
         self.assertEqual(report["scenes"][0]["source_revision"], self.loaded["revision"])
@@ -185,6 +193,8 @@ class ExportTests(unittest.TestCase):
         shutil.rmtree(self.folder / "input")
         shutil.rmtree(self.folder / "sprites")
         reopened = Project(moved)
+        # Exported tilesets gain native animation data, so their inventory hashes change.
+        original["files"] = {path: digest(files[path]) for path in original["files"]}
         self.assertEqual(reopened.catalog()["project"], original)
         self.assertEqual(reopened.load_scene(self.loaded["id"])["scene"], self.scene)
         reopened.create_scene("New room", 3, 3, 8, reopened.catalog()["revision"])

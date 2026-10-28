@@ -230,6 +230,10 @@ with tempfile.TemporaryDirectory(prefix="forge-tiled-") as folder:
         tile = tilesets["terrain"]["tiles"][0]
         assert {p["name"]: p["value"] for p in tile["properties"]}["forge:terrain"] == "water"
         assert len(tile["objectgroup"]["objects"]) == 3
+        assert tile["animation"] == [{"tileid": 0, "duration": 100}, {"tileid": 1, "duration": 200}]
+        assert tilesets["actors sprites"]["tiles"][0]["animation"] == [
+            {"tileid": 0, "duration": 120}
+        ]
         assert tilesets["actors sprites"]["tiles"][0]["objectgroup"]["objects"][0]["height"] == 32
         rendered = moved / "rendered.png"
         subprocess.run(
@@ -244,5 +248,5 @@ with tempfile.TemporaryDirectory(prefix="forge-tiled-") as folder:
             assert reopened.load_scene(loaded["id"])["scene"] == layered
 
 print(
-    "Official Tiled verified moved scene/project ZIP exports, object/property/origin and terrain/collision data, and rasterized layers."
+    "Official Tiled verified moved scene/project ZIP exports, animation frame order/timing, object/property/origin and terrain/collision data, and rasterized layers."
 )

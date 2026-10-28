@@ -1,4 +1,9 @@
 /** Standalone project controller for atlas, layer and object authoring. */
+import { decodePreviewSettings, prunePreviewSettings } from './preview-settings.mts';
+import { sceneOverlaps } from './movement-preview.mts';
+import type { PreviewRect } from './movement-preview.mts';
+import { createAnimationPreview } from './animation-preview.mts';
+import type { SpriteAnimation } from './animation-preview.mts';
 import { downloadArchive } from './export.mts';
 import { createTileInspector } from './tile-inspector.mts';
 import type { TileChoice } from './tile-inspector.mts';
@@ -28,6 +33,7 @@ interface Atlas {
   png: string;
   regions: Region[];
   mappings: Record<string, Record<string, number>>;
+  animations: SpriteAnimation[];
   metadata: MetadataSets;
 }
 interface Project {
@@ -65,6 +71,7 @@ if (!ctx) {
 const context = ctx;
 const status = element('status', HTMLElement);
 let token = '';
+let previewSettingsLoaded = false;
 let atlasFolder: AtlasFolder | null = null;
 let revision = '';
 let project: Project | null = null;
@@ -91,6 +98,7 @@ let pan: { x: number; y: number; left: number; top: number } | null = null;
 const images = new Map<string, HTMLImageElement>();
 const regions = new Map<string, { image: HTMLImageElement; x: number; y: number }>();
 const sprites = new Map<string, { image: HTMLImageElement; region: Region }>();
+const animationPreview = createAnimationPreview(() => draw(false));
 
 function tileMetadata(group: string, asset: string): TileMetadata | undefined {
   return project?.atlases[asset.split('/')[0]]?.metadata[group]?.[asset];
@@ -317,6 +325,22 @@ function decodeProject(value: unknown): Project {
       png: string(entry.png),
       metadata: decodeMetadataSets(entry.metadata),
       mappings,
+      animations: array(record(entry.manifest).animations ?? [], (value) => {
+        const animation = record(value);
+        return {
+          name: string(animation.name),
+          frames: array(animation.frames, (value) => {
+            const frame = record(value);
+            const region = array(record(entry.manifest).regions, record).find(
+              (region) => region.name === frame.region,
+            );
+            return {
+              region: string(frame.region),
+              duration: number(frame.duration_ms ?? region?.duration_ms),
+            };
+          }),
+        };
+      }),
       regions: array(record(entry.manifest).regions, (value) => {
         const r = record(value);
         const origin = array(r.origin ?? [0, 0], number);
@@ -375,6 +399,7 @@ async function discard(): Promise<boolean> {
 function update() {
   element('dirty', HTMLElement).textContent = !editor ? 'NO SCENE' : dirty() ? 'UNSAVED' : 'SAVED';
   element('dirty', HTMLElement).dataset.dirty = String(dirty());
+  button('save-preview-settings').disabled = busy || !project;
   button('save').disabled = busy || !editor || !dirty();
   button('show-export').disabled = busy || !project || anchor !== null;
   button('export-confirm').disabled = button('export-cancel').disabled = busy;
@@ -522,6 +547,32 @@ function inspect() {
   );
   select('object-list').disabled = busy || !editor?.objects.length || anchor !== null;
   const sprite = item?.kind === 'sprite' && sprites.get(item.asset);
+  const atlas = item?.kind === 'sprite' ? project?.atlases[item.asset.split('/')[0]] : undefined;
+  animationPreview.configure(
+    item?.kind === 'sprite' && sprite && atlas
+      ? {
+          key: item.id + ':' + item.asset,
+          asset: item.asset,
+          image: sprite.image,
+          region: sprite.region,
+          regions: atlas.regions,
+          animations: atlas.animations.filter((animation) =>
+            animation.frames.every((frame) =>
+              atlas.regions.some(
+                (region) => region.name === frame.region && region.kind === 'sprite',
+              ),
+            ),
+          ),
+          origin: item.origin,
+          start: { x: item.x, y: item.y },
+          world: {
+            width: canvas.width,
+            height: canvas.height,
+            blocked: (rect) => previewBlocked(rect, item.id),
+          },
+        }
+      : null,
+  );
   element('selection-preview', HTMLElement).hidden = !sprite;
   if (item?.kind === 'sprite' && sprite) {
     const r = sprite.region;
@@ -530,14 +581,6 @@ function inspect() {
       item.name || item.asset.replace('/', ' / ');
     element('selection-detail', HTMLElement).textContent =
       `${r.width} × ${r.height}px · X ${item.x}, Y ${item.y} · Origin ${(item.origin || r.origin)[0]}, ${(item.origin || r.origin)[1]} · #${item.id}`;
-    const preview = element('selection-image', HTMLCanvasElement);
-    preview.width = r.width;
-    preview.height = r.height;
-    preview.style.width = `${r.width * 3}px`;
-    preview.style.height = `${r.height * 3}px`;
-    preview
-      .getContext('2d')
-      ?.drawImage(sprite.image, r.x, r.y, r.width, r.height, 0, 0, r.width, r.height);
   } else if (item) {
     element('selection-kind', HTMLElement).textContent = item.kind.toUpperCase();
     element('selection-name', HTMLElement).textContent = item.name || item.class || item.kind;
@@ -584,6 +627,13 @@ async function run(work: () => Promise<void>) {
 async function refresh() {
   const data = await api('project', record);
   token = string(data.token);
+  if (!previewSettingsLoaded && data.project !== null) {
+    const saved = record(record(data.project).preview).sprite;
+    if (saved !== undefined) {
+      animationPreview.restore(decodePreviewSettings(saved));
+    }
+    previewSettingsLoaded = true;
+  }
   project = data.project === null ? null : decodeProject(data.project);
   revision = data.project === null ? '' : string(data.revision);
   form('project-form').hidden = project !== null;
@@ -815,6 +865,7 @@ function open(data: Loaded) {
     next_object_id: data.nextObjectId,
     grid: data.grid,
   };
+  animationPreview.reset();
   editor = new LayerEditor(scene, [], { erase_cell: 'empty' });
   editor.spriteRegion = (asset) => sprites.get(asset)?.region;
   baseline = snapshot();
@@ -833,7 +884,14 @@ function open(data: Loaded) {
   palette();
   draw();
 }
-function draw() {
+function previewBlocked(rect: PreviewRect, selectedId: string): boolean {
+  if (!editor || !loaded) {
+    return false;
+  }
+  return sceneOverlaps(rect, editor.layers, loaded.grid, selectedId, tileMetadata, bounds);
+}
+
+function draw(refreshUI = true) {
   if (!editor || !loaded) {
     return;
   }
@@ -845,6 +903,9 @@ function draw() {
   canvas.height = loaded.height * size;
   canvas.style.width = `${canvas.width * Number(select('zoom').value)}px`;
   canvas.style.height = `${canvas.height * Number(select('zoom').value)}px`;
+  if (refreshUI) {
+    update();
+  }
   context.imageSmoothingEnabled = false;
   context.fillStyle = '#242820';
   context.fillRect(0, 0, canvas.width, canvas.height);
@@ -876,15 +937,25 @@ function draw() {
       for (const item of layer.objects) {
         const sprite = item.kind === 'sprite' && sprites.get(item.asset);
         if (sprite) {
-          const r = sprite.region;
+          const r =
+            item.id === selectedObject
+              ? animationPreview.frame(
+                  item.id + ':' + (item.kind === 'sprite' ? item.asset : ''),
+                ) || sprite.region
+              : sprite.region;
+          const position =
+            animationPreview.movement.position(
+              item.id + ':' + (item.kind === 'sprite' ? item.asset : ''),
+            ) || item;
+          const pivot = item.kind === 'sprite' ? item.origin || r.origin : r.origin;
           context.drawImage(
             sprite.image,
             r.x,
             r.y,
             r.width,
             r.height,
-            bounds(item).x,
-            bounds(item).y,
+            position.x - pivot[0],
+            position.y - pivot[1],
             r.width,
             r.height,
           );
@@ -985,6 +1056,9 @@ function draw() {
     context.strokeRect(r.x, r.y, r.width, r.height);
     context.fillStyle = '#f2d67b';
     context.fillRect(selected.x - 1, selected.y - 1, 2, 2);
+    if (selected.kind === 'sprite') {
+      animationPreview.movement.draw(context, selected.id + ':' + selected.asset);
+    }
   }
   const tool = document.querySelector<HTMLInputElement>('input[name="tool"]:checked')?.value;
   if (hover && tool !== 'pan' && !pan) {
@@ -1000,7 +1074,6 @@ function draw() {
       height * size - 0.5,
     );
   }
-  update();
 }
 function point(event: { clientX: number; clientY: number }) {
   const rect = canvas.getBoundingClientRect();
@@ -1219,6 +1292,10 @@ canvas.ondragover = (event) => {
   }
 };
 canvas.ondrop = (event) => {
+  if (animationPreview.movement.active) {
+    event.preventDefault();
+    return;
+  }
   if (!editor || busy) {
     return;
   }
@@ -1347,6 +1424,33 @@ function sceneSnapshot() {
     next_object_id: number(editor.scene.next_object_id),
   };
 }
+button('save-preview-settings').onclick = () => {
+  if (!project || busy) {
+    return;
+  }
+  void run(async () => {
+    const available: Record<string, string[]> = {};
+    for (const [atlasId, atlas] of Object.entries(project?.atlases || {})) {
+      const spriteNames = new Set(
+        atlas.regions.filter((region) => region.kind === 'sprite').map((region) => region.name),
+      );
+      const animations = atlas.animations
+        .filter((animation) => animation.frames.every((frame) => spriteNames.has(frame.region)))
+        .map((animation) => animation.name);
+      for (const name of spriteNames) {
+        available[`${atlasId}/${name}`] = animations;
+      }
+    }
+    const result = await api('save-preview-settings', record, {
+      settings: prunePreviewSettings(animationPreview.settings(), available),
+      project_revision: revision,
+    });
+    project = decodeProject(result.project);
+    revision = string(result.revision);
+    status.textContent =
+      'Preview settings saved. Scene edits and starting positions are unchanged.';
+  });
+};
 button('save').onclick = () => {
   if (!editor || !loaded) {
     return;
@@ -1438,11 +1542,11 @@ button('revert').onclick = async () => {
     open(loaded);
   }
 };
-select('zoom').onchange = draw;
-input('grid').onchange = draw;
-input('terrain-overlay').onchange = draw;
-input('collision-overlay').onchange = draw;
-input('snap').onchange = draw;
+select('zoom').onchange = () => draw();
+input('grid').onchange = () => draw();
+input('terrain-overlay').onchange = () => draw();
+input('collision-overlay').onchange = () => draw();
+input('snap').onchange = () => draw();
 button('browse-atlas').onclick = () => {
   void run(async () => {
     const browse = button('browse-atlas');
@@ -1660,8 +1764,29 @@ for (const control of document.querySelectorAll<HTMLInputElement>('input[name="t
     draw();
   };
 }
+// Active preview captures scene gestures so they cannot become authoring strokes.
+for (const type of ['pointerdown', 'pointermove', 'pointerup', 'dblclick']) {
+  canvas.addEventListener(
+    type,
+    (event) => {
+      if (!animationPreview.movement.active) {
+        return;
+      }
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (type === 'pointerdown') {
+        canvas.focus({ preventScroll: true });
+      }
+    },
+    { capture: true },
+  );
+}
 document.addEventListener('keydown', (event) => {
+  if (!busy && animationPreview.movement.keydown(event)) {
+    return;
+  }
   if (
+    (event.target instanceof Element && event.target.closest('#animation-preview')) ||
     event.target instanceof HTMLInputElement ||
     event.target instanceof HTMLSelectElement ||
     event.target instanceof HTMLTextAreaElement ||
