@@ -10,6 +10,7 @@
 #palette-summary[data-state=fail] {color:#f19b82}
 #palette-summary[data-state=pass] {color:#b4c890}
 #show-palettes[data-state=fail] {color:#f19b82;border-color:#ad6752}
+#show-palettes {width:180px;flex:none}
 #palette-findings {display:grid;gap:8px;overflow:auto;min-height:80px;max-height:40dvh;flex:1}
 #palette-findings p {margin:4px 0}
 .palette-count {font-weight:600}

@@ -2412,10 +2412,17 @@ for y in range(height):
     true,
   );
   assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
+  const paletteIndicatorWidth = await evaluate(
+    "document.getElementById('show-palettes').getBoundingClientRect().width",
+  );
   await browser.click('document.querySelector(\'[data-asset="reordered/swapped"]\')');
   await browser.pointer(4, 20);
   await browser.pointer(4, 20, 'mouseReleased');
   await wait("document.getElementById('show-palettes').dataset.state === 'fail'");
+  assert.equal(
+    await evaluate("document.getElementById('show-palettes').getBoundingClientRect().width"),
+    paletteIndicatorWidth,
+  );
   assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'UNSAVED');
   // Hold an old passing response, then redo the over-budget edit before releasing it.
   await evaluate(`window.__paletteFetch = window.fetch;
