@@ -31,7 +31,11 @@ def make_handler(root, token):
             try:
                 if route == "/api/project":
                     self.reply(
-                        dict(project.catalog() if project else {"project": None}, token=token)
+                        dict(
+                            project.catalog() if project else {"project": None},
+                            token=token,
+                            project_path=str(root),
+                        )
                     )
                 elif route.startswith("/api/scene/") and project:
                     self.reply(project.load_scene(route.removeprefix("/api/scene/")))

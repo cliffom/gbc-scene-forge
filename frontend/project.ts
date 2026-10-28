@@ -11,6 +11,8 @@ import { decodeMetadataSets, drawCollision, terrainColor } from './tile-metadata
 import type { MetadataSets, TileMetadata } from './tile-metadata.mts';
 import { createObjectInspector } from './object-inspector.mts';
 import { LayerEditor } from './layers.mts';
+import { layerDragging } from './layer-drag.mts';
+import { editorFocus } from './editor-focus.mts';
 import type { LayerScene, SceneLayer } from './layers.mts';
 import { decodeObject, encodeObject, objectBounds } from './objects.mts';
 import type { SceneObject } from './objects.mts';
@@ -101,7 +103,8 @@ let deleteCandidate: {
 } | null = null;
 let deleteAtlasCandidate: { id: string; projectRevision: string } | null = null;
 let busy = false;
-let pan: { x: number; y: number; left: number; top: number } | null = null;
+let spacePan = false;
+let pan: { pointer: number; x: number; y: number; left: number; top: number } | null = null;
 const images = new Map<string, HTMLImageElement>();
 const regions = new Map<string, { image: HTMLImageElement; x: number; y: number }>();
 const sprites = new Map<string, { image: HTMLImageElement; region: Region }>();
@@ -204,7 +207,7 @@ for (const kind of ['point', 'rectangle'] as const) {
     if (paintTool) {
       paintTool.checked = true;
     }
-    element('viewport', HTMLElement).dataset.pan = 'false';
+    syncPanCursor();
     element('paint-label', HTMLElement).textContent = 'Place object';
     element('selected-brush', HTMLElement).textContent =
       kind === 'point' ? 'Spawn point' : 'Trigger area';
@@ -409,6 +412,11 @@ async function discard(): Promise<boolean> {
   });
 }
 function update() {
+  if (busy || !editor) {
+    spacePan = false;
+    finishPan();
+  }
+  syncPanCursor();
   select('switch-project').disabled = busy || anchor !== null || !projectBase;
   button('show-new-project').disabled = button('back-to-projects').disabled = busy;
   for (const id of ['switch-save', 'switch-discard', 'switch-cancel']) {
@@ -420,7 +428,18 @@ function update() {
   element('dirty', HTMLElement).textContent = !editor ? 'NO SCENE' : dirty() ? 'UNSAVED' : 'SAVED';
   element('dirty', HTMLElement).dataset.dirty = String(dirty());
   button('save-preview-settings').disabled = busy || !project;
-  button('save').disabled = busy || !editor || !dirty();
+  const unsaved = Boolean(editor && dirty());
+  button('save').disabled = busy || !unsaved;
+  button('save').classList.toggle('primary', unsaved);
+  const saveState = element('scene-save-state', HTMLElement);
+  const saveText = !editor ? '' : unsaved ? 'Unsaved changes' : 'Saved';
+  if (saveState.textContent !== saveText) {
+    saveState.textContent = saveText;
+  }
+  saveState.dataset.dirty = String(unsaved);
+  button('fit-scene').disabled = !editor;
+  select('zoom').disabled = !editor;
+  button('library-import').disabled = busy || anchor !== null;
   button('show-export').disabled = busy || !project || anchor !== null;
   button('export-confirm').disabled = button('export-cancel').disabled = busy;
   select('export-scope').disabled = busy;
@@ -472,27 +491,57 @@ function update() {
       button.disabled = busy;
     });
   renderLayers();
+  renderLayerContext();
   inspect();
 }
 function renderLayers() {
-  const list = select('layers');
-  list.replaceChildren(
-    ...(editor
-      ? [...editor.layers]
-          .reverse()
-          .map(
-            (layer) =>
-              new Option(
-                `${layer.visible ? '●' : '○'} ${layer.name} · ${layer.type === 'tilelayer' ? 'Tiles' : 'Objects'}`,
-                String(layer.id),
-                false,
-                layer.id === editor?.active.id,
-              ),
-          )
-      : []),
-  );
+  const list = element('layers', HTMLElement);
   const disabled = busy || !editor || anchor !== null;
-  list.disabled = disabled;
+  const focused = document.activeElement;
+  const rows = (editor ? [...editor.layers].reverse() : []).map((layer) => {
+    let row = list.querySelector<HTMLDivElement>(`[data-layer-id="${layer.id}"]`);
+    if (!row) {
+      row = document.createElement('div');
+      row.className = 'layer-row';
+      row.dataset.layerId = String(layer.id);
+      row.innerHTML =
+        '<span class="layer-grip" aria-hidden="true" title="Drag to reorder layer">⠿</span><label class="layer-choice"><input type="radio" name="active-layer"><span class="layer-icon" aria-hidden="true"></span><span class="layer-detail"><span class="layer-name"></span><span class="layer-meta"></span></span></label><button class="layer-eye" type="button"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="eye-slash" d="m3 3 18 18"/></svg></button>';
+    }
+    const radio = row.querySelector('input');
+    const eye = row.querySelector('button');
+    const icon = row.querySelector('.layer-icon');
+    const name = row.querySelector('.layer-name');
+    const meta = row.querySelector('.layer-meta');
+    if (!radio || !eye || !icon || !name || !meta) {
+      throw new Error('Layer row controls are missing.');
+    }
+    radio.onchange = () => layerAction((editor) => editor.activate(layer.id));
+    eye.onclick = () =>
+      layerAction((editor) => editor.visibility(layer.id), layer.id === editor?.active.id);
+    eye.disabled = disabled;
+    eye.setAttribute('aria-label', `${layer.visible ? 'Hide' : 'Show'} ${layer.name}`);
+    eye.setAttribute('aria-pressed', String(layer.visible));
+    eye.title = `${layer.visible ? 'Hide' : 'Show'} layer`;
+    radio.value = String(layer.id);
+    radio.checked = layer.id === editor?.active.id;
+    radio.disabled = disabled;
+    row.dataset.visible = String(layer.visible);
+    icon.textContent = layer.type === 'tilelayer' ? '▦' : '◇';
+    name.textContent = layer.name;
+    meta.textContent = `${layer.type === 'tilelayer' ? 'Tiles' : 'Objects'} · ${layer.visible ? 'Visible' : 'Hidden'}`;
+    return row;
+  });
+  // Keep existing inputs mounted during canvas redraws and keyboard navigation.
+  if (rows.length !== list.children.length || rows.some((row, i) => row !== list.children[i])) {
+    list.replaceChildren(...rows);
+    if (focused instanceof HTMLElement && list.contains(focused)) {
+      focused.focus({ preventScroll: true });
+    }
+  }
+  if (!editor) {
+    list.textContent = 'Open a scene to view its layers.';
+  }
+  list.setAttribute('aria-disabled', String(disabled));
   input('layer-name').disabled = disabled;
   if (document.activeElement !== input('layer-name')) {
     input('layer-name').value = editor?.active.name || '';
@@ -512,26 +561,26 @@ function renderLayers() {
     button('layer-up').disabled ||= index === editor.layers.length - 1;
     button('layer-down').disabled ||= index === 0;
     button('layer-remove').disabled ||= editor.layers.length === 1;
-    button('layer-visible').textContent = editor.active.visible ? 'Hide' : 'Show';
+    button('layer-visible').textContent = editor.active.visible ? 'Hide layer' : 'Show layer';
   }
 }
-function layerAction(work: (editor: LayerEditor) => void) {
+function layerAction(work: (editor: LayerEditor) => void, clearSelection = true) {
   if (!editor || busy || anchor) {
     return;
   }
   try {
     work(editor);
-    selection = null;
-    selectedObject = null;
-    objectDrag = null;
+    if (clearSelection) {
+      selection = null;
+      selectedObject = null;
+      objectDrag = null;
+    }
     input('layer-name').value = editor.active.name;
     draw();
   } catch (error) {
     status.textContent = error instanceof Error ? error.message : String(error);
   }
 }
-select('layers').onchange = () =>
-  layerAction((editor) => editor.activate(Number(select('layers').value)));
 input('layer-name').onchange = () =>
   layerAction((editor) => editor.rename(input('layer-name').value));
 button('layer-tile').onclick = () => layerAction((editor) => editor.add('tilelayer'));
@@ -540,6 +589,43 @@ button('layer-up').onclick = () => layerAction((editor) => editor.reorder(1));
 button('layer-down').onclick = () => layerAction((editor) => editor.reorder(-1));
 button('layer-visible').onclick = () => layerAction((editor) => editor.visibility());
 button('layer-remove').onclick = () => layerAction((editor) => editor.remove());
+layerDragging(element('layers', HTMLElement), (id, before) =>
+  layerAction((editor) => editor.moveLayer(id, before), false),
+);
+function renderLayerContext() {
+  const context = element('layer-context', HTMLElement);
+  context.hidden = !editor;
+  if (!editor) {
+    return;
+  }
+  const layer = editor.active;
+  const tool = spacePan
+    ? 'pan'
+    : document.querySelector<HTMLInputElement>('input[name="tool"]:checked')?.value;
+  const action =
+    tool === 'select'
+      ? 'Selecting'
+      : tool === 'erase'
+        ? 'Erasing'
+        : tool === 'fill'
+          ? 'Filling'
+          : tool === 'pan'
+            ? 'Panning'
+            : objectBrush
+              ? 'Placing objects'
+              : spriteBrush
+                ? 'Placing sprites'
+                : 'Painting';
+  const text = layer.visible ? `${action} on ${layer.name}` : `${layer.name} is hidden`;
+  const label = element('layer-context-text', HTMLElement);
+  if (label.textContent !== text) {
+    label.textContent = text;
+  }
+  context.dataset.hiddenLayer = String(!layer.visible);
+  button('context-show-layer').hidden = layer.visible;
+  button('context-show-layer').disabled = busy || anchor !== null;
+}
+button('context-show-layer').onclick = () => layerAction((editor) => editor.visibility());
 function inspect() {
   input('inspector-name').value = loaded?.name || '';
   input('inspector-size').value = loaded ? `${loaded.width} × ${loaded.height} cells` : '';
@@ -554,6 +640,15 @@ function inspect() {
       ? `${loaded.width * loaded.grid} × ${loaded.height * loaded.grid} pixels · ${objectCount} ${objectCount === 1 ? 'object' : 'objects'}`
       : 'Open a scene to inspect its dimensions and placed sprites.';
   const item = editor?.objects.find((r) => r.id === selectedObject);
+  const inspector = document.querySelector('.inspector');
+  const hasSelection = Boolean(item || selection);
+  if (inspector instanceof HTMLElement) {
+    const wasSelected = inspector.classList.contains('has-selection');
+    inspector.classList.toggle('has-selection', hasSelection);
+    if (hasSelection && !wasSelected) {
+      inspector.scrollTop = 0;
+    }
+  }
   select('object-list').replaceChildren(
     ...(editor?.objects.map(
       (item) =>
@@ -649,6 +744,35 @@ function showProjectStart(creating: boolean) {
   form('project-form').hidden = project !== null || !creating;
   button('back-to-projects').hidden = !hasProjectChoices;
 }
+const folderPopover = element('folder-popover', HTMLElement);
+function positionFolderPopover() {
+  if (!folderPopover.matches(':popover-open')) {
+    return;
+  }
+  const trigger = button('project-folder').getBoundingClientRect();
+  const panel = folderPopover.getBoundingClientRect();
+  folderPopover.style.left = `${Math.max(16, Math.min(trigger.right - panel.width, innerWidth - panel.width - 16))}px`;
+  folderPopover.style.top = `${Math.max(16, Math.min(trigger.bottom + 8, innerHeight - panel.height - 16))}px`;
+}
+folderPopover.addEventListener('toggle', () => {
+  element('folder-copy-status', HTMLElement).textContent = '';
+  positionFolderPopover();
+});
+window.addEventListener('resize', positionFolderPopover);
+button('copy-folder').onclick = async () => {
+  const copy = button('copy-folder');
+  const feedback = element('folder-copy-status', HTMLElement);
+  copy.disabled = true;
+  try {
+    await navigator.clipboard.writeText(element('folder-path', HTMLElement).textContent || '');
+    feedback.textContent = 'Path copied.';
+  } catch {
+    feedback.textContent = 'Copy unavailable. Select the path above to copy it.';
+  } finally {
+    copy.disabled = false;
+    positionFolderPopover();
+  }
+};
 button('show-new-project').onclick = () => {
   showProjectStart(true);
   input('project-title').focus();
@@ -661,6 +785,16 @@ async function refresh() {
   const data = await api('project', record);
   token = string(data.token);
   choosingProject = Array.isArray(data.projects);
+  const folderPath = string(choosingProject ? data.project_root : data.project_path);
+  const folderLabel = choosingProject ? 'Projects folder' : 'Project folder';
+  element('folder-path', HTMLElement).textContent = folderPath;
+  element('folder-name', HTMLElement).textContent =
+    folderPath.split(/[\\/]/).filter(Boolean).at(-1) || folderPath;
+  element('folder-heading', HTMLElement).textContent = folderLabel;
+  button('project-folder').disabled = false;
+  button('project-folder').setAttribute('aria-label', `${folderLabel}: ${folderPath}`);
+  button('project-folder').title = folderLabel;
+  element('folder-copy-status', HTMLElement).textContent = '';
   if (choosingProject) {
     const list = element('project-list', HTMLElement);
     list.replaceChildren();
@@ -904,7 +1038,7 @@ function palette() {
         }
         element('paint-label', HTMLElement).textContent = sprite ? 'Place sprite' : 'Paint';
         element('selected-brush', HTMLElement).textContent = `${id} / ${region.name}`;
-        element('viewport', HTMLElement).dataset.pan = 'false';
+        syncPanCursor();
         status.textContent = sprite
           ? `Click the canvas to place ${region.name}. Select to drag it; Delete removes it.`
           : `Paint ${region.name}.`;
@@ -977,8 +1111,9 @@ function draw(refreshUI = true) {
   const size = loaded.grid;
   canvas.width = loaded.width * size;
   canvas.height = loaded.height * size;
-  canvas.style.width = `${canvas.width * Number(select('zoom').value)}px`;
-  canvas.style.height = `${canvas.height * Number(select('zoom').value)}px`;
+  const zoom = sceneZoom();
+  canvas.style.width = `${canvas.width * zoom}px`;
+  canvas.style.height = `${canvas.height * zoom}px`;
   if (refreshUI) {
     update();
   }
@@ -1137,7 +1272,7 @@ function draw(refreshUI = true) {
     }
   }
   const tool = document.querySelector<HTMLInputElement>('input[name="tool"]:checked')?.value;
-  if (hover && tool !== 'pan' && !pan) {
+  if (hover && tool !== 'pan' && !spacePan && !pan) {
     const width = tool === 'paint' && brush ? brush[0].length : 1;
     const height = tool === 'paint' && brush ? brush.length : 1;
     const valid = hover.x + width <= loaded.width && hover.y + height <= loaded.height;
@@ -1288,6 +1423,146 @@ function paint(event: PointerEvent) {
   }
   draw();
 }
+function panEnabled() {
+  return (
+    spacePan ||
+    document.querySelector<HTMLInputElement>('input[name="tool"]:checked')?.value === 'pan'
+  );
+}
+function syncPanCursor() {
+  const viewport = element('viewport', HTMLElement);
+  viewport.dataset.pan = String(Boolean(editor && !busy && panEnabled()));
+  viewport.dataset.panning = String(pan !== null);
+}
+function finishPan() {
+  const pointer = pan?.pointer;
+  pan = null;
+  const viewport = element('viewport', HTMLElement);
+  if (pointer !== undefined && viewport.hasPointerCapture(pointer)) {
+    viewport.releasePointerCapture(pointer);
+  }
+  syncPanCursor();
+}
+function releaseSpacePan() {
+  const held = spacePan;
+  spacePan = false;
+  finishPan();
+  if (held) {
+    draw();
+  }
+}
+function panShortcutBlocked(target: EventTarget | null) {
+  return (
+    target instanceof Element &&
+    Boolean(
+      target.closest(
+        'input, select, textarea, button, a, [contenteditable]:not([contenteditable="false"]), dialog, #animation-preview',
+      ),
+    )
+  );
+}
+editorFocus(element('workspace', HTMLElement), canvas, () => Boolean(editor));
+const viewport = element('viewport', HTMLElement);
+viewport.addEventListener(
+  'pointerdown',
+  (event) => {
+    if (!editor || busy || !panEnabled() || event.button !== 0 || !event.isPrimary || anchor) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    canvas.focus({ preventScroll: true });
+    viewport.setPointerCapture(event.pointerId);
+    pan = {
+      pointer: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      left: viewport.scrollLeft,
+      top: viewport.scrollTop,
+    };
+    syncPanCursor();
+  },
+  true,
+);
+viewport.addEventListener(
+  'pointermove',
+  (event) => {
+    if (!pan || event.pointerId !== pan.pointer) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    viewport.scrollLeft = pan.left - event.clientX + pan.x;
+    viewport.scrollTop = pan.top - event.clientY + pan.y;
+  },
+  true,
+);
+for (const type of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) {
+  viewport.addEventListener(
+    type,
+    (event) => {
+      if (!pan || event.pointerId !== pan.pointer) {
+        return;
+      }
+      event.stopPropagation();
+      finishPan();
+    },
+    true,
+  );
+}
+document.addEventListener(
+  'keydown',
+  (event) => {
+    if (event.code !== 'Space' && event.key !== ' ') {
+      return;
+    }
+    if (spacePan) {
+      event.preventDefault();
+      return;
+    }
+    if (
+      !editor ||
+      busy ||
+      event.isComposing ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.altKey ||
+      document.querySelector('dialog[open], [popover]:popover-open') ||
+      panShortcutBlocked(event.target)
+    ) {
+      return;
+    }
+    event.preventDefault();
+    if (
+      event.repeat ||
+      anchor ||
+      editor.stroke ||
+      document.querySelector('#layers[data-dragging=true]')
+    ) {
+      return;
+    }
+    spacePan = true;
+    syncPanCursor();
+    draw();
+  },
+  true,
+);
+window.addEventListener('keyup', (event) => {
+  if (event.code === 'Space' || event.key === ' ') {
+    releaseSpacePan();
+  }
+});
+window.addEventListener('blur', releaseSpacePan);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    releaseSpacePan();
+  }
+});
+document.addEventListener('focusin', (event) => {
+  if (spacePan && panShortcutBlocked(event.target)) {
+    releaseSpacePan();
+  }
+});
 canvas.onpointerdown = (event) => {
   if (!editor || busy || event.button !== 0) {
     return;
@@ -1297,17 +1572,6 @@ canvas.onpointerdown = (event) => {
   anchor = point(event);
   trackHover(event);
   const tool = document.querySelector<HTMLInputElement>('input[name="tool"]:checked')?.value;
-  if (tool === 'pan') {
-    const viewport = element('viewport', HTMLElement);
-    pan = {
-      x: event.clientX,
-      y: event.clientY,
-      left: viewport.scrollLeft,
-      top: viewport.scrollTop,
-    };
-    viewport.dataset.panning = 'true';
-    return;
-  }
   editor.begin();
   if (tool === 'select') {
     const hit = hitObject(anchor.px, anchor.py);
@@ -1320,12 +1584,6 @@ canvas.onpointerdown = (event) => {
 canvas.onpointermove = (event) => {
   const previous = hover;
   trackHover(event);
-  if (pan) {
-    const viewport = element('viewport', HTMLElement);
-    viewport.scrollLeft = pan.left - event.clientX + pan.x;
-    viewport.scrollTop = pan.top - event.clientY + pan.y;
-    return;
-  }
   if (anchor) {
     paint(event);
   } else if (previous?.x !== hover?.x || previous?.y !== hover?.y) {
@@ -1341,24 +1599,18 @@ canvas.onpointerup = () => {
   editor?.end();
   anchor = null;
   objectDrag = null;
-  pan = null;
-  element('viewport', HTMLElement).dataset.panning = 'false';
   update();
 };
 canvas.onpointercancel = () => {
   editor?.cancel();
   anchor = null;
   objectDrag = null;
-  pan = null;
-  element('viewport', HTMLElement).dataset.panning = 'false';
   draw();
 };
 canvas.onlostpointercapture = () => {
   editor?.end();
   anchor = null;
   objectDrag = null;
-  pan = null;
-  element('viewport', HTMLElement).dataset.panning = 'false';
   update();
 };
 canvas.ondragover = (event) => {
@@ -1702,7 +1954,104 @@ button('revert').onclick = async () => {
     open(loaded);
   }
 };
-select('zoom').onchange = () => draw();
+function sceneZoom() {
+  if (select('zoom').value !== 'fit' || !loaded) {
+    return Number(select('zoom').value) || 1;
+  }
+  const viewport = element('viewport', HTMLElement);
+  const padding = getComputedStyle(element('canvas-surround', HTMLElement));
+  const width =
+    viewport.clientWidth - parseFloat(padding.paddingLeft) - parseFloat(padding.paddingRight) - 2;
+  const height =
+    viewport.clientHeight - parseFloat(padding.paddingTop) - parseFloat(padding.paddingBottom) - 2;
+  const scale = Math.max(
+    1,
+    Math.min(8, width / (loaded.width * loaded.grid), height / (loaded.height * loaded.grid)),
+  );
+  const zoom = Math.floor(scale);
+  element('fit-zoom-option', HTMLOptionElement).textContent = `Fit (${zoom}×)`;
+  return zoom;
+}
+function fitScene() {
+  if (!editor) {
+    return;
+  }
+  select('zoom').value = 'fit';
+  draw();
+  element('viewport', HTMLElement).scrollTo(0, 0);
+}
+button('fit-scene').onclick = fitScene;
+let wheelDelta = 0;
+let lastWheel = 0;
+viewport.addEventListener(
+  'wheel',
+  (event) => {
+    if (
+      !editor ||
+      busy ||
+      document.querySelector('dialog[open], [popover]:popover-open') ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.deltaY === 0 ||
+      Math.abs(event.deltaX) > Math.abs(event.deltaY)
+    ) {
+      return;
+    }
+    event.preventDefault();
+    if (anchor || pan) {
+      return;
+    }
+    const now = performance.now();
+    if (now - lastWheel > 180 || Math.sign(wheelDelta) !== Math.sign(event.deltaY)) {
+      wheelDelta = 0;
+    }
+    lastWheel = now;
+    wheelDelta +=
+      event.deltaY *
+      (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? viewport.clientHeight : 1);
+    if (Math.abs(wheelDelta) < 40) {
+      return;
+    }
+    const direction = Math.sign(wheelDelta);
+    wheelDelta = 0;
+    const current = sceneZoom();
+    const stops = Array.from(select('zoom').options, (option) => Number(option.value)).filter(
+      Number.isFinite,
+    );
+    const next =
+      direction < 0
+        ? stops.find((value) => value > current + 0.001)
+        : [...stops].reverse().find((value) => value < current - 0.001);
+    if (next === undefined) {
+      return;
+    }
+    const before = canvas.getBoundingClientRect();
+    const x = (event.clientX - before.left) / before.width;
+    const y = (event.clientY - before.top) / before.height;
+    select('zoom').value = String(next);
+    canvas.style.width = `${canvas.width * next}px`;
+    canvas.style.height = `${canvas.height * next}px`;
+    const after = canvas.getBoundingClientRect();
+    viewport.scrollLeft += after.left + x * after.width - event.clientX;
+    viewport.scrollTop += after.top + y * after.height - event.clientY;
+    trackHover(event);
+    draw();
+  },
+  { passive: false },
+);
+
+select('zoom').onchange = () => {
+  draw();
+  if (select('zoom').value === 'fit') {
+    element('viewport', HTMLElement).scrollTo(0, 0);
+  }
+};
+new ResizeObserver(() => {
+  if (editor && select('zoom').value === 'fit') {
+    draw(false);
+    element('viewport', HTMLElement).scrollTo(0, 0);
+  }
+}).observe(element('viewport', HTMLElement));
 input('grid').onchange = () => draw();
 input('terrain-overlay').onchange = () => draw();
 input('collision-overlay').onchange = () => draw();
@@ -1889,7 +2238,6 @@ function showCreate() {
 }
 button('show-create').onclick = showCreate;
 button('empty-create').onclick = showCreate;
-button('show-import').onclick = () => showImport();
 button('library-import').onclick = () => showImport();
 for (const close of document.querySelectorAll<HTMLButtonElement>('[data-close]')) {
   close.onclick = () => {
@@ -1919,7 +2267,7 @@ button('remove-sprite').onclick = () => {
 };
 for (const control of document.querySelectorAll<HTMLInputElement>('input[name="tool"]')) {
   control.onchange = () => {
-    element('viewport', HTMLElement).dataset.pan = String(control.value === 'pan');
+    syncPanCursor();
     draw();
   };
 }
@@ -1941,6 +2289,22 @@ for (const type of ['pointerdown', 'pointermove', 'pointerup', 'dblclick']) {
   );
 }
 document.addEventListener('keydown', (event) => {
+  if (
+    editor &&
+    !busy &&
+    !document.querySelector('dialog[open], [popover]:popover-open') &&
+    event.target instanceof HTMLInputElement &&
+    ['layer-name', 'search'].includes(event.target.id) &&
+    ['Enter', 'Escape'].includes(event.key) &&
+    !event.isComposing
+  ) {
+    event.preventDefault();
+    if (event.key === 'Escape' && event.target.id === 'layer-name') {
+      event.target.value = editor.active.name;
+    }
+    canvas.focus({ preventScroll: true });
+    return;
+  }
   if (!busy && animationPreview.movement.keydown(event)) {
     return;
   }
@@ -1949,7 +2313,10 @@ document.addEventListener('keydown', (event) => {
     event.target instanceof HTMLInputElement ||
     event.target instanceof HTMLSelectElement ||
     event.target instanceof HTMLTextAreaElement ||
-    document.querySelector('dialog[open]') ||
+    (event.target instanceof Element &&
+      Boolean(event.target.closest('a, [contenteditable]:not([contenteditable="false"])'))) ||
+    (event.target instanceof HTMLButtonElement && !event.ctrlKey && !event.metaKey) ||
+    document.querySelector('dialog[open], [popover]:popover-open') ||
     busy
   ) {
     return;

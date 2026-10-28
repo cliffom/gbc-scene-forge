@@ -43,6 +43,11 @@ Unsupported schema versions are rejected before recovery writes. Future schema
 changes must provide explicit migrations; transaction history is not a schema
 version or a migration mechanism.
 
+The folder button beside the GitHub link shows the current directory name.
+Open it to see the full, selectable path and **Copy path**. It is labeled
+**Projects folder** in the chooser and **Project folder** inside a project.
+Long names are truncated in the header; full paths wrap inside the popover.
+
 ## Import and edit
 
 1. Choose **Import atlas**, then **Browse folder…** to select an atlas folder.
@@ -60,9 +65,28 @@ version or a migration mechanism.
 Search the asset library or filter by atlas and kind. Drag an asset onto the
 canvas to place it directly. Use S, P, F, E and H to switch Select, Paint, Fill,
 Erase and Pan while editing the canvas. Pan drags the view without editing the
-scene. The inspector shows scene dimensions, selection details and project
+scene. Hold Space and drag anywhere in the workspace to pan temporarily; release
+Space to return to the selected tool. The cursor changes to a hand while panning.
+This shortcut stays inactive in fields, buttons and dialogs. Mouse-operated tools,
+layer controls and editor dropdowns return focus to the canvas. Keyboard-operated
+controls keep focus for navigation. Enter finishes editing a layer name or search
+and returns to the canvas; Escape leaves the field and cancels a pending layer rename. The inspector shows scene dimensions, selection details and project
 atlases; its **Update** action opens the atlas reimport dialog. Detailed import
 results remain under **Last import** in the inspector.
+
+**Fit scene**, beside Zoom, centers the whole map in the workspace and adjusts
+when the workspace is resized. Zoom always uses whole-number multiples from
+1× to 8×, including Fit mode. Maps too large to fit at 1× remain scrollable.
+Choose a numeric zoom to leave Fit mode. The mouse wheel zooms around the pointer
+over the workspace; wheel zoom also leaves Fit mode when the zoom level changes.
+Ctrl/⌘ wheel keeps the browser’s normal behavior.
+The message below the tools names the active layer; a hidden layer offers
+**Show layer** there. View changes do not mark the scene as unsaved.
+
+**Unsaved changes** appears beside the scene selector, and **Save scene** gains
+an accent when edits need saving. The asset library contains **Import atlas**.
+Selecting an object or tiles brings the Selection section to the top of the
+inspector; object edit and remove controls appear before animation settings.
 
 Hovering over the canvas outlines the active grid cell (or a tile stamp's full
 footprint). The footer shows `Cell column, row` and `Pixel X, Y`, both starting at
@@ -107,7 +131,12 @@ Reopening restores preferences with playback paused at frame one and movement
 disabled. Progress, active keys, paths and temporary positions are never persisted.
 Deleting/reimporting an atlas prunes obsolete sprite/sequence references.
 
-The **Layers** list shows the topmost layer first. Choose a layer to edit its
+The **Layers** list shows the topmost layer first. Each row shows its type and
+visibility; its eye button shows or hides the layer without changing the active
+layer. Drag the grip at the left of a row to reorder it; the gold insertion line
+shows where it will land. Dropping creates one undoable change. Escape or a drop
+outside the list cancels. The list scrolls when dragging near its edges.
+Tab into the list and use arrow keys to select a layer. Choose a layer to edit its
 contents, rename it, move it **Up**/**Down**, or **Hide**/**Show** it. **+ Tile layer**
 and **+ Object layer** add empty layers above the existing stack. **Delete layer**
 removes that layer and its contents; Undo restores both. Keep at least one layer;

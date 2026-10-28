@@ -13,7 +13,17 @@
 <body class="standalone">
   <header class="masthead">
     <div class="brand"><img class="mark" src="/branding/logo-64.png" width="64" height="64" alt=""><div><h1>GBC Scene Forge</h1><span id="project-name" class="eyebrow">LOCAL PROJECT</span></div></div>
-    <div class="connection"><span class="dot"></span> LOCAL WORKSPACE <span class="tag">STANDALONE</span></div>
+    <div class="connection">
+      <div class="folder-control">
+        <button id="project-folder" class="folder-button" popovertarget="folder-popover" aria-label="Project folder" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h6l2 3h10v12H3Z"/></svg><span id="folder-name">Project folder</span></button>
+        <div id="folder-popover" class="folder-popover" popover aria-labelledby="folder-heading">
+          <h2 id="folder-heading">Project folder</h2>
+          <p id="folder-path" class="folder-path"></p>
+          <button id="copy-folder" class="small">Copy path</button>
+          <p id="folder-copy-status" class="hint" role="status"></p>
+        </div>
+      </div>
+      <a class="github-link" href="https://github.com/cliffom/gbc-scene-forge" target="_blank" rel="noopener noreferrer" aria-label="GBC Scene Forge on GitHub (opens in a new tab)" title="View GBC Scene Forge on GitHub"><svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.65 7.65 0 0 1 8 3.86c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg></a></div>
   </header>
   <div id="project-start" class="project-start">
     <section id="project-picker" class="welcome" hidden aria-labelledby="projects-heading">
@@ -34,12 +44,12 @@
     <nav class="document-bar" aria-label="Document controls">
       <label>Project <select id="switch-project" aria-label="Current project" disabled></select></label>
       <label>Scene <select id="scenes" aria-label="Saved scenes"><option value="">Choose a scene…</option></select></label>
+      <span id="scene-save-state" role="status" aria-live="polite"></span>
       <button id="show-create">Create scene</button>
       <button id="show-delete" disabled>Delete scene</button>
       <span class="spacer"></span>
-      <button id="show-import">Import atlas</button>
       <button id="show-export" disabled>Export…</button>
-      <button id="save" class="primary" disabled title="Save scene (⌘/Ctrl S)">Save scene</button>
+      <button id="save" disabled title="Save scene (⌘/Ctrl S)">Save scene</button>
     </nav>
     <main>
       <aside class="library">
@@ -62,90 +72,98 @@
             <label class="tool" title="Paint or place (P)"><input type="radio" name="tool" value="paint" checked disabled><svg class="tool-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m14 6 4-4a2.8 2.8 0 0 1 4 4l-9 9-4-4 5-5Z"/><path d="M9 11c-3-1-5 1-5 4 0 2-1 4-2 5 5 1 10-1 10-5"/></svg><span id="paint-label">Paint</span></label>
             <label class="tool" title="Fill (F)"><input type="radio" name="tool" value="fill" disabled><svg class="tool-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 2 5 5M19 11l-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2a2 2 0 0 0 2.8 0L19 11ZM2 12h16"/><path d="M20 15s-2 2.5-2 4a2 2 0 0 0 4 0c0-1.5-2-4-2-4Z"/></svg><span>Fill</span></label>
             <label class="tool" title="Erase (E)"><input type="radio" name="tool" value="erase" disabled><span aria-hidden="true">⌫</span><span>Erase</span></label>
-            <label class="tool" title="Pan (H)"><input type="radio" name="tool" value="pan" disabled><span aria-hidden="true">✥</span><span>Pan</span></label>
+            <label class="tool" title="Pan (H), or hold Space and drag"><input type="radio" name="tool" value="pan" disabled><span aria-hidden="true">✥</span><span>Pan</span></label>
           </div>
           <button id="deselect" title="Deselect (Escape)" disabled>Deselect</button>
           <div class="tool-group"><button id="undo" title="Undo (⌘/Ctrl Z)" aria-label="Undo" disabled>↶</button><button id="redo" title="Redo (⌘/Ctrl Shift Z)" aria-label="Redo" disabled>↷</button></div>
           <button id="revert" disabled>Revert changes</button>
-          <span class="spacer"></span><label>Zoom <select id="zoom"><option value="1">1×</option><option value="2">2×</option><option value="3" selected>3×</option><option value="4">4×</option><option value="6">6×</option><option value="8">8×</option></select></label>
+          <span class="spacer"></span><div class="zoom-controls"><label>Zoom <select id="zoom"><option value="fit" id="fit-zoom-option">Fit</option><option value="1">1×</option><option value="2">2×</option><option value="3" selected>3×</option><option value="4">4×</option><option value="6">6×</option><option value="8">8×</option></select></label><button id="fit-scene" disabled title="Center and fit the entire scene in the workspace">Fit scene</button></div>
         </div>
+        <div id="layer-context" class="layer-context" hidden><span id="layer-context-text"></span><button id="context-show-layer" class="small" hidden>Show layer</button></div>
         <div id="viewport" class="viewport" tabindex="0" aria-label="Scene workspace">
           <div id="empty-scene"><h2>No scene open</h2><p>Create a scene to start building, or choose a saved scene and open it.</p><button id="empty-create" class="primary">Create scene</button></div>
           <div id="canvas-surround" class="canvas-surround" hidden><canvas id="scene" hidden tabindex="0" aria-label="Editable scene on a tile grid"></canvas></div>
         </div>
         <div class="canvas-footer"><span id="coordinates" title="Cell column and row, followed by pixel X and Y. All coordinates start at zero.">Cell —, — · Pixel —, —</span><span id="scene-name">No scene open</span><span id="selected-brush">Select a brush</span></div>
-        <div class="review-bar"><span class="eyebrow">VIEW</span><label><input id="grid" type="checkbox" checked> Grid</label><label title="Snap sprite origins to grid intersections. Hold Alt to bypass; arrow keys nudge one pixel."><input id="snap" type="checkbox" checked> Snap to grid</label><label><input id="terrain-overlay" type="checkbox"> Terrain</label><label><input id="collision-overlay" type="checkbox"> Collision</label><span class="hint">Alt: free placement · Arrow keys: 1 px</span></div>
+        <div class="review-bar"><span class="eyebrow">VIEW</span><label><input id="grid" type="checkbox" checked> Grid</label><label title="Snap sprite origins to grid intersections. Hold Alt to bypass; arrow keys nudge one pixel."><input id="snap" type="checkbox" checked> Snap to grid</label><label><input id="terrain-overlay" type="checkbox"> Terrain</label><label><input id="collision-overlay" type="checkbox"> Collision</label><span class="hint">Space: pan · Wheel: zoom · Alt: free placement · Arrow keys: 1 px</span></div>
       </section>
       <aside class="inspector">
-        <div class="panel-heading"><h2>Scene properties</h2><span id="dirty" class="tag">NO SCENE</span></div>
-        <label class="field">Scene name<input id="inspector-name" readonly placeholder="No scene open"></label>
-        <div class="property-grid"><label class="field">Dimensions<input id="inspector-size" readonly placeholder="—"></label><label class="field">Grid<input id="inspector-grid" readonly placeholder="—"></label></div>
-        <p id="scene-summary" class="hint">Open a scene to inspect its dimensions and placed sprites.</p>
-        <div class="divider"></div>
-        <div class="panel-heading"><h3>Layers</h3><span class="muted">TOP FIRST</span></div>
-        <select id="layers" size="5" aria-label="Active layer" disabled></select>
-        <label class="field">Layer name<input id="layer-name" maxlength="100" disabled></label>
-        <div class="layer-actions">
-          <button id="layer-up" class="small" disabled>Up</button><button id="layer-down" class="small" disabled>Down</button><button id="layer-visible" class="small" disabled>Hide</button>
-          <button id="layer-remove" class="small" disabled>Delete layer</button>
-          <button id="layer-tile" class="small" disabled>+ Tile layer</button><button id="layer-object" class="small" disabled>+ Object layer</button>
-        </div>
-        <p class="hint">Edits affect the active layer. Hidden layers cannot be edited. Layer changes and deletion can be undone.</p>
-        <div class="divider"></div>
-        <div class="panel-heading"><h3>Selection</h3><span id="selection-kind" class="muted">—</span></div>
-        <div id="selection-preview" class="selection-preview" hidden><canvas id="selection-image"></canvas></div>
-        <p id="selection-name" class="selection-name muted">Nothing selected</p>
-        <p id="selection-detail" class="hint">Select an object on the canvas or in the list to edit it, or select tiles on a tile layer.</p>
-        <section id="animation-preview" aria-label="Sprite animation preview" hidden>
-          <div class="property-grid">
-            <label class="field">Preview action<select id="preview-action"><option value="manual">Manual</option><option value="idle">Idle</option><option value="walk">Walk</option></select></label>
-            <label class="field">Direction<select id="preview-direction"><option value="down">Down</option><option value="left">Left</option><option value="right">Right</option><option value="up">Up</option></select></label>
-          </div>
-          <label class="field">Animation<select id="preview-animation"><option value="">Static frame</option></select></label>
-          <div class="layer-actions"><button id="preview-previous" class="small" aria-label="Previous animation frame">Previous</button><button id="preview-play" class="small">Play</button><button id="preview-next" class="small" aria-label="Next animation frame">Next</button></div>
-          <label class="field">Playback speed<select id="preview-speed"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
-          <label><input id="preview-origin" type="checkbox" checked> Show origin in preview</label>
-          <p id="preview-frame" class="hint"></p>
-          <p id="preview-mapping-status" class="hint"></p>
-          <details id="preview-mappings"><summary>Sequence mappings</summary>
-            <p class="hint">Assign imported sequences explicitly for this sprite asset. Mappings are shared by its instances.</p>
-            <table><thead><tr><th scope="col">Direction</th><th scope="col">Idle</th><th scope="col">Walk</th></tr></thead><tbody>
-              <tr><th scope="row">Down</th><td><select id="preview-map-idle-down" aria-label="Idle down sequence"><option value="">Unmapped</option></select></td><td><select id="preview-map-walk-down" aria-label="Walk down sequence"><option value="">Unmapped</option></select></td></tr>
-              <tr><th scope="row">Left</th><td><select id="preview-map-idle-left" aria-label="Idle left sequence"><option value="">Unmapped</option></select></td><td><select id="preview-map-walk-left" aria-label="Walk left sequence"><option value="">Unmapped</option></select></td></tr>
-              <tr><th scope="row">Right</th><td><select id="preview-map-idle-right" aria-label="Idle right sequence"><option value="">Unmapped</option></select></td><td><select id="preview-map-walk-right" aria-label="Walk right sequence"><option value="">Unmapped</option></select></td></tr>
-              <tr><th scope="row">Up</th><td><select id="preview-map-idle-up" aria-label="Idle up sequence"><option value="">Unmapped</option></select></td><td><select id="preview-map-walk-up" aria-label="Walk up sequence"><option value="">Unmapped</option></select></td></tr>
-            </tbody></table>
-            <p class="hint">Unmapped directions show the saved sprite.</p>
-          </details>
-          <details id="preview-movement-settings"><summary>Movement preview</summary>
-            <label><input id="preview-movement" type="checkbox"> Enable movement preview</label>
-            <p class="hint">Click the scene, then use arrow keys or WASD. Escape exits. The gold outline marks the saved position; the cyan box is the collision footprint. Scene edges always stop movement.</p>
-            <label class="field">Movement speed (px/s)<input id="preview-move-speed" type="number" min="1" max="512" value="48"></label>
-            <p class="hint">Footprint offsets are relative to the sprite origin, independent of its artwork.</p>
-            <div class="property-grid">
-              <label class="field">Offset X<input id="preview-footprint-x" type="number" value="-4" min="-4096" max="4096"></label>
-              <label class="field">Offset Y<input id="preview-footprint-y" type="number" value="-4" min="-4096" max="4096"></label>
-              <label class="field">Width<input id="preview-footprint-width" type="number" value="8" min="0.1" max="4096" step="any"></label>
-              <label class="field">Height<input id="preview-footprint-height" type="number" value="8" min="0.1" max="4096" step="any"></label>
-            </div>
-            <label><input id="preview-check-collision" type="checkbox"> Check collisions</label>
-            <p class="hint">Checks visible tiles and other sprites with authored collision metadata. Markers and trigger areas do not block movement.</p>
-            <label class="field">Path waypoints (pixel X, Y per line)<textarea id="preview-path" rows="3" placeholder="32, 32&#10;48, 32"></textarea></label>
-            <div class="layer-actions"><button id="preview-follow-path" class="small" disabled>Follow path</button><button id="preview-pause-movement" class="small" disabled>Pause movement</button><button id="preview-reset-position" class="small" disabled>Reset position</button></div>
-            <p id="preview-position" class="hint" aria-live="off"></p>
-          </details>
-          <button id="save-preview-settings" class="selection-remove">Save preview settings</button>
-          <p class="hint">Save mappings, choices, speeds, footprint and collision preference in this project. Playback progress and temporary positions are never saved.</p>
-          <p class="hint">Preview only. Playback does not edit the scene or its starting positions.</p>
+        <section id="scene-panel" class="inspector-panel" aria-label="Scene properties">
+          <div class="panel-heading"><h2>Scene properties</h2><span id="dirty" class="tag">NO SCENE</span></div>
+          <label class="field">Scene name<input id="inspector-name" readonly placeholder="No scene open"></label>
+          <div class="property-grid"><label class="field">Dimensions<input id="inspector-size" readonly placeholder="—"></label><label class="field">Grid<input id="inspector-grid" readonly placeholder="—"></label></div>
+          <p id="scene-summary" class="hint">Open a scene to inspect its dimensions and placed sprites.</p>
         </section>
-        <select id="object-list" size="3" aria-label="Objects in active layer" disabled></select>
-        <button id="edit-object" class="selection-remove" disabled>Edit selected object</button>
-        <button id="remove-sprite" class="selection-remove" disabled>Remove selected object</button>
-        <div class="divider"></div>
-        <h3>Project assets</h3>
-        <div id="atlas-list" class="atlas-list"><p class="hint">No atlases imported yet.</p></div>
-        <details id="import-results" hidden><summary id="import-result-summary">Last import</summary><p id="import-report" class="hint"></p></details>
-        <p class="hint">Imports copy artwork into this project. Source atlas files stay unchanged.</p>
+        <section id="layers-panel" class="inspector-panel" aria-labelledby="layers-heading">
+          <div class="panel-heading"><h3 id="layers-heading">Layers</h3><span class="layer-order">Top first</span></div>
+          <div id="layers" role="radiogroup" aria-labelledby="layers-heading"></div>
+          <label class="field">Layer name<input id="layer-name" maxlength="100" disabled></label>
+          <div class="layer-controls">
+            <button id="layer-up" class="small" title="Move active layer toward the top" disabled>↑ Move up</button><button id="layer-down" class="small" title="Move active layer toward the bottom" disabled>↓ Move down</button><button id="layer-visible" class="small" disabled>Hide layer</button>
+            <button id="layer-remove" class="small" disabled>Delete layer</button>
+          </div>
+          <div class="layer-add">
+            <button id="layer-tile" class="small" disabled>+ Tile layer</button><button id="layer-object" class="small" disabled>+ Object layer</button>
+          </div>
+          <p class="hint layer-hint">Drag the grips to reorder layers. Select a layer to edit it. Hidden layers cannot be edited. All layer changes can be undone.</p>
+        </section>
+        <section id="selection-panel" class="inspector-panel" aria-label="Selection properties">
+          <div class="panel-heading"><h3>Selection</h3><span id="selection-kind" class="muted">—</span></div>
+          <div id="selection-preview" class="selection-preview" hidden><canvas id="selection-image"></canvas></div>
+          <p id="selection-name" class="selection-name muted">Nothing selected</p>
+          <p id="selection-detail" class="hint">Select an object on the canvas or in the list to edit it, or select tiles on a tile layer.</p>
+          <div class="selection-actions"><button id="edit-object" class="selection-remove" disabled>Edit selected object</button>
+          <button id="remove-sprite" class="selection-remove" disabled>Remove selected object</button></div>
+          <section id="animation-preview" aria-label="Sprite animation preview" hidden>
+            <div class="property-grid">
+              <label class="field">Preview action<select id="preview-action"><option value="manual">Manual</option><option value="idle">Idle</option><option value="walk">Walk</option></select></label>
+              <label class="field">Direction<select id="preview-direction"><option value="down">Down</option><option value="left">Left</option><option value="right">Right</option><option value="up">Up</option></select></label>
+            </div>
+            <label class="field">Animation<select id="preview-animation"><option value="">Static frame</option></select></label>
+            <div class="layer-actions"><button id="preview-previous" class="small" aria-label="Previous animation frame">Previous</button><button id="preview-play" class="small">Play</button><button id="preview-next" class="small" aria-label="Next animation frame">Next</button></div>
+            <label class="field">Playback speed<select id="preview-speed"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
+            <label><input id="preview-origin" type="checkbox" checked> Show origin in preview</label>
+            <p id="preview-frame" class="hint"></p>
+            <p id="preview-mapping-status" class="hint"></p>
+            <details id="preview-mappings"><summary>Sequence mappings</summary>
+              <p class="hint">Assign imported sequences explicitly for this sprite asset. Mappings are shared by its instances.</p>
+              <table><thead><tr><th scope="col">Direction</th><th scope="col">Idle</th><th scope="col">Walk</th></tr></thead><tbody>
+                <tr><th scope="row">Down</th><td><select id="preview-map-idle-down" aria-label="Idle down sequence"><option value="">Unmapped</option></select></td><td><select id="preview-map-walk-down" aria-label="Walk down sequence"><option value="">Unmapped</option></select></td></tr>
+                <tr><th scope="row">Left</th><td><select id="preview-map-idle-left" aria-label="Idle left sequence"><option value="">Unmapped</option></select></td><td><select id="preview-map-walk-left" aria-label="Walk left sequence"><option value="">Unmapped</option></select></td></tr>
+                <tr><th scope="row">Right</th><td><select id="preview-map-idle-right" aria-label="Idle right sequence"><option value="">Unmapped</option></select></td><td><select id="preview-map-walk-right" aria-label="Walk right sequence"><option value="">Unmapped</option></select></td></tr>
+                <tr><th scope="row">Up</th><td><select id="preview-map-idle-up" aria-label="Idle up sequence"><option value="">Unmapped</option></select></td><td><select id="preview-map-walk-up" aria-label="Walk up sequence"><option value="">Unmapped</option></select></td></tr>
+              </tbody></table>
+              <p class="hint">Unmapped directions show the saved sprite.</p>
+            </details>
+            <details id="preview-movement-settings"><summary>Movement preview</summary>
+              <label><input id="preview-movement" type="checkbox"> Enable movement preview</label>
+              <p class="hint">Click the scene, then use arrow keys or WASD. Escape exits. The gold outline marks the saved position; the cyan box is the collision footprint. Scene edges always stop movement.</p>
+              <label class="field">Movement speed (px/s)<input id="preview-move-speed" type="number" min="1" max="512" value="48"></label>
+              <p class="hint">Footprint offsets are relative to the sprite origin, independent of its artwork.</p>
+              <div class="property-grid">
+                <label class="field">Offset X<input id="preview-footprint-x" type="number" value="-4" min="-4096" max="4096"></label>
+                <label class="field">Offset Y<input id="preview-footprint-y" type="number" value="-4" min="-4096" max="4096"></label>
+                <label class="field">Width<input id="preview-footprint-width" type="number" value="8" min="0.1" max="4096" step="any"></label>
+                <label class="field">Height<input id="preview-footprint-height" type="number" value="8" min="0.1" max="4096" step="any"></label>
+              </div>
+              <label><input id="preview-check-collision" type="checkbox"> Check collisions</label>
+              <p class="hint">Checks visible tiles and other sprites with authored collision metadata. Markers and trigger areas do not block movement.</p>
+              <label class="field">Path waypoints (pixel X, Y per line)<textarea id="preview-path" rows="3" placeholder="32, 32&#10;48, 32"></textarea></label>
+              <div class="layer-actions"><button id="preview-follow-path" class="small" disabled>Follow path</button><button id="preview-pause-movement" class="small" disabled>Pause movement</button><button id="preview-reset-position" class="small" disabled>Reset position</button></div>
+              <p id="preview-position" class="hint" aria-live="off"></p>
+            </details>
+            <button id="save-preview-settings" class="selection-remove">Save preview settings</button>
+            <p class="hint">Save mappings, choices, speeds, footprint and collision preference in this project. Playback progress and temporary positions are never saved.</p>
+            <p class="hint">Preview only. Playback does not edit the scene or its starting positions.</p>
+          </section>
+          <select id="object-list" size="3" aria-label="Objects in active layer" disabled></select>
+        </section>
+        <section class="inspector-panel" aria-label="Project assets">
+          <h3>Project assets</h3>
+          <div id="atlas-list" class="atlas-list"><p class="hint">No atlases imported yet.</p></div>
+          <details id="import-results" hidden><summary id="import-result-summary">Last import</summary><p id="import-report" class="hint"></p></details>
+          <p class="hint">Imports copy artwork into this project. Source atlas files stay unchanged.</p>
+        </section>
       </aside>
     </main>
   </div>

@@ -1,0 +1,58 @@
+/** Return mouse-operated editor controls to the canvas without disrupting keyboard use. */
+export function editorFocus(root: HTMLElement, canvas: HTMLCanvasElement, enabled: () => boolean) {
+  const commands = [
+    '.canvas-toolbar button',
+    '.tool',
+    '.asset',
+    '.layer-choice',
+    '.layer-eye',
+    '.layer-controls button',
+    '.layer-add button',
+    '.review-bar input',
+    '#place-point',
+    '#place-rectangle',
+    '#context-show-layer',
+    '#save',
+    '#remove-sprite',
+  ].join(',');
+  const dropdowns = '#zoom, #atlas-filter, #kind-filter, #object-list';
+  let pointerSelect: HTMLSelectElement | null = null;
+  function excluded(target: Element) {
+    return Boolean(target.closest('dialog, #animation-preview'));
+  }
+  function returnToCanvas() {
+    if (enabled() && !document.querySelector('dialog[open]')) {
+      canvas.focus({ preventScroll: true });
+    }
+  }
+  root.addEventListener('click', (event) => {
+    if (event.detail === 0 || !(event.target instanceof Element) || excluded(event.target)) {
+      return;
+    }
+    if (event.target.closest(commands)) {
+      returnToCanvas();
+    }
+  });
+  root.addEventListener('pointerdown', (event) => {
+    pointerSelect =
+      event.target instanceof HTMLSelectElement && event.target.matches(dropdowns)
+        ? event.target
+        : null;
+  });
+  root.addEventListener('change', (event) => {
+    if (event.target === pointerSelect) {
+      pointerSelect = null;
+      returnToCanvas();
+    }
+  });
+  document.addEventListener(
+    'keydown',
+    () => {
+      pointerSelect = null;
+    },
+    true,
+  );
+  window.addEventListener('blur', () => {
+    pointerSelect = null;
+  });
+}

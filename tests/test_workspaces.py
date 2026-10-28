@@ -231,6 +231,10 @@ class ProjectRootHttpTests(unittest.TestCase):
                 with self.assertRaises(HTTPError):
                     request(second + "scene/" + scene["id"])
                 self.assertEqual(len(request("/api/project")["projects"]), 2)
+                self.assertEqual(request("/api/project")["project_root"], str(root))
+                self.assertEqual(
+                    request(first + "project")["project_path"], str(root / "hello-world")
+                )
                 with self.assertRaises(HTTPError):
                     request("/projects/%2e%2e/api/project")
                 # A request from the first tab remains scoped after another tab opens B.

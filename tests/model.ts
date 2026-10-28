@@ -121,6 +121,19 @@ layered.move({ x: 1, y: 1, w: 1, h: 1 }, 1, 0);
 assert.equal(layered.cells[1][2], 'leaf');
 layered.undo();
 assert.equal(layered.cells[1][1], 'leaf');
+const activeLayerBeforeVisibility = layered.active.id;
+layered.visibility(layered.layers[0].id);
+assert.equal(layered.active.id, activeLayerBeforeVisibility);
+assert.equal(layered.layers[0].visible, false);
+layered.undo();
+assert.equal(layered.layers[0].visible, true);
+assert.equal(layered.active.id, activeLayerBeforeVisibility);
+layered.redo();
+assert.equal(layered.layers[0].visible, false);
+layered.undo();
+const beforeUnknownVisibility = JSON.stringify(layered.scene);
+assert.throws(() => layered.visibility(999), /Unknown layer/);
+assert.equal(JSON.stringify(layered.scene), beforeUnknownVisibility);
 layered.visibility();
 const hidden = JSON.stringify(layered.scene);
 assert.throws(() => layered.stamp(0, 0, [['bad']]), /Show/);
@@ -339,3 +352,54 @@ for (const points of [
 console.log(
   'Tile metadata: terrain identity, shapes, stable IDs and invalid polygon/bounds checks pass.',
 );
+
+// A drag moves an arbitrary layer in one history entry without changing the active layer.
+const dragLayers = new LayerEditor(
+  {
+    width: 1,
+    height: 1,
+    grid: 8,
+    layers: [1, 2, 3].map((id) => ({
+      id,
+      name: `Layer ${id}`,
+      visible: id !== 3,
+      type: 'tilelayer' as const,
+      cells: [['empty']],
+    })),
+    next_layer_id: 4,
+    next_object_id: 1,
+    active_layer_id: 2,
+  },
+  [],
+  { erase_cell: 'empty' },
+);
+dragLayers.moveLayer(1, 3);
+assert.deepEqual(
+  dragLayers.layers.map((layer) => layer.id),
+  [2, 3, 1],
+);
+assert.equal(dragLayers.active.id, 2);
+assert.equal(dragLayers.undoStack.length, 1);
+assert.equal(dragLayers.layers[1].visible, false);
+dragLayers.undo();
+assert.deepEqual(
+  dragLayers.layers.map((layer) => layer.id),
+  [1, 2, 3],
+);
+dragLayers.redo();
+assert.deepEqual(
+  dragLayers.layers.map((layer) => layer.id),
+  [2, 3, 1],
+);
+dragLayers.moveLayer(1, null);
+assert.deepEqual(
+  dragLayers.layers.map((layer) => layer.id),
+  [1, 2, 3],
+);
+const dragHistory = dragLayers.undoStack.length;
+dragLayers.moveLayer(1, null);
+dragLayers.moveLayer(2, 2);
+assert.equal(dragLayers.undoStack.length, dragHistory);
+assert.throws(() => dragLayers.moveLayer(99, null), /Unknown layer/);
+assert.throws(() => dragLayers.moveLayer(1, 99), /Unknown layer/);
+assert.equal(dragLayers.undoStack.length, dragHistory);

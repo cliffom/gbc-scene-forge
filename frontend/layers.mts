@@ -133,9 +133,13 @@ export class LayerEditor extends Editor<LayerScene> {
       this.active.name = name;
     });
   }
-  visibility() {
+  visibility(id = this.active.id) {
+    const layer = this.layers.find((layer) => layer.id === id);
+    if (!layer) {
+      throw Error('Unknown layer.');
+    }
     this.change(() => {
-      this.active.visible = !this.active.visible;
+      layer.visible = !layer.visible;
     });
   }
   reorder(delta: number) {
@@ -147,6 +151,28 @@ export class LayerEditor extends Editor<LayerScene> {
     this.change(() => {
       const [layer] = this.layers.splice(from, 1);
       this.layers.splice(to, 0, layer);
+    });
+  }
+  moveLayer(id: number, beforeId: number | null) {
+    const ordered = [...this.layers].reverse();
+    const layer = ordered.find((layer) => layer.id === id);
+    if (!layer || (beforeId !== null && !ordered.some((layer) => layer.id === beforeId))) {
+      throw Error('Unknown layer.');
+    }
+    if (id === beforeId) {
+      return;
+    }
+    const remaining = ordered.filter((layer) => layer.id !== id);
+    remaining.splice(
+      beforeId === null ? remaining.length : remaining.findIndex((layer) => layer.id === beforeId),
+      0,
+      layer,
+    );
+    if (remaining.every((layer, index) => layer === ordered[index])) {
+      return;
+    }
+    this.change(() => {
+      this.scene.layers = remaining.reverse();
     });
   }
   remove() {

@@ -86,7 +86,7 @@ try {
   const submit = async (id: string) => {
     const dialogs: Record<string, [string, string]> = {
       'scene-form': ['create-scene-dialog', 'show-create'],
-      'import-form': ['import-atlas-dialog', 'show-import'],
+      'import-form': ['import-atlas-dialog', 'library-import'],
     };
     const target = dialogs[id];
     if (target && !(await evaluate(`document.getElementById('${target[0]}').open`))) {
@@ -100,6 +100,8 @@ try {
       `(() => { const control = document.getElementById(${JSON.stringify(id)}); control.value=${JSON.stringify(value)}; control.dispatchEvent(new Event(control.tagName === 'SELECT' ? 'change' : 'input', {bubbles:true})); })()`,
     );
   };
+  const chooseLayer = async (id: string) =>
+    browser.click(`document.querySelector('#layers [data-layer-id="${id}"] .layer-choice')`);
   const chooseScene = async (id: string) => {
     await wait("document.getElementById('scenes')?.disabled === false");
     await set('scenes', id);
@@ -177,6 +179,33 @@ print(json.dumps(result))
   await wait(
     "!document.getElementById('project-form')?.hidden && document.getElementById('status')?.textContent.includes('Choose a project')",
   );
+  assert.equal(await evaluate("document.getElementById('folder-name').textContent"), 'projects');
+  assert.equal(
+    await evaluate("document.getElementById('folder-heading').textContent"),
+    'Projects folder',
+  );
+  assert.equal(await evaluate("document.getElementById('folder-path').textContent"), projectRoot);
+  await click('project-folder');
+  await wait("document.getElementById('folder-popover').matches(':popover-open')");
+  await evaluate(
+    "Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async value=>{window.__copiedFolder=value}}})",
+  );
+  await click('copy-folder');
+  await wait("document.getElementById('folder-copy-status').textContent === 'Path copied.'");
+  assert.equal(await evaluate('window.__copiedFolder'), projectRoot);
+  await browser.call('Input.dispatchKeyEvent', {
+    type: 'keyDown',
+    key: 'Escape',
+    code: 'Escape',
+    windowsVirtualKeyCode: 27,
+  });
+  await browser.call('Input.dispatchKeyEvent', {
+    type: 'keyUp',
+    key: 'Escape',
+    code: 'Escape',
+    windowsVirtualKeyCode: 27,
+  });
+  await wait("!document.getElementById('folder-popover').matches(':popover-open')");
   for (const height of [1500, 700, 500]) {
     await browser.call('Emulation.setDeviceMetricsOverride', {
       width: 1440,
@@ -305,7 +334,7 @@ print(json.dumps(result))
         project.selectedOptions[0].textContent === 'Hello World' &&
         project.closest('.document-bar') === scene.closest('.document-bar') &&
         project.getBoundingClientRect().right < scene.getBoundingClientRect().left &&
-        !document.querySelector('.masthead select, .masthead button');
+        !document.querySelector('.masthead select');
     })()`),
     true,
   );
@@ -362,6 +391,50 @@ print(json.dumps(result))
   await start(join(folder, 'world'));
   await browser.call('Page.navigate', { url });
   await wait("document.getElementById('status')?.textContent.includes('Name your project')");
+  assert.equal(await evaluate("document.getElementById('folder-name').textContent"), 'world');
+  assert.equal(
+    await evaluate("document.getElementById('folder-heading').textContent"),
+    'Project folder',
+  );
+  assert.equal(
+    await evaluate("document.getElementById('folder-path').textContent"),
+    join(folder, 'world'),
+  );
+  // A long path remains readable in the popover without widening the page.
+  await click('project-folder');
+  await wait("document.getElementById('folder-popover').matches(':popover-open')");
+  await evaluate(
+    "document.getElementById('folder-path').textContent='/very-long-project-folder/'.repeat(20)",
+  );
+  await browser.call('Emulation.setDeviceMetricsOverride', {
+    width: 980,
+    height: 760,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await wait(`(() => {
+    const panel=document.getElementById('folder-popover'),rect=panel.getBoundingClientRect();
+    return rect.left >= 0 && rect.right <= innerWidth && panel.scrollWidth <= panel.clientWidth;
+  })()`);
+  await browser.screenshot('standalone-project-folder');
+  await evaluate(
+    "Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw Error('Clipboard unavailable')}}})",
+  );
+  await click('copy-folder');
+  await wait(
+    "document.getElementById('folder-copy-status').textContent.includes('Select the path')",
+  );
+  await click('project-folder');
+  await evaluate(
+    `document.getElementById('folder-path').textContent=${JSON.stringify(join(folder, 'world'))}`,
+  );
+  await browser.call('Emulation.setDeviceMetricsOverride', {
+    width: 1440,
+    height: 1000,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+
   await wait("document.querySelector('.mark')?.naturalWidth === 64");
   assert.equal(
     await evaluate("getComputedStyle(document.querySelector('.mark')).imageRendering"),
@@ -371,7 +444,7 @@ print(json.dumps(result))
   await submit('project-form');
   await wait("document.getElementById('status')?.textContent.includes('Project created')");
   // Browser owns folder selection; choosing reads no atlas bytes and makes no picker HTTP requests.
-  await click('show-import');
+  await click('library-import');
   await set('atlas-path', '/tmp/keep-this-path.atlas.json');
   await evaluate(
     "window.showDirectoryPicker=async()=>{throw new DOMException('Cancelled','AbortError')}",
@@ -506,6 +579,18 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   await set('kind-filter', '');
   await evaluate("document.getElementById('kind-filter').dispatchEvent(new Event('change'))");
   assert.equal(await evaluate("document.getElementById('inspector-size').value"), '7 × 5 cells');
+  assert.equal(await evaluate("document.querySelectorAll('#show-import').length"), 0);
+  assert.equal(await evaluate("document.getElementById('scene-save-state').textContent"), 'Saved');
+  assert.equal(
+    await evaluate(
+      "document.getElementById('save').disabled && !document.getElementById('save').classList.contains('primary')",
+    ),
+    true,
+  );
+  await click('fit-scene');
+  assert.equal(await evaluate("document.getElementById('zoom').value"), 'fit');
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
+  await set('zoom', '3');
   await evaluate(`(() => {
     const canvas=document.getElementById('scene'), rect=canvas.getBoundingClientRect();
     const data=new DataTransfer();data.setData('application/x-forge-asset','actors/idle');
@@ -513,6 +598,16 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
       clientX:rect.left+32*rect.width/canvas.width,clientY:rect.top+24*rect.height/canvas.height}));
   })()`);
   assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'UNSAVED');
+  assert.equal(
+    await evaluate("document.getElementById('scene-save-state').textContent"),
+    'Unsaved changes',
+  );
+  assert.equal(
+    await evaluate(
+      "!document.getElementById('save').disabled && document.getElementById('save').classList.contains('primary')",
+    ),
+    true,
+  );
   await click('undo');
   assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
   await browser.click('document.querySelector(\'[data-asset="terrain/earth"]\')');
@@ -1092,6 +1187,17 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
     await evaluate("document.getElementById('status').textContent"),
     'Show the active layer before editing it.',
   );
+  assert.equal(
+    await evaluate("document.getElementById('layer-context-text').textContent"),
+    'Canopy is hidden',
+  );
+  await click('context-show-layer');
+  assert.equal(await evaluate("document.getElementById('context-show-layer').hidden"), true);
+  await click('undo');
+  assert.equal(
+    await evaluate("document.getElementById('layer-context-text').textContent"),
+    'Canopy is hidden',
+  );
   await click('layer-object');
   await set('layer-name', 'Foreground actors');
   await evaluate("document.getElementById('layer-name').dispatchEvent(new Event('change'))");
@@ -1099,7 +1205,7 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   await browser.pointer(48, 24);
   await browser.pointer(48, 24, 'mouseReleased');
   await click('layer-remove');
-  assert.equal(await evaluate("document.getElementById('layers').options.length"), 3);
+  assert.equal(await evaluate("document.querySelectorAll('#layers input[type=radio]').length"), 3);
   await click('undo');
   assert.equal(await evaluate("document.getElementById('layer-name').value"), 'Foreground actors');
   await click('save');
@@ -1117,12 +1223,255 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'UNSAVED');
   await click('redo');
   assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
+  assert.deepEqual(
+    await evaluate(
+      "Array.from(document.querySelectorAll('#layers .layer-name'), node => node.textContent)",
+    ),
+    ['Foreground actors', 'Canopy', 'Sprites', 'Ground'],
+  );
+  await evaluate("document.querySelector('#layers input:checked').focus()");
+  for (const [key, code, expected] of [
+    ['ArrowDown', 40, 'Canopy'],
+    ['ArrowUp', 38, 'Foreground actors'],
+  ] as const) {
+    await browser.call('Input.dispatchKeyEvent', {
+      type: 'keyDown',
+      key,
+      code: key,
+      windowsVirtualKeyCode: code,
+    });
+    await browser.call('Input.dispatchKeyEvent', {
+      type: 'keyUp',
+      key,
+      code: key,
+      windowsVirtualKeyCode: code,
+    });
+    assert.equal(await evaluate("document.getElementById('layer-name').value"), expected);
+    assert.equal(
+      await evaluate("document.activeElement === document.querySelector('#layers input:checked')"),
+      true,
+    );
+  }
+  assert.equal(await evaluate("document.getElementById('layer-up').disabled"), true);
+  const longLayerName =
+    'Characters, markers and foreground objects with a long descriptive layer name';
+  await set('layer-name', longLayerName);
+  await evaluate("document.getElementById('layer-name').dispatchEvent(new Event('change'))");
+  assert.equal(
+    await evaluate(`(() => {
+    const name = document.querySelector('#layers input:checked').closest('label').querySelector('.layer-name');
+    return name.textContent === ${JSON.stringify(longLayerName)} && name.scrollWidth <= name.clientWidth && name.clientHeight > 30;
+  })()`),
+    true,
+  );
+  await browser.screenshot('standalone-layers-long-name');
+  await click('undo');
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
+  // Real pointer drags reorder inactive layers and form one undoable edit.
+  const layerOrder = () =>
+    evaluate(
+      "Array.from(document.querySelectorAll('#layers .layer-row'), row => row.dataset.layerId)",
+    );
+  const startLayerDrag = async (id: string, target: string, after = false) => {
+    await evaluate("document.getElementById('layers').scrollIntoView({block:'center'})");
+    const points = array(
+      await evaluate(`(() => {
+      const handle = document.querySelector('#layers [data-layer-id="${id}"] .layer-grip').getBoundingClientRect();
+      const target = document.querySelector('#layers [data-layer-id="${target}"]').getBoundingClientRect();
+      return [handle.left + handle.width / 2, handle.top + handle.height / 2, target.top + target.height * ${after ? 0.8 : 0.2}];
+    })()`),
+      number,
+    );
+    await browser.call('Input.dispatchMouseEvent', {
+      type: 'mousePressed',
+      x: points[0],
+      y: points[1],
+      button: 'left',
+      buttons: 1,
+      clickCount: 1,
+    });
+    await browser.call('Input.dispatchMouseEvent', {
+      type: 'mouseMoved',
+      x: points[0],
+      y: points[2],
+      buttons: 1,
+    });
+    return points;
+  };
+  const dropLayer = async (points: number[]) =>
+    browser.call('Input.dispatchMouseEvent', {
+      type: 'mouseReleased',
+      x: points[0],
+      y: points[2],
+      button: 'left',
+      buttons: 0,
+      clickCount: 1,
+    });
+  let dragPoints = await startLayerDrag('1', '3');
+  assert.equal(await evaluate("document.getElementById('layers').dataset.dragging"), 'true');
+  assert.equal(
+    await evaluate("document.querySelector('#layers [data-drop=before]').dataset.layerId"),
+    '3',
+  );
+  await browser.screenshot('standalone-layer-drag');
+  await dropLayer(dragPoints);
+  assert.deepEqual(await layerOrder(), ['4', '1', '3', '2']);
+  assert.equal(await evaluate("document.querySelector('#layers input:checked').value"), '4');
+  assert.equal(
+    await evaluate("document.getElementById('scene-save-state').textContent"),
+    'Unsaved changes',
+  );
+  await click('undo');
+  assert.deepEqual(await layerOrder(), ['4', '3', '2', '1']);
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
+  await click('redo');
+  assert.deepEqual(await layerOrder(), ['4', '1', '3', '2']);
+  await click('undo');
+  dragPoints = await startLayerDrag('4', '1', true);
+  await dropLayer(dragPoints);
+  assert.deepEqual(await layerOrder(), ['3', '2', '1', '4']);
+  await click('undo');
+  dragPoints = await startLayerDrag('1', '3');
+  await browser.call('Input.dispatchKeyEvent', {
+    type: 'keyDown',
+    key: 'Escape',
+    code: 'Escape',
+    windowsVirtualKeyCode: 27,
+  });
+  await browser.call('Input.dispatchKeyEvent', {
+    type: 'keyUp',
+    key: 'Escape',
+    code: 'Escape',
+    windowsVirtualKeyCode: 27,
+  });
+  await dropLayer(dragPoints);
+  assert.deepEqual(await layerOrder(), ['4', '3', '2', '1']);
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
+  // Leaving the list cancels, and long stacks scroll under a captured pointer.
+  dragPoints = await startLayerDrag('1', '3');
+  const outsideX = number(
+    await evaluate("document.getElementById('layers').getBoundingClientRect().left - 20"),
+  );
+  await browser.call('Input.dispatchMouseEvent', {
+    type: 'mouseReleased',
+    x: outsideX,
+    y: dragPoints[2],
+    button: 'left',
+    buttons: 0,
+    clickCount: 1,
+  });
+  assert.deepEqual(await layerOrder(), ['4', '3', '2', '1']);
+  await evaluate(
+    "document.getElementById('layers').style.maxHeight='140px'; document.getElementById('layers').scrollTop=0",
+  );
+  dragPoints = await startLayerDrag('4', '3');
+  const edgeY = number(
+    await evaluate("document.getElementById('layers').getBoundingClientRect().bottom - 5"),
+  );
+  await browser.call('Input.dispatchMouseEvent', {
+    type: 'mouseMoved',
+    x: dragPoints[0],
+    y: edgeY,
+    buttons: 1,
+  });
+  await wait("document.getElementById('layers').scrollTop > 0");
+  await browser.call('Input.dispatchKeyEvent', {
+    type: 'keyDown',
+    key: 'Escape',
+    code: 'Escape',
+    windowsVirtualKeyCode: 27,
+  });
+  await browser.call('Input.dispatchKeyEvent', {
+    type: 'keyUp',
+    key: 'Escape',
+    code: 'Escape',
+    windowsVirtualKeyCode: 27,
+  });
+  await dropLayer(dragPoints);
+  await evaluate(
+    "document.getElementById('layers').style.maxHeight=''; document.getElementById('layers').scrollTop=0",
+  );
+  assert.deepEqual(await layerOrder(), ['4', '3', '2', '1']);
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
   await browser.screenshot('standalone-layers');
+  // Visibility controls leave the active layer and its selected object unchanged.
+  await browser.click(`document.querySelector('#layers [data-layer-id="4"] .layer-choice')`);
+  await set('object-list', '2');
+  const selectedNameBeforeToggle = await evaluate(
+    "document.getElementById('selection-name').textContent",
+  );
+  await browser.click(`document.querySelector('#layers [data-layer-id="3"] .layer-eye')`);
+  assert.equal(await evaluate("document.querySelector('#layers input:checked').value"), '4');
+  assert.equal(
+    await evaluate("document.getElementById('selection-name').textContent"),
+    selectedNameBeforeToggle,
+  );
+  assert.equal(
+    await evaluate(
+      "document.querySelector('#layers [data-layer-id=\"3\"] .layer-eye').getAttribute('aria-pressed')",
+    ),
+    'true',
+  );
+  await click('undo');
+  assert.equal(
+    await evaluate(
+      "document.querySelector('#layers [data-layer-id=\"3\"] .layer-eye').getAttribute('aria-pressed')",
+    ),
+    'false',
+  );
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
+  // Fit stops at 1x for a tall scene, then adjusts when more space becomes available.
+  await browser.call('Emulation.setDeviceMetricsOverride', {
+    width: 980,
+    height: 600,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await click('fit-scene');
+  const sceneFits = `(() => {
+    const scene = document.getElementById('scene').getBoundingClientRect();
+    const viewport = document.getElementById('viewport').getBoundingClientRect();
+    return scene.left >= viewport.left && scene.right <= viewport.right && scene.top >= viewport.top && scene.bottom <= viewport.bottom;
+  })()`;
+  await wait("document.getElementById('fit-zoom-option').textContent === 'Fit (1×)'");
+  assert.equal(
+    await evaluate(
+      "document.getElementById('scene').getBoundingClientRect().height === document.getElementById('scene').height",
+    ),
+    true,
+  );
+  assert.equal(
+    await evaluate(
+      "document.getElementById('viewport').scrollHeight > document.getElementById('viewport').clientHeight",
+    ),
+    true,
+  );
+  await browser.screenshot('standalone-fit-scene');
+  await browser.call('Emulation.setDeviceMetricsOverride', {
+    width: 1440,
+    height: 1000,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await wait(sceneFits);
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
+  await set('zoom', '3');
   // Generic markers, areas, properties and per-instance sprite origins share layer history.
   await click('place-point');
   await browser.pointer(16, 48);
   await browser.pointer(16, 48, 'mouseReleased');
   assert.equal(await evaluate("document.getElementById('selection-kind').textContent"), 'POINT');
+  assert.equal(
+    await evaluate(`(() => {
+    const inspector = document.querySelector('.inspector').getBoundingClientRect();
+    const panel = document.getElementById('selection-panel').getBoundingClientRect();
+    const scene = document.getElementById('scene-panel').getBoundingClientRect();
+    const edit = document.getElementById('edit-object').getBoundingClientRect();
+    return panel.top >= inspector.top && panel.top < scene.top && edit.bottom < inspector.bottom;
+  })()`),
+    true,
+  );
+  await browser.screenshot('standalone-selection-first');
   await click('edit-object');
   await wait("document.getElementById('object-dialog').open");
   await set('object-name', 'Discard me');
@@ -1388,7 +1737,7 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
     true,
   );
   // Downloads include explicit unsaved snapshots while preserving source files and history.
-  await set('layers', '4');
+  await chooseLayer('4');
   await set('object-list', '3');
   await click('edit-object');
   await set('object-name', 'Export-only entry');
@@ -1462,11 +1811,216 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   await browser.pointer(32, 80, 'mouseReleased');
   assert.equal(await evaluate("document.getElementById('viewport').scrollTop > 0"), true);
   assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
+  // Mouse-operated controls release focus so canvas shortcuts work immediately.
+  const pointerClick = async (expression: string) => {
+    const point = array(
+      await evaluate(`(() => {
+      const control=${expression}; control.scrollIntoView({block:'nearest'});
+      const rect=control.getBoundingClientRect(); return [rect.left+rect.width/2,rect.top+rect.height/2];
+    })()`),
+      number,
+    );
+    await browser.call('Input.dispatchMouseEvent', {
+      type: 'mousePressed',
+      x: point[0],
+      y: point[1],
+      button: 'left',
+      buttons: 1,
+      clickCount: 1,
+    });
+    await browser.call('Input.dispatchMouseEvent', {
+      type: 'mouseReleased',
+      x: point[0],
+      y: point[1],
+      button: 'left',
+      buttons: 0,
+      clickCount: 1,
+    });
+  };
+  await evaluate("document.getElementById('search').focus()");
+  await pointerClick("document.querySelector('.tool:has(input[value=paint])')");
+  assert.equal(await evaluate('document.activeElement.id'), 'scene');
+  await pointerClick("document.querySelector('#layers input:checked').closest('.layer-choice')");
+  assert.equal(await evaluate('document.activeElement.id'), 'scene');
+  // Keyboard interaction keeps radio and dropdown focus available for navigation.
+  await evaluate("document.querySelector('#layers input:checked').focus()");
+  assert.equal(await evaluate('document.activeElement.name'), 'active-layer');
+  await evaluate(
+    "document.getElementById('zoom').focus(); document.getElementById('zoom').value='4'; document.getElementById('zoom').dispatchEvent(new Event('change',{bubbles:true}))",
+  );
+  assert.equal(await evaluate('document.activeElement.id'), 'zoom');
+  await evaluate(
+    "document.getElementById('zoom').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true})); document.getElementById('zoom').value='3'; document.getElementById('zoom').dispatchEvent(new Event('change',{bubbles:true}))",
+  );
+  assert.equal(await evaluate('document.activeElement.id'), 'scene');
+  const originalLayerName = string(await evaluate("document.getElementById('layer-name').value"));
+  await evaluate(
+    "document.getElementById('layer-name').focus(); document.getElementById('layer-name').value='Uncommitted rename'",
+  );
+  await browser.call('Input.dispatchKeyEvent', {
+    type: 'keyDown',
+    key: 'Escape',
+    code: 'Escape',
+    windowsVirtualKeyCode: 27,
+  });
+  await browser.call('Input.dispatchKeyEvent', {
+    type: 'keyUp',
+    key: 'Escape',
+    code: 'Escape',
+    windowsVirtualKeyCode: 27,
+  });
+  assert.equal(await evaluate("document.getElementById('layer-name').value"), originalLayerName);
+  assert.equal(await evaluate('document.activeElement.id'), 'scene');
+  await evaluate("document.getElementById('search').focus()");
+  await browser.call('Input.dispatchKeyEvent', {
+    type: 'keyDown',
+    key: 'Enter',
+    code: 'Enter',
+    windowsVirtualKeyCode: 13,
+  });
+  await browser.call('Input.dispatchKeyEvent', {
+    type: 'keyUp',
+    key: 'Enter',
+    code: 'Enter',
+    windowsVirtualKeyCode: 13,
+  });
+  assert.equal(await evaluate('document.activeElement.id'), 'scene');
+  // Space pans the workspace temporarily without switching tools or authoring.
+  await evaluate("document.getElementById('viewport').scrollTop=0");
+  const spaceKey = async (type: string) =>
+    browser.call('Input.dispatchKeyEvent', {
+      type,
+      key: ' ',
+      code: 'Space',
+      windowsVirtualKeyCode: 32,
+    });
+  const navigationState = await evaluate(
+    "[document.getElementById('dirty').textContent, document.getElementById('undo').disabled, document.getElementById('redo').disabled]",
+  );
+  await spaceKey('keyDown');
+  assert.equal(await evaluate("getComputedStyle(document.getElementById('scene')).cursor"), 'grab');
+  assert.equal(await evaluate("document.querySelector('input[value=paint]').checked"), true);
+  const panPoint = array(
+    await evaluate(`(() => {
+    const rect=document.getElementById('viewport').getBoundingClientRect();
+    return [rect.left+12,rect.top+140];
+  })()`),
+    number,
+  );
+  await browser.call('Input.dispatchMouseEvent', {
+    type: 'mousePressed',
+    x: panPoint[0],
+    y: panPoint[1],
+    button: 'left',
+    buttons: 1,
+    clickCount: 1,
+  });
+  assert.equal(
+    await evaluate("getComputedStyle(document.getElementById('viewport')).cursor"),
+    'grabbing',
+  );
+  await browser.call('Input.dispatchMouseEvent', {
+    type: 'mouseMoved',
+    x: panPoint[0],
+    y: panPoint[1] - 60,
+    buttons: 1,
+  });
+  assert.equal(await evaluate("document.getElementById('viewport').scrollTop > 0"), true);
+  // Releasing Space mid-drag must not turn the remaining gesture into painting.
+  await spaceKey('keyUp');
+  assert.equal(
+    await evaluate("getComputedStyle(document.getElementById('scene')).cursor"),
+    'crosshair',
+  );
+  await browser.call('Input.dispatchMouseEvent', {
+    type: 'mouseMoved',
+    x: panPoint[0] + 50,
+    y: panPoint[1] - 80,
+    buttons: 1,
+  });
+  await browser.call('Input.dispatchMouseEvent', {
+    type: 'mouseReleased',
+    x: panPoint[0] + 50,
+    y: panPoint[1] - 80,
+    button: 'left',
+    buttons: 0,
+    clickCount: 1,
+  });
+  assert.deepEqual(
+    await evaluate(
+      "[document.getElementById('dirty').textContent, document.getElementById('undo').disabled, document.getElementById('redo').disabled]",
+    ),
+    navigationState,
+  );
+  await evaluate("document.getElementById('scene').focus()");
+  await spaceKey('keyDown');
+  await evaluate("window.dispatchEvent(new Event('blur'))");
+  assert.equal(await evaluate("document.getElementById('viewport').dataset.pan"), 'false');
+  await spaceKey('keyUp');
+  await evaluate("document.getElementById('search').focus()");
+  await spaceKey('keyDown');
+  await spaceKey('keyUp');
+  assert.equal(await evaluate("document.getElementById('viewport').dataset.pan"), 'false');
+  await set('search', '');
+  await evaluate(
+    "document.getElementById('scene').focus(); document.getElementById('viewport').scrollTop=0",
+  );
+  // Wheel zoom retains the scene pixel under the cursor and never changes history.
+  const wheelPoint = array(
+    await evaluate(`(() => {
+    const rect=document.getElementById('scene').getBoundingClientRect();
+    return [rect.left+rect.width/2,rect.top+240];
+  })()`),
+    number,
+  );
+  const pixelUnderWheel = () =>
+    evaluate(`(() => {
+    const canvas=document.getElementById('scene'),rect=canvas.getBoundingClientRect();
+    return [(${wheelPoint[0]}-rect.left)*canvas.width/rect.width,(${wheelPoint[1]}-rect.top)*canvas.height/rect.height];
+  })()`);
+  const beforeZoom = array(await pixelUnderWheel(), number);
+  const wheel = async (deltaY: number) =>
+    browser.call('Input.dispatchMouseEvent', {
+      type: 'mouseWheel',
+      x: wheelPoint[0],
+      y: wheelPoint[1],
+      deltaX: 0,
+      deltaY,
+    });
+  await wheel(-100);
+  await wait("document.getElementById('zoom').value === '4'");
+  const afterZoom = array(await pixelUnderWheel(), number);
+  assert.ok(Math.abs(beforeZoom[0] - afterZoom[0]) < 1);
+  assert.ok(Math.abs(beforeZoom[1] - afterZoom[1]) < 1);
+  await wheel(100);
+  await wait("document.getElementById('zoom').value === '3'");
+  await click('fit-scene');
+  await wheel(100);
+  await wait("document.getElementById('zoom').value !== 'fit'");
+  await set('zoom', '1');
+  await wheel(100);
+  assert.equal(await evaluate("document.getElementById('zoom').value"), '1');
+  assert.equal(
+    await evaluate(
+      "Array.from(document.getElementById('zoom').options).every(option => !option.textContent.includes('%') && (option.value === 'fit' || Number(option.value) >= 1))",
+    ),
+    true,
+  );
+  await set('zoom', '8');
+  await wheel(-100);
+  assert.equal(await evaluate("document.getElementById('zoom').value"), '8');
+  await set('zoom', '3');
+  assert.deepEqual(
+    await evaluate(
+      "[document.getElementById('dirty').textContent, document.getElementById('undo').disabled, document.getElementById('redo').disabled]",
+    ),
+    navigationState,
+  );
   await chooseScene(first);
   await wait("document.getElementById('status')?.textContent === 'Scene opened.'");
   // Explicit unchanged reimport retains placements and both scenes.
   await set('atlas-path', join(folder, 'input/terrain.atlas.json'));
-  await click('show-import');
+  await click('library-import');
   await evaluate("document.getElementById('reimport').checked=true");
   await submit('import-form');
   await wait("document.getElementById('status')?.textContent.includes('Atlas imported')");
@@ -1509,15 +2063,14 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   assert.deepEqual(record((await scene(second)).scene), layeredScene);
   await chooseScene(second);
   await wait("document.getElementById('status').textContent === 'Scene opened.'");
-  assert.equal(await evaluate("document.getElementById('layers').options.length"), 4);
+  assert.equal(await evaluate("document.querySelectorAll('#layers input[type=radio]').length"), 4);
   assert.equal(
     await evaluate(
-      "Array.from(document.getElementById('layers').options).some(option => option.textContent.includes('○ Canopy'))",
+      "Array.from(document.querySelectorAll('#layers .layer-row[data-visible=false]')).some(row => row.textContent.includes('Canopy') && row.textContent.includes('Hidden'))",
     ),
     true,
   );
-  await set('layers', '4');
-  await evaluate("document.getElementById('layers').dispatchEvent(new Event('change'))");
+  await chooseLayer('4');
   await set('object-list', '3');
   await evaluate("document.getElementById('object-list').dispatchEvent(new Event('change'))");
   await click('edit-object');
@@ -1549,7 +2102,7 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
     [0, 0, 0, 255],
   );
   // Preview preferences survive server restart and moving the project directory.
-  await set('layers', '2');
+  await chooseLayer('2');
   await set('object-list', String(record(placed[0]).id));
   assert.equal(
     await evaluate("document.getElementById('preview-map-walk-left').value"),
@@ -1579,7 +2132,7 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   assert.equal(await readFile(previewManifest, 'utf8'), beforePreviewConflict + '\n');
   await writeFile(previewManifest, beforePreviewConflict);
   await set('preview-speed', '2');
-  await set('layers', '1');
+  await chooseLayer('1');
   await browser.click('document.querySelector(\'[data-asset="terrain/earth"]\')');
   const mapPath = join(movedRoot, 'scenes', `${first}.tmj`);
   const before = await readFile(mapPath, 'utf8');
