@@ -56,7 +56,10 @@ The browser suite can also be run locally; see the README.
 
 `npm run build` (also used by `make frontend`, `make run`, `make demo` and
 `make build`) reads the app version from `pyproject.toml` and embeds it in the
-browser bundle. By default, `FORGE_BUILD_MODE=development`: the bottom-right
+browser bundle and `static/build-info.json`. The server reads that same metadata
+to print its version above Project Root at startup. Source-only Python runs
+before a frontend build fall back to the Python package version.
+By default, `FORGE_BUILD_MODE=development`: the bottom-right
 label shows `VERSION-COMMIT`, using `git rev-parse --short=7 HEAD` at build time.
 Set `FORGE_BUILD_COMMIT` to a 7–40 character hexadecimal Git commit identifier
 when building development assets without a Git checkout. Missing Git metadata

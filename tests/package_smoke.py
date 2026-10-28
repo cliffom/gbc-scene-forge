@@ -9,6 +9,8 @@ from importlib.resources import files
 from pathlib import Path
 
 from gbc_scene_forge import __version__, standalone
+from gbc_scene_forge.build_info import build_version
+from gbc_scene_forge.console import ServerConsole
 from gbc_scene_forge.projects import Project
 from gbc_scene_forge.sample import prepare
 from gbc_scene_forge.workspaces import ProjectRoot
@@ -34,6 +36,7 @@ class InstalledPackageSmokeTests(unittest.TestCase):
             "project.css",
             "project.js",
             "project.js.map",
+            "build-info.json",
             "branding/logo-64.png",
             "branding/favicon-32.png",
             "branding/favicon-16.png",
@@ -41,6 +44,12 @@ class InstalledPackageSmokeTests(unittest.TestCase):
         ):
             with self.subTest(asset=name):
                 self.assertTrue(static.joinpath(name).read_bytes())
+        version = build_version()
+        self.assertRegex(version, rf"^{__version__}(?:-[0-9a-f]{{7,40}})?$")
+        self.assertIn(f'"{version}"', static.joinpath("project.js").read_text())
+        stream = io.StringIO()
+        ServerConsole(stream).start(8765)
+        self.assertIn(f"  {'Version':<14}{version}", stream.getvalue())
 
     def test_sample_project_loads(self):
         with tempfile.TemporaryDirectory() as folder:

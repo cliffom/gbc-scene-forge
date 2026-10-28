@@ -108,10 +108,17 @@ try {
     assert.equal(
       await evaluate(`(() => {
         const label = document.getElementById('app-version').getBoundingClientRect();
+        const identity = document.querySelector('.build-identity');
+        const identityBounds = identity.getBoundingClientRect();
         const content = document.querySelector('#workspace:not([hidden]), #project-start:not([hidden])').getBoundingClientRect();
         return label.width > 0 && label.left >= 0 && label.right <= innerWidth &&
           label.bottom <= innerHeight && label.bottom >= innerHeight - 12 &&
-          label.top >= content.bottom;
+          label.top >= content.bottom &&
+          identity.closest('.status-bar') !== null &&
+          identity.textContent === document.getElementById('app-version').textContent &&
+          !identity.textContent.includes('LOCAL PROJECT') &&
+          label.top >= identityBounds.top && label.bottom <= identityBounds.bottom &&
+          identityBounds.height <= parseFloat(getComputedStyle(identity).lineHeight) + 1;
       })()`),
       true,
     );

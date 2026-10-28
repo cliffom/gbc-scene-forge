@@ -38,3 +38,4 @@ for (const entry of ['app', 'project']) {
     await writeFile('src/gbc_scene_forge/static/app.meta.json', JSON.stringify(result.metafile));
   }
 }
+await writeFile('src/gbc_scene_forge/static/build-info.json', JSON.stringify({ version: label }));

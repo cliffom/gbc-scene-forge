@@ -39,6 +39,7 @@ await test('esbuild bundles nested modules, emits source maps and preserves asse
       'app.js',
       'app.js.map',
       'app.meta.json',
+      'build-info.json',
       'project.js',
       'project.js.map',
     ]);
@@ -48,11 +49,23 @@ await test('esbuild bundles nested modules, emits source maps and preserves asse
     )?.[1];
     assert(version);
     assert((await readFile(join(staticDir, 'project.js'), 'utf8')).includes(`${version}-a1b2c3d`));
+    assert.equal(
+      string(
+        record(JSON.parse(await readFile(join(staticDir, 'build-info.json'), 'utf8'))).version,
+      ),
+      `${version}-a1b2c3d`,
+    );
     const production = build('production');
     assert.equal(production.status, 0, production.stdout + production.stderr);
     const releaseBundle = await readFile(join(staticDir, 'project.js'), 'utf8');
     assert(releaseBundle.includes(`versionLabel.textContent = "${version}"`));
     assert(!releaseBundle.includes(`${version}-a1b2c3d`));
+    assert.equal(
+      string(
+        record(JSON.parse(await readFile(join(staticDir, 'build-info.json'), 'utf8'))).version,
+      ),
+      version,
+    );
     assert.notEqual(build('invalid').status, 0);
     assert.notEqual(build('development', '').status, 0);
     assert.match(bundle, /nested dependency/);

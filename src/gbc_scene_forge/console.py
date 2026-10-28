@@ -7,6 +7,8 @@ import sys
 import time
 from threading import Lock
 
+from .build_info import build_version
+
 CLIENT_TIMEOUT = 120
 
 
@@ -58,6 +60,7 @@ class ServerConsole:
             self.write("Scene Forge")
             self.write(f"  {'Status':<14}" + self.highlight("online", "32"))
             self.write(f"  {'Editor':<14}" + self.highlight(f"http://127.0.0.1:{port}/", "36"))
+            self.write(f"  {'Version':<14}" + build_version())
             if project_root is not None:
                 self.write(f"  {'Project Root':<14}" + json.dumps(str(project_root)))
             if self.log_path is not None:
