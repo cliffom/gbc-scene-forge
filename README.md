@@ -23,6 +23,18 @@ Open **http://127.0.0.1:8765/** in your browser. The terminal prints the address
 you can stop the server with **Ctrl+C**. The installed editor needs no Node or
 additional Python runtime dependencies.
 
+The console shows server status, the editor URL and active client totals. A client
+is one IP address + User-Agent combination, so multiple tabs in the same browser
+count once; different browsers at the same address count separately. Each HTTP
+request refreshes that client's activity. After **120 seconds without a request**,
+the client expires, even if its tab is still open; its next request counts it as
+active again. This is recent activity, not a count of open browser connections.
+Arrivals and expirations include the IP and User-Agent. Successful requests stay
+quiet; HTTP failures remain visible. Colors appear only in interactive terminals
+and can be disabled with `NO_COLOR` (or `TERM=dumb`). Redirected logs use plain text.
+
+![Preview of the server console status and client activity](docs/screenshots/server-console.png)
+
 Working from this repository? Install the development tools described below, then run:
 
 ```sh

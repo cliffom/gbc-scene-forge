@@ -8,10 +8,34 @@ from threading import Lock
 from urllib.parse import parse_qs, unquote, urlparse
 
 from .atlas import require
+from .console import ServerConsole
 from .documents import Conflict
 from .projects import Project
 from .server import STATIC, LocalHandler
 from .workspaces import ProjectRoot
+
+
+class StandaloneHandler(LocalHandler):
+    def log_request(self, code="-", size="-"):
+        console = getattr(self.server, "console", None)
+        if console is None:
+            return super().log_request(code, size)
+        headers = getattr(self, "headers", {})
+        console.request(
+            self.client_address[0], headers.get("User-Agent", ""), self.requestline, code
+        )
+
+    def log_message(self, format, *args):
+        console = getattr(self.server, "console", None)
+        if console is None:
+            return super().log_message(format, *args)
+        console.error(format % args)
+
+
+class StandaloneServer(ThreadingHTTPServer):
+    def service_actions(self):
+        # Runs even without traffic, so stale clients disappear while the server is idle.
+        self.console.expire()
 
 
 def make_handler(root, token):
@@ -22,7 +46,7 @@ def make_handler(root, token):
         Project.prepare_creation(root)
     project = Project(root, recover=False) if (root / "forge.project.json").exists() else None
 
-    class Handler(LocalHandler):
+    class Handler(StandaloneHandler):
         def do_GET(self):
             if not self.trusted_host():
                 self.reply({"error": "Local host required"}, status=403)
@@ -181,7 +205,7 @@ def make_root_handler(root, token):
     handlers = {}
     initialization_lock = Lock()
 
-    class Handler(LocalHandler):
+    class Handler(StandaloneHandler):
         def dispatch(self, method):
             if not self.trusted_host():
                 self.reply({"error": "Local host required"}, status=403)
@@ -269,11 +293,14 @@ def make_root_handler(root, token):
 
 def serve(root, port=8765, *, single_project=False):
     token = secrets.token_urlsafe(32)
-    with ThreadingHTTPServer(
+    with StandaloneServer(
         ("127.0.0.1", port), (make_handler if single_project else make_root_handler)(root, token)
     ) as server:
-        print(f"Scene Forge: http://127.0.0.1:{server.server_port}/", flush=True)
+        server.console = ServerConsole()
+        server.console.start(server.server_port)
         try:
             server.serve_forever()
         except KeyboardInterrupt:
             pass
+        finally:
+            server.console.stop()

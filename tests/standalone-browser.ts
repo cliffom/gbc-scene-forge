@@ -52,7 +52,7 @@ async function start(root: string, fixture = true, single = true, demo = false) 
     });
     child.stdout.on('data', (data: Buffer) => {
       logs += data.toString();
-      const match = /Scene Forge: (http:\/\/127\.0\.0\.1:\d+\/)/.exec(logs);
+      const match = /Editor\s+(http:\/\/127\.0\.0\.1:\d+\/)/.exec(logs);
       if (match) {
         clearTimeout(timer);
         resolve(match[1]);
