@@ -1907,6 +1907,14 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   })()`),
     number,
   );
+  assert.equal(
+    await evaluate(`(() => {
+      const viewport=document.getElementById('viewport');
+      return viewport.scrollHeight > viewport.clientHeight;
+    })()`),
+    true,
+    'The Space-pan fixture must have vertical scroll room',
+  );
   await browser.call('Input.dispatchMouseEvent', {
     type: 'mousePressed',
     x: panPoint[0],
@@ -1925,7 +1933,9 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
     y: panPoint[1] - 60,
     buttons: 1,
   });
-  assert.equal(await evaluate("document.getElementById('viewport').scrollTop > 0"), true);
+  // Chrome may acknowledge the mouse move before delivering its pointer event.
+  // Keep the drag active until the viewport has processed it.
+  await wait("document.getElementById('viewport').scrollTop > 0");
   // Releasing Space mid-drag must not turn the remaining gesture into painting.
   await spaceKey('keyUp');
   assert.equal(
