@@ -13,8 +13,17 @@
 <body class="standalone">
   <header class="masthead">
     <div class="brand"><img class="mark" src="/branding/logo-64.png" width="64" height="64" alt=""><div><h1>GBC Scene Forge</h1><span id="project-name" class="eyebrow">LOCAL PROJECT</span></div></div>
+    <button id="switch-project" hidden>Projects…</button>
     <div class="connection"><span class="dot"></span> LOCAL WORKSPACE <span class="tag">STANDALONE</span></div>
   </header>
+  <section id="project-picker" class="welcome" hidden aria-labelledby="projects-heading">
+    <span class="eyebrow">YOUR WORLDS</span>
+    <h2 id="projects-heading">Choose a project</h2>
+    <p class="hint">Open a project to continue, or create a new world below.</p>
+    <div id="project-list" class="project-list"></div>
+    <details><summary>Project folder</summary><p id="project-root-path" class="hint"></p></details>
+    <div id="unavailable-projects" class="error" role="status"></div>
+  </section>
   <form id="project-form" class="welcome">
     <span class="eyebrow">A NEW WORLD STARTS HERE</span>
     <h2>Create your project</h2>
@@ -214,6 +223,16 @@
       <p class="form-error error" role="alert"></p>
       <div class="dialog-actions"><button type="button" data-close="import-atlas-dialog">Cancel</button><button class="primary">Import atlas</button></div>
     </form>
+  </dialog>
+  <dialog id="switch-project-dialog" aria-labelledby="switch-heading">
+    <h2 id="switch-heading">Save before switching projects?</h2>
+    <p>This scene has unsaved changes. Save them before choosing another project.</p>
+    <p class="form-error error" role="alert"></p>
+    <div class="dialog-actions">
+      <button id="switch-cancel" autofocus>Keep editing</button>
+      <button id="switch-discard">Discard and switch</button>
+      <button id="switch-save" class="primary">Save and switch</button>
+    </div>
   </dialog>
   <dialog id="discard-dialog" aria-labelledby="discard-heading">
     <form method="dialog"><h2 id="discard-heading">Discard unsaved changes?</h2><p>Save this scene before continuing to keep your current edits.</p><div class="dialog-actions"><button id="keep-editing" value="cancel" autofocus>Keep editing</button><button value="discard" class="primary">Discard changes</button></div></form>

@@ -2,143 +2,201 @@
 
 ![GBC Scene Forge — Build a world. One tile at a time.](assets/branding/hero.png)
 
-Scene Forge is a local browser editor for standalone projects, imported gbc-atlas
-artwork and native Tiled maps. It has no runtime Python dependencies. Standalone
-scene authoring is the supported product direction; game connectors and
-Apply/build integrations are legacy code and have no compatibility guarantee.
+Scene Forge is a local browser editor for building tile-based scenes from imported
+[gbc-atlas](https://github.com/cliffom/gbc-atlas) artwork. Organize your work into
+projects, paint maps, place sprites and markers, and export portable Tiled files.
+Your projects stay on your computer.
 
-## Standalone projects
+## Start editing
 
-From an installed package, create or open a local project:
-
-```sh
-gbc-scene-forge /path/to/my-world --create "My world"
-# Reopen after stopping the server:
-gbc-scene-forge /path/to/my-world
-```
-
-From this checkout after `make setup`, use
-`poetry run python -m gbc_scene_forge /path/to/my-world`. A new or empty directory
-opens the project creation form; an existing project opens its scene list.
-Open <http://127.0.0.1:8765/> (override with `--port`). Import a local
-`*.atlas.json` manifest and its neighboring PNG, create a named scene, paint and
-save. Each scene uses an 8, 16 or 32 pixel grid. Larger tile regions become stamps;
-sprites can be placed at native size using their atlas origins, independently of
-the scene grid. Named tile/object layers support ordering, visibility and active-layer
-editing. Add spawn markers and trigger rectangles, then edit names, classes and
-typed custom properties. Object and layer edits share undo/redo and save as Tiled
-objects. Author terrain classifications and collision flags/shapes per shared
-tile, then review terrain and collision overlays. **Export…** downloads a portable
-scene or project ZIP for Tiled, with an option to include unsaved canvas edits.
-Whole-project exports can also be reopened in Forge. Select a placed sprite to preview imported sprite animations, play or pause,
-step frames, change playback speed, and inspect the origin marker. Assign explicit
-idle/walk sequences for up, down, left, and right under **Sequence mappings**, then
-choose a preview action and direction. Mappings are shared by instances of the same
-sprite asset. **Save preview settings** stores mappings, animation choices, speeds,
-origin display, footprint and collision preference in the project. Playback is
-transient: it does not change saved assets, positions, scene dirty state, or undo history.
-Under **Movement preview**, enable movement, click the scene, and use arrow keys or
-WASD, or enter pixel waypoints and choose **Follow path**. Movement uses the mapped
-idle/walk directions and an adjustable footprint relative to the sprite origin.
-Optional collision checks use visible tile/sprite collision metadata; scene edges
-always stop movement. **Pause movement** holds the pose and path; resume continues it.
-**Reset position** restores the saved starting position;
-Escape exits movement preview. Reopening restores saved preferences with playback
-paused and movement disabled. Supported atlas sequences export as native Tiled
-animations with their original timing. `export.json` reports sequences skipped
-because they share a starting tile or do not fit an exported grid.
-
-Projects contain `forge.project.json`, native `scenes/*.tmj` maps and shared
-`assets/` tilesets/PNGs. Move the entire directory to relocate a project. The
-original imported bundle is no longer required.
-
-See [standalone usage and file compatibility](docs/STANDALONE.md) for the Tiled
-subset, reimport behavior and recovery details.
-
-## Installation
+Install the release with Python 3.10 or newer:
 
 ```sh
-python -m pip install gbc-scene-forge==0.2.0
+python -m pip install gbc-scene-forge==0.3.0
+gbc-scene-forge
 ```
 
-The [PyPI package](https://pypi.org/project/gbc-scene-forge/0.2.0/) includes the
-browser UI, standalone launcher and service. Version 0.2.0 introduces standalone
-projects; see the [release notes](docs/RELEASE-0.2.0.md) for features and
-compatibility changes.
+Open **http://127.0.0.1:8765/** in your browser. The terminal prints the address;
+you can stop the server with **Ctrl+C**. The installed editor needs no Node or
+additional Python runtime dependencies.
 
-## Development
-
-Install Python 3.10+, Poetry 2.4–2.x, Node 24.12+, npm, and Make, with their
-executables on `PATH`. Follow the [Poetry installation guide](https://python-poetry.org/docs/#installation)
-if needed. `make setup` checks prerequisites, uses Poetry to manage `.venv`,
-installs locked dependencies, and bundles the frontend. It does not install Poetry.
+Working from this repository? Install the development tools described below, then run:
 
 ```sh
 make setup PYTHON=python3.12
-make lint test build
+make run
 ```
 
-`make check-deps` checks tool availability and Poetry/project compatibility without
-installing dependencies. Override executable paths with `PYTHON`, `POETRY`, or
-`NPM` when needed. Poetry checks Python compatibility; `npm ci --engine-strict`
-enforces the frontend's Node requirement during setup.
+### Create your first project
 
-The build creates `dist/gbc_scene_forge-0.2.0-py3-none-any.whl` and a source
-archive, then checks metadata with Twine. Run `make check-dist` afterward to install
-the wheel without dependencies in a fresh environment and run the small
-`tests/package_smoke.py` suite. CI runs this installed-wheel check explicitly. See
-[building and releasing](docs/RELEASING.md) for tooling and manual PyPI publication.
-For local development, hosts can install this checkout with
-`python -m pip install -e ../gbc-scene-forge` or use their dependency manager's
-editable path support.
+1. On the project selector, enter **Hello World** and choose **Create project**.
+2. Choose **Import atlas**, then **Browse folder…**. Select your atlas folder,
+   choose a `*.atlas.json` manifest if needed, and confirm the import. Forge copies
+   the artwork into the project, so you can move the original import folder later.
+3. Choose **Create scene**. Give it a name, dimensions in cells, and an 8, 16 or
+   32 pixel grid.
+4. Pick a tile in the asset library and paint. Choose **Save scene** or press
+   **Ctrl/⌘ S** to save your work.
 
-### Frontend workflow
+To reopen a scene, choose it from the scene list and click **Open scene**.
 
-Edit TypeScript in `frontend/`: `project.ts` owns the standalone project UI,
-`layers.mts` owns active-layer editing, `model.mts` supplies tile editing/history,
-`objects.mts` defines standalone object/property validation, `object-inspector.mts`
-commits object dialog edits, and `atlas-import.mts` handles folder imports.
-`decode.mts` provides checked JSON decoding. Server validation remains authoritative for project and Tiled data.
-The remaining connector controllers are legacy code; their APIs and document
-formats are not compatibility targets for new features.
+### Open another project
 
-- `make frontend`: type-check, then bundle the browser entry point with esbuild.
-- `make typecheck`: check browser and test code with TypeScript strict mode.
-- `make lint`: check Python plus TypeScript-aware ESLint, Prettier, and types.
-- `make format`: format Python and frontend sources/configuration in place.
-- `make test`: run Python contracts, typed editor-model tests, and API decoder tests.
+Choose **Projects…** at the top of the workspace to return to the project selector.
+You can open an existing project or create another one without restarting Forge.
+If your scene has unsaved edits, choose **Save and switch**, **Discard and switch**,
+or **Keep editing**. If saving fails, your edits stay in the current workspace.
 
-Frontend formatting uses two spaces, single quotes, semicolons, and a 100-character
-print width. Use explicit shared types and checked `unknown` values at JSON
-boundaries; avoid `any`, unchecked casts, and type-check suppressions. Node runs
-the TypeScript tests using built-in type stripping; `make typecheck` enforces types.
+Opening a project loads a fresh workspace. Choose a saved scene to continue;
+brushes, selections, undo history, and running previews start fresh. Separate
+browser tabs can work on different projects. If two tabs edit the same scene,
+revision checks protect against overwriting each other's saved work.
 
-Generated JavaScript is Git-ignored; do not edit it. `make demo` and `make build`
-run `npm run build`, which runs `tsc --noEmit` before esbuild. esbuild follows
-imports, including nested modules, and produces the connector entry `static/app.js`
-and standalone entry `static/project.js`, with external source maps.
-`static/app.meta.json` records the connector entry's complete runtime dependency
-graph and output sizes. Type errors stop the build before
-existing assets are replaced. Bundles are readable and unminified.
+![Choose an existing project or create a new one](docs/screenshots/project-selector.png)
 
-After changing frontend code while a server is running, run `make frontend` and
-reload the page. Use `make build` for releases so assets are always rebuilt first.
-When invoking Python build tools directly from a checkout, run `npm ci` and
-`npm run build` first. Hatchling packages the required bundle and source map using
-declarative file inclusion and rejects missing assets. Wheels and source archives
-include prebuilt assets, so installing and running a release needs no Node.
+### Where your projects live
 
-Configured API deadlines cover headers and body reads, including downloads and
-HTTP error bodies. Incompatible JSON/task responses stop automatic polling with
-an actionable message; the task may still have completed, and Reconnect retries
-status retrieval explicitly. Temporary connection failures continue to retry.
+By default, Forge keeps projects in `.forge_project/` under the directory where
+you start it. Each project gets its own folder: **Hello World** becomes
+`hello-world`. Names are normalized to lowercase letters, numbers and hyphens;
+accents are simplified. Choose another name if its folder already exists.
 
-## Legacy connector code
+```text
+.forge_project/
+├── hello-world/
+│   ├── forge.project.json    # Project name, identity and format version
+│   ├── assets/               # Imported artwork and generated Tiled tilesets
+│   ├── scenes/               # Saved Tiled maps
+│   └── .forge/history/       # Recovery records
+└── another-world/
+    └── …
+```
 
-The repository still contains the former connector/demo implementation and its
-tests. It is not a supported API or a compatibility target. See the
-[legacy implementation notes](docs/LEGACY-CONNECTOR.md) for source reference.
-New features use the standalone project and Tiled model.
+Asset and scene folders appear when you import artwork or create scenes. Back up
+or move the **entire project folder**, including its hidden `.forge` directory.
+The project selector finds manifests in the root's immediate child directories;
+there is no separate project registry to maintain.
+
+Choose a different location for your projects:
+
+```sh
+gbc-scene-forge --project-root "$HOME/Scene Forge Projects"
+# From the repository:
+make run PROJECT_ROOT="$HOME/Scene Forge Projects"
+```
+
+Use the same location on later launches to see those projects again. Unsupported
+or damaged manifests are reported in the selector so you can identify the folder
+that needs attention. Version 0.3.0 continues to use manifest format version 1.
+
+### Bring an existing project into 0.3.0
+
+Existing 0.2.0 projects keep their artwork, scene IDs and manifest format. To add
+one to the selector, stop Forge and move the whole project folder into your
+project root. For the old default location, run these commands from the repository:
+
+```sh
+mkdir -p .forge_project
+# Choose a destination name that does not already exist:
+mv .forge-project .forge_project/my-world
+make run
+```
+
+You can also open a project directly, including an extracted whole-project export:
+
+```sh
+gbc-scene-forge --project /path/to/my-world
+# From the repository:
+make run PROJECT=/path/to/my-world
+```
+
+Direct mode opens just that directory; it has no project selector. The old
+`.forge-project/` directory is never moved or deleted automatically. In 0.3.0, a
+positional directory argument means a **project root**; use `--project` for a
+single project. Passing a project as a root produces instructions instead of
+silently nesting new projects inside it. The old `--create` option is replaced by
+project creation in the browser.
+
+## Explore the editor
+
+- Paint tile regions as stamps; place sprites at their native size and atlas origin.
+- Use named tile and object layers, change their order and visibility, and undo edits.
+- Place spawn points and trigger rectangles with names, classes and typed properties.
+- Add shared terrain and collision metadata, then inspect it with canvas overlays.
+- Select a sprite to try animation and movement previews. Save sequence mappings
+  and preview preferences separately with **Save preview settings**.
+- Choose **Export…** for a scene or whole-project ZIP. You can include unsaved
+  canvas edits in an export. Open the maps in Tiled, or extract a whole-project
+  export and open it in Forge with `--project`.
+
+See [the editor guide](docs/STANDALONE.md) for controls, atlas reimport, preview
+settings, supported Tiled features and recovery behavior.
+
+## Try the sample
+
+From a development checkout after setup:
+
+```sh
+make demo
+```
+
+Open the printed address, choose **Riverside** or **Courtyard**, and click
+**Open scene**. The sample includes original pixel artwork, layers, markers,
+collision metadata and an animated character. Select the character on its object
+layer to try animation and movement previews.
+
+![The editable sample project](docs/screenshots/standalone-demo.png)
+
+The sample lives in `.demo/` and preserves saved edits on later runs.
+`make demo DEMO_ROOT=/path/to/demo` chooses another sample directory. It opens in
+direct mode; you can put it under a project root to find it in the selector later.
+The sample artwork is covered by this project's MIT license.
+
+## Development
+
+Install **Python 3.10+**, **Poetry 2.4–2.x**, **Node 24.12+**, **npm**, and **Make**
+on your `PATH`. See the [Poetry installation guide](https://python-poetry.org/docs/#installation)
+if needed. Run commands from the repository root.
+
+`make setup` checks tools, creates a Poetry-managed `.venv`, installs locked
+dependencies and builds the browser UI. It does not install Poetry itself.
+`make help` lists the available commands.
+
+| Command | What it does |
+| --- | --- |
+| `make run` | Rebuild the UI and open the project selector for `.forge_project/` |
+| `make run PROJECT_ROOT="/path/to/projects"` | Browse projects in another root |
+| `make run PROJECT="/path/to/world"` | Open one project directly |
+| `make demo [DEMO_ROOT=/path]` | Create or reopen the editable sample |
+| `make run PORT=8777` | Use another local port; also works with `make demo` |
+| `make check-deps` | Check tools and the Python dependency lock without installing |
+| `make frontend` | Type-check and rebuild the browser UI |
+| `make lint` / `make format` | Check code style or apply formatting |
+| `make typecheck` | Run strict TypeScript checks |
+| `make test` | Run Python and TypeScript tests |
+| `make test-python` / `make test-frontend` | Run one test suite |
+| `make test-browser [CHROME=/path]` | Run Chrome acceptance in disposable directories |
+| `make check` | Run lint, tests and Chrome acceptance |
+| `make build` | Rebuild the UI, build wheel/source distributions and check metadata |
+| `make check-dist` | Install the built wheel in an isolated environment and smoke-test it |
+| `make clean` | Remove build outputs and `node_modules`; keep your projects |
+| `make clean-demo` | Delete the default `.demo/`, including saved sample edits |
+
+Stop the sample server before `make clean-demo`. Custom demo directories are never
+removed by that command. Default project and sample directories are Git-ignored.
+Override tool paths with `PYTHON`, `POETRY`, or `NPM` when needed.
+
+Chrome defaults to its macOS application path; pass `CHROME=/path/to/chrome` on
+other systems. Optional official Tiled interoperability checks run with
+`make test-tiled TILED=/path/to/Tiled RASTERIZER=/path/to/tmxrasterizer`.
+
+Edit TypeScript in `frontend/` and Python in `src/gbc_scene_forge/`.
+Generated JavaScript is Git-ignored. After frontend edits, run `make frontend`
+and reload the page; launch, demo, browser-test and build commands rebuild it for
+you. Release packages include the prebuilt UI.
+
+See [the 0.3.0 release notes](docs/RELEASE-0.3.0.md) and
+[building and releasing](docs/RELEASING.md) for release validation and publication.
 
 ## License
 

@@ -1,17 +1,47 @@
 # Standalone Scene Forge
 
-Create or open projects without installing or supplying a game connector:
+Start the project selector with `gbc-scene-forge` or, from a configured checkout,
+`make run`. The default project root is `.forge_project/` in the current directory.
+Create **Hello World** to store a self-contained project in
+`.forge_project/hello-world/`, or open an existing project from the list.
 
 ```sh
-gbc-scene-forge /path/to/world --create "My world"
-gbc-scene-forge /path/to/world --port 8777
+gbc-scene-forge --project-root /path/to/projects --port 8777
+# From a development checkout:
+make run PROJECT_ROOT=/path/to/projects PORT=8777
 ```
 
-The equivalent module command is `python -m gbc_scene_forge /path/to/world`.
-For this checkout, prefix it with `poetry run` after `make setup`.
-Without `--create`, a new or empty directory opens a creation form in the browser.
-An existing project opens its saved scene list. The launcher selects one workspace
-for the server session; stop and relaunch to open a different directory.
+Open the printed local URL. Choose **Projects…** to change projects; unsaved scene
+edits offer **Save and switch**, **Discard and switch**, or **Keep editing**.
+Failed saves keep the current workspace and edits. Opening a project reloads the
+workspace, clears undo/redo and selections, and resets previews. Requests are
+scoped to the project's URL, so another tab cannot change their destination.
+
+Each immediate child directory with a valid manifest appears in the selector.
+Invalid or unsupported manifests appear as errors, without being rewritten.
+New project folders use lowercase ASCII slugs with hyphens; accented characters
+are simplified, separators and empty slugs are rejected, and existing directories
+are never overwritten. The display name and project UUID are independent of the
+folder name. Renaming a display name does not imply moving its directory.
+
+To bring an existing project into the selector, move the entire directory under
+the project root while Forge is stopped. Or open it directly:
+
+```sh
+gbc-scene-forge --project /path/to/world
+make run PROJECT=/path/to/world
+```
+
+Direct mode serves one directory and has no selector. `make demo` uses this mode
+for the sample in `.demo/`; `DEMO_ROOT` chooses another directory. All Make launch
+targets rebuild the UI first. A positional CLI directory is now a project root;
+use `--project` for the old single-directory behavior. Project creation happens
+in the browser rather than through the removed `--create` option.
+
+Manifest schema version remains 1. Existing 0.2.0 projects require no migration.
+Unsupported schema versions are rejected before recovery writes. Future schema
+changes must provide explicit migrations; transaction history is not a schema
+version or a migration mechanism.
 
 ## Import and edit
 
@@ -310,11 +340,8 @@ Polygons, polylines, ellipses, text, templates, per-object hiding, fractional
 coordinates, rotation/flip flags, file/object/color/class property types,
 group/image layers, offsets, infinite maps, embedded tilesets and compressed/base64
 tile data are unsupported. Forge rejects unsupported data before saving instead
-of dropping it. Layer, object, terrain/collision and portable export authoring
-complete #14;
-sprite playback and movement preview follow in #15.
-This is a supported subset for Forge-created projects, not a general-purpose
-arbitrary Tiled-file importer. See the
+of dropping it. This is a supported subset for Forge-created projects, not a
+general-purpose arbitrary Tiled-file importer. See the
 [Tiled JSON format reference](https://doc.mapeditor.org/en/stable/reference/json-map-format/)
 for the native field definitions. Tile collision object groups support the
 rectangle, ellipse and simple-polygon subset described above; other collision
@@ -331,7 +358,7 @@ project**. The source project and editor undo/redo history stay unchanged.
   those sets and all their tile images are kept to preserve the map's references.
 - **Whole project** exports every saved scene, all managed assets and
   `forge.project.json`. After extraction, open any `scenes/*.tmj` in Tiled, or
-  launch Forge on the extracted directory to continue authoring. This snapshot
+  launch Forge with `--project` on the extracted directory to continue authoring. This snapshot
   includes artwork/provenance and metadata for all grids, including unused assets.
   Transaction history and undeclared workspace files are excluded.
 
@@ -398,26 +425,23 @@ explicit atlas reimport for artwork updates. Do not edit generated tilesets or
 identity mappings manually.
 
 The server binds only to loopback, validates the Host header and requires a
-per-session mutation token. Standalone projects are the supported product
-direction. Connector v1 launchers, `.scene.json` documents and game Apply/build
-integrations are legacy code, with no compatibility guarantee for new work.
-The standalone editor does not execute a connector or expose game Apply operations.
+per-session mutation token. All project operations use the standalone service
+and declared workspace.
 
 ## Verification
 
 `make lint test build check-dist` checks code, persistence, import validation,
 Tiled round trips, revision conflicts, interrupted recovery and wheel contents.
-`npm run test:standalone` launches its own disposable workspace and local Chrome,
+`make test-browser` launches its own disposable workspace and local Chrome,
 then exercises create/import/paint/save, layers, generic objects, typed properties,
 origin overrides, terrain/collision editing and overlays, reimport, restart, a
 directory move, scene/project ZIP downloads (including unsaved snapshots), and
-external-edit conflicts. Pass a Chrome executable after `--` on other
-platforms. Screenshots are written under `build/reports/scene-editor/`.
+external-edit conflicts. Pass `CHROME=/path/to/chrome` on other platforms. Screenshots are written under `build/reports/scene-editor/`.
 
 With official Tiled binaries installed, also run:
 
 ```sh
-poetry run python tests/tiled_interop.py --tiled /path/to/Tiled --rasterizer /path/to/tmxrasterizer
+make test-tiled TILED=/path/to/Tiled RASTERIZER=/path/to/tmxrasterizer
 ```
 
 This opens and exports a Forge map with Tiled, reopens the exported data in Forge,

@@ -14,10 +14,17 @@ const folder = await mkdtemp(join(tmpdir(), 'forge-standalone-'));
 let server: ChildProcess | undefined;
 let chrome: Chrome | undefined;
 let url = '';
-async function start(root: string, fixture = true) {
+async function start(root: string, fixture = true, single = true) {
   const args = fixture
-    ? ['tests/serve_standalone_fixture.py', '--root', root]
-    : ['-m', 'gbc_scene_forge', root, '--port', '0'];
+    ? ['tests/serve_standalone_fixture.py', '--root', root, ...(single ? ['--single-project'] : [])]
+    : [
+        '-m',
+        'gbc_scene_forge',
+        ...(single ? ['--project'] : ['--project-root']),
+        root,
+        '--port',
+        '0',
+      ];
   const child = spawn('.venv/bin/python', args, {
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -148,6 +155,114 @@ print(json.dumps(result))
     deviceScaleFactor: 1,
     mobile: false,
   });
+  // Exercise the multi-project launcher before the detailed single-project suite.
+  await stop();
+  const projectRoot = join(folder, 'projects');
+  await start(projectRoot, false, false);
+  await browser.call('Page.navigate', { url });
+  await wait(
+    "!document.getElementById('project-picker')?.hidden && document.getElementById('status')?.textContent.includes('Choose a project')",
+  );
+  const createProject = async (name: string, slug: string) => {
+    await set('project-title', name);
+    await submit('project-form');
+    await wait(
+      `location.pathname === '/projects/${slug}/' && document.getElementById('project-name')?.textContent === ${JSON.stringify(name)} && !document.getElementById('switch-project')?.disabled`,
+    );
+  };
+  const goProjects = async () => {
+    await click('switch-project');
+    await wait("location.pathname === '/' && document.querySelector('#project-list a') !== null");
+  };
+  const openProject = async (slug: string) => {
+    await browser.click(`document.querySelector('a[href="/projects/${slug}/"]')`);
+    await wait(
+      `location.pathname === '/projects/${slug}/' && document.getElementById('switch-project')?.hidden === false && document.getElementById('switch-project')?.disabled === false`,
+    );
+  };
+  await createProject('Hello World', 'hello-world');
+  await set('atlas-path', join(folder, 'input/terrain.atlas.json'));
+  await submit('import-form');
+  await wait("document.getElementById('status')?.textContent.includes('Atlas imported')");
+  await set('scene-title', 'Home');
+  await submit('scene-form');
+  await wait("document.getElementById('status')?.textContent.includes('Scene created')");
+  const renameLayer = async (name: string) => {
+    await set('layer-name', name);
+    await evaluate("document.getElementById('layer-name').dispatchEvent(new Event('change'))");
+    await wait("document.getElementById('dirty')?.textContent === 'UNSAVED'");
+  };
+  await renameLayer('Saved before switching');
+  await click('switch-project');
+  await wait("document.getElementById('switch-project-dialog')?.open");
+  await browser.screenshot('project-switch-save');
+  await click('switch-cancel');
+  assert.equal(await evaluate('location.pathname'), '/projects/hello-world/');
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'UNSAVED');
+  await click('switch-project');
+  await click('switch-save');
+  await wait("location.pathname === '/' && document.querySelector('#project-list a') !== null");
+  const savedManifest = record(
+    JSON.parse(await readFile(join(projectRoot, 'hello-world/forge.project.json'), 'utf8')),
+  );
+  const rootSceneId = string(record(array(savedManifest.scenes, record)[0]).id);
+  const rootScenePath = join(projectRoot, `hello-world/scenes/${rootSceneId}.tmj`);
+  let rootMap = record(JSON.parse(await readFile(rootScenePath, 'utf8')));
+  assert.equal(record(array(rootMap.layers, record)[0]).name, 'Saved before switching');
+  await createProject('Another World', 'another-world');
+  assert.equal(
+    await evaluate("document.getElementById('scene-name').textContent"),
+    'No scene open',
+  );
+  assert.equal(
+    await evaluate("document.querySelectorAll('#palette button[data-asset]').length"),
+    0,
+  );
+  assert.equal(await evaluate("document.getElementById('undo').disabled"), true);
+  await goProjects();
+  await browser.screenshot('project-selector');
+  await openProject('hello-world');
+  assert.equal(
+    await evaluate("document.getElementById('scene-name').textContent"),
+    'No scene open',
+  );
+  await set('scenes', rootSceneId);
+  await click('open');
+  await wait("document.getElementById('status')?.textContent === 'Scene opened.'");
+  assert.equal(
+    await evaluate("document.getElementById('layer-name').value"),
+    'Saved before switching',
+  );
+  assert.equal(await evaluate("document.getElementById('undo').disabled"), true);
+  await renameLayer('Keep this edit after a failed save');
+  // External edit forces a real save conflict: switching must leave the edit in place.
+  rootMap = { ...rootMap, properties: [{ name: 'external', type: 'string', value: 'changed' }] };
+  await writeFile(rootScenePath, JSON.stringify(rootMap));
+  await click('switch-project');
+  await click('switch-save');
+  await wait(
+    "document.querySelector('#switch-project-dialog .form-error')?.textContent.length > 0",
+  );
+  assert.equal(await evaluate('location.pathname'), '/projects/hello-world/');
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'UNSAVED');
+  assert.equal(
+    await evaluate("document.getElementById('layer-name').value"),
+    'Keep this edit after a failed save',
+  );
+  await click('switch-discard');
+  await wait(
+    "location.pathname === '/' && document.querySelectorAll('#project-list a').length === 2",
+  );
+  await stop();
+  await start(projectRoot, false, false);
+  await browser.call('Page.navigate', { url });
+  await wait("document.querySelectorAll('#project-list a').length === 2");
+  await openProject('another-world');
+  assert.equal(await evaluate("document.querySelector('#scenes').options.length"), 1);
+  assert.equal(await evaluate("document.getElementById('terrain-overlay').checked"), false);
+  // Return to the direct-project fixture to exercise the full editor and legacy opening mode.
+  await stop();
+  await start(join(folder, 'world'));
   await browser.call('Page.navigate', { url });
   await wait("document.getElementById('status')?.textContent.includes('Name your project')");
   await wait("document.querySelector('.mark')?.naturalWidth === 64");
@@ -1391,7 +1506,7 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   assert.equal(await evaluate("document.getElementById('asset-count').textContent"), '0 / 0');
   assert.deepEqual(browser.errors, []);
   console.log(
-    'Standalone browser acceptance passed: project creation, atlas import/reimport, painting, layers, objects/properties, terrain/collision, portable exports, undo/redo, restart, moved directory, and conflict preservation.',
+    'Standalone browser acceptance passed: project roots, selection, save/discard/cancel switching, failed-save preservation, project creation, atlas import/reimport, painting, layers, objects/properties, terrain/collision, portable exports, undo/redo, restart, moved directory, and conflict preservation.',
   );
 } finally {
   await chrome?.close();

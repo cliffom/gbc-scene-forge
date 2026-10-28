@@ -10,6 +10,7 @@ from .documents import Conflict, json_text
 from .transactions import Transactions, digest, read_optional, safe_path
 
 MANIFEST = "forge.project.json"
+SCHEMA_VERSION = 1
 
 
 def name(value):
@@ -28,13 +29,30 @@ def identity(value):
 
 
 class Project:
-    def __init__(self, root):
+    def __init__(self, root, *, recover=True):
         self.root = Path(root).absolute()
         safe_path(self.root, MANIFEST)
         atlas.require(self.root.is_dir(), "Project directory does not exist")
         self.transactions = Transactions(self.root, ".forge/history")
-        self.transactions.recover()
+        # Refuse unknown schemas before recovery can write any files.
+        manifest = safe_path(self.root, MANIFEST)
+        if manifest.exists():
+            with manifest.open("rb") as stream:
+                data = stream.read(8 * 1024 * 1024 + 1)
+            atlas.require(len(data) <= 8 * 1024 * 1024, "Project manifest exceeds 8 MiB")
+            self.check_version(json.loads(data))
+        if recover:
+            self.transactions.recover()
         self.read()
+
+    @staticmethod
+    def check_version(document):
+        atlas.require(
+            isinstance(document, dict)
+            and type(document.get("version")) is int
+            and document["version"] == SCHEMA_VERSION,
+            "Unsupported project version; this release supports manifest version 1",
+        )
 
     @classmethod
     def prepare_creation(cls, root):
@@ -68,7 +86,7 @@ class Project:
         root.mkdir(parents=True, exist_ok=True)
         safe_path(root, MANIFEST)
         document = {
-            "version": 1,
+            "version": SCHEMA_VERSION,
             "id": str(uuid4()),
             "name": title,
             "scenes": [],
@@ -90,10 +108,7 @@ class Project:
             and set(document) == {"version", "id", "name", "scenes", "atlases", "files", "preview"},
             "Unsupported project manifest fields",
         )
-        atlas.require(
-            type(document["version"]) is int and document["version"] == 1,
-            "Unsupported project version",
-        )
+        self.check_version(document)
         atlas.require(identity(document["id"]), "Invalid project identity")
         name(document["name"])
         atlas.require(
