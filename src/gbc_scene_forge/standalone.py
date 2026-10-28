@@ -109,6 +109,12 @@ def make_handler(root, token):
                         data.get("scene_revision"),
                     )
                     self.reply(payload, "application/zip", filename=filename)
+                elif route == "/api/save-preview-settings":
+                    self.reply(
+                        project.save_preview_settings(
+                            data.get("settings"), data.get("project_revision")
+                        )
+                    )
                 elif route == "/api/save-tile-metadata":
                     self.reply(
                         project.save_tile_metadata(

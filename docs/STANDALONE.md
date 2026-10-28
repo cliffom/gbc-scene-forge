@@ -48,7 +48,34 @@ one pixel with arrow keys, or remove it with Delete. Sprite edits participate in
 Undo/Redo, unsaved-change prompts and Save/Reopen. Existing imported sprite atlases
 work without reimport; their portable sprite tilesets are created on the next
 explicit project mutation. Palette assignments and animation timing remain in
-project metadata. Sprite playback and movement preview follow in #15.
+project metadata.
+
+Select a sprite to choose an imported animation, play/pause it, step frames,
+change playback speed, and inspect its origin. **Sequence mappings** explicitly
+assign idle/walk animations for up, down, left, and right; unmapped slots show
+static artwork. Mappings are shared by instances of the same sprite asset.
+
+Under **Movement preview**, enable movement and click the scene to use arrow keys
+or WASD, or enter native-pixel X, Y waypoints (one pair per line) and choose
+**Follow path**. Keyboard input takes over from a path. The adjustable collision
+footprint uses offsets from the sprite origin, independently of artwork dimensions.
+Scene edges always block movement. **Check collisions** additionally checks visible
+tiles and other sprites with authored collision metadata, including rectangles,
+ellipses and polygons. Markers and trigger areas do not block. Paths stop at the
+first obstacle; they do not find a route around it. Collision sweeps use subpixel
+steps and can conservatively stop near diagonal corners. **Pause movement** holds
+the current pose and path; **Resume movement** continues it. Reset restores the saved
+starting position; Escape exits. Losing focus stops motion.
+
+**Save preview settings** stores animation choices, idle/walk mappings, playback
+and movement speeds, origin display, footprint, and collision preference under
+`preview.sprite` in `forge.project.json`. This explicit project mutation uses the
+project revision and durable transaction checks. A conflict preserves local
+preferences so they can be reviewed before retrying. Scene dirty state, undo/redo,
+scene revisions, saved sprite assets and starting positions remain unchanged.
+Reopening restores preferences with playback paused at frame one and movement
+disabled. Progress, active keys, paths and temporary positions are never persisted.
+Deleting/reimporting an atlas prunes obsolete sprite/sequence references.
 
 The **Layers** list shows the topmost layer first. Choose a layer to edit its
 contents, rename it, move it **Up**/**Down**, or **Hide**/**Show** it. **+ Tile layer**
@@ -146,7 +173,7 @@ layers and sprite instances. Terrain colors are deterministic per label. Custom
 collision shapes define the displayed footprint even if **Solid** is unchecked;
 with no shapes, the flag supplies the full-tile fallback. Sprite collision is
 translated by each instance's actual origin, including overrides. These are
-editing overlays; no movement or collision simulation runs in this milestone.
+editing overlays. Optional movement preview uses this same authored collision data.
 
 Forge authors and validates this data. gbc-atlas supplies artwork, regions and
 animation metadata; it does not generate structured terrain or collision.
@@ -322,6 +349,19 @@ only whole-project exports include a Forge project manifest. No original import
 folder, connector, running server or network access is needed to open exported
 maps in Tiled. Grid, terrain and collision view overlays are not baked into art;
 terrain/collision properties and geometry remain editable in the tilesets.
+
+Supported atlas animations are emitted as native Tiled `animation` frame arrays,
+using original durations in milliseconds and local tileset IDs. The first region
+is the animated tile; for a region split across a scene grid, each cell receives
+its corresponding frame sequence. `forge:animation` records the sequence name.
+Tiled supports one loop per tile, so sequences sharing the same starting tile
+are skipped rather than selected arbitrarily. Sequences that do not fit a grid
+are also skipped. `export.json` includes per-tileset exported/skipped entries and
+reasons under `animations`. All named source sequences remain in project atlas
+metadata. Idle/walk direction mappings remain Forge preferences; they do not
+become Tiled actor logic. Preview playback speed does not scale exported timing.
+The ZIP gains animation data without changing source project assets; a whole
+project ZIP updates its own inventory checksums so it can reopen in Forge.
 
 Every ZIP contains `EXPORT.md` with offline usage/subset notes and `export.json`
 with scene names/IDs, source byte revisions, canvas-override flags and SHA-256

@@ -17,7 +17,7 @@ from urllib.request import Request, urlopen
 
 from atlas_fixture import bundle, image, sprite_bundle
 
-from gbc_scene_forge import atlas, png, tiled, transactions
+from gbc_scene_forge import atlas, png, preview_settings, tiled, transactions
 from gbc_scene_forge.atlas import load_bundle
 from gbc_scene_forge.documents import Conflict
 from gbc_scene_forge.projects import MANIFEST, Project
@@ -853,6 +853,18 @@ class StandaloneHttpTests(unittest.TestCase):
                     current = json.load(response)
                 with self.assertRaises(HTTPError) as caught:
                     request("/api/save-tile-metadata", metadata_request)
+                self.assertEqual(caught.exception.code, 409)
+                preview_request = {
+                    "settings": preview_settings.defaults(),
+                    "project_revision": current["revision"],
+                }
+                with self.assertRaises(HTTPError) as caught:
+                    request("/api/save-preview-settings", preview_request, token="wrong")
+                self.assertEqual(caught.exception.code, 403)
+                with request("/api/save-preview-settings", preview_request) as response:
+                    current = json.load(response)
+                with self.assertRaises(HTTPError) as caught:
+                    request("/api/save-preview-settings", preview_request)
                 self.assertEqual(caught.exception.code, 409)
                 export_request = {
                     "scope": "scene",

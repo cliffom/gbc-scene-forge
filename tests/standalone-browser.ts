@@ -237,6 +237,35 @@ print(json.dumps(result))
   await wait("document.getElementById('status')?.textContent.includes('Atlas imported')");
   assert.deepEqual(await evaluate('window.atlasReads'), ['second.atlas.json', 'atlas.png']);
   assert.deepEqual(await evaluate('window.pickerRequests'), []);
+  const actorManifestPath = join(folder, 'sprites/actors.atlas.json');
+  const actorManifest = record(JSON.parse(await readFile(actorManifestPath, 'utf8')));
+  actorManifest.cell_palettes = Array(16).fill(0);
+  actorManifest.regions = [
+    ...array(actorManifest.regions, record),
+    { ...record(array(actorManifest.regions, record)[0]), name: 'step', x: 16 },
+  ];
+  await promisify(execFile)('.venv/bin/python', [
+    '-c',
+    `
+from pathlib import Path
+import sys
+from gbc_scene_forge import png
+path = Path(sys.argv[1])
+width, height, pixels = png.decode(path.read_bytes())
+rows = []
+for y in range(height):
+    row = pixels[y * width * 4 : (y + 1) * width * 4]
+    rows.append(row + row[16:] + row[:16])
+path.write_bytes(png.encode(32, height, b''.join(rows)))
+`,
+    join(folder, 'sprites/atlas.png'),
+  ]);
+  actorManifest.animations = [
+    { name: 'idle', frames: [{ region: 'idle' }, { region: 'idle', duration_ms: 240 }] },
+    { name: 'stride_west', frames: [{ region: 'idle', duration_ms: 80 }] },
+    { name: 'turn', frames: [{ region: 'step' }, { region: 'idle' }] },
+  ];
+  await writeFile(actorManifestPath, JSON.stringify(actorManifest));
   await set('atlas-path', join(folder, 'sprites/actors.atlas.json'));
   await submit('import-form');
   await wait("document.getElementById('import-report')?.textContent.includes('Imported actors')");
@@ -530,6 +559,241 @@ print(json.dumps(result))
   assert.deepEqual(record((await scene(second)).scene).objects, [
     { id: 1, asset: 'actors/idle', x: 32, y: 24 },
   ]);
+  // Playback controls never dirty a saved scene, move its origin, or add history.
+  const savedSprite = await scene(second);
+  const selectionBeforePlayback = await evaluate(
+    "document.getElementById('selection-detail').textContent",
+  );
+  const historyBeforePlayback = await evaluate(
+    "['undo','redo'].map(id=>document.getElementById(id).disabled)",
+  );
+  const savedFramePixel = await evaluate(
+    "Array.from(document.getElementById('scene').getContext('2d').getImageData(34,9,1,1).data)",
+  );
+  await set('preview-animation', 'turn');
+  const alternateFramePixel = await evaluate(
+    "Array.from(document.getElementById('scene').getContext('2d').getImageData(34,9,1,1).data)",
+  );
+  assert.notDeepEqual(alternateFramePixel, savedFramePixel);
+  await click('deselect');
+  await set('object-list', '1');
+  // Selecting a restored, paused sequence must update the scene on that same draw.
+  assert.deepEqual(
+    await evaluate(
+      "Array.from(document.getElementById('scene').getContext('2d').getImageData(34,9,1,1).data)",
+    ),
+    alternateFramePixel,
+  );
+  await set('preview-animation', 'idle');
+  await wait("document.getElementById('preview-frame').textContent.includes('Frame 1 / 2')");
+  await click('preview-previous');
+  assert.match(
+    string(await evaluate("document.getElementById('preview-frame').textContent")),
+    /Frame 2 \/ 2.*240 ms.*Origin 8, 23/,
+  );
+  await click('preview-next');
+  await evaluate(
+    "document.getElementById('preview-next').dispatchEvent(new KeyboardEvent('keydown', {key:'ArrowRight', bubbles:true}))",
+  );
+  await set('preview-speed', '0.25');
+  await click('preview-play');
+  await wait("document.getElementById('preview-frame').textContent.includes('Frame 2 / 2')");
+  await click('preview-play');
+  assert.equal(await evaluate("document.getElementById('preview-play').textContent"), 'Play');
+  await click('preview-origin');
+  await click('preview-origin');
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
+  assert.equal(
+    await evaluate("document.getElementById('selection-detail').textContent"),
+    selectionBeforePlayback,
+  );
+  assert.deepEqual(
+    await evaluate("['undo','redo'].map(id=>document.getElementById(id).disabled)"),
+    historyBeforePlayback,
+  );
+  assert.deepEqual(await scene(second), savedSprite);
+  await evaluate("document.getElementById('animation-preview').scrollIntoView({block:'center'})");
+  await browser.screenshot('standalone-animation-preview');
+  await set('preview-animation', '');
+  assert.equal(await evaluate("document.getElementById('preview-play').disabled"), true);
+  // Mappings are explicit, per asset, and independent of scene authoring history.
+  await set('preview-action', 'idle');
+  assert.match(
+    string(await evaluate("document.getElementById('preview-mapping-status').textContent")),
+    /No sequence mapped for idle \/ down/,
+  );
+  assert.equal(await evaluate("document.getElementById('preview-animation').disabled"), true);
+  await evaluate("document.getElementById('preview-mappings').open = true");
+  await set('preview-map-idle-down', 'idle');
+  await set('preview-map-walk-left', 'stride_west');
+  assert.equal(await evaluate("document.getElementById('preview-animation').value"), 'idle');
+  await set('preview-action', 'walk');
+  assert.equal(await evaluate("document.getElementById('preview-play').disabled"), true);
+  await set('preview-direction', 'left');
+  assert.equal(await evaluate("document.getElementById('preview-animation').value"), 'stride_west');
+  assert.match(
+    string(await evaluate("document.getElementById('preview-frame').textContent")),
+    /Frame 1 \/ 1.*80 ms/,
+  );
+  await click('preview-play');
+  await set('preview-direction', 'up');
+  assert.equal(await evaluate("document.getElementById('preview-play').disabled"), true);
+  await set('preview-direction', 'left');
+  await set('preview-map-walk-left', '');
+  assert.equal(await evaluate("document.getElementById('preview-play').disabled"), true);
+  await set('preview-map-walk-left', 'stride_west');
+  await evaluate("document.getElementById('preview-mappings').scrollIntoView({block:'center'})");
+  await browser.screenshot('standalone-sequence-mappings');
+  await set('preview-action', 'manual');
+  assert.equal(await evaluate("document.getElementById('preview-animation').disabled"), false);
+  assert.equal(await evaluate("document.getElementById('preview-animation').value"), '');
+  await set('preview-animation', 'idle');
+  await set('preview-action', 'walk');
+  await set('preview-action', 'manual');
+  assert.equal(await evaluate("document.getElementById('preview-animation').value"), 'idle');
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
+  assert.deepEqual(await scene(second), savedSprite);
+  assert.deepEqual(
+    await evaluate("['undo','redo'].map(id=>document.getElementById(id).disabled)"),
+    historyBeforePlayback,
+  );
+  await click('undo');
+  assert.equal(await evaluate("document.getElementById('object-list').options.length"), 0);
+  await click('redo');
+  assert.equal(await evaluate("document.getElementById('object-list').options.length"), 1);
+  await set('object-list', '1');
+  assert.equal(await evaluate("document.getElementById('preview-map-idle-down').value"), 'idle');
+  assert.equal(
+    await evaluate("document.getElementById('preview-map-walk-left').value"),
+    'stride_west',
+  );
+  await evaluate("document.getElementById('preview-mappings').open = false");
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
+  // Keyboard/path movement renders a transient pose and never authors a new position.
+  const originalSpritePixel = await evaluate(
+    "Array.from(document.getElementById('scene').getContext('2d').getImageData(30,9,1,1).data)",
+  );
+  await evaluate("document.getElementById('preview-movement-settings').open = true");
+  await set('preview-map-idle-down', 'idle');
+  await set('preview-map-walk-down', 'stride_west');
+  await set('preview-map-walk-right', 'stride_west');
+  await click('preview-movement');
+  await click('preview-check-collision');
+  assert.equal(await evaluate("document.getElementById('preview-action').value"), 'idle');
+  await set('preview-path', '44, 24\n44, 40');
+  await click('preview-follow-path');
+  await wait("document.getElementById('preview-action').value === 'walk'");
+  await click('preview-pause-movement');
+  const pausedMovement = await evaluate(
+    "[document.getElementById('preview-position').textContent, document.getElementById('preview-frame').textContent]",
+  );
+  await evaluate('new Promise(resolve => setTimeout(resolve, 160))');
+  assert.deepEqual(
+    await evaluate(
+      "[document.getElementById('preview-position').textContent, document.getElementById('preview-frame').textContent]",
+    ),
+    pausedMovement,
+  );
+  assert.equal(
+    await evaluate("document.getElementById('preview-pause-movement').textContent"),
+    'Resume movement',
+  );
+  await click('preview-pause-movement');
+  assert.equal(await evaluate("document.getElementById('preview-animation').value"), 'stride_west');
+  await wait(
+    "document.getElementById('preview-position').textContent.includes('X 44.0, Y 40.0') && document.getElementById('preview-action').value === 'idle'",
+  );
+  assert.equal(await evaluate("document.getElementById('preview-animation').value"), 'idle');
+  assert.notDeepEqual(
+    await evaluate(
+      "Array.from(document.getElementById('scene').getContext('2d').getImageData(30,9,1,1).data)",
+    ),
+    originalSpritePixel,
+  );
+  // Even with the placement brush active, scene gestures only focus movement controls.
+  await browser.pointer(48, 24);
+  await browser.pointer(48, 24, 'mouseReleased');
+  assert.equal(await evaluate("document.getElementById('object-list').options.length"), 1);
+  await evaluate(
+    "document.getElementById('scene').dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowLeft',bubbles:true}))",
+  );
+  await wait(
+    "document.getElementById('preview-direction').value === 'left' && document.getElementById('preview-action').value === 'walk'",
+  );
+  await evaluate("window.dispatchEvent(new KeyboardEvent('keyup',{key:'ArrowLeft'}))");
+  await wait("document.getElementById('preview-action').value === 'idle'");
+  await evaluate(
+    "document.getElementById('scene').dispatchEvent(new KeyboardEvent('keydown',{key:'d',bubbles:true}))",
+  );
+  await wait(
+    "document.getElementById('preview-direction').value === 'right' && document.getElementById('preview-action').value === 'walk'",
+  );
+  await evaluate("window.dispatchEvent(new Event('blur'))");
+  await wait("document.getElementById('preview-action').value === 'idle'");
+  await set('preview-path', '52, 40');
+  await click('preview-follow-path');
+  await wait("document.getElementById('preview-position').textContent.includes('X 52.0, Y 40.0')");
+  await set('preview-path', '55, 40');
+  await click('preview-follow-path');
+  await wait("document.getElementById('preview-position').textContent.includes('Blocked')");
+  await evaluate(
+    "document.getElementById('preview-movement-settings').scrollIntoView({block:'center'})",
+  );
+  await browser.screenshot('standalone-movement-preview');
+  // Save preferences while displaced; saving must never bake in the current pose.
+  await set('preview-speed', '2');
+  await set('preview-move-speed', '64');
+  await set('preview-footprint-width', '6');
+  await click('save-preview-settings');
+  await wait("document.getElementById('status').textContent.startsWith('Preview settings saved.')");
+  const savedPreview = record(record(record((await catalog()).project).preview).sprite);
+  assert.equal(savedPreview.playback_speed, 2);
+  assert.equal(savedPreview.movement_speed, 64);
+  assert.equal(record(savedPreview.footprint).width, 6);
+  assert.equal(savedPreview.check_collisions, true);
+  assert.equal(savedPreview.position, undefined);
+  assert.equal(savedPreview.path, undefined);
+  assert.equal(savedPreview.playing, undefined);
+  assert.deepEqual(await scene(second), savedSprite);
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
+  await evaluate(
+    "document.getElementById('save-preview-settings').scrollIntoView({block:'center'})",
+  );
+  await browser.screenshot('standalone-preview-settings');
+
+  await click('preview-reset-position');
+  assert.match(
+    string(await evaluate("document.getElementById('preview-position').textContent")),
+    /X 32.0, Y 24.0/,
+  );
+  await evaluate(
+    "document.getElementById('scene').dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))",
+  );
+  assert.equal(await evaluate("document.getElementById('preview-movement').checked"), false);
+  assert.equal(await evaluate("document.getElementById('preview-action').value"), 'manual');
+  assert.equal(await evaluate("document.getElementById('preview-animation').value"), 'idle');
+  assert.deepEqual(
+    await evaluate(
+      "Array.from(document.getElementById('scene').getContext('2d').getImageData(30,9,1,1).data)",
+    ),
+    originalSpritePixel,
+  );
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
+  assert.equal(
+    await evaluate("document.getElementById('selection-detail').textContent"),
+    selectionBeforePlayback,
+  );
+  assert.deepEqual(await scene(second), savedSprite);
+  assert.deepEqual(
+    await evaluate("['undo','redo'].map(id=>document.getElementById(id).disabled)"),
+    historyBeforePlayback,
+  );
+  await evaluate("document.getElementById('preview-movement-settings').open = false");
+  await click('undo');
+  assert.equal(await evaluate("document.getElementById('object-list').options.length"), 0);
+  await click('redo');
+  assert.equal(await evaluate("document.getElementById('object-list').options.length"), 1);
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
   // Named layers render in order, edit independently, and retain history through Save.
   const spritePixel = await evaluate(
     "Array.from(document.getElementById('scene').getContext('2d').getImageData(30,9,1,1).data)",
@@ -1024,6 +1288,39 @@ print(json.dumps(result))
     ),
     [0, 0, 0, 255],
   );
+  // Preview preferences survive server restart and moving the project directory.
+  await set('layers', '2');
+  await set('object-list', String(record(placed[0]).id));
+  assert.equal(
+    await evaluate("document.getElementById('preview-map-walk-left').value"),
+    'stride_west',
+  );
+  assert.equal(await evaluate("document.getElementById('preview-speed').value"), '2');
+  assert.equal(await evaluate("document.getElementById('preview-move-speed').value"), '64');
+  assert.equal(await evaluate("document.getElementById('preview-footprint-width').value"), '6');
+  assert.equal(await evaluate("document.getElementById('preview-check-collision').checked"), true);
+  assert.equal(await evaluate("document.getElementById('preview-origin').checked"), true);
+  assert.equal(await evaluate("document.getElementById('preview-movement').checked"), false);
+  assert.equal(await evaluate("document.getElementById('preview-play').textContent"), 'Play');
+  assert.equal(await evaluate("document.getElementById('preview-action').value"), 'manual');
+  assert.equal(await evaluate("document.getElementById('preview-animation').value"), 'idle');
+  assert.match(
+    string(await evaluate("document.getElementById('preview-frame').textContent")),
+    /Frame 1 \/ 2/,
+  );
+  const previewManifest = join(movedRoot, 'forge.project.json');
+  const beforePreviewConflict = await readFile(previewManifest, 'utf8');
+  await writeFile(previewManifest, beforePreviewConflict + '\n');
+  await set('preview-speed', '0.5');
+  await click('save-preview-settings');
+  await wait("document.getElementById('status').textContent.includes('Project changed on disk')");
+  assert.equal(await evaluate("document.getElementById('preview-speed').value"), '0.5');
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
+  assert.equal(await readFile(previewManifest, 'utf8'), beforePreviewConflict + '\n');
+  await writeFile(previewManifest, beforePreviewConflict);
+  await set('preview-speed', '2');
+  await set('layers', '1');
+  await browser.click('document.querySelector(\'[data-asset="terrain/earth"]\')');
   const mapPath = join(movedRoot, 'scenes', `${first}.tmj`);
   const before = await readFile(mapPath, 'utf8');
   // An external map edit causes a visible 409 and preserves the unsaved browser canvas.
