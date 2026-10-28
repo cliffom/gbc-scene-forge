@@ -1,5 +1,6 @@
 /* Standalone uses the same design system and editor shell as connector mode. */
 .standalone {min-width:760px; height:100dvh}
+.build-footer {flex:none;width:100vw;max-width:100%;padding:3px 12px;text-align:right;color:var(--muted);font-size:11px;line-height:18px;border-top:1px solid var(--line);overflow-wrap:anywhere}
 .workspace {display:flex;flex-direction:column;flex:1;min-height:0}
 .standalone .document-bar {flex:none}
 #scenes {min-width:180px;max-width:300px}

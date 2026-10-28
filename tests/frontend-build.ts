@@ -13,7 +13,7 @@ await test('esbuild bundles nested modules, emits source maps and preserves asse
   const root = await mkdtemp(join(tmpdir(), 'forge-bundle-test-'));
   try {
     await cp(join(repository, 'frontend'), join(root, 'frontend'), { recursive: true });
-    for (const name of ['tsconfig.json', 'package.json', 'package-lock.json']) {
+    for (const name of ['tsconfig.json', 'package.json', 'package-lock.json', 'pyproject.toml']) {
       await cp(join(repository, name), join(root, name));
     }
     await symlink(join(repository, 'node_modules'), join(root, 'node_modules'), 'dir');
@@ -26,7 +26,12 @@ await test('esbuild bundles nested modules, emits source maps and preserves asse
       (await readFile(app, 'utf8')) +
         "\nimport { probe } from './nested/probe.mts';\nconsole.log(probe);\n",
     );
-    const build = () => spawnSync('npm', ['run', 'build'], { cwd: root, encoding: 'utf8' });
+    const build = (mode = 'development', commit = 'a1b2c3d') =>
+      spawnSync('npm', ['run', 'build'], {
+        cwd: root,
+        encoding: 'utf8',
+        env: { ...process.env, FORGE_BUILD_MODE: mode, FORGE_BUILD_COMMIT: commit },
+      });
     const successful = build();
     assert.equal(successful.status, 0, successful.stdout + successful.stderr);
     const staticDir = join(root, 'src/gbc_scene_forge/static');
@@ -38,6 +43,18 @@ await test('esbuild bundles nested modules, emits source maps and preserves asse
       'project.js.map',
     ]);
     const bundle = await readFile(join(staticDir, 'app.js'), 'utf8');
+    const version = /^version = "([^"]+)"$/m.exec(
+      await readFile(join(root, 'pyproject.toml'), 'utf8'),
+    )?.[1];
+    assert(version);
+    assert((await readFile(join(staticDir, 'project.js'), 'utf8')).includes(`${version}-a1b2c3d`));
+    const production = build('production');
+    assert.equal(production.status, 0, production.stdout + production.stderr);
+    const releaseBundle = await readFile(join(staticDir, 'project.js'), 'utf8');
+    assert(releaseBundle.includes(`versionLabel.textContent = "${version}"`));
+    assert(!releaseBundle.includes(`${version}-a1b2c3d`));
+    assert.notEqual(build('invalid').status, 0);
+    assert.notEqual(build('development', '').status, 0);
     assert.match(bundle, /nested dependency/);
     assert.doesNotMatch(bundle, /from ["']\.\//);
     const metadata = record(JSON.parse(await readFile(join(staticDir, 'app.meta.json'), 'utf8')));

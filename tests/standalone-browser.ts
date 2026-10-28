@@ -95,6 +95,27 @@ try {
     await browser.click(`document.querySelector('#${id} button.primary')`);
   };
   const wait = browser.wait.bind(browser);
+  const checkBuildLabel = async () => {
+    const label = string(await evaluate("document.getElementById('app-version').textContent"));
+    const version = /^version = "([^"]+)"$/m.exec(await readFile('pyproject.toml', 'utf8'))?.[1];
+    assert(version);
+    if (process.env.FORGE_BUILD_MODE === 'production') {
+      assert.equal(label, version);
+    } else {
+      const { stdout } = await promisify(execFile)('git', ['rev-parse', '--short=7', 'HEAD']);
+      assert.equal(label, `${version}-${process.env.FORGE_BUILD_COMMIT ?? stdout.trim()}`);
+    }
+    assert.equal(
+      await evaluate(`(() => {
+        const label = document.getElementById('app-version').getBoundingClientRect();
+        const content = document.querySelector('#workspace:not([hidden]), #project-start:not([hidden])').getBoundingClientRect();
+        return label.width > 0 && label.left >= 0 && label.right <= innerWidth &&
+          label.bottom <= innerHeight && label.bottom >= innerHeight - 12 &&
+          label.top >= content.bottom;
+      })()`),
+      true,
+    );
+  };
   const set = async (id: string, value: string) => {
     await evaluate(
       `(() => { const control = document.getElementById(${JSON.stringify(id)}); control.value=${JSON.stringify(value)}; control.dispatchEvent(new Event(control.tagName === 'SELECT' ? 'change' : 'input', {bubbles:true})); })()`,
@@ -324,6 +345,20 @@ print(json.dumps(result))
     'Unfinished project',
   );
   await click('back-to-projects');
+  await browser.call('Emulation.setDeviceMetricsOverride', {
+    width: 760,
+    height: 640,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await checkBuildLabel();
+  await browser.screenshot('project-selector-version');
+  await browser.call('Emulation.setDeviceMetricsOverride', {
+    width: 1440,
+    height: 1000,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
   await browser.screenshot('project-selector');
   await openProject('hello-world');
   assert.equal(
@@ -2055,6 +2090,7 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   });
   assert.equal(await evaluate('document.documentElement.scrollWidth <= window.innerWidth'), true);
   assert.equal(await evaluate("document.getElementById('viewport').clientHeight > 200"), true);
+  await checkBuildLabel();
   await browser.screenshot('standalone-compact');
   await browser.call('Emulation.setDeviceMetricsOverride', {
     width: 1440,

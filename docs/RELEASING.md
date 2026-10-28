@@ -52,6 +52,26 @@ wheel and runs Python tests and installed-package smoke checks on Python 3.10,
 3.11, 3.12, 3.13 and 3.14, without installing Node or rebuilding the frontend.
 The browser suite can also be run locally; see the README.
 
+## UI build identity
+
+`npm run build` (also used by `make frontend`, `make run`, `make demo` and
+`make build`) reads the app version from `pyproject.toml` and embeds it in the
+browser bundle. By default, `FORGE_BUILD_MODE=development`: the bottom-right
+label shows `VERSION-COMMIT`, using `git rev-parse --short=7 HEAD` at build time.
+Set `FORGE_BUILD_COMMIT` to a 7–40 character hexadecimal Git commit identifier
+when building development assets without a Git checkout. Missing Git metadata
+or an invalid commit fails the development build rather than inventing an identity.
+
+Use `FORGE_BUILD_MODE=production make build` for release artifacts; their label
+shows only `VERSION`. The publication workflow sets this mode for all its build
+steps, including TestPyPI. Ordinary CI and local builds use development mode.
+Only `development` and `production` are accepted. These values are build-time
+inputs: changing environment variables or Git HEAD after building does not change
+the displayed identity. Wheels and source distributions preserve the prebuilt
+bundle, so installation and wheel builds from source archives need neither Git
+nor Node. Rebuilding that bundle from an archive requires production mode or an
+explicit `FORGE_BUILD_COMMIT`.
+
 ## Publication
 
 The project uses the MIT license, included in both distribution formats. Before a
