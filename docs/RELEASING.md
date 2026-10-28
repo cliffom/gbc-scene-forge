@@ -96,7 +96,7 @@ publishing page. Use the official [trusted publisher setup guide](https://docs.p
 The workflow follows the [Python Packaging User Guide](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/)
 and uses short-lived OIDC credentials; no PyPI API token is stored in the repository.
 
-After reviewing and committing a release, create and push an annotated `v0.4.0`
+After reviewing and committing a release, create and push an annotated `v0.5.0`
 tag (or the matching next version). Run **Publish package** manually against that
 tag, selecting `testpypi` first when its trusted publisher is configured. TestPyPI
 is currently unconfigured; its 0.1.4 upload failed with `invalid-publisher`. Until
@@ -106,13 +106,12 @@ with `tests/package_smoke.py` after publication. The workflow rebuilds and
 checks the distributions, checks the tag against the package version, then uploads
 only those verified artifacts. Pushing a tag alone does not publish.
 
-## Release 0.4.0
+## Release 0.5.0
 
-Version 0.4.0 adds selection clipboard editing, duplication, tile/marker transforms,
-and project-local reusable compositions. Scene operations share undo/redo and draft
-recovery; project stamps use guarded manifest transactions. See
-[release notes](RELEASE-0.4.0.md) and the
-[composition guide](STANDALONE.md#clipboard-and-reusable-stamps).
+Version 0.5.0 adds scene rename, duplication, and anchored resize/crop with a
+preview, explicit destructive-change confirmation, undo/redo, and draft recovery.
+See [release notes](RELEASE-0.5.0.md) and the
+[scene management guide](STANDALONE.md#scene-management).
 
 Before tagging, run:
 
