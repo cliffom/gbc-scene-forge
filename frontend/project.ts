@@ -1,4 +1,12 @@
 /** Standalone project controller for atlas, layer and object authoring. */
+import { createDefinitionLibrary } from './definition-library.mts';
+import {
+  describeFinding,
+  decodeDefinitions,
+  definitionInstance,
+  resolveDefinition,
+} from './object-definitions.mts';
+import type { ObjectDefinition } from './object-definitions.mts';
 import { resizeScene } from './scene-size.mts';
 import { capture, eraseCaptured, paste, transform } from './compositions.mts';
 import type { Composition, CompositionSelection } from './compositions.mts';
@@ -56,6 +64,7 @@ interface Project {
   id: string;
   name: string;
   paletteProfile: PaletteProfile | null;
+  definitions: ObjectDefinition[];
   stamps: { id: string; name: string; composition: Composition }[];
   scenes: { id: string; name: string }[];
   atlases: Record<string, Atlas>;
@@ -152,6 +161,7 @@ async function clearDraft() {
 let brush: string[][] | null = null;
 let spriteBrush: string | null = null;
 let objectBrush: 'point' | 'rectangle' | null = null;
+let definitionBrush: string | null = null;
 let selectedObject: string | null = null;
 let selectedObjects = new Set<string>();
 let clipboard: Composition | null = null;
@@ -299,6 +309,7 @@ button('save-stamp').onclick = () => {
   }
 };
 button('place-stamp').onclick = () => {
+  definitionBrush = null;
   stampBrush = project?.stamps.find((s) => s.id === select('stamps').value)?.composition ?? null;
   status.textContent =
     'Click the canvas to place the stamp repeatedly. Escape or choose a tool to stop.';
@@ -464,10 +475,14 @@ button('edit-tile').onclick = () => {
   }
   tileInspector.open(choices);
 };
-const objectInspector = createObjectInspector(() => {
-  const item = editor?.objects.find((item) => item.id === selectedObject);
-  return editor && item ? { editor, item } : null;
-}, draw);
+const objectInspector = createObjectInspector(
+  () => {
+    const item = editor?.objects.find((item) => item.id === selectedObject);
+    return editor && item ? { editor, item } : null;
+  },
+  draw,
+  () => project?.definitions ?? [],
+);
 button('edit-object').onclick = objectInspector.open;
 for (const kind of ['point', 'rectangle'] as const) {
   button(`place-${kind}`).onclick = () => {
@@ -483,6 +498,7 @@ for (const kind of ['point', 'rectangle'] as const) {
       return;
     }
     layerAction((editor) => editor.activate(layer.id));
+    definitionBrush = null;
     objectBrush = kind;
     brush = null;
     spriteBrush = null;
@@ -501,6 +517,131 @@ for (const kind of ['point', 'rectangle'] as const) {
       'Click to place an object. Select it to edit its name, class, dimensions and properties.';
     draw();
   };
+}
+async function definitionMutation(route: string, payload: Record<string, unknown>) {
+  if (busy) {
+    throw Error('Wait for the current operation.');
+  }
+  busy = true;
+  update();
+  try {
+    const result = await api(route, record, { ...payload, project_revision: revision });
+    project = decodeProject(result.project);
+    revision = string(result.revision);
+    definitionBrush = null;
+    status.textContent =
+      'Object definition library saved. Scene history and unsaved edits are preserved.';
+    draw();
+  } finally {
+    busy = false;
+    update();
+  }
+}
+const definitionLibrary = createDefinitionLibrary(
+  () => project?.definitions ?? [],
+  () =>
+    Object.entries(project?.atlases ?? {}).flatMap(([id, a]) =>
+      a.regions.filter((r) => r.kind === 'sprite').map((r) => `${id}/${r.name}`),
+    ),
+  (value) => definitionMutation('save-object-definition', { definition: value }),
+  (id) => definitionMutation('delete-object-definition', { id }),
+);
+button('manage-definitions').onclick = () => definitionLibrary.open();
+button('place-definition').onclick = () => {
+  if (!editor || busy || !project) {
+    return;
+  }
+  const definition = project.definitions.find(
+    (d) => d.id === select('object-definition-brush').value,
+  );
+  if (!definition) {
+    return;
+  }
+  const layer =
+    editor.active.type === 'objectgroup' && editor.active.visible
+      ? editor.active
+      : editor.layers.find((l) => l.visible && l.type === 'objectgroup');
+  if (!layer) {
+    status.textContent = 'Add an object layer before placing instances.';
+    return;
+  }
+  editor.activate(layer.id);
+  brush = null;
+  spriteBrush = null;
+  objectBrush = null;
+  stampBrush = null;
+  definitionBrush = definition.id;
+  const tool = document.querySelector<HTMLInputElement>('input[value="paint"]');
+  if (tool) {
+    tool.checked = true;
+  }
+  element('paint-label', HTMLElement).textContent = 'Place instance';
+  element('selected-brush', HTMLElement).textContent = definition.name;
+  status.textContent =
+    'Click to place an instance. Select it to set overrides or reset shared defaults.';
+  draw();
+};
+select('object-definition-brush').onchange = () => {
+  definitionBrush = null;
+  update();
+};
+let renderedDefinitions = '';
+function renderObjectValidation() {
+  const encoded = JSON.stringify(project?.definitions ?? []);
+  if (encoded !== renderedDefinitions) {
+    const previous = select('object-definition-brush').value;
+    select('object-definition-brush').replaceChildren(
+      new Option('Choose definition…', ''),
+      ...(project?.definitions ?? []).map((d) => new Option(d.name, d.id)),
+    );
+    select('object-definition-brush').value = project?.definitions.some((d) => d.id === previous)
+      ? previous
+      : '';
+    renderedDefinitions = encoded;
+  }
+  const container = element('object-findings', HTMLElement);
+  container.replaceChildren();
+  let instances = 0,
+    count = 0;
+  for (const layer of editor?.layers ?? []) {
+    if (layer.type !== 'objectgroup') {
+      continue;
+    }
+    for (const item of layer.objects) {
+      if (!item.definition) {
+        continue;
+      }
+      instances++;
+      const findings = resolveDefinition(item, project?.definitions ?? []).findings;
+      count += findings.length;
+      for (const finding of findings) {
+        if (container.children.length >= 100) {
+          break;
+        }
+        const link = document.createElement('button');
+        link.className = 'small';
+        link.disabled = busy || anchor !== null;
+        link.textContent = `${layer.name} / ${item.name || '#' + item.id} / ${finding.field || 'definition'}: ${describeFinding(item, finding, project?.definitions ?? [])}${layer.visible ? '' : ' (hidden layer)'}`;
+        link.onclick = () => {
+          if (!editor || busy || anchor) {
+            return;
+          }
+          editor.activate(layer.id);
+          selectedObject = item.id;
+          selectedObjects.clear();
+          selection = null;
+          if (!layer.visible) {
+            status.textContent = 'Show this layer to edit its object.';
+          }
+          draw();
+        };
+        container.append(link);
+      }
+    }
+  }
+  element('object-validation-summary', HTMLElement).textContent = editor
+    ? `${instances} linked instances · ${count} findings${count > 100 ? ' (first 100 shown)' : ''}. Checks include hidden layers and current unsaved edits.`
+    : 'Open a scene to validate its objects.';
 }
 select('object-list').onchange = () => {
   selectedObjects.clear();
@@ -665,6 +806,7 @@ function decodeProject(value: unknown): Project {
     id: string(data.id),
     name: string(data.name),
     paletteProfile: decodePaletteProfile(data.gbc_palette_profile),
+    definitions: decodeDefinitions(data.object_definitions),
     stamps: array(data.stamps ?? [], (value) => {
       const stamp = record(value);
       const loaded = decodeLoaded({
@@ -728,6 +870,11 @@ async function discard(): Promise<boolean> {
   });
 }
 function update() {
+  renderObjectValidation();
+  button('manage-definitions').disabled = busy || !project || anchor !== null;
+  button('place-definition').disabled =
+    busy || !editor || !select('object-definition-brush').value || anchor !== null;
+  select('object-definition-brush').disabled = busy || !project;
   checkpoint();
   button('show-recovery').disabled = busy || anchor !== null || dirty();
   palettePanel.sync(project?.paletteProfile ?? null, busy || anchor !== null);
@@ -804,7 +951,10 @@ function update() {
         busy ||
         !editor ||
         (id === 'fill' &&
-          (spriteBrush !== null || objectBrush !== null || editor?.active.type !== 'tilelayer'));
+          (definitionBrush !== null ||
+            spriteBrush !== null ||
+            objectBrush !== null ||
+            editor?.active.type !== 'tilelayer'));
     }
   }
   for (const control of document.querySelectorAll<
@@ -1291,6 +1441,7 @@ function palette() {
   sprites.clear();
   brush = null;
   spriteBrush = null;
+  definitionBrush = null;
   objectBrush = null;
   if (!project) {
     return;
@@ -1383,6 +1534,7 @@ function palette() {
             selectedObjects.clear();
           }
         }
+        definitionBrush = null;
         objectBrush = null;
         brush = sprite ? null : cells;
         spriteBrush = sprite ? asset : null;
@@ -1424,6 +1576,7 @@ function palette() {
 }
 function open(data: Loaded) {
   stampBrush = null;
+  definitionBrush = null;
   committed = data;
   newDraftWriter();
   loaded = data;
@@ -1944,6 +2097,27 @@ canvas.onpointerdown = (event) => {
   if (!editor || busy || event.button !== 0) {
     return;
   }
+  if (
+    definitionBrush &&
+    project &&
+    document.querySelector<HTMLInputElement>('input[name="tool"]:checked')?.value === 'paint'
+  ) {
+    try {
+      const definition = project.definitions.find((d) => d.id === definitionBrush);
+      if (!definition) {
+        throw Error('Choose an existing definition.');
+      }
+      const p = point(event);
+      const position = spritePosition(p.px, p.py, event.altKey);
+      selectedObject = editor.createObject(definitionInstance(definition, position.x, position.y));
+      selectedObjects.clear();
+      selection = null;
+      draw();
+    } catch (error) {
+      status.textContent = String(error);
+    }
+    return;
+  }
   if (stampBrush && project) {
     try {
       const p = point(event);
@@ -2247,6 +2421,7 @@ async function saveScene() {
   await clearDraft();
   loaded = data;
   stampBrush = null;
+  definitionBrush = null;
   committed = data;
   baseline = snapshot();
   newDraftWriter();
@@ -2744,6 +2919,7 @@ form('delete-scene-form').onsubmit = (event) => {
       hover = null;
       brush = null;
       spriteBrush = null;
+      definitionBrush = null;
       objectBrush = null;
       canvas.hidden = true;
       element('canvas-surround', HTMLElement).hidden = true;
@@ -2934,6 +3110,10 @@ document.addEventListener('keydown', (event) => {
     return;
   }
   try {
+    if (event.key === 'Escape' && definitionBrush) {
+      definitionBrush = null;
+      draw();
+    }
     if (event.key === 'Escape' && stampBrush) {
       event.preventDefault();
       stampBrush = null;

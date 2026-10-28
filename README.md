@@ -245,6 +245,10 @@ across atlases, with separate background/window and sprite budgets, explicit
 runtime reservations and navigable contributors. Generic editing and Tiled
 export remain available without a target profile.
 
+[Reusable object definitions](docs/STANDALONE.md#reusable-object-definitions) provide
+typed fields, shared defaults, instance overrides and navigable validation for
+points, rectangles and sprites.
+
 Clipboard editing, duplication, transforms and reusable project stamps are described
 in the [composition guide](docs/STANDALONE.md#clipboard-and-reusable-stamps).
 

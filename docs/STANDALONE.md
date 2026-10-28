@@ -658,3 +658,91 @@ Tiled maps use native orthogonal horizontal, vertical and diagonal GID flags, fo
 [Tiled's documented transform order](https://doc.mapeditor.org/en/stable/reference/global-tile-ids/).
 The semantic scene API reserves suffix `#1`..`#7` for those flag combinations (H=1,
 V=2, diagonal=4). Unsupported object rotations and hexagonal flags remain rejected.
+
+## Reusable object definitions
+
+Choose **Object definitions…** in the asset library to create a project-owned point,
+rectangle or sprite definition. A rectangle supplies initial dimensions; a sprite
+uses an imported sprite asset and its native size/origin. Add fields of type
+`string`, `int`, `float` or `bool`, mark required fields, and optionally supply shared
+defaults. Numeric fields support inclusive minimum/maximum bounds; strings support
+an explicit choice list. Required strings cannot be empty. Required numeric zero
+and boolean false are valid. Defaults must satisfy their own constraints.
+
+Choose a definition and **Place instance**, then click a visible object layer.
+Placement is one undoable scene edit. Select an instance and choose **Edit object**
+to enter typed values. Unchecked fields inherit the current shared default, or
+remain unset if no default exists. Check **Override shared value** to author a
+value; uncheck it to reset to inheritance. The inspector shows shared defaults and
+constraints. Apply commits the whole object edit as one undoable change; Cancel
+leaves the instance unchanged. Existing ordinary objects can be attached to a
+compatible definition. Detaching materializes current effective values into custom
+properties, preserving their types.
+
+Definitions have stable project UUIDs; object IDs remain stable within each scene.
+Rename a definition without breaking links. Scene duplication, selection copies,
+project stamps, resize, save/reopen and draft recovery preserve links and explicit
+overrides. Copies receive their usual new scene/object identities. Definition names
+do not need to be unique; the link uses the UUID. Field names identify overrides:
+renaming a field removes one field and adds another, so old overrides remain
+visible as unknown-field findings until explicitly removed or renamed.
+
+Saving a definition is a guarded project transaction, separate from scene Save
+and scene undo/redo. It preserves the current canvas and undo history. Shared
+default edits immediately affect all inheriting instances, including saved scenes
+and stamps, without rewriting their map files. Explicit overrides stay unchanged.
+Undoing an instance edit restores its authored overrides against the **current**
+definition; it does not revert project definitions. Changing shape, initial size or
+sprite asset affects new placements only. Existing geometry and artwork remain
+unchanged; a shape mismatch is reported. Asset deletion is blocked while a sprite
+definition references the asset's atlas.
+
+Changing fields, constraints or shape can invalidate existing instances. Deleting a
+definition requires confirmation; instances retain their UUID link and overrides,
+report a missing definition, and stop inheriting defaults. This is also a project
+transaction outside scene undo. Reattach an instance or detach it to repair the
+link. Invalid instances remain editable, saveable and exportable; validation never
+silently fixes or drops authored values.
+
+**Object validation** checks the open canvas, including hidden layers, for missing
+definitions, shape/type mismatches, required values, numeric bounds, invalid choices
+and unknown overrides. Click a finding to select its layer and a visible object; show a hidden
+layer before selecting and editing its objects. The panel displays up to 100 findings and the full
+count. This is definition validation, not engine-specific gameplay validation.
+`POST /api/object-report` exposes the same deterministic rules for a saved scene or
+explicit canvas snapshot, with project/scene revision guards. Results include
+`version`, `status`, `instances`, and `findings`; each finding identifies `scene`,
+`layer`, `object`, `definition`, `field`, `code` and `severity`. The pure Python
+`object_definitions.report` service can be reused by future project diagnostics.
+
+### Definition persistence and portable Tiled data
+
+The manifest's optional `object_definitions` library has `version: 1` and up to 128
+`definitions`. Each definition stores `id`, `name`, `kind`, `fields`, and shape-specific
+`asset` or `width`/`height`. A field stores `name`, `type`, `required`, optional
+`default`, numeric `min`/`max`, and string `choices`; up to 128 fields are supported.
+The native scene object's optional `definition` UUID links it to the library, while
+`properties` contains **only explicit overrides**. Ordinary object properties and
+classes continue to work without definitions. Instance class/name are independent
+metadata; definition renames do not rewrite them.
+
+Tiled object properties contain effective values as ordinary typed properties, plus
+reserved string properties `forge:definition` (UUID), `forge:overrides` (JSON array
+of explicit property names) and `forge:inherited` (JSON snapshot of inherited typed
+properties). These metadata distinguish an explicit value equal to the default
+from inheritance. Forge decodes the override list and resolves inherited fields
+against the current library. The snapshot detects external edits to inherited
+values rather than silently discarding them: promote a changed property into the
+override list and remove its entry from the inherited snapshot before reopening.
+New external custom properties must likewise be listed as overrides. Geometry and
+sprite origins use the existing portable Tiled representation.
+
+Exports refresh inherited values from the current library in their frozen map
+copies, without changing source maps. Both scene and project exports include
+`object-definitions.json`; project exports also preserve the library in
+`forge.project.json`. External Tiled consumers can read the effective typed values
+without knowing Forge's metadata. These are Forge templates, not Tiled external
+object-template files or a runtime engine schema. Preserve the manifest/library
+and reserved properties when round-tripping inheritance through other tools.
+Existing projects without the library remain supported; projects using definition
+links require a Forge version that supports this feature.

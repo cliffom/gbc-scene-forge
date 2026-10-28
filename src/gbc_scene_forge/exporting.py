@@ -392,7 +392,7 @@ def export_bundle(project, scope, revision, scene_id=None, scene=None, scene_rev
             original = target.read_bytes()
             guards[path] = digest(original)
             # Validate every saved scene, including one replaced by a canvas override.
-            tiled.decode(parse_json(original, path), document)
+            saved_scene = tiled.decode(parse_json(original, path), document)
             if (
                 item["id"] == scene_id
                 and scene_revision is not None
@@ -400,7 +400,18 @@ def export_bundle(project, scope, revision, scene_id=None, scene=None, scene_rev
             ):
                 raise Conflict(f"Scene changed on disk: {path}. Reopen it before exporting.")
             overridden = scene is not None and item["id"] == scene_id
-            data = json_text(tiled.encode(scene, document)).encode() if overridden else original
+            # Refresh inherited values in exports without rewriting authoring maps.
+            candidate = scene if overridden else saved_scene
+            has_definitions = any(
+                "definition" in obj
+                for layer in tiled.scene_layers(candidate)
+                for obj in layer.get("objects", [])
+            )
+            data = (
+                json_text(tiled.encode(candidate, document)).encode()
+                if overridden or has_definitions
+                else original
+            )
             require(len(data) <= 4 * 1024 * 1024, f"Scene exceeds 4 MiB: {path}")
             encoded = parse_json(data, path)
             include(path, data)
@@ -448,6 +459,8 @@ def export_bundle(project, scope, revision, scene_id=None, scene=None, scene_rev
             for path in document["files"]:
                 document["files"][path] = digest(files[path])
             replace(MANIFEST, json_text(document).encode())
+        if document.get("object_definitions"):
+            include("object-definitions.json", json_text(document["object_definitions"]).encode())
         include("EXPORT.md", GUIDE.encode())
         include(
             "export.json",

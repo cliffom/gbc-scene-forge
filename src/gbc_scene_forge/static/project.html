@@ -67,6 +67,7 @@
         </div>
         <button id="edit-tile" class="small" disabled>Tile terrain &amp; collision…</button>
         <div class="object-tools"><h3>Objects</h3><div class="layer-actions"><button id="place-point" class="small" disabled>Spawn point</button><button id="place-rectangle" class="small" disabled>Trigger area</button></div><p class="hint">Place markers or areas on the active object layer. Edit their class and properties for your project.</p></div>
+        <div class="definition-tools"><button id="manage-definitions" class="small" disabled>Object definitions…</button><label class="field">Definition<select id="object-definition-brush"><option value="">Choose definition…</option></select></label><button id="place-definition" class="small" disabled>Place instance</button></div>
         <p id="library-hint" class="hint">Choose a tile to paint or a sprite to place. Imported artwork keeps its native size.</p>
         <div id="palette" class="assets" aria-label="Available assets"></div>
       </aside>
@@ -172,6 +173,7 @@
           </section>
           <select id="object-list" size="3" aria-label="Objects in active layer" disabled></select>
         </section>
+        <section class="inspector-panel" aria-label="Object validation"><h3>Object validation</h3><p id="object-validation-summary" class="hint"></p><div id="object-findings"></div></section>
         <section class="inspector-panel" aria-label="Draft recovery">
           <h3>Draft recovery</h3>
           <p id="draft-status" class="hint" role="status" aria-live="polite"></p>
@@ -242,11 +244,26 @@
       <div class="dialog-actions"><button id="tile-cancel" type="button">Cancel</button><button id="tile-save" class="primary">Save shared tile metadata</button></div>
     </form>
   </dialog>
+  <dialog id="definitions-dialog" aria-labelledby="definitions-heading">
+    <form id="definition-form">
+      <h2 id="definitions-heading">Object definitions</h2>
+      <p class="hint">Define reusable objects with typed fields and shared defaults. Saving updates inherited values and preserves overrides. Definition changes are saved immediately, outside scene undo. Shape and artwork changes apply to new placements.</p>
+      <label class="field">Edit definition<select id="definition-list"></select></label><button id="definition-new" type="button">New definition</button>
+      <label class="field">Name<input id="definition-name" maxlength="100" required></label>
+      <label class="field">Shape<select id="definition-kind"><option value="point">Point</option><option value="rectangle">Rectangle</option><option value="sprite">Sprite</option></select></label>
+      <label class="field">Sprite asset<select id="definition-asset" required></select></label>
+      <div class="property-grid"><label class="field">Width (px)<input id="definition-width" type="number" min="1" max="8192" step="1" required></label><label class="field">Height (px)<input id="definition-height" type="number" min="1" max="8192" step="1" required></label></div>
+      <h3>Typed fields</h3><div id="definition-fields"></div><button id="definition-add-field" type="button">Add field</button>
+      <p id="definition-error" class="error" role="alert"></p>
+      <div class="dialog-actions"><button id="definition-delete" type="button">Delete definition</button><button id="definition-close" type="button">Cancel</button><button id="definition-save" class="primary">Save definition</button></div>
+    </form>
+  </dialog>
   <dialog id="object-dialog" aria-labelledby="object-heading">
     <form id="object-form">
       <h2 id="object-heading">Edit object</h2>
       <div class="property-grid"><label class="field">ID<input id="object-id" readonly></label><label class="field">Shape<input id="object-kind" readonly></label></div>
       <label class="field">Name<input id="object-name" maxlength="100"></label>
+      <label class="field">Definition<select id="object-definition"></select></label><p id="object-definition-hint" class="hint"></p><div id="object-definition-fields"></div><p id="object-definition-validation" class="error"></p>
       <label class="field">Class<input id="object-class" maxlength="100" placeholder="spawn, trigger, NPC…"></label>
       <div class="property-grid"><label class="field">X (px)<input id="object-x" type="number" min="0" step="1" required></label><label class="field">Y (px)<input id="object-y" type="number" min="0" step="1" required></label></div>
       <div id="object-dimensions" class="property-grid"><label class="field">Width (px)<input id="object-width" type="number" min="1" max="8192" step="1" required></label><label class="field">Height (px)<input id="object-height" type="number" min="1" max="8192" step="1" required></label></div>
