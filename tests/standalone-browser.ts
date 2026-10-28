@@ -1296,6 +1296,8 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
       y: points[2],
       buttons: 1,
     });
+    // Chrome can acknowledge a mouse move before delivering its pointer event.
+    await wait("document.getElementById('layers').dataset.dragging === 'true'");
     return points;
   };
   const dropLayer = async (points: number[]) =>
