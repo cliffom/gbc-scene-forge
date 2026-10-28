@@ -1,6 +1,7 @@
 """Thread-safe server status, live client total and recent HTTP client activity."""
 
 import json
+import logging
 import os
 import sys
 import time
@@ -10,7 +11,15 @@ CLIENT_TIMEOUT = 120
 
 
 class ServerConsole:
-    def __init__(self, stream=None, *, clock=time.monotonic, timeout=CLIENT_TIMEOUT):
+    def __init__(
+        self,
+        stream=None,
+        *,
+        logger=None,
+        log_path=None,
+        clock=time.monotonic,
+        timeout=CLIENT_TIMEOUT,
+    ):
         self.stream = stream if stream is not None else sys.stdout
         self.clock = clock
         self.timeout = timeout
@@ -19,23 +28,27 @@ class ServerConsole:
         self.interactive = self.stream.isatty() and os.environ.get("TERM") != "dumb"
         self.color = self.interactive and "NO_COLOR" not in os.environ
         self.live_total = False
+        self.logger = logger if logger is not None else logging.Logger(__name__)
+        if logger is None:
+            self.logger.addHandler(logging.NullHandler())
+        self.log_path = log_path
+        self.failures = 0
 
     def highlight(self, text, code):
         return f"\033[{code}m{text}\033[0m" if self.color else text
 
     def write(self, text):
-        if self.live_total:
-            # The total occupies the current line. Insert ledger entries above it,
-            # then replace it with the current count; never leave a stale total behind.
-            self.stream.write("\r\033[2K")
         print(text, file=self.stream, flush=True)
-        if self.live_total:
-            self._total()
 
     def _total(self):
+        if self.live_total:
+            self.stream.write("\r\033[2K")
         print(
-            "  Clients  " + self.highlight(f"{len(self.clients)} active", "36"),
-            end="",
+            "  Clients  "
+            + self.highlight(f"{len(self.clients)} active", "36")
+            + " | Failures "
+            + self.highlight(str(self.failures), "33" if self.failures else "36"),
+            end="" if self.live_total else "\n",
             file=self.stream,
             flush=True,
         )
@@ -45,20 +58,21 @@ class ServerConsole:
             self.write("Scene Forge")
             self.write("  Status   " + self.highlight("online", "32"))
             self.write("  Editor   " + self.highlight(f"http://127.0.0.1:{port}/", "36"))
+            if self.log_path is not None:
+                self.write("  Log      " + json.dumps(str(self.log_path)))
             self.write(
                 f"  Activity expires after {self.timeout}s without a request. Ctrl+C to stop."
             )
             self.live_total = self.interactive
-            if self.live_total:
-                self._total()
-            else:
-                self.write("  Clients  " + self.highlight("0 active", "36"))
+            self._total()
 
     def stop(self):
         with self.lock:
             if self.live_total:
                 print(file=self.stream, flush=True)
                 self.live_total = False
+            else:
+                self._total()
             self.write("Status   " + self.highlight("stopped", "33"))
 
     def expire(self):
@@ -73,10 +87,12 @@ class ServerConsole:
 
     def _client_event(self, event, identity):
         ip, agent = identity
-        self.write(
+        self.logger.info(
             f"{event} client {json.dumps(ip)} | User-Agent: {json.dumps(agent)} | "
-            + self.highlight(f"Clients: {len(self.clients)} active", "36")
+            + f"Clients: {len(self.clients)} active"
         )
+        if self.live_total:
+            self._total()
 
     def request(self, ip, agent, request_line, status):
         with self.lock:
@@ -87,12 +103,21 @@ class ServerConsole:
             self.clients[identity] = now
             if new:
                 self._client_event("New", identity)
+            self.logger.info(
+                "HTTP %s | %s | %s | User-Agent: %s",
+                status,
+                json.dumps(ip),
+                json.dumps(request_line),
+                json.dumps(agent),
+            )
             if int(status) >= 400:
-                self.write(
-                    self.highlight(f"HTTP {status}", "31" if int(status) >= 500 else "33")
-                    + f" | {json.dumps(ip)} | {json.dumps(request_line)}"
-                )
+                self.failures += 1
+                if self.live_total:
+                    self._total()
 
     def error(self, message):
         with self.lock:
-            self.write(self.highlight("Error", "31") + " | " + json.dumps(message))
+            self.logger.error("Error | %s", json.dumps(message))
+            self.failures += 1
+            if self.live_total:
+                self._total()

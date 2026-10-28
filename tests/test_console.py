@@ -1,19 +1,68 @@
 """Console rendering, identity, inactivity and standalone HTTP logging."""
 
 import io
+import logging
 import tempfile
 import threading
 import unittest
 from concurrent.futures import ThreadPoolExecutor
 from http.client import HTTPConnection
+from pathlib import Path
 from unittest.mock import patch
 
 from gbc_scene_forge.console import ServerConsole
 from gbc_scene_forge.png import decode
-from gbc_scene_forge.standalone import StandaloneServer, make_handler, make_root_handler
+from gbc_scene_forge.standalone import StandaloneServer, make_handler, make_root_handler, serve
 
 
 class ConsoleTests(unittest.TestCase):
+    def test_launcher_writes_timestamped_rotating_log_and_compact_output(self):
+        with tempfile.TemporaryDirectory() as folder:
+            server = unittest.mock.MagicMock()
+            server.__enter__.return_value = server
+            server.server_port = 8765
+
+            def traffic():
+                for index in range(100):
+                    server.console.request("127.0.0.1", "Browser", f"GET /{index} HTTP/1.1", 200)
+                server.console.request("127.0.0.1", "Browser", "GET /missing HTTP/1.1", 404)
+                server.console.error("Protocol error")
+                server.console.logger.handlers[0].flush()
+                raise KeyboardInterrupt
+
+            server.serve_forever.side_effect = traffic
+            stream = io.StringIO()
+            with (
+                patch("gbc_scene_forge.standalone.StandaloneServer", return_value=server),
+                patch("gbc_scene_forge.standalone.make_root_handler"),
+                patch("gbc_scene_forge.standalone.Path.cwd", return_value=Path(folder)),
+                patch("sys.stdout", stream),
+            ):
+                serve(Path(folder) / "projects")
+                handler = server.console.logger.handlers[0]
+                self.assertEqual(handler.maxBytes, 1024 * 1024)
+                self.assertEqual(handler.backupCount, 3)
+                self.assertIsNone(handler.stream)
+                serve(Path(folder) / "projects")
+            path = Path(folder) / ".forge-logs/server-8765.log"
+            log = path.read_text()
+            self.assertEqual(log.count("HTTP 200"), 200)
+            self.assertEqual(log.count("HTTP 404"), 2)
+            self.assertIn("Protocol error", log)
+            self.assertRegex(log, r"\d{4}-\d{2}-\d{2} .* INFO HTTP 200")
+            self.assertIn(str(path), stream.getvalue())
+            self.assertIn("Failures 2", stream.getvalue())
+            self.assertNotIn("GET /", stream.getvalue())
+            self.assertNotIn("New client", stream.getvalue())
+            self.assertNotIn("\033", stream.getvalue() + log)
+            self.assertLess(len(stream.getvalue().splitlines()), 20)
+
+    def make_console(self, stream, **kwargs):
+        self.activity = io.StringIO()
+        logger = logging.Logger("test.activity", level=logging.INFO)
+        logger.addHandler(logging.StreamHandler(self.activity))
+        return ServerConsole(stream, logger=logger, **kwargs)
+
     def test_plain_startup_and_terminal_colors(self):
         for tty, env, colored in (
             (False, {}, False),
@@ -24,13 +73,13 @@ class ConsoleTests(unittest.TestCase):
             with self.subTest(tty=tty, env=env), patch.dict("os.environ", env, clear=True):
                 stream = io.StringIO()
                 stream.isatty = lambda: tty
-                console = ServerConsole(stream)
+                console = self.make_console(stream)
                 console.start(8765)
                 console.request("127.0.0.1", "Browser", "GET /missing HTTP/1.1", 404)
                 console.request("127.0.0.1", "Browser", "GET /broken HTTP/1.1", 500)
                 console.stop()
                 output = stream.getvalue()
-                for text in ("online", "http://127.0.0.1:8765/", "0 active", "stopped", "HTTP 404"):
+                for text in ("online", "http://127.0.0.1:8765/", "0 active", "stopped", "Failures"):
                     self.assertIn(text, output)
                 self.assertEqual("\033[32m" in output, colored)
                 self.assertEqual("\033[2K" in output, tty and env.get("TERM") != "dumb")
@@ -41,12 +90,11 @@ class ConsoleTests(unittest.TestCase):
                 now = [0]
                 stream = io.StringIO()
                 stream.isatty = lambda: True
-                console = ServerConsole(stream, clock=lambda: now[0])
+                console = self.make_console(stream, clock=lambda: now[0])
                 console.start(8765)
 
                 def current_total():
-                    # An erase-line removes the previous footer before an event is
-                    # printed. The last line is the only live Clients field.
+                    # Every refresh replaces the current line without a newline.
                     return stream.getvalue().rsplit("\r\033[2K", 1)[-1].split("\n")[-1]
 
                 self.assertIn("0 active", current_total())
@@ -61,6 +109,12 @@ class ConsoleTests(unittest.TestCase):
                 now[0] = 120
                 console.expire()
                 self.assertIn("0 active", current_total())
+                self.assertEqual(stream.getvalue().count("\n"), 4)
+                self.assertNotIn("GET /", stream.getvalue())
+                self.assertNotIn("New client", stream.getvalue())
+                self.assertIn(
+                    "Failures 2", current_total().replace("\033[33m", "").replace("\033[0m", "")
+                )
                 console.stop()
                 self.assertTrue(
                     stream.getvalue().endswith("stopped\n")
@@ -70,7 +124,7 @@ class ConsoleTests(unittest.TestCase):
     def test_identity_refresh_expiration_and_return(self):
         now = [0]
         stream = io.StringIO()
-        console = ServerConsole(stream, clock=lambda: now[0])
+        console = self.make_console(stream, clock=lambda: now[0])
         console.request("127.0.0.1", "Browser A", "GET / HTTP/1.1", 200)
         console.request("127.0.0.1", "Browser B", "GET / HTTP/1.1", 200)
         console.request("127.0.0.2", "Browser A", "GET / HTTP/1.1", 200)
@@ -82,15 +136,16 @@ class ConsoleTests(unittest.TestCase):
         now[0] = 180
         console.expire()
         self.assertEqual(len(console.clients), 0)
-        self.assertIn("Clients: 0 active", stream.getvalue())
+        self.assertIn("Clients: 0 active", self.activity.getvalue())
         console.request("127.0.0.1", "Browser A", "GET / HTTP/1.1", 200)
-        self.assertEqual(stream.getvalue().count("New client"), 4)
-        self.assertEqual(stream.getvalue().count("Inactive client"), 3)
-        self.assertNotIn("GET /", stream.getvalue())
+        self.assertEqual(self.activity.getvalue().count("New client"), 4)
+        self.assertEqual(self.activity.getvalue().count("Inactive client"), 3)
+        self.assertIn("GET /", self.activity.getvalue())
+        self.assertEqual(stream.getvalue(), "")
 
     def test_concurrent_requests_count_one_identity_and_escape_untrusted_text(self):
         stream = io.StringIO()
-        console = ServerConsole(stream)
+        console = self.make_console(stream)
         with ThreadPoolExecutor(max_workers=8) as pool:
             list(
                 pool.map(
@@ -99,10 +154,10 @@ class ConsoleTests(unittest.TestCase):
             )
         console.error("bad\033[31m\nmessage")
         self.assertEqual(len(console.clients), 1)
-        self.assertEqual(stream.getvalue().count("New client"), 1)
-        self.assertNotIn("\033", stream.getvalue())
-        self.assertIn(r"\u001b", stream.getvalue())
-        self.assertEqual(len(stream.getvalue().splitlines()), 2)
+        self.assertEqual(self.activity.getvalue().count("New client"), 1)
+        self.assertNotIn("\033", self.activity.getvalue())
+        self.assertIn(r"\u001b", self.activity.getvalue())
+        self.assertEqual(len(self.activity.getvalue().splitlines()), 52)
 
     def test_http_logging_and_idle_expiry_in_both_launch_modes(self):
         for factory in (make_handler, make_root_handler):
@@ -119,7 +174,11 @@ class ConsoleTests(unittest.TestCase):
                 now = [0]
                 stream = Stream()
                 with StandaloneServer(("127.0.0.1", 0), factory(root, "secret")) as server:
-                    server.console = ServerConsole(stream, clock=lambda: now[0])
+                    logger = logging.Logger("test.http", level=logging.INFO)
+                    logger.addHandler(logging.StreamHandler(stream))
+                    server.console = ServerConsole(
+                        io.StringIO(), logger=logger, clock=lambda: now[0]
+                    )
                     thread = threading.Thread(
                         target=lambda: server.serve_forever(poll_interval=0.01)
                     )
@@ -142,7 +201,7 @@ class ConsoleTests(unittest.TestCase):
                         self.assertEqual(request("/api/project"), 200)
                         self.assertEqual(request("/api/project", "Browser B"), 200)
                         self.assertEqual(stream.getvalue().count("New client"), 2)
-                        self.assertNotIn("GET /api/project", stream.getvalue())
+                        self.assertIn("GET /api/project", stream.getvalue())
                         icons = []
                         for path in ("/apple-touch-icon.png", "/apple-touch-icon-precomposed.png"):
                             connection = HTTPConnection("127.0.0.1", server.server_port, timeout=2)
@@ -156,7 +215,7 @@ class ConsoleTests(unittest.TestCase):
                                 connection.close()
                         self.assertEqual(icons[0], icons[1])
                         self.assertEqual(decode(icons[0])[:2], (256, 256))
-                        self.assertNotIn("apple-touch-icon", stream.getvalue())
+                        self.assertIn("apple-touch-icon", stream.getvalue())
                         self.assertEqual(request("/missing"), 404)
                         self.assertEqual(request("/api/create-project", method="POST"), 403)
                         self.assertEqual(request("/", headers={"Host": "evil.example"}), 403)

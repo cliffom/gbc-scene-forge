@@ -1,8 +1,11 @@
 """Loopback transport for a project root or a directly opened project."""
 
 import json
+import logging
 import secrets
+import traceback
 from http.server import ThreadingHTTPServer
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from threading import Lock
 from urllib.parse import parse_qs, unquote, urlparse
@@ -35,6 +38,11 @@ class StandaloneHandler(LocalHandler):
 
 
 class StandaloneServer(ThreadingHTTPServer):
+    def handle_error(self, request, client_address):
+        self.console.error(
+            f"Unhandled request error from {client_address[0]}: {traceback.format_exc()}"
+        )
+
     def service_actions(self):
         # Runs even without traffic, so stale clients disappear while the server is idle.
         self.console.expire()
@@ -302,11 +310,18 @@ def serve(root, port=8765, *, single_project=False):
     with StandaloneServer(
         ("127.0.0.1", port), (make_handler if single_project else make_root_handler)(root, token)
     ) as server:
-        server.console = ServerConsole()
-        server.console.start(server.server_port)
+        log_path = Path.cwd() / ".forge-logs" / f"server-{server.server_port}.log"
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        log = RotatingFileHandler(log_path, maxBytes=1024 * 1024, backupCount=3, encoding="utf-8")
+        log.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+        logger = logging.Logger("gbc_scene_forge.activity", level=logging.INFO)
+        logger.addHandler(log)
+        server.console = ServerConsole(logger=logger, log_path=log_path)
         try:
+            server.console.start(server.server_port)
             server.serve_forever()
         except KeyboardInterrupt:
             pass
         finally:
             server.console.stop()
+            log.close()

@@ -23,19 +23,24 @@ Open **http://127.0.0.1:8765/** in your browser. The terminal prints the address
 you can stop the server with **Ctrl+C**. The installed editor needs no Node or
 additional Python runtime dependencies.
 
-The console shows server status, the editor URL and active client totals. In an
-interactive terminal, a live Clients field stays below the event log and updates
-as clients arrive or expire. A client
+The console shows server status, the editor URL, the log location and a live
+Clients / Failures field. Request and client activity goes to
+`.forge-logs/server-PORT.log` under the directory where you launch Forge, keeping the terminal
+compact. Logs include timestamps, all HTTP requests, failures, and client arrivals
+and expirations with IP and User-Agent. They append across launches and rotate at
+1 MiB, retaining three backups (for example, `server-8765.log.1` through
+`server-8765.log.3`). A client
 is one IP address + User-Agent combination, so multiple tabs in the same browser
 count once; different browsers at the same address count separately. Each HTTP
 request refreshes that client's activity. After **120 seconds without a request**,
 the client expires, even if its tab is still open; its next request counts it as
 active again. This is recent activity, not a count of open browser connections.
-Arrivals and expirations include the IP and User-Agent. Successful requests stay
-quiet; HTTP failures remain visible. Colors appear only in interactive terminals
-and can be disabled with `NO_COLOR` (or `TERM=dumb`). Redirected logs use plain text.
+The live failure count points to details in the log. Colors appear only in
+interactive terminals and can be disabled with `NO_COLOR` (or `TERM=dumb`).
+Redirected output prints only startup and shutdown summaries without ANSI escapes;
+activity logs always use plain text.
 
-![Preview of the server console status and client activity](docs/screenshots/server-console.png)
+![Preview of the compact server console](docs/screenshots/server-console.png)
 
 Working from this repository? Install the development tools described below, then run:
 
