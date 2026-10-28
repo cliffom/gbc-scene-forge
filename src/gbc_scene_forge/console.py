@@ -44,7 +44,7 @@ class ServerConsole:
         if self.live_total:
             self.stream.write("\r\033[2K")
         print(
-            "  Clients  "
+            f"  {'Clients':<14}"
             + self.highlight(f"{len(self.clients)} active", "36")
             + " | Failures "
             + self.highlight(str(self.failures), "33" if self.failures else "36"),
@@ -53,13 +53,15 @@ class ServerConsole:
             flush=True,
         )
 
-    def start(self, port):
+    def start(self, port, *, project_root=None):
         with self.lock:
             self.write("Scene Forge")
-            self.write("  Status   " + self.highlight("online", "32"))
-            self.write("  Editor   " + self.highlight(f"http://127.0.0.1:{port}/", "36"))
+            self.write(f"  {'Status':<14}" + self.highlight("online", "32"))
+            self.write(f"  {'Editor':<14}" + self.highlight(f"http://127.0.0.1:{port}/", "36"))
+            if project_root is not None:
+                self.write(f"  {'Project Root':<14}" + json.dumps(str(project_root)))
             if self.log_path is not None:
-                self.write("  Log      " + json.dumps(str(self.log_path)))
+                self.write(f"  {'Log':<14}" + json.dumps(str(self.log_path)))
             self.write(
                 f"  Activity expires after {self.timeout}s without a request. Ctrl+C to stop."
             )

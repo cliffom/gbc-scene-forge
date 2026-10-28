@@ -318,7 +318,7 @@ def serve(root, port=8765, *, single_project=False):
         logger.addHandler(log)
         server.console = ServerConsole(logger=logger, log_path=log_path)
         try:
-            server.console.start(server.server_port)
+            server.console.start(server.server_port, project_root=Path(root).absolute())
             server.serve_forever()
         except KeyboardInterrupt:
             pass

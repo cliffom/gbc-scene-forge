@@ -23,7 +23,8 @@ Open **http://127.0.0.1:8765/** in your browser. The terminal prints the address
 you can stop the server with **Ctrl+C**. The installed editor needs no Node or
 additional Python runtime dependencies.
 
-The console shows server status, the editor URL, the log location and a live
+The console shows server status, the editor URL, the absolute Project Root path,
+the log location and a live
 Clients / Failures field. Request and client activity goes to
 `.forge-logs/server-PORT.log` under the directory where you launch Forge, keeping the terminal
 compact. Logs include timestamps, all HTTP requests, failures, and client arrivals
