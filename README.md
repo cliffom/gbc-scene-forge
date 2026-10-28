@@ -58,12 +58,13 @@ subset, reimport behavior and recovery details.
 ## Installation
 
 ```sh
-python -m pip install gbc-scene-forge==0.1.5
+python -m pip install gbc-scene-forge==0.2.0
 ```
 
-The [PyPI package](https://pypi.org/project/gbc-scene-forge/0.1.5/) includes the
-browser UI, standalone launcher and service. The standalone workflow is a
-development feature until the next package release.
+The [PyPI package](https://pypi.org/project/gbc-scene-forge/0.2.0/) includes the
+browser UI, standalone launcher and service. Version 0.2.0 introduces standalone
+projects; see the [release notes](docs/RELEASE-0.2.0.md) for features and
+compatibility changes.
 
 ## Development
 
@@ -82,7 +83,7 @@ installing dependencies. Override executable paths with `PYTHON`, `POETRY`, or
 `NPM` when needed. Poetry checks Python compatibility; `npm ci --engine-strict`
 enforces the frontend's Node requirement during setup.
 
-The build creates `dist/gbc_scene_forge-0.1.5-py3-none-any.whl` and a source
+The build creates `dist/gbc_scene_forge-0.2.0-py3-none-any.whl` and a source
 archive, then checks metadata with Twine. Run `make check-dist` afterward to install
 the wheel without dependencies in a fresh environment and run the small
 `tests/package_smoke.py` suite. CI runs this installed-wheel check explicitly. See
