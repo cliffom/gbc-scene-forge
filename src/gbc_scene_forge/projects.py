@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from uuid import UUID, uuid4
 
-from . import atlas, exporting, png, preview_settings, tile_metadata, tiled
+from . import atlas, exporting, palette_budget, png, preview_settings, tile_metadata, tiled
 from .documents import Conflict, json_text
 from .transactions import Transactions, digest, read_optional, safe_path
 
@@ -112,11 +112,23 @@ class Project:
         self.check_version(document)
         atlas.require(
             isinstance(document, dict)
-            and set(document) == {"version", "id", "name", "scenes", "atlases", "files", "preview"},
+            and {"version", "id", "name", "scenes", "atlases", "files", "preview"} <= set(document)
+            and not set(document)
+            - {
+                "version",
+                "id",
+                "name",
+                "scenes",
+                "atlases",
+                "files",
+                "preview",
+                "gbc_palette_profile",
+            },
             "Unsupported project manifest fields",
         )
         atlas.require(identity(document["id"]), "Invalid project identity")
         name(document["name"])
+        palette_budget.check_profile(document.get("gbc_palette_profile"))
         atlas.require(
             isinstance(document["scenes"], list)
             and isinstance(document["atlases"], dict)
@@ -242,6 +254,34 @@ class Project:
         document["preview"]["sprite"] = preview_settings.validate(value, document)
         self._commit(document, revision, {}, {}, "Save sprite preview settings")
         return self.catalog()
+
+    def save_palette_profile(self, value, revision):
+        palette_budget.check_profile(value)
+        document = self._current(revision)
+        if value is None:
+            document.pop("gbc_palette_profile", None)
+        else:
+            document["gbc_palette_profile"] = copy.deepcopy(value)
+        self._commit(document, revision, {}, {}, "Save GBC palette profile")
+        return self.catalog()
+
+    def palette_report(self, scene_id, revision, scene_revision, scene=None):
+        """Check a frozen saved scene or unsaved canvas; never mutate authoring files."""
+        with self.transactions.locked():
+            document = self._current(revision)
+            current = self._load_scene(scene_id, document)
+            if current["revision"] != scene_revision:
+                raise Conflict("Scene changed on disk. Reopen it before validating.")
+            candidate = current["scene"] if scene is None else scene
+            tiled.check_scene(candidate, document)
+            result = palette_budget.report(
+                candidate, document, document.get("gbc_palette_profile"), scene_id
+            )
+            # Detect noncooperating edits while analysis ran, just as export does.
+            self._current(revision)
+            if self._load_scene(scene_id, document)["revision"] != scene_revision:
+                raise Conflict("Scene changed while validating. Reopen it before validating.")
+            return {**result, "project_revision": revision, "scene_revision": scene_revision}
 
     def save_tile_metadata(self, atlas_id, group, asset, value, revision):
         document = self._current(revision)

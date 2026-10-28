@@ -57,9 +57,16 @@ def make_handler(root, token):
     if not (root / "forge.project.json").exists():
         Project.prepare_creation(root)
     project = Project(root, recover=False) if (root / "forge.project.json").exists() else None
+    request_lock = Lock()
 
     class Handler(StandaloneHandler):
         def do_GET(self):
+            # Queue direct-project requests too: background reports must not make
+            # a cooperating editor's save contend with the filesystem lock.
+            with request_lock:
+                Handler._get(self)
+
+        def _get(self):
             if not self.trusted_host():
                 self.reply({"error": "Local host required"}, status=403)
                 return
@@ -103,6 +110,10 @@ def make_handler(root, token):
                 self.reply({"error": str(error)}, status=400)
 
         def do_POST(self):
+            with request_lock:
+                Handler._post(self)
+
+        def _post(self):
             nonlocal project
             if not self.trusted_host() or not secrets.compare_digest(
                 self.headers.get("X-Scene-Token", ""), token
@@ -152,6 +163,25 @@ def make_handler(root, token):
                         data.get("scene_revision"),
                     )
                     self.reply(payload, "application/zip", filename=filename)
+                elif route in ("/api/palette-report", "/api/palette-preflight"):
+                    report = project.palette_report(
+                        data.get("scene_id"),
+                        data.get("project_revision"),
+                        data.get("scene_revision"),
+                        data.get("scene"),
+                    )
+                    self.reply(
+                        report,
+                        status=422
+                        if route.endswith("preflight") and report["status"] != "pass"
+                        else 200,
+                    )
+                elif route == "/api/save-palette-profile":
+                    self.reply(
+                        project.save_palette_profile(
+                            data.get("profile"), data.get("project_revision")
+                        )
+                    )
                 elif route == "/api/save-preview-settings":
                     self.reply(
                         project.save_preview_settings(

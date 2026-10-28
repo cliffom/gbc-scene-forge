@@ -21,6 +21,8 @@ import type { AtlasFolder } from './atlas-import.mts';
 import { array, boolean, number, record, string } from './decode.mts';
 import type { Decoder } from './decode.mts';
 import type { Selection } from './types.ts';
+import { createPalettePanel, decodePaletteProfile } from './palette-budget.mts';
+import type { PaletteProfile } from './palette-budget.mts';
 
 declare const __FORGE_BUILD_LABEL__: string;
 const versionLabel = document.getElementById('app-version');
@@ -46,6 +48,7 @@ interface Atlas {
 }
 interface Project {
   name: string;
+  paletteProfile: PaletteProfile | null;
   scenes: { id: string; name: string }[];
   atlases: Record<string, Atlas>;
 }
@@ -109,6 +112,67 @@ let deleteCandidate: {
 } | null = null;
 let deleteAtlasCandidate: { id: string; projectRevision: string } | null = null;
 let busy = false;
+const palettePanel = createPalettePanel({
+  context: () => {
+    if (!editor || !loaded || !project) {
+      return null;
+    }
+    const payload = {
+      scene_id: loaded.id,
+      scene_revision: loaded.revision,
+      project_revision: revision,
+      scene: sceneSnapshot(),
+    };
+    return { payload, key: JSON.stringify(payload) };
+  },
+  report: (preflight, payload) =>
+    api(preflight ? 'palette-preflight' : 'palette-report', record, payload),
+  save: (profile) => {
+    void run(async () => {
+      const result = await api('save-palette-profile', record, {
+        profile,
+        project_revision: revision,
+      });
+      revision = string(result.revision);
+      project = decodeProject(result.project);
+      palettePanel.saved();
+      status.textContent = 'GBC palette profile saved. Scene content is unchanged.';
+    });
+  },
+  navigate: (source) => {
+    if (!editor || !loaded || busy || anchor !== null) {
+      return;
+    }
+    const layer = editor.layers.find((layer) => layer.id === number(source.layer_id));
+    if (!layer) {
+      return;
+    }
+    editor.activate(layer.id);
+    selectedObject = source.object_id === null ? null : String(number(source.object_id));
+    selection =
+      source.object_id === null ? { x: number(source.x), y: number(source.y), w: 1, h: 1 } : null;
+    element('palette-dialog', HTMLDialogElement).close();
+    draw();
+    const viewport = element('viewport', HTMLElement);
+    const sceneRect = canvas.getBoundingClientRect();
+    const viewRect = viewport.getBoundingClientRect();
+    const multiplier = source.object_id === null ? loaded.grid : 1;
+    viewport.scrollLeft +=
+      sceneRect.left +
+      number(source.x) * multiplier * sceneZoom() -
+      viewRect.left -
+      viewport.clientWidth / 2;
+    viewport.scrollTop +=
+      sceneRect.top +
+      number(source.y) * multiplier * sceneZoom() -
+      viewRect.top -
+      viewport.clientHeight / 2;
+    status.textContent = layer.visible
+      ? `Palette contributor: ${layer.name} · ${string(source.asset)}`
+      : `Palette contributor is on hidden layer “${layer.name}”. Show that layer to inspect it on the canvas.`;
+    canvas.focus({ preventScroll: true });
+  },
+});
 let spacePan = false;
 let pan: { pointer: number; x: number; y: number; left: number; top: number } | null = null;
 const images = new Map<string, HTMLImageElement>();
@@ -244,7 +308,7 @@ async function request(
     body: data === undefined ? undefined : JSON.stringify(data),
     signal: AbortSignal.timeout(timeout),
   });
-  if (!response.ok) {
+  if (!response.ok && !(route === 'palette-preflight' && response.status === 422)) {
     const body: unknown = await response.json();
     throw Error(string(record(body).error));
   }
@@ -382,6 +446,7 @@ function decodeProject(value: unknown): Project {
   }
   return {
     name: string(data.name),
+    paletteProfile: decodePaletteProfile(data.gbc_palette_profile),
     atlases,
     scenes: array(data.scenes, (value) => {
       const scene = record(value);
@@ -418,6 +483,7 @@ async function discard(): Promise<boolean> {
   });
 }
 function update() {
+  palettePanel.sync(project?.paletteProfile ?? null, busy || anchor !== null);
   if (busy || !editor) {
     spacePan = false;
     finishPan();
@@ -447,6 +513,7 @@ function update() {
   select('zoom').disabled = !editor;
   button('library-import').disabled = busy || anchor !== null;
   button('show-export').disabled = busy || !project || anchor !== null;
+  button('show-palettes').disabled = busy || !project || anchor !== null;
   button('export-confirm').disabled = button('export-cancel').disabled = busy;
   select('export-scope').disabled = busy;
   input('export-canvas').disabled = busy || !editor || !dirty();
@@ -1897,6 +1964,12 @@ function exportDetails() {
     : `Export “${loaded?.name || ''}” and all referenced tilesets and PNGs for Tiled.`;
   element('export-canvas-field', HTMLElement).hidden = !editor || !dirty();
 }
+button('show-palettes').onclick = () => {
+  element('palette-dialog', HTMLDialogElement).showModal();
+};
+button('palette-close').onclick = () => {
+  element('palette-dialog', HTMLDialogElement).close();
+};
 button('show-export').onclick = () => {
   if (!project || busy || anchor) {
     return;

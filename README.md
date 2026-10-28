@@ -235,6 +235,11 @@ Generated JavaScript is Git-ignored. After frontend edits, run `make frontend`
 and reload the page; launch, demo, browser-test and build commands rebuild it for
 you. Release packages include the prebuilt UI.
 
+Optional [GBC palette checks](docs/PALETTE-BUDGETS.md) report scene requirements
+across atlases, with separate background/window and sprite budgets, explicit
+runtime reservations and navigable contributors. Generic editing and Tiled
+export remain available without a target profile.
+
 See [the 0.3.3 release notes](docs/RELEASE-0.3.3.md) and
 [building and releasing](docs/RELEASING.md) for release validation and publication.
 

@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "id": "reordered",
+  "png": "atlas.png",
+  "palettes": [
+    [
+      [0, 0, 0],
+      [20, 20, 20],
+      [10, 10, 10],
+      [31, 31, 31]
+    ]
+  ],
+  "cell_palettes": [0],
+  "regions": [
+    {
+      "name": "swapped",
+      "kind": "tile",
+      "x": 0,
+      "y": 0,
+      "width": 8,
+      "height": 8
+    }
+  ],
+  "animations": [],
+  "approval": {
+    "status": "draft"
+  }
+}

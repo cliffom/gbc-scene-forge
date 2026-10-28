@@ -3,6 +3,19 @@
 .standalone .status-bar {width:100vw;max-width:100%;align-items:flex-end}
 .standalone #status {min-width:0;overflow-wrap:anywhere}
 .build-identity {flex:none;white-space:nowrap}
+#palette-dialog {width:620px}
+#palette-dialog[open] {display:flex;flex-direction:column;max-height:calc(100dvh - 32px);overflow:hidden}
+#palette-dialog>* {flex:none}
+#palette-summary {font-weight:600;margin:16px 0}
+#palette-summary[data-state=fail] {color:#f19b82}
+#palette-summary[data-state=pass] {color:#b4c890}
+#show-palettes[data-state=fail] {color:#f19b82;border-color:#ad6752}
+#palette-findings {display:grid;gap:8px;overflow:auto;min-height:80px;max-height:40dvh;flex:1}
+#palette-findings p {margin:4px 0}
+.palette-count {font-weight:600}
+.palette-contributor {display:block;width:100%;text-align:left;overflow-wrap:anywhere;margin:6px 0}
+.palette-swatches {display:flex;gap:3px;margin:6px 0}
+.palette-swatches span {width:24px;height:24px;border:1px solid var(--line)}
 .workspace {display:flex;flex-direction:column;flex:1;min-height:0}
 .standalone .document-bar {flex:none}
 #scenes {min-width:180px;max-width:300px}
