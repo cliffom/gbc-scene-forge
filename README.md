@@ -1,5 +1,8 @@
 # GBC Scene Forge
 
+[![Package checks](https://github.com/cliffom/gbc-scene-forge/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/cliffom/gbc-scene-forge/actions/workflows/ci.yml)
+[![Publish package](https://github.com/cliffom/gbc-scene-forge/actions/workflows/publish.yml/badge.svg)](https://github.com/cliffom/gbc-scene-forge/actions/workflows/publish.yml)
+
 ![GBC Scene Forge — Build a world. One tile at a time.](assets/branding/hero.png)
 
 Scene Forge is a local browser editor for building tile-based scenes from imported
@@ -12,7 +15,7 @@ Your projects stay on your computer.
 Install the release with Python 3.10 or newer:
 
 ```sh
-python -m pip install gbc-scene-forge==0.3.0
+python -m pip install gbc-scene-forge==0.3.1
 gbc-scene-forge
 ```
 
@@ -30,6 +33,7 @@ make run
 ### Create your first project
 
 1. On the project selector, enter **Hello World** and choose **Create project**.
+   If projects already exist, choose **Create a new project** first.
 2. Choose **Import atlas**, then **Browse folder…**. Select your atlas folder,
    choose a `*.atlas.json` manifest if needed, and confirm the import. Forge copies
    the artwork into the project, so you can move the original import folder later.
@@ -43,8 +47,9 @@ unsaved edits, choose whether to save, discard, or keep editing before switching
 
 ### Open another project
 
-Choose **Projects…** at the top of the workspace to return to the project selector.
-You can open an existing project or create another one without restarting Forge.
+Use the **Project** dropdown beside the scene selector to open another project.
+Choose **Choose or create project…** to return to the project selector, then open
+an existing project or choose **Create a new project**, without restarting Forge.
 If your scene has unsaved edits, choose **Save and switch**, **Discard and switch**,
 or **Keep editing**. If saving fails, your edits stay in the current workspace.
 
@@ -88,9 +93,9 @@ make run PROJECT_ROOT="$HOME/Scene Forge Projects"
 
 Use the same location on later launches to see those projects again. Unsupported
 or damaged manifests are reported in the selector so you can identify the folder
-that needs attention. Version 0.3.0 continues to use manifest format version 1.
+that needs attention. Version 0.3.1 continues to use manifest format version 1.
 
-### Bring an existing project into 0.3.0
+### Bring an existing project into 0.3.1
 
 Existing 0.2.0 projects keep their artwork, scene IDs and manifest format. To add
 one to the selector, stop Forge and move the whole project folder into your
@@ -210,7 +215,7 @@ Generated JavaScript is Git-ignored. After frontend edits, run `make frontend`
 and reload the page; launch, demo, browser-test and build commands rebuild it for
 you. Release packages include the prebuilt UI.
 
-See [the 0.3.0 release notes](docs/RELEASE-0.3.0.md) and
+See [the 0.3.1 release notes](docs/RELEASE-0.3.1.md) and
 [building and releasing](docs/RELEASING.md) for release validation and publication.
 
 ## License

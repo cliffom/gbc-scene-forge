@@ -11,8 +11,10 @@ gbc-scene-forge --project-root /path/to/projects --port 8777
 make run PROJECT_ROOT=/path/to/projects PORT=8777
 ```
 
-Open the printed local URL. Choose **Projects…** to change projects; unsaved scene
-edits offer **Save and switch**, **Discard and switch**, or **Keep editing**.
+Open the printed local URL. Use the **Project** dropdown beside the scene selector
+to change projects, or choose **Choose or create project…** to return to the
+selector. Unsaved scene edits offer **Save and switch**, **Discard and switch**,
+or **Keep editing**.
 Failed saves keep the current workspace and edits. Opening a project reloads the
 workspace, clears undo/redo and selections, and resets previews. Requests are
 scoped to the project's URL, so another tab cannot change their destination.

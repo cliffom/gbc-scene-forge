@@ -73,7 +73,7 @@ publishing page. Use the official [trusted publisher setup guide](https://docs.p
 The workflow follows the [Python Packaging User Guide](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/)
 and uses short-lived OIDC credentials; no PyPI API token is stored in the repository.
 
-After reviewing and committing a release, create and push an annotated `v0.3.0`
+After reviewing and committing a release, create and push an annotated `v0.3.1`
 tag (or the matching next version). Run **Publish package** manually against that
 tag, selecting `testpypi` first when its trusted publisher is configured. TestPyPI
 is currently unconfigured; its 0.1.4 upload failed with `invalid-publisher`. Until
@@ -83,12 +83,13 @@ with `tests/package_smoke.py` after publication. The workflow rebuilds and
 checks the distributions, checks the tag against the package version, then uploads
 only those verified artifacts. Pushing a tag alone does not publish.
 
-## Release 0.3.0
+## Release 0.3.1
 
-Version 0.3.0 adds project roots, named project directories, a project selector,
-and save-aware workspace switching. It also includes the editable standalone sample
-and Make development workflow. Manifest schema remains version 1.
-See [release notes and compatibility changes](RELEASE-0.3.0.md).
+Version 0.3.1 improves project selection, layer controls, canvas navigation and
+save feedback. It bundles the tracked editable sample project and expands
+installed-wheel compatibility checks through Python 3.14. Manifest schema remains
+version 1; existing 0.2.0 and 0.3.0 projects need no format migration.
+See [release notes](RELEASE-0.3.1.md).
 
 Before tagging, run:
 
