@@ -8,6 +8,7 @@ import unittest
 from concurrent.futures import ThreadPoolExecutor
 from http.client import HTTPConnection
 from pathlib import Path
+from socket import create_connection
 from unittest.mock import patch
 
 from gbc_scene_forge.console import ServerConsole
@@ -223,8 +224,21 @@ class ConsoleTests(unittest.TestCase):
                         self.assertEqual(request("/missing"), 404)
                         self.assertEqual(request("/api/create-project", method="POST"), 403)
                         self.assertEqual(request("/", headers={"Host": "evil.example"}), 403)
+                        self.assertEqual(server.console.failures, 3)
                         self.assertEqual(request("/", method="DELETE"), 501)
-                        for status in (403, 404, 501):
+                        self.assertEqual(server.console.failures, 4)
+                        self.assertIn("Unsupported method", stream.getvalue())
+                        with create_connection(
+                            ("127.0.0.1", server.server_port), timeout=2
+                        ) as sock:
+                            sock.sendall(b"GET / HTTP/1.1 extra\r\n\r\n")
+                            # Early parse errors use an HTTP/0.9-style body without
+                            # a status line, because no HTTP version was accepted.
+                            with sock.makefile("rb") as response:
+                                self.assertIn(b"Error code: 400", response.read())
+                        self.assertEqual(server.console.failures, 5)
+                        self.assertIn("Bad request version", stream.getvalue())
+                        for status in (400, 403, 404, 501):
                             self.assertIn(f"HTTP {status}", stream.getvalue())
                         now[0] = 120
                         self.assertTrue(expired.wait(2), "Idle server did not expire clients")

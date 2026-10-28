@@ -117,9 +117,10 @@ class ServerConsole:
                 if self.live_total:
                     self._total()
 
-    def error(self, message):
+    def error(self, message, *, count_failure=True):
         with self.lock:
             self.logger.error("Error | %s", json.dumps(message))
-            self.failures += 1
-            if self.live_total:
-                self._total()
+            if count_failure:
+                self.failures += 1
+                if self.live_total:
+                    self._total()

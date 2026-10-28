@@ -34,7 +34,9 @@ class StandaloneHandler(LocalHandler):
         console = getattr(self.server, "console", None)
         if console is None:
             return super().log_message(format, *args)
-        console.error(format % args)
+        # send_error logs a diagnostic before log_request records the failed
+        # response. Only the response increments the HTTP failure count.
+        console.error(format % args, count_failure=False)
 
 
 class StandaloneServer(ThreadingHTTPServer):
