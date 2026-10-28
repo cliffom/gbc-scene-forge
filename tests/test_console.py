@@ -31,7 +31,40 @@ class ConsoleTests(unittest.TestCase):
                 output = stream.getvalue()
                 for text in ("online", "http://127.0.0.1:8765/", "0 active", "stopped", "HTTP 404"):
                     self.assertIn(text, output)
-                self.assertEqual("\033[" in output, colored)
+                self.assertEqual("\033[32m" in output, colored)
+                self.assertEqual("\033[2K" in output, tty and env.get("TERM") != "dumb")
+
+    def test_live_total_is_replaced_after_arrivals_errors_and_expiration(self):
+        for env in ({}, {"NO_COLOR": ""}):
+            with self.subTest(env=env), patch.dict("os.environ", env, clear=True):
+                now = [0]
+                stream = io.StringIO()
+                stream.isatty = lambda: True
+                console = ServerConsole(stream, clock=lambda: now[0])
+                console.start(8765)
+
+                def current_total():
+                    # An erase-line removes the previous footer before an event is
+                    # printed. The last line is the only live Clients field.
+                    return stream.getvalue().rsplit("\r\033[2K", 1)[-1].split("\n")[-1]
+
+                self.assertIn("0 active", current_total())
+                console.request("127.0.0.1", "Browser A", "GET / HTTP/1.1", 200)
+                self.assertIn("1 active", current_total())
+                console.request("127.0.0.1", "Browser A", "GET / HTTP/1.1", 200)
+                self.assertIn("1 active", current_total())
+                console.request("127.0.0.1", "Browser B", "GET / HTTP/1.1", 404)
+                self.assertIn("2 active", current_total())
+                console.error("Protocol error")
+                self.assertIn("2 active", current_total())
+                now[0] = 120
+                console.expire()
+                self.assertIn("0 active", current_total())
+                console.stop()
+                self.assertTrue(
+                    stream.getvalue().endswith("stopped\n")
+                    or stream.getvalue().endswith("stopped\033[0m\n")
+                )
 
     def test_identity_refresh_expiration_and_return(self):
         now = [0]
