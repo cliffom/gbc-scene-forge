@@ -1,8 +1,9 @@
 /** Full standalone workflow across server restarts and a moved project directory. */
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
+import { promisify } from 'node:util';
 import type { ChildProcess } from 'node:child_process';
-import { mkdtemp, readFile, rename, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { once } from 'node:events';
@@ -57,7 +58,10 @@ async function catalog() {
   return record(await (await fetch(new URL('/api/project', url))).json());
 }
 async function scene(id: string) {
-  return record(await (await fetch(new URL(`/api/scene/${id}`, url))).json());
+  const response = await fetch(new URL(`/api/scene/${id}`, url));
+  const body = record(await response.json());
+  assert.equal(response.status, 200, JSON.stringify(body));
+  return body;
 }
 try {
   await start(join(folder, 'world'));
@@ -82,6 +86,53 @@ try {
       `(() => { const control = document.getElementById(${JSON.stringify(id)}); control.value=${JSON.stringify(value)}; control.dispatchEvent(new Event(control.tagName === 'SELECT' ? 'change' : 'input', {bubbles:true})); })()`,
     );
   };
+  const captureDownloads = async () =>
+    evaluate(`window.__exportBlob=null; window.__exportFilename=null;
+    URL.createObjectURL=blob=>{window.__exportBlob=blob;return 'blob:export-test'};
+    HTMLAnchorElement.prototype.click=function(){window.__exportFilename=this.download};`);
+  async function unpackDownload(tag: string) {
+    const encoded = string(
+      await evaluate(
+        `window.__exportBlob.arrayBuffer().then(buffer=>btoa(Array.from(new Uint8Array(buffer), byte=>String.fromCharCode(byte)).join('')))`,
+      ),
+    );
+    const zipPath = join(folder, `${tag}.zip`),
+      output = join(folder, `${tag}-export`);
+    await writeFile(zipPath, Buffer.from(encoded, 'base64'));
+    const { stdout } = await promisify(execFile)('.venv/bin/python', [
+      '-c',
+      `
+import json, sys, zipfile
+from pathlib import Path
+from gbc_scene_forge.projects import Project
+from gbc_scene_forge import png
+root = Path(sys.argv[2]).resolve()
+with zipfile.ZipFile(sys.argv[1]) as archive:
+    assert archive.testzip() is None
+    names = archive.namelist()
+    archive.extractall(root)
+report = json.loads((root / 'export.json').read_bytes())
+for scene in report['scenes']:
+    path = root / scene['path']
+    for ref in json.loads(path.read_bytes())['tilesets']:
+        tileset = (path.parent / ref['source']).resolve()
+        assert tileset.is_relative_to(root) and tileset.is_file()
+        for tile in json.loads(tileset.read_bytes())['tiles']:
+            image = (tileset.parent / tile['image']).resolve()
+            assert image.is_relative_to(root) and image.is_file()
+            width, height, _ = png.decode(image.read_bytes())
+            assert (width, height) == (tile['imagewidth'], tile['imageheight'])
+result = {'report': report, 'names': names, 'maps': {s['id']: json.loads((root/s['path']).read_bytes()) for s in report['scenes']}}
+if (root/'forge.project.json').exists():
+    project = Project(root)
+    result['reopened'] = {s['id']: project.load_scene(s['id'])['scene'] for s in report['scenes']}
+print(json.dumps(result))
+`,
+      zipPath,
+      output,
+    ]);
+    return record(JSON.parse(stdout));
+  }
   const target = string(
     (await browser.call('Target.createTarget', { url: 'about:blank' }, null)).targetId,
   );
@@ -479,11 +530,401 @@ try {
   assert.deepEqual(record((await scene(second)).scene).objects, [
     { id: 1, asset: 'actors/idle', x: 32, y: 24 },
   ]);
+  // Named layers render in order, edit independently, and retain history through Save.
+  const spritePixel = await evaluate(
+    "Array.from(document.getElementById('scene').getContext('2d').getImageData(30,9,1,1).data)",
+  );
+  await click('layer-tile');
+  await set('layer-name', 'Canopy');
+  await evaluate("document.getElementById('layer-name').dispatchEvent(new Event('change'))");
+  await browser.click('document.querySelector(\'[data-asset="terrain/earth"]\')');
+  await browser.pointer(30, 9);
+  await browser.pointer(30, 9, 'mouseReleased');
+  const tilePixel = await evaluate(
+    "Array.from(document.getElementById('scene').getContext('2d').getImageData(30,9,1,1).data)",
+  );
+  assert.notDeepEqual(tilePixel, spritePixel);
+  await click('layer-down');
+  assert.deepEqual(
+    await evaluate(
+      "Array.from(document.getElementById('scene').getContext('2d').getImageData(30,9,1,1).data)",
+    ),
+    spritePixel,
+  );
+  await click('undo');
+  assert.deepEqual(
+    await evaluate(
+      "Array.from(document.getElementById('scene').getContext('2d').getImageData(30,9,1,1).data)",
+    ),
+    tilePixel,
+  );
+  await click('layer-visible');
+  await browser.pointer(44, 25);
+  await browser.pointer(44, 25, 'mouseReleased');
+  assert.equal(
+    await evaluate("document.getElementById('status').textContent"),
+    'Show the active layer before editing it.',
+  );
+  await click('layer-object');
+  await set('layer-name', 'Foreground actors');
+  await evaluate("document.getElementById('layer-name').dispatchEvent(new Event('change'))");
+  await browser.click('document.querySelector(\'[data-asset="actors/idle"]\')');
+  await browser.pointer(48, 24);
+  await browser.pointer(48, 24, 'mouseReleased');
+  await click('layer-remove');
+  assert.equal(await evaluate("document.getElementById('layers').options.length"), 3);
+  await click('undo');
+  assert.equal(await evaluate("document.getElementById('layer-name').value"), 'Foreground actors');
+  await click('save');
+  await wait("document.getElementById('status').textContent === 'Scene saved.'");
+  let layeredScene = record((await scene(second)).scene);
+  const savedLayers = array(layeredScene.layers, record);
+  assert.deepEqual(
+    savedLayers.map((layer) => layer.name),
+    ['Ground', 'Sprites', 'Canopy', 'Foreground actors'],
+  );
+  assert.equal(savedLayers[2].visible, false);
+  assert.equal(array(savedLayers[2].cells, (row) => array(row, string))[3][5], '');
+  assert.deepEqual(savedLayers[3].objects, [{ id: 2, asset: 'actors/idle', x: 48, y: 24 }]);
+  await click('undo');
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'UNSAVED');
+  await click('redo');
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
+  await browser.screenshot('standalone-layers');
+  // Generic markers, areas, properties and per-instance sprite origins share layer history.
+  await click('place-point');
+  await browser.pointer(16, 48);
+  await browser.pointer(16, 48, 'mouseReleased');
+  assert.equal(await evaluate("document.getElementById('selection-kind').textContent"), 'POINT');
+  await click('edit-object');
+  await wait("document.getElementById('object-dialog').open");
+  await set('object-name', 'Discard me');
+  await click('object-cancel');
+  assert.equal(await evaluate("document.getElementById('selection-name').textContent"), 'spawn');
+  await click('edit-object');
+  await set('object-name', 'Entrance');
+  async function addProperty(name: string, type: string, value: string | boolean) {
+    await click('object-add-property');
+    await evaluate(`(() => {
+      const row = document.getElementById('object-properties').lastElementChild;
+      const fields = row.querySelectorAll('input'), type = row.querySelector('select');
+      fields[0].value = ${JSON.stringify(name)};
+      type.value = ${JSON.stringify(type)}; type.dispatchEvent(new Event('change'));
+      if (type.value === 'bool') fields[1].checked = ${JSON.stringify(value)};
+      else fields[1].value = ${JSON.stringify(String(value))};
+    })()`);
+  }
+  await addProperty('enabled', 'bool', true);
+  await addProperty('facing', 'string', 'north');
+  await addProperty('priority', 'int', '2');
+  await addProperty('speed', 'float', '1.25');
+  await addProperty('enabled', 'string', 'duplicate');
+  await click('object-apply');
+  assert.equal(
+    await evaluate("document.getElementById('object-error').textContent.includes('unique')"),
+    true,
+  );
+  await browser.click(
+    "document.querySelector('#object-properties .object-property:last-child button')",
+  );
+  await browser.screenshot('standalone-object-properties');
+  await click('object-apply');
+  await wait("!document.getElementById('object-dialog').open");
+  assert.equal(await evaluate("document.getElementById('selection-name').textContent"), 'Entrance');
+  await click('undo');
+  assert.equal(await evaluate("document.getElementById('selection-name').textContent"), 'spawn');
+  await click('redo');
+  assert.equal(await evaluate("document.getElementById('selection-name').textContent"), 'Entrance');
+  await click('place-rectangle');
+  await browser.pointer(32, 56);
+  await browser.pointer(32, 56, 'mouseReleased');
+  await click('edit-object');
+  await set('object-name', 'Exit');
+  await set('object-class', 'door-trigger');
+  await set('object-width', '16');
+  await set('object-height', '24');
+  await addProperty('destination', 'string', 'room-b');
+  await click('object-apply');
+  await browser.click("document.querySelector('input[value=select]')");
+  await browser.pointer(36, 60);
+  await browser.pointer(44, 68, 'mouseMoved');
+  await browser.pointer(44, 68, 'mouseReleased');
+  assert.equal(
+    await evaluate(
+      "document.getElementById('selection-detail').textContent.includes('X 40, Y 64')",
+    ),
+    true,
+  );
+  await evaluate("document.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowUp'}))");
+  await click('undo');
+  await click('undo');
+  assert.equal(
+    await evaluate(
+      "document.getElementById('selection-detail').textContent.includes('X 32, Y 56')",
+    ),
+    true,
+  );
+  await click('remove-sprite');
+  await click('undo');
+  await set('object-list', '2');
+  await evaluate("document.getElementById('object-list').dispatchEvent(new Event('change'))");
+  await click('edit-object');
+  await set('object-name', 'Guard');
+  await set('object-class', 'npc');
+  await click('object-default-origin');
+  await set('object-origin-x', '4');
+  await set('object-origin-y', '16');
+  await click('object-apply');
+  assert.equal(
+    await evaluate(
+      "document.getElementById('selection-detail').textContent.includes('Origin 4, 16')",
+    ),
+    true,
+  );
+  await click('save');
+  await wait("document.getElementById('status').textContent === 'Scene saved.'");
+  layeredScene = record((await scene(second)).scene);
+  const authored = array(array(layeredScene.layers, record)[3].objects, record);
+  assert.deepEqual(authored[0], {
+    id: 2,
+    asset: 'actors/idle',
+    x: 48,
+    y: 24,
+    name: 'Guard',
+    class: 'npc',
+    origin: [4, 16],
+  });
+  assert.deepEqual(authored[1], {
+    id: 3,
+    kind: 'point',
+    x: 16,
+    y: 48,
+    name: 'Entrance',
+    class: 'spawn',
+    properties: [
+      { name: 'enabled', type: 'bool', value: true },
+      { name: 'facing', type: 'string', value: 'north' },
+      { name: 'priority', type: 'int', value: 2 },
+      { name: 'speed', type: 'float', value: 1.25 },
+    ],
+  });
+  assert.deepEqual(authored[2], {
+    id: 4,
+    kind: 'rectangle',
+    x: 32,
+    y: 56,
+    width: 16,
+    height: 24,
+    name: 'Exit',
+    class: 'door-trigger',
+    properties: [{ name: 'destination', type: 'string', value: 'room-b' }],
+  });
+  await click('layer-visible');
+  await click('place-point');
+  await browser.pointer(8, 48);
+  await browser.pointer(8, 48, 'mouseReleased');
+  assert.equal(
+    await evaluate("document.getElementById('status').textContent"),
+    'Show the active layer before editing it.',
+  );
+  await click('undo');
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
+
+  // Shared tile metadata saves retain an unsaved scene and its undo history.
+  await browser.click('document.querySelector(\'[data-asset="terrain/earth"]\')');
+  await browser.pointer(12, 98);
+  await browser.pointer(12, 98, 'mouseReleased');
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'UNSAVED');
+  await click('edit-tile');
+  await wait("document.getElementById('tile-dialog').open");
+  await set('tile-terrain', 'water');
+  await evaluate("document.getElementById('tile-terrain').dispatchEvent(new Event('change'))");
+  await click('tile-add-shape');
+  await set('tile-y', '4');
+  await set('tile-height', '4');
+  await evaluate("document.getElementById('tile-height').dispatchEvent(new Event('change'))");
+  await set('tile-shape-kind', 'ellipse');
+  await click('tile-add-shape');
+  await set('tile-x', '2');
+  await set('tile-y', '0');
+  await set('tile-width', '4');
+  await set('tile-height', '4');
+  await evaluate("document.getElementById('tile-height').dispatchEvent(new Event('change'))");
+  await set('tile-shape-kind', 'polygon');
+  await click('tile-add-shape');
+  await set('tile-points', '0,0 8,8 0,8 7,0');
+  await evaluate("document.getElementById('tile-points').dispatchEvent(new Event('change'))");
+  await click('tile-save');
+  assert.equal(
+    await evaluate("document.getElementById('tile-error').textContent.includes('intersect')"),
+    true,
+  );
+  assert.equal(await evaluate("document.getElementById('tile-dialog').open"), true);
+  await set('tile-points', '0,8 8,8 8,0');
+  await evaluate("document.getElementById('tile-points').dispatchEvent(new Event('change'))");
+  await click('tile-undo');
+  assert.equal(await evaluate("document.getElementById('tile-shapes').options.length"), 2);
+  await click('tile-redo');
+  assert.equal(await evaluate("document.getElementById('tile-shapes').options.length"), 3);
+  await browser.screenshot('standalone-tile-metadata');
+  await click('tile-save');
+  await wait("!document.getElementById('tile-dialog').open");
+  const tileMetadata = record(
+    record(record(record((await catalog()).project).atlases).terrain).metadata,
+  );
+  const earthMetadata = record(record(tileMetadata['8'])['terrain/earth/0/0']);
+  assert.equal(earthMetadata.terrain, 'water');
+  assert.equal(earthMetadata.solid, true);
+  assert.equal(array(earthMetadata.shapes, record).length, 3);
+  assert.deepEqual(record((await scene(second)).scene), layeredScene);
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'UNSAVED');
+  await click('undo');
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
+  // The collision overlay follows actual geometry and visible layers, independently of art.
+  await browser.pointer(12, 98);
+  await browser.pointer(12, 98, 'mouseReleased');
+  const rawTile = await evaluate(
+    "Array.from(document.getElementById('scene').getContext('2d').getImageData(12,102,1,1).data)",
+  );
+  await click('terrain-overlay');
+  await evaluate("document.getElementById('terrain-overlay').dispatchEvent(new Event('change'))");
+  assert.notDeepEqual(
+    await evaluate(
+      "Array.from(document.getElementById('scene').getContext('2d').getImageData(12,102,1,1).data)",
+    ),
+    rawTile,
+  );
+  await click('collision-overlay');
+  await evaluate("document.getElementById('collision-overlay').dispatchEvent(new Event('change'))");
+  assert.notDeepEqual(
+    await evaluate(
+      "Array.from(document.getElementById('scene').getContext('2d').getImageData(12,102,1,1).data)",
+    ),
+    rawTile,
+  );
+  // The canopy uses this same tile but is hidden, so its geometry must not cover the actor.
+  assert.deepEqual(
+    await evaluate(
+      "Array.from(document.getElementById('scene').getContext('2d').getImageData(30,9,1,1).data)",
+    ),
+    [255, 255, 255, 255],
+  );
+  await browser.screenshot('standalone-collision-overlay');
+  await click('layer-visible');
+  assert.deepEqual(
+    await evaluate(
+      "Array.from(document.getElementById('scene').getContext('2d').getImageData(12,102,1,1).data)",
+    ),
+    [36, 40, 32, 255],
+  );
+  await click('undo');
+  await click('undo');
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
+  await click('terrain-overlay');
+  await evaluate("document.getElementById('terrain-overlay').dispatchEvent(new Event('change'))");
+  await click('collision-overlay');
+  await evaluate("document.getElementById('collision-overlay').dispatchEvent(new Event('change'))");
+  await browser.click('document.querySelector(\'[data-asset="actors/idle"]\')');
+  await click('edit-tile');
+  await set('tile-terrain', 'actor');
+  await evaluate("document.getElementById('tile-terrain').dispatchEvent(new Event('change'))");
+  await set('tile-shape-kind', 'ellipse');
+  await click('tile-add-shape');
+  await set('tile-x', '4');
+  await set('tile-y', '24');
+  await set('tile-width', '8');
+  await set('tile-height', '8');
+  await evaluate("document.getElementById('tile-height').dispatchEvent(new Event('change'))");
+  await click('tile-save');
+  await wait("!document.getElementById('tile-dialog').open");
+  const rawActor = await evaluate(
+    "Array.from(document.getElementById('scene').getContext('2d').getImageData(30,28,1,1).data)",
+  );
+  await click('collision-overlay');
+  await evaluate("document.getElementById('collision-overlay').dispatchEvent(new Event('change'))");
+  assert.notDeepEqual(
+    await evaluate(
+      "Array.from(document.getElementById('scene').getContext('2d').getImageData(30,28,1,1).data)",
+    ),
+    rawActor,
+  );
+  await click('collision-overlay');
+  await evaluate("document.getElementById('collision-overlay').dispatchEvent(new Event('change'))");
+  await click('edit-tile');
+  await set('tile-terrain', 'discarded');
+  await evaluate("document.getElementById('tile-terrain').dispatchEvent(new Event('change'))");
+  await click('tile-cancel');
+  assert.equal(
+    record(
+      record(record(record(record((await catalog()).project).atlases).actors).metadata).sprites,
+    )['actors/idle'] !== undefined,
+    true,
+  );
+  // Downloads include explicit unsaved snapshots while preserving source files and history.
+  await set('layers', '4');
+  await set('object-list', '3');
+  await click('edit-object');
+  await set('object-name', 'Export-only entry');
+  await click('object-apply');
+  const exportRevision = string((await catalog()).revision);
+  await captureDownloads();
+  await click('show-export');
+  assert.equal(await evaluate("document.getElementById('export-canvas').checked"), true);
+  await browser.screenshot('standalone-export');
+  await click('export-confirm');
+  await wait("!document.getElementById('export-dialog').open && window.__exportBlob !== null");
+  assert.equal(await evaluate('window.__exportBlob.type'), 'application/zip');
+  assert.equal(await evaluate(`window.__exportFilename === 'forge-scene-${second}.zip'`), true);
+  const sceneExport = await unpackDownload('scene');
+  assert.equal(array(sceneExport.names, string).includes('forge.project.json'), false);
+  assert.equal(array(record(sceneExport.report).scenes, record).length, 1);
+  const exportedMap = record(record(sceneExport.maps)[second]);
+  assert.equal(array(exportedMap.layers, record)[2].visible, false);
+  const exportedObjects = array(array(exportedMap.layers, record)[3].objects, record);
+  assert.equal(exportedObjects[1].name, 'Export-only entry');
+  assert.deepEqual(exportedObjects[1].properties, authored[1].properties);
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'UNSAVED');
+  await captureDownloads();
+  await click('show-export');
+  await set('export-scope', 'project');
+  await click('export-confirm');
+  await wait("!document.getElementById('export-dialog').open && window.__exportBlob !== null");
+  const projectExport = await unpackDownload('project');
+  assert.equal(array(projectExport.names, string).includes('forge.project.json'), true);
+  assert.equal(array(record(projectExport.report).scenes, record).length, 2);
+  const reopened = record(record(projectExport.reopened)[second]);
+  assert.equal(
+    array(array(reopened.layers, record)[3].objects, record)[1].name,
+    'Export-only entry',
+  );
+  assert.deepEqual(record((await scene(second)).scene), layeredScene);
+  assert.equal(string((await catalog()).revision), exportRevision);
+  await click('undo');
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
+  // Excluding the canvas exports the saved version and leaves the draft intact.
+  await click('redo');
+  await captureDownloads();
+  await click('show-export');
+  await click('export-canvas');
+  await click('export-confirm');
+  await wait("!document.getElementById('export-dialog').open && window.__exportBlob !== null");
+  const savedExport = await unpackDownload('saved-scene');
+  const savedObjects = array(
+    array(record(record(savedExport.maps)[second]).layers, record)[3].objects,
+    record,
+  );
+  assert.equal(savedObjects[1].name, 'Entrance');
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'UNSAVED');
+  await click('undo');
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
   await browser.click('document.querySelector(\'[data-delete-atlas="terrain"]\')');
   await wait("document.getElementById('delete-atlas-dialog').open");
-  await click('delete-atlas-confirm');
-  await wait(
-    "document.querySelector('#delete-atlas-form .form-error')?.textContent.includes('Village')",
+  assert.equal(await evaluate("document.getElementById('delete-atlas-confirm').disabled"), true);
+  assert.equal(
+    await evaluate(
+      "document.querySelector('#delete-atlas-form .form-error').textContent.includes('open scene uses')",
+    ),
+    true,
   );
   assert.equal(Object.keys(record(record((await catalog()).project).atlases)).length, 2);
   await click('delete-atlas-cancel');
@@ -533,9 +974,43 @@ try {
   await start(movedRoot, false);
   await browser.call('Page.navigate', { url });
   await wait("document.getElementById('status')?.textContent.includes('Choose a scene')");
+  assert.deepEqual(
+    record(record(record(record(record((await catalog()).project).atlases).terrain).metadata)['8'])[
+      'terrain/earth/0/0'
+    ],
+    earthMetadata,
+  );
+  assert.deepEqual(record((await scene(second)).scene), layeredScene);
+  await set('scenes', second);
+  await click('open');
+  await wait("document.getElementById('status').textContent === 'Scene opened.'");
+  assert.equal(await evaluate("document.getElementById('layers').options.length"), 4);
+  assert.equal(
+    await evaluate(
+      "Array.from(document.getElementById('layers').options).some(option => option.textContent.includes('○ Canopy'))",
+    ),
+    true,
+  );
+  await set('layers', '4');
+  await evaluate("document.getElementById('layers').dispatchEvent(new Event('change'))");
+  await set('object-list', '3');
+  await evaluate("document.getElementById('object-list').dispatchEvent(new Event('change'))");
+  await click('edit-object');
+  assert.equal(await evaluate("document.getElementById('object-name').value"), 'Entrance');
+  assert.equal(
+    await evaluate("document.querySelectorAll('#object-properties .object-property').length"),
+    4,
+  );
+  assert.equal(
+    await evaluate("document.querySelector('#object-properties input[type=checkbox]').checked"),
+    true,
+  );
+  await click('object-cancel');
   await set('scenes', first);
   await click('open');
-  await wait("document.getElementById('status')?.textContent === 'Scene opened.'");
+  await wait(
+    "document.getElementById('status')?.textContent === 'Scene opened.' && document.getElementById('scene-name').textContent.startsWith('Village')",
+  );
   assert.deepEqual(record((await scene(first)).scene).objects, placed);
   assert.deepEqual(
     await evaluate(
@@ -552,10 +1027,17 @@ try {
   const mapPath = join(movedRoot, 'scenes', `${first}.tmj`);
   const before = await readFile(mapPath, 'utf8');
   // An external map edit causes a visible 409 and preserves the unsaved browser canvas.
-  const { writeFile } = await import('node:fs/promises');
   await writeFile(mapPath, before + '\n');
   await browser.pointer(20, 12);
   await browser.pointer(20, 12, 'mouseReleased');
+  await captureDownloads();
+  await click('show-export');
+  await click('export-confirm');
+  await wait(
+    "document.querySelector('#export-form .form-error').textContent.includes('Scene changed on disk')",
+  );
+  assert.equal(await evaluate('window.__exportBlob'), null);
+  await click('export-cancel');
   await click('save');
   await wait("document.getElementById('status')?.textContent.includes('Scene changed on disk')");
   assert.equal(await readFile(mapPath, 'utf8'), before + '\n');
@@ -612,7 +1094,7 @@ try {
   assert.equal(await evaluate("document.getElementById('asset-count').textContent"), '0 / 0');
   assert.deepEqual(browser.errors, []);
   console.log(
-    'Standalone browser acceptance passed: project creation, atlas import/reimport, painting, fill, selection, undo/redo, independent scenes, restart, moved directory, and conflict preservation.',
+    'Standalone browser acceptance passed: project creation, atlas import/reimport, painting, layers, objects/properties, terrain/collision, portable exports, undo/redo, restart, moved directory, and conflict preservation.',
   );
 } finally {
   await chrome?.close();

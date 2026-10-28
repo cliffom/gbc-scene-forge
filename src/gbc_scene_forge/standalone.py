@@ -100,6 +100,25 @@ def make_handler(root, token):
                             data.get("project_revision"),
                         )
                     )
+                elif route == "/api/export":
+                    payload, filename = project.export_bundle(
+                        data.get("scope"),
+                        data.get("project_revision"),
+                        data.get("scene_id"),
+                        data.get("scene"),
+                        data.get("scene_revision"),
+                    )
+                    self.reply(payload, "application/zip", filename=filename)
+                elif route == "/api/save-tile-metadata":
+                    self.reply(
+                        project.save_tile_metadata(
+                            data.get("atlas"),
+                            data.get("group"),
+                            data.get("asset"),
+                            data.get("metadata"),
+                            data.get("project_revision"),
+                        )
+                    )
                 elif route == "/api/delete-scene":
                     self.reply(
                         project.delete_scene(

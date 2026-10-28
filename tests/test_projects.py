@@ -2,11 +2,13 @@
 
 import base64
 import copy
+import io
 import json
 import shutil
 import tempfile
 import threading
 import unittest
+import zipfile
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 from unittest.mock import patch
@@ -41,6 +43,82 @@ class ProjectTests(unittest.TestCase):
 
     def scene(self, title="Village", grid=8):
         return self.project.create_scene(title, 7, 5, grid, self.revision())
+
+    def test_ordered_layers_survive_save_reopen_and_atlas_rewrites(self):
+        self.import_atlas()
+        path, _ = sprite_bundle(self.folder / "sprites")
+        self.project.import_atlas(path, self.revision())
+        loaded = self.scene()
+        cells = loaded["scene"]["cells"]
+        cells[1][1] = "terrain/earth/0/0"
+        scene = {
+            "width": 7,
+            "height": 5,
+            "grid": 8,
+            "next_object_id": 10,
+            "next_layer_id": 12,
+            "layers": [
+                {
+                    "id": 4,
+                    "name": "Behind",
+                    "type": "objectgroup",
+                    "visible": True,
+                    "objects": [{"id": 3, "asset": "actors/idle", "x": 32, "y": 24}],
+                },
+                {"id": 8, "name": "Canopy", "type": "tilelayer", "visible": False, "cells": cells},
+                {
+                    "id": 11,
+                    "name": "Empty objects",
+                    "type": "objectgroup",
+                    "visible": False,
+                    "objects": [],
+                },
+            ],
+        }
+        saved = self.project.save_scene(loaded["id"], scene, loaded["revision"], self.revision())
+        self.assertEqual(saved["scene"], scene)
+        self.assertEqual(Project(self.project.root).load_scene(loaded["id"])["scene"], scene)
+        document = json.loads((self.project.root / f"scenes/{loaded['id']}.tmj").read_text())
+        self.assertEqual([layer["id"] for layer in document["layers"]], [4, 8, 11])
+        self.assertFalse(document["layers"][1]["visible"])
+        self.assertEqual(document["nextlayerid"], 12)
+        self.assertEqual(document["layers"][0]["objects"][0]["y"], 33)
+        # Hidden and non-ground layers protect their dependencies from deletion.
+        for atlas_id in ("terrain", "actors"):
+            with self.assertRaisesRegex(ValueError, "Village"):
+                self.project.delete_atlas(atlas_id, self.revision())
+        self.project.import_atlas(self.path, self.revision(), reimport=True)
+        self.assertEqual(self.project.load_scene(loaded["id"])["scene"], scene)
+        # Duplicate IDs, unsupported fields and transforms must never be dropped.
+        variants = []
+        for update in (
+            {"opacity": 0.5},
+            {"offsetx": 2},
+            {"properties": []},
+            {"type": "group"},
+            {"id": 4},
+            {"visible": 1},
+            {"name": ""},
+        ):
+            variant = copy.deepcopy(document)
+            variant["layers"][1].update(update)
+            variants.append(variant)
+        variant = copy.deepcopy(document)
+        variant["layers"][2]["objects"] = copy.deepcopy(variant["layers"][0]["objects"])
+        variants.append(variant)
+        variants.append(dict(document, nextlayerid=8))
+        for variant in variants:
+            with self.subTest(variant=variant), self.assertRaises(ValueError):
+                tiled.decode(variant, self.project.catalog()["project"])
+        # An object-only scene and empty layers also round trip.
+        scene["layers"] = [scene["layers"][2]]
+        self.assertEqual(
+            tiled.decode(
+                tiled.encode(scene, self.project.catalog()["project"]),
+                self.project.catalog()["project"],
+            ),
+            scene,
+        )
 
     def test_full_workflow_two_scenes_and_move(self):
         self.import_atlas()
@@ -337,7 +415,12 @@ class ProjectTests(unittest.TestCase):
         saved = self.project.save_scene(loaded["id"], scene, loaded["revision"], self.revision())
         map_path = self.project.root / f"scenes/{loaded['id']}.tmj"
         document = json.loads(map_path.read_bytes())
-        for extra in ({"rotation": 90}, {"properties": []}, {"width": 100}, {"gid": 0x80000001}):
+        for extra in (
+            {"rotation": 90},
+            {"properties": [{"name": "x", "type": "file", "value": "foo"}]},
+            {"width": 100},
+            {"gid": 0x80000001},
+        ):
             candidate = copy.deepcopy(document)
             candidate["layers"][1]["objects"][0].update(extra)
             map_path.write_text(json.dumps(candidate))
@@ -751,6 +834,41 @@ class StandaloneHttpTests(unittest.TestCase):
                 self.assertEqual(caught.exception.code, 409)
                 with request("/api/project") as response:
                     current = json.load(response)
+                metadata_request = {
+                    "atlas": "terrain",
+                    "group": "8",
+                    "asset": "terrain/earth/0/0",
+                    "metadata": {
+                        "terrain": "wall",
+                        "solid": True,
+                        "shapes": [],
+                        "next_shape_id": 1,
+                    },
+                    "project_revision": current["revision"],
+                }
+                with self.assertRaises(HTTPError) as caught:
+                    request("/api/save-tile-metadata", metadata_request, token="wrong")
+                self.assertEqual(caught.exception.code, 403)
+                with request("/api/save-tile-metadata", metadata_request) as response:
+                    current = json.load(response)
+                with self.assertRaises(HTTPError) as caught:
+                    request("/api/save-tile-metadata", metadata_request)
+                self.assertEqual(caught.exception.code, 409)
+                export_request = {
+                    "scope": "scene",
+                    "scene_id": scene["id"],
+                    "scene_revision": scene["revision"],
+                    "project_revision": current["revision"],
+                }
+                with self.assertRaises(HTTPError) as caught:
+                    request("/api/export", export_request, token="wrong")
+                self.assertEqual(caught.exception.code, 403)
+                with request("/api/export", export_request) as response:
+                    self.assertEqual(response.headers["Content-Type"], "application/zip")
+                    self.assertIn(".zip", response.headers["Content-Disposition"])
+                    with zipfile.ZipFile(io.BytesIO(response.read())) as exported:
+                        self.assertIsNone(exported.testzip())
+                        self.assertIn(f"scenes/{scene['id']}.tmj", exported.namelist())
                 deletion = {
                     "id": scene["id"],
                     "revision": scene["revision"],

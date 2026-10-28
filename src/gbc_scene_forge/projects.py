@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from uuid import UUID, uuid4
 
-from . import atlas, png, tiled
+from . import atlas, exporting, png, tile_metadata, tiled
 from .documents import Conflict, json_text
 from .transactions import Transactions, digest, read_optional, safe_path
 
@@ -120,7 +120,8 @@ class Project:
             atlas.require(
                 atlas.identifier(atlas_id)
                 and isinstance(entry, dict)
-                and set(entry) == {"manifest", "tiles", "png"}
+                and {"manifest", "tiles", "png"} <= set(entry)
+                and not set(entry) - {"manifest", "tiles", "png", "metadata"}
                 and isinstance(entry["manifest"], dict)
                 and entry["manifest"].get("id") == atlas_id
                 and entry["png"] == f"assets/{atlas_id}/atlas.png",
@@ -144,6 +145,7 @@ class Project:
                     and sorted(mapping.values()) == list(range(len(mapping))),
                     "Invalid tile identities",
                 )
+            tile_metadata.check_entry(entry)
         for path, revision in document["files"].items():
             atlas.require(
                 isinstance(path, str)
@@ -183,6 +185,11 @@ class Project:
                     changes.setdefault(path, data)
         expected = {**document["files"], **expected, MANIFEST: revision}
         for path, data in changes.items():
+            if path.startswith("scenes/") and data is not None:
+                atlas.require(
+                    len(data) <= 4 * 1024 * 1024,
+                    "Scene exceeds 4 MiB. Reduce layers, objects or property text.",
+                )
             if path.startswith("assets/"):
                 expected.setdefault(path, None)
                 if data is None:
@@ -202,6 +209,36 @@ class Project:
         for entry in document["atlases"].values():
             entry["tiles"].setdefault("sprites", atlas.sprite_mapping(entry))
         return {"project": document, "revision": revision}
+
+    def export_bundle(self, scope, revision, scene_id=None, scene=None, scene_revision=None):
+        return exporting.export_bundle(self, scope, revision, scene_id, scene, scene_revision)
+
+    def save_tile_metadata(self, atlas_id, group, asset, value, revision):
+        document = self._current(revision)
+        atlas.require(
+            isinstance(atlas_id, str) and atlas_id in document["atlases"],
+            "Choose an imported atlas",
+        )
+        entry = document["atlases"][atlas_id]
+        entry["tiles"].setdefault("sprites", atlas.sprite_mapping(entry))
+        width, height = tile_metadata.dimensions(entry, group, asset)
+        tile_metadata.check_metadata(value, width, height)
+        entry.setdefault("metadata", {}).setdefault(group, {})[asset] = copy.deepcopy(value)
+        filename = "sprites" if group == "sprites" else f"grid-{group}"
+        path = f"assets/{atlas_id}/{filename}.tsj"
+        changes = {}
+        if path in document["files"]:
+            source = json.loads(safe_path(self.root, path).read_bytes())
+        else:
+            atlas.require(
+                group == "sprites", "Missing tileset dependency. Restore it before editing."
+            )
+            width, _, pixels = png.decode(safe_path(self.root, entry["png"]).read_bytes())
+            changes = atlas.build_sprites(entry, width, pixels)
+            source = json.loads(changes[path])
+        changes[path] = json_text(tile_metadata.decorate(entry, group, source)).encode()
+        self._commit(document, revision, changes, {}, "Edit tile metadata")
+        return self.catalog()
 
     def load_scene(self, scene_id, document=None):
         # Atlas origins and native maps must come from the same committed state.
@@ -312,8 +349,17 @@ class Project:
         used = [
             item["name"]
             for item in scenes
-            if any(cell.startswith(prefix) for row in item["scene"]["cells"] for cell in row)
-            or any(obj["asset"].startswith(prefix) for obj in item["scene"]["objects"])
+            if any(
+                cell.startswith(prefix)
+                for layer in tiled.scene_layers(item["scene"])
+                for row in layer.get("cells", [])
+                for cell in row
+            )
+            or any(
+                obj.get("asset", "").startswith(prefix)
+                for layer in tiled.scene_layers(item["scene"])
+                for obj in layer.get("objects", [])
+            )
         ]
         atlas.require(
             not used,
