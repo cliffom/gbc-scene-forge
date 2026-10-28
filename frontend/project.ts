@@ -73,7 +73,9 @@ const status = element('status', HTMLElement);
 const projectMatch = /^\/projects\/([^/]+)\//.exec(location.pathname);
 const projectBase = projectMatch ? `/projects/${projectMatch[1]}` : '';
 let choosingProject = false;
+let hasProjectChoices = false;
 let navigating = false;
+let pendingProject = '';
 let token = '';
 let previewSettingsLoaded = false;
 let atlasFolder: AtlasFolder | null = null;
@@ -219,8 +221,13 @@ select('object-list').onchange = () => {
   }
   draw();
 };
-async function request(route: string, data?: unknown, timeout = 30000): Promise<Response> {
-  const response = await fetch(`${projectBase}/api/${route}`, {
+async function request(
+  route: string,
+  data?: unknown,
+  timeout = 30000,
+  base = projectBase,
+): Promise<Response> {
+  const response = await fetch(`${base}/api/${route}`, {
     method: data === undefined ? 'GET' : 'POST',
     headers:
       data === undefined ? {} : { 'Content-Type': 'application/json', 'X-Scene-Token': token },
@@ -401,7 +408,8 @@ async function discard(): Promise<boolean> {
   });
 }
 function update() {
-  button('switch-project').disabled = busy || anchor !== null;
+  select('switch-project').disabled = busy || anchor !== null || !projectBase;
+  button('show-new-project').disabled = button('back-to-projects').disabled = busy;
   for (const id of ['switch-save', 'switch-discard', 'switch-cancel']) {
     button(id).disabled = busy;
   }
@@ -632,14 +640,24 @@ async function run(work: () => Promise<void>) {
     update();
   }
 }
+function showProjectStart(creating: boolean) {
+  element('project-picker', HTMLElement).hidden = project !== null || creating;
+  form('project-form').hidden = project !== null || !creating;
+  button('back-to-projects').hidden = !hasProjectChoices;
+}
+button('show-new-project').onclick = () => {
+  showProjectStart(true);
+  input('project-title').focus();
+};
+button('back-to-projects').onclick = () => {
+  showProjectStart(false);
+  button('show-new-project').focus();
+};
 async function refresh() {
   const data = await api('project', record);
   token = string(data.token);
   choosingProject = Array.isArray(data.projects);
-  element('project-picker', HTMLElement).hidden = !choosingProject;
-  button('switch-project').hidden = !projectBase;
   if (choosingProject) {
-    element('project-root-path', HTMLElement).textContent = string(data.project_root);
     const list = element('project-list', HTMLElement);
     list.replaceChildren();
     for (const value of array(data.projects, record)) {
@@ -648,13 +666,9 @@ async function refresh() {
       link.href = `/projects/${encodeURIComponent(string(value.directory))}/`;
       const title = document.createElement('strong');
       title.textContent = string(value.name);
-      const folder = document.createElement('span');
-      folder.textContent = string(value.directory) + '/';
-      link.append(title, folder);
+      link.title = string(value.directory);
+      link.append(title);
       list.append(link);
-    }
-    if (!list.children.length) {
-      list.textContent = 'No projects yet. Create your first project below.';
     }
     const unavailable = element('unavailable-projects', HTMLElement);
     unavailable.replaceChildren();
@@ -663,6 +677,7 @@ async function refresh() {
       message.textContent = `${string(value.directory)}: ${string(value.error)}`;
       unavailable.append(message);
     }
+    hasProjectChoices = list.children.length > 0 || unavailable.children.length > 0;
   }
   if (!previewSettingsLoaded && data.project !== null) {
     const saved = record(record(data.project).preview).sprite;
@@ -672,9 +687,26 @@ async function refresh() {
     previewSettingsLoaded = true;
   }
   project = data.project === null ? null : decodeProject(data.project);
+  const projects = select('switch-project');
+  projects.replaceChildren(new Option(project?.name || 'Current project', projectBase));
+  if (projectBase) {
+    const catalog = record(await (await request('project', undefined, 30000, '')).json());
+    projects.replaceChildren(
+      ...array(catalog.projects, record).map(
+        (item) =>
+          new Option(string(item.name), `/projects/${encodeURIComponent(string(item.directory))}`),
+      ),
+      new Option('Choose or create project…', '/'),
+    );
+  }
+  projects.value = projectBase;
   revision = data.project === null ? '' : string(data.revision);
-  form('project-form').hidden = project !== null;
+  showProjectStart(!hasProjectChoices);
+  element('project-start', HTMLElement).hidden = project !== null;
   element('workspace', HTMLElement).hidden = project === null;
+  if (!project && !hasProjectChoices) {
+    input('project-title').focus();
+  }
   element('project-name', HTMLElement).textContent =
     project?.name || (choosingProject ? 'Your projects' : 'Create a project');
   document.title = `${project?.name || (choosingProject ? 'Projects' : 'New project')} · Scene Forge`;
@@ -1511,28 +1543,35 @@ async function saveScene() {
   status.textContent = 'Scene saved.';
 }
 button('save').onclick = () => void run(saveScene);
-button('switch-project').onclick = () => {
-  if (busy || anchor) {
+function navigateProject() {
+  navigating = true;
+  location.assign(pendingProject === '/' ? '/' : `${pendingProject}/`);
+}
+select('switch-project').onchange = () => {
+  const destination = select('switch-project').value;
+  select('switch-project').value = projectBase;
+  if (busy || anchor || !destination || destination === projectBase) {
     return;
   }
+  pendingProject = destination;
+  element('switch-project-dialog', HTMLDialogElement)
+    .querySelector('.form-error')
+    ?.replaceChildren();
   if (dirty()) {
     element('switch-project-dialog', HTMLDialogElement).showModal();
   } else {
-    navigating = true;
-    location.assign('/');
+    navigateProject();
   }
 };
 button('switch-save').onclick = () => {
   void run(async () => {
     await saveScene();
-    navigating = true;
-    location.assign('/');
+    navigateProject();
   });
 };
 button('switch-discard').onclick = () => {
   if (!busy) {
-    navigating = true;
-    location.assign('/');
+    navigateProject();
   }
 };
 button('switch-cancel').onclick = () => {

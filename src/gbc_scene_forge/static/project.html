@@ -13,27 +13,26 @@
 <body class="standalone">
   <header class="masthead">
     <div class="brand"><img class="mark" src="/branding/logo-64.png" width="64" height="64" alt=""><div><h1>GBC Scene Forge</h1><span id="project-name" class="eyebrow">LOCAL PROJECT</span></div></div>
-    <button id="switch-project" hidden>Projects…</button>
     <div class="connection"><span class="dot"></span> LOCAL WORKSPACE <span class="tag">STANDALONE</span></div>
   </header>
-  <section id="project-picker" class="welcome" hidden aria-labelledby="projects-heading">
-    <span class="eyebrow">YOUR WORLDS</span>
-    <h2 id="projects-heading">Choose a project</h2>
-    <p class="hint">Open a project to continue, or create a new world below.</p>
-    <div id="project-list" class="project-list"></div>
-    <details><summary>Project folder</summary><p id="project-root-path" class="hint"></p></details>
-    <div id="unavailable-projects" class="error" role="status"></div>
-  </section>
-  <form id="project-form" class="welcome">
-    <span class="eyebrow">A NEW WORLD STARTS HERE</span>
-    <h2>Create your project</h2>
-    <p class="hint">Import your artwork, build scenes and save portable Tiled maps. Your project stays on this computer.</p>
-    <label class="field">Project name<input id="project-title" required maxlength="100" autocomplete="off" placeholder="My world" autofocus></label>
-    <p class="form-error error" role="alert"></p>
-    <button class="primary">Create project</button>
-  </form>
+  <div id="project-start" class="project-start">
+    <section id="project-picker" class="welcome" hidden aria-labelledby="projects-heading">
+      <h2 id="projects-heading">Open a project</h2>
+      <div id="project-list" class="project-list"></div>
+      <div id="unavailable-projects" class="error" role="status"></div>
+      <button id="show-new-project" type="button">Create a new project</button>
+    </section>
+    <form id="project-form" class="welcome" hidden>
+      <h2>Create a project</h2>
+      <label class="field">Project name<input id="project-title" required maxlength="100" autocomplete="off" placeholder="My world" autofocus></label>
+      <p class="form-error error" role="alert"></p>
+      <button class="primary">Create project</button>
+      <button id="back-to-projects" type="button" hidden>Back to projects</button>
+    </form>
+  </div>
   <div id="workspace" class="workspace" hidden>
     <nav class="document-bar" aria-label="Document controls">
+      <label>Project <select id="switch-project" aria-label="Current project" disabled></select></label>
       <label>Scene <select id="scenes" aria-label="Saved scenes"><option value="">Choose a scene…</option></select></label>
       <button id="open">Open scene</button>
       <button id="show-create">Create scene</button>
@@ -226,7 +225,7 @@
   </dialog>
   <dialog id="switch-project-dialog" aria-labelledby="switch-heading">
     <h2 id="switch-heading">Save before switching projects?</h2>
-    <p>This scene has unsaved changes. Save them before choosing another project.</p>
+    <p>This scene has unsaved changes. Save them before switching projects.</p>
     <p class="form-error error" role="alert"></p>
     <div class="dialog-actions">
       <button id="switch-cancel" autofocus>Keep editing</button>

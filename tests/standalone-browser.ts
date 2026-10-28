@@ -161,17 +161,52 @@ print(json.dumps(result))
   await start(projectRoot, false, false);
   await browser.call('Page.navigate', { url });
   await wait(
-    "!document.getElementById('project-picker')?.hidden && document.getElementById('status')?.textContent.includes('Choose a project')",
+    "!document.getElementById('project-form')?.hidden && document.getElementById('status')?.textContent.includes('Choose a project')",
   );
+  for (const height of [1500, 700, 500]) {
+    await browser.call('Emulation.setDeviceMetricsOverride', {
+      width: 1440,
+      height,
+      deviceScaleFactor: 1,
+      mobile: false,
+    });
+    assert.equal(
+      await evaluate(`(() => {
+        const start = document.getElementById('project-start');
+        const visible = start.querySelectorAll('.welcome:not([hidden])');
+        const form = document.getElementById('project-form').getBoundingClientRect();
+        const header = document.querySelector('.masthead').getBoundingClientRect();
+        const footer = document.querySelector('.status-bar').getBoundingClientRect();
+        start.scrollTop = start.scrollHeight;
+        const button = document.querySelector('#project-form button.primary').getBoundingClientRect();
+        return visible.length === 1 &&
+          form.top >= header.bottom && button.bottom <= footer.top &&
+          document.documentElement.scrollHeight <= innerHeight;
+      })()`),
+      true,
+      `Project launcher shows one panel and its create button is reachable at height ${height}`,
+    );
+    await evaluate("document.getElementById('project-start').scrollTop = 0");
+  }
+  await browser.call('Emulation.setDeviceMetricsOverride', {
+    width: 1440,
+    height: 1000,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
   const createProject = async (name: string, slug: string) => {
+    if (await evaluate("document.getElementById('project-form').hidden")) {
+      await click('show-new-project');
+    }
     await set('project-title', name);
     await submit('project-form');
     await wait(
       `location.pathname === '/projects/${slug}/' && document.getElementById('project-name')?.textContent === ${JSON.stringify(name)} && !document.getElementById('switch-project')?.disabled`,
     );
   };
+  const chooseProject = (destination: string) => set('switch-project', destination);
   const goProjects = async () => {
-    await click('switch-project');
+    await chooseProject('/');
     await wait("location.pathname === '/' && document.querySelector('#project-list a') !== null");
   };
   const openProject = async (slug: string) => {
@@ -193,13 +228,17 @@ print(json.dumps(result))
     await wait("document.getElementById('dirty')?.textContent === 'UNSAVED'");
   };
   await renameLayer('Saved before switching');
-  await click('switch-project');
+  await chooseProject('/');
   await wait("document.getElementById('switch-project-dialog')?.open");
   await browser.screenshot('project-switch-save');
   await click('switch-cancel');
+  assert.equal(
+    await evaluate("document.getElementById('switch-project').value"),
+    '/projects/hello-world',
+  );
   assert.equal(await evaluate('location.pathname'), '/projects/hello-world/');
   assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'UNSAVED');
-  await click('switch-project');
+  await chooseProject('/');
   await click('switch-save');
   await wait("location.pathname === '/' && document.querySelector('#project-list a') !== null");
   const savedManifest = record(
@@ -220,8 +259,48 @@ print(json.dumps(result))
   );
   assert.equal(await evaluate("document.getElementById('undo').disabled"), true);
   await goProjects();
+  assert.equal(await evaluate("document.getElementById('project-form').hidden"), true);
+  assert.equal(
+    await evaluate("document.querySelectorAll('#project-start .welcome:not([hidden])').length"),
+    1,
+  );
+  await click('show-new-project');
+  assert.equal(await evaluate("document.getElementById('project-picker').hidden"), true);
+  assert.equal(await evaluate('document.activeElement.id'), 'project-title');
+  await set('project-title', 'Unfinished project');
+  await click('back-to-projects');
+  assert.equal(await evaluate("document.getElementById('project-form').hidden"), true);
+  assert.equal(await evaluate("document.getElementById('project-picker').hidden"), false);
+  assert.equal(await evaluate("document.querySelectorAll('#project-list a').length"), 2);
+  await click('show-new-project');
+  assert.equal(
+    await evaluate("document.getElementById('project-title').value"),
+    'Unfinished project',
+  );
+  await click('back-to-projects');
   await browser.screenshot('project-selector');
   await openProject('hello-world');
+  assert.equal(
+    await evaluate(`(() => {
+      const project = document.getElementById('switch-project');
+      const scene = document.getElementById('scenes');
+      return project.value === '/projects/hello-world' &&
+        project.selectedOptions[0].textContent === 'Hello World' &&
+        project.closest('.document-bar') === scene.closest('.document-bar') &&
+        project.getBoundingClientRect().right < scene.getBoundingClientRect().left &&
+        !document.querySelector('.masthead select, .masthead button');
+    })()`),
+    true,
+  );
+  await browser.screenshot('project-dropdown');
+  await chooseProject('/projects/another-world');
+  await wait(
+    "location.pathname === '/projects/another-world/' && document.getElementById('switch-project')?.value === '/projects/another-world'",
+  );
+  await chooseProject('/projects/hello-world');
+  await wait(
+    "location.pathname === '/projects/hello-world/' && document.getElementById('switch-project')?.value === '/projects/hello-world'",
+  );
   assert.equal(
     await evaluate("document.getElementById('scene-name').textContent"),
     'No scene open',
@@ -238,7 +317,7 @@ print(json.dumps(result))
   // External edit forces a real save conflict: switching must leave the edit in place.
   rootMap = { ...rootMap, properties: [{ name: 'external', type: 'string', value: 'changed' }] };
   await writeFile(rootScenePath, JSON.stringify(rootMap));
-  await click('switch-project');
+  await chooseProject('/projects/another-world');
   await click('switch-save');
   await wait(
     "document.querySelector('#switch-project-dialog .form-error')?.textContent.length > 0",
@@ -251,8 +330,10 @@ print(json.dumps(result))
   );
   await click('switch-discard');
   await wait(
-    "location.pathname === '/' && document.querySelectorAll('#project-list a').length === 2",
+    "location.pathname === '/projects/another-world/' && document.getElementById('switch-project')?.value === '/projects/another-world'",
   );
+  await goProjects();
+  await wait("document.querySelectorAll('#project-list a').length === 2");
   await stop();
   await start(projectRoot, false, false);
   await browser.call('Page.navigate', { url });
