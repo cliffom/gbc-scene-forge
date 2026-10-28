@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { execFile, spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
@@ -254,8 +254,160 @@ print(json.dumps(ids))
   await wait("document.getElementById('stamps')?.options.length === 2");
   await choose(first);
   assert.equal(await evaluate("document.querySelectorAll('#object-list option').length"), 0); // tile layer active
+  // Scene management keeps current edits and history independent of project transactions.
+  const setValue = async (id: string, value: string) =>
+    evaluate(
+      `(() => { const field = document.getElementById(${JSON.stringify(id)}); field.value = ${JSON.stringify(value)}; field.dispatchEvent(new Event('input')); })()`,
+    );
+  const cancelDialog = async (id: string) =>
+    chrome.click(`document.querySelector('#${id} [data-close]')`);
+  await click('show-rename');
+  await setValue('scene-manage-name', 'Canceled rename');
+  await cancelDialog('scene-manage-dialog');
+  assert.equal(
+    await evaluate("document.getElementById('scene-name').textContent.startsWith('Room ·')"),
+    true,
+  );
+  await click('show-resize');
+  await setValue('resize-width', '14');
+  await setValue('resize-height', '12');
+  await cancelDialog('resize-scene-dialog');
+  assert.equal(await evaluate("document.getElementById('scene-save-state').textContent"), 'Saved');
+  await click('show-resize');
+  await setValue('resize-width', '14');
+  await setValue('resize-height', '12');
+  await click('resize-confirm');
+  await wait("document.getElementById('scene-name').textContent.includes('14 × 12')");
+  await click('show-rename');
+  await setValue('scene-manage-name', 'Courtyard');
+  await click('scene-manage-confirm');
+  await wait("document.getElementById('scene-name').textContent.startsWith('Courtyard ·')");
+  assert.equal(
+    await evaluate("document.getElementById('scene-save-state').textContent"),
+    'Unsaved changes',
+  );
+  assert.equal(await evaluate("document.getElementById('undo').disabled"), false);
+  assert.equal(record(await saved(first)).width, 12); // rename did not save canvas
+  const duplicate = async (name: string, canvas: boolean) => {
+    await click('show-duplicate-scene');
+    await setValue('scene-manage-name', name);
+    if (canvas) {
+      await click('duplicate-canvas');
+      await chrome.screenshot('scene-duplicate-dialog');
+    }
+    await click('scene-manage-confirm');
+    await wait(
+      "!document.getElementById('scene-manage-dialog').open && !document.getElementById('show-duplicate-scene').disabled",
+    );
+    return string(
+      await evaluate(
+        `Array.from(document.getElementById('scenes').options).find(o => o.textContent === ${JSON.stringify(name)}).value`,
+      ),
+    );
+  };
+  await click('show-duplicate-scene');
+  await cancelDialog('scene-manage-dialog');
+  const savedCopy = await duplicate('Saved courtyard', false);
+  const canvasCopy = await duplicate('Expanded courtyard', true);
+  assert.equal(record(await saved(savedCopy)).width, 12);
+  assert.equal(record(await saved(canvasCopy)).width, 14);
+  assert.equal(await evaluate("document.getElementById('scenes').value"), first);
+  assert.equal(
+    await evaluate("document.getElementById('scene-save-state').textContent"),
+    'Unsaved changes',
+  );
+  await click('undo');
+  await wait("document.getElementById('scene-name').textContent.includes('12 × 10')");
+  assert.equal(await evaluate("document.getElementById('scene-save-state').textContent"), 'Saved');
+  await click('redo');
+  await wait("document.getElementById('scene-name').textContent.includes('14 × 12')");
+  // Wait for the current canvas and project revision, not an earlier success label.
+  await wait(`(async () => {
+    const catalog = await (await fetch('api/project')).json();
+    const post = async (route, payload) => (await fetch('api/' + route, {method:'POST', headers:{'Content-Type':'application/json','X-Scene-Token':catalog.token}, body:JSON.stringify(payload)})).json();
+    const listing = await post('list-drafts', {});
+    for (const entry of listing.drafts) {
+      const draft = await post('download-draft', entry);
+      if (draft.scene_id === ${JSON.stringify(first)} && draft.scene.width === 14 && draft.project_revision === catalog.revision) return true;
+    }
+    return false;
+  })()`);
+  await chrome.call('Page.reload');
+  await wait(
+    "document.getElementById('recovery-dialog')?.open && !document.getElementById('show-create').disabled",
+  );
+  await click('recovery-restore');
+  await wait("document.getElementById('status').textContent.includes('Draft restored')");
+  assert.equal(
+    await evaluate("document.getElementById('scene-name').textContent.includes('14 × 12')"),
+    true,
+  );
+  await click('save');
+  await wait("document.getElementById('scene-save-state').textContent === 'Saved'");
+  assert.equal(record(await saved(first)).width, 14);
+  await chrome.screenshot('scene-management');
+  // Cropping requires confirmation, then remains one undoable edit.
+  await click('show-resize');
+  await setValue('resize-width', '1');
+  await setValue('resize-height', '1');
+  await chrome.screenshot('scene-resize-preview');
+  await click('resize-confirm');
+  await wait(
+    "document.querySelector('#resize-scene-dialog .form-error').textContent.includes('Confirm')",
+  );
+  assert.equal(record(await saved(first)).width, 14);
+  await click('resize-confirm-loss');
+  await click('resize-confirm');
+  await wait("document.getElementById('scene-name').textContent.includes('1 × 1')");
+  await click('undo');
+  await wait("document.getElementById('scene-name').textContent.includes('14 × 12')");
+  await click('redo');
+  await click('save');
+  await wait("document.getElementById('scene-save-state').textContent === 'Saved'");
+  const cropped = record(await saved(first));
+  assert.equal(cropped.width, 1);
+  assert.equal(cropped.height, 1);
+  const croppedLayers = cropped.layers;
+  assert(Array.isArray(croppedLayers));
+  const croppedObjects = record(croppedLayers[1]).objects;
+  assert(Array.isArray(croppedObjects));
+  assert(croppedObjects.every((o) => record(o).point === true)); // rectangles beyond edge removed
+  // A disk change after the dialog opens is rejected without losing the canvas.
+  await click('show-rename');
+  await setValue('scene-manage-name', 'Must not rename');
+  const mapPath = join(root, 'scenes', `${first}.tmj`);
+  const external = (await readFile(mapPath, 'utf8')) + '\n';
+  await writeFile(mapPath, external);
+  await click('scene-manage-confirm');
+  await wait(
+    "document.querySelector('#scene-manage-dialog .form-error').textContent.includes('changed on disk')",
+  );
+  assert.equal(await readFile(mapPath, 'utf8'), external);
+  assert.equal(
+    await evaluate("document.getElementById('scene-name').textContent.startsWith('Courtyard ·')"),
+    true,
+  );
+  await cancelDialog('scene-manage-dialog');
+  // Compact layout retains all controls without horizontal page overflow.
+  await chrome.call('Emulation.setDeviceMetricsOverride', {
+    width: 980,
+    height: 760,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await wait('document.documentElement.scrollWidth <= innerWidth');
+  await chrome.screenshot('scene-management-compact');
   assert.deepEqual(chrome.errors, []);
-  console.log('Composition browser acceptance passed');
+  console.log('Composition and scene management browser acceptance passed');
+} catch (error) {
+  if (browser) {
+    console.error(
+      await browser.evaluate(
+        "({status:document.getElementById('status')?.textContent, error:document.querySelector('dialog[open] .form-error')?.textContent})",
+      ),
+    );
+  }
+  throw error;
 } finally {
   await browser?.close();
   if (server && server.exitCode === null) {

@@ -146,6 +146,7 @@ project creation in the browser.
 ## Explore the editor
 
 - Paint tile regions as stamps; place sprites at their native size and atlas origin.
+- Rename and duplicate scenes; resize or crop with an anchored preview and undo.
 - Use named tile and object layers, change their order and visibility, and undo edits.
 - Recover unsaved scene drafts after a browser or server interruption; checkpoints
   stay inside the project, with explicit restore, download and discard choices.
