@@ -187,6 +187,17 @@ def make_handler(root, token):
                         if route.endswith("preflight") and report["status"] != "pass"
                         else 200,
                     )
+                elif route == "/api/save-stamp":
+                    self.reply(
+                        project.save_stamp(
+                            data.get("name"),
+                            data.get("scene"),
+                            data.get("slots"),
+                            data.get("project_revision"),
+                        )
+                    )
+                elif route == "/api/delete-stamp":
+                    self.reply(project.delete_stamp(data.get("id"), data.get("project_revision")))
                 elif route == "/api/save-palette-profile":
                     self.reply(
                         project.save_palette_profile(

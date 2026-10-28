@@ -123,6 +123,7 @@ class Project:
                 "files",
                 "preview",
                 "gbc_palette_profile",
+                "stamps",
             },
             "Unsupported project manifest fields",
         )
@@ -136,6 +137,21 @@ class Project:
             and isinstance(document["preview"], dict),
             "Invalid project collections",
         )
+        stamps = document.get("stamps", [])
+        atlas.require(isinstance(stamps, list) and len(stamps) <= 128, "Use at most 128 stamps")
+        stamp_ids = set()
+        for stamp in stamps:
+            atlas.require(
+                isinstance(stamp, dict)
+                and set(stamp) == {"id", "name", "scene", "slots"}
+                and identity(stamp["id"])
+                and stamp["id"] not in stamp_ids,
+                "Invalid stamp identity",
+            )
+            stamp_ids.add(stamp["id"])
+            name(stamp["name"])
+            tiled.check_scene(stamp["scene"], document)
+            self._check_stamp_slots(stamp["slots"], stamp["scene"])
         seen = set()
         for item in document["scenes"]:
             atlas.require(
@@ -248,6 +264,45 @@ class Project:
 
     def export_bundle(self, scope, revision, scene_id=None, scene=None, scene_revision=None):
         return exporting.export_bundle(self, scope, revision, scene_id, scene, scene_revision)
+
+    @staticmethod
+    def _check_stamp_slots(slots, scene):
+        atlas.require(
+            isinstance(slots, list)
+            and len(slots) == len(tiled.scene_layers(scene))
+            and all(atlas.integer(slot, 0, 127) for slot in slots),
+            "Invalid stamp layer mapping",
+        )
+
+        previous = {}
+        for layer, slot in zip(tiled.scene_layers(scene), slots):
+            key = (layer["type"], layer["name"])
+            atlas.require(slot > previous.get(key, -1), "Invalid stamp layer mapping order")
+            previous[key] = slot
+
+    def save_stamp(self, title, scene, slots, revision):
+        document = self._current(revision)
+        title = name(title)
+        tiled.check_scene(scene, document)
+        self._check_stamp_slots(slots, scene)
+        stamps = document.setdefault("stamps", [])
+        atlas.require(len(stamps) < 128, "Use at most 128 stamps")
+        stored = copy.deepcopy(scene)
+        stored["layers"] = copy.deepcopy(tiled.scene_layers(scene))
+        stored.pop("cells", None)
+        stored.pop("objects", None)
+        stored.setdefault("next_layer_id", max(layer["id"] for layer in stored["layers"]) + 1)
+        stamps.append({"id": str(uuid4()), "name": title, "scene": stored, "slots": list(slots)})
+        self._commit(document, revision, {}, {}, "Save reusable stamp")
+        return self.catalog()
+
+    def delete_stamp(self, stamp_id, revision):
+        document = self._current(revision)
+        stamps = document.get("stamps", [])
+        atlas.require(any(s["id"] == stamp_id for s in stamps), "Unknown stamp")
+        document["stamps"] = [s for s in stamps if s["id"] != stamp_id]
+        self._commit(document, revision, {}, {}, "Delete reusable stamp")
+        return self.catalog()
 
     def save_preview_settings(self, value, revision):
         document = self._current(revision)
@@ -428,6 +483,21 @@ class Project:
             or any(
                 obj.get("asset", "").startswith(prefix)
                 for layer in tiled.scene_layers(item["scene"])
+                for obj in layer.get("objects", [])
+            )
+        ]
+        used += [
+            "stamp " + stamp["name"]
+            for stamp in document.get("stamps", [])
+            if any(
+                cell.startswith(prefix)
+                for layer in tiled.scene_layers(stamp["scene"])
+                for row in layer.get("cells", [])
+                for cell in row
+            )
+            or any(
+                obj.get("asset", "").startswith(prefix)
+                for layer in tiled.scene_layers(stamp["scene"])
                 for obj in layer.get("objects", [])
             )
         ]

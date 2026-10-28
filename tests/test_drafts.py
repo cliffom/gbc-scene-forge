@@ -48,6 +48,36 @@ class DraftTests(unittest.TestCase):
         self.payload.update(self.store.write(self.payload))
         return self.payload["revision"]
 
+    def test_transformed_composition_survives_checkpoint_and_explicit_save(self):
+        scene = self.payload["scene"]
+        scene["cells"][1][1] = "terrain/earth/0/0#7"
+        scene["objects"] = [
+            {
+                "id": 5,
+                "kind": "rectangle",
+                "name": "Copied door",
+                "class": "trigger",
+                "x": 8,
+                "y": 8,
+                "width": 4,
+                "height": 8,
+                "properties": [{"name": "target", "type": "string", "value": "room"}],
+            }
+        ]
+        scene["next_object_id"] = 6
+        self.checkpoint()
+        restored = self.store.restore(self.payload["id"], self.payload["revision"])
+        self.assertEqual(restored["scene"]["cells"][1][1], "terrain/earth/0/0#7")
+        self.assertEqual(restored["scene"]["objects"], scene["objects"])
+        self.assertEqual(self.project.load_scene(self.scene["id"])["scene"]["cells"][1][1], "")
+        saved = self.project.save_scene(
+            self.scene["id"],
+            restored["scene"],
+            restored["revision"],
+            self.project.catalog()["revision"],
+        )
+        self.assertEqual(saved["scene"], restored["scene"])
+
     def test_restart_move_restore_does_not_commit_until_explicit_save(self):
         self.checkpoint()
         original = self.project.load_scene(self.scene["id"])

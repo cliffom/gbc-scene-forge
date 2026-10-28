@@ -1,4 +1,7 @@
 /** Standalone project controller for atlas, layer and object authoring. */
+import { capture, eraseCaptured, paste, transform } from './compositions.mts';
+import type { Composition, CompositionSelection } from './compositions.mts';
+import { tileParts, tileContext, transformMetadata } from './tile-transform.mts';
 import { DraftWriter } from './drafts.mts';
 import { HttpError } from './errors.mts';
 import { decodePreviewSettings, prunePreviewSettings } from './preview-settings.mts';
@@ -52,6 +55,7 @@ interface Project {
   id: string;
   name: string;
   paletteProfile: PaletteProfile | null;
+  stamps: { id: string; name: string; composition: Composition }[];
   scenes: { id: string; name: string }[];
   atlases: Record<string, Atlas>;
 }
@@ -148,6 +152,164 @@ let brush: string[][] | null = null;
 let spriteBrush: string | null = null;
 let objectBrush: 'point' | 'rectangle' | null = null;
 let selectedObject: string | null = null;
+let selectedObjects = new Set<string>();
+let clipboard: Composition | null = null;
+let stampBrush: Composition | null = null;
+function compositionSelection(): CompositionSelection {
+  return {
+    rectangle: selection,
+    objects: selectedObjects.size
+      ? selectedObjects
+      : new Set(selectedObject ? [selectedObject] : []),
+    allLayers: input('select-all-layers').checked || selectedObjects.size > 0,
+  };
+}
+function compositionAction(
+  action: 'copy' | 'cut' | 'paste' | 'duplicate' | 'horizontal' | 'vertical' | 'rotate',
+) {
+  if (!editor || !project || busy || anchor || animationPreview.movement.active) {
+    return;
+  }
+  try {
+    const choice = compositionSelection();
+    if (action === 'copy' || action === 'cut') {
+      clipboard = capture(editor, choice, project.id).composition;
+      if (action === 'cut') {
+        eraseCaptured(editor, choice);
+        selection = null;
+        selectedObject = null;
+        selectedObjects.clear();
+      }
+      status.textContent =
+        action === 'copy'
+          ? 'Selection copied. Paste into a compatible scene in this project.'
+          : 'Selection cut.';
+    } else if (action === 'paste' || action === 'duplicate') {
+      const copied = action === 'duplicate' ? capture(editor, choice, project.id) : null;
+      const value = copied?.composition ?? clipboard;
+      if (!value) {
+        throw Error('Copy a selection first.');
+      }
+      const x = copied ? copied.x + 1 : (hover?.x ?? selection?.x ?? 0);
+      const y = copied ? copied.y + 1 : (hover?.y ?? selection?.y ?? 0);
+      selectedObjects = paste(editor, value, project.id, x, y, (asset) => regions.has(asset));
+      selectedObject = null;
+      if (value.scene.layers.length > 1) {
+        input('select-all-layers').checked = true;
+      }
+      const firstLayer = value.scene.layers[0];
+      const targetLayer = editor.layers.filter(
+        (l) => l.name === firstLayer.name && l.type === firstLayer.type,
+      )[value.slots[0]];
+      editor.activate(targetLayer.id);
+      selection = value.scene.layers.some((l) => l.type === 'tilelayer')
+        ? { x, y, w: value.scene.width, h: value.scene.height }
+        : null;
+      status.textContent = 'Composition placed. Undo reverses the entire placement.';
+    } else {
+      const copied = capture(editor, choice, project.id);
+      const transformed = transform(copied.composition, action);
+      const staged = new LayerEditor(editor.scene, [], editor.descriptor);
+      staged.spriteRegion = editor.spriteRegion;
+      eraseCaptured(staged, choice);
+      paste(
+        staged,
+        transformed,
+        project.id,
+        copied.x,
+        copied.y,
+        (asset) => regions.has(asset),
+        false,
+      );
+      editor.change(() => {
+        if (editor) {
+          editor.scene = staged.scene;
+        }
+      });
+      selection = {
+        x: copied.x,
+        y: copied.y,
+        w: transformed.scene.width,
+        h: transformed.scene.height,
+      };
+      selectedObject = null;
+      selectedObjects.clear();
+      status.textContent = 'Selection transformed around its top-left grid origin.';
+    }
+    draw();
+  } catch (error) {
+    status.textContent = String(error instanceof Error ? error.message : error);
+  }
+}
+const compositionCommands: Record<string, Parameters<typeof compositionAction>[0]> = {
+  'copy-selection': 'copy',
+  'cut-selection': 'cut',
+  'paste-selection': 'paste',
+  'duplicate-selection': 'duplicate',
+  'flip-horizontal': 'horizontal',
+  'flip-vertical': 'vertical',
+  'rotate-selection': 'rotate',
+};
+for (const [id, action] of Object.entries(compositionCommands)) {
+  button(id).onclick = () => compositionAction(action);
+}
+input('select-all-layers').onchange = () => {
+  selection = null;
+  selectedObject = null;
+  selectedObjects.clear();
+  draw();
+};
+select('stamps').onchange = () => {
+  stampBrush = null;
+  update();
+};
+button('save-stamp').onclick = () => {
+  if (!editor || !project || busy || anchor) {
+    return;
+  }
+  try {
+    const value = capture(editor, compositionSelection(), project.id).composition;
+    const name = window.prompt('Name this reusable stamp:');
+    if (!name?.trim()) {
+      return;
+    }
+    void run(async () => {
+      const scene = {
+        ...value.scene,
+        layers: value.scene.layers.map((l) => ({
+          ...l,
+          ...(l.type === 'tilelayer'
+            ? { cells: l.cells.map((r) => r.map((c) => (c === 'empty' ? '' : c))) }
+            : { objects: l.objects.map(encodeObject) }),
+        })),
+      };
+      await api('save-stamp', record, {
+        name,
+        scene,
+        slots: value.slots,
+        project_revision: revision,
+      });
+      await refresh();
+      draw();
+      status.textContent = 'Reusable stamp saved in the project.';
+    });
+  } catch (error) {
+    status.textContent = String(error);
+  }
+};
+button('place-stamp').onclick = () => {
+  stampBrush = project?.stamps.find((s) => s.id === select('stamps').value)?.composition ?? null;
+  status.textContent =
+    'Click the canvas to place the stamp repeatedly. Escape or choose a tool to stop.';
+  canvas.focus();
+};
+button('delete-stamp').onclick = () =>
+  void run(async () => {
+    await api('delete-stamp', record, { id: select('stamps').value, project_revision: revision });
+    stampBrush = null;
+    await refresh();
+    draw();
+  });
 let objectDrag: { id: string; x: number; y: number } | null = null;
 let selection: Selection | null = null;
 let anchor: { x: number; y: number; px: number; py: number } | null = null;
@@ -229,7 +391,12 @@ const sprites = new Map<string, { image: HTMLImageElement; region: Region }>();
 const animationPreview = createAnimationPreview(() => draw(false));
 
 function tileMetadata(group: string, asset: string): TileMetadata | undefined {
-  return project?.atlases[asset.split('/')[0]]?.metadata[group]?.[asset];
+  const [base, flags] = tileParts(asset);
+  const value = project?.atlases[base.split('/')[0]]?.metadata[group]?.[base];
+  if (!value || !flags || group === 'sprites') {
+    return value;
+  }
+  return transformMetadata(value, flags, Number(group));
 }
 const tileInspector = createTileInspector(
   (tile) => tileMetadata(tile.group, tile.asset),
@@ -335,6 +502,7 @@ for (const kind of ['point', 'rectangle'] as const) {
   };
 }
 select('object-list').onchange = () => {
+  selectedObjects.clear();
   selectedObject = select('object-list').value || null;
   selection = null;
   const control = document.querySelector<HTMLInputElement>('input[value="select"]');
@@ -496,6 +664,31 @@ function decodeProject(value: unknown): Project {
     id: string(data.id),
     name: string(data.name),
     paletteProfile: decodePaletteProfile(data.gbc_palette_profile),
+    stamps: array(data.stamps ?? [], (value) => {
+      const stamp = record(value);
+      const loaded = decodeLoaded({
+        id: stamp.id,
+        name: stamp.name,
+        revision: '',
+        scene: stamp.scene,
+      });
+      return {
+        id: string(stamp.id),
+        name: string(stamp.name),
+        composition: {
+          project: string(data.id),
+          slots: array(stamp.slots, number),
+          scene: {
+            width: loaded.width,
+            height: loaded.height,
+            grid: loaded.grid,
+            layers: loaded.layers,
+            next_layer_id: loaded.nextLayerId,
+            next_object_id: loaded.nextObjectId,
+          },
+        },
+      };
+    }),
     atlases,
     scenes: array(data.scenes, (value) => {
       const scene = record(value);
@@ -571,7 +764,23 @@ function update() {
   button('undo').disabled = busy || !editor?.undoStack.length;
   button('redo').disabled = busy || !editor?.redoStack.length;
   button('revert').disabled = busy || !dirty();
-  button('deselect').disabled = busy || (!selection && !selectedObject);
+  const hasComposition = Boolean(selection || selectedObject || selectedObjects.size);
+  for (const id of [
+    'copy-selection',
+    'cut-selection',
+    'duplicate-selection',
+    'flip-horizontal',
+    'flip-vertical',
+    'rotate-selection',
+    'save-stamp',
+  ]) {
+    button(id).disabled = busy || !editor || !hasComposition || anchor !== null;
+  }
+  button('paste-selection').disabled = busy || !editor || !clipboard || anchor !== null;
+  button('place-stamp').disabled = busy || !editor || !select('stamps').value;
+  button('delete-stamp').disabled = busy || !select('stamps').value;
+  input('select-all-layers').disabled = busy || !editor || anchor !== null;
+  button('deselect').disabled = busy || (!selection && !selectedObject && !selectedObjects.size);
   button('edit-tile').disabled = busy || !loaded || (!brush && !spriteBrush) || anchor !== null;
   button('edit-object').disabled =
     busy ||
@@ -697,6 +906,7 @@ function layerAction(work: (editor: LayerEditor) => void, clearSelection = true)
     if (clearSelection) {
       selection = null;
       selectedObject = null;
+      selectedObjects.clear();
       objectDrag = null;
     }
     input('layer-name').value = editor.active.name;
@@ -765,7 +975,7 @@ function inspect() {
       : 'Open a scene to inspect its dimensions and placed sprites.';
   const item = editor?.objects.find((r) => r.id === selectedObject);
   const inspector = document.querySelector('.inspector');
-  const hasSelection = Boolean(item || selection);
+  const hasSelection = Boolean(item || selection || selectedObjects.size);
   if (inspector instanceof HTMLElement) {
     const wasSelected = inspector.classList.contains('has-selection');
     inspector.classList.toggle('has-selection', hasSelection);
@@ -826,10 +1036,18 @@ function inspect() {
     element('selection-detail', HTMLElement).textContent =
       `#${item.id} · ${item.class || 'No class'} · X ${item.x}, Y ${item.y}${item.kind === 'rectangle' ? ` · ${item.width} × ${item.height}px` : ''} · ${item.properties.length} properties`;
   } else if (selection) {
-    element('selection-kind', HTMLElement).textContent = 'TILES';
+    element('selection-kind', HTMLElement).textContent =
+      input('select-all-layers').checked || editor?.active.type === 'objectgroup'
+        ? 'COMPOSITION'
+        : 'TILES';
     element('selection-name', HTMLElement).textContent = `${selection.w} × ${selection.h} cells`;
     element('selection-detail', HTMLElement).textContent =
       `Column ${selection.x}, row ${selection.y}. Arrow keys move the selection; Delete erases it.`;
+  } else if (selectedObjects.size) {
+    element('selection-kind', HTMLElement).textContent = 'OBJECTS';
+    element('selection-name', HTMLElement).textContent = `${selectedObjects.size} objects selected`;
+    element('selection-detail', HTMLElement).textContent =
+      'Copy, cut, duplicate or save this group as a reusable stamp. Shift-click toggles objects; Delete removes the group.';
   } else {
     element('selection-kind', HTMLElement).textContent = '—';
     element('selection-name', HTMLElement).textContent = 'Nothing selected';
@@ -949,6 +1167,12 @@ async function refresh() {
     previewSettingsLoaded = true;
   }
   project = data.project === null ? null : decodeProject(data.project);
+  const previousStamp = select('stamps').value;
+  select('stamps').replaceChildren(
+    new Option('Choose stamp…', ''),
+    ...(project?.stamps.map((s) => new Option(s.name, s.id)) ?? []),
+  );
+  select('stamps').value = project?.stamps.some((s) => s.id === previousStamp) ? previousStamp : '';
   const projects = select('switch-project');
   projects.replaceChildren(new Option(project?.name || 'Current project', projectBase));
   if (projectBase) {
@@ -1139,6 +1363,7 @@ function palette() {
       type.textContent = `${id} · ${region.kind}`;
       item.append(thumb, label, type);
       item.onclick = () => {
+        stampBrush = null;
         if (editor && editor.active.type !== (sprite ? 'objectgroup' : 'tilelayer')) {
           const layer = editor.layers.find(
             (layer) => layer.visible && layer.type === (sprite ? 'objectgroup' : 'tilelayer'),
@@ -1147,6 +1372,7 @@ function palette() {
             editor.activate(layer.id);
             selection = null;
             selectedObject = null;
+            selectedObjects.clear();
           }
         }
         objectBrush = null;
@@ -1189,6 +1415,7 @@ function palette() {
   filterPalette();
 }
 function open(data: Loaded) {
+  stampBrush = null;
   committed = data;
   newDraftWriter();
   loaded = data;
@@ -1207,6 +1434,7 @@ function open(data: Loaded) {
   baseline = snapshot();
   selection = null;
   selectedObject = null;
+  selectedObjects.clear();
   objectDrag = null;
   anchor = null;
   hover = null;
@@ -1233,7 +1461,13 @@ function draw(refreshUI = true) {
   }
   if (selectedObject && !editor.objects.some((item) => item.id === selectedObject)) {
     selectedObject = null;
+    selectedObjects.clear();
   }
+  selectedObjects = new Set(
+    [...selectedObjects].filter((id) =>
+      editor?.layers.some((l) => l.type === 'objectgroup' && l.objects.some((o) => o.id === id)),
+    ),
+  );
   const size = loaded.grid;
   canvas.width = loaded.width * size;
   canvas.height = loaded.height * size;
@@ -1253,19 +1487,14 @@ function draw(refreshUI = true) {
     if (layer.type === 'tilelayer') {
       layer.cells.forEach((row, y) =>
         row.forEach((cell, x) => {
-          const region = regions.get(cell);
+          const [asset, flags] = tileParts(cell);
+          const region = regions.get(asset);
           if (region) {
-            context.drawImage(
-              region.image,
-              region.x,
-              region.y,
-              size,
-              size,
-              x * size,
-              y * size,
-              size,
-              size,
-            );
+            context.save();
+            context.translate(x * size, y * size);
+            tileContext(context, flags, size);
+            context.drawImage(region.image, region.x, region.y, size, size, 0, 0, size, size);
+            context.restore();
           }
         }),
       );
@@ -1385,6 +1614,18 @@ function draw(refreshUI = true) {
       selection.h * size,
     );
   }
+  for (const layer of editor.layers) {
+    if (layer.visible && layer.type === 'objectgroup') {
+      for (const item of layer.objects) {
+        if (selectedObjects.has(item.id)) {
+          const r = bounds(item);
+          context.strokeStyle = '#f2d67b';
+          context.lineWidth = 1;
+          context.strokeRect(r.x, r.y, r.width, r.height);
+        }
+      }
+    }
+  }
   const selected = editor.objects.find((r) => r.id === selectedObject);
   if (selected) {
     const r = bounds(selected);
@@ -1480,10 +1721,9 @@ function paint(event: PointerEvent) {
         }
       });
     } else if (tool === 'select') {
-      if (editor.active.type !== 'tilelayer') {
-        return;
+      if (p.x < 0 || p.y < 0 || p.x >= editor.scene.width || p.y >= editor.scene.height) {
+        throw Error('Selection is outside the scene.');
       }
-      editor.check(p.x, p.y);
       selection = {
         x: Math.min(anchor.x, p.x),
         y: Math.min(anchor.y, p.y),
@@ -1693,6 +1933,16 @@ canvas.onpointerdown = (event) => {
   if (!editor || busy || event.button !== 0) {
     return;
   }
+  if (stampBrush && project) {
+    try {
+      const p = point(event);
+      paste(editor, stampBrush, project.id, p.x, p.y, (asset) => regions.has(asset));
+      draw();
+    } catch (error) {
+      status.textContent = String(error);
+    }
+    return;
+  }
   canvas.setPointerCapture(event.pointerId);
   canvas.focus({ preventScroll: true });
   anchor = point(event);
@@ -1701,6 +1951,24 @@ canvas.onpointerdown = (event) => {
   editor.begin();
   if (tool === 'select') {
     const hit = hitObject(anchor.px, anchor.py);
+    if (event.shiftKey && hit) {
+      if (selectedObject) {
+        selectedObjects.add(selectedObject);
+      }
+      if (selectedObjects.has(hit.id)) {
+        selectedObjects.delete(hit.id);
+      } else {
+        selectedObjects.add(hit.id);
+      }
+      selectedObject = null;
+      selection = null;
+      objectDrag = null;
+      anchor = null;
+      editor.end();
+      draw();
+      return;
+    }
+    selectedObjects.clear();
     selectedObject = hit?.id ?? null;
     selection = null;
     objectDrag = hit ? { id: hit.id, x: hit.x, y: hit.y } : null;
@@ -1967,6 +2235,7 @@ async function saveScene() {
   });
   await clearDraft();
   loaded = data;
+  stampBrush = null;
   committed = data;
   baseline = snapshot();
   newDraftWriter();
@@ -2279,6 +2548,7 @@ form('delete-scene-form').onsubmit = (event) => {
       baseline = '';
       selection = null;
       selectedObject = null;
+      selectedObjects.clear();
       objectDrag = null;
       anchor = null;
       hover = null;
@@ -2402,6 +2672,7 @@ select('kind-filter').onchange = filterPalette;
 button('deselect').onclick = () => {
   selection = null;
   selectedObject = null;
+  selectedObjects.clear();
   draw();
 };
 button('remove-sprite').onclick = () => {
@@ -2412,10 +2683,12 @@ button('remove-sprite').onclick = () => {
     }
   });
   selectedObject = null;
+  selectedObjects.clear();
   draw();
 };
 for (const control of document.querySelectorAll<HTMLInputElement>('input[name="tool"]')) {
   control.onchange = () => {
+    stampBrush = null;
     syncPanCursor();
     draw();
   };
@@ -2471,7 +2744,28 @@ document.addEventListener('keydown', (event) => {
     return;
   }
   try {
-    if ((event.ctrlKey || event.metaKey) && ['s', 'z', 'y'].includes(event.key.toLowerCase())) {
+    if (event.key === 'Escape' && stampBrush) {
+      event.preventDefault();
+      stampBrush = null;
+      status.textContent = 'Stamp placement stopped.';
+      return;
+    }
+    if (
+      (event.ctrlKey || event.metaKey) &&
+      ['c', 'x', 'v', 'd'].includes(event.key.toLowerCase())
+    ) {
+      event.preventDefault();
+      const commands: Record<string, Parameters<typeof compositionAction>[0]> = {
+        c: 'copy',
+        x: 'cut',
+        v: 'paste',
+        d: 'duplicate',
+      };
+      compositionAction(commands[event.key.toLowerCase()]);
+    } else if (
+      (event.ctrlKey || event.metaKey) &&
+      ['s', 'z', 'y'].includes(event.key.toLowerCase())
+    ) {
       event.preventDefault();
       button(
         event.key.toLowerCase() === 's'
@@ -2502,6 +2796,16 @@ document.addEventListener('keydown', (event) => {
         control.checked = true;
         control.dispatchEvent(new Event('change'));
       }
+    } else if (selectedObjects.size && !selection && editor) {
+      if (event.key === 'Escape') {
+        selectedObjects.clear();
+        draw();
+      } else if (event.key === 'Delete' || event.key === 'Backspace') {
+        event.preventDefault();
+        eraseCaptured(editor, compositionSelection());
+        selectedObjects.clear();
+        draw();
+      }
     } else if (selectedObject && editor) {
       const id = selectedObject;
       if (event.key === 'Delete' || event.key === 'Backspace') {
@@ -2512,8 +2816,10 @@ document.addEventListener('keydown', (event) => {
           }
         });
         selectedObject = null;
+        selectedObjects.clear();
       } else if (event.key === 'Escape') {
         selectedObject = null;
+        selectedObjects.clear();
       } else {
         const move: Record<string, [number, number]> = {
           ArrowLeft: [-1, 0],
@@ -2549,7 +2855,7 @@ document.addEventListener('keydown', (event) => {
     } else if (selection && editor) {
       if (event.key === 'Delete' || event.key === 'Backspace') {
         event.preventDefault();
-        editor.erase(selection);
+        eraseCaptured(editor, compositionSelection());
       } else {
         const move: Record<string, [number, number]> = {
           ArrowLeft: [-1, 0],
@@ -2560,7 +2866,24 @@ document.addEventListener('keydown', (event) => {
         const delta = move[event.key];
         if (delta) {
           event.preventDefault();
-          editor.move(selection, ...delta);
+          const copied = capture(editor, compositionSelection(), project?.id ?? '');
+          const staged = new LayerEditor(editor.scene, [], editor.descriptor);
+          staged.spriteRegion = editor.spriteRegion;
+          eraseCaptured(staged, compositionSelection());
+          paste(
+            staged,
+            copied.composition,
+            project?.id ?? '',
+            copied.x + delta[0],
+            copied.y + delta[1],
+            (asset) => regions.has(asset),
+            false,
+          );
+          editor.change(() => {
+            if (editor) {
+              editor.scene = staged.scene;
+            }
+          });
           selection.x += delta[0];
           selection.y += delta[1];
         } else if (event.key === 'Escape') {

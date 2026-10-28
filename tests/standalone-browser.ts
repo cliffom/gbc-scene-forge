@@ -2036,8 +2036,8 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   // Wheel zoom retains the scene pixel under the cursor and never changes history.
   const wheelPoint = array(
     await evaluate(`(() => {
-    const rect=document.getElementById('scene').getBoundingClientRect();
-    return [rect.left+rect.width/2,rect.top+240];
+    const rect=document.getElementById('viewport').getBoundingClientRect();
+    return [rect.left+rect.width/2,rect.top+rect.height/2];
   })()`),
     number,
   );
@@ -2063,7 +2063,12 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   await wheel(100);
   await wait("document.getElementById('zoom').value === '3'");
   await click('fit-scene');
-  await wheel(100);
+  const fittedScale = number(
+    await evaluate(
+      "document.getElementById('scene').getBoundingClientRect().width / document.getElementById('scene').width",
+    ),
+  );
+  await wheel(fittedScale > 1 ? 100 : -100);
   await wait("document.getElementById('zoom').value !== 'fit'");
   await set('zoom', '1');
   await wheel(100);

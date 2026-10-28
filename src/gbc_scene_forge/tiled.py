@@ -8,6 +8,23 @@ from .objects import check_object, decode_object, encode_object
 EMPTY = ""
 
 
+def cell_parts(cell):
+    """Semantic asset plus orthogonal transform suffix; reserved outside atlas IDs."""
+    if isinstance(cell, str) and len(cell) > 2 and cell[-2] == "#" and cell[-1] in "1234567":
+        return cell[:-2], int(cell[-1])
+    return cell, 0
+
+
+def cell_gid(cell, gids):
+    asset, flags = cell_parts(cell)
+    return gids[asset] | ((flags & 1) << 31) | ((flags & 2) << 29) | ((flags & 4) << 27)
+
+
+def gid_cell(gid, gids):
+    flags = ((gid >> 31) & 1) | ((gid >> 29) & 2) | ((gid >> 27) & 4)
+    return gids[gid & 0x0FFFFFFF] + (f"#{flags}" if flags else "")
+
+
 def sprite_regions(project):
     return {
         f"{atlas_id}/{region['name']}": region
@@ -57,7 +74,12 @@ def _check_flat(scene, project):
         and all(
             isinstance(row, list)
             and len(row) == scene["width"]
-            and all(isinstance(cell, str) and cell in valid for cell in row)
+            and all(
+                isinstance(cell, str)
+                and cell_parts(cell)[0] in valid
+                and (not cell_parts(cell)[1] or bool(cell_parts(cell)[0]))
+                for cell in row
+            )
             for row in cells
         ),
         "Invalid scene cells or unknown asset reference",
@@ -96,7 +118,7 @@ def _encode_flat(scene, project):
             "height": scene["height"],
             "opacity": 1,
             "visible": True,
-            "data": [gids[cell] for row in scene["cells"] for cell in row],
+            "data": [cell_gid(cell, gids) for row in scene["cells"] for cell in row],
         }
     ]
     regions, objects = sprite_regions(project), []
@@ -224,7 +246,15 @@ def _decode_flat(document, project):
     require(
         isinstance(data, list)
         and len(data) == width * height
-        and all(type(gid) is int and gid in gids and gids[gid] not in sprites for gid in data),
+        and all(
+            type(gid) is int
+            and 0 <= gid <= 0xFFFFFFFF
+            and not gid & 0x10000000
+            and (gid & 0x0FFFFFFF) in gids
+            and gids[gid & 0x0FFFFFFF] not in sprites
+            and (gid == 0 or bool(gids[gid & 0x0FFFFFFF]))
+            for gid in data
+        ),
         "Unknown, transformed or invalid Tiled GIDs",
     )
     objects = []
@@ -252,7 +282,10 @@ def _decode_flat(document, project):
         "width": width,
         "height": height,
         "grid": size,
-        "cells": [[gids[gid] for gid in data[y * width : (y + 1) * width]] for y in range(height)],
+        "cells": [
+            [gid_cell(gid, gids) for gid in data[y * width : (y + 1) * width]]
+            for y in range(height)
+        ],
         "objects": objects,
         "next_object_id": document.get("nextobjectid", 1),
     }
