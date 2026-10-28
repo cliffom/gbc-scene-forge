@@ -39,6 +39,10 @@ assets without Node. Direct Python builds from a checkout must follow
 imports, version consistency, absent runtime dependencies, bundled browser assets,
 standalone sample loading, and project create/reopen/export. It is
 intentionally excluded from source-test discovery.
+The wheel bundles the portable project from `assets/demo/project/`; the source
+distribution also retains the editable Aseprite sources, exports, and atlas
+manifest in `assets/demo/artwork/`. The installed sample test checks both loading
+and restoring that bundled template without external artwork tools.
 CI and release workflows perform the same steps with standard venv/pip commands
 before accepting artifacts. No command above uploads packages.
 

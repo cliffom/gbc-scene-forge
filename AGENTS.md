@@ -10,7 +10,7 @@ Install Python 3.10+, Poetry 2.4–2.x, Node 24.12+, npm, and Make on `PATH`.
 
 - `make help`: list setup, standalone launch, test and build targets.
 - `make run [PROJECT_ROOT=/path]`: rebuild and browse projects (default `.forge_project/`). Use `PROJECT=/path` to open one project directly.
-- `make demo`: rebuild and serve a populated standalone sample in `.demo/`, preserving edits.
+- `make demo`: rebuild, restore the tracked `assets/demo/project/` into `.demo/`, and serve it. Each launch resets demo scenes and assets; use `make run PROJECT=.demo` to preserve edits.
 - `make check-deps`: check installed tools and Poetry/project compatibility.
 - `make setup PYTHON=python3.12`: use Poetry to manage `.venv`, install locked dependencies, and bundle the frontend.
 - `make lint`: run Ruff, ESLint, Prettier, and strict TypeScript checks.

@@ -17,7 +17,7 @@ RASTERIZER ?= tmxrasterizer
 help:
 	@echo 'Getting started:'
 	@echo '  make setup PYTHON=python3.12  Install locked dependencies and build the UI'
-	@echo '  make demo                    Open a populated standalone sample in .demo/'
+	@echo '  make demo                    Reset .demo/ from the checked-in sample and open it'
 	@echo '  make run                     Browse/create projects in .forge_project/'
 	@echo '  make run PROJECT_ROOT=/path  Browse/create projects in another root'
 	@echo '  make run PROJECT=/path       Open one project directly (legacy or exported)'
@@ -63,7 +63,7 @@ run: frontend
 	$(POETRY) run python -m gbc_scene_forge $(if $(PROJECT),--project "$(PROJECT)",--project-root "$(PROJECT_ROOT)") --port "$(PORT)"
 
 demo: frontend
-	$(POETRY) run python -m gbc_scene_forge.sample --root "$(DEMO_ROOT)" --port "$(PORT)"
+	$(POETRY) run python -m gbc_scene_forge.sample --reset --root "$(DEMO_ROOT)" --port "$(PORT)"
 
 check: lint test test-browser
 

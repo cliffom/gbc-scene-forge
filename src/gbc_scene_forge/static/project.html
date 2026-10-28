@@ -34,7 +34,6 @@
     <nav class="document-bar" aria-label="Document controls">
       <label>Project <select id="switch-project" aria-label="Current project" disabled></select></label>
       <label>Scene <select id="scenes" aria-label="Saved scenes"><option value="">Choose a scene…</option></select></label>
-      <button id="open">Open scene</button>
       <button id="show-create">Create scene</button>
       <button id="show-delete" disabled>Delete scene</button>
       <span class="spacer"></span>
@@ -231,6 +230,16 @@
       <button id="switch-cancel" autofocus>Keep editing</button>
       <button id="switch-discard">Discard and switch</button>
       <button id="switch-save" class="primary">Save and switch</button>
+    </div>
+  </dialog>
+  <dialog id="switch-scene-dialog" aria-labelledby="switch-scene-heading">
+    <h2 id="switch-scene-heading">Save before switching scenes?</h2>
+    <p id="switch-scene-description"></p>
+    <p class="form-error error" role="alert"></p>
+    <div class="dialog-actions">
+      <button id="scene-switch-cancel" autofocus>Keep editing</button>
+      <button id="scene-switch-discard">Discard and switch</button>
+      <button id="scene-switch-save" class="primary">Save and switch</button>
     </div>
   </dialog>
   <dialog id="discard-dialog" aria-labelledby="discard-heading">

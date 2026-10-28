@@ -1,0 +1,461 @@
+{
+  "version": 1,
+  "id": "e897d730-d238-4bde-82ee-c4c08c410ead",
+  "name": "Scene Forge demo",
+  "scenes": [
+    {
+      "id": "718d82d4-b0b5-4891-b724-5d1896749348",
+      "name": "Riverside",
+      "path": "scenes/718d82d4-b0b5-4891-b724-5d1896749348.tmj"
+    },
+    {
+      "id": "694f19d2-ce59-4263-87f0-3d517f329434",
+      "name": "Courtyard",
+      "path": "scenes/694f19d2-ce59-4263-87f0-3d517f329434.tmj"
+    }
+  ],
+  "atlases": {
+    "sample": {
+      "manifest": {
+        "version": 1,
+        "id": "sample",
+        "png": "atlas.png",
+        "palettes": [
+          [
+            [
+              5,
+              10,
+              7
+            ],
+            [
+              11,
+              17,
+              8
+            ],
+            [
+              17,
+              23,
+              12
+            ],
+            [
+              26,
+              28,
+              18
+            ]
+          ],
+          [
+            [
+              9,
+              8,
+              6
+            ],
+            [
+              17,
+              13,
+              9
+            ],
+            [
+              24,
+              20,
+              13
+            ],
+            [
+              29,
+              26,
+              18
+            ]
+          ],
+          [
+            [
+              3,
+              8,
+              14
+            ],
+            [
+              5,
+              13,
+              20
+            ],
+            [
+              9,
+              19,
+              25
+            ],
+            [
+              18,
+              26,
+              28
+            ]
+          ],
+          [
+            [
+              7,
+              8,
+              10
+            ],
+            [
+              13,
+              15,
+              16
+            ],
+            [
+              20,
+              22,
+              21
+            ],
+            [
+              28,
+              28,
+              24
+            ]
+          ],
+          [
+            [
+              8,
+              5,
+              6
+            ],
+            [
+              15,
+              7,
+              7
+            ],
+            [
+              23,
+              11,
+              8
+            ],
+            [
+              29,
+              19,
+              11
+            ]
+          ],
+          [
+            [
+              2,
+              3,
+              5
+            ],
+            [
+              6,
+              10,
+              16
+            ],
+            [
+              13,
+              21,
+              25
+            ],
+            [
+              30,
+              25,
+              17
+            ]
+          ]
+        ],
+        "cell_palettes": [
+          0,
+          1,
+          2,
+          3,
+          1,
+          4,
+          5,
+          5,
+          0,
+          1,
+          2,
+          1,
+          1,
+          1,
+          5,
+          5
+        ],
+        "regions": [
+          {
+            "name": "grass",
+            "kind": "tile",
+            "x": 0,
+            "y": 0,
+            "width": 8,
+            "height": 8
+          },
+          {
+            "name": "path",
+            "kind": "tile",
+            "x": 8,
+            "y": 0,
+            "width": 8,
+            "height": 8
+          },
+          {
+            "name": "water",
+            "kind": "tile",
+            "x": 16,
+            "y": 0,
+            "width": 8,
+            "height": 8
+          },
+          {
+            "name": "stone",
+            "kind": "tile",
+            "x": 24,
+            "y": 0,
+            "width": 8,
+            "height": 8
+          },
+          {
+            "name": "wall",
+            "kind": "tile",
+            "x": 32,
+            "y": 0,
+            "width": 8,
+            "height": 8
+          },
+          {
+            "name": "roof",
+            "kind": "tile",
+            "x": 40,
+            "y": 0,
+            "width": 8,
+            "height": 8
+          },
+          {
+            "name": "flowers",
+            "kind": "tile",
+            "x": 0,
+            "y": 8,
+            "width": 8,
+            "height": 8
+          },
+          {
+            "name": "dirt",
+            "kind": "tile",
+            "x": 8,
+            "y": 8,
+            "width": 8,
+            "height": 8
+          },
+          {
+            "name": "ripple",
+            "kind": "tile",
+            "x": 16,
+            "y": 8,
+            "width": 8,
+            "height": 8
+          },
+          {
+            "name": "wood",
+            "kind": "tile",
+            "x": 24,
+            "y": 8,
+            "width": 8,
+            "height": 8
+          },
+          {
+            "name": "window",
+            "kind": "tile",
+            "x": 32,
+            "y": 8,
+            "width": 8,
+            "height": 8
+          },
+          {
+            "name": "door",
+            "kind": "tile",
+            "x": 40,
+            "y": 8,
+            "width": 8,
+            "height": 8
+          },
+          {
+            "name": "hero_idle",
+            "kind": "sprite",
+            "x": 48,
+            "y": 0,
+            "width": 8,
+            "height": 16,
+            "origin": [
+              4,
+              14
+            ],
+            "duration_ms": 160
+          },
+          {
+            "name": "hero_step",
+            "kind": "sprite",
+            "x": 56,
+            "y": 0,
+            "width": 8,
+            "height": 16,
+            "origin": [
+              4,
+              14
+            ],
+            "duration_ms": 160
+          }
+        ],
+        "animations": [
+          {
+            "name": "idle",
+            "frames": [
+              {
+                "region": "hero_idle",
+                "duration_ms": 400
+              }
+            ]
+          },
+          {
+            "name": "walk",
+            "frames": [
+              {
+                "region": "hero_step",
+                "duration_ms": 160
+              },
+              {
+                "region": "hero_idle",
+                "duration_ms": 160
+              }
+            ]
+          }
+        ],
+        "source": "atlas.aseprite",
+        "preview": "riverside.aseprite",
+        "review_images": [
+          "riverside.png",
+          "courtyard.png"
+        ],
+        "approval": {
+          "status": "draft"
+        }
+      },
+      "tiles": {
+        "8": {
+          "sample/grass/0/0": 0,
+          "sample/path/0/0": 1,
+          "sample/water/0/0": 2,
+          "sample/stone/0/0": 3,
+          "sample/wall/0/0": 4,
+          "sample/roof/0/0": 5,
+          "sample/flowers/0/0": 6,
+          "sample/dirt/0/0": 7,
+          "sample/ripple/0/0": 8,
+          "sample/wood/0/0": 9,
+          "sample/window/0/0": 10,
+          "sample/door/0/0": 11
+        },
+        "16": {},
+        "32": {},
+        "sprites": {
+          "sample/hero_idle": 0,
+          "sample/hero_step": 1
+        }
+      },
+      "png": "assets/sample/atlas.png",
+      "metadata": {
+        "8": {
+          "sample/grass/0/0": {
+            "terrain": "grass",
+            "solid": false,
+            "shapes": [],
+            "next_shape_id": 1
+          },
+          "sample/flowers/0/0": {
+            "terrain": "grass",
+            "solid": false,
+            "shapes": [],
+            "next_shape_id": 1
+          },
+          "sample/path/0/0": {
+            "terrain": "path",
+            "solid": false,
+            "shapes": [],
+            "next_shape_id": 1
+          },
+          "sample/water/0/0": {
+            "terrain": "water",
+            "solid": true,
+            "shapes": [],
+            "next_shape_id": 1
+          },
+          "sample/ripple/0/0": {
+            "terrain": "water",
+            "solid": true,
+            "shapes": [],
+            "next_shape_id": 1
+          },
+          "sample/stone/0/0": {
+            "terrain": "stone",
+            "solid": true,
+            "shapes": [],
+            "next_shape_id": 1
+          },
+          "sample/wall/0/0": {
+            "terrain": "wall",
+            "solid": true,
+            "shapes": [],
+            "next_shape_id": 1
+          },
+          "sample/roof/0/0": {
+            "terrain": "roof",
+            "solid": true,
+            "shapes": [],
+            "next_shape_id": 1
+          }
+        }
+      }
+    }
+  },
+  "files": {
+    "assets/sample/atlas.png": "25c97a1ed28e2633de4f20174c5bc6dde8c1884454e32efb1a0d1f4131f0324e",
+    "assets/sample/grid-8/0.png": "64454e4120796a5a9a8f9fcf5278f81753f78d73804a19abca607502d10a7deb",
+    "assets/sample/grid-8/1.png": "ab89768c82266abf8d52e3deb12a507de9b24e2cf49a758cdd5921c87b5c5b96",
+    "assets/sample/grid-8/2.png": "b9269ff524f7a342eb4d45f98a0f75b72075dabf0fca2c7f8432abedb1272a4c",
+    "assets/sample/grid-8/3.png": "149aab53de515bf93c20885183d1f22944729b45ffe0d84bac36377720affcbd",
+    "assets/sample/grid-8/4.png": "20ec6656c767700d2e07baeddfa03022d58d635c9b9c08b9f52e9003a13261cd",
+    "assets/sample/grid-8/5.png": "0b28b0479891e94469514e7830e9f3b79cb969810308439dfa0e1a37eff2c5c9",
+    "assets/sample/grid-8/6.png": "4bfba00218e23c5e11b3798e195f3e61df78649a3fc6db4c02d165f3daea4d45",
+    "assets/sample/grid-8/7.png": "d32279d94884b2abda9db7d2ca2dd9312bc35a4e71ddae8b666c08a45704b6d4",
+    "assets/sample/grid-8/8.png": "8f9f30c775681d8a08e97b8dd6dcb8b0e30edb440dd0ef85517aac5ac8467079",
+    "assets/sample/grid-8/9.png": "60530b349d5153d003708b76308b2db4805a6a2df80f22220b7ab0265d5f3ca2",
+    "assets/sample/grid-8/10.png": "6ba568062b66035d62573a9f791f0fee803ff583a96614f2ca347fd880380b94",
+    "assets/sample/grid-8/11.png": "e9a8843d6d38378aa498bb08cbbd83c52321c783aecec1f4e468b263fc8bfbd6",
+    "assets/sample/grid-8.tsj": "40720c93a9bd4144136fbd9829f489a4c795e623ddad957a757eca8815880266",
+    "assets/sample/grid-16.tsj": "c57ffd870e64232b10460962ee95af882553cdf84c863c5be2ec51002f303658",
+    "assets/sample/grid-32.tsj": "dc79490deeb8a5100259004d5c922e6e27fe40577f696e92f2f50ea8a5d4ad60",
+    "assets/sample/sample.atlas.json": "2cea50002479d617d6f65ee99a62ff8addc2fffd19050c63ef7286abb1e5d707",
+    "assets/sample/sprites/0.png": "7900e257c00fae94a08c471824beb8ed6a889050ec4c49dd25a3ed7620e2cd9e",
+    "assets/sample/sprites/1.png": "f1cce2b984e764aa580f99c42e21f3c6cc9b219b158acf57d33594344b3b009f",
+    "assets/sample/sprites.tsj": "be7bd826377674cdbba44d17e4685aae45e92419fd7ac5d8126709dd92a73e5c"
+  },
+  "preview": {
+    "zoom": 3,
+    "grid": true,
+    "sprite": {
+      "playback_speed": 1,
+      "show_origin": true,
+      "movement_speed": 48,
+      "footprint": {
+        "x": -3,
+        "y": -3,
+        "width": 6,
+        "height": 3
+      },
+      "check_collisions": true,
+      "mappings": {
+        "sample/hero_idle": {
+          "idle:down": "idle",
+          "idle:left": "idle",
+          "idle:right": "idle",
+          "idle:up": "idle",
+          "walk:down": "walk",
+          "walk:left": "walk",
+          "walk:right": "walk",
+          "walk:up": "walk"
+        }
+      },
+      "selections": {}
+    }
+  }
+}

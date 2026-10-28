@@ -125,6 +125,6 @@
 .project-card { display: flex; justify-content: space-between; gap: 16px; padding: 16px; border: 1px solid var(--line, #39434b); border-radius: 8px; color: inherit; text-decoration: none; }
 .project-card:hover, .project-card:focus-visible { background: var(--panel, #253038); outline: 2px solid var(--accent, #d7b66b); }
 .project-card span { opacity: .7; }
-#switch-project-dialog .dialog-actions { flex-wrap: wrap; }
+#switch-project-dialog .dialog-actions,#switch-scene-dialog .dialog-actions { flex-wrap: wrap; }
 .project-card strong { overflow-wrap: anywhere; min-width: 0; }
 .project-card span { overflow-wrap: anywhere; min-width: 0; }

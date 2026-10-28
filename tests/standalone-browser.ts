@@ -14,17 +14,24 @@ const folder = await mkdtemp(join(tmpdir(), 'forge-standalone-'));
 let server: ChildProcess | undefined;
 let chrome: Chrome | undefined;
 let url = '';
-async function start(root: string, fixture = true, single = true) {
-  const args = fixture
-    ? ['tests/serve_standalone_fixture.py', '--root', root, ...(single ? ['--single-project'] : [])]
-    : [
-        '-m',
-        'gbc_scene_forge',
-        ...(single ? ['--project'] : ['--project-root']),
-        root,
-        '--port',
-        '0',
-      ];
+async function start(root: string, fixture = true, single = true, demo = false) {
+  const args = demo
+    ? ['-m', 'gbc_scene_forge.sample', '--root', root, '--reset', '--port', '0']
+    : fixture
+      ? [
+          'tests/serve_standalone_fixture.py',
+          '--root',
+          root,
+          ...(single ? ['--single-project'] : []),
+        ]
+      : [
+          '-m',
+          'gbc_scene_forge',
+          ...(single ? ['--project'] : ['--project-root']),
+          root,
+          '--port',
+          '0',
+        ];
   const child = spawn('.venv/bin/python', args, {
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -91,6 +98,13 @@ try {
   const set = async (id: string, value: string) => {
     await evaluate(
       `(() => { const control = document.getElementById(${JSON.stringify(id)}); control.value=${JSON.stringify(value)}; control.dispatchEvent(new Event(control.tagName === 'SELECT' ? 'change' : 'input', {bubbles:true})); })()`,
+    );
+  };
+  const chooseScene = async (id: string) => {
+    await wait("document.getElementById('scenes')?.disabled === false");
+    await set('scenes', id);
+    await wait(
+      `document.getElementById('scenes')?.value === ${JSON.stringify(id)} && document.getElementById('scenes')?.disabled === false`,
     );
   };
   const captureDownloads = async () =>
@@ -204,7 +218,10 @@ print(json.dumps(result))
       `location.pathname === '/projects/${slug}/' && document.getElementById('project-name')?.textContent === ${JSON.stringify(name)} && !document.getElementById('switch-project')?.disabled`,
     );
   };
-  const chooseProject = (destination: string) => set('switch-project', destination);
+  const chooseProject = async (destination: string) => {
+    await wait("document.getElementById('switch-project')?.disabled === false");
+    await set('switch-project', destination);
+  };
   const goProjects = async () => {
     await chooseProject('/');
     await wait("location.pathname === '/' && document.querySelector('#project-list a') !== null");
@@ -305,8 +322,7 @@ print(json.dumps(result))
     await evaluate("document.getElementById('scene-name').textContent"),
     'No scene open',
   );
-  await set('scenes', rootSceneId);
-  await click('open');
+  await chooseScene(rootSceneId);
   await wait("document.getElementById('status')?.textContent === 'Scene opened.'");
   assert.equal(
     await evaluate("document.getElementById('layer-name').value"),
@@ -725,13 +741,12 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
     'spare',
   );
   await assert.rejects(readFile(join(folder, 'world/assets/spare/atlas.png')), { code: 'ENOENT' });
-  // Unsaved edits survive a canceled scene switch.
+  // Choosing the current scene is a no-op, even with unsaved edits.
   await browser.click('document.querySelector(\'[data-asset="terrain/earth"]\')');
   await browser.pointer(20, 12);
   await browser.pointer(20, 12, 'mouseReleased');
-  await click('open');
-  await wait("document.getElementById('discard-dialog')?.open === true");
-  await click('keep-editing');
+  await set('scenes', first);
+  assert.equal(await evaluate("document.getElementById('switch-scene-dialog').open"), false);
   assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'UNSAVED');
   await click('undo');
   await set('scene-title', 'River');
@@ -745,6 +760,58 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
     '',
   );
   assert.deepEqual(record((await scene(second)).scene).objects, []);
+  // Switching from the dropdown preserves edits on cancel and supports save/discard.
+  assert.equal(await evaluate("document.getElementById('open')"), null);
+  await renameLayer('River ground');
+  await set('scenes', first);
+  await wait("document.getElementById('switch-scene-dialog').open");
+  assert.equal(await evaluate("document.getElementById('scenes').value"), second);
+  await click('scene-switch-cancel');
+  assert.equal(await evaluate("document.getElementById('layer-name').value"), 'River ground');
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'UNSAVED');
+  await set('scenes', first);
+  await wait("document.getElementById('switch-scene-dialog').open");
+  await browser.call('Input.dispatchKeyEvent', {
+    type: 'keyDown',
+    key: 'Escape',
+    code: 'Escape',
+    windowsVirtualKeyCode: 27,
+  });
+  await browser.call('Input.dispatchKeyEvent', {
+    type: 'keyUp',
+    key: 'Escape',
+    code: 'Escape',
+    windowsVirtualKeyCode: 27,
+  });
+  await wait("!document.getElementById('switch-scene-dialog').open");
+  assert.equal(await evaluate("document.getElementById('scenes').value"), second);
+  await set('scenes', first);
+  await wait("document.getElementById('switch-scene-dialog').open");
+  await browser.screenshot('scene-switch-save');
+  await click('scene-switch-save');
+  await wait(
+    `document.getElementById('scenes').value === ${JSON.stringify(first)} && !document.getElementById('switch-scene-dialog').open`,
+  );
+  assert.equal(
+    record(array(record((await scene(second)).scene).layers, record)[0]).name,
+    'River ground',
+  );
+  await chooseScene(second);
+  await renameLayer('Discard this name');
+  await set('scenes', first);
+  await wait("document.getElementById('switch-scene-dialog').open");
+  await click('scene-switch-discard');
+  await wait(
+    `document.getElementById('scenes').value === ${JSON.stringify(first)} && !document.getElementById('switch-scene-dialog').open`,
+  );
+  assert.equal(
+    record(array(record((await scene(second)).scene).layers, record)[0]).name,
+    'River ground',
+  );
+  await chooseScene(second);
+  await renameLayer('Ground');
+  await click('save');
+  await wait("document.getElementById('status').textContent === 'Scene saved.'");
   // Focusing a canvas taller than the viewport must not scroll it and offset
   // the placement away from the pointer's original scene coordinate.
   await browser.click('document.querySelector(\'[data-asset="actors/idle"]\')');
@@ -1395,8 +1462,7 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   await browser.pointer(32, 80, 'mouseReleased');
   assert.equal(await evaluate("document.getElementById('viewport').scrollTop > 0"), true);
   assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
-  await set('scenes', first);
-  await click('open');
+  await chooseScene(first);
   await wait("document.getElementById('status')?.textContent === 'Scene opened.'");
   // Explicit unchanged reimport retains placements and both scenes.
   await set('atlas-path', join(folder, 'input/terrain.atlas.json'));
@@ -1441,8 +1507,7 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
     earthMetadata,
   );
   assert.deepEqual(record((await scene(second)).scene), layeredScene);
-  await set('scenes', second);
-  await click('open');
+  await chooseScene(second);
   await wait("document.getElementById('status').textContent === 'Scene opened.'");
   assert.equal(await evaluate("document.getElementById('layers').options.length"), 4);
   assert.equal(
@@ -1466,8 +1531,7 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
     true,
   );
   await click('object-cancel');
-  await set('scenes', first);
-  await click('open');
+  await chooseScene(first);
   await wait(
     "document.getElementById('status')?.textContent === 'Scene opened.' && document.getElementById('scene-name').textContent.startsWith('Village')",
   );
@@ -1549,22 +1613,18 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   );
   assert.equal(await readFile(mapPath, 'utf8'), before + '\n');
   await click('delete-scene-cancel');
-  // Deleting a different scene preserves this canvas and its unsaved changes.
+  // A failed save while switching keeps the current scene and its selection.
   await set('scenes', second);
-  await click('show-delete');
-  await wait("document.getElementById('delete-scene-dialog').open");
-  assert.equal(
-    await evaluate(
-      "document.getElementById('delete-scene-description').textContent.includes('River')",
-    ),
-    true,
+  await wait("document.getElementById('switch-scene-dialog').open");
+  await click('scene-switch-save');
+  await wait(
+    "document.querySelector('#switch-scene-dialog .form-error').textContent.includes('Scene changed')",
   );
-  assert.equal(await evaluate("document.getElementById('delete-scene-unsaved').hidden"), true);
-  await click('delete-scene-confirm');
-  await wait("document.getElementById('status').textContent.includes('Deleted “River”')");
+  assert.equal(await evaluate("document.getElementById('scenes').value"), first);
   assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'UNSAVED');
-  assert.equal(array(record((await catalog()).project).scenes, record).length, 1);
-  // Restore the external test edit, then explicitly delete the last, dirty scene.
+  assert.equal(await readFile(mapPath, 'utf8'), before + '\n');
+  await click('scene-switch-cancel');
+  // Restore the external test edit, then explicitly delete the dirty scene.
   await writeFile(mapPath, before);
   await click('show-delete');
   await wait("document.getElementById('delete-scene-dialog').open");
@@ -1574,6 +1634,14 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'NO SCENE');
   assert.equal(await evaluate("document.getElementById('scene').hidden"), true);
   assert.equal(await evaluate("document.getElementById('undo').disabled"), true);
+  assert.equal(array(record((await catalog()).project).scenes, record).length, 1);
+  await chooseScene(second);
+  await click('show-delete');
+  await wait("document.getElementById('delete-scene-dialog').open");
+  await click('delete-scene-confirm');
+  await wait("document.getElementById('status').textContent.includes('Deleted “River”')");
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'NO SCENE');
+  assert.equal(await evaluate("document.getElementById('scene').hidden"), true);
   assert.equal(array(record((await catalog()).project).scenes, record).length, 0);
   assert.equal(Object.keys(record(record((await catalog()).project).atlases)).length, 2);
   await assert.rejects(readFile(mapPath), { code: 'ENOENT' });
@@ -1585,6 +1653,52 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   }
   assert.deepEqual(record(record((await catalog()).project).atlases), {});
   assert.equal(await evaluate("document.getElementById('asset-count').textContent"), '0 / 0');
+  // Exercise the actual demo entry point and compare its artwork with Aseprite exports.
+  await stop();
+  await start(join(folder, 'demo'), false, true, true);
+  await browser.call('Emulation.setDeviceMetricsOverride', {
+    width: 1440,
+    height: 1000,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await browser.call('Page.navigate', { url });
+  await wait("document.getElementById('project-name')?.textContent === 'Scene Forge demo'");
+  await wait("!document.getElementById('scenes')?.disabled");
+  if (await evaluate("document.getElementById('grid').checked")) {
+    await click('grid');
+  }
+  for (const entry of array(record((await catalog()).project).scenes, record)) {
+    const name = string(entry.name).toLowerCase();
+    await chooseScene(string(entry.id));
+    await wait(
+      `document.getElementById('scene-name')?.textContent.startsWith(${JSON.stringify(string(entry.name) + ' ·')}) && document.getElementById('scenes')?.disabled === false`,
+    );
+    const data = string(await evaluate("document.getElementById('scene').toDataURL('image/png')"));
+    const rendered = join(folder, `${name}.png`);
+    await writeFile(rendered, Buffer.from(data.split(',')[1], 'base64'));
+    await promisify(execFile)('.venv/bin/python', [
+      '-c',
+      `
+import sys
+from pathlib import Path
+from gbc_scene_forge import png
+width, height, expected = png.decode(Path(sys.argv[1]).read_bytes())
+actual_width, actual_height, actual = png.decode(Path(sys.argv[2]).read_bytes())
+assert (actual_width, actual_height) == (width, height) == (224, 160)
+for y in range(height):
+    for x in range(width):
+        # The editor draws authoring guides for the spawn and trigger objects.
+        if (110 <= x <= 122 and 130 <= y <= 142) or (166 <= x <= 178 and 70 <= y <= 82):
+            continue
+        i = (y * width + x) * 4
+        assert expected[i:i+4] == actual[i:i+4], f'Artwork differs at {x},{y}'
+`,
+      `assets/demo/artwork/${name}.png`,
+      rendered,
+    ]);
+    await browser.screenshot(`demo-${name}`);
+  }
   assert.deepEqual(browser.errors, []);
   console.log(
     'Standalone browser acceptance passed: project roots, selection, save/discard/cancel switching, failed-save preservation, project creation, atlas import/reimport, painting, layers, objects/properties, terrain/collision, portable exports, undo/redo, restart, moved directory, and conflict preservation.',

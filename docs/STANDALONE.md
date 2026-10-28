@@ -53,7 +53,7 @@ version or a migration mechanism.
 3. Choose **Create scene**, select a tile region to paint or a sprite to place.
 4. Use Erase, one-cell Fill, or Select. Drag a selection, then use arrow keys to
    move it or Delete to erase it. Undo/Redo retain up to 100 completed edits.
-5. Choose **Save** or press Ctrl/⌘ S. Choose another saved scene and **Open scene**
+5. Choose **Save** or press Ctrl/⌘ S. Select another saved scene from the dropdown
    to switch. Unsaved changes prompt before being discarded. **Revert** restores
    the last opened/saved canvas. Ctrl/⌘ Z undoes; Ctrl/⌘ Shift Z or Ctrl/⌘ Y redoes.
 
@@ -419,7 +419,8 @@ preserves that edit instead of overwriting it. Retain the workspace and backups
 while resolving such a conflict.
 
 If a scene changes externally, saving shows a conflict and leaves unsaved edits
-in the browser. Preserve those changes before choosing **Open scene** to reload.
+in the browser. Preserve those changes, reload the page, and select the scene
+again to load the external revision.
 Externally changed managed assets block mutations; restore those files and use
 explicit atlas reimport for artwork updates. Do not edit generated tilesets or
 identity mappings manually.

@@ -76,6 +76,7 @@ let choosingProject = false;
 let hasProjectChoices = false;
 let navigating = false;
 let pendingProject = '';
+let pendingScene = '';
 let token = '';
 let previewSettingsLoaded = false;
 let atlasFolder: AtlasFolder | null = null;
@@ -413,6 +414,9 @@ function update() {
   for (const id of ['switch-save', 'switch-discard', 'switch-cancel']) {
     button(id).disabled = busy;
   }
+  for (const id of ['scene-switch-save', 'scene-switch-discard', 'scene-switch-cancel']) {
+    button(id).disabled = busy;
+  }
   element('dirty', HTMLElement).textContent = !editor ? 'NO SCENE' : dirty() ? 'UNSAVED' : 'SAVED';
   element('dirty', HTMLElement).dataset.dirty = String(dirty());
   button('save-preview-settings').disabled = busy || !project;
@@ -450,10 +454,10 @@ function update() {
   }
   for (const control of document.querySelectorAll<
     HTMLButtonElement | HTMLInputElement | HTMLSelectElement
-  >('#project-form button, #import-form button, #scene-form button, #open, #scenes')) {
+  >('#project-form button, #import-form button, #scene-form button')) {
     control.disabled = busy;
   }
-  button('open').disabled = busy || !select('scenes').value;
+  select('scenes').disabled = busy || anchor !== null || !project?.scenes.length;
   button('show-delete').disabled = busy || !select('scenes').value;
   button('delete-scene-confirm').disabled = busy || !deleteCandidate;
   button('delete-scene-cancel').disabled = busy;
@@ -711,8 +715,10 @@ async function refresh() {
     project?.name || (choosingProject ? 'Your projects' : 'Create a project');
   document.title = `${project?.name || (choosingProject ? 'Projects' : 'New project')} · Scene Forge`;
   const previous = select('scenes').value;
+  const placeholder = new Option('Choose a scene…', '');
+  placeholder.disabled = true;
   select('scenes').replaceChildren(
-    new Option('Choose a scene…', ''),
+    placeholder,
     ...(project?.scenes.map((s) => new Option(s.name, s.id)) || []),
   );
   select('scenes').value = project?.scenes.some((item) => item.id === previous) ? previous : '';
@@ -1465,18 +1471,59 @@ form('scene-form').onsubmit = async (event) => {
     status.textContent = 'Scene created. Choose a region and paint.';
   });
 };
-button('open').onclick = async () => {
+async function openSavedScene(id: string) {
+  const data = await api(`scene/${id}`, decodeLoaded);
+  await refresh();
+  open(data);
+  status.textContent = 'Scene opened.';
+}
+select('scenes').onchange = () => {
   const id = select('scenes').value;
-  if (!id || !(await discard())) {
+  select('scenes').value = loaded?.id || '';
+  if (busy || anchor || !id || id === loaded?.id) {
+    return;
+  }
+  if (dirty()) {
+    pendingScene = id;
+    const dialog = element('switch-scene-dialog', HTMLDialogElement);
+    dialog.querySelector('.form-error')?.replaceChildren();
+    const target = project?.scenes.find((scene) => scene.id === id)?.name || 'another scene';
+    element('switch-scene-description', HTMLElement).textContent =
+      `This scene has unsaved changes. Save them before opening “${target}”.`;
+    dialog.showModal();
+  } else {
+    void run(() => openSavedScene(id));
+  }
+};
+function confirmSceneSwitch(save: boolean) {
+  if (!pendingScene || busy) {
     return;
   }
   void run(async () => {
-    // Refresh project metadata so externally added scenes/assets can be reopened explicitly.
-    const data = await api(`scene/${id}`, decodeLoaded);
-    await refresh();
-    open(data);
-    status.textContent = 'Scene opened.';
+    if (save) {
+      await saveScene();
+    }
+    await openSavedScene(pendingScene);
+    element('switch-scene-dialog', HTMLDialogElement).close();
   });
+}
+button('scene-switch-save').onclick = () => confirmSceneSwitch(true);
+button('scene-switch-discard').onclick = () => confirmSceneSwitch(false);
+button('scene-switch-cancel').onclick = () => {
+  if (!busy) {
+    element('switch-scene-dialog', HTMLDialogElement).close();
+  }
+};
+element('switch-scene-dialog', HTMLDialogElement).oncancel = (event) => {
+  if (busy) {
+    event.preventDefault();
+  }
+};
+element('switch-scene-dialog', HTMLDialogElement).onclose = () => {
+  // A queued close event may arrive after a new confirmation has already opened.
+  if (!element('switch-scene-dialog', HTMLDialogElement).open) {
+    pendingScene = '';
+  }
 };
 function sceneSnapshot() {
   if (!editor || !loaded) {
@@ -1852,7 +1899,6 @@ for (const close of document.querySelectorAll<HTMLButtonElement>('[data-close]')
     }
   };
 }
-select('scenes').onchange = update;
 input('search').oninput = filterPalette;
 select('atlas-filter').onchange = filterPalette;
 select('kind-filter').onchange = filterPalette;

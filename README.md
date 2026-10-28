@@ -38,7 +38,8 @@ make run
 4. Pick a tile in the asset library and paint. Choose **Save scene** or press
    **Ctrl/⌘ S** to save your work.
 
-To reopen a scene, choose it from the scene list and click **Open scene**.
+Choose a scene from the scene dropdown to open it. If the current scene has
+unsaved edits, choose whether to save, discard, or keep editing before switching.
 
 ### Open another project
 
@@ -140,17 +141,24 @@ From a development checkout after setup:
 make demo
 ```
 
-Open the printed address, choose **Riverside** or **Courtyard**, and click
-**Open scene**. The sample includes original pixel artwork, layers, markers,
+Open the printed address and select **Riverside** or **Courtyard** from the scene
+dropdown. The sample includes original pixel artwork, layers, markers,
 collision metadata and an animated character. Select the character on its object
 layer to try animation and movement previews.
 
 ![The editable sample project](docs/screenshots/standalone-demo.png)
 
-The sample lives in `.demo/` and preserves saved edits on later runs.
-`make demo DEMO_ROOT=/path/to/demo` chooses another sample directory. It opens in
-direct mode; you can put it under a project root to find it in the selector later.
-The sample artwork is covered by this project's MIT license.
+The canonical sample lives in [`assets/demo/`](assets/demo/README.md): editable
+Aseprite artwork, exported PNGs and a gbc-atlas manifest, and the portable Forge
+project built from that atlas. `make demo` copies the project into `.demo/` and
+restores its scenes and assets on **every launch**. No artwork tools are needed
+to run it. The installed wheel includes the same project.
+
+To keep editing without a reset, use `make run PROJECT=.demo` or export the project
+to another folder. `make demo DEMO_ROOT=/path/to/demo` chooses another working
+directory with the same reset behavior; unrelated projects are refused. Resets
+retain transaction recovery history and unrelated files. The sample artwork is
+covered by this project's MIT license.
 
 ## Development
 
@@ -167,7 +175,7 @@ dependencies and builds the browser UI. It does not install Poetry itself.
 | `make run` | Rebuild the UI and open the project selector for `.forge_project/` |
 | `make run PROJECT_ROOT="/path/to/projects"` | Browse projects in another root |
 | `make run PROJECT="/path/to/world"` | Open one project directly |
-| `make demo [DEMO_ROOT=/path]` | Create or reopen the editable sample |
+| `make demo [DEMO_ROOT=/path]` | Restore the checked-in sample into a working copy and open it |
 | `make run PORT=8777` | Use another local port; also works with `make demo` |
 | `make check-deps` | Check tools and the Python dependency lock without installing |
 | `make frontend` | Type-check and rebuild the browser UI |

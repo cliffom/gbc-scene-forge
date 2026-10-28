@@ -49,6 +49,14 @@ class InstalledPackageSmokeTests(unittest.TestCase):
             for scene in scenes:
                 with self.subTest(scene=scene["name"]):
                     self.assertTrue(project.load_scene(scene["id"])["scene"]["layers"])
+            original = project.load_scene(scenes[0]["id"])
+            changed = project.load_scene(scenes[0]["id"])
+            changed["scene"]["layers"][0]["cells"][2][2] = "sample/path/0/0"
+            project.save_scene(
+                changed["id"], changed["scene"], changed["revision"], project.catalog()["revision"]
+            )
+            restored = prepare(project.root, reset=True)
+            self.assertEqual(restored.load_scene(original["id"])["scene"], original["scene"])
 
     def test_project_root_creates_and_discovers_named_projects(self):
         with tempfile.TemporaryDirectory() as folder:

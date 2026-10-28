@@ -1,0 +1,399 @@
+{
+  "type": "tileset",
+  "version": "1.10",
+  "name": "sample",
+  "tilewidth": 8,
+  "tileheight": 8,
+  "tilecount": 12,
+  "columns": 0,
+  "margin": 0,
+  "spacing": 0,
+  "tiles": [
+    {
+      "id": 0,
+      "image": "grid-8/0.png",
+      "imagewidth": 8,
+      "imageheight": 8,
+      "properties": [
+        {
+          "name": "forge:asset",
+          "type": "string",
+          "value": "sample/grass/0/0"
+        },
+        {
+          "name": "forge:terrain",
+          "type": "string",
+          "value": "grass"
+        },
+        {
+          "name": "forge:solid",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "name": "forge:next_shape_id",
+          "type": "int",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "image": "grid-8/1.png",
+      "imagewidth": 8,
+      "imageheight": 8,
+      "properties": [
+        {
+          "name": "forge:asset",
+          "type": "string",
+          "value": "sample/path/0/0"
+        },
+        {
+          "name": "forge:terrain",
+          "type": "string",
+          "value": "path"
+        },
+        {
+          "name": "forge:solid",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "name": "forge:next_shape_id",
+          "type": "int",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "image": "grid-8/2.png",
+      "imagewidth": 8,
+      "imageheight": 8,
+      "properties": [
+        {
+          "name": "forge:asset",
+          "type": "string",
+          "value": "sample/water/0/0"
+        },
+        {
+          "name": "forge:terrain",
+          "type": "string",
+          "value": "water"
+        },
+        {
+          "name": "forge:solid",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "name": "forge:next_shape_id",
+          "type": "int",
+          "value": 1
+        }
+      ],
+      "objectgroup": {
+        "type": "objectgroup",
+        "name": "",
+        "draworder": "index",
+        "opacity": 1,
+        "visible": true,
+        "x": 0,
+        "y": 0,
+        "objects": [
+          {
+            "id": 1,
+            "name": "",
+            "type": "",
+            "rotation": 0,
+            "visible": true,
+            "x": 0,
+            "y": 0,
+            "width": 8,
+            "height": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "image": "grid-8/3.png",
+      "imagewidth": 8,
+      "imageheight": 8,
+      "properties": [
+        {
+          "name": "forge:asset",
+          "type": "string",
+          "value": "sample/stone/0/0"
+        },
+        {
+          "name": "forge:terrain",
+          "type": "string",
+          "value": "stone"
+        },
+        {
+          "name": "forge:solid",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "name": "forge:next_shape_id",
+          "type": "int",
+          "value": 1
+        }
+      ],
+      "objectgroup": {
+        "type": "objectgroup",
+        "name": "",
+        "draworder": "index",
+        "opacity": 1,
+        "visible": true,
+        "x": 0,
+        "y": 0,
+        "objects": [
+          {
+            "id": 1,
+            "name": "",
+            "type": "",
+            "rotation": 0,
+            "visible": true,
+            "x": 0,
+            "y": 0,
+            "width": 8,
+            "height": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "image": "grid-8/4.png",
+      "imagewidth": 8,
+      "imageheight": 8,
+      "properties": [
+        {
+          "name": "forge:asset",
+          "type": "string",
+          "value": "sample/wall/0/0"
+        },
+        {
+          "name": "forge:terrain",
+          "type": "string",
+          "value": "wall"
+        },
+        {
+          "name": "forge:solid",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "name": "forge:next_shape_id",
+          "type": "int",
+          "value": 1
+        }
+      ],
+      "objectgroup": {
+        "type": "objectgroup",
+        "name": "",
+        "draworder": "index",
+        "opacity": 1,
+        "visible": true,
+        "x": 0,
+        "y": 0,
+        "objects": [
+          {
+            "id": 1,
+            "name": "",
+            "type": "",
+            "rotation": 0,
+            "visible": true,
+            "x": 0,
+            "y": 0,
+            "width": 8,
+            "height": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "image": "grid-8/5.png",
+      "imagewidth": 8,
+      "imageheight": 8,
+      "properties": [
+        {
+          "name": "forge:asset",
+          "type": "string",
+          "value": "sample/roof/0/0"
+        },
+        {
+          "name": "forge:terrain",
+          "type": "string",
+          "value": "roof"
+        },
+        {
+          "name": "forge:solid",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "name": "forge:next_shape_id",
+          "type": "int",
+          "value": 1
+        }
+      ],
+      "objectgroup": {
+        "type": "objectgroup",
+        "name": "",
+        "draworder": "index",
+        "opacity": 1,
+        "visible": true,
+        "x": 0,
+        "y": 0,
+        "objects": [
+          {
+            "id": 1,
+            "name": "",
+            "type": "",
+            "rotation": 0,
+            "visible": true,
+            "x": 0,
+            "y": 0,
+            "width": 8,
+            "height": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "image": "grid-8/6.png",
+      "imagewidth": 8,
+      "imageheight": 8,
+      "properties": [
+        {
+          "name": "forge:asset",
+          "type": "string",
+          "value": "sample/flowers/0/0"
+        },
+        {
+          "name": "forge:terrain",
+          "type": "string",
+          "value": "grass"
+        },
+        {
+          "name": "forge:solid",
+          "type": "bool",
+          "value": false
+        },
+        {
+          "name": "forge:next_shape_id",
+          "type": "int",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "image": "grid-8/7.png",
+      "imagewidth": 8,
+      "imageheight": 8,
+      "properties": [
+        {
+          "name": "forge:asset",
+          "type": "string",
+          "value": "sample/dirt/0/0"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "image": "grid-8/8.png",
+      "imagewidth": 8,
+      "imageheight": 8,
+      "properties": [
+        {
+          "name": "forge:asset",
+          "type": "string",
+          "value": "sample/ripple/0/0"
+        },
+        {
+          "name": "forge:terrain",
+          "type": "string",
+          "value": "water"
+        },
+        {
+          "name": "forge:solid",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "name": "forge:next_shape_id",
+          "type": "int",
+          "value": 1
+        }
+      ],
+      "objectgroup": {
+        "type": "objectgroup",
+        "name": "",
+        "draworder": "index",
+        "opacity": 1,
+        "visible": true,
+        "x": 0,
+        "y": 0,
+        "objects": [
+          {
+            "id": 1,
+            "name": "",
+            "type": "",
+            "rotation": 0,
+            "visible": true,
+            "x": 0,
+            "y": 0,
+            "width": 8,
+            "height": 8
+          }
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "image": "grid-8/9.png",
+      "imagewidth": 8,
+      "imageheight": 8,
+      "properties": [
+        {
+          "name": "forge:asset",
+          "type": "string",
+          "value": "sample/wood/0/0"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "image": "grid-8/10.png",
+      "imagewidth": 8,
+      "imageheight": 8,
+      "properties": [
+        {
+          "name": "forge:asset",
+          "type": "string",
+          "value": "sample/window/0/0"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "image": "grid-8/11.png",
+      "imagewidth": 8,
+      "imageheight": 8,
+      "properties": [
+        {
+          "name": "forge:asset",
+          "type": "string",
+          "value": "sample/door/0/0"
+        }
+      ]
+    }
+  ]
+}
