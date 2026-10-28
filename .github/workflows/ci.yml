@@ -36,3 +36,4 @@ jobs:
           fixture_pid=$!
           trap 'kill "$fixture_pid"' EXIT
           npm run test:browser -- http://127.0.0.1:8777/ /usr/bin/google-chrome
+          npm run test:standalone -- /usr/bin/google-chrome

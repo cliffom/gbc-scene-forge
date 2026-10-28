@@ -1,0 +1,88 @@
+/* Standalone uses the same design system and editor shell as connector mode. */
+.standalone {min-width:760px; height:100dvh}
+.workspace {display:flex;flex-direction:column;flex:1;min-height:0}
+.standalone .document-bar {flex:none}
+#scenes {min-width:180px;max-width:300px}
+.standalone main {grid-template-columns:245px minmax(300px,1fr) 250px}
+.standalone .library {min-height:0}
+#palette {min-height:0}
+#palette:has(.library-empty) {display:flex;align-items:center;justify-content:center}
+.library-empty {padding:22px 4px;text-align:center;color:var(--muted);font-size:12px;line-height:1.7}
+.library-empty strong {display:block;font-size:13px;color:var(--text);margin-bottom:6px}
+#palette .asset {position:relative;min-height:96px}
+#palette .asset canvas {width:auto;height:auto;min-width:0;flex:none}
+#palette .asset[aria-pressed=true] {background:#4a4731;border-color:var(--accent);color:#f2dda1}
+#palette .asset:disabled {opacity:.4}
+#palette .asset .asset-name {width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#palette .asset .type {font-size:8px}
+#palette .asset[hidden] {display:none!important}
+#library-import {width:100%;flex:none}
+.tool {position:relative;display:inline-flex;gap:5px;align-items:center;padding:6px 8px;border:1px solid transparent;border-radius:4px;cursor:pointer;white-space:nowrap;font-size:13px}
+.tool>input {position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:inherit}
+.tool:has(input:checked) {color:var(--accent);border-color:#605b3a;background:#373729}
+.tool:has(input:disabled) {opacity:.4;cursor:default}
+.tool:has(input:focus-visible) {outline:2px solid var(--accent);outline-offset:2px}
+.tool>span[aria-hidden] {display:inline-block}
+.tool:hover:not(:has(input:disabled)) {background:#393e33}
+.standalone .canvas-toolbar {gap:6px}
+.standalone .canvas-surround {padding:40px}
+.standalone #scene:focus-visible {outline:none}
+.standalone .canvas-footer {align-items:center}
+#scene-name {overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#selected-brush {max-width:35%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.standalone .inspector {display:flex;flex-direction:column;gap:0}
+.property-grid {display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.property-grid .field {margin-top:0}
+.selection-preview {padding:12px;margin:12px 0;background:#181b17;border:1px solid var(--line);border-radius:4px;text-align:center}
+.selection-preview canvas {image-rendering:pixelated;max-width:120px;max-height:112px;object-fit:contain}
+.selection-name {font-size:12px;margin:12px 0 6px;overflow-wrap:anywhere}
+.selection-remove {width:100%;font-size:10px;margin-top:12px}
+.atlas-list {display:grid;gap:8px;margin:12px 0}
+.atlas-row {display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:11px}
+.atlas-row span {overflow:hidden;text-overflow:ellipsis}
+.atlas-row .small {white-space:nowrap}
+.atlas-actions {display:flex;gap:4px;flex:none}
+#import-results {font-size:11px;margin:0 0 12px}
+#import-results summary {cursor:pointer;color:var(--accent)}
+#import-report {white-space:pre-wrap;overflow-wrap:anywhere;margin-top:8px}
+#dirty[data-dirty=true] {color:var(--accent);border-color:#75663d}
+#status[data-state=error],.form-error {color:#f19b82}
+.form-error:empty {display:none}
+.standalone button.danger {background:#713b30;border-color:#ad6752;color:#ffe5da}
+.standalone button.danger:hover {background:#8b493b}
+.standalone dialog {width:440px;max-width:calc(100vw - 40px)}
+.standalone dialog h2 {font-size:18px}
+.dimensions {display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.dimensions .field {margin:10px 0}
+.replace-atlas {font-size:12px;margin-top:16px}
+.file-picker-field {display:flex;align-items:stretch;gap:8px}
+.file-picker-field input {min-width:0;flex:1}
+.file-picker-field button {flex:none;font-size:11px;color:var(--text)}
+.file-picker-field .hint {align-self:center;overflow-wrap:anywhere;min-width:0}
+.manual-atlas {margin:16px 0;font-size:11px;color:var(--muted)}
+.manual-atlas summary {cursor:pointer}
+.standalone dialog .dialog-actions {margin-top:20px}
+.welcome {width:420px;max-width:calc(100vw - 40px);margin:auto;padding:32px;display:flex;flex-direction:column;gap:16px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.welcome h2 {font-size:24px;letter-spacing:-.5px}
+.welcome .field {margin:0}
+#empty-scene {gap:12px}
+.standalone .status-bar {flex:none}
+.standalone #viewport[data-pan=true] {cursor:grab}
+.standalone #viewport[data-pan=true] #scene {cursor:grab}
+.standalone #viewport[data-panning=true],.standalone #viewport[data-panning=true] #scene {cursor:grabbing}
+@media(max-width:1200px) {
+  .standalone main {grid-template-columns:210px minmax(280px,1fr) 220px}
+  .tool>span:not([aria-hidden]) {display:none}
+  .standalone .canvas-surround {padding:28px}
+  #selected-brush {max-width:30%}
+}
+@media(max-width:980px) {
+  .standalone main {grid-template-columns:190px minmax(280px,1fr) 190px}
+  .standalone .mark {width:48px;height:48px}
+  .standalone .masthead {padding:12px 16px}
+  .standalone .connection {letter-spacing:.8px}
+  .standalone .canvas-toolbar {padding:8px}
+  .tool {padding:6px}
+  #selected-brush {display:none}
+  .standalone .canvas-footer {font-size:9px}
+}

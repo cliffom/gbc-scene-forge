@@ -31,4 +31,4 @@ Existing commits use short, imperative subjects such as “Preserve original sce
 
 ## Architecture & Safety Boundaries
 
-Keep rendering, asset decoding, and game builds in explicitly supplied connectors. Preserve loopback binding, mutation-token checks, declared workspace paths, reviewed Apply, and conflict-aware recovery. Never introduce game-specific branches into the reusable editor.
+Forge owns generic rendering, atlas import, project storage, and Tiled serialization for standalone projects. Game-specific rendering, asset decoding, validation, and builds stay in explicitly supplied connectors. Preserve connector v1 compatibility, loopback binding, mutation-token checks, declared workspace paths, reviewed Apply, and conflict-aware recovery. Never introduce game-specific branches into the reusable editor.

@@ -190,7 +190,7 @@ export class Chrome {
     );
   }
 
-  async pointer(x: number, y: number, type = 'mousePressed') {
+  async pointer(x: number, y: number, type = 'mousePressed', modifiers = 0) {
     const rect = record(
       await this.evaluate(`(()=>{const r=document.getElementById('scene').getBoundingClientRect();
       return {x:r.x,y:r.y,w:r.width,h:r.height};})()`),
@@ -207,6 +207,7 @@ export class Chrome {
       button: 'left',
       buttons: type === 'mouseReleased' ? 0 : 1,
       clickCount: 1,
+      modifiers,
     });
   }
 

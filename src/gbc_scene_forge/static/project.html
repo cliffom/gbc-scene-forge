@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>GBC Scene Forge</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/branding/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/branding/favicon-16.png">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/project.css">
+  <script type="module" src="/project.js"></script>
+</head>
+<body class="standalone">
+  <header class="masthead">
+    <div class="brand"><img class="mark" src="/branding/logo-64.png" width="64" height="64" alt=""><div><h1>GBC Scene Forge</h1><span id="project-name" class="eyebrow">LOCAL PROJECT</span></div></div>
+    <div class="connection"><span class="dot"></span> LOCAL WORKSPACE <span class="tag">STANDALONE</span></div>
+  </header>
+  <form id="project-form" class="welcome">
+    <span class="eyebrow">A NEW WORLD STARTS HERE</span>
+    <h2>Create your project</h2>
+    <p class="hint">Import your artwork, build scenes and save portable Tiled maps. Your project stays on this computer.</p>
+    <label class="field">Project name<input id="project-title" required maxlength="100" autocomplete="off" placeholder="My world" autofocus></label>
+    <p class="form-error error" role="alert"></p>
+    <button class="primary">Create project</button>
+  </form>
+  <div id="workspace" class="workspace" hidden>
+    <nav class="document-bar" aria-label="Document controls">
+      <label>Scene <select id="scenes" aria-label="Saved scenes"><option value="">Choose a scene…</option></select></label>
+      <button id="open">Open scene</button>
+      <button id="show-create">Create scene</button>
+      <button id="show-delete" disabled>Delete scene</button>
+      <span class="spacer"></span>
+      <button id="show-import">Import atlas</button>
+      <button id="save" class="primary" disabled title="Save scene (⌘/Ctrl S)">Save scene</button>
+    </nav>
+    <main>
+      <aside class="library">
+        <div class="panel-heading"><h2>Asset library</h2><span id="asset-count" class="muted">0</span></div>
+        <button id="library-import" class="small">Import atlas</button>
+        <input id="search" type="search" placeholder="Search tiles and sprites…" aria-label="Search assets">
+        <div class="filters">
+          <select id="atlas-filter" aria-label="Filter atlas"><option value="">All atlases</option></select>
+          <select id="kind-filter" aria-label="Filter asset kind"><option value="">All kinds</option><option value="tile">Tiles</option><option value="sprite">Sprites</option></select>
+        </div>
+        <p id="library-hint" class="hint">Choose a tile to paint or a sprite to place. Imported artwork keeps its native size.</p>
+        <div id="palette" class="assets" aria-label="Available assets"></div>
+      </aside>
+      <section class="workbench" aria-label="Scene canvas">
+        <div class="canvas-toolbar">
+          <div class="tool-group" role="group" aria-label="Editing tools">
+            <label class="tool" title="Select and move (S)"><input type="radio" name="tool" value="select" disabled><span aria-hidden="true">⌖</span><span>Select</span></label>
+            <label class="tool" title="Paint or place (P)"><input type="radio" name="tool" value="paint" checked disabled><svg class="tool-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m14 6 4-4a2.8 2.8 0 0 1 4 4l-9 9-4-4 5-5Z"/><path d="M9 11c-3-1-5 1-5 4 0 2-1 4-2 5 5 1 10-1 10-5"/></svg><span id="paint-label">Paint</span></label>
+            <label class="tool" title="Fill (F)"><input type="radio" name="tool" value="fill" disabled><svg class="tool-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 2 5 5M19 11l-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2a2 2 0 0 0 2.8 0L19 11ZM2 12h16"/><path d="M20 15s-2 2.5-2 4a2 2 0 0 0 4 0c0-1.5-2-4-2-4Z"/></svg><span>Fill</span></label>
+            <label class="tool" title="Erase (E)"><input type="radio" name="tool" value="erase" disabled><span aria-hidden="true">⌫</span><span>Erase</span></label>
+            <label class="tool" title="Pan (H)"><input type="radio" name="tool" value="pan" disabled><span aria-hidden="true">✥</span><span>Pan</span></label>
+          </div>
+          <button id="deselect" title="Deselect (Escape)" disabled>Deselect</button>
+          <div class="tool-group"><button id="undo" title="Undo (⌘/Ctrl Z)" aria-label="Undo" disabled>↶</button><button id="redo" title="Redo (⌘/Ctrl Shift Z)" aria-label="Redo" disabled>↷</button></div>
+          <button id="revert" disabled>Revert changes</button>
+          <span class="spacer"></span><label>Zoom <select id="zoom"><option value="1">1×</option><option value="2">2×</option><option value="3" selected>3×</option><option value="4">4×</option><option value="6">6×</option><option value="8">8×</option></select></label>
+        </div>
+        <div id="viewport" class="viewport" tabindex="0" aria-label="Scene workspace">
+          <div id="empty-scene"><h2>No scene open</h2><p>Create a scene to start building, or choose a saved scene and open it.</p><button id="empty-create" class="primary">Create scene</button></div>
+          <div id="canvas-surround" class="canvas-surround" hidden><canvas id="scene" hidden tabindex="0" aria-label="Editable scene on a tile grid"></canvas></div>
+        </div>
+        <div class="canvas-footer"><span id="coordinates" title="Cell column and row, followed by pixel X and Y. All coordinates start at zero.">Cell —, — · Pixel —, —</span><span id="scene-name">No scene open</span><span id="selected-brush">Select a brush</span></div>
+        <div class="review-bar"><span class="eyebrow">VIEW</span><label><input id="grid" type="checkbox" checked> Grid</label><label title="Snap sprite origins to grid intersections. Hold Alt to bypass; arrow keys nudge one pixel."><input id="snap" type="checkbox" checked> Snap to grid</label><span class="hint">Alt: free placement · Arrow keys: 1 px</span></div>
+      </section>
+      <aside class="inspector">
+        <div class="panel-heading"><h2>Scene properties</h2><span id="dirty" class="tag">NO SCENE</span></div>
+        <label class="field">Scene name<input id="inspector-name" readonly placeholder="No scene open"></label>
+        <div class="property-grid"><label class="field">Dimensions<input id="inspector-size" readonly placeholder="—"></label><label class="field">Grid<input id="inspector-grid" readonly placeholder="—"></label></div>
+        <p id="scene-summary" class="hint">Open a scene to inspect its dimensions and placed sprites.</p>
+        <div class="divider"></div>
+        <div class="panel-heading"><h3>Selection</h3><span id="selection-kind" class="muted">—</span></div>
+        <div id="selection-preview" class="selection-preview" hidden><canvas id="selection-image"></canvas></div>
+        <p id="selection-name" class="selection-name muted">Nothing selected</p>
+        <p id="selection-detail" class="hint">Select a sprite on the canvas to inspect it, or drag a rectangle to select tiles.</p>
+        <button id="remove-sprite" class="selection-remove" disabled>Remove selected sprite</button>
+        <div class="divider"></div>
+        <h3>Project assets</h3>
+        <div id="atlas-list" class="atlas-list"><p class="hint">No atlases imported yet.</p></div>
+        <details id="import-results" hidden><summary id="import-result-summary">Last import</summary><p id="import-report" class="hint"></p></details>
+        <p class="hint">Imports copy artwork into this project. Source atlas files stay unchanged.</p>
+      </aside>
+    </main>
+  </div>
+  <footer class="status-bar"><span id="status" role="status" aria-live="polite">Opening local workspace…</span><span>LOCAL PROJECT · TILED JSON</span></footer>
+  <dialog id="create-scene-dialog" aria-labelledby="create-heading">
+    <form id="scene-form">
+      <h2 id="create-heading">Create scene</h2>
+      <p>Choose the canvas dimensions. Imported sprites keep their own native size.</p>
+      <label class="field">Scene name<input id="scene-title" required maxlength="100" autocomplete="off" autofocus placeholder="Village square"></label>
+      <div class="dimensions"><label class="field">Width <input id="width" type="number" min="1" max="256" value="20" required></label><label class="field">Height <input id="height" type="number" min="1" max="256" value="18" required></label><label class="field">Grid <select id="cell-size"><option value="8">8 px</option><option value="16">16 px</option><option value="32">32 px</option></select></label></div>
+      <p class="hint">Width and height are in cells. Sprites can be placed at any pixel.</p>
+      <p class="form-error error" role="alert"></p>
+      <div class="dialog-actions"><button type="button" data-close="create-scene-dialog">Cancel</button><button class="primary">Create scene</button></div>
+    </form>
+  </dialog>
+  <dialog id="import-atlas-dialog" aria-labelledby="import-heading">
+    <form id="import-form">
+      <h2 id="import-heading">Import atlas</h2>
+      <p>Choose the folder containing your atlas manifest and PNG. Its artwork is copied into this project.</p>
+      <div class="file-picker-field"><button id="browse-atlas" type="button" autofocus>Browse folder…</button><span id="atlas-folder-name" class="hint">No folder selected</span></div>
+      <input id="atlas-folder-files" type="file" webkitdirectory multiple hidden>
+      <label id="atlas-manifest-field" class="field" hidden>Atlas manifest<select id="atlas-manifest"></select></label>
+      <p class="hint">The selected manifest’s declared PNG is included automatically. Source files stay unchanged.</p>
+      <details class="manual-atlas"><summary>Enter a manifest path instead</summary><label class="field">Manifest path<input id="atlas-path" placeholder="/path/to/art.atlas.json"></label></details>
+      <label class="replace-atlas"><input id="reimport" type="checkbox"> Update an atlas already in this project</label>
+      <p class="hint">Matches the atlas ID and preserves placements. Removed or resized regions stop the update.</p>
+      <p class="form-error error" role="alert"></p>
+      <div class="dialog-actions"><button type="button" data-close="import-atlas-dialog">Cancel</button><button class="primary">Import atlas</button></div>
+    </form>
+  </dialog>
+  <dialog id="discard-dialog" aria-labelledby="discard-heading">
+    <form method="dialog"><h2 id="discard-heading">Discard unsaved changes?</h2><p>Save this scene before continuing to keep your current edits.</p><div class="dialog-actions"><button id="keep-editing" value="cancel" autofocus>Keep editing</button><button value="discard" class="primary">Discard changes</button></div></form>
+  </dialog>
+  <dialog id="delete-scene-dialog" aria-labelledby="delete-heading">
+    <form id="delete-scene-form">
+      <h2 id="delete-heading">Delete scene?</h2>
+      <p id="delete-scene-description"></p>
+      <p id="delete-scene-unsaved" class="error" hidden>This scene has unsaved changes. Deleting it also discards those edits.</p>
+      <p class="hint">This removes the scene from this project. Shared atlases and other scenes stay available. This action cannot be undone in the editor.</p>
+      <p class="form-error error" role="alert"></p>
+      <div class="dialog-actions"><button id="delete-scene-cancel" type="button" data-close="delete-scene-dialog">Keep scene</button><button id="delete-scene-confirm" class="danger">Delete scene</button></div>
+    </form>
+  </dialog>
+  <dialog id="delete-atlas-dialog" aria-labelledby="delete-atlas-heading">
+    <form id="delete-atlas-form">
+      <h2 id="delete-atlas-heading">Delete atlas?</h2>
+      <p id="delete-atlas-description"></p>
+      <p class="hint">Removes the atlas’s imported files from this project. Its original source files stay unchanged. Atlases used by saved scenes cannot be deleted.</p>
+      <p id="delete-atlas-history" class="hint" hidden>Undo/redo history that uses this atlas will be cleared. Your current scene edits will be kept.</p>
+      <p class="form-error error" role="alert"></p>
+      <div class="dialog-actions"><button id="delete-atlas-cancel" type="button" data-close="delete-atlas-dialog">Keep atlas</button><button id="delete-atlas-confirm" class="danger">Delete atlas</button></div>
+    </form>
+  </dialog>
+</body>
+</html>

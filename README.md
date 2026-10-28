@@ -2,11 +2,37 @@
 
 ![GBC Scene Forge — Build a world. One tile at a time.](assets/branding/hero.png)
 
-Version 0.1.5 is a local browser editor with an explicitly supplied Python game
-connector. It has no runtime Python dependencies. The package contains its HTTP
-service, browser UI, document storage, task runner and durable transaction store.
-Atlas decoding, rendering, source translation and game builds belong to the host
-connector. No connector is discovered or executed automatically.
+Scene Forge is a local browser editor for standalone projects, imported gbc-atlas
+artwork and native Tiled maps. It has no runtime Python dependencies. Optional,
+explicitly supplied game connectors provide game validation, reviewed Apply and
+builds. No connector is discovered or executed automatically.
+
+## Standalone projects
+
+From an installed package, create or open a local project:
+
+```sh
+gbc-scene-forge /path/to/my-world --create "My world"
+# Reopen after stopping the server:
+gbc-scene-forge /path/to/my-world
+```
+
+From this checkout after `make setup`, use
+`poetry run python -m gbc_scene_forge /path/to/my-world`. A new or empty directory
+opens the project creation form; an existing project opens its scene list.
+Open <http://127.0.0.1:8765/> (override with `--port`). Import a local
+`*.atlas.json` manifest and its neighboring PNG, create a named scene, paint and
+save. Each scene uses an 8, 16 or 32 pixel grid. Larger tile regions become stamps;
+sprites can be placed at native size using their atlas origins, independently of
+the scene grid. Animation metadata is retained for later playback features.
+
+Projects contain `forge.project.json`, native `scenes/*.tmj` maps and shared
+`assets/` tilesets/PNGs. Move the entire directory to relocate a project. The
+original imported bundle is no longer required. Existing connector documents and
+launchers continue to work with their current formats.
+
+See [standalone usage and file compatibility](docs/STANDALONE.md) for the Tiled
+subset, reimport behavior and recovery details.
 
 ## Installation
 
@@ -15,7 +41,9 @@ python -m pip install gbc-scene-forge==0.1.5
 ```
 
 The [PyPI package](https://pypi.org/project/gbc-scene-forge/0.1.5/) includes the
-browser UI and service. A host game supplies the connector and launcher described below.
+browser UI, standalone launcher and service. Game integrations may supply the
+connector and launcher described below. The standalone workflow is a development
+feature until the next package release.
 
 ## Development
 
@@ -69,9 +97,10 @@ the TypeScript tests using built-in type stripping; `make typecheck` enforces ty
 
 Generated JavaScript is Git-ignored; do not edit it. `make demo` and `make build`
 run `npm run build`, which runs `tsc --noEmit` before esbuild. esbuild follows
-imports, including nested modules, and produces one ES2022 module, `static/app.js`,
-with an external source map. `static/app.meta.json` records esbuild's complete
-runtime dependency graph and output sizes. Type errors stop the build before
+imports, including nested modules, and produces the connector entry `static/app.js`
+and standalone entry `static/project.js`, with external source maps.
+`static/app.meta.json` records the connector entry's complete runtime dependency
+graph and output sizes. Type errors stop the build before
 existing assets are replaced. Bundles are readable and unminified.
 
 After changing frontend code while a server is running, run `make frontend` and

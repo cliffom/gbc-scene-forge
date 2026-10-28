@@ -132,10 +132,10 @@ class Transactions:
 
     def apply(self, changes, expected, label, *, review_id=None):
         with self.locked():
-            for name in changes:
+            for name in set(changes) | set(expected):
                 if digest(read_optional(safe_path(self.root, name))) != expected.get(name):
                     raise ValueError(
-                        f"{name} changed since review. Review the current game before applying."
+                        f"{name} changed since this operation was prepared. Reload before trying again."
                     )
             transaction_id = uuid4().hex
             record_path = self.record_path(transaction_id)
