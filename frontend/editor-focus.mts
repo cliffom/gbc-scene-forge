@@ -2,6 +2,8 @@
 export function editorFocus(root: HTMLElement, canvas: HTMLCanvasElement, enabled: () => boolean) {
   const commands = [
     '.canvas-toolbar button',
+    '.composition-tools button',
+    '#select-all-layers',
     '.tool',
     '.asset',
     '.layer-choice',
@@ -15,7 +17,7 @@ export function editorFocus(root: HTMLElement, canvas: HTMLCanvasElement, enable
     '#save',
     '#remove-sprite',
   ].join(',');
-  const dropdowns = '#zoom, #atlas-filter, #kind-filter, #object-list';
+  const dropdowns = '#zoom, #atlas-filter, #kind-filter, #object-list, #stamps';
   let pointerSelect: HTMLSelectElement | null = null;
   function excluded(target: Element) {
     return Boolean(target.closest('dialog, #animation-preview'));

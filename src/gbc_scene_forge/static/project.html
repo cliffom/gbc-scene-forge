@@ -81,6 +81,15 @@
           <button id="revert" disabled>Revert changes</button>
           <span class="spacer"></span><div class="zoom-controls"><label>Zoom <select id="zoom"><option value="fit" id="fit-zoom-option">Fit</option><option value="1">1×</option><option value="2">2×</option><option value="3" selected>3×</option><option value="4">4×</option><option value="6">6×</option><option value="8">8×</option></select></label><button id="fit-scene" disabled title="Center and fit the entire scene in the workspace">Fit scene</button></div>
         </div>
+        <div class="composition-tools" role="group" aria-label="Clipboard and stamps">
+          <label><input type="checkbox" id="select-all-layers"> Select across visible layers</label>
+          <button id="copy-selection" disabled>Copy</button><button id="cut-selection" disabled>Cut</button>
+          <button id="paste-selection" disabled>Paste</button><button id="duplicate-selection" disabled>Duplicate</button>
+          <button id="flip-horizontal" disabled>Flip H</button><button id="flip-vertical" disabled>Flip V</button><button id="rotate-selection" disabled>Rotate 90°</button>
+          <button id="save-stamp" disabled>Save stamp…</button>
+          <label>Stamp <select id="stamps"><option value="">Choose stamp…</option></select></label>
+          <button id="place-stamp" disabled>Place repeatedly</button><button id="delete-stamp" disabled>Delete stamp</button>
+        </div>
         <div id="layer-context" class="layer-context" hidden><span id="layer-context-text"></span><button id="context-show-layer" class="small" hidden>Show layer</button></div>
         <div id="viewport" class="viewport" tabindex="0" aria-label="Scene workspace">
           <div id="empty-scene"><h2>No scene open</h2><p>Create a scene to start building, or choose a saved scene and open it.</p><button id="empty-create" class="primary">Create scene</button></div>

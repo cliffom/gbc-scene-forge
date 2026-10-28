@@ -556,3 +556,61 @@ collision geometry in exported tilesets, plus rasterized layer, sprite, tile and
 empty pixels. It also extracts and moves scene/project ZIPs, removes the original
 workspace/imports, then verifies the exported maps and dependencies with Tiled.
 Validated with Tiled 1.12.2.
+
+## Clipboard and reusable stamps
+
+Use Select (S) and drag a rectangle. By default it selects tiles on the active tile
+layer or objects whose **anchor** lies within the rectangle on the active object
+layer. Shift-click objects to toggle a multi-object selection. Check **Select across
+visible layers** to include tiles and object anchors on every visible layer in the
+rectangle; hidden layers are excluded. Sprite anchors are their authored origins,
+rectangle anchors are their top-left corners, and point anchors are their positions.
+A rectangle extending outside the selection expands the composition bounds so its
+content remains intact; tiles in that expanded bounding rectangle are included too. Selection itself is transient and does not enter scene history.
+
+Use Copy, Cut, Paste, Duplicate or Cmd/Ctrl+C/X/V/D. These shortcuts leave text
+fields, dialogs, menus and preview controls to their normal behavior. The internal
+clipboard persists while switching scenes in the same project in this browser tab;
+it does not use or replace the operating system clipboard. Paste uses the hovered
+cell, then the selected rectangle's top-left cell, then cell (0, 0). Duplicate places
+one grid cell down and right from the source. Each cut, paste, duplicate, deletion,
+rectangle move or transform is one Undo/Redo operation. Arrows move a rectangular
+selection one grid cell; a single selected object moves one pixel. Delete removes
+all content in the selection. Escape deselects.
+
+Layer mapping uses the source layer's **name, type and occurrence among layers with
+that name/type in bottom-to-top order**, independent of numeric layer IDs. Create
+and show matching target layers first. Paste requires the same project and grid,
+all referenced assets, visible matching layers, available object IDs, and enough
+space for the entire composition. Forge checks all layers before changing content;
+failed placement leaves the scene and history intact. Empty tiles overwrite target
+tiles. Object placement appends in source order, preserving relative positions,
+names, classes, custom properties, sprite origins and semantic asset references.
+Paste and duplicate allocate new scene-wide object IDs; moves and transforms retain IDs.
+
+Flip H/V mirrors tiles, points and rectangles inside the selection's grid-aligned
+bounding box. Rotate 90° turns it clockwise and swaps width/height. The top-left
+grid origin stays fixed, with x increasing right and y down. Tile pixels and their
+collision metadata transform together. Points mirror as single pixel positions
+(`width - 1 - x`); rectangles mirror their full extents (`width - x - rectangleWidth`).
+Coordinates stay whole pixels. The entire result must fit in the scene. Sprite
+transforms are unsupported: a selection containing any sprite is rejected in full.
+Sprite copy, cut, paste, duplicate and reusable placement retain native size and origin.
+
+**Save stamp…** names a snapshot of the selection in `forge.project.json`. Choose it
+in Stamp, click **Place repeatedly**, then click cells on the canvas. Every placement
+is separately undoable. Escape or choosing a tool/asset ends repeated placement.
+Stamp names may repeat; each stamp has its own stable identity. Saving or deleting a
+stamp commits the project library immediately with revision conflict checks; scene
+Undo/Redo affects placements. Deleting a library entry leaves placed content intact.
+Library deletion is permanent; project backups preserve the library. Atlases used by
+stamps cannot be deleted until their stamps are removed. Up to 128 stamps are supported.
+
+Stamps survive reopening and project moves. Full project exports include the library;
+scene exports include placed content. Recovery checkpoints preserve authored placements.
+The project manifest stays at version 1 with an optional `stamps` collection. Earlier
+Forge versions cannot read projects containing stamps; back up before upgrading.
+Tiled maps use native orthogonal horizontal, vertical and diagonal GID flags, following
+[Tiled's documented transform order](https://doc.mapeditor.org/en/stable/reference/global-tile-ids/).
+The semantic scene API reserves suffix `#1`..`#7` for those flag combinations (H=1,
+V=2, diagonal=4). Unsupported object rotations and hexagonal flags remain rejected.

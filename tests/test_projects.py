@@ -759,12 +759,68 @@ class ProjectTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 png.decode(data)
 
-    def test_gid_flags_and_unknown_tilesets_are_rejected(self):
+    def test_transformed_tiles_roundtrip_save_export_and_reimport(self):
+        self.import_atlas()
+        loaded = self.scene()
+        cells = loaded["scene"]["cells"]
+        for flags in range(8):
+            cells[flags // 7][flags % 7] = "terrain/earth/0/0" + (f"#{flags}" if flags else "")
+        project = self.project.catalog()["project"]
+        encoded = tiled.encode(loaded["scene"], project)
+        base = encoded["layers"][0]["data"][0]
+        for flags in range(8):
+            self.assertEqual(
+                encoded["layers"][0]["data"][flags],
+                base | ((flags & 1) << 31) | ((flags & 2) << 29) | ((flags & 4) << 27),
+            )
+        saved = self.project.save_scene(
+            loaded["id"], loaded["scene"], loaded["revision"], self.revision()
+        )
+        self.assertEqual(saved["scene"]["cells"], cells)
+        self.assertEqual(self.project.load_scene(saved["id"])["scene"]["cells"], cells)
+        archive, _ = self.project.export_bundle("project", self.revision())
+        with zipfile.ZipFile(io.BytesIO(archive)) as exported:
+            document = json.loads(exported.read(f"scenes/{saved['id']}.tmj"))
+            self.assertEqual(tiled.decode(document, project)["cells"], cells)
+        self.import_atlas(reimport=True)
+        self.assertEqual(self.project.load_scene(saved["id"])["scene"]["cells"], cells)
+        for invalid in ("#1", "terrain/earth/0/0#8", "terrain/earth/0/0#0", "unknown#1"):
+            loaded["scene"]["cells"][0][0] = invalid
+            with self.assertRaises(ValueError):
+                tiled.check_scene(loaded["scene"], project)
+
+    def test_stamps_persist_conflict_guard_export_and_protect_assets(self):
+        self.import_atlas()
+        scene = self.scene()["scene"]
+        scene["cells"][0][0] = "terrain/earth/0/0#5"
+        before = self.revision()
+        result = self.project.save_stamp("Doorway", scene, [0], before)
+        stamp = result["project"]["stamps"][0]
+        reopened = Project(self.project.root)
+        self.assertEqual(reopened.catalog()["project"]["stamps"][0], stamp)
+        with self.assertRaises(Conflict):
+            self.project.save_stamp("Stale", scene, [0], before)
+        with self.assertRaisesRegex(ValueError, "stamp layer mapping"):
+            self.project.save_stamp("Bad", scene, [], self.revision())
+        with self.assertRaisesRegex(ValueError, "stamp Doorway"):
+            self.project.delete_atlas("terrain", self.revision())
+        self.import_atlas(reimport=True)
+        archive, _ = self.project.export_bundle("project", self.revision())
+        with zipfile.ZipFile(io.BytesIO(archive)) as exported:
+            manifest = json.loads(exported.read(MANIFEST))
+            self.assertEqual(manifest["stamps"], [stamp])
+        with self.assertRaises(Conflict):
+            self.project.delete_stamp(stamp["id"], before)
+        self.project.delete_stamp(stamp["id"], self.revision())
+        self.assertEqual(self.project.catalog()["project"]["stamps"], [])
+        self.project.delete_atlas("terrain", self.revision())
+
+    def test_hex_flags_and_unknown_tilesets_are_rejected(self):
         self.import_atlas()
         scene = self.scene()["scene"]
         project = self.project.catalog()["project"]
         document = tiled.encode(scene, project)
-        document["layers"][0]["data"][0] = 0x80000001
+        document["layers"][0]["data"][0] = 0x10000001
         with self.assertRaises(ValueError):
             tiled.decode(document, project)
         document["layers"][0]["data"][0] = 0
@@ -906,6 +962,32 @@ class StandaloneHttpTests(unittest.TestCase):
                     current = json.load(response)
                 with self.assertRaises(HTTPError) as caught:
                     request("/api/save-preview-settings", preview_request)
+                self.assertEqual(caught.exception.code, 409)
+                stamp_request = {
+                    "name": "Empty room",
+                    "scene": scene["scene"],
+                    "slots": [0],
+                    "project_revision": current["revision"],
+                }
+                with self.assertRaises(HTTPError) as caught:
+                    request("/api/save-stamp", stamp_request, token="wrong")
+                self.assertEqual(caught.exception.code, 403)
+                with request("/api/save-stamp", stamp_request) as response:
+                    current = json.load(response)
+                with self.assertRaises(HTTPError) as caught:
+                    request("/api/save-stamp", stamp_request)
+                self.assertEqual(caught.exception.code, 409)
+                deletion_stamp = {
+                    "id": current["project"]["stamps"][0]["id"],
+                    "project_revision": current["revision"],
+                }
+                with self.assertRaises(HTTPError) as caught:
+                    request("/api/delete-stamp", deletion_stamp, token="wrong")
+                self.assertEqual(caught.exception.code, 403)
+                with request("/api/delete-stamp", deletion_stamp) as response:
+                    current = json.load(response)
+                with self.assertRaises(HTTPError) as caught:
+                    request("/api/delete-stamp", deletion_stamp)
                 self.assertEqual(caught.exception.code, 409)
                 export_request = {
                     "scope": "scene",

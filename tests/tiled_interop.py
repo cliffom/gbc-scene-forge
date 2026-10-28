@@ -182,6 +182,9 @@ with tempfile.TemporaryDirectory(prefix="forge-tiled-") as folder:
             },
         ],
     }
+    # Orthogonal transform flags survive the official Tiled round-trip and export.
+    for flags in range(1, 8):
+        layered["layers"][1]["cells"][2][flags - 1] = f"terrain/earth/0/0#{flags}"
     # Cover a known opaque sprite pixel with an opaque tile.
     layered["layers"][1]["cells"][0][3] = "terrain/earth/0/0"
     project.save_scene(loaded["id"], layered, saved["revision"], project.catalog()["revision"])

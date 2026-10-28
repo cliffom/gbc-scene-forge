@@ -78,6 +78,7 @@ def report(scene, project, profile, scene_id):
     closures = {}
 
     def contribute(asset, location, pool):
+        asset = asset.rsplit("#", 1)[0]
         cached = resolved.get((pool, asset))
         if cached is not None:
             for key, source in cached:

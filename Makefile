@@ -12,11 +12,11 @@ DEMO_ROOT ?= .demo
 CHROME ?=
 TILED ?= tiled
 RASTERIZER ?= tmxrasterizer
-FRONTEND_TESTS := model drafts animation-preview movement-preview contracts timeouts atlas-import frontend-build
+FRONTEND_TESTS := model compositions drafts animation-preview movement-preview contracts timeouts atlas-import frontend-build
 FRONTEND_TEST_TARGETS := $(addprefix test-frontend-,$(FRONTEND_TESTS))
 .DEFAULT_GOAL := help
 
-.PHONY: help setup check-deps deps frontend run demo check test test-python test-frontend test-browser test-standalone-browser test-drafts-browser test-tiled lint typecheck format build check-dist clean clean-demo $(FRONTEND_TEST_TARGETS)
+.PHONY: help setup check-deps deps frontend run demo check test test-python test-frontend test-browser test-standalone-browser test-drafts-browser test-compositions-browser test-tiled lint typecheck format build check-dist clean clean-demo $(FRONTEND_TEST_TARGETS)
 help:
 	@echo 'Getting started:'
 	@echo '  make setup PYTHON=python3.13  Install locked dependencies and build the UI'
@@ -38,6 +38,7 @@ help:
 	@echo '  make test-browser            Run all Chrome acceptance suites (CHROME=/path)'
 	@echo '  make test-standalone-browser Run standalone editor Chrome acceptance'
 	@echo '  make test-drafts-browser     Run unsaved draft recovery Chrome acceptance'
+	@echo '  make test-compositions-browser Run clipboard and stamp Chrome acceptance'
 	@echo '  make test-tiled              Check Tiled interoperability (TILED=/path RASTERIZER=/path)'
 	@echo '  make lint / make format      Check or apply source formatting and lint rules'
 	@echo '  make typecheck               Run strict TypeScript checking'
@@ -83,10 +84,13 @@ test-frontend: $(FRONTEND_TEST_TARGETS)
 $(FRONTEND_TEST_TARGETS): test-frontend-%:
 	$(NODE) tests/$*.ts
 
-test-browser: test-standalone-browser test-drafts-browser
+test-browser: test-standalone-browser test-drafts-browser test-compositions-browser
 
 test-standalone-browser: frontend
 	$(NPM) run test:standalone -- $(if $(CHROME),"$(CHROME)")
+
+test-compositions-browser: frontend
+	$(NODE) tests/compositions-browser.ts $(if $(CHROME),"$(CHROME)")
 
 test-drafts-browser: frontend
 	$(NPM) run test:drafts -- $(if $(CHROME),"$(CHROME)")
