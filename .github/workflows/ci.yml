@@ -8,27 +8,45 @@ permissions:
 jobs:
   checks:
     runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version-file: '.python-version'
+      - name: Install Poetry
+        run: python -m pip install poetry==2.4.2
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+      - run: make setup
+      - run: make lint test-frontend build check-dist
+      - name: Browser acceptance checks
+        run: make test-browser CHROME=/usr/bin/google-chrome
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: compatibility-wheel
+          path: dist/*.whl
+          if-no-files-found: error
+  python-compatibility:
+    needs: checks
+    runs-on: ubuntu-24.04
     strategy:
+      fail-fast: false
       matrix:
-        python: ['3.10', '3.12', '3.14']
+        python: ['3.10', '3.11', '3.12', '3.13', '3.14']
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
-      - name: Install Poetry
-        run: python -m pip install poetry==2.4.2
-      - uses: actions/setup-node@v7.1.0
+      - uses: actions/download-artifact@v8.0.2
         with:
-          node-version: '24'
-          cache: npm
-      - run: make setup
-      - run: make lint test build
+          name: compatibility-wheel
+          path: dist/
+      - name: Install built wheel
+        run: python -m pip install --no-index --no-deps dist/*.whl
+      - name: Python tests
+        run: python -m unittest discover -s tests -p 'test_*.py'
       - name: Installed-wheel smoke test
-        run: |
-          python -m venv "$RUNNER_TEMP/package-smoke"
-          "$RUNNER_TEMP/package-smoke/bin/python" -m pip install --no-index --no-deps dist/*.whl
-          "$RUNNER_TEMP/package-smoke/bin/python" -I tests/package_smoke.py
-      - name: Browser acceptance checks
-        if: matrix.python == '3.12'
-        run: make test-browser CHROME=/usr/bin/google-chrome
+        run: python -I tests/package_smoke.py

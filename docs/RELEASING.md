@@ -1,7 +1,7 @@
 # Building and releasing
 
-Python 3.10+ and Make are required. The commands below select Python 3.12;
-set `PYTHON` to another supported interpreter if needed. Node 24.12+ and npm compile
+Development and release builds use Python 3.13 and Make. The installed package
+supports Python 3.10+. Node 24 (24.12+) and npm compile
 the TypeScript frontend and run its tests; the installed editor needs no Node.
 Install Poetry 2.4–2.x on `PATH` before running setup; CI installs Poetry 2.4.2
 with pip. Development dependencies are locked in `poetry.lock` and
@@ -10,7 +10,7 @@ uses `poetry env use` to create/select `.venv`, installs locked dependencies, an
 compiles the frontend. `make check-deps` checks prerequisites without installing.
 
 ```sh
-make setup PYTHON=python3.12
+make setup PYTHON=python3.13
 make lint test
 make build
 make check-dist
@@ -46,8 +46,11 @@ and restoring that bundled template without external artwork tools.
 CI and release workflows perform the same steps with standard venv/pip commands
 before accepting artifacts. No command above uploads packages.
 
-CI runs these checks on Python 3.10, 3.12 and 3.14, with Chrome acceptance checks
-on Python 3.12. The browser suite can also be run locally; see the README.
+CI runs lint, frontend tests, package builds and Chrome acceptance checks once
+on Python 3.13 with Node 24. A separate compatibility matrix installs that same
+wheel and runs Python tests and installed-package smoke checks on Python 3.10,
+3.11, 3.12, 3.13 and 3.14, without installing Node or rebuilding the frontend.
+The browser suite can also be run locally; see the README.
 
 ## Publication
 

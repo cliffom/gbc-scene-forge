@@ -23,7 +23,7 @@ additional Python runtime dependencies.
 Working from this repository? Install the development tools described below, then run:
 
 ```sh
-make setup PYTHON=python3.12
+make setup PYTHON=python3.13
 make run
 ```
 
@@ -162,9 +162,16 @@ covered by this project's MIT license.
 
 ## Development
 
-Install **Python 3.10+**, **Poetry 2.4–2.x**, **Node 24.12+**, **npm**, and **Make**
+Install **Python 3.13**, **Poetry 2.4–2.x**, **Node 24 (24.12+)**, **npm**, and **Make**
 on your `PATH`. See the [Poetry installation guide](https://python-poetry.org/docs/#installation)
 if needed. Run commands from the repository root.
+
+`.python-version` selects Python 3.13.13 with pyenv; `.nvmrc` and `.node-version`
+select Node 24 with nvm and nodenv respectively. Run `pyenv install -s` and
+`nvm install && nvm use` when using those managers. `.npmrc` makes npm reject
+Node versions outside the supported Node 24 range. After switching Python,
+rerun `make setup PYTHON=python3.13` to select the development interpreter.
+The installed package continues to support Python 3.10+.
 
 `make setup` checks tools, creates a Poetry-managed `.venv`, installs locked
 dependencies and builds the browser UI. It does not install Poetry itself.

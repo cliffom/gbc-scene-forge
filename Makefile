@@ -16,7 +16,7 @@ RASTERIZER ?= tmxrasterizer
 .PHONY: help setup check-deps deps frontend run demo check test test-python test-frontend test-browser test-tiled lint typecheck format build check-dist clean clean-demo
 help:
 	@echo 'Getting started:'
-	@echo '  make setup PYTHON=python3.12  Install locked dependencies and build the UI'
+	@echo '  make setup PYTHON=python3.13  Install locked dependencies and build the UI'
 	@echo '  make demo                    Reset .demo/ from the checked-in sample and open it'
 	@echo '  make run                     Browse/create projects in .forge_project/'
 	@echo '  make run PROJECT_ROOT=/path  Browse/create projects in another root'
