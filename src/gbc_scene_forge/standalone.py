@@ -1,25 +1,26 @@
-"""Standalone transport: one explicitly declared project workspace per server."""
+"""Loopback transport for a project root or a directly opened project."""
 
 import json
 import secrets
 from http.server import ThreadingHTTPServer
 from pathlib import Path
+from threading import Lock
 from urllib.parse import parse_qs, unquote, urlparse
 
 from .atlas import require
 from .documents import Conflict
 from .projects import Project
 from .server import STATIC, LocalHandler
-from .transactions import Transactions
+from .workspaces import ProjectRoot
 
 
 def make_handler(root, token):
     root = Path(root).absolute()
-    if root.is_dir() and (root / ".forge/history").exists():
-        Transactions(root, ".forge/history").recover()
+    if (root / "forge.project.json").exists():
+        Project.recover(root)
     if not (root / "forge.project.json").exists():
         Project.prepare_creation(root)
-    project = Project(root) if (root / "forge.project.json").exists() else None
+    project = Project(root, recover=False) if (root / "forge.project.json").exists() else None
 
     class Handler(LocalHandler):
         def do_GET(self):
@@ -171,9 +172,102 @@ def make_handler(root, token):
     return Handler
 
 
-def serve(root, port=8765):
+def make_root_handler(root, token):
+    workspace = ProjectRoot(root)
+    handlers = {}
+    initialization_lock = Lock()
+
+    class Handler(LocalHandler):
+        def dispatch(self, method):
+            if not self.trusted_host():
+                self.reply({"error": "Local host required"}, status=403)
+                return
+            if method == "do_POST" and not secrets.compare_digest(
+                self.headers.get("X-Scene-Token", ""), token
+            ):
+                self.reply({"error": "Local editor token required"}, status=403)
+                return
+            route = unquote(urlparse(self.path).path)
+            try:
+                if route.startswith("/projects/"):
+                    parts = route.split("/", 3)
+                    require(len(parts) == 4, "Project URLs must end with a slash")
+                    project_path = workspace.path(parts[2])
+                    with initialization_lock:
+                        cached = handlers.get(project_path)
+                        if cached is None:
+                            require(
+                                (project_path / "forge.project.json").is_file(), "Project not found"
+                            )
+                            handler = make_handler(project_path, token)
+                            cached = (handler, Lock())
+                            handlers[project_path] = cached
+                        handler, request_lock = cached
+                    original = self.path
+                    self.path = "/" + parts[3]
+                    query = urlparse(original).query
+                    if query:
+                        self.path += "?" + query
+                    try:
+                        # Project reads also take nonblocking filesystem locks. Queue
+                        # local requests so tabs do not contend with one another.
+                        with request_lock:
+                            getattr(handler, method)(self)
+                    finally:
+                        self.path = original
+                elif route == "/api/project" and method == "do_GET":
+                    self.reply(dict(workspace.catalog(), token=token))
+                elif route == "/api/create-project" and method == "do_POST":
+                    require(
+                        self.headers.get("Content-Type") == "application/json",
+                        "Use application/json",
+                    )
+                    length = int(self.headers.get("Content-Length", "0"))
+                    require(0 < length <= 8192, "Project request must be within 8 KiB")
+                    data = json.loads(self.rfile.read(length))
+                    require(isinstance(data, dict), "Expected a JSON object")
+                    directory = workspace.create(data.get("name"))
+                    self.reply({"directory": directory})
+                elif method == "do_GET" and route in (
+                    "/",
+                    "/project.js",
+                    "/project.js.map",
+                    "/project.css",
+                    "/style.css",
+                    "/branding/logo-64.png",
+                    "/branding/favicon-32.png",
+                    "/branding/favicon-16.png",
+                ):
+                    file = "project.html" if route == "/" else route[1:]
+                    mime = {
+                        "html": "text/html",
+                        "js": "text/javascript",
+                        "map": "application/json",
+                        "css": "text/css",
+                        "png": "image/png",
+                    }[file.rsplit(".", 1)[1]]
+                    self.reply((STATIC / file).read_bytes(), mime)
+                else:
+                    self.reply({"error": "Not found"}, status=404)
+            except Conflict as error:
+                self.reply({"error": str(error)}, status=409)
+            except (ValueError, OSError, KeyError, TypeError) as error:
+                self.reply({"error": str(error)}, status=400)
+
+        def do_GET(self):
+            self.dispatch("do_GET")
+
+        def do_POST(self):
+            self.dispatch("do_POST")
+
+    return Handler
+
+
+def serve(root, port=8765, *, single_project=False):
     token = secrets.token_urlsafe(32)
-    with ThreadingHTTPServer(("127.0.0.1", port), make_handler(root, token)) as server:
+    with ThreadingHTTPServer(
+        ("127.0.0.1", port), (make_handler if single_project else make_root_handler)(root, token)
+    ) as server:
         print(f"Scene Forge: http://127.0.0.1:{server.server_port}/", flush=True)
         try:
             server.serve_forever()

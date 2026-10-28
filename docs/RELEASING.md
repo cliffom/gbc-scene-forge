@@ -23,9 +23,10 @@ Use `make format` to apply formatting, and `make typecheck` for a standalone typ
 imports with esbuild, then uses the
 standard isolated Python build frontend: it creates the
 source distribution, then builds the wheel from that source distribution and
-checks metadata with Twine. Artifacts appear in `dist/`. Before building a different
-version, run `make clean` followed by `npm ci` to reinstall the frontend dependencies
-removed by cleanup. The source archive includes TypeScript sources, frontend
+checks metadata with Twine. Artifacts appear in `dist/`. `make build` and
+`make check-dist` select artifacts matching the current package version, so older
+local builds do not interfere. `make clean` removes all build outputs and
+`node_modules`; run `npm ci` or `make setup` afterward. The source archive includes TypeScript sources, frontend
 configuration, the npm lockfile, esbuild dependency metadata, and the prebuilt
 bundle and source map. Hatchling is the standard Python build backend; its
 declarative file inclusion requires the bundle and map to exist. No custom Python
@@ -36,7 +37,7 @@ assets without Node. Direct Python builds from a checkout must follow
 `build/package-smoke`, installs the wheel with `pip --no-index --no-deps`, and runs
 `tests/package_smoke.py` with Python's `-I` isolation flag. The small suite checks
 imports, version consistency, absent runtime dependencies, bundled browser assets,
-demo scene loading, and standalone project create/reopen/export. It is
+standalone sample loading, and project create/reopen/export. It is
 intentionally excluded from source-test discovery.
 CI and release workflows perform the same steps with standard venv/pip commands
 before accepting artifacts. No command above uploads packages.
@@ -65,7 +66,7 @@ publishing page. Use the official [trusted publisher setup guide](https://docs.p
 The workflow follows the [Python Packaging User Guide](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/)
 and uses short-lived OIDC credentials; no PyPI API token is stored in the repository.
 
-After reviewing and committing a release, create and push an annotated `v0.2.0`
+After reviewing and committing a release, create and push an annotated `v0.3.0`
 tag (or the matching next version). Run **Publish package** manually against that
 tag, selecting `testpypi` first when its trusted publisher is configured. TestPyPI
 is currently unconfigured; its 0.1.4 upload failed with `invalid-publisher`. Until
@@ -75,22 +76,23 @@ with `tests/package_smoke.py` after publication. The workflow rebuilds and
 checks the distributions, checks the tag against the package version, then uploads
 only those verified artifacts. Pushing a tag alone does not publish.
 
-## Release 0.2.0
+## Release 0.3.0
 
-Version 0.2.0 introduces standalone projects, imported atlas artwork, layered
-Tiled authoring, portable exports, and sprite animation/movement previews.
-See [release notes and compatibility changes](RELEASE-0.2.0.md).
+Version 0.3.0 adds project roots, named project directories, a project selector,
+and save-aware workspace switching. It also includes the editable standalone sample
+and Make development workflow. Manifest schema remains version 1.
+See [release notes and compatibility changes](RELEASE-0.3.0.md).
 
 Before tagging, run:
 
 ```sh
 make lint test build check-dist
-npm run test:standalone
-poetry run python tests/tiled_interop.py --tiled /path/to/Tiled --rasterizer /path/to/tmxrasterizer
+make test-browser
+make test-tiled TILED=/path/to/Tiled RASTERIZER=/path/to/tmxrasterizer
 ```
 
-Keep only the intended version's artifacts in `dist/` before `make check-dist`
-or publication. Its wheel glob must identify one release. Review the release
+`make check-dist` installs the current version's wheel explicitly. Keep only the
+intended version's artifacts in `dist/` before any manual publication. Review the release
 notes, commit the release changes, and use the publication workflow above.
 Keep the README installation example and release notes aligned with the tagged version.
 Verify a fresh install and the standalone launcher before announcing the release.

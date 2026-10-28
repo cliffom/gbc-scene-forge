@@ -70,6 +70,10 @@ if (!ctx) {
 }
 const context = ctx;
 const status = element('status', HTMLElement);
+const projectMatch = /^\/projects\/([^/]+)\//.exec(location.pathname);
+const projectBase = projectMatch ? `/projects/${projectMatch[1]}` : '';
+let choosingProject = false;
+let navigating = false;
 let token = '';
 let previewSettingsLoaded = false;
 let atlasFolder: AtlasFolder | null = null;
@@ -216,7 +220,7 @@ select('object-list').onchange = () => {
   draw();
 };
 async function request(route: string, data?: unknown, timeout = 30000): Promise<Response> {
-  const response = await fetch(`/api/${route}`, {
+  const response = await fetch(`${projectBase}/api/${route}`, {
     method: data === undefined ? 'GET' : 'POST',
     headers:
       data === undefined ? {} : { 'Content-Type': 'application/json', 'X-Scene-Token': token },
@@ -397,6 +401,10 @@ async function discard(): Promise<boolean> {
   });
 }
 function update() {
+  button('switch-project').disabled = busy || anchor !== null;
+  for (const id of ['switch-save', 'switch-discard', 'switch-cancel']) {
+    button(id).disabled = busy;
+  }
   element('dirty', HTMLElement).textContent = !editor ? 'NO SCENE' : dirty() ? 'UNSAVED' : 'SAVED';
   element('dirty', HTMLElement).dataset.dirty = String(dirty());
   button('save-preview-settings').disabled = busy || !project;
@@ -627,6 +635,35 @@ async function run(work: () => Promise<void>) {
 async function refresh() {
   const data = await api('project', record);
   token = string(data.token);
+  choosingProject = Array.isArray(data.projects);
+  element('project-picker', HTMLElement).hidden = !choosingProject;
+  button('switch-project').hidden = !projectBase;
+  if (choosingProject) {
+    element('project-root-path', HTMLElement).textContent = string(data.project_root);
+    const list = element('project-list', HTMLElement);
+    list.replaceChildren();
+    for (const value of array(data.projects, record)) {
+      const link = document.createElement('a');
+      link.className = 'project-card';
+      link.href = `/projects/${encodeURIComponent(string(value.directory))}/`;
+      const title = document.createElement('strong');
+      title.textContent = string(value.name);
+      const folder = document.createElement('span');
+      folder.textContent = string(value.directory) + '/';
+      link.append(title, folder);
+      list.append(link);
+    }
+    if (!list.children.length) {
+      list.textContent = 'No projects yet. Create your first project below.';
+    }
+    const unavailable = element('unavailable-projects', HTMLElement);
+    unavailable.replaceChildren();
+    for (const value of array(data.unavailable, record)) {
+      const message = document.createElement('p');
+      message.textContent = `${string(value.directory)}: ${string(value.error)}`;
+      unavailable.append(message);
+    }
+  }
   if (!previewSettingsLoaded && data.project !== null) {
     const saved = record(record(data.project).preview).sprite;
     if (saved !== undefined) {
@@ -638,8 +675,9 @@ async function refresh() {
   revision = data.project === null ? '' : string(data.revision);
   form('project-form').hidden = project !== null;
   element('workspace', HTMLElement).hidden = project === null;
-  element('project-name', HTMLElement).textContent = project?.name || 'Create a project';
-  document.title = `${project?.name || 'New project'} · Scene Forge`;
+  element('project-name', HTMLElement).textContent =
+    project?.name || (choosingProject ? 'Your projects' : 'Create a project');
+  document.title = `${project?.name || (choosingProject ? 'Projects' : 'New project')} · Scene Forge`;
   const previous = select('scenes').value;
   select('scenes').replaceChildren(
     new Option('Choose a scene…', ''),
@@ -649,7 +687,7 @@ async function refresh() {
   images.clear();
   for (const [id, atlas] of Object.entries(project?.atlases || {})) {
     const image = new Image();
-    image.src = `/${atlas.png}?revision=${encodeURIComponent(revision)}`;
+    image.src = `${projectBase}/${atlas.png}?revision=${encodeURIComponent(revision)}`;
     await image.decode();
     images.set(id, image);
   }
@@ -1325,7 +1363,12 @@ canvas.ondrop = (event) => {
 form('project-form').onsubmit = (event) => {
   event.preventDefault();
   void run(async () => {
-    await api('create-project', record, { name: input('project-title').value });
+    const result = await api('create-project', record, { name: input('project-title').value });
+    if (choosingProject) {
+      navigating = true;
+      location.assign(`/projects/${encodeURIComponent(string(result.directory))}/`);
+      return;
+    }
     await refresh();
     status.textContent = 'Project created. Import an atlas and create a scene.';
   });
@@ -1451,27 +1494,58 @@ button('save-preview-settings').onclick = () => {
       'Preview settings saved. Scene edits and starting positions are unchanged.';
   });
 };
-button('save').onclick = () => {
+async function saveScene() {
   if (!editor || !loaded) {
     return;
   }
-  const current = loaded;
-  const scene = sceneSnapshot();
+  const data = await api('save-scene', decodeLoaded, {
+    id: loaded.id,
+    scene: sceneSnapshot(),
+    revision: loaded.revision,
+    project_revision: revision,
+  });
+  loaded = data;
+  baseline = snapshot();
+  const catalog = await api('project', record);
+  revision = string(catalog.revision);
+  status.textContent = 'Scene saved.';
+}
+button('save').onclick = () => void run(saveScene);
+button('switch-project').onclick = () => {
+  if (busy || anchor) {
+    return;
+  }
+  if (dirty()) {
+    element('switch-project-dialog', HTMLDialogElement).showModal();
+  } else {
+    navigating = true;
+    location.assign('/');
+  }
+};
+button('switch-save').onclick = () => {
   void run(async () => {
-    const data = await api('save-scene', decodeLoaded, {
-      id: current.id,
-      scene,
-      revision: current.revision,
-      project_revision: revision,
-    });
-    loaded = data;
-    baseline = snapshot();
-    // Saving retains editor undo history.
-    const catalog = await api('project', record);
-    revision = string(catalog.revision);
-    status.textContent = 'Scene saved.';
+    await saveScene();
+    navigating = true;
+    location.assign('/');
   });
 };
+button('switch-discard').onclick = () => {
+  if (!busy) {
+    navigating = true;
+    location.assign('/');
+  }
+};
+button('switch-cancel').onclick = () => {
+  if (!busy) {
+    element('switch-project-dialog', HTMLDialogElement).close();
+  }
+};
+element('switch-project-dialog', HTMLDialogElement).oncancel = (event) => {
+  if (busy) {
+    event.preventDefault();
+  }
+};
+
 function exportDetails() {
   const projectScope = select('export-scope').value === 'project';
   element('export-details', HTMLElement).textContent = projectScope
@@ -1899,7 +1973,7 @@ document.addEventListener('keydown', (event) => {
   }
 });
 window.addEventListener('beforeunload', (event) => {
-  if (dirty() || busy) {
+  if (!navigating && (dirty() || busy)) {
     event.preventDefault();
     event.returnValue = '';
   }
@@ -1915,5 +1989,7 @@ void run(async () => {
   }
   status.textContent = project
     ? 'Choose a scene, or import an atlas and create one.'
-    : 'Name your project to get started.';
+    : choosingProject
+      ? 'Choose a project or create a new one.'
+      : 'Name your project to get started.';
 });

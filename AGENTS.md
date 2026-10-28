@@ -8,6 +8,9 @@
 
 Install Python 3.10+, Poetry 2.4–2.x, Node 24.12+, npm, and Make on `PATH`.
 
+- `make help`: list setup, standalone launch, test and build targets.
+- `make run [PROJECT_ROOT=/path]`: rebuild and browse projects (default `.forge_project/`). Use `PROJECT=/path` to open one project directly.
+- `make demo`: rebuild and serve a populated standalone sample in `.demo/`, preserving edits.
 - `make check-deps`: check installed tools and Poetry/project compatibility.
 - `make setup PYTHON=python3.12`: use Poetry to manage `.venv`, install locked dependencies, and bundle the frontend.
 - `make lint`: run Ruff, ESLint, Prettier, and strict TypeScript checks.
@@ -15,7 +18,9 @@ Install Python 3.10+, Poetry 2.4–2.x, Node 24.12+, npm, and Make on `PATH`.
 - `make build`: bundle the frontend, build source/wheel distributions, and check metadata.
 - `make check-dist`: install the built wheel in a fresh environment and run `tests/package_smoke.py`.
 - `.venv/bin/python tests/serve_standalone_fixture.py --root /tmp/forge-fixture --port 8777`: launch a disposable standalone project fixture.
-- `npm run test:standalone`: exercise standalone project workflows with a disposable workspace and local Chrome.
+- `make test-browser [CHROME=/path]`: rebuild and exercise standalone workflows with a disposable workspace and Chrome.
+- `make check`: run lint, Python/TypeScript tests and standalone Chrome acceptance.
+- `make test-tiled TILED=/path RASTERIZER=/path`: run optional official Tiled interoperability checks.
 
 ## Coding Style & Naming Conventions
 

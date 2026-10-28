@@ -31,9 +31,4 @@ jobs:
           "$RUNNER_TEMP/package-smoke/bin/python" -I tests/package_smoke.py
       - name: Browser acceptance checks
         if: matrix.python == '3.12'
-        run: |
-          .venv/bin/python tests/serve_fixture.py --root "$RUNNER_TEMP/forge-fixture" --port 8777 &
-          fixture_pid=$!
-          trap 'kill "$fixture_pid"' EXIT
-          npm run test:browser -- http://127.0.0.1:8777/ /usr/bin/google-chrome
-          npm run test:standalone -- /usr/bin/google-chrome
+        run: make test-browser CHROME=/usr/bin/google-chrome
