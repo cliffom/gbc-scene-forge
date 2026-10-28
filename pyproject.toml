@@ -1,7 +1,7 @@
 [project]
 name = "gbc-scene-forge"
-version = "0.1.5"
-description = "Standalone local scene editor with optional game-owned connectors"
+version = "0.2.0"
+description = "Standalone local scene editor for imported artwork and portable Tiled projects"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
