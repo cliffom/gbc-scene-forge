@@ -446,6 +446,193 @@ class ProjectTests(unittest.TestCase):
             self.scene("Blocked")
         self.assertEqual(image_path.read_bytes(), b"external edit")
 
+    def test_rename_preserves_scene_identity_bytes_and_reopen(self):
+        loaded = self.scene()
+        path = self.project.root / f"scenes/{loaded['id']}.tmj"
+        before = path.read_bytes()
+        result = self.project.rename_scene(
+            loaded["id"], "  Courtyard  ", loaded["revision"], self.revision()
+        )
+        self.assertEqual(
+            result["project"]["scenes"],
+            [{"id": loaded["id"], "name": "Courtyard", "path": f"scenes/{loaded['id']}.tmj"}],
+        )
+        self.assertEqual(path.read_bytes(), before)
+        self.assertEqual(
+            Project(self.project.root).load_scene(loaded["id"]), dict(loaded, name="Courtyard")
+        )
+
+    def test_duplicate_saved_and_unsaved_keep_source_and_share_assets(self):
+        self.import_atlas()
+        loaded = self.scene()
+        candidate = copy.deepcopy(loaded["scene"])
+        candidate["cells"][0][0] = "terrain/earth/0/0#1"
+        before = self.project.catalog()["project"]["files"]
+        first = self.project.duplicate_scene(
+            loaded["id"], "Saved copy", loaded["revision"], self.revision()
+        )["duplicated"]
+        second = self.project.duplicate_scene(
+            loaded["id"], "Canvas copy", loaded["revision"], self.revision(), candidate
+        )["duplicated"]
+        self.assertEqual(len({first, second, loaded["id"]}), 3)
+        self.assertEqual(self.project.load_scene(first)["scene"], loaded["scene"])
+        self.assertEqual(self.project.load_scene(second)["scene"]["cells"], candidate["cells"])
+        self.assertEqual(self.project.load_scene(loaded["id"]), loaded)
+        self.assertEqual(self.project.catalog()["project"]["files"], before)
+        changed = self.project.load_scene(first)
+        changed["scene"]["cells"][0][1] = "terrain/stone/0/0"
+        self.project.save_scene(first, changed["scene"], changed["revision"], self.revision())
+        self.assertEqual(self.project.load_scene(loaded["id"]), loaded)
+        moved = self.folder / "moved"
+        shutil.move(self.project.root, moved)
+        reopened = Project(moved)
+        self.assertEqual(reopened.load_scene(second)["scene"]["cells"], candidate["cells"])
+        payload, _ = reopened.export_bundle("project", reopened.catalog()["revision"])
+        with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+            self.assertTrue(any(second in path for path in archive.namelist()))
+
+    def test_scene_management_conflicts_invalid_names_and_invalid_snapshot(self):
+        loaded = self.scene()
+        stale = self.revision()
+        self.scene("Other")
+        for method in (self.project.rename_scene, self.project.duplicate_scene):
+            with self.assertRaises(Conflict):
+                method(loaded["id"], "Changed", loaded["revision"], stale)
+            before = self.project.catalog()
+            for title in ("", "a" * 101, None):
+                with self.assertRaises(ValueError):
+                    method(loaded["id"], title, loaded["revision"], self.revision())
+            self.assertEqual(self.project.catalog(), before)
+        with self.assertRaises(ValueError):
+            self.project.duplicate_scene(
+                loaded["id"], "Bad", loaded["revision"], self.revision(), {"width": 0}
+            )
+        path = self.project.root / f"scenes/{loaded['id']}.tmj"
+        path.write_bytes(path.read_bytes() + b"\n")
+        before = self.project.catalog()
+        for method in (self.project.rename_scene, self.project.duplicate_scene):
+            with self.assertRaises(Conflict):
+                method(loaded["id"], "Changed", loaded["revision"], self.revision())
+        self.assertEqual(self.project.catalog(), before)
+
+    def test_management_guards_source_again_at_publication(self):
+        loaded = self.scene()
+        path = self.project.root / f"scenes/{loaded['id']}.tmj"
+        original = self.project._commit
+
+        def external_change(*args, **kwargs):
+            path.write_bytes(path.read_bytes() + b"\n")
+            return original(*args, **kwargs)
+
+        for method in (self.project.rename_scene, self.project.duplicate_scene):
+            loaded = self.project.load_scene(loaded["id"])
+            before = self.project.catalog()
+            with patch.object(self.project, "_commit", side_effect=external_change):
+                with self.assertRaises(Conflict):
+                    method(loaded["id"], "Changed", loaded["revision"], self.revision())
+            self.assertEqual(self.project.catalog(), before)
+            self.assertEqual(len(list((self.project.root / "scenes").glob("*.tmj"))), 1)
+
+    def test_resized_layered_snapshot_duplicate_export_and_interrupted_save(self):
+        self.import_atlas()
+        source = self.scene()
+        candidate = {
+            "width": 2,
+            "height": 2,
+            "grid": 8,
+            "next_layer_id": 10,
+            "next_object_id": 9,
+            "layers": [
+                {
+                    "id": 4,
+                    "name": "Hidden",
+                    "visible": False,
+                    "type": "tilelayer",
+                    "cells": [["terrain/earth/0/0#5", ""], ["", ""]],
+                },
+                {
+                    "id": 6,
+                    "name": "Entrances",
+                    "visible": True,
+                    "type": "objectgroup",
+                    "objects": [
+                        {
+                            "id": 7,
+                            "kind": "rectangle",
+                            "x": 0,
+                            "y": 0,
+                            "width": 16,
+                            "height": 8,
+                            "name": "Door",
+                            "class": "exit",
+                            "properties": [{"name": "enabled", "type": "bool", "value": True}],
+                        }
+                    ],
+                },
+            ],
+        }
+        duplicate = self.project.duplicate_scene(
+            source["id"], "Resized snapshot", source["revision"], self.revision(), candidate
+        )["duplicated"]
+        self.assertEqual(self.project.load_scene(duplicate)["scene"], candidate)
+        payload, _ = self.project.export_bundle("scene", self.revision(), duplicate)
+        with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+            maps = [entry for entry in archive.namelist() if entry.endswith(".tmj")]
+            native = json.loads(archive.read(maps[0]))
+            self.assertEqual((native["width"], native["height"]), (2, 2))
+            self.assertEqual(native["layers"][1]["objects"][0]["id"], 7)
+        # A resize uses the existing durable save: interrupt after map publication.
+        before = self.project.catalog()
+        original = transactions.atomic_write
+
+        def fail_manifest(path, data):
+            if path == self.project.root / MANIFEST:
+                raise OSError("interrupted resized scene save")
+            original(path, data)
+
+        with (
+            patch.object(transactions, "atomic_write", side_effect=fail_manifest),
+            patch.object(
+                transactions.Transactions, "_restore", side_effect=OSError("process exited")
+            ),
+        ):
+            with self.assertRaises(OSError):
+                self.project.save_scene(
+                    source["id"], candidate, source["revision"], self.revision()
+                )
+        reopened = Project(self.project.root)
+        self.assertEqual(reopened.catalog(), before)
+        self.assertEqual(reopened.load_scene(source["id"]), source)
+        saved = reopened.save_scene(source["id"], candidate, source["revision"], self.revision())
+        self.assertEqual(saved["scene"], candidate)
+        self.assertEqual(Project(self.project.root).load_scene(source["id"])["scene"], candidate)
+
+    def test_duplicate_interruption_recovers_map_and_manifest_together(self):
+        loaded = self.scene()
+        before = self.project.catalog()
+        original = transactions.atomic_write
+
+        def fail_manifest(path, data):
+            if path == self.project.root / MANIFEST:
+                raise OSError("interrupted after duplicated map publication")
+            original(path, data)
+
+        with (
+            patch.object(transactions, "atomic_write", side_effect=fail_manifest),
+            patch.object(
+                transactions.Transactions, "_restore", side_effect=OSError("process exited")
+            ),
+        ):
+            with self.assertRaises(OSError):
+                self.project.duplicate_scene(
+                    loaded["id"], "Copy", loaded["revision"], self.revision()
+                )
+        self.assertEqual(len(list((self.project.root / "scenes").glob("*.tmj"))), 2)
+        reopened = Project(self.project.root)
+        self.assertEqual(reopened.catalog(), before)
+        self.assertEqual(len(list((self.project.root / "scenes").glob("*.tmj"))), 1)
+        self.assertEqual(reopened.load_scene(loaded["id"]), loaded)
+
     def test_delete_scene_keeps_shared_assets_and_other_scenes(self):
         self.import_atlas()
         first, second = self.scene(), self.scene("River")
@@ -931,6 +1118,22 @@ class StandaloneHttpTests(unittest.TestCase):
                 self.assertEqual(caught.exception.code, 409)
                 with request("/api/project") as response:
                     current = json.load(response)
+                for route in ("rename-scene", "duplicate-scene"):
+                    body = {
+                        "id": scene["id"],
+                        "revision": scene["revision"],
+                        "name": "Managed",
+                        "project_revision": current["revision"],
+                    }
+                    with self.assertRaises(HTTPError) as caught:
+                        request("/api/" + route, body, token="wrong")
+                    self.assertEqual(caught.exception.code, 403)
+                    with request("/api/" + route, body) as response:
+                        current = json.load(response)
+                    # A stale project revision must not change either source or copy.
+                    with self.assertRaises(HTTPError) as caught:
+                        request("/api/" + route, body)
+                    self.assertEqual(caught.exception.code, 409)
                 metadata_request = {
                     "atlas": "terrain",
                     "group": "8",

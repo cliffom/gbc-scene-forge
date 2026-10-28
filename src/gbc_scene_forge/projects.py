@@ -438,6 +438,37 @@ class Project:
             "scene": tiled.decode(json.loads(encoded), document),
         }
 
+    def rename_scene(self, scene_id, title, revision, project_revision):
+        document = self._current(project_revision)
+        current = self.load_scene(scene_id, document)
+        if current["revision"] != revision:
+            raise Conflict("Scene changed on disk. Reopen it before renaming.")
+        entry = next(item for item in document["scenes"] if item["id"] == scene_id)
+        entry["name"] = name(title)
+        self._commit(document, project_revision, {}, {entry["path"]: revision}, "Rename scene")
+        return self.catalog()
+
+    def duplicate_scene(self, scene_id, title, revision, project_revision, scene=None):
+        document = self._current(project_revision)
+        current = self.load_scene(scene_id, document)
+        if current["revision"] != revision:
+            raise Conflict("Scene changed on disk. Reopen it before duplicating.")
+        title = name(title)
+        candidate = current["scene"] if scene is None else scene
+        encoded = json_text(tiled.encode(candidate, document)).encode()
+        new_id = str(uuid4())
+        path = f"scenes/{new_id}.tmj"
+        source = next(item["path"] for item in document["scenes"] if item["id"] == scene_id)
+        document["scenes"].append({"id": new_id, "name": title, "path": path})
+        self._commit(
+            document,
+            project_revision,
+            {path: encoded},
+            {path: None, source: revision},
+            "Duplicate scene",
+        )
+        return {"duplicated": new_id, **self.catalog()}
+
     def delete_scene(self, scene_id, revision, project_revision):
         document = self._current(project_revision)
         entry = next((item for item in document["scenes"] if item["id"] == scene_id), None)

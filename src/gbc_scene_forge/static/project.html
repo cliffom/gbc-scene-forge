@@ -47,6 +47,9 @@
       <label>Scene <select id="scenes" aria-label="Saved scenes"><option value="">Choose a scene…</option></select></label>
       <span id="scene-save-state" role="status" aria-live="polite"></span>
       <button id="show-create">Create scene</button>
+      <button id="show-rename" disabled>Rename scene</button>
+      <button id="show-duplicate-scene" disabled>Duplicate scene</button>
+      <button id="show-resize" disabled>Resize / crop</button>
       <button id="show-delete" disabled>Delete scene</button>
       <span class="spacer"></span>
       <button id="show-export" disabled>Export…</button>
@@ -302,6 +305,36 @@
   </dialog>
   <dialog id="discard-dialog" aria-labelledby="discard-heading">
     <form method="dialog"><h2 id="discard-heading">Discard unsaved changes?</h2><p>Save this scene before continuing to keep your current edits.</p><div class="dialog-actions"><button id="keep-editing" value="cancel" autofocus>Keep editing</button><button value="discard" class="primary">Discard changes</button></div></form>
+  </dialog>
+  <dialog id="scene-manage-dialog" aria-labelledby="scene-manage-heading">
+    <form id="scene-manage-form">
+      <h2 id="scene-manage-heading">Rename scene</h2>
+      <label class="field">Name <input id="scene-manage-name" required maxlength="100"></label>
+      <label id="duplicate-canvas-field"><input id="duplicate-canvas" type="checkbox"> Include unsaved canvas edits</label>
+      <p id="scene-manage-hint" class="hint"></p>
+      <p class="form-error error" role="alert"></p>
+      <div class="dialog-actions"><button type="button" data-close="scene-manage-dialog">Cancel</button><button id="scene-manage-confirm" class="primary">Rename scene</button></div>
+    </form>
+  </dialog>
+  <dialog id="resize-scene-dialog" aria-labelledby="resize-scene-heading">
+    <form id="resize-scene-form">
+      <h2 id="resize-scene-heading">Resize / crop scene</h2>
+      <div class="property-grid"><label class="field">Width (cells) <input id="resize-width" type="number" min="1" max="256" required></label>
+      <label class="field">Height (cells) <input id="resize-height" type="number" min="1" max="256" required></label></div>
+      <label class="field">Keep anchored to <select id="resize-anchor">
+        <option value="0,0">Top left</option><option value="1,0">Top center</option><option value="2,0">Top right</option>
+        <option value="0,1">Middle left</option><option value="1,1">Center</option><option value="2,1">Middle right</option>
+        <option value="0,2">Bottom left</option><option value="1,2">Bottom center</option><option value="2,2">Bottom right</option>
+      </select></label>
+      <canvas id="resize-preview" width="320" height="200" aria-label="Resize preview: red marks discarded area, green outlines the new scene"></canvas>
+      <p class="hint">Green outline: new scene. Red: discarded area.</p>
+      <p id="resize-summary" aria-live="polite"></p>
+      <ul id="resize-objects"></ul>
+      <p class="hint">All layers, including hidden layers, move together. Rectangles crossing an edge are clipped; points and sprites outside by their anchor are removed. Sprite artwork retains its native size. Undo restores the entire edit. Save commits it to disk.</p>
+      <label><input id="resize-confirm-loss" type="checkbox"> Allow the listed removals and clipping</label>
+      <p class="form-error error" role="alert"></p>
+      <div class="dialog-actions"><button type="button" data-close="resize-scene-dialog">Cancel</button><button id="resize-confirm" class="primary">Apply resize</button></div>
+    </form>
   </dialog>
   <dialog id="delete-scene-dialog" aria-labelledby="delete-heading">
     <form id="delete-scene-form">

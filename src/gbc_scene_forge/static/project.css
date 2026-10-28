@@ -211,3 +211,7 @@
 
 .composition-tools { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 12px; border-bottom: 1px solid #394139; font-size: 12px; }
 .composition-tools button, .composition-tools select { font-size: 12px; padding: 4px 7px; }
+
+#resize-scene-dialog {max-height:90dvh;overflow:auto}
+#resize-preview {display:block;max-width:100%;margin:12px auto;background:#171a16;border:1px solid var(--line)}
+#resize-objects {max-height:120px;overflow:auto;font-size:12px}

@@ -220,6 +220,25 @@ def make_handler(root, token):
                             data.get("project_revision"),
                         )
                     )
+                elif route == "/api/rename-scene":
+                    self.reply(
+                        project.rename_scene(
+                            data.get("id"),
+                            data.get("name"),
+                            data.get("revision"),
+                            data.get("project_revision"),
+                        )
+                    )
+                elif route == "/api/duplicate-scene":
+                    self.reply(
+                        project.duplicate_scene(
+                            data.get("id"),
+                            data.get("name"),
+                            data.get("revision"),
+                            data.get("project_revision"),
+                            data.get("scene"),
+                        )
+                    )
                 elif route == "/api/delete-scene":
                     self.reply(
                         project.delete_scene(

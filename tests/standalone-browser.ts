@@ -2483,6 +2483,9 @@ for y in range(height):
   await submit('import-form');
   await wait("document.getElementById('status').textContent.includes('Atlas imported')");
   await wait("document.getElementById('show-palettes').dataset.state === 'fail'");
+  await wait(
+    "document.getElementById('show-create').disabled === false && document.getElementById('dirty').textContent === 'SAVED'",
+  );
   await evaluate('window.__paletteReloadMarker = true');
   await browser.call('Page.reload');
   await wait(

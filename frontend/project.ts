@@ -1,4 +1,5 @@
 /** Standalone project controller for atlas, layer and object authoring. */
+import { resizeScene } from './scene-size.mts';
 import { capture, eraseCaptured, paste, transform } from './compositions.mts';
 import type { Composition, CompositionSelection } from './compositions.mts';
 import { tileParts, tileContext, transformMetadata } from './tile-transform.mts';
@@ -699,6 +700,8 @@ function decodeProject(value: unknown): Project {
 function snapshot() {
   return editor
     ? JSON.stringify({
+        width: editor.scene.width,
+        height: editor.scene.height,
         layers: editor.layers,
         nextLayer: editor.scene.next_layer_id,
         next: editor.scene.next_object_id,
@@ -810,6 +813,11 @@ function update() {
     control.disabled = busy;
   }
   select('scenes').disabled = busy || anchor !== null || !project?.scenes.length;
+  for (const id of ['show-rename', 'show-duplicate-scene', 'show-resize']) {
+    button(id).disabled = busy || !editor || anchor !== null;
+  }
+  button('scene-manage-confirm').disabled = busy;
+  button('resize-confirm').disabled = busy;
   button('show-delete').disabled = busy || !select('scenes').value;
   button('delete-scene-confirm').disabled = busy || !deleteCandidate;
   button('delete-scene-cancel').disabled = busy;
@@ -1055,7 +1063,7 @@ function inspect() {
       'Select an object on the canvas or in the list to edit it, or select tiles on a tile layer.';
   }
 }
-async function run(work: () => Promise<void>) {
+async function run(work: () => Promise<void> | void) {
   if (busy) {
     return;
   }
@@ -1468,6 +1476,9 @@ function draw(refreshUI = true) {
       editor?.layers.some((l) => l.type === 'objectgroup' && l.objects.some((o) => o.id === id)),
     ),
   );
+  loaded = { ...loaded, width: editor.scene.width, height: editor.scene.height };
+  element('scene-name', HTMLElement).textContent =
+    `${loaded.name} · ${loaded.width} × ${loaded.height} · ${loaded.grid}px`;
   const size = loaded.grid;
   canvas.width = loaded.width * size;
   canvas.height = loaded.height * size;
@@ -2180,8 +2191,8 @@ function sceneSnapshot() {
     throw Error('Open a scene first.');
   }
   return {
-    width: loaded.width,
-    height: loaded.height,
+    width: editor.scene.width,
+    height: editor.scene.height,
     grid: loaded.grid,
     layers: editor.layers.map((layer) => ({
       id: layer.id,
@@ -2509,6 +2520,185 @@ input('atlas-path').oninput = () => {
   element('atlas-manifest-field', HTMLElement).hidden = true;
   select('atlas-manifest').required = false;
 };
+let sceneAction: 'rename' | 'duplicate' = 'rename';
+let manageRevision = '';
+function showSceneManagement(action: 'rename' | 'duplicate') {
+  if (!loaded || busy || anchor) {
+    return;
+  }
+  sceneAction = action;
+  manageRevision = revision;
+  const duplicate = action === 'duplicate';
+  const title = duplicate ? 'Duplicate scene' : 'Rename scene';
+  element('scene-manage-heading', HTMLElement).textContent = title;
+  button('scene-manage-confirm').textContent = title;
+  input('scene-manage-name').value = loaded.name + (duplicate ? ' copy' : '');
+  element('duplicate-canvas-field', HTMLElement).hidden = !duplicate || !dirty();
+  input('duplicate-canvas').checked = false;
+  element('scene-manage-hint', HTMLElement).textContent = duplicate
+    ? 'Creates a saved, independent scene sharing this project’s artwork. The source stays open with its edits and history. Unchecked copies the saved scene.'
+    : 'Updates the project name for this scene immediately, preserving its identity and current edits. Scene Undo does not undo a rename.';
+  form('scene-manage-form').querySelector('.form-error')?.replaceChildren();
+  element('scene-manage-dialog', HTMLDialogElement).showModal();
+  input('scene-manage-name').focus();
+  input('scene-manage-name').select();
+}
+button('show-rename').onclick = () => showSceneManagement('rename');
+button('show-duplicate-scene').onclick = () => showSceneManagement('duplicate');
+form('scene-manage-form').onsubmit = (event) => {
+  event.preventDefault();
+  if (!loaded || busy) {
+    return;
+  }
+  const current = loaded;
+  const action = sceneAction;
+  const title = input('scene-manage-name').value.trim();
+  void run(async () => {
+    const result = await api(`${action}-scene`, record, {
+      id: current.id,
+      name: title,
+      revision: current.revision,
+      project_revision: manageRevision,
+      ...(action === 'duplicate' && dirty() && input('duplicate-canvas').checked
+        ? { scene: sceneSnapshot() }
+        : {}),
+    });
+    project = decodeProject(result.project);
+    revision = string(result.revision);
+    if (action === 'rename') {
+      loaded = { ...current, name: title };
+      if (committed) {
+        committed = { ...committed, name: title };
+      }
+    }
+    element('scene-manage-dialog', HTMLDialogElement).close();
+    await refresh();
+    select('scenes').value = current.id;
+    draw();
+    status.textContent =
+      action === 'rename'
+        ? `Renamed scene to “${title}”.`
+        : `Created “${title}”. Choose it from the scene list to open it.`;
+  });
+};
+function resizeCandidate() {
+  if (!editor) {
+    throw Error('Open a scene first.');
+  }
+  return resizeScene(
+    editor,
+    Number(input('resize-width').value),
+    Number(input('resize-height').value),
+    select('resize-anchor').value,
+  );
+}
+function previewResize() {
+  input('resize-confirm-loss').checked = false;
+  try {
+    const result = resizeCandidate();
+    if (!editor) {
+      return;
+    }
+    const old = editor.scene;
+    element('resize-summary', HTMLElement).textContent =
+      `${old.width} × ${old.height} → ${result.scene.width} × ${result.scene.height} cells. Remove ${result.tiles} painted tiles and ${result.removed} objects; clip ${result.clipped} rectangles.`;
+    element('resize-objects', HTMLElement).replaceChildren(
+      ...result.objects.map((label) => {
+        const li = document.createElement('li');
+        li.textContent = label;
+        return li;
+      }),
+    );
+    const preview = element('resize-preview', HTMLCanvasElement);
+    const context = preview.getContext('2d');
+    if (!context) {
+      return;
+    }
+    const minX = Math.min(0, result.dx),
+      minY = Math.min(0, result.dy);
+    const maxX = Math.max(result.scene.width, result.dx + old.width);
+    const maxY = Math.max(result.scene.height, result.dy + old.height);
+    const scale = Math.min(300 / (maxX - minX), 180 / (maxY - minY));
+    const x = 10 - minX * scale,
+      y = 10 - minY * scale;
+    context.clearRect(0, 0, preview.width, preview.height);
+    context.imageSmoothingEnabled = false;
+    context.drawImage(
+      canvas,
+      x + result.dx * scale,
+      y + result.dy * scale,
+      old.width * scale,
+      old.height * scale,
+    );
+    context.save();
+    context.beginPath();
+    context.rect(
+      x + result.dx * scale,
+      y + result.dy * scale,
+      old.width * scale,
+      old.height * scale,
+    );
+    context.clip();
+    context.fillStyle = 'rgba(255, 50, 50, 0.5)';
+    context.beginPath();
+    context.rect(
+      x + result.dx * scale,
+      y + result.dy * scale,
+      old.width * scale,
+      old.height * scale,
+    );
+    context.rect(x, y, result.scene.width * scale, result.scene.height * scale);
+    context.fill('evenodd');
+    context.restore();
+    context.strokeStyle = '#34d399';
+    context.lineWidth = 2;
+    context.strokeRect(x, y, result.scene.width * scale, result.scene.height * scale);
+  } catch (error) {
+    element('resize-summary', HTMLElement).textContent = String(error);
+  }
+}
+button('show-resize').onclick = () => {
+  if (!editor || busy || anchor) {
+    return;
+  }
+  input('resize-width').value = String(editor.scene.width);
+  input('resize-height').value = String(editor.scene.height);
+  select('resize-anchor').value = '0,0';
+  form('resize-scene-form').querySelector('.form-error')?.replaceChildren();
+  previewResize();
+  element('resize-scene-dialog', HTMLDialogElement).showModal();
+};
+input('resize-width').oninput = previewResize;
+input('resize-height').oninput = previewResize;
+select('resize-anchor').onchange = previewResize;
+form('resize-scene-form').onsubmit = (event) => {
+  event.preventDefault();
+  if (!editor || busy) {
+    return;
+  }
+  void run(() => {
+    const result = resizeCandidate();
+    if (
+      (result.tiles || result.removed || result.clipped) &&
+      !input('resize-confirm-loss').checked
+    ) {
+      throw Error('Confirm the listed removals and clipping before applying.');
+    }
+    editor?.change(() => {
+      if (editor) {
+        editor.scene = result.scene;
+      }
+    });
+    selection = null;
+    selectedObject = null;
+    selectedObjects.clear();
+    hover = null;
+    animationPreview.reset();
+    element('resize-scene-dialog', HTMLDialogElement).close();
+    draw();
+    status.textContent = 'Scene resized. Undo restores it; Save commits it to disk.';
+  });
+};
 button('show-delete').onclick = () => {
   const id = select('scenes').value;
   if (!id || busy) {
@@ -2661,7 +2851,7 @@ button('library-import').onclick = () => showImport();
 for (const close of document.querySelectorAll<HTMLButtonElement>('[data-close]')) {
   close.onclick = () => {
     const id = close.dataset.close;
-    if (id) {
+    if (id && !busy) {
       element(id, HTMLDialogElement).close();
     }
   };
@@ -3004,6 +3194,8 @@ button('recovery-restore').onclick = () =>
     await refresh();
     open(restored);
     baseline = JSON.stringify({
+      width: saved.width,
+      height: saved.height,
       layers: saved.layers,
       nextLayer: saved.nextLayerId,
       next: saved.nextObjectId,
@@ -3048,3 +3240,11 @@ button('recovery-discard').onclick = () =>
     await showRecovery();
     status.textContent = 'Draft discarded. Saved scenes are unchanged.';
   });
+
+for (const id of ['scene-manage-dialog', 'resize-scene-dialog']) {
+  element(id, HTMLDialogElement).oncancel = (event) => {
+    if (busy) {
+      event.preventDefault();
+    }
+  };
+}

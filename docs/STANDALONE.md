@@ -557,6 +557,50 @@ empty pixels. It also extracts and moves scene/project ZIPs, removes the origina
 workspace/imports, then verifies the exported maps and dependencies with Tiled.
 Validated with Tiled 1.12.2.
 
+## Scene management
+
+Open a scene, then use **Rename scene**, **Duplicate scene**, or **Resize / crop**
+in the document bar.
+
+**Rename scene** updates its display name immediately. Its UUID, map path, saved
+map bytes, and references remain stable. Unsaved canvas edits and Undo/Redo history
+are preserved. The name is a project change and is not part of scene Undo/Redo.
+Cancel leaves the name unchanged.
+
+**Duplicate scene** creates a saved scene with a new UUID and map path, sharing
+project artwork. By default it copies the saved map. If the open scene is dirty,
+**Include unsaved canvas edits** explicitly chooses the current canvas instead.
+The source remains open with its edits and history; select the copy in the scene
+list to open it. Layer and object IDs, names, properties, tile orientations, and
+sprite origins are preserved inside the independent new scene. Object IDs are
+scene-local; later connections must use the scene UUID together with the object ID.
+The duplicate does not copy local recovery checkpoints. Deleting a copy uses the
+normal confirmed scene deletion flow; scene Undo does not remove it.
+
+**Resize / crop** changes dimensions within 1–256 cells, keeping the grid size.
+Choose one of nine anchors to retain the corresponding edge or center. Center
+offsets round down to whole cells, including negative offsets for cropping.
+All layers move together, including hidden layers. New cells are empty.
+The preview outlines the new scene in green and marks discarded old area red;
+counts include painted tiles and objects on hidden layers, and the list identifies
+each removed or clipped object by layer and name/ID.
+
+Rectangles intersecting the new boundary are clipped to their intersection;
+rectangles entirely outside are removed. Points and sprites are retained when
+their anchors remain inside the new scene. Sprites keep their native artwork and
+origins, so artwork may extend beyond the boundary. IDs, properties, layer order,
+and visibility are preserved. Any removal or clipping requires the explicit
+**Allow the listed removals and clipping** checkbox, which resets when dimensions
+or anchor change. Cancel leaves the scene and history intact.
+
+Applying resize/crop is one scene Undo/Redo operation. It remains unsaved until
+**Save scene**, participates in draft recovery, and can be exported as an unsaved
+canvas. Revert restores saved dimensions and content. Rename and duplication use
+project and source-map revision guards and durable project transactions; saving a
+resized scene uses the normal guarded save transaction. A conflict keeps the dialog
+and current canvas available. Reopen the scene/project to load external changes
+before retrying.
+
 ## Clipboard and reusable stamps
 
 Use Select (S) and drag a rectangle. By default it selects tiles on the active tile
