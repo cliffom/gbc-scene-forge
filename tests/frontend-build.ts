@@ -30,7 +30,13 @@ await test('esbuild bundles nested modules, emits source maps and preserves asse
     const successful = build();
     assert.equal(successful.status, 0, successful.stdout + successful.stderr);
     const staticDir = join(root, 'src/gbc_scene_forge/static');
-    assert.deepEqual(await readdir(staticDir), ['app.js', 'app.js.map', 'app.meta.json']);
+    assert.deepEqual(await readdir(staticDir), [
+      'app.js',
+      'app.js.map',
+      'app.meta.json',
+      'project.js',
+      'project.js.map',
+    ]);
     const bundle = await readFile(join(staticDir, 'app.js'), 'utf8');
     assert.match(bundle, /nested dependency/);
     assert.doesNotMatch(bundle, /from ["']\.\//);

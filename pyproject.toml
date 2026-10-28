@@ -1,7 +1,7 @@
 [project]
 name = "gbc-scene-forge"
 version = "0.1.5"
-description = "Local browser scene editor with game-owned connectors"
+description = "Standalone local scene editor with optional game-owned connectors"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -19,6 +19,9 @@ Repository = "https://github.com/cliffom/gbc-scene-forge"
 Documentation = "https://github.com/cliffom/gbc-scene-forge/blob/main/README.md"
 Issues = "https://github.com/cliffom/gbc-scene-forge/issues"
 
+[project.scripts]
+gbc-scene-forge = "gbc_scene_forge.__main__:main"
+
 [tool.poetry]
 requires-poetry = ">=2.4,<3.0"
 packages = [{ include = "gbc_scene_forge", from = "src" }]
@@ -30,6 +33,8 @@ core-metadata-version = "2.4"
 [tool.hatch.build.targets.wheel.force-include]
 "src/gbc_scene_forge/static/app.js" = "gbc_scene_forge/static/app.js"
 "src/gbc_scene_forge/static/app.js.map" = "gbc_scene_forge/static/app.js.map"
+"src/gbc_scene_forge/static/project.js" = "gbc_scene_forge/static/project.js"
+"src/gbc_scene_forge/static/project.js.map" = "gbc_scene_forge/static/project.js.map"
 
 [tool.hatch.build.targets.sdist]
 core-metadata-version = "2.4"
@@ -43,6 +48,8 @@ include = [
 "src/gbc_scene_forge/static/app.js" = "src/gbc_scene_forge/static/app.js"
 "src/gbc_scene_forge/static/app.js.map" = "src/gbc_scene_forge/static/app.js.map"
 "src/gbc_scene_forge/static/app.meta.json" = "src/gbc_scene_forge/static/app.meta.json"
+"src/gbc_scene_forge/static/project.js" = "src/gbc_scene_forge/static/project.js"
+"src/gbc_scene_forge/static/project.js.map" = "src/gbc_scene_forge/static/project.js.map"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.15.13"
