@@ -249,6 +249,10 @@ export remain available without a target profile.
 typed fields, shared defaults, instance overrides and navigable validation for
 points, rectangles and sprites.
 
+[World view and scene connections](docs/STANDALONE.md#world-view-and-scene-connections)
+let you arrange scenes, author one-way or two-way links between object endpoints,
+and follow or repair connections with navigable findings.
+
 Clipboard editing, duplication, transforms and reusable project stamps are described
 in the [composition guide](docs/STANDALONE.md#clipboard-and-reusable-stamps).
 

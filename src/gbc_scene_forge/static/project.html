@@ -46,6 +46,7 @@
       <label>Project <select id="switch-project" aria-label="Current project" disabled></select></label>
       <label>Scene <select id="scenes" aria-label="Saved scenes"><option value="">Choose a scene…</option></select></label>
       <span id="scene-save-state" role="status" aria-live="polite"></span>
+      <button id="show-world" disabled>World view…</button>
       <button id="show-create">Create scene</button>
       <button id="show-rename" disabled>Rename scene</button>
       <button id="show-duplicate-scene" disabled>Duplicate scene</button>
@@ -244,6 +245,28 @@
       <div class="dialog-actions"><button id="tile-cancel" type="button">Cancel</button><button id="tile-save" class="primary">Save shared tile metadata</button></div>
     </form>
   </dialog>
+  <dialog id="world-dialog" aria-labelledby="world-heading">
+    <div class="world-heading"><h2 id="world-heading">World view</h2><span id="world-state" role="status"></span></div>
+    <p class="hint">Drag scenes to arrange your world, or select one and set its coordinates. Connections describe authoring intent; they do not run game transitions.</p>
+    <p class="hint">Endpoint checks include current unsaved scene edits and hidden layers. Save scene edits separately to retain new or changed endpoints.</p>
+    <svg id="world-map" role="group" aria-label="Scene arrangement" viewBox="0 0 700 300"></svg>
+    <div class="world-position"><strong id="world-selected">Choose a scene</strong><label>X<input id="world-x" type="number" min="-100000" max="100000" step="1" aria-label="World X"></label><label>Y<input id="world-y" type="number" min="-100000" max="100000" step="1" aria-label="World Y"></label><button id="world-position" type="button">Set position</button><button id="world-open" type="button">Open scene</button></div>
+    <h3>Connections</h3><div id="world-links"></div>
+    <h3>Endpoint findings</h3><div id="world-findings" role="status"></div>
+    <form id="world-link-form">
+      <h3>Author connection</h3>
+      <label class="field">Name<input id="world-link-name" required maxlength="100" autocomplete="off"></label>
+      <div class="world-endpoints">
+        <fieldset><legend>Source exit / trigger</legend><label class="field">Scene<select id="world-source-scene" required></select></label><label class="field">Object<select id="world-source-object" required></select></label></fieldset>
+        <fieldset><legend>Destination entrance</legend><label class="field">Scene<select id="world-destination-scene" required></select></label><label class="field">Object<select id="world-destination-object" required></select></label></fieldset>
+      </div>
+      <label class="field">Direction<select id="world-direction"><option value="one-way">One-way: source → destination</option><option value="two-way">Two-way: source ↔ destination</option></select></label>
+      <p class="hint">Each endpoint should use a valid object definition. Two-way connections allow travel in both directions between these same objects.</p>
+      <button id="world-link-apply">Add connection</button><button id="world-link-new" type="button">Clear / new connection</button>
+    </form>
+    <p id="world-error" class="error form-error" role="alert"></p>
+    <div class="dialog-actions"><button id="world-close" type="button">Close</button><button id="world-save" type="button" class="primary">Save world</button></div>
+  </dialog>
   <dialog id="definitions-dialog" aria-labelledby="definitions-heading">
     <form id="definition-form">
       <h2 id="definitions-heading">Object definitions</h2>
@@ -357,6 +380,7 @@
     <form id="delete-scene-form">
       <h2 id="delete-heading">Delete scene?</h2>
       <p id="delete-scene-description"></p>
+      <p id="delete-scene-links" class="error"></p>
       <p id="delete-scene-unsaved" class="error" hidden>This scene has unsaved changes. Deleting it also discards those edits.</p>
       <p class="hint">This removes the scene from this project. Shared atlases and other scenes stay available. This action cannot be undone in the editor.</p>
       <p class="form-error error" role="alert"></p>

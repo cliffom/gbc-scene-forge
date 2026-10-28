@@ -29,6 +29,11 @@ export.json lists scene names, source revisions, canvas overrides and SHA-256
 checksums of the exported files. A canvas override changes only the downloaded
 snapshot. Source project files and editor undo history stay unchanged.
 
+World layout and connections are retained in forge.project.json for project exports
+and world.json for both export scopes. Endpoint scene UUIDs and Tiled object IDs
+remain stable. A scene-only export can reference scenes not included in the ZIP.
+Connections describe authoring intent; Tiled does not execute transitions.
+
 Maps use finite orthogonal grids, ordered named tile/object layers and external
 image-collection tilesets. GID zero is empty; transformed GIDs are unsupported.
 Objects support native-size sprites, points and rectangles, names, classes (Tiled
@@ -459,6 +464,8 @@ def export_bundle(project, scope, revision, scene_id=None, scene=None, scene_rev
             for path in document["files"]:
                 document["files"][path] = digest(files[path])
             replace(MANIFEST, json_text(document).encode())
+        if document.get("world"):
+            include("world.json", json_text(document["world"]).encode())
         if document.get("object_definitions"):
             include("object-definitions.json", json_text(document["object_definitions"]).encode())
         include("EXPORT.md", GUIDE.encode())
