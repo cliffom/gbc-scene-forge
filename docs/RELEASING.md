@@ -96,7 +96,7 @@ publishing page. Use the official [trusted publisher setup guide](https://docs.p
 The workflow follows the [Python Packaging User Guide](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/)
 and uses short-lived OIDC credentials; no PyPI API token is stored in the repository.
 
-After reviewing and committing a release, create and push an annotated `v0.3.4`
+After reviewing and committing a release, create and push an annotated `v0.3.5`
 tag (or the matching next version). Run **Publish package** manually against that
 tag, selecting `testpypi` first when its trusted publisher is configured. TestPyPI
 is currently unconfigured; its 0.1.4 upload failed with `invalid-publisher`. Until
@@ -106,14 +106,14 @@ with `tests/package_smoke.py` after publication. The workflow rebuilds and
 checks the distributions, checks the tag against the package version, then uploads
 only those verified artifacts. Pushing a tag alone does not publish.
 
-## Release 0.3.4
+## Release 0.3.5
 
-Version 0.3.4 adds opt-in GBC scene palette-budget reporting and explicit
-preflight across imported atlases. Generic Tiled editing and export stay
-available without a target profile. Projects remain manifest version 1; enabling
-the optional profile adds a field that older Forge versions cannot open.
-See [release notes](RELEASE-0.3.4.md) and the
-[palette budget guide](PALETTE-BUDGETS.md).
+Version 0.3.5 adds project-local checkpoints and explicit recovery of unsaved
+scene edits after interruption. Restore leaves committed scenes intact until
+Save; Revert returns to the committed content. Checkpoints remain separate from
+portable Tiled exports and use guarded replacement and cleanup across tabs.
+See [release notes](RELEASE-0.3.5.md) and the
+[recovery guide](STANDALONE.md#unsaved-draft-recovery).
 
 Before tagging, run:
 

@@ -160,6 +160,11 @@
           </section>
           <select id="object-list" size="3" aria-label="Objects in active layer" disabled></select>
         </section>
+        <section class="inspector-panel" aria-label="Draft recovery">
+          <h3>Draft recovery</h3>
+          <p id="draft-status" class="hint" role="status" aria-live="polite"></p>
+          <button id="show-recovery" type="button">Recover unsaved work…</button>
+        </section>
         <section class="inspector-panel" aria-label="Project assets">
           <h3>Project assets</h3>
           <div id="atlas-list" class="atlas-list"><p class="hint">No atlases imported yet.</p></div>
@@ -170,6 +175,14 @@
     </main>
   </div>
   <footer class="status-bar"><span id="status" role="status" aria-live="polite">Opening local workspace…</span><span class="build-identity"><span id="app-version" aria-label="App version"></span></span></footer>
+  <dialog id="recovery-dialog" aria-labelledby="recovery-heading">
+    <h2 id="recovery-heading">Recover unsaved work</h2>
+    <p>Drafts may belong to another open tab. Restoring opens unsaved edits; the saved scene stays unchanged until you save.</p>
+    <label class="field">Available drafts<select id="recovery-drafts"></select></label>
+    <p id="recovery-details" class="hint"></p>
+    <p class="form-error" role="alert"></p>
+    <div class="dialog-actions"><button id="recovery-later" type="button">Later</button><button id="recovery-download" type="button">Download draft</button><button id="recovery-discard" type="button">Discard draft…</button><button id="recovery-restore" class="primary" type="button">Restore draft</button></div>
+  </dialog>
   <dialog id="palette-dialog" aria-labelledby="palette-heading">
     <h2 id="palette-heading">GBC palette budget</h2>
     <p class="hint">Checks the current canvas against 8 background/window slots and 8 sprite slots. Includes hidden layers and all frames of animations linked to placed artwork.</p>

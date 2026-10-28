@@ -15,10 +15,12 @@ Install Python 3.13, Poetry 2.4–2.x, Node 24 (24.12+), npm, and Make on `PATH`
 - `make setup PYTHON=python3.13`: use Poetry to manage `.venv`, install locked dependencies, and bundle the frontend.
 - `make lint`: run Ruff, ESLint, Prettier, and strict TypeScript checks.
 - `make test`: run Python `unittest` discovery and TypeScript model/API/build checks.
+- `make test-frontend-<suite>`: run one TypeScript suite, such as `drafts` or `model`; `npm test` delegates to `make test-frontend`.
 - `make build`: bundle the frontend, build source/wheel distributions, and check metadata.
 - `make check-dist`: install the built wheel in a fresh environment and run `tests/package_smoke.py`.
 - `.venv/bin/python tests/serve_standalone_fixture.py --root /tmp/forge-fixture --port 8777`: launch a disposable standalone project fixture.
-- `make test-browser [CHROME=/path]`: rebuild and exercise standalone workflows with a disposable workspace and Chrome.
+- `make test-browser [CHROME=/path]`: rebuild and run all Chrome acceptance suites in disposable workspaces.
+- `make test-standalone-browser` / `make test-drafts-browser`: run editor or unsaved draft recovery Chrome acceptance independently.
 - `make check`: run lint, Python/TypeScript tests and standalone Chrome acceptance.
 - `make test-tiled TILED=/path RASTERIZER=/path`: run optional official Tiled interoperability checks.
 

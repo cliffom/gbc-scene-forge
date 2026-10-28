@@ -33,6 +33,7 @@ export async function waitForServer(url: string): Promise<void> {
 export class Chrome {
   session: string | null = null;
   errors: string[] = [];
+  acceptBeforeUnload = false;
   private browser: ChildProcess;
   private profile: string;
   private input: Writable;
@@ -110,6 +111,19 @@ export class Chrome {
             job.resolve(record(event.result));
           }
         }
+      }
+      if (
+        event.method === 'Page.javascriptDialogOpening' &&
+        record(event.params).type === 'beforeunload' &&
+        this.acceptBeforeUnload
+      ) {
+        void this.call(
+          'Page.handleJavaScriptDialog',
+          { accept: true },
+          string(event.sessionId),
+        ).catch((error: unknown) => {
+          this.errors.push(String(error));
+        });
       }
       if (event.method === 'Runtime.exceptionThrown') {
         this.errors.push(JSON.stringify(record(event.params).exceptionDetails));

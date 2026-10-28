@@ -867,6 +867,14 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   );
   assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'UNSAVED');
   assert.equal(await evaluate("document.getElementById('undo').disabled"), true);
+  // Revert must retain the scene revision rewritten by atlas deletion.
+  await click('revert');
+  await wait("document.getElementById('discard-dialog').open");
+  await browser.click("document.querySelector('#discard-dialog button[value=discard]')");
+  await wait("document.getElementById('dirty').textContent === 'SAVED'");
+  await browser.click('document.querySelector(\'[data-asset="terrain/earth"]\')');
+  await browser.pointer(28, 12);
+  await browser.pointer(28, 12, 'mouseReleased');
   await click('save');
   await wait("document.getElementById('status').textContent === 'Scene saved.'");
   assert.equal(
