@@ -1,17 +1,53 @@
 """Loopback transport for a project root or a directly opened project."""
 
 import json
+import logging
 import secrets
+import traceback
 from http.server import ThreadingHTTPServer
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from threading import Lock
 from urllib.parse import parse_qs, unquote, urlparse
 
 from .atlas import require
+from .console import ServerConsole
 from .documents import Conflict
 from .projects import Project
 from .server import STATIC, LocalHandler
 from .workspaces import ProjectRoot
+
+TOUCH_ICONS = ("/apple-touch-icon.png", "/apple-touch-icon-precomposed.png")
+
+
+class StandaloneHandler(LocalHandler):
+    def log_request(self, code="-", size="-"):
+        console = getattr(self.server, "console", None)
+        if console is None:
+            return super().log_request(code, size)
+        headers = getattr(self, "headers", {})
+        console.request(
+            self.client_address[0], headers.get("User-Agent", ""), self.requestline, code
+        )
+
+    def log_message(self, format, *args):
+        console = getattr(self.server, "console", None)
+        if console is None:
+            return super().log_message(format, *args)
+        # send_error logs a diagnostic before log_request records the failed
+        # response. Only the response increments the HTTP failure count.
+        console.error(format % args, count_failure=False)
+
+
+class StandaloneServer(ThreadingHTTPServer):
+    def handle_error(self, request, client_address):
+        self.console.error(
+            f"Unhandled request error from {client_address[0]}: {traceback.format_exc()}"
+        )
+
+    def service_actions(self):
+        # Runs even without traffic, so stale clients disappear while the server is idle.
+        self.console.expire()
 
 
 def make_handler(root, token):
@@ -22,7 +58,7 @@ def make_handler(root, token):
         Project.prepare_creation(root)
     project = Project(root, recover=False) if (root / "forge.project.json").exists() else None
 
-    class Handler(LocalHandler):
+    class Handler(StandaloneHandler):
         def do_GET(self):
             if not self.trusted_host():
                 self.reply({"error": "Local host required"}, status=403)
@@ -42,6 +78,8 @@ def make_handler(root, token):
                 elif route.startswith("/assets/") and project:
                     revision = parse_qs(urlparse(self.path).query).get("revision", [None])[0]
                     self.reply(project.asset(route[1:], revision), "image/png")
+                elif route in TOUCH_ICONS:
+                    self.reply((STATIC / "branding/apple-touch-icon.png").read_bytes(), "image/png")
                 elif route in (
                     "/branding/logo-64.png",
                     "/branding/favicon-32.png",
@@ -181,7 +219,7 @@ def make_root_handler(root, token):
     handlers = {}
     initialization_lock = Lock()
 
-    class Handler(LocalHandler):
+    class Handler(StandaloneHandler):
         def dispatch(self, method):
             if not self.trusted_host():
                 self.reply({"error": "Local host required"}, status=403)
@@ -232,6 +270,8 @@ def make_root_handler(root, token):
                     require(isinstance(data, dict), "Expected a JSON object")
                     directory = workspace.create(data.get("name"))
                     self.reply({"directory": directory})
+                elif method == "do_GET" and route in TOUCH_ICONS:
+                    self.reply((STATIC / "branding/apple-touch-icon.png").read_bytes(), "image/png")
                 elif method == "do_GET" and route in (
                     "/",
                     "/project.js",
@@ -269,11 +309,21 @@ def make_root_handler(root, token):
 
 def serve(root, port=8765, *, single_project=False):
     token = secrets.token_urlsafe(32)
-    with ThreadingHTTPServer(
+    with StandaloneServer(
         ("127.0.0.1", port), (make_handler if single_project else make_root_handler)(root, token)
     ) as server:
-        print(f"Scene Forge: http://127.0.0.1:{server.server_port}/", flush=True)
+        log_path = Path.cwd() / ".forge-logs" / f"server-{server.server_port}.log"
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        log = RotatingFileHandler(log_path, maxBytes=1024 * 1024, backupCount=3, encoding="utf-8")
+        log.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+        logger = logging.Logger("gbc_scene_forge.activity", level=logging.INFO)
+        logger.addHandler(log)
+        server.console = ServerConsole(logger=logger, log_path=log_path)
         try:
+            server.console.start(server.server_port, project_root=Path(root).absolute())
             server.serve_forever()
         except KeyboardInterrupt:
             pass
+        finally:
+            server.console.stop()
+            log.close()

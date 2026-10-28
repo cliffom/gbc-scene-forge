@@ -15,13 +15,33 @@ Your projects stay on your computer.
 Install the release with Python 3.10 or newer:
 
 ```sh
-python -m pip install gbc-scene-forge==0.3.1
+python -m pip install gbc-scene-forge==0.3.2
 gbc-scene-forge
 ```
 
 Open **http://127.0.0.1:8765/** in your browser. The terminal prints the address;
 you can stop the server with **Ctrl+C**. The installed editor needs no Node or
 additional Python runtime dependencies.
+
+The console shows server status, the editor URL, the absolute Project Root path,
+the log location and a live
+Clients / Failures field. Request and client activity goes to
+`.forge-logs/server-PORT.log` under the directory where you launch Forge, keeping the terminal
+compact. Logs include timestamps, all HTTP requests, failures, and client arrivals
+and expirations with IP and User-Agent. They append across launches and rotate at
+1 MiB, retaining three backups (for example, `server-8765.log.1` through
+`server-8765.log.3`). A client
+is one IP address + User-Agent combination, so multiple tabs in the same browser
+count once; different browsers at the same address count separately. Each HTTP
+request refreshes that client's activity. After **120 seconds without a request**,
+the client expires, even if its tab is still open; its next request counts it as
+active again. This is recent activity, not a count of open browser connections.
+The live failure count points to details in the log. Colors appear only in
+interactive terminals and can be disabled with `NO_COLOR` (or `TERM=dumb`).
+Redirected output prints only startup and shutdown summaries without ANSI escapes;
+activity logs always use plain text.
+
+![Preview of the compact server console](docs/screenshots/server-console.png)
 
 Working from this repository? Install the development tools described below, then run:
 
@@ -93,9 +113,9 @@ make run PROJECT_ROOT="$HOME/Scene Forge Projects"
 
 Use the same location on later launches to see those projects again. Unsupported
 or damaged manifests are reported in the selector so you can identify the folder
-that needs attention. Version 0.3.1 continues to use manifest format version 1.
+that needs attention. Version 0.3.2 continues to use manifest format version 1.
 
-### Bring an existing project into 0.3.1
+### Bring an existing project into 0.3.2
 
 Existing 0.2.0 projects keep their artwork, scene IDs and manifest format. To add
 one to the selector, stop Forge and move the whole project folder into your
@@ -215,7 +235,7 @@ Generated JavaScript is Git-ignored. After frontend edits, run `make frontend`
 and reload the page; launch, demo, browser-test and build commands rebuild it for
 you. Release packages include the prebuilt UI.
 
-See [the 0.3.1 release notes](docs/RELEASE-0.3.1.md) and
+See [the 0.3.2 release notes](docs/RELEASE-0.3.2.md) and
 [building and releasing](docs/RELEASING.md) for release validation and publication.
 
 ## License

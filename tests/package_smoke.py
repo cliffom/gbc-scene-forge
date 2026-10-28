@@ -37,6 +37,7 @@ class InstalledPackageSmokeTests(unittest.TestCase):
             "branding/logo-64.png",
             "branding/favicon-32.png",
             "branding/favicon-16.png",
+            "branding/apple-touch-icon.png",
         ):
             with self.subTest(asset=name):
                 self.assertTrue(static.joinpath(name).read_bytes())

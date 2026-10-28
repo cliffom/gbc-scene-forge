@@ -52,7 +52,7 @@ async function start(root: string, fixture = true, single = true, demo = false) 
     });
     child.stdout.on('data', (data: Buffer) => {
       logs += data.toString();
-      const match = /Scene Forge: (http:\/\/127\.0\.0\.1:\d+\/)/.exec(logs);
+      const match = /Editor\s+(http:\/\/127\.0\.0\.1:\d+\/)/.exec(logs);
       if (match) {
         clearTimeout(timer);
         resolve(match[1]);
@@ -1273,7 +1273,14 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
       "Array.from(document.querySelectorAll('#layers .layer-row'), row => row.dataset.layerId)",
     );
   const startLayerDrag = async (id: string, target: string, after = false) => {
-    await evaluate("document.getElementById('layers').scrollIntoView({block:'center'})");
+    await evaluate(`document.querySelector('#layers [data-layer-id="${id}"] .layer-grip')
+      .scrollIntoView({block:'center', inline:'nearest', behavior:'instant'})`);
+    await wait(`(() => {
+      const grip = document.querySelector('#layers [data-layer-id="${id}"] .layer-grip');
+      const rect = grip.getBoundingClientRect();
+      return document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)
+        ?.closest('.layer-grip') === grip;
+    })()`);
     const points = array(
       await evaluate(`(() => {
       const handle = document.querySelector('#layers [data-layer-id="${id}"] .layer-grip').getBoundingClientRect();
@@ -1308,7 +1315,8 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
       clickCount: 1,
     });
   let dragPoints = await startLayerDrag('1', '3');
-  assert.equal(await evaluate("document.getElementById('layers').dataset.dragging"), 'true');
+  // Chrome can acknowledge a mouse move before delivering its pointer event.
+  await wait("document.getElementById('layers').dataset.dragging === 'true'");
   assert.equal(
     await evaluate("document.querySelector('#layers [data-drop=before]').dataset.layerId"),
     '3',
