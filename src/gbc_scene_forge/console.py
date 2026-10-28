@@ -97,6 +97,8 @@ class ServerConsole:
             self._total()
 
     def request(self, ip, agent, request_line, status):
+        # HTTPStatus renders as its enum name on Python 3.10; logs use numeric codes.
+        status = int(status)
         with self.lock:
             now = self.clock()
             self._expire(now)
@@ -112,7 +114,7 @@ class ServerConsole:
                 json.dumps(request_line),
                 json.dumps(agent),
             )
-            if int(status) >= 400:
+            if status >= 400:
                 self.failures += 1
                 if self.live_total:
                     self._total()
