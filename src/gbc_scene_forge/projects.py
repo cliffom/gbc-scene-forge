@@ -5,7 +5,16 @@ import json
 from pathlib import Path
 from uuid import UUID, uuid4
 
-from . import atlas, exporting, palette_budget, png, preview_settings, tile_metadata, tiled
+from . import (
+    atlas,
+    exporting,
+    object_definitions,
+    palette_budget,
+    png,
+    preview_settings,
+    tile_metadata,
+    tiled,
+)
 from .documents import Conflict, json_text
 from .transactions import Transactions, digest, read_optional, safe_path
 
@@ -124,6 +133,7 @@ class Project:
                 "preview",
                 "gbc_palette_profile",
                 "stamps",
+                "object_definitions",
             },
             "Unsupported project manifest fields",
         )
@@ -195,6 +205,10 @@ class Project:
                     "Invalid tile identities",
                 )
             tile_metadata.check_entry(entry)
+        object_definitions.check_library(
+            document.get("object_definitions", {"version": 1, "definitions": []}),
+            tiled.sprite_regions(document),
+        )
         if "sprite" in document["preview"]:
             preview_settings.validate(document["preview"]["sprite"], document)
         for path, revision in document["files"].items():
@@ -279,6 +293,50 @@ class Project:
             key = (layer["type"], layer["name"])
             atlas.require(slot > previous.get(key, -1), "Invalid stamp layer mapping order")
             previous[key] = slot
+
+    def save_object_definition(self, definition, revision):
+        document = self._current(revision)
+        library = document.setdefault("object_definitions", {"version": 1, "definitions": []})
+        atlas.require(isinstance(definition, dict), "Expected an object definition")
+        candidate = copy.deepcopy(definition)
+        if candidate.get("id") is None:
+            candidate["id"] = str(uuid4())
+        else:
+            atlas.require(
+                any(d["id"] == candidate["id"] for d in library["definitions"]),
+                "Unknown definition; create a new one without an ID",
+            )
+        library["definitions"] = [d for d in library["definitions"] if d["id"] != candidate["id"]]
+        library["definitions"].append(candidate)
+        object_definitions.check_library(library, tiled.sprite_regions(document))
+        self._commit(document, revision, {}, {}, "Save object definition")
+        return {"definition_id": candidate["id"], **self.catalog()}
+
+    def delete_object_definition(self, definition_id, revision):
+        document = self._current(revision)
+        library = document.get("object_definitions", {"version": 1, "definitions": []})
+        atlas.require(
+            any(d["id"] == definition_id for d in library["definitions"]),
+            "Unknown object definition",
+        )
+        library["definitions"] = [d for d in library["definitions"] if d["id"] != definition_id]
+        document["object_definitions"] = library
+        self._commit(document, revision, {}, {}, "Delete object definition")
+        return self.catalog()
+
+    def object_report(self, scene_id, revision, scene_revision, scene=None):
+        with self.transactions.locked():
+            document = self._current(revision)
+            current = self._load_scene(scene_id, document)
+            if current["revision"] != scene_revision:
+                raise Conflict("Scene changed on disk. Reopen it before validating.")
+            candidate = current["scene"] if scene is None else scene
+            tiled.check_scene(candidate, document)
+            result = object_definitions.report(candidate, document, scene_id)
+            self._current(revision)
+            if self._load_scene(scene_id, document)["revision"] != scene_revision:
+                raise Conflict("Scene changed while validating. Reopen it before validating.")
+            return {**result, "project_revision": revision, "scene_revision": scene_revision}
 
     def save_stamp(self, title, scene, slots, revision):
         document = self._current(revision)
@@ -516,6 +574,11 @@ class Project:
                 for layer in tiled.scene_layers(item["scene"])
                 for obj in layer.get("objects", [])
             )
+        ]
+        used += [
+            "definition " + d["name"]
+            for d in document.get("object_definitions", {}).get("definitions", [])
+            if d.get("asset", "").startswith(prefix)
         ]
         used += [
             "stamp " + stamp["name"]

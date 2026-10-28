@@ -12,6 +12,7 @@ export type NewObject = {
   x: number;
   y: number;
   properties: ObjectProperty[];
+  definition?: string;
 } & (
   | { kind: 'sprite'; asset: string; origin?: [number, number] }
   | { kind: 'point' }
@@ -58,9 +59,9 @@ export function decodeProperty(value: unknown): ObjectProperty {
   }
   throw Error('Unsupported property type.');
 }
-export function validateProperties(properties: ObjectProperty[]) {
-  if (properties.length > 128) {
-    throw Error('Use at most 128 properties.');
+export function validateProperties(properties: ObjectProperty[], limit = 256) {
+  if (properties.length > limit) {
+    throw Error(`Use at most ${limit} properties.`);
   }
   const names = new Set<string>();
   for (const prop of properties) {
@@ -88,6 +89,7 @@ export function decodeObject(value: unknown): SceneObject {
     name: string(item.name ?? ''),
     class: string(item.class ?? ''),
     properties: array(item.properties ?? [], decodeProperty),
+    ...(item.definition === undefined ? {} : { definition: string(item.definition) }),
   };
   if (item.kind === 'point') {
     return { ...common, kind: 'point' };
@@ -112,6 +114,7 @@ export function decodeObject(value: unknown): SceneObject {
 export function encodeObject(item: SceneObject) {
   return {
     id: Number(item.id),
+    ...(item.definition ? { definition: item.definition } : {}),
     x: item.x,
     y: item.y,
     ...(item.name ? { name: item.name } : {}),
@@ -167,7 +170,13 @@ export function validateObject(
   if (item.name.length > 100 || item.class.length > 100) {
     throw Error('Object name and class must be at most 100 characters.');
   }
-  validateProperties(item.properties);
+  if (
+    item.definition !== undefined &&
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(item.definition)
+  ) {
+    throw Error('Invalid object definition identity.');
+  }
+  validateProperties(item.properties, item.definition === undefined ? 256 : 128);
   if (
     item.kind === 'rectangle' &&
     (!Number.isInteger(item.width) ||

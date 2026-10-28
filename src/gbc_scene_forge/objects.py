@@ -1,5 +1,6 @@
 """Standalone point, rectangle and sprite objects, with Tiled property encoding."""
 
+import json
 import math
 
 from .atlas import integer, require
@@ -8,8 +9,10 @@ MAX_INT = 9007199254740991
 ORIGIN_KEYS = ("forge:origin_x", "forge:origin_y")
 
 
-def check_properties(properties):
-    require(isinstance(properties, list) and len(properties) <= 128, "Use at most 128 properties")
+def check_properties(properties, limit=128):
+    require(
+        isinstance(properties, list) and len(properties) <= limit, f"Use at most {limit} properties"
+    )
     names = set()
     for prop in properties:
         require(
@@ -42,7 +45,7 @@ def check_properties(properties):
 
 def check_object(item, width, height, sprites):
     require(isinstance(item, dict), "Expected an object")
-    common = {"id", "x", "y", "name", "class", "properties"}
+    common = {"id", "x", "y", "name", "class", "properties", "definition"}
     kind = item.get("kind", "sprite")
     extra = {
         "sprite": {"asset", "origin"},
@@ -66,7 +69,11 @@ def check_object(item, width, height, sprites):
             isinstance(item.get(field, ""), str) and len(item.get(field, "")) <= 100,
             f"Object {field} must be at most 100 characters",
         )
-    check_properties(item.get("properties", []))
+    if "definition" in item:
+        from .object_definitions import identity
+
+        require(identity(item["definition"]), "Invalid object definition identity")
+    check_properties(item.get("properties", []), 128 if "definition" in item else 256)
     if kind == "sprite":
         require(
             isinstance(item.get("asset"), str) and item["asset"] in sprites, "Unknown sprite asset"
@@ -88,7 +95,7 @@ def check_object(item, width, height, sprites):
         )
 
 
-def encode_object(item, sprites, gids):
+def encode_object(item, sprites, gids, definitions=()):
     result = {
         "id": item["id"],
         "name": item.get("name", ""),
@@ -102,6 +109,23 @@ def encode_object(item, sprites, gids):
         "opacity": 1,
     }
     properties = list(item.get("properties", []))
+    if "definition" in item:
+        from .object_definitions import resolve
+
+        properties, _ = resolve(item, definitions)
+        override_names = {p["name"] for p in item.get("properties", [])}
+        inherited = [p for p in properties if p["name"] not in override_names]
+        properties.extend(
+            [
+                {"name": "forge:inherited", "type": "string", "value": json.dumps(inherited)},
+                {"name": "forge:definition", "type": "string", "value": item["definition"]},
+                {
+                    "name": "forge:overrides",
+                    "type": "string",
+                    "value": json.dumps(sorted(p["name"] for p in item.get("properties", []))),
+                },
+            ]
+        )
     if item.get("kind", "sprite") == "sprite":
         region = sprites[item["asset"]]
         ox, oy = item.get("origin", region.get("origin", [0, 0]))
@@ -164,10 +188,19 @@ def decode_object(item, sprites, gids):
     )
     props = item.get("properties", [])
     require(isinstance(props, list), "Expected object properties")
-    origin_props, properties = {}, []
+    origin_props, properties, definition_props = {}, [], {}
     for prop in props:
         require(isinstance(prop, dict), "Expected a typed property")
-        if prop.get("name") in ORIGIN_KEYS:
+        if prop.get("name") in ("forge:definition", "forge:overrides", "forge:inherited"):
+            require(
+                set(prop) == {"name", "type", "value"}
+                and prop["type"] == "string"
+                and isinstance(prop["value"], str)
+                and prop["name"] not in definition_props,
+                "Invalid object definition property",
+            )
+            definition_props[prop["name"]] = prop["value"]
+        elif prop.get("name") in ORIGIN_KEYS:
             require(
                 set(prop) == {"name", "type", "value"}
                 and prop["type"] == "int"
@@ -178,8 +211,47 @@ def decode_object(item, sprites, gids):
             origin_props[prop["name"]] = prop["value"]
         else:
             properties.append(prop)
-    check_properties(properties)
+    if definition_props:
+        from .object_definitions import identity
+
+        require(
+            set(definition_props) == {"forge:definition", "forge:overrides", "forge:inherited"}
+            and identity(definition_props["forge:definition"]),
+            "Invalid definition link",
+        )
+        override_names = json.loads(definition_props["forge:overrides"])
+        require(
+            isinstance(override_names, list)
+            and len(override_names) <= 128
+            and all(isinstance(n, str) for n in override_names)
+            and len(set(override_names)) == len(override_names),
+            "Invalid override names",
+        )
+        # Validate materialized defaults too, without imposing the authored override limit.
+        require(len(properties) <= 256, "Too many materialized properties")
+        names = [p.get("name") for p in properties]
+        require(
+            all(isinstance(n, str) for n in names) and len(set(names)) == len(names),
+            "Duplicate materialized properties",
+        )
+        for prop in properties:
+            check_properties([prop])
+        require(set(override_names) <= set(names), "Missing override property")
+        inherited = json.loads(definition_props["forge:inherited"])
+        check_properties(inherited)
+        require(
+            inherited
+            == sorted(
+                [p for p in properties if p["name"] not in override_names], key=lambda p: p["name"]
+            ),
+            "Inherited Tiled properties changed. Promote edited fields into forge:overrides "
+            "and remove them from forge:inherited before reopening; refusing to discard data",
+        )
+        properties = [p for p in properties if p["name"] in override_names]
+    check_properties(properties, 128 if definition_props else 256)
     result = {"id": item.get("id"), "x": int(item["x"]), "y": int(item["y"])}
+    if definition_props:
+        result["definition"] = definition_props["forge:definition"]
     if "gid" in item:
         gid = item["gid"]
         require(

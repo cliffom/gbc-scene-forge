@@ -1,4 +1,6 @@
 /** Object editing is committed as one undoable change; Cancel leaves the scene intact. */
+import { describeFinding, resolveDefinition } from './object-definitions.mts';
+import type { ObjectDefinition } from './object-definitions.mts';
 import { decodeProperty, propertyValue } from './objects.mts';
 import type { ObjectProperty, SceneObject } from './objects.mts';
 import type { LayerEditor } from './layers.mts';
@@ -14,6 +16,7 @@ const input = (id: string) => element(id, HTMLInputElement);
 export function createObjectInspector(
   current: () => { editor: LayerEditor; item: SceneObject } | null,
   changed: () => void,
+  definitions: () => ObjectDefinition[] = () => [],
 ) {
   const dialog = element('object-dialog', HTMLDialogElement);
   const form = element('object-form', HTMLFormElement);
@@ -21,6 +24,164 @@ export function createObjectInspector(
   const error = element('object-error', HTMLElement);
   let draft: SceneObject | null = null;
   let owner: LayerEditor | null = null;
+  const definitionSelect = element('object-definition', HTMLSelectElement);
+  const definitionFields = element('object-definition-fields', HTMLElement);
+  let schemaValues: (() => ObjectProperty | null)[] = [];
+  function readProperties() {
+    return [...properties.children]
+      .map((row) => {
+        const fields = row.querySelectorAll('input');
+        const type = row.querySelector('select');
+        if (!type || fields.length !== 2) {
+          throw Error('Invalid property row.');
+        }
+        return decodeProperty({
+          name: fields[0].value,
+          type: type.value,
+          value: propertyValue(
+            type.value,
+            type.value === 'bool' ? fields[1].checked : fields[1].value,
+          ),
+        });
+      })
+      .concat(
+        schemaValues.flatMap((read) => {
+          const value = read();
+          return value ? [value] : [];
+        }),
+      );
+  }
+  function validateDraft() {
+    if (!draft) {
+      return;
+    }
+    const item = draft;
+    try {
+      const findings = resolveDefinition(
+        { ...draft, properties: readProperties() },
+        definitions(),
+      ).findings;
+      element('object-definition-validation', HTMLElement).textContent = findings
+        .map((f) => `${f.field || 'Definition'}: ${describeFinding(item, f, definitions())}`)
+        .join('; ');
+    } catch (cause) {
+      element('object-definition-validation', HTMLElement).textContent = String(cause);
+    }
+  }
+  function renderDefinition() {
+    if (!draft) {
+      return;
+    }
+    const definition = definitions().find((d) => d.id === draft?.definition);
+    definitionFields.replaceChildren();
+    schemaValues = [];
+    const names = new Set(definition?.fields.map((f) => f.name));
+    properties.replaceChildren();
+    draft.properties.filter((p) => !names.has(p.name)).forEach(propertyRow);
+    element('object-definition-hint', HTMLElement).textContent = draft.definition
+      ? 'Unchecked fields inherit the shared default. Check Override to set an instance value; uncheck to reset. Invalid values remain editable and appear in Object validation.'
+      : 'Choose a definition to use typed fields. Detaching keeps the current effective values as custom properties.';
+    for (const field of definition?.fields ?? []) {
+      const override = draft.properties.find((p) => p.name === field.name);
+      const row = document.createElement('div');
+      row.className = 'definition-instance-field';
+      row.dataset.field = field.name;
+      const heading = document.createElement('strong');
+      heading.textContent = `${field.name} (${field.type}${field.required ? ', required' : ''})`;
+      const toggle = document.createElement('input');
+      toggle.type = 'checkbox';
+      toggle.checked = Boolean(override);
+      const label = document.createElement('label');
+      label.append(toggle, ' Override shared value');
+      const control = field.choices
+        ? document.createElement('select')
+        : document.createElement('input');
+      control.setAttribute('aria-label', field.name);
+      if (control instanceof HTMLSelectElement) {
+        control.replaceChildren(
+          new Option('Choose…', ''),
+          ...(field.choices ?? []).map((v) => new Option(v, v)),
+        );
+        if (override && !(field.choices ?? []).includes(String(override.value))) {
+          control.add(new Option(String(override.value), String(override.value)));
+        }
+      } else {
+        control.type =
+          field.type === 'bool' ? 'checkbox' : field.type === 'string' ? 'text' : 'number';
+        control.step = field.type === 'int' ? '1' : 'any';
+        control.maxLength = 4096;
+      }
+      function setValue(value: ObjectProperty['value'] | undefined) {
+        if (control instanceof HTMLInputElement && field.type === 'bool') {
+          control.checked = value === true;
+        } else {
+          control.value = value === undefined ? '' : String(value);
+        }
+      }
+      setValue(override?.value ?? field.default);
+      control.disabled = !toggle.checked;
+      const hint = document.createElement('small');
+      hint.textContent = `Shared default: ${field.default === undefined ? '(unset)' : JSON.stringify(field.default)}${field.min === undefined ? '' : ` · Minimum ${field.min}`}${field.max === undefined ? '' : ` · Maximum ${field.max}`}`;
+      // A mismatched override is retained until the author explicitly edits or resets it.
+      let retained = override && override.type !== field.type ? structuredClone(override) : null;
+      function updateStep() {
+        if (control instanceof HTMLInputElement) {
+          control.step = retained || field.type !== 'int' ? 'any' : '1';
+        }
+      }
+      updateStep();
+      toggle.onchange = () => {
+        retained = null;
+        updateStep();
+        control.disabled = !toggle.checked;
+        if (!toggle.checked) {
+          setValue(field.default);
+        }
+        validateDraft();
+      };
+      control.oninput = control.onchange = () => {
+        retained = null;
+        updateStep();
+        validateDraft();
+      };
+      schemaValues.push(() =>
+        !toggle.checked
+          ? null
+          : (retained ??
+            decodeProperty({
+              name: field.name,
+              type: field.type,
+              value: propertyValue(
+                field.type,
+                control instanceof HTMLInputElement && field.type === 'bool'
+                  ? control.checked
+                  : control.value,
+              ),
+            })),
+      );
+      row.append(heading, label, control, hint);
+      definitionFields.append(row);
+    }
+    validateDraft();
+  }
+  definitionSelect.onchange = () => {
+    if (!draft) {
+      return;
+    }
+    try {
+      draft.properties = readProperties();
+      if (!definitionSelect.value) {
+        draft.properties = resolveDefinition(draft, definitions()).properties;
+        delete draft.definition;
+      } else {
+        draft.definition = definitionSelect.value;
+      }
+      renderDefinition();
+    } catch (cause) {
+      error.textContent = String(cause);
+      definitionSelect.value = draft.definition ?? '';
+    }
+  };
   function propertyRow(prop: ObjectProperty) {
     const row = document.createElement('div');
     row.className = 'object-property';
@@ -71,8 +232,13 @@ export function createObjectInspector(
     properties.append(row);
   }
   element('object-add-property', HTMLButtonElement).onclick = () => {
-    if (properties.children.length >= 128) {
-      error.textContent = 'Use at most 128 properties.';
+    const limit = draft?.definition ? 128 : 256;
+    if (
+      properties.children.length +
+        definitionFields.querySelectorAll('label input:checked').length >=
+      limit
+    ) {
+      error.textContent = `Use at most ${limit} properties.`;
       return;
     }
     propertyRow({ name: '', type: 'string', value: '' });
@@ -109,21 +275,7 @@ export function createObjectInspector(
           ];
         }
       }
-      result.properties = [...properties.children].map((row) => {
-        const fields = row.querySelectorAll('input');
-        const type = row.querySelector('select');
-        if (!type || fields.length !== 2) {
-          throw Error('Invalid property row.');
-        }
-        return decodeProperty({
-          name: fields[0].value,
-          type: type.value,
-          value: propertyValue(
-            type.value,
-            type.value === 'bool' ? fields[1].checked : fields[1].value,
-          ),
-        });
-      });
+      result.properties = readProperties();
       owner.replaceObject(result);
       dialog.close();
       changed();
@@ -161,8 +313,22 @@ export function createObjectInspector(
     }
     input('object-default-origin').checked = draft.kind !== 'sprite' || !draft.origin;
     input('object-default-origin').dispatchEvent(new Event('change'));
-    properties.replaceChildren();
-    draft.properties.forEach(propertyRow);
+    definitionSelect.replaceChildren(
+      new Option('No definition', ''),
+      ...definitions()
+        .filter((d) => d.kind === draft?.kind)
+        .map((d) => new Option(d.name, d.id)),
+    );
+    if (
+      draft.definition &&
+      ![...definitionSelect.options].some((o) => o.value === draft?.definition)
+    ) {
+      definitionSelect.add(
+        new Option(`Missing or incompatible definition (${draft.definition})`, draft.definition),
+      );
+    }
+    definitionSelect.value = draft.definition ?? '';
+    renderDefinition();
     error.textContent = '';
     dialog.showModal();
     input('object-name').focus();

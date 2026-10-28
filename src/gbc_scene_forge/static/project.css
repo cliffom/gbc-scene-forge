@@ -215,3 +215,20 @@
 #resize-scene-dialog {max-height:90dvh;overflow:auto}
 #resize-preview {display:block;max-width:100%;margin:12px auto;background:#171a16;border:1px solid var(--line)}
 #resize-objects {max-height:120px;overflow:auto;font-size:12px}
+
+#definitions-dialog { width: min(760px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: auto; }
+.definition-field { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 12px 0; border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+.definition-field input, .definition-field textarea, .definition-field select { max-width: 100%; min-width: 0; }
+.definition-instance-field { display: grid; gap: 6px; margin: 12px 0; padding: 10px; border: 1px solid var(--line); border-radius: 6px; }
+#object-findings button { display: block; text-align: left; width: 100%; margin-top: 6px; white-space: normal; }
+@media (max-width: 600px) { .definition-field { grid-template-columns: minmax(0, 1fr); } }
+
+.definition-field .field { margin: 0; }
+.definition-toggle { align-self: center; font-size: 11px; color: var(--muted); }
+.definition-toggle input[type=checkbox] { width: auto; }
+#object-definition-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.definition-instance-field { margin: 0; min-width: 0; }
+.definition-instance-field input[type=checkbox] { justify-self: start; }
+.definition-instance-field > input:not([type=checkbox]), .definition-instance-field select { width: 100%; min-width: 0; }
+.definition-instance-field small { color: var(--muted); overflow-wrap: anywhere; }
+@media (max-width: 600px) { #object-definition-fields { grid-template-columns: minmax(0, 1fr); } }

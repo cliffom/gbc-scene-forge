@@ -123,7 +123,11 @@ def _encode_flat(scene, project):
     ]
     regions, objects = sprite_regions(project), []
     for item in scene.get("objects", []):
-        objects.append(encode_object(item, regions, gids))
+        objects.append(
+            encode_object(
+                item, regions, gids, project.get("object_definitions", {}).get("definitions", [])
+            )
+        )
     if objects:
         layers.append(
             {
