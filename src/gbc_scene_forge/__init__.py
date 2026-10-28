@@ -1,3 +1,3 @@
 """Standalone local scene editor for imported artwork and portable Tiled projects."""
 
-__version__ = "0.3.3"
+__version__ = "0.3.4"
