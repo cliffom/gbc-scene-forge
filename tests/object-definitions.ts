@@ -113,4 +113,41 @@ for (const d of [
 ]) {
   assert.equal(definitionInstance(d, 1, 2).kind, d.kind);
 }
+// Detachment can materialize all defaults and overrides without losing values.
+const many: ObjectDefinition = {
+  ...definition,
+  fields: Array.from({ length: 128 }, (_, i) => ({
+    name: `default-${i}`,
+    type: 'int',
+    required: false,
+    default: i,
+  })),
+};
+const linked = structuredClone(instance);
+linked.properties = Array.from({ length: 128 }, (_, i) => ({
+  name: `extra-${i}`,
+  type: 'string',
+  value: `keep-${i}`,
+}));
+editor.replaceObject(linked);
+const detached = structuredClone(linked);
+detached.properties = resolveDefinition(linked, [many]).properties;
+delete detached.definition;
+assert.equal(detached.properties.length, 256);
+editor.replaceObject(detached);
+assert.deepEqual(editor.objects[0], detached);
+editor.undo();
+assert.deepEqual(editor.objects[0], linked);
+editor.redo();
+assert.deepEqual(editor.objects[0], detached);
+assert.deepEqual(decodeObject(encodeObject(detached)), detached);
+assert.throws(
+  () =>
+    editor.replaceObject({
+      ...detached,
+      properties: [...detached.properties, { name: 'overflow', type: 'int', value: 0 }],
+    }),
+  /256 properties/,
+);
+assert.throws(() => editor.replaceObject({ ...detached, definition: many.id }), /128 properties/);
 console.log('Object definition model checks passed');

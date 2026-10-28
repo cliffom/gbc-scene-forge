@@ -43,13 +43,26 @@ for name in ('Room', 'Other room', 'Missing layers'):
                 dict(id=2, kind='rectangle', x=9, y=1, width=3, height=4, name='trigger')])])
         p.save_scene(loaded['id'], scene, loaded['revision'], p.catalog()['revision'])
     ids.append(loaded['id'])
+definition = p.save_object_definition(dict(name='Regression fields', kind='point', fields=[
+    dict(name=f'field-{n}', type='int', required=False, default=n) for n in range(128)
+]), p.catalog()['revision'])
+definition_id = definition['definition_id']
+loaded = p.create_scene('Regression', 12, 10, 8, p.catalog()['revision'])
+scene = dict(width=12, height=10, grid=8, next_layer_id=2, next_object_id=3, layers=[
+    dict(id=1, name='Instances', type='objectgroup', visible=True, objects=[
+        dict(id=1, kind='point', x=8, y=8, definition=definition_id,
+             properties=[dict(name='field-0', type='float', value=1.5)]),
+        dict(id=2, kind='point', x=16, y=16, definition=definition_id,
+             properties=[dict(name=f'extra-{n}', type='string', value=f'keep-{n}') for n in range(128)])])])
+p.save_scene(loaded['id'], scene, loaded['revision'], p.catalog()['revision'])
+ids.append(loaded['id'])
 print(json.dumps(ids))
 `,
     root,
   ]);
   const ids: unknown = JSON.parse(stdout);
   assert(Array.isArray(ids) && ids.every((id) => typeof id === 'string'));
-  const [first, second] = ids.map(string);
+  const [first, second, , regression] = ids.map(string);
   const child = spawn(
     '.venv/bin/python',
     ['-m', 'gbc_scene_forge', '--project', root, '--port', '0'],
@@ -86,7 +99,7 @@ print(json.dumps(ids))
       `(() => { const s = document.getElementById('scenes'); s.value = ${JSON.stringify(id)}; s.dispatchEvent(new Event('change')); })()`,
     );
     await wait(
-      `document.getElementById('scene-name').textContent.startsWith(${JSON.stringify(id === first ? 'Room ·' : 'Other room ·')}) && !document.getElementById('show-create').disabled`,
+      `document.getElementById('scene-name').textContent.startsWith(${JSON.stringify(id === first ? 'Room ·' : id === regression ? 'Regression ·' : 'Other room ·')}) && !document.getElementById('show-create').disabled`,
     );
   };
   const saved = async (id: string): Promise<unknown> =>
@@ -151,7 +164,9 @@ print(json.dumps(ids))
   let data = record(await manifest());
   const library = record(data.object_definitions);
   assert(Array.isArray(library.definitions));
-  const definitionId = string(record(library.definitions[0]).id);
+  const definitionId = string(
+    record(library.definitions.find((d) => record(d).name === 'Entrance')).id,
+  );
   await chooseValue('object-definition-brush', definitionId);
   await click('place-definition');
   await chrome.pointer(33, 33);
@@ -347,6 +362,71 @@ print(json.dumps(ids))
       "document.getElementById('object-validation-summary').textContent.includes('1 linked instances · 0 findings')",
     );
   }
+  // Retained fractional float overrides must not block unrelated edits after an int schema change.
+  await choose(regression);
+  await chooseValue('object-list', '1');
+  await click('edit-object');
+  assert.equal(await evaluate("document.getElementById('object-form').checkValidity()"), true);
+  await chooseValue('object-name', 'Retained fractional override');
+  await click('object-apply');
+  await wait("!document.getElementById('object-dialog').open");
+  await click('edit-object');
+  assert.equal(
+    await evaluate(
+      `document.querySelector('${instanceField('field-0', '[aria-label="field-0"]')}').value`,
+    ),
+    '1.5',
+  );
+  // Explicit editing restores integer constraints; resetting returns to the shared default.
+  await set(instanceField('field-0', '[aria-label="field-0"]'), '2.5');
+  assert.equal(await evaluate("document.getElementById('object-form').checkValidity()"), false);
+  await set(instanceField('field-0', 'input[type=checkbox]'), false);
+  assert.equal(await evaluate("document.getElementById('object-form').checkValidity()"), true);
+  await click('object-cancel');
+  await chooseValue('object-list', '2');
+  await click('edit-object');
+  await chooseValue('object-definition', '');
+  assert.equal(await evaluate("document.querySelectorAll('#object-properties > div').length"), 256);
+  await click('object-apply');
+  await wait("!document.getElementById('object-dialog').open");
+  await click('undo');
+  await click('edit-object');
+  assert.notEqual(await evaluate("document.getElementById('object-definition').value"), '');
+  await click('object-cancel');
+  await click('redo');
+  await click('save');
+  await wait("document.getElementById('scene-save-state').textContent === 'Saved'");
+  const regressionMap = record(await saved(regression));
+  assert(Array.isArray(regressionMap.layers));
+  const regressionObjects = record(regressionMap.layers[0]).objects;
+  assert(Array.isArray(regressionObjects));
+  const retainedProperties = record(regressionObjects[0]).properties;
+  assert(Array.isArray(retainedProperties));
+  assert.deepEqual(
+    retainedProperties.find((p) => record(p).name === 'field-0'),
+    { name: 'field-0', type: 'float', value: 1.5 },
+  );
+  const detachedProperties = record(regressionObjects[1]).properties;
+  assert(Array.isArray(detachedProperties));
+  assert.equal(detachedProperties.length, 256);
+  for (let n = 0; n < 128; n++) {
+    assert.deepEqual(
+      detachedProperties.find((p) => record(p).name === `field-${n}`),
+      { name: `field-${n}`, type: 'int', value: n },
+    );
+    assert.deepEqual(
+      detachedProperties.find((p) => record(p).name === `extra-${n}`),
+      { name: `extra-${n}`, type: 'string', value: `keep-${n}` },
+    );
+  }
+  await choose(second);
+  await choose(regression);
+  await chooseValue('object-list', '2');
+  await click('edit-object');
+  assert.equal(await evaluate("document.getElementById('object-definition').value"), '');
+  assert.equal(await evaluate("document.querySelectorAll('#object-properties > div').length"), 256);
+  await click('object-cancel');
+  await choose(first);
   // Library version guards preserve unsaved form edits on conflict.
   await click('manage-definitions');
   await chooseValue('definition-list', definitionId);
@@ -381,7 +461,10 @@ print(json.dumps(ids))
   data = record(await manifest());
   const finalDefinitions = record(data.object_definitions).definitions;
   assert(Array.isArray(finalDefinitions));
-  assert.equal(record(finalDefinitions[0]).name, 'Entrance');
+  assert.equal(
+    record(finalDefinitions.find((d) => record(d).id === definitionId)).name,
+    'Entrance',
+  );
   assert.deepEqual(chrome.errors, []);
   console.log('Object definitions browser acceptance passed');
 } catch (error) {

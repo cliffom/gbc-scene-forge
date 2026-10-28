@@ -192,7 +192,9 @@ values use checkboxes; numbers remain typed numbers, including whole-valued
 floats. Integer values must be safe JavaScript integers (±9,007,199,254,740,991);
 floats must be finite and within that range. Names must be nonblank, unique per
 object and at most 100 characters; strings can contain up to 4096 characters.
-Each object supports 128 properties and each layer up to 4096 objects. Maps must
+Linked objects support 128 explicit overrides plus up to 128 inherited defaults.
+Ordinary objects support 256 properties so detaching can preserve every effective
+value. Each layer supports up to 4096 objects. Maps must
 fit within 4 MiB after serialization; oversized saves leave existing files intact. Changing a
 property's type resets its draft value; enter the desired value before applying.
 Property order is insignificant and saved properties are sorted by name.

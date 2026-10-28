@@ -124,8 +124,15 @@ export function createObjectInspector(
       hint.textContent = `Shared default: ${field.default === undefined ? '(unset)' : JSON.stringify(field.default)}${field.min === undefined ? '' : ` · Minimum ${field.min}`}${field.max === undefined ? '' : ` · Maximum ${field.max}`}`;
       // A mismatched override is retained until the author explicitly edits or resets it.
       let retained = override && override.type !== field.type ? structuredClone(override) : null;
+      function updateStep() {
+        if (control instanceof HTMLInputElement) {
+          control.step = retained || field.type !== 'int' ? 'any' : '1';
+        }
+      }
+      updateStep();
       toggle.onchange = () => {
         retained = null;
+        updateStep();
         control.disabled = !toggle.checked;
         if (!toggle.checked) {
           setValue(field.default);
@@ -134,6 +141,7 @@ export function createObjectInspector(
       };
       control.oninput = control.onchange = () => {
         retained = null;
+        updateStep();
         validateDraft();
       };
       schemaValues.push(() =>
@@ -224,8 +232,13 @@ export function createObjectInspector(
     properties.append(row);
   }
   element('object-add-property', HTMLButtonElement).onclick = () => {
-    if (properties.children.length >= 128) {
-      error.textContent = 'Use at most 128 properties.';
+    const limit = draft?.definition ? 128 : 256;
+    if (
+      properties.children.length +
+        definitionFields.querySelectorAll('label input:checked').length >=
+      limit
+    ) {
+      error.textContent = `Use at most ${limit} properties.`;
       return;
     }
     propertyRow({ name: '', type: 'string', value: '' });

@@ -336,6 +336,21 @@ class DefinitionTests(unittest.TestCase):
             Project(self.project.root).load_scene(self.loaded["id"])["scene"], self.scene
         )
         self.assertEqual(len(definitions.resolve(self.item, [definition])[0]), 256)
+        # Detaching preserves the complete effective set as ordinary Tiled properties.
+        effective, _ = definitions.resolve(self.item, [definition])
+        self.item["properties"] = effective
+        del self.item["definition"]
+        self.save()
+        reopened = Project(self.project.root).load_scene(self.loaded["id"])["scene"]
+        self.assertEqual(reopened, self.scene)
+        self.assertEqual(len(reopened["layers"][0]["objects"][0]["properties"]), 256)
+        self.item["properties"].append({"name": "overflow", "type": "int", "value": 0})
+        with self.assertRaisesRegex(ValueError, "256 properties"):
+            self.save()
+        self.item["properties"] = effective[:129]
+        self.item["definition"] = definition["id"]
+        with self.assertRaisesRegex(ValueError, "128 properties"):
+            self.save()
 
     def test_external_edits_to_inherited_properties_are_not_discarded(self):
         self.save()

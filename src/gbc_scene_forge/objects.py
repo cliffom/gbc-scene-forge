@@ -9,8 +9,10 @@ MAX_INT = 9007199254740991
 ORIGIN_KEYS = ("forge:origin_x", "forge:origin_y")
 
 
-def check_properties(properties):
-    require(isinstance(properties, list) and len(properties) <= 128, "Use at most 128 properties")
+def check_properties(properties, limit=128):
+    require(
+        isinstance(properties, list) and len(properties) <= limit, f"Use at most {limit} properties"
+    )
     names = set()
     for prop in properties:
         require(
@@ -71,7 +73,7 @@ def check_object(item, width, height, sprites):
         from .object_definitions import identity
 
         require(identity(item["definition"]), "Invalid object definition identity")
-    check_properties(item.get("properties", []))
+    check_properties(item.get("properties", []), 128 if "definition" in item else 256)
     if kind == "sprite":
         require(
             isinstance(item.get("asset"), str) and item["asset"] in sprites, "Unknown sprite asset"
@@ -246,7 +248,7 @@ def decode_object(item, sprites, gids):
             "and remove them from forge:inherited before reopening; refusing to discard data",
         )
         properties = [p for p in properties if p["name"] in override_names]
-    check_properties(properties)
+    check_properties(properties, 128 if definition_props else 256)
     result = {"id": item.get("id"), "x": int(item["x"]), "y": int(item["y"])}
     if definition_props:
         result["definition"] = definition_props["forge:definition"]

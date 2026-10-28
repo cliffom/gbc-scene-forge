@@ -59,9 +59,9 @@ export function decodeProperty(value: unknown): ObjectProperty {
   }
   throw Error('Unsupported property type.');
 }
-export function validateProperties(properties: ObjectProperty[]) {
-  if (properties.length > 128) {
-    throw Error('Use at most 128 properties.');
+export function validateProperties(properties: ObjectProperty[], limit = 256) {
+  if (properties.length > limit) {
+    throw Error(`Use at most ${limit} properties.`);
   }
   const names = new Set<string>();
   for (const prop of properties) {
@@ -176,7 +176,7 @@ export function validateObject(
   ) {
     throw Error('Invalid object definition identity.');
   }
-  validateProperties(item.properties);
+  validateProperties(item.properties, item.definition === undefined ? 256 : 128);
   if (
     item.kind === 'rectangle' &&
     (!Number.isInteger(item.width) ||
