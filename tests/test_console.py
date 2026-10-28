@@ -9,6 +9,7 @@ from http.client import HTTPConnection
 from unittest.mock import patch
 
 from gbc_scene_forge.console import ServerConsole
+from gbc_scene_forge.png import decode
 from gbc_scene_forge.standalone import StandaloneServer, make_handler, make_root_handler
 
 
@@ -142,6 +143,20 @@ class ConsoleTests(unittest.TestCase):
                         self.assertEqual(request("/api/project", "Browser B"), 200)
                         self.assertEqual(stream.getvalue().count("New client"), 2)
                         self.assertNotIn("GET /api/project", stream.getvalue())
+                        icons = []
+                        for path in ("/apple-touch-icon.png", "/apple-touch-icon-precomposed.png"):
+                            connection = HTTPConnection("127.0.0.1", server.server_port, timeout=2)
+                            try:
+                                connection.request("GET", path, headers={"User-Agent": "Browser A"})
+                                response = connection.getresponse()
+                                self.assertEqual(response.status, 200)
+                                self.assertEqual(response.getheader("Content-Type"), "image/png")
+                                icons.append(response.read())
+                            finally:
+                                connection.close()
+                        self.assertEqual(icons[0], icons[1])
+                        self.assertEqual(decode(icons[0])[:2], (256, 256))
+                        self.assertNotIn("apple-touch-icon", stream.getvalue())
                         self.assertEqual(request("/missing"), 404)
                         self.assertEqual(request("/api/create-project", method="POST"), 403)
                         self.assertEqual(request("/", headers={"Host": "evil.example"}), 403)

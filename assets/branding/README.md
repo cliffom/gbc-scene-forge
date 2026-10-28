@@ -48,8 +48,11 @@ aseprite --batch assets/branding/hero.aseprite --scale 3 --save-as assets/brandi
 aseprite --batch assets/branding/favicon-16.aseprite --save-as src/gbc_scene_forge/static/branding/favicon-16.png
 cp assets/branding/logo-32.png src/gbc_scene_forge/static/branding/favicon-32.png
 cp assets/branding/logo-64.png src/gbc_scene_forge/static/branding/logo-64.png
+cp assets/branding/logo-256.png src/gbc_scene_forge/static/branding/apple-touch-icon.png
 ```
 
 The web app uses empty alt text for the mark because the adjacent heading names
 the product. The hero's README alt text includes the product name and tagline.
+Both `/apple-touch-icon.png` and `/apple-touch-icon-precomposed.png` serve the
+256×256 logo export in project-root and direct-project modes.
 Artwork is covered by the repository's MIT license.

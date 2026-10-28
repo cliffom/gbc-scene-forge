@@ -14,6 +14,8 @@ from .projects import Project
 from .server import STATIC, LocalHandler
 from .workspaces import ProjectRoot
 
+TOUCH_ICONS = ("/apple-touch-icon.png", "/apple-touch-icon-precomposed.png")
+
 
 class StandaloneHandler(LocalHandler):
     def log_request(self, code="-", size="-"):
@@ -66,6 +68,8 @@ def make_handler(root, token):
                 elif route.startswith("/assets/") and project:
                     revision = parse_qs(urlparse(self.path).query).get("revision", [None])[0]
                     self.reply(project.asset(route[1:], revision), "image/png")
+                elif route in TOUCH_ICONS:
+                    self.reply((STATIC / "branding/apple-touch-icon.png").read_bytes(), "image/png")
                 elif route in (
                     "/branding/logo-64.png",
                     "/branding/favicon-32.png",
@@ -256,6 +260,8 @@ def make_root_handler(root, token):
                     require(isinstance(data, dict), "Expected a JSON object")
                     directory = workspace.create(data.get("name"))
                     self.reply({"directory": directory})
+                elif method == "do_GET" and route in TOUCH_ICONS:
+                    self.reply((STATIC / "branding/apple-touch-icon.png").read_bytes(), "image/png")
                 elif method == "do_GET" and route in (
                     "/",
                     "/project.js",
