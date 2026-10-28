@@ -52,6 +52,29 @@ wheel and runs Python tests and installed-package smoke checks on Python 3.10,
 3.11, 3.12, 3.13 and 3.14, without installing Node or rebuilding the frontend.
 The browser suite can also be run locally; see the README.
 
+## UI build identity
+
+`npm run build` (also used by `make frontend`, `make run`, `make demo` and
+`make build`) reads the app version from `pyproject.toml` and embeds it in the
+browser bundle and `static/build-info.json`. The server reads that same metadata
+to print its version above Project Root at startup. Source-only Python runs
+before a frontend build fall back to the Python package version.
+By default, `FORGE_BUILD_MODE=development`: the bottom-right
+label shows `VERSION-COMMIT`, using `git rev-parse --short=7 HEAD` at build time.
+Set `FORGE_BUILD_COMMIT` to a 7–40 character hexadecimal Git commit identifier
+when building development assets without a Git checkout. Missing Git metadata
+or an invalid commit fails the development build rather than inventing an identity.
+
+Use `FORGE_BUILD_MODE=production make build` for release artifacts; their label
+shows only `VERSION`. The publication workflow sets this mode for all its build
+steps, including TestPyPI. Ordinary CI and local builds use development mode.
+Only `development` and `production` are accepted. These values are build-time
+inputs: changing environment variables or Git HEAD after building does not change
+the displayed identity. Wheels and source distributions preserve the prebuilt
+bundle, so installation and wheel builds from source archives need neither Git
+nor Node. Rebuilding that bundle from an archive requires production mode or an
+explicit `FORGE_BUILD_COMMIT`.
+
 ## Publication
 
 The project uses the MIT license, included in both distribution formats. Before a
@@ -73,7 +96,7 @@ publishing page. Use the official [trusted publisher setup guide](https://docs.p
 The workflow follows the [Python Packaging User Guide](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/)
 and uses short-lived OIDC credentials; no PyPI API token is stored in the repository.
 
-After reviewing and committing a release, create and push an annotated `v0.3.2`
+After reviewing and committing a release, create and push an annotated `v0.3.3`
 tag (or the matching next version). Run **Publish package** manually against that
 tag, selecting `testpypi` first when its trusted publisher is configured. TestPyPI
 is currently unconfigured; its 0.1.4 upload failed with `invalid-publisher`. Until
@@ -83,11 +106,12 @@ with `tests/package_smoke.py` after publication. The workflow rebuilds and
 checks the distributions, checks the tag against the package version, then uploads
 only those verified artifacts. Pushing a tag alone does not publish.
 
-## Release 0.3.2
+## Release 0.3.3
 
-Version 0.3.2 adds a compact server console, active client tracking and rotating
-activity logs, plus Apple touch icons. Manifest schema remains version 1; existing
-projects need no format migration. See [release notes](RELEASE-0.3.2.md).
+Version 0.3.3 displays the running build version in the editor status row and
+server startup output. Production builds show the release version; development
+builds append the build commit. Manifest schema remains version 1; existing
+projects need no format migration. See [release notes](RELEASE-0.3.3.md).
 
 Before tagging, run:
 

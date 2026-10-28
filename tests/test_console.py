@@ -11,6 +11,7 @@ from pathlib import Path
 from socket import create_connection
 from unittest.mock import patch
 
+from gbc_scene_forge.build_info import build_version
 from gbc_scene_forge.console import ServerConsole
 from gbc_scene_forge.png import decode
 from gbc_scene_forge.standalone import StandaloneServer, make_handler, make_root_handler, serve
@@ -54,13 +55,15 @@ class ConsoleTests(unittest.TestCase):
             self.assertIn(str(path), stream.getvalue())
             lines = stream.getvalue().splitlines()
             editor_line = next(index for index, line in enumerate(lines) if "Editor" in line)
-            self.assertIn("Project Root", lines[editor_line + 1])
-            self.assertIn(str(Path(folder) / "projects"), lines[editor_line + 1])
+            self.assertIn("Version", lines[editor_line + 1])
+            self.assertIn(build_version(), lines[editor_line + 1])
+            self.assertIn("Project Root", lines[editor_line + 2])
+            self.assertIn(str(Path(folder) / "projects"), lines[editor_line + 2])
             self.assertIn("Failures 2", stream.getvalue())
             self.assertNotIn("GET /", stream.getvalue())
             self.assertNotIn("New client", stream.getvalue())
             self.assertNotIn("\033", stream.getvalue() + log)
-            self.assertLess(len(stream.getvalue().splitlines()), 20)
+            self.assertLess(len(stream.getvalue().splitlines()), 22)
 
     def make_console(self, stream, **kwargs):
         self.activity = io.StringIO()
@@ -114,7 +117,7 @@ class ConsoleTests(unittest.TestCase):
                 now[0] = 120
                 console.expire()
                 self.assertIn("0 active", current_total())
-                self.assertEqual(stream.getvalue().count("\n"), 4)
+                self.assertEqual(stream.getvalue().count("\n"), 5)
                 self.assertNotIn("GET /", stream.getvalue())
                 self.assertNotIn("New client", stream.getvalue())
                 self.assertIn(

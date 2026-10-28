@@ -6,7 +6,7 @@
     "node": ">=24.12.0 <25"
   },
   "scripts": {
-    "build": "npm run typecheck && esbuild frontend/app.ts --bundle --format=esm --platform=browser --target=es2022 --sourcemap --metafile=src/gbc_scene_forge/static/app.meta.json --outfile=src/gbc_scene_forge/static/app.js && esbuild frontend/project.ts --bundle --format=esm --platform=browser --target=es2022 --sourcemap --outfile=src/gbc_scene_forge/static/project.js",
+    "build": "npm run typecheck && node frontend/build.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint frontend tests/*.ts --max-warnings=0",
     "format": "prettier --write frontend tests/*.ts *.json eslint.config.mjs .prettierrc.json",

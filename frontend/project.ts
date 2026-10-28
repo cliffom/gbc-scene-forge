@@ -22,6 +22,12 @@ import { array, boolean, number, record, string } from './decode.mts';
 import type { Decoder } from './decode.mts';
 import type { Selection } from './types.ts';
 
+declare const __FORGE_BUILD_LABEL__: string;
+const versionLabel = document.getElementById('app-version');
+if (versionLabel) {
+  versionLabel.textContent = __FORGE_BUILD_LABEL__;
+}
+
 interface Region {
   name: string;
   kind: string;
