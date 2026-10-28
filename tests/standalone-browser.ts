@@ -2313,9 +2313,194 @@ for y in range(height):
     ]);
     await browser.screenshot(`demo-${name}`);
   }
+  // Use the published atlas conformance bundles in the real standalone editor.
+  await stop();
+  const paletteRoot = join(folder, 'palette-examples');
+  await promisify(execFile)('.venv/bin/python', [
+    'tests/prepare_palette_fixture.py',
+    '--root',
+    paletteRoot,
+  ]);
+  await start(paletteRoot, false);
+  await browser.call('Page.navigate', { url });
+  await wait("document.getElementById('project-name')?.textContent === 'GBC palette examples'");
+  const paletteScenes = array(record((await catalog()).project).scenes, record);
+  const passingPaletteScene = string(paletteScenes[0].id);
+  const overPaletteScene = string(paletteScenes[1].id);
+  await chooseScene(passingPaletteScene);
+  await wait("document.getElementById('show-palettes').dataset.state === 'pass'");
+  await click('show-palettes');
+  await wait("document.getElementById('palette-dialog').open");
+  assert.equal(
+    await evaluate(
+      "document.getElementById('palette-findings').textContent.includes('Background palettes: 8 required, 8 available (0 reserved)')",
+    ),
+    true,
+  );
+  assert.equal(
+    await evaluate(
+      "document.getElementById('palette-findings').textContent.includes('Sprite palettes: 2 required')",
+    ),
+    true,
+  );
+  await click('palette-preflight');
+  await wait(
+    "document.getElementById('palette-summary').textContent === 'GBC palette preflight passed.'",
+  );
+  await browser.screenshot('palette-preflight-passing');
+  await browser.call('Emulation.setDeviceMetricsOverride', {
+    width: 980,
+    height: 760,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  assert.equal(
+    await evaluate(`(() => {
+    const rect = document.getElementById('palette-dialog').getBoundingClientRect();
+    const actions = document.getElementById('palette-preflight').getBoundingClientRect();
+    return rect.left >= 0 && rect.top >= 0 && rect.right <= innerWidth && rect.bottom <= innerHeight && actions.bottom <= innerHeight;
+  })()`),
+    true,
+  );
+  await browser.screenshot('palette-preflight-compact');
+  await browser.call('Emulation.setDeviceMetricsOverride', {
+    width: 1440,
+    height: 1000,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await set('palette-bg-reserved', '1');
+  assert.equal(await evaluate("document.getElementById('palette-preflight').disabled"), true);
+  assert.equal(await evaluate("document.getElementById('palette-findings').children.length"), 0);
+  await click('palette-save-profile');
+  await wait("document.getElementById('palette-summary').dataset.state === 'fail'");
+  assert.equal(
+    await evaluate(
+      "document.getElementById('palette-findings').textContent.includes('7 available (1 reserved)')",
+    ),
+    true,
+  );
+  await set('palette-bg-reserved', '');
+  await click('palette-save-profile');
+  await wait("document.getElementById('palette-summary').dataset.state === 'unverified'");
+  await click('palette-preflight');
+  await wait(
+    "document.getElementById('palette-summary').textContent === 'GBC palette preflight unverified.'",
+  );
+  await set('palette-bg-reserved', '0');
+  await click('palette-save-profile');
+  await wait("document.getElementById('palette-summary').dataset.state === 'pass'");
+  await browser.click("document.querySelector('#palette-findings details summary')");
+  await wait("document.querySelector('#palette-findings .palette-contributor') !== null");
+  await evaluate(`window.__pollFetch = window.fetch; window.__palettePolls = 0;
+    window.fetch = async (...args) => {
+      const response = await window.__pollFetch(...args);
+      if (String(args[0]).endsWith('/palette-report')) {
+        await response.clone().text(); window.__palettePolls++;
+      }
+      return response;
+    };`);
+  await wait('window.__palettePolls > 0');
+  assert.equal(await evaluate("document.querySelector('#palette-findings details').open"), true);
+  await evaluate('window.fetch = window.__pollFetch');
+  await browser.click("document.querySelector('#palette-findings .palette-contributor')");
+  await wait("!document.getElementById('palette-dialog').open");
+  assert.equal(
+    await evaluate(
+      "document.getElementById('status').textContent.startsWith('Palette contributor:')",
+    ),
+    true,
+  );
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
+  const paletteIndicatorWidth = await evaluate(
+    "document.getElementById('show-palettes').getBoundingClientRect().width",
+  );
+  await browser.click('document.querySelector(\'[data-asset="reordered/swapped"]\')');
+  await browser.pointer(4, 20);
+  await browser.pointer(4, 20, 'mouseReleased');
+  await wait("document.getElementById('show-palettes').dataset.state === 'fail'");
+  assert.equal(
+    await evaluate("document.getElementById('show-palettes').getBoundingClientRect().width"),
+    paletteIndicatorWidth,
+  );
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'UNSAVED');
+  // Hold an old passing response, then redo the over-budget edit before releasing it.
+  await evaluate(`window.__paletteFetch = window.fetch;
+    window.__holdPalette = true;
+    window.fetch = async (...args) => {
+      const response = await window.__paletteFetch(...args);
+      if (String(args[0]).endsWith('/palette-report') && window.__holdPalette) {
+        window.__holdPalette = false; window.__paletteHeld = true;
+        await new Promise(resolve => window.__releasePalette = resolve);
+        window.__paletteReleased = true;
+      }
+      return response;
+    };`);
+  await click('undo');
+  await wait('window.__paletteHeld === true');
+  await click('redo');
+  await wait("document.getElementById('show-palettes').dataset.state === 'fail'");
+  await evaluate('window.__releasePalette()');
+  await wait('window.__paletteReleased === true');
+  assert.equal(await evaluate("document.getElementById('show-palettes').dataset.state"), 'fail');
+  await evaluate('window.fetch = window.__paletteFetch');
+  await click('show-palettes');
+  await click('palette-preflight');
+  await wait(
+    "document.getElementById('palette-summary').textContent === 'GBC palette preflight failed.'",
+  );
+  await browser.screenshot('palette-preflight-over-budget');
+  await click('palette-close');
+  await captureDownloads();
+  await click('show-export');
+  await set('export-scope', 'scene');
+  await click('export-confirm');
+  await wait('window.__exportBlob !== null');
+  await click('undo');
+  await wait("document.getElementById('show-palettes').dataset.state === 'pass'");
+  await chooseScene(overPaletteScene);
+  await wait("document.getElementById('show-palettes').dataset.state === 'fail'");
+  // Reimport metadata must invalidate an existing report without changing the canvas.
+  await click('library-import');
+  await set(
+    'atlas-path',
+    join(process.cwd(), 'tests/fixtures/palette-semantics/mixed/mixed.atlas.json'),
+  );
+  await evaluate("document.getElementById('reimport').checked = true");
+  await submit('import-form');
+  await wait("document.getElementById('status').textContent.includes('Atlas imported')");
+  await wait("document.getElementById('show-palettes').dataset.state === 'fail'");
+  await evaluate('window.__paletteReloadMarker = true');
+  await browser.call('Page.reload');
+  await wait(
+    "window.__paletteReloadMarker !== true && document.getElementById('project-name')?.textContent === 'GBC palette examples' && document.getElementById('status')?.textContent === 'Choose a scene, or import an atlas and create one.' && document.getElementById('scenes')?.disabled === false",
+  );
+  await chooseScene(passingPaletteScene);
+  await wait("document.getElementById('show-palettes').dataset.state === 'pass'");
+  const paletteManifestPath = join(paletteRoot, 'forge.project.json');
+  const paletteManifestBytes = await readFile(paletteManifestPath, 'utf8');
+  await writeFile(paletteManifestPath, paletteManifestBytes + '\n');
+  await wait("document.getElementById('show-palettes').dataset.state === 'unverified'");
+  await click('show-palettes');
+  assert.equal(await evaluate("document.getElementById('palette-findings').children.length"), 0);
+  assert.equal(
+    await evaluate(
+      "document.getElementById('palette-summary').textContent.includes('Project changed')",
+    ),
+    true,
+  );
+  await writeFile(paletteManifestPath, paletteManifestBytes);
+  await wait("document.getElementById('palette-summary').dataset.state === 'pass'");
+  await click('palette-enabled');
+  await click('palette-save-profile');
+  await wait(
+    "document.getElementById('palette-summary').textContent === 'GBC palette checks are off.'",
+  );
+  assert.equal(await evaluate("document.getElementById('palette-preflight').disabled"), true);
+  await click('palette-close');
   assert.deepEqual(browser.errors, []);
   console.log(
-    'Standalone browser acceptance passed: project roots, selection, save/discard/cancel switching, failed-save preservation, project creation, atlas import/reimport, painting, layers, objects/properties, terrain/collision, portable exports, undo/redo, restart, moved directory, and conflict preservation.',
+    'Standalone browser acceptance passed: project roots, selection, save/discard/cancel switching, failed-save preservation, project creation, atlas import/reimport, painting, layers, objects/properties, terrain/collision, portable exports, undo/redo, restart, moved directory, conflict preservation, and GBC palette budgets/preflight with stale-response protection.',
   );
 } finally {
   await chrome?.close();

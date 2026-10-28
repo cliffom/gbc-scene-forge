@@ -50,6 +50,7 @@
       <button id="show-delete" disabled>Delete scene</button>
       <span class="spacer"></span>
       <button id="show-export" disabled>Export…</button>
+      <button id="show-palettes" disabled>GBC palettes…</button>
       <button id="save" disabled title="Save scene (⌘/Ctrl S)">Save scene</button>
     </nav>
     <main>
@@ -169,6 +170,22 @@
     </main>
   </div>
   <footer class="status-bar"><span id="status" role="status" aria-live="polite">Opening local workspace…</span><span class="build-identity"><span id="app-version" aria-label="App version"></span></span></footer>
+  <dialog id="palette-dialog" aria-labelledby="palette-heading">
+    <h2 id="palette-heading">GBC palette budget</h2>
+    <p class="hint">Checks the current canvas against 8 background/window slots and 8 sprite slots. Includes hidden layers and all frames of animations linked to placed artwork.</p>
+    <label><input id="palette-enabled" type="checkbox"> Enable GBC palette checks for this project</label>
+    <p class="hint">Reserve slots for UI/window content, effects and dynamic actors. Leave blank if unknown; enter zero only when no additional slots are needed. Unknown reservations cannot pass preflight.</p>
+    <div class="property-grid">
+      <label class="field">Background slots reserved<input id="palette-bg-reserved" type="number" min="0" max="8" step="1" placeholder="Unknown"></label>
+      <label class="field">Sprite slots reserved<input id="palette-obj-reserved" type="number" min="0" max="8" step="1" placeholder="Unknown"></label>
+    </div>
+    <button id="palette-save-profile" type="button">Save profile</button>
+    <p class="form-error error" role="alert"></p>
+    <p id="palette-summary" role="status" aria-live="polite">GBC palette checks are off.</p>
+    <div id="palette-findings"></div>
+    <p class="hint">Assumes static residency without palette streaming. Preview playback does not affect counts. A pass covers this palette budget; the game build must verify its remaining requirements. Generic Tiled export stays available.</p>
+    <div class="dialog-actions"><button id="palette-preflight" type="button" disabled>Run GBC palette preflight</button><button id="palette-close" type="button">Close</button></div>
+  </dialog>
   <dialog id="export-dialog" aria-labelledby="export-heading">
     <form id="export-form">
       <h2 id="export-heading">Portable Tiled export</h2>

@@ -378,6 +378,16 @@ for the native field definitions. Tile collision object groups support the
 rectangle, ellipse and simple-polygon subset described above; other collision
 geometry and arbitrary tile properties are not imported from external tilesets.
 
+## GBC palette budgets
+
+Choose **GBC palettes…** to enable optional scene palette checks and reserve
+background/window and sprite slots for runtime content. Counts include the
+current unsaved canvas, hidden layers and linked animation frames. Expand a
+palette to navigate to its contributors, or run an explicit palette preflight.
+Unknown reservations remain unverified; generic editing and Tiled export stay
+available for every result. See [palette budgets](PALETTE-BUDGETS.md) for the
+counting policy, headless command and reproducible cross-atlas examples.
+
 ## Portable export
 
 Choose **Export…** to download a ZIP, then choose **Open scene** or **Whole

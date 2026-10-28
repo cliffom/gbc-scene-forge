@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "id": "mixed",
+  "png": "atlas.png",
+  "palettes": [
+    [
+      [0, 0, 0],
+      [10, 10, 10],
+      [20, 20, 20],
+      [31, 31, 31]
+    ],
+    [
+      [0, 0, 0],
+      [10, 10, 10],
+      [20, 20, 20],
+      [31, 31, 31]
+    ],
+    [
+      [1, 2, 3],
+      [10, 10, 10],
+      [20, 20, 20],
+      [31, 31, 31]
+    ],
+    [
+      [0, 0, 0],
+      [20, 20, 20],
+      [10, 10, 10],
+      [31, 31, 31]
+    ],
+    [
+      [8, 1, 0],
+      [8, 2, 0],
+      [8, 3, 0],
+      [8, 4, 0]
+    ]
+  ],
+  "cell_palettes": [0, 1, 2, 3, 0, 1, 2, 3],
+  "regions": [
+    {
+      "name": "ground",
+      "kind": "tile",
+      "x": 0,
+      "y": 0,
+      "width": 16,
+      "height": 16
+    },
+    {
+      "name": "actor_a",
+      "kind": "sprite",
+      "x": 16,
+      "y": 0,
+      "width": 8,
+      "height": 16
+    },
+    {
+      "name": "actor_b",
+      "kind": "sprite",
+      "x": 24,
+      "y": 0,
+      "width": 8,
+      "height": 16
+    }
+  ],
+  "animations": [
+    {
+      "name": "walk",
+      "frames": [
+        {
+          "region": "actor_a",
+          "duration_ms": 100
+        },
+        {
+          "region": "actor_b",
+          "duration_ms": 125
+        }
+      ]
+    }
+  ],
+  "approval": {
+    "status": "draft"
+  }
+}
