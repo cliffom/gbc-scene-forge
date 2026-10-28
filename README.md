@@ -147,6 +147,8 @@ project creation in the browser.
 
 - Paint tile regions as stamps; place sprites at their native size and atlas origin.
 - Use named tile and object layers, change their order and visibility, and undo edits.
+- Recover unsaved scene drafts after a browser or server interruption; checkpoints
+  stay inside the project, with explicit restore, download and discard choices.
 - Place spawn points and trigger rectangles with names, classes and typed properties.
 - Add shared terrain and collision metadata, then inspect it with canvas overlays.
 - Select a sprite to try animation and movement previews. Save sequence mappings
@@ -214,8 +216,10 @@ dependencies and builds the browser UI. It does not install Poetry itself.
 | `make lint` / `make format` | Check code style or apply formatting |
 | `make typecheck` | Run strict TypeScript checks |
 | `make test` | Run Python and TypeScript tests |
-| `make test-python` / `make test-frontend` | Run one test suite |
-| `make test-browser [CHROME=/path]` | Run Chrome acceptance in disposable directories |
+| `make test-python` / `make test-frontend` | Run Python tests or all TypeScript suites |
+| `make test-frontend-<suite>` | Run one TypeScript suite, such as `drafts` or `model` |
+| `make test-browser [CHROME=/path]` | Run all Chrome acceptance suites in disposable directories |
+| `make test-standalone-browser` / `make test-drafts-browser` | Run editor or draft recovery Chrome acceptance separately |
 | `make check` | Run lint, tests and Chrome acceptance |
 | `make build` | Rebuild the UI, build wheel/source distributions and check metadata |
 | `make check-dist` | Install the built wheel in an isolated environment and smoke-test it |

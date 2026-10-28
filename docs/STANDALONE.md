@@ -336,6 +336,7 @@ world/
   assets/<atlas-id>/sprites.tsj     # independent native-size sprite tiles
   assets/<atlas-id>/sprites/<id>.png
   .forge/history/                  # transaction records and recovery backups
+  .forge/drafts/                   # unsaved scene checkpoints (local recovery only)
 ```
 
 The version-1 Forge manifest records project identity/name, scene UUIDs/names and
@@ -449,6 +450,69 @@ transaction lock and checked again before archiving; a detected direct external
 edit stops the download. Exports are limited to 256 MiB of
 uncompressed file data; choose one scene or reduce imported assets for larger
 projects. Export never repairs, rewrites or deletes source files.
+
+## Unsaved draft recovery
+
+Forge automatically checkpoints completed scene edits after 750 ms of inactivity
+and checks for another checkpoint every five seconds. Each browser page owns a
+separate draft, keyed by the persistent project and scene identities and the
+original saved revisions. Checkpoints live in `.forge/drafts/` inside the project,
+so they survive browser crashes, server restarts, port changes and moving the
+whole project. They do not depend on browser storage. Keep this hidden folder
+when moving or backing up your work.
+
+Reopening a project offers **Recover unsaved work** when checkpoints exist. You
+can also choose **Recover unsaved work…** in the inspector when the canvas is
+clean, or reopen a scene to see its drafts. Choose a checkpoint, then:
+
+- **Restore draft** opens its authored content as unsaved edits. The committed
+  scene stays unchanged until **Save scene**. **Revert** returns to the committed
+  scene and removes the restored checkpoint.
+- **Download draft** retains the complete checkpoint as JSON for manual recovery
+  or inspection. It does not remove the checkpoint. This JSON is recovery data,
+  not an importable Tiled map.
+- **Discard draft…** asks for confirmation before removing that checkpoint.
+  **Later** leaves it available for another visit.
+
+Restoration checks the project revision, saved scene revision, asset hashes and
+normal scene validation. External changes, reimports, missing assets and deleted
+scenes can make a draft incompatible. Forge explains the conflict and keeps the
+draft downloadable; it never silently rebases onto externally changed content.
+Even an unrelated change to the manifest requires manual recovery when its
+original revision no longer matches. Checkpoints can still be written after an
+external edit, preserving the unsaved canvas with its original revision guards.
+
+Drafts may belong to another open tab. Tabs write independent files, and every
+replacement or deletion checks the checkpoint's own revision. Restoring another
+tab's draft copies it into your workspace; if that tab updates its checkpoint,
+your later cleanup cannot delete its newer work. Closing a tab leaves its draft
+available. Save, explicit discard when switching/reverting, and undo back to the
+saved baseline clean up that page's checkpoint; saving or discarding a restored
+workspace also removes its unchanged source checkpoint. Other tabs' drafts are
+retained. A crash between save and cleanup may leave a redundant checkpoint;
+it is safe to discard after inspecting it.
+
+Recovery includes layers, tiles, objects, properties and stable asset references.
+Selections, brushes, undo history, animation playback and temporary movement
+positions are not checkpointed. Restored work starts with fresh undo history.
+Shared metadata and preview preferences retain their separate explicit saves.
+
+The inspector shows checkpoint success or a persistent error if the server is
+unavailable, the disk is full, or a limit is reached. Forge retries automatically;
+save or export your work while recovery is unavailable. Edits since the last
+successful checkpoint can be lost on interruption. Checkpoints are limited to
+4 MiB each, 64 files and 64 MiB total per project. No age-based eviction deletes
+unsaved work: download/discard obsolete or incompatible drafts explicitly to
+free space. Damaged records are preserved and reported for manual recovery in
+`.forge/drafts/`. Scene deletion does not silently delete older drafts.
+
+Portable ZIP exports include authored scene data, including an explicitly
+selected unsaved canvas, but exclude local recovery checkpoints. Copy the whole
+project directory when you also need its recovery files.
+
+![Recover unsaved work](screenshots/draft-recovery/restore.png)
+
+![A changed scene keeps its draft available to download](screenshots/draft-recovery/conflict.png)
 
 ## Conflicts and recovery
 

@@ -13,6 +13,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 from .atlas import require
 from .console import ServerConsole
 from .documents import Conflict
+from .drafts import Drafts
 from .projects import Project
 from .server import STATIC, LocalHandler
 from .workspaces import ProjectRoot
@@ -154,6 +155,16 @@ def make_handler(root, token):
                             data.get("project_revision"),
                         )
                     )
+                elif route == "/api/checkpoint-draft":
+                    self.reply(Drafts(project).write(data))
+                elif route == "/api/list-drafts":
+                    self.reply(Drafts(project).list())
+                elif route == "/api/restore-draft":
+                    self.reply(Drafts(project).restore(data.get("id"), data.get("revision")))
+                elif route == "/api/download-draft":
+                    self.reply(Drafts(project).download(data.get("id"), data.get("revision")))
+                elif route == "/api/delete-draft":
+                    self.reply(Drafts(project).delete(data.get("id"), data.get("revision")))
                 elif route == "/api/export":
                     payload, filename = project.export_bundle(
                         data.get("scope"),

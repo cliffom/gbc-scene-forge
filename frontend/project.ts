@@ -1,4 +1,5 @@
 /** Standalone project controller for atlas, layer and object authoring. */
+import { DraftWriter } from './drafts.mts';
 import { decodePreviewSettings, prunePreviewSettings } from './preview-settings.mts';
 import { sceneOverlaps } from './movement-preview.mts';
 import type { PreviewRect } from './movement-preview.mts';
@@ -47,6 +48,7 @@ interface Atlas {
   metadata: MetadataSets;
 }
 interface Project {
+  id: string;
   name: string;
   paletteProfile: PaletteProfile | null;
   scenes: { id: string; name: string }[];
@@ -94,8 +96,53 @@ let atlasFolder: AtlasFolder | null = null;
 let revision = '';
 let project: Project | null = null;
 let loaded: Loaded | null = null;
+let committed: Loaded | null = null;
 let editor: LayerEditor | null = null;
 let baseline = '';
+let draftWriter: DraftWriter | null = null;
+let recoveredDraft: { id: string; revision: string } | null = null;
+let recoveryItems: Record<string, unknown>[] = [];
+function newDraftWriter() {
+  draftWriter = new DraftWriter(
+    (route, payload) => api(route, record, payload),
+    (message) => {
+      element('draft-status', HTMLElement).textContent = message;
+    },
+  );
+}
+function checkpoint() {
+  if (busy || anchor || !project || !loaded || !editor || !draftWriter) {
+    return;
+  }
+  draftWriter.observe(
+    dirty()
+      ? {
+          project_id: project.id,
+          scene_id: loaded.id,
+          name: loaded.name,
+          scene_revision: loaded.revision,
+          project_revision: revision,
+          scene: sceneSnapshot(),
+        }
+      : null,
+  );
+}
+async function clearDraft() {
+  const writer = draftWriter;
+  draftWriter = null;
+  try {
+    await writer?.clear();
+    if (recoveredDraft) {
+      await api('delete-draft', record, recoveredDraft);
+    }
+    recoveredDraft = null;
+    element('draft-status', HTMLElement).textContent = '';
+  } catch (error) {
+    element('draft-status', HTMLElement).textContent =
+      `Draft cleanup failed; the checkpoint was retained. ${String(error)}`;
+  }
+}
+
 let brush: string[][] | null = null;
 let spriteBrush: string | null = null;
 let objectBrush: 'point' | 'rectangle' | null = null;
@@ -445,6 +492,7 @@ function decodeProject(value: unknown): Project {
     };
   }
   return {
+    id: string(data.id),
     name: string(data.name),
     paletteProfile: decodePaletteProfile(data.gbc_palette_profile),
     atlases,
@@ -483,6 +531,8 @@ async function discard(): Promise<boolean> {
   });
 }
 function update() {
+  checkpoint();
+  button('show-recovery').disabled = busy || anchor !== null || dirty();
   palettePanel.sync(project?.paletteProfile ?? null, busy || anchor !== null);
   if (busy || !editor) {
     spacePan = false;
@@ -1138,6 +1188,8 @@ function palette() {
   filterPalette();
 }
 function open(data: Loaded) {
+  committed = data;
+  newDraftWriter();
   loaded = data;
   const scene: LayerScene = {
     width: data.width,
@@ -1752,6 +1804,7 @@ form('import-form').onsubmit = async (event) => {
       reimport: input('reimport').checked,
       project_revision: revision,
     });
+    await clearDraft();
     await refresh();
     if (loaded) {
       open(await api(`scene/${loaded.id}`, decodeLoaded));
@@ -1790,6 +1843,7 @@ form('scene-form').onsubmit = async (event) => {
       grid: Number(select('cell-size').value),
       project_revision: revision,
     });
+    await clearDraft();
     await refresh();
     open(data);
     element('create-scene-dialog', HTMLDialogElement).close();
@@ -1798,9 +1852,11 @@ form('scene-form').onsubmit = async (event) => {
 };
 async function openSavedScene(id: string) {
   const data = await api(`scene/${id}`, decodeLoaded);
+  await clearDraft();
   await refresh();
   open(data);
   status.textContent = 'Scene opened.';
+  await showRecovery(id);
 }
 select('scenes').onchange = () => {
   const id = select('scenes').value;
@@ -1908,8 +1964,11 @@ async function saveScene() {
     revision: loaded.revision,
     project_revision: revision,
   });
+  await clearDraft();
   loaded = data;
+  committed = data;
   baseline = snapshot();
+  newDraftWriter();
   const catalog = await api('project', record);
   revision = string(catalog.revision);
   status.textContent = 'Scene saved.';
@@ -1942,9 +2001,10 @@ button('switch-save').onclick = () => {
   });
 };
 button('switch-discard').onclick = () => {
-  if (!busy) {
+  void run(async () => {
+    await clearDraft();
     navigateProject();
-  }
+  });
 };
 button('switch-cancel').onclick = () => {
   if (!busy) {
@@ -2029,8 +2089,13 @@ button('redo').onclick = () => {
   draw();
 };
 button('revert').onclick = async () => {
-  if (loaded && (await discard())) {
-    open(loaded);
+  if (committed && (await discard())) {
+    void run(async () => {
+      await clearDraft();
+      if (committed) {
+        open(committed);
+      }
+    });
   }
 };
 function sceneZoom() {
@@ -2207,6 +2272,7 @@ form('delete-scene-form').onsubmit = (event) => {
     project = decodeProject(result.project);
     revision = string(result.revision);
     if (loaded?.id === candidate.id) {
+      await clearDraft();
       loaded = null;
       editor = null;
       baseline = '';
@@ -2523,4 +2589,135 @@ void run(async () => {
     : choosingProject
       ? 'Choose a project or create a new one.'
       : 'Name your project to get started.';
+  if (project) {
+    await showRecovery();
+  }
 });
+
+// Checkpoint only authored scene snapshots; playback positions and selections are transient.
+setInterval(() => {
+  checkpoint();
+  if (!busy && !anchor) {
+    void draftWriter?.flush();
+  }
+}, 5000);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    checkpoint();
+    void draftWriter?.flush();
+  }
+});
+function recoverySelection() {
+  return recoveryItems.find((item) => item.id === select('recovery-drafts').value);
+}
+function recoveryLabel(item: Record<string, unknown>) {
+  return `${string(item.name)} · ${new Date(string(item.updated)).toLocaleString()}`;
+}
+function recoveryDetails() {
+  const item = recoverySelection();
+  element('recovery-details', HTMLElement).textContent = item
+    ? `${recoveryLabel(item)}. Restoration checks the original project, scene and asset revisions. If they changed, download the draft to retain its contents.`
+    : 'No recoverable drafts. Checkpoints are created automatically while editing.';
+  for (const id of ['recovery-restore', 'recovery-download', 'recovery-discard']) {
+    button(id).disabled = !item;
+  }
+}
+async function showRecovery(sceneId?: string) {
+  const result = await api('list-drafts', record, {});
+  const all = array(result.drafts, record);
+  recoveryItems = all.filter(
+    (item) => !item.error && item.id !== draftWriter?.id && (!sceneId || item.scene_id === sceneId),
+  );
+  select('recovery-drafts').replaceChildren(
+    ...recoveryItems.map((item) => new Option(recoveryLabel(item), string(item.id))),
+  );
+  recoveryDetails();
+  if (all.some((item) => item.error)) {
+    element('draft-status', HTMLElement).textContent =
+      'Some draft files are damaged. They remain in .forge/drafts for manual recovery.';
+  }
+  if (recoveryItems.length) {
+    element('recovery-dialog', HTMLDialogElement).showModal();
+  }
+}
+select('recovery-drafts').onchange = recoveryDetails;
+button('show-recovery').onclick = () =>
+  void run(async () => {
+    await showRecovery();
+    if (!recoveryItems.length) {
+      status.textContent = 'No recoverable drafts.';
+    }
+  });
+button('recovery-later').onclick = () => {
+  if (!busy) {
+    element('recovery-dialog', HTMLDialogElement).close();
+  }
+};
+element('recovery-dialog', HTMLDialogElement).oncancel = (event) => {
+  if (busy) {
+    event.preventDefault();
+  }
+};
+button('recovery-restore').onclick = () =>
+  void run(async () => {
+    const item = recoverySelection();
+    if (!item || dirty()) {
+      return;
+    }
+    const guard = { id: string(item.id), revision: string(item.revision) };
+    // Fetch baseline first; restore validates again after it, fencing concurrent saves.
+    const saved = await api(`scene/${string(item.scene_id)}`, decodeLoaded);
+    const restored = await api('restore-draft', decodeLoaded, guard);
+    if (saved.revision !== restored.revision) {
+      throw Error(
+        'Scene changed during recovery. Reopen recovery and try again; the draft was retained.',
+      );
+    }
+    await clearDraft();
+    await refresh();
+    open(restored);
+    baseline = JSON.stringify({
+      layers: saved.layers,
+      nextLayer: saved.nextLayerId,
+      next: saved.nextObjectId,
+    });
+    committed = saved;
+    recoveredDraft = guard;
+    element('recovery-dialog', HTMLDialogElement).close();
+    draw();
+    status.textContent =
+      'Draft restored as unsaved edits. Save scene to commit them; Revert discards them.';
+  });
+button('recovery-download').onclick = () =>
+  void run(async () => {
+    const item = recoverySelection();
+    if (!item) {
+      return;
+    }
+    const value = await api('download-draft', record, { id: item.id, revision: item.revision });
+    const url = URL.createObjectURL(
+      new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' }),
+    );
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `forge-draft-${string(item.id)}.json`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    status.textContent = 'Draft downloaded. The checkpoint is still available.';
+  });
+button('recovery-discard').onclick = () =>
+  void run(async () => {
+    const item = recoverySelection();
+    if (
+      !item ||
+      !window.confirm(
+        `Permanently discard the draft for “${string(item.name)}”? Download it first to keep a copy.`,
+      )
+    ) {
+      return;
+    }
+    await api('delete-draft', record, { id: item.id, revision: item.revision });
+    element('recovery-dialog', HTMLDialogElement).close();
+    await showRecovery();
+    status.textContent = 'Draft discarded. Saved scenes are unchanged.';
+  });
