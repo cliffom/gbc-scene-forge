@@ -4,6 +4,7 @@ import json
 import secrets
 from http.server import ThreadingHTTPServer
 from pathlib import Path
+from threading import Lock
 from urllib.parse import parse_qs, unquote, urlparse
 
 from .atlas import require
@@ -15,9 +16,11 @@ from .workspaces import ProjectRoot
 
 def make_handler(root, token):
     root = Path(root).absolute()
+    if (root / "forge.project.json").exists():
+        Project.recover(root)
     if not (root / "forge.project.json").exists():
         Project.prepare_creation(root)
-    project = Project(root) if (root / "forge.project.json").exists() else None
+    project = Project(root, recover=False) if (root / "forge.project.json").exists() else None
 
     class Handler(LocalHandler):
         def do_GET(self):
@@ -171,6 +174,8 @@ def make_handler(root, token):
 
 def make_root_handler(root, token):
     workspace = ProjectRoot(root)
+    handlers = {}
+    initialization_lock = Lock()
 
     class Handler(LocalHandler):
         def dispatch(self, method):
@@ -188,15 +193,26 @@ def make_root_handler(root, token):
                     parts = route.split("/", 3)
                     require(len(parts) == 4, "Project URLs must end with a slash")
                     project_path = workspace.path(parts[2])
-                    require((project_path / "forge.project.json").is_file(), "Project not found")
-                    handler = make_handler(project_path, token)
+                    with initialization_lock:
+                        cached = handlers.get(project_path)
+                        if cached is None:
+                            require(
+                                (project_path / "forge.project.json").is_file(), "Project not found"
+                            )
+                            handler = make_handler(project_path, token)
+                            cached = (handler, Lock())
+                            handlers[project_path] = cached
+                        handler, request_lock = cached
                     original = self.path
                     self.path = "/" + parts[3]
                     query = urlparse(original).query
                     if query:
                         self.path += "?" + query
                     try:
-                        getattr(handler, method)(self)
+                        # Project reads also take nonblocking filesystem locks. Queue
+                        # local requests so tabs do not contend with one another.
+                        with request_lock:
+                            getattr(handler, method)(self)
                     finally:
                         self.path = original
                 elif route == "/api/project" and method == "do_GET":

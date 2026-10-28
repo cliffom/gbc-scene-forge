@@ -774,6 +774,47 @@ class ProjectTests(unittest.TestCase):
 
 
 class StandaloneHttpTests(unittest.TestCase):
+    def test_creation_screen_and_retry_after_recovery_removes_manifest(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder) / "project"
+            original = transactions.atomic_write
+
+            def fail_after_manifest(path, data):
+                original(path, data)
+                if path == root / MANIFEST:
+                    raise OSError("process exited after installing manifest")
+
+            with (
+                patch.object(transactions, "atomic_write", side_effect=fail_after_manifest),
+                patch.object(
+                    transactions.Transactions, "_restore", side_effect=OSError("process exited")
+                ),
+            ):
+                with self.assertRaises(OSError):
+                    Project.create(root, "Interrupted")
+            self.assertTrue((root / MANIFEST).exists())
+            server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(root, "secret"))
+            worker = threading.Thread(target=server.serve_forever, daemon=True)
+            worker.start()
+            try:
+                url = f"http://127.0.0.1:{server.server_port}"
+                with urlopen(url + "/api/project", timeout=5) as response:
+                    self.assertIsNone(json.load(response)["project"])
+                self.assertFalse((root / MANIFEST).exists())
+                with urlopen(
+                    Request(
+                        url + "/api/create-project",
+                        data=json.dumps({"name": "Retried"}).encode(),
+                        headers={"Content-Type": "application/json", "X-Scene-Token": "secret"},
+                    ),
+                    timeout=5,
+                ) as response:
+                    self.assertEqual(json.load(response)["project"]["name"], "Retried")
+            finally:
+                server.shutdown()
+                server.server_close()
+                worker.join()
+
     def test_create_security_and_conflict(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder) / "project"

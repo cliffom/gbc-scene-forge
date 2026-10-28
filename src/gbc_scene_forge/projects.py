@@ -34,16 +34,22 @@ class Project:
         safe_path(self.root, MANIFEST)
         atlas.require(self.root.is_dir(), "Project directory does not exist")
         self.transactions = Transactions(self.root, ".forge/history")
+        if recover:
+            self.recover(self.root)
+        self.read()
+
+    @classmethod
+    def recover(cls, root):
+        """Recover pending writes, including creation that may remove the manifest."""
+        root = Path(root).absolute()
         # Refuse unknown schemas before recovery can write any files.
-        manifest = safe_path(self.root, MANIFEST)
+        manifest = safe_path(root, MANIFEST)
         if manifest.exists():
             with manifest.open("rb") as stream:
                 data = stream.read(8 * 1024 * 1024 + 1)
             atlas.require(len(data) <= 8 * 1024 * 1024, "Project manifest exceeds 8 MiB")
-            self.check_version(json.loads(data))
-        if recover:
-            self.transactions.recover()
-        self.read()
+            cls.check_version(json.loads(data))
+        Transactions(root, ".forge/history").recover()
 
     @staticmethod
     def check_version(document):
@@ -103,12 +109,12 @@ class Project:
         data = safe_path(self.root, MANIFEST).read_bytes()
         atlas.require(len(data) <= 8 * 1024 * 1024, "Project manifest exceeds 8 MiB")
         document = json.loads(data)
+        self.check_version(document)
         atlas.require(
             isinstance(document, dict)
             and set(document) == {"version", "id", "name", "scenes", "atlases", "files", "preview"},
             "Unsupported project manifest fields",
         )
-        self.check_version(document)
         atlas.require(identity(document["id"]), "Invalid project identity")
         name(document["name"])
         atlas.require(

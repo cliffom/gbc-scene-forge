@@ -4,6 +4,7 @@ import json
 import tempfile
 import threading
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 from unittest.mock import patch
@@ -13,7 +14,7 @@ from urllib.request import Request, urlopen
 from gbc_scene_forge import transactions
 from gbc_scene_forge.__main__ import main
 from gbc_scene_forge.projects import MANIFEST, Project
-from gbc_scene_forge.standalone import make_root_handler
+from gbc_scene_forge.standalone import make_handler, make_root_handler
 from gbc_scene_forge.workspaces import ProjectRoot, slug
 
 
@@ -81,8 +82,12 @@ class ProjectRootTests(unittest.TestCase):
         manifest.write_text(json.dumps(document))
         before = {str(p): p.read_bytes() for p in project.root.rglob("*") if p.is_file()}
         with patch("gbc_scene_forge.transactions.Transactions.recover") as recover:
-            with self.assertRaisesRegex(ValueError, "Unsupported project version"):
-                Project(project.root)
+            for open_project in (
+                lambda: Project(project.root),
+                lambda: make_handler(project.root, "t"),
+            ):
+                with self.assertRaisesRegex(ValueError, "Unsupported project version"):
+                    open_project()
             recover.assert_not_called()
         self.assertEqual(
             {str(p): p.read_bytes() for p in project.root.rglob("*") if p.is_file()}, before
@@ -141,6 +146,38 @@ class ProjectRootTests(unittest.TestCase):
 
 
 class ProjectRootHttpTests(unittest.TestCase):
+    def test_concurrent_scoped_reads_initialize_recovery_once(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            project = Project.create(root / "world", "World")
+            server = ThreadingHTTPServer(("127.0.0.1", 0), make_root_handler(root, "secret"))
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                url = f"http://127.0.0.1:{server.server_port}/projects/world"
+
+                def read(index):
+                    route = ("/", "/api/project", "/style.css")[index % 3]
+                    with urlopen(url + route, timeout=5) as response:
+                        self.assertEqual(response.status, 200)
+                        return response.read()
+
+                recover = transactions.Transactions.recover
+                with patch.object(transactions.Transactions, "recover", autospec=True) as recovery:
+                    recovery.side_effect = recover
+                    with ThreadPoolExecutor(max_workers=4) as pool:
+                        results = list(pool.map(read, range(40)))
+                    self.assertTrue(all(results))
+                    recovery.assert_called_once()
+                    # Static pages do not rerun recovery while a writer holds the lock.
+                    with project.transactions.locked():
+                        read(0)
+                    recovery.assert_called_once()
+            finally:
+                server.shutdown()
+                server.server_close()
+                thread.join()
+
     def test_scoped_requests_tokens_conflicts_and_multiple_tabs(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder) / "projects"
