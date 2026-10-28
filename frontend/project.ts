@@ -1,4 +1,6 @@
 /** Standalone project controller for atlas, layer and object authoring. */
+import { createDiagnosticsView } from './diagnostics-view.mts';
+import type { DiagnosticLocation } from './diagnostics-view.mts';
 import { createWorldView } from './world-view.mts';
 import { decodeWorld, decodeWorldSnapshot } from './world.mts';
 import type { World, Endpoint } from './world.mts';
@@ -541,6 +543,34 @@ async function definitionMutation(route: string, payload: Record<string, unknown
     update();
   }
 }
+let pendingDiagnostic: DiagnosticLocation | null = null;
+function focusDiagnostic() {
+  const location = pendingDiagnostic;
+  pendingDiagnostic = null;
+  if (!location || !editor || !location.scene || location.scene !== loaded?.id) {
+    return;
+  }
+  const item = editor.layers
+    .flatMap((l) => (l.type === 'objectgroup' ? l.objects : []))
+    .find((o) => Number(o.id) === location.object);
+  if (location.object) {
+    pendingWorldEndpoint = { scene: location.scene, object: location.object };
+    focusWorldEndpoint();
+  } else if (location.layer && editor.layers.some((l) => l.id === location.layer)) {
+    editor.activate(location.layer);
+    draw();
+  }
+  const x = location.x ?? item?.x,
+    y = location.y ?? item?.y;
+  if (x !== undefined && y !== undefined) {
+    const viewport = element('viewport', HTMLElement);
+    const scale = canvas.getBoundingClientRect().width / canvas.width;
+    viewport.scrollTo(
+      Math.max(0, x * scale - viewport.clientWidth / 2),
+      Math.max(0, y * scale - viewport.clientHeight / 2),
+    );
+  }
+}
 let pendingWorldEndpoint: Endpoint | null = null;
 function focusWorldEndpoint() {
   const endpoint = pendingWorldEndpoint;
@@ -613,6 +643,41 @@ const worldView = createWorldView(
   },
 );
 button('show-world').onclick = () => void run(() => worldView.open());
+const diagnosticsView = createDiagnosticsView(
+  () => ({ definitions: project?.definitions ?? [], scenes: project?.scenes ?? [] }),
+  (options) =>
+    api('diagnostics-report', record, {
+      options,
+      project_revision: revision,
+      ...(loaded && editor
+        ? { scene_id: loaded.id, scene_revision: loaded.revision, scene: sceneSnapshot() }
+        : {}),
+    }),
+  (location) => {
+    if (location.scene && project?.scenes.some((s) => s.id === location.scene)) {
+      pendingDiagnostic = location;
+      if (location.scene === loaded?.id) {
+        focusDiagnostic();
+      } else {
+        requestSceneOpen(location.scene);
+      }
+    } else if (location.connection) {
+      void run(() => worldView.open());
+    } else if (location.asset) {
+      status.textContent = `Unused asset ${location.asset}. Select it in the palette to inspect its artwork and metadata.`;
+      input('search').value = '';
+      select('atlas-filter').value = '';
+      select('kind-filter').value = '';
+      filterPalette();
+      const node = Array.from(element('palette', HTMLElement).querySelectorAll('button')).find(
+        (b) => b.dataset.asset === location.asset?.split('/').slice(0, 2).join('/'),
+      );
+      node?.scrollIntoView({ block: 'center' });
+      node?.focus();
+    }
+  },
+);
+button('show-diagnostics').onclick = () => diagnosticsView.open();
 const definitionLibrary = createDefinitionLibrary(
   () => project?.definitions ?? [],
   () =>
@@ -949,6 +1014,7 @@ async function discard(): Promise<boolean> {
 function update() {
   renderObjectValidation();
   button('show-world').disabled = busy || !project || anchor !== null;
+  button('show-diagnostics').disabled = busy || !project || anchor !== null;
   button('manage-definitions').disabled = busy || !project || anchor !== null;
   button('place-definition').disabled =
     busy || !editor || !select('object-definition-brush').value || anchor !== null;
@@ -2397,11 +2463,13 @@ async function openSavedScene(id: string) {
   status.textContent = 'Scene opened.';
   await showRecovery(id);
   focusWorldEndpoint();
+  focusDiagnostic();
 }
 select('scenes').onchange = () => {
   const id = select('scenes').value;
   select('scenes').value = loaded?.id || '';
   pendingWorldEndpoint = null;
+  pendingDiagnostic = null;
   requestSceneOpen(id);
 };
 function requestSceneOpen(id: string) {
@@ -2448,6 +2516,7 @@ element('switch-scene-dialog', HTMLDialogElement).onclose = () => {
   // A queued close event may arrive after a new confirmation has already opened.
   if (!element('switch-scene-dialog', HTMLDialogElement).open) {
     pendingScene = '';
+    pendingDiagnostic = null;
   }
 };
 function sceneSnapshot() {

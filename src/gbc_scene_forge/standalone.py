@@ -188,6 +188,16 @@ def make_handler(root, token):
                         if route.endswith("preflight") and report["status"] != "pass"
                         else 200,
                     )
+                elif route == "/api/diagnostics-report":
+                    self.reply(
+                        project.diagnostics_report(
+                            data.get("project_revision"),
+                            data.get("options"),
+                            data.get("scene_id"),
+                            data.get("scene_revision"),
+                            data.get("scene"),
+                        )
+                    )
                 elif route == "/api/world-report":
                     self.reply(
                         project.world_report(
