@@ -14,6 +14,7 @@
 <body class="standalone">
   <header class="masthead">
     <div class="brand"><img class="mark" src="/branding/logo-64.png" width="64" height="64" alt=""><div><h1>GBC Scene Forge</h1><span id="project-name" class="eyebrow">LOCAL PROJECT</span></div></div>
+    <button id="show-first-scene-guide" type="button">First scene guide</button>
     <div class="connection">
       <div class="folder-control">
         <button id="project-folder" class="folder-button" popovertarget="folder-popover" aria-label="Project folder" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h6l2 3h10v12H3Z"/></svg><span id="folder-name">Project folder</span></button>
@@ -36,11 +37,22 @@
     <form id="project-form" class="welcome" hidden>
       <h2>Create a project</h2>
       <label class="field">Project name<input id="project-title" required maxlength="100" autocomplete="off" placeholder="My world" autofocus></label>
+      <label class="field">Start with<select id="project-starter"><option value="empty">Empty project</option><option value="sample">Sample artwork and scenes</option></select></label>
+      <p class="hint">The sample includes original MIT-licensed tiles, sprites and two scenes. A private editable copy stays in your project folder and works offline.</p>
+      <label><input id="continue-guide" type="checkbox"> Continue first-scene guide after creation</label>
       <p class="form-error error" role="alert"></p>
       <button class="primary">Create project</button>
       <button id="back-to-projects" type="button" hidden>Back to projects</button>
     </form>
   </div>
+  <dialog id="first-scene-guide" aria-labelledby="guide-heading">
+    <h2 id="guide-heading">First scene guide</h2>
+    <p id="guide-progress" class="hint" aria-live="polite"></p>
+    <h3 id="guide-title"></h3><p id="guide-text"></p>
+    <p class="hint">Close the guide to edit. Reopen it from the header to continue. Next only moves through instructions; it does not perform or verify an edit. Guide position is stored in this browser.</p>
+    <button id="guide-action" type="button">Try this step</button>
+    <div class="dialog-actions"><button id="guide-restart" type="button">Restart</button><button id="guide-previous" type="button">Back</button><button id="guide-next" type="button">Next</button><button id="guide-close" type="button" class="primary" autofocus>Close guide</button></div>
+  </dialog>
   <div id="workspace" class="workspace" hidden>
     <nav class="document-bar" aria-label="Document controls">
       <label>Project <select id="switch-project" aria-label="Current project" disabled></select></label>
@@ -71,7 +83,7 @@
         <div class="object-tools"><h3>Objects</h3><div class="layer-actions"><button id="place-point" class="small" disabled>Spawn point</button><button id="place-rectangle" class="small" disabled>Trigger area</button></div><p class="hint">Place markers or areas on the active object layer. Edit their class and properties for your project.</p></div>
         <div class="definition-tools"><button id="manage-definitions" class="small" disabled>Object definitions…</button><label class="field">Definition<select id="object-definition-brush"><option value="">Choose definition…</option></select></label><button id="place-definition" class="small" disabled>Place instance</button></div>
         <p id="library-hint" class="hint">Choose a tile to paint or a sprite to place. Imported artwork keeps its native size.</p>
-        <div id="palette" class="assets" aria-label="Available assets"></div>
+        <div id="palette" class="assets" tabindex="-1" aria-label="Available assets"></div>
       </aside>
       <section class="workbench" aria-label="Scene canvas">
         <div class="canvas-toolbar">

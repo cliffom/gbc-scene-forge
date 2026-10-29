@@ -59,7 +59,8 @@ class ProjectRoot:
             "project_root": str(self.root),
         }
 
-    def create(self, title):
+    def create(self, title, *, starter="empty"):
+        require(starter in ("empty", "sample"), "Choose an empty or sample project")
         directory = slug(title)
         path = self.path(directory)
         try:
@@ -73,5 +74,10 @@ class ProjectRoot:
                 raise ValueError(
                     f"A directory named '{directory}' already exists. Choose another project name."
                 ) from error
-        Project.create(path, title)
+        if starter == "sample":
+            from .sample import prepare
+
+            prepare(path, title=title)
+        else:
+            Project.create(path, title)
         return directory

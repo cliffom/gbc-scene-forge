@@ -1,12 +1,19 @@
 """Run explicitly with an isolated interpreter after installing the built wheel."""
 
 import io
+import json
+import queue
+import re
+import subprocess
+import sys
 import tempfile
+import threading
 import unittest
 import zipfile
 from importlib.metadata import distribution
 from importlib.resources import files
 from pathlib import Path
+from urllib.request import Request, urlopen
 
 from gbc_scene_forge import __version__, standalone
 from gbc_scene_forge.build_info import build_version
@@ -75,6 +82,61 @@ class InstalledPackageSmokeTests(unittest.TestCase):
             catalog = ProjectRoot(workspace.root).catalog()
             self.assertEqual(catalog["projects"][0]["name"], "Hello World")
             self.assertEqual(Project(workspace.root / "hello-world").read()[0]["version"], 1)
+
+    def test_installed_launcher_creates_sample_and_serves_offline_editor(self):
+        with tempfile.TemporaryDirectory() as folder:
+            process = subprocess.Popen(
+                [sys.executable, "-I", "-m", "gbc_scene_forge", "--no-browser", "--port", "0"],
+                cwd=folder,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+            )
+            lines = queue.Queue()
+
+            def collect():
+                for line in process.stdout:
+                    lines.put(line)
+                lines.put(None)
+
+            reader = threading.Thread(target=collect, daemon=True)
+            reader.start()
+            try:
+                output = ""
+                while True:
+                    line = lines.get(timeout=15)
+                    self.assertIsNotNone(line, output)
+                    output += line
+                    match = re.search(r"Editor\s+(http://127\.0\.0\.1:\d+/)", output)
+                    if match:
+                        url = match[1]
+                        break
+                with urlopen(url + "api/project", timeout=5) as response:
+                    catalog = json.load(response)
+                request = Request(
+                    url + "api/create-project",
+                    data=json.dumps({"name": "First world", "starter": "sample"}).encode(),
+                    headers={"Content-Type": "application/json", "X-Scene-Token": catalog["token"]},
+                )
+                with urlopen(request, timeout=5) as response:
+                    directory = json.load(response)["directory"]
+                base = url + f"projects/{directory}/"
+                with urlopen(base, timeout=5) as response:
+                    self.assertIn(b"First scene guide", response.read())
+                with urlopen(base + "project.js", timeout=5) as response:
+                    self.assertIn(b"Save and reopen", response.read())
+                project = Project(Path(folder) / ".forge_project" / directory)
+                self.assertEqual(project.read()[0]["name"], "First world")
+                self.assertEqual(len(project.read()[0]["scenes"]), 2)
+            finally:
+                process.terminate()
+                try:
+                    process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait(timeout=5)
+                reader.join(timeout=5)
+                process.stdout.close()
 
     def test_standalone_project_reopens(self):
         with tempfile.TemporaryDirectory() as folder:

@@ -5,10 +5,11 @@ import json
 import shutil
 import tempfile
 from pathlib import Path
+from uuid import uuid4
 
 from . import tiled
-from .documents import Conflict
-from .projects import MANIFEST, Project
+from .documents import Conflict, json_text
+from .projects import MANIFEST, Project, name
 from .standalone import serve
 from .transactions import digest, read_optional, safe_path
 
@@ -27,17 +28,21 @@ def _snapshot(project):
     files = {name: safe_path(project.root, name).read_bytes() for name in sorted(paths)}
     if digest(files[MANIFEST]) != revision:
         raise Conflict("Demo template changed while copying")
-    for name, expected in document["files"].items():
-        if digest(files[name]) != expected:
-            raise Conflict(f"Demo template asset changed: {name}")
+    for asset_path, expected in document["files"].items():
+        if digest(files[asset_path]) != expected:
+            raise Conflict(f"Demo template asset changed: {asset_path}")
     for scene in document["scenes"]:
         tiled.decode(json.loads(files[scene["path"]]), document)
     return document, revision, files
 
 
-def prepare(root, *, reset=False):
+def prepare(root, *, reset=False, title=None):
     """Copy the template once, or restore its declared files in a recoverable reset."""
     root = Path(root).absolute()
+    if title is not None:
+        title = name(title)
+        if (root / MANIFEST).exists():
+            raise ValueError("A project already exists in this directory")
     source = template_path().resolve()
     # Never allow a demo launch to overwrite the canonical template or its parents.
     if root.resolve().is_relative_to(source) or source.is_relative_to(root.resolve()):
@@ -69,6 +74,12 @@ def prepare(root, *, reset=False):
     with tempfile.TemporaryDirectory(prefix=".forge-sample-", dir=root.parent) as folder:
         staging = Path(folder) / "project"
         shutil.copytree(source, staging, ignore=shutil.ignore_patterns(".forge"))
+        if title is not None:
+            manifest = staging / MANIFEST
+            document = json.loads(manifest.read_bytes())
+            document["name"] = title
+            document["id"] = str(uuid4())
+            manifest.write_text(json_text(document), encoding="utf-8")
         _snapshot(Project(staging, recover=False))
         Project.prepare_creation(root)
         if root.exists():

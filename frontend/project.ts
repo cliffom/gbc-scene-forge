@@ -1,4 +1,5 @@
 /** Standalone project controller for atlas, layer and object authoring. */
+import { createFirstSceneGuide } from './first-scene-guide.mts';
 import { createDiagnosticsView } from './diagnostics-view.mts';
 import type { DiagnosticLocation } from './diagnostics-view.mts';
 import { createWorldView } from './world-view.mts';
@@ -1013,6 +1014,7 @@ async function discard(): Promise<boolean> {
 }
 function update() {
   renderObjectValidation();
+  button('show-first-scene-guide').disabled = busy || anchor !== null;
   button('show-world').disabled = busy || !project || anchor !== null;
   button('show-diagnostics').disabled = busy || !project || anchor !== null;
   button('manage-definitions').disabled = busy || !project || anchor !== null;
@@ -2380,17 +2382,27 @@ canvas.ondrop = (event) => {
   anchor = null;
   draw();
 };
+const firstSceneGuide = createFirstSceneGuide(() => !busy);
 form('project-form').onsubmit = (event) => {
   event.preventDefault();
   void run(async () => {
-    const result = await api('create-project', record, { name: input('project-title').value });
+    const continuingGuide = input('continue-guide').checked;
+    const result = await api('create-project', record, {
+      name: input('project-title').value,
+      starter: select('project-starter').value,
+    });
     if (choosingProject) {
       navigating = true;
-      location.assign(`/projects/${encodeURIComponent(string(result.directory))}/`);
+      location.assign(
+        `/projects/${encodeURIComponent(string(result.directory))}/${continuingGuide ? '?guide=1' : ''}`,
+      );
       return;
     }
     await refresh();
-    status.textContent = 'Project created. Import an atlas and create a scene.';
+    status.textContent = 'Project created. Choose a scene or create your own.';
+    if (continuingGuide) {
+      firstSceneGuide.continueInProject();
+    }
   });
 };
 form('import-form').onsubmit = async (event) => {
@@ -3480,6 +3492,10 @@ void run(async () => {
       : 'Name your project to get started.';
   if (project) {
     await showRecovery();
+    if (new URLSearchParams(location.search).get('guide') === '1') {
+      history.replaceState(null, '', location.pathname);
+      firstSceneGuide.continueInProject();
+    }
   }
 });
 

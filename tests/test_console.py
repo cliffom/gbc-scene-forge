@@ -1,5 +1,6 @@
 """Console rendering, identity, inactivity and standalone HTTP logging."""
 
+import errno
 import io
 import logging
 import tempfile
@@ -14,7 +15,13 @@ from unittest.mock import patch
 from gbc_scene_forge.build_info import build_version
 from gbc_scene_forge.console import ServerConsole
 from gbc_scene_forge.png import decode
-from gbc_scene_forge.standalone import StandaloneServer, make_handler, make_root_handler, serve
+from gbc_scene_forge.standalone import (
+    StandaloneServer,
+    make_handler,
+    make_root_handler,
+    open_editor,
+    serve,
+)
 
 
 class ConsoleTests(unittest.TestCase):
@@ -64,6 +71,42 @@ class ConsoleTests(unittest.TestCase):
             self.assertNotIn("New client", stream.getvalue())
             self.assertNotIn("\033", stream.getvalue() + log)
             self.assertLess(len(stream.getvalue().splitlines()), 22)
+
+    def test_browser_opens_actual_bound_port_and_failure_keeps_url_available(self):
+        for result in (False, OSError("no desktop")):
+            with (
+                self.subTest(result=result),
+                patch("gbc_scene_forge.standalone.webbrowser.open") as browser,
+                patch("sys.stdout", new_callable=io.StringIO) as output,
+            ):
+                if isinstance(result, Exception):
+                    browser.side_effect = result
+                else:
+                    browser.return_value = result
+                open_editor("http://127.0.0.1:12345/")
+                browser.assert_called_once_with("http://127.0.0.1:12345/")
+                self.assertIn("Open http://127.0.0.1:12345/ manually", output.getvalue())
+        with tempfile.TemporaryDirectory() as folder:
+            with (
+                patch("gbc_scene_forge.standalone.StandaloneServer") as server_type,
+                patch("gbc_scene_forge.standalone.Thread") as thread,
+                patch("gbc_scene_forge.standalone.Path.cwd", return_value=Path(folder)),
+                patch("sys.stdout", new_callable=io.StringIO),
+            ):
+                server = server_type.return_value
+                server.server_port = 12345
+                server.serve_forever.side_effect = KeyboardInterrupt
+                serve(Path(folder) / "projects", 0, open_browser=True)
+                self.assertEqual(thread.call_args.kwargs["args"], ("http://127.0.0.1:12345/",))
+                thread.return_value.start.assert_called_once()
+            with (
+                patch(
+                    "gbc_scene_forge.standalone.StandaloneServer",
+                    side_effect=OSError(errno.EADDRINUSE, "busy"),
+                ),
+                self.assertRaisesRegex(ValueError, "--port 8777"),
+            ):
+                serve(Path(folder) / "projects")
 
     def make_console(self, stream, **kwargs):
         self.activity = io.StringIO()

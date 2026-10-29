@@ -96,7 +96,7 @@ publishing page. Use the official [trusted publisher setup guide](https://docs.p
 The workflow follows the [Python Packaging User Guide](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/)
 and uses short-lived OIDC credentials; no PyPI API token is stored in the repository.
 
-After reviewing and committing a release, create and push an annotated `v0.8.0`
+After reviewing and committing a release, create and push an annotated `v0.9.0`
 tag (or the matching next version). Run **Publish package** manually against that
 tag, selecting `testpypi` first when its trusted publisher is configured. TestPyPI
 is currently unconfigured; its 0.1.4 upload failed with `invalid-publisher`. Until
@@ -106,13 +106,15 @@ with `tests/package_smoke.py` after publication. The workflow rebuilds and
 checks the distributions, checks the tag against the package version, then uploads
 only those verified artifacts. Pushing a tag alone does not publish.
 
-## Release 0.8.0
+## Release 0.9.0
 
-Version 0.8.0 adds read-only project diagnostics with navigable findings for
-schema errors, world endpoints, unused artwork, and explicitly configured grid
-movement checks. Reports include current unsaved scene edits, reject stale
-navigation, and bound collision work. See [release notes](RELEASE-0.8.0.md) and
-the [diagnostics guide](STANDALONE.md#project-diagnostics).
+Version 0.9.0 adds named sample projects from the project selector, an optional
+resumable first-scene guide and automatic browser opening with a headless option.
+See [release notes](RELEASE-0.9.0.md) and the
+[first-use guide](STANDALONE.md#first-scene-guide). The installed-wheel smoke test
+launches the CLI outside the checkout and creates a sample using its HTTP API.
+Run `FORGE_TEST_PYTHON="$PWD/build/package-smoke/bin/python" make test-first-use-browser`
+after `make check-dist` to exercise the full browser path using that installed wheel.
 
 Before tagging, run:
 
