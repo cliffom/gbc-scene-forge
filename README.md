@@ -80,6 +80,14 @@ runs in Chrome on macOS and Linux; the package CI checks Python 3.10–3.14 on L
 Choose a scene from the scene dropdown to open it. If the current scene has
 unsaved edits, choose whether to save, discard, or keep editing before switching.
 
+### Plan before importing artwork
+
+Choose **Blockout — no artwork needed** when creating a project, or **Scene
+actions → Create blockout scene…** in an existing project. Draw labeled ground,
+platforms, hazards and climb regions; place encounter/progression markers; and
+review the route through a configurable gameplay camera. The plan stays as native
+objects when you add artwork or export to Tiled. See the [blockout guide](docs/BLOCKOUT.md).
+
 ### Open another project
 
 Use the **Project** dropdown beside the scene selector to open another project.

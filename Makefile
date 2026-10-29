@@ -12,11 +12,11 @@ DEMO_ROOT ?= .demo
 CHROME ?=
 TILED ?= tiled
 RASTERIZER ?= tmxrasterizer
-FRONTEND_TESTS := model world object-definitions scene-size compositions drafts animation-preview movement-preview contracts timeouts atlas-import frontend-build
+FRONTEND_TESTS := blockout model world object-definitions scene-size compositions drafts animation-preview movement-preview contracts timeouts atlas-import frontend-build
 FRONTEND_TEST_TARGETS := $(addprefix test-frontend-,$(FRONTEND_TESTS))
 .DEFAULT_GOAL := help
 
-.PHONY: help setup check-deps deps frontend run demo check test test-python test-frontend test-browser test-layout-browser test-first-use-browser test-standalone-browser test-drafts-browser test-compositions-browser test-definitions-browser test-world-browser test-diagnostics-browser test-tiled lint typecheck format build check-dist clean clean-demo $(FRONTEND_TEST_TARGETS)
+.PHONY: help setup check-deps deps frontend run demo check test test-python test-frontend test-browser test-blockout-browser test-layout-browser test-first-use-browser test-standalone-browser test-drafts-browser test-compositions-browser test-definitions-browser test-world-browser test-diagnostics-browser test-tiled lint typecheck format build check-dist clean clean-demo $(FRONTEND_TEST_TARGETS)
 help:
 	@echo 'Getting started:'
 	@echo '  make setup PYTHON=python3.13  Install locked dependencies and build the UI'
@@ -36,6 +36,7 @@ help:
 	@echo '  make test-frontend           Run TypeScript model/API/build tests'
 	@echo '  make test-frontend-<suite>   Run one suite (model, drafts, contracts, etc.)'
 	@echo '  make test-browser            Run all Chrome acceptance suites (CHROME=/path)'
+	@echo '  make test-blockout-browser   Run artwork-free blockout acceptance'
 	@echo '  make test-layout-browser     Check editor layout and keyboard navigation'
 	@echo '  make test-first-use-browser  Run the first-scene Chrome acceptance path'
 	@echo '  make test-standalone-browser Run standalone editor Chrome acceptance'
@@ -89,7 +90,10 @@ test-frontend: $(FRONTEND_TEST_TARGETS)
 $(FRONTEND_TEST_TARGETS): test-frontend-%:
 	$(NODE) tests/$*.ts
 
-test-browser: test-layout-browser test-first-use-browser test-standalone-browser test-drafts-browser test-compositions-browser test-definitions-browser test-world-browser test-diagnostics-browser
+test-browser: test-blockout-browser test-layout-browser test-first-use-browser test-standalone-browser test-drafts-browser test-compositions-browser test-definitions-browser test-world-browser test-diagnostics-browser
+
+test-blockout-browser: frontend
+	$(NODE) tests/blockout-browser.ts $(if $(CHROME),"$(CHROME)")
 
 test-layout-browser: frontend
 	$(NODE) tests/layout-browser.ts $(if $(CHROME),"$(CHROME)")

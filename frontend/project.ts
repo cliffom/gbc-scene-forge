@@ -1,4 +1,14 @@
 /** Standalone project controller for atlas, layer and object authoring. */
+import { createBlockoutView } from './blockout-view.mts';
+import {
+  blockoutAppearance,
+  blockoutDefinitions,
+  blockoutLayer,
+  definitionRole,
+  dragRectangle,
+  resizeRectangle,
+  drawBlockout,
+} from './blockout.mts';
 import { createEditorLayout } from './editor-layout.mts';
 import { createFirstSceneGuide } from './first-scene-guide.mts';
 import { createDiagnosticsView } from './diagnostics-view.mts';
@@ -170,6 +180,7 @@ async function clearDraft() {
 let brush: string[][] | null = null;
 let spriteBrush: string | null = null;
 let objectBrush: 'point' | 'rectangle' | null = null;
+let planningScene = false;
 let definitionBrush: string | null = null;
 let selectedObject: string | null = null;
 let selectedObjects = new Set<string>();
@@ -337,6 +348,8 @@ button('delete-stamp').onclick = () =>
     draw();
   });
 let objectDrag: { id: string; x: number; y: number } | null = null;
+let blockoutDraw: { id: string; x: number; y: number } | null = null;
+let objectResize: { id: string; x: number; y: number } | null = null;
 let selection: Selection | null = null;
 let anchor: { x: number; y: number; px: number; py: number } | null = null;
 let hover: ReturnType<typeof point> | null = null;
@@ -1022,6 +1035,12 @@ async function discard(): Promise<boolean> {
 }
 function update() {
   renderObjectValidation();
+  editorLayout.enableBlockout(blockoutDefinitions(project?.definitions ?? []).length > 0);
+  blockoutView.sync();
+  for (const node of element('blockout-presets', HTMLElement).querySelectorAll('button')) {
+    node.setAttribute('aria-pressed', String(node.dataset.definition === definitionBrush));
+    node.disabled = busy || !editor || anchor !== null;
+  }
   button('show-first-scene-guide').disabled = busy || anchor !== null;
   for (const id of ['scene-commands', 'project-commands']) {
     button(id).disabled = busy || !project || anchor !== null;
@@ -1402,6 +1421,131 @@ async function run(work: () => Promise<void> | void) {
     update();
   }
 }
+function blockoutCameras() {
+  return (editor?.layers ?? []).flatMap((layer) =>
+    layer.visible && layer.type === 'objectgroup'
+      ? layer.objects.flatMap((item) => {
+          const style = blockoutAppearance(item, project?.definitions ?? []);
+          return item.kind === 'rectangle' && style?.role === 'camera'
+            ? [
+                {
+                  item,
+                  layer: layer.id,
+                  scrollX: style.properties.scroll_x === true,
+                  scrollY: style.properties.scroll_y === true,
+                },
+              ]
+            : [];
+        })
+      : [],
+  );
+}
+function focusBlockoutCamera(id: string, edit: boolean) {
+  const found = blockoutCameras().find((c) => c.item.id === id);
+  if (!found || !editor || busy) {
+    return;
+  }
+  editor.activate(found.layer);
+  selectedObject = found.item.id;
+  selectedObjects.clear();
+  selection = null;
+  definitionBrush = null;
+  stampBrush = null;
+  const tool = document.querySelector<HTMLInputElement>('input[name="tool"][value="select"]');
+  if (tool) {
+    tool.checked = true;
+  }
+  draw();
+  if (edit) {
+    objectInspector.open();
+  } else {
+    const zoom = sceneZoom();
+    viewport.scrollTo(Math.max(0, found.item.x * zoom - 32), Math.max(0, found.item.y * zoom - 32));
+    canvas.focus({ preventScroll: true });
+    status.textContent =
+      'Drag the camera to move it. Resize its bottom-right handle or use Settings for dimensions and scrolling axes.';
+  }
+}
+const blockoutView = createBlockoutView(
+  () => ({
+    definitions: project?.definitions ?? [],
+    cameras: blockoutCameras(),
+    width: (editor?.scene.width ?? 0) * (loaded?.grid ?? 8),
+    height: (editor?.scene.height ?? 0) * (loaded?.grid ?? 8),
+    grid: loaded?.grid ?? 8,
+    busy,
+    hasScene: editor !== null,
+  }),
+  (name, options) =>
+    void (async () => {
+      if (!(await discard())) {
+        return;
+      }
+      await run(async () => {
+        const result = await api('create-blockout-scene', decodeLoaded, {
+          name,
+          options,
+          project_revision: revision,
+        });
+        await clearDraft();
+        await refresh();
+        open(result);
+        editorLayout.showLibrary('blockout');
+        blockoutView.closeCreate();
+        fitScene();
+        status.textContent =
+          'Blockout created. Choose a preset and draw geometry or place markers.';
+      });
+    })(),
+  (definition) => {
+    if (!editor || !project || busy || anchor) {
+      return;
+    }
+    const preferred = blockoutLayer(definitionRole(definition), definition.kind);
+    const layer =
+      editor.layers.find((l) => l.visible && l.type === 'objectgroup' && l.name === preferred) ??
+      (editor.active.type === 'objectgroup' && editor.active.visible
+        ? editor.active
+        : editor.layers.find((l) => l.visible && l.type === 'objectgroup'));
+    if (!layer) {
+      status.textContent = 'Show or add an object layer before placing a preset.';
+      return;
+    }
+    editor.activate(layer.id);
+    definitionBrush = definition.id;
+    brush = null;
+    spriteBrush = null;
+    objectBrush = null;
+    stampBrush = null;
+    const tool = document.querySelector<HTMLInputElement>('input[name="tool"][value="paint"]');
+    if (tool) {
+      tool.checked = true;
+    }
+    element('paint-label', HTMLElement).textContent =
+      definition.kind === 'rectangle' ? 'Draw region' : 'Place marker';
+    element('selected-brush', HTMLElement).textContent = definition.name;
+    status.textContent =
+      definition.kind === 'rectangle'
+        ? 'Drag to draw a region. Select to move or resize; double-click to edit properties.'
+        : 'Click to place a marker. Double-click to name it or edit its typed properties.';
+    draw();
+  },
+  focusBlockoutCamera,
+  (id) =>
+    void run(async () => {
+      if (!loaded || !editor) {
+        return;
+      }
+      const result = await api('blockout-review', record, {
+        project_revision: revision,
+        scene_id: loaded.id,
+        scene_revision: loaded.revision,
+        scene: sceneSnapshot(),
+        camera_id: Number(id),
+      });
+      blockoutView.present(result);
+    }),
+);
 function showProjectStart(creating: boolean) {
   element('project-picker', HTMLElement).hidden = project !== null || creating;
   form('project-form').hidden = project !== null || !creating;
@@ -1759,11 +1903,30 @@ function open(data: Loaded) {
   animationPreview.reset();
   editor = new LayerEditor(scene, [], { erase_cell: 'empty' });
   editor.spriteRegion = (asset) => sprites.get(asset)?.region;
+  if (
+    data.layers.some(
+      (layer) =>
+        layer.type === 'objectgroup' &&
+        layer.objects.some(
+          (item) => blockoutAppearance(item, project?.definitions ?? [])?.role === 'camera',
+        ),
+    )
+  ) {
+    const geometry = editor.layers.find(
+      (layer) =>
+        layer.type === 'objectgroup' && layer.name === 'Blockout geometry' && layer.visible,
+    );
+    if (geometry) {
+      editor.activate(geometry.id);
+    }
+  }
   baseline = snapshot();
   selection = null;
   selectedObject = null;
   selectedObjects.clear();
   objectDrag = null;
+  blockoutDraw = null;
+  objectResize = null;
   anchor = null;
   hover = null;
   element('coordinates', HTMLElement).textContent = 'Cell —, — · Pixel —, —';
@@ -1808,6 +1971,7 @@ function draw(refreshUI = true) {
   const size = loaded.grid;
   canvas.width = loaded.width * size;
   canvas.height = loaded.height * size;
+  planningScene = syncBlockoutZoom();
   const zoom = sceneZoom();
   canvas.style.width = `${canvas.width * zoom}px`;
   canvas.style.height = `${canvas.height * zoom}px`;
@@ -1862,6 +2026,8 @@ function draw(refreshUI = true) {
             r.width,
             r.height,
           );
+        } else if (drawBlockout(context, item, project?.definitions ?? [], zoom)) {
+          // Planning geometry uses the definition's portable typed appearance fields.
         } else {
           const r = bounds(item);
           context.strokeStyle = '#83cfc1';
@@ -1971,6 +2137,15 @@ function draw(refreshUI = true) {
     context.strokeRect(r.x, r.y, r.width, r.height);
     context.fillStyle = '#f2d67b';
     context.fillRect(selected.x - 1, selected.y - 1, 2, 2);
+    if (selected.kind === 'rectangle' && blockoutAppearance(selected, project?.definitions ?? [])) {
+      const handle = 8 / zoom;
+      context.fillRect(
+        selected.x + selected.width - handle / 2,
+        selected.y + selected.height - handle / 2,
+        handle,
+        handle,
+      );
+    }
     if (selected.kind === 'sprite') {
       animationPreview.movement.draw(context, selected.id + ':' + selected.asset);
     }
@@ -2032,6 +2207,20 @@ function paint(event: PointerEvent) {
   const tool = document.querySelector<HTMLInputElement>('input[name="tool"]:checked')?.value;
   try {
     editor.editable();
+    if (blockoutDraw || objectResize) {
+      const gesture = blockoutDraw ?? objectResize;
+      const item = editor.objects.find((item) => item.id === gesture?.id);
+      if (item?.kind === 'rectangle' && gesture) {
+        const step = input('snap').checked && !event.altKey ? (loaded?.grid ?? 8) : 1;
+        const end = { x: p.px, y: p.py };
+        const geometry = blockoutDraw
+          ? dragRectangle(blockoutDraw, end, canvas.width, canvas.height, step)
+          : resizeRectangle(gesture, end, canvas.width, canvas.height, step);
+        editor.replaceObject({ ...item, ...geometry });
+      }
+      draw();
+      return;
+    }
     if (objectDrag) {
       const drag = objectDrag;
       const origin = anchor;
@@ -2270,6 +2459,28 @@ canvas.onpointerdown = (event) => {
   if (!editor || busy || event.button !== 0) {
     return;
   }
+  const selected = editor.objects.find((item) => item.id === selectedObject);
+  const selectTool =
+    document.querySelector<HTMLInputElement>('input[name="tool"]:checked')?.value === 'select';
+  if (
+    selectTool &&
+    selected?.kind === 'rectangle' &&
+    blockoutAppearance(selected, project?.definitions ?? [])
+  ) {
+    const p = point(event),
+      radius = 7 / sceneZoom();
+    if (
+      Math.abs(p.px - selected.x - selected.width) <= radius &&
+      Math.abs(p.py - selected.y - selected.height) <= radius
+    ) {
+      objectResize = { id: selected.id, x: selected.x, y: selected.y };
+      anchor = p;
+      editor.begin();
+      canvas.setPointerCapture(event.pointerId);
+      canvas.focus({ preventScroll: true });
+      return;
+    }
+  }
   if (
     definitionBrush &&
     project &&
@@ -2282,7 +2493,23 @@ canvas.onpointerdown = (event) => {
       }
       const p = point(event);
       const position = spritePosition(p.px, p.py, event.altKey);
-      selectedObject = editor.createObject(definitionInstance(definition, position.x, position.y));
+      const item = definitionInstance(definition, position.x, position.y);
+      const isBlockout = definitionRole(definition).length > 0;
+      if (isBlockout) {
+        item.name = definition.name;
+      }
+      if (item.kind === 'rectangle' && isBlockout) {
+        item.width = Math.min(item.width, canvas.width - item.x);
+        item.height = Math.min(item.height, canvas.height - item.y);
+        editor.begin();
+        selectedObject = editor.createObject(item);
+        blockoutDraw = { id: selectedObject, x: position.x, y: position.y };
+        anchor = p;
+        canvas.setPointerCapture(event.pointerId);
+        canvas.focus({ preventScroll: true });
+      } else {
+        selectedObject = editor.createObject(item);
+      }
       selectedObjects.clear();
       selection = null;
       draw();
@@ -2348,18 +2575,24 @@ canvas.onpointerleave = () => {
   draw();
 };
 canvas.onpointerup = () => {
+  blockoutDraw = null;
+  objectResize = null;
   editor?.end();
   anchor = null;
   objectDrag = null;
   update();
 };
 canvas.onpointercancel = () => {
+  blockoutDraw = null;
+  objectResize = null;
   editor?.cancel();
   anchor = null;
   objectDrag = null;
   draw();
 };
 canvas.onlostpointercapture = () => {
+  blockoutDraw = null;
+  objectResize = null;
   editor?.end();
   anchor = null;
   objectDrag = null;
@@ -2407,6 +2640,7 @@ form('project-form').onsubmit = (event) => {
   event.preventDefault();
   void run(async () => {
     const continuingGuide = input('continue-guide').checked;
+    const startingBlockout = select('project-starter').value === 'blockout';
     const result = await api('create-project', record, {
       name: input('project-title').value,
       starter: select('project-starter').value,
@@ -2414,13 +2648,16 @@ form('project-form').onsubmit = (event) => {
     if (choosingProject) {
       navigating = true;
       location.assign(
-        `/projects/${encodeURIComponent(string(result.directory))}/${continuingGuide ? '?guide=1' : ''}`,
+        `/projects/${encodeURIComponent(string(result.directory))}/${startingBlockout ? '?blockout=1' : continuingGuide ? '?guide=1' : ''}`,
       );
       return;
     }
     await refresh();
     status.textContent = 'Project created. Choose a scene or create your own.';
-    if (continuingGuide) {
+    if (startingBlockout) {
+      editorLayout.showLibrary('blockout');
+      blockoutView.showCreate();
+    } else if (continuingGuide) {
       firstSceneGuide.continueInProject();
     }
   });
@@ -2770,6 +3007,35 @@ button('revert').onclick = async () => {
     });
   }
 };
+function syncBlockoutZoom() {
+  const planning = !!editor?.layers.some(
+    (layer) =>
+      layer.type === 'objectgroup' &&
+      layer.objects.some((item) => blockoutAppearance(item, project?.definitions ?? []) !== null),
+  );
+  const control = select('zoom');
+  for (const [value, label] of [
+    ['0.25', '25%'],
+    ['0.5', '50%'],
+  ]) {
+    const existing = Array.from(control.options).find((option) => option.value === value);
+    if (planning && !existing) {
+      control.add(
+        new Option(label, value),
+        Array.from(control.options).find((option) => option.value === '1'),
+      );
+    } else if (!planning && existing) {
+      if (existing.selected) {
+        control.value = '1';
+      }
+      existing.remove();
+    }
+  }
+  if (!planning && control.value !== 'fit') {
+    element('fit-zoom-option', HTMLOptionElement).textContent = 'Fit';
+  }
+  return planning;
+}
 function sceneZoom() {
   if (select('zoom').value !== 'fit' || !loaded) {
     return Number(select('zoom').value) || 1;
@@ -2781,11 +3047,12 @@ function sceneZoom() {
   const height =
     viewport.clientHeight - parseFloat(padding.paddingTop) - parseFloat(padding.paddingBottom) - 2;
   const scale = Math.max(
-    1,
+    planningScene ? 1 / 64 : 1,
     Math.min(8, width / (loaded.width * loaded.grid), height / (loaded.height * loaded.grid)),
   );
-  const zoom = Math.floor(scale);
-  element('fit-zoom-option', HTMLOptionElement).textContent = `Fit (${zoom}×)`;
+  const zoom = scale >= 1 ? Math.floor(scale) : scale;
+  element('fit-zoom-option', HTMLOptionElement).textContent =
+    `Fit (${zoom >= 1 ? `${zoom}×` : `${Math.round(zoom * 100)}%`})`;
   return zoom;
 }
 function fitScene() {
@@ -3512,7 +3779,11 @@ void run(async () => {
       : 'Name your project to get started.';
   if (project) {
     await showRecovery();
-    if (new URLSearchParams(location.search).get('guide') === '1') {
+    if (new URLSearchParams(location.search).get('blockout') === '1') {
+      history.replaceState(null, '', location.pathname);
+      editorLayout.showLibrary('blockout');
+      blockoutView.showCreate();
+    } else if (new URLSearchParams(location.search).get('guide') === '1') {
       history.replaceState(null, '', location.pathname);
       firstSceneGuide.continueInProject();
     }
