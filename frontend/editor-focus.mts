@@ -20,7 +20,7 @@ export function editorFocus(root: HTMLElement, canvas: HTMLCanvasElement, enable
   const dropdowns = '#zoom, #atlas-filter, #kind-filter, #object-list, #stamps';
   let pointerSelect: HTMLSelectElement | null = null;
   function excluded(target: Element) {
-    return Boolean(target.closest('dialog, #animation-preview'));
+    return Boolean(target.closest('dialog, #animation-preview, [popovertarget]'));
   }
   function returnToCanvas() {
     if (enabled() && !document.querySelector('dialog[open]')) {

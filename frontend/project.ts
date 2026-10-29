@@ -1,4 +1,5 @@
 /** Standalone project controller for atlas, layer and object authoring. */
+import { createEditorLayout } from './editor-layout.mts';
 import { createFirstSceneGuide } from './first-scene-guide.mts';
 import { createDiagnosticsView } from './diagnostics-view.mts';
 import type { DiagnosticLocation } from './diagnostics-view.mts';
@@ -98,6 +99,7 @@ const button = (id: string) => element(id, HTMLButtonElement);
 const input = (id: string) => element(id, HTMLInputElement);
 const select = (id: string) => element(id, HTMLSelectElement);
 const form = (id: string) => element(id, HTMLFormElement);
+const editorLayout = createEditorLayout();
 const canvas = element('scene', HTMLCanvasElement);
 const ctx = canvas.getContext('2d');
 if (!ctx) {
@@ -309,6 +311,7 @@ button('save-stamp').onclick = () => {
       });
       await refresh();
       draw();
+      editorLayout.showLibrary('stamps');
       status.textContent = 'Reusable stamp saved in the project.';
     });
   } catch (error) {
@@ -317,10 +320,14 @@ button('save-stamp').onclick = () => {
 };
 button('place-stamp').onclick = () => {
   definitionBrush = null;
-  stampBrush = project?.stamps.find((s) => s.id === select('stamps').value)?.composition ?? null;
-  status.textContent =
-    'Click the canvas to place the stamp repeatedly. Escape or choose a tool to stop.';
-  canvas.focus();
+  stampBrush = stampBrush
+    ? null
+    : (project?.stamps.find((s) => s.id === select('stamps').value)?.composition ?? null);
+  status.textContent = stampBrush
+    ? 'Click the canvas to place the stamp repeatedly. Escape or choose a tool to stop.'
+    : 'Stamp placement stopped.';
+  update();
+  canvas.focus({ preventScroll: true });
 };
 button('delete-stamp').onclick = () =>
   void run(async () => {
@@ -665,6 +672,7 @@ const diagnosticsView = createDiagnosticsView(
     } else if (location.connection) {
       void run(() => worldView.open());
     } else if (location.asset) {
+      editorLayout.showLibrary('artwork');
       status.textContent = `Unused asset ${location.asset}. Select it in the palette to inspect its artwork and metadata.`;
       input('search').value = '';
       select('atlas-filter').value = '';
@@ -1015,6 +1023,9 @@ async function discard(): Promise<boolean> {
 function update() {
   renderObjectValidation();
   button('show-first-scene-guide').disabled = busy || anchor !== null;
+  for (const id of ['scene-commands', 'project-commands']) {
+    button(id).disabled = busy || !project || anchor !== null;
+  }
   button('show-world').disabled = busy || !project || anchor !== null;
   button('show-diagnostics').disabled = busy || !project || anchor !== null;
   button('manage-definitions').disabled = busy || !project || anchor !== null;
@@ -1061,6 +1072,7 @@ function update() {
   button('redo').disabled = busy || !editor?.redoStack.length;
   button('revert').disabled = busy || !dirty();
   const hasComposition = Boolean(selection || selectedObject || selectedObjects.size);
+  button('transform-commands').disabled = busy || !editor || !hasComposition || anchor !== null;
   for (const id of [
     'copy-selection',
     'cut-selection',
@@ -1074,6 +1086,10 @@ function update() {
   }
   button('paste-selection').disabled = busy || !editor || !clipboard || anchor !== null;
   button('place-stamp').disabled = busy || !editor || !select('stamps').value;
+  button('place-stamp').setAttribute('aria-pressed', String(stampBrush !== null));
+  button('place-stamp').textContent = stampBrush ? 'Stop placing' : 'Place stamp';
+  select('stamps').title = select('stamps').selectedOptions[0]?.textContent ?? '';
+  select('stamps').disabled = busy || !project?.stamps.length;
   button('delete-stamp').disabled = busy || !select('stamps').value;
   input('select-all-layers').disabled = busy || !editor || anchor !== null;
   button('deselect').disabled = busy || (!selection && !selectedObject && !selectedObjects.size);
@@ -1594,7 +1610,7 @@ function palette() {
     return;
   }
   const size = loaded?.grid ?? 8;
-  let initialBrush: HTMLButtonElement | null = null;
+  let initialBrush: (() => void) | null = null;
   for (const [id, atlas] of Object.entries(project.atlases)) {
     const image = images.get(id);
     if (!image) {
@@ -1668,7 +1684,10 @@ function palette() {
       type.className = 'type';
       type.textContent = `${id} · ${region.kind}`;
       item.append(thumb, label, type);
-      item.onclick = () => {
+      const chooseAsset = (reveal = true) => {
+        if (reveal) {
+          editorLayout.showLibrary('artwork');
+        }
         stampBrush = null;
         if (editor && editor.active.type !== (sprite ? 'objectgroup' : 'tilelayer')) {
           const layer = editor.layers.find(
@@ -1701,13 +1720,14 @@ function palette() {
           : `Paint ${region.name}.`;
         draw();
       };
+      item.onclick = () => chooseAsset();
       paletteElement.append(item);
       if (!initialBrush && !item.disabled) {
-        initialBrush = item;
+        initialBrush = () => chooseAsset(false);
       }
     }
   }
-  initialBrush?.click();
+  initialBrush?.();
   if (!paletteElement.children.length) {
     const empty = document.createElement('div');
     empty.className = 'library-empty';
@@ -2382,7 +2402,7 @@ canvas.ondrop = (event) => {
   anchor = null;
   draw();
 };
-const firstSceneGuide = createFirstSceneGuide(() => !busy);
+const firstSceneGuide = createFirstSceneGuide(() => !busy, editorLayout.reveal);
 form('project-form').onsubmit = (event) => {
   event.preventDefault();
   void run(async () => {

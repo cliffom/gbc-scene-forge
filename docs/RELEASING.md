@@ -96,7 +96,7 @@ publishing page. Use the official [trusted publisher setup guide](https://docs.p
 The workflow follows the [Python Packaging User Guide](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/)
 and uses short-lived OIDC credentials; no PyPI API token is stored in the repository.
 
-After reviewing and committing a release, create and push an annotated `v0.9.0`
+After reviewing and committing a release, create and push an annotated `v0.10.0`
 tag (or the matching next version). Run **Publish package** manually against that
 tag, selecting `testpypi` first when its trusted publisher is configured. TestPyPI
 is currently unconfigured; its 0.1.4 upload failed with `invalid-publisher`. Until
@@ -106,15 +106,21 @@ with `tests/package_smoke.py` after publication. The workflow rebuilds and
 checks the distributions, checks the tag against the package version, then uploads
 only those verified artifacts. Pushing a tag alone does not publish.
 
-## Release 0.9.0
+## Release 0.10.0
 
-Version 0.9.0 adds named sample projects from the project selector, an optional
-resumable first-scene guide and automatic browser opening with a headless option.
-See [release notes](RELEASE-0.9.0.md) and the
-[first-use guide](STANDALONE.md#first-scene-guide). The installed-wheel smoke test
-launches the CLI outside the checkout and creates a sample using its HTTP API.
-Run `FORGE_TEST_PYTHON="$PWD/build/package-smoke/bin/python" make test-first-use-browser`
-after `make check-dist` to exercise the full browser path using that installed wheel.
+Version 0.10.0 reorganizes the editor around scene/project command groups and
+Artwork, Objects and Stamps library tabs. It fixes dropdown arrow clearance,
+improves keyboard focus and preserves space for the canvas at smaller desktop
+window sizes. See [release notes](RELEASE-0.10.0.md), the
+[editor layout guide](STANDALONE.md#editor-layout) and
+[layout guidelines](UI-DESIGN.md).
+
+The installed-wheel smoke test launches the CLI outside the checkout and creates
+a sample using its HTTP API. After `make check-dist`, run
+`FORGE_TEST_PYTHON="$PWD/build/package-smoke/bin/python" make test-first-use-browser`
+to exercise the first-use path using that installed wheel. `make test-layout-browser`
+checks dropdown clearance, long stamp names, five desktop window sizes and
+keyboard navigation through the reorganized controls.
 
 Before tagging, run:
 
