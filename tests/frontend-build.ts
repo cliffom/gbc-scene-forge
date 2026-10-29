@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
-import { record, array, string } from '../frontend/decode.mts';
+import { record, array, string } from '../frontend/shared/decode.mts';
 
 const repository = fileURLToPath(new URL('../', import.meta.url));
 await test('esbuild bundles nested modules, emits source maps and preserves assets after type errors', async () => {

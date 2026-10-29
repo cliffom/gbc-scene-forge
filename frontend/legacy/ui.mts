@@ -1,4 +1,4 @@
-import { errorDetails } from '../errors.mts';
+import { errorDetails } from '../shared/errors.mts';
 import { $ } from './dom.mts';
 export const status = (message: string) => {
   $('status').textContent = message;

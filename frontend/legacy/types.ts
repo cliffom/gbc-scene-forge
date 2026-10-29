@@ -1,5 +1,5 @@
-import type { Constraint, Coordinate, EditorDescriptor, Marker, Point } from '../types.ts';
-export type { Coordinate, EditorDescriptor, Marker, Point, Selection, Tool } from '../types.ts';
+import type { Constraint, Coordinate, EditorDescriptor, Marker, Point } from '../shared/types.ts';
+export type { Coordinate, EditorDescriptor, Marker, Point, Selection, Tool } from '../shared/types.ts';
 /** Shared tile editing types and the remaining legacy connector transport types. */
 export interface SceneReference {
   id: string;

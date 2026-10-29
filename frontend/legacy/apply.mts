@@ -1,4 +1,4 @@
-import { errorDetails, ProtocolError } from '../errors.mts';
+import { errorDetails, ProtocolError } from '../shared/errors.mts';
 import type { ApiClient } from './api.mts';
 import * as decode from './decode.mts';
 import type { Documents } from './documents.mts';

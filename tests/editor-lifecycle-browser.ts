@@ -7,7 +7,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Chrome } from './chrome.ts';
-import { string } from '../frontend/decode.mts';
+import { string } from '../frontend/shared/decode.mts';
 
 const folder = await mkdtemp(join(tmpdir(), 'forge-layout-'));
 const root = join(folder, 'world');

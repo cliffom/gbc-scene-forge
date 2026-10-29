@@ -4,11 +4,11 @@ import {
   decodeDefinitions,
   definitionInstance,
   resolveDefinition,
-} from '../frontend/object-definitions.mts';
-import type { ObjectDefinition } from '../frontend/object-definitions.mts';
-import { decodeObject, encodeObject } from '../frontend/objects.mts';
-import { LayerEditor } from '../frontend/layers.mts';
-import { capture, paste } from '../frontend/compositions.mts';
+} from '../frontend/objects/object-definitions.mts';
+import type { ObjectDefinition } from '../frontend/objects/object-definitions.mts';
+import { decodeObject, encodeObject } from '../frontend/objects/objects.mts';
+import { LayerEditor } from '../frontend/scene/layers.mts';
+import { capture, paste } from '../frontend/compositions/compositions.mts';
 const definition: ObjectDefinition = {
   id: 'f3825e00-c5e9-4aa3-aa07-61a9d9fb12a6',
   name: 'Entrance',

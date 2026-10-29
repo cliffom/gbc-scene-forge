@@ -1,6 +1,6 @@
-export { array, boolean, number, record, string } from '../decode.mts';
-export type { Decoder } from '../decode.mts';
-import type { Decoder } from '../decode.mts';
+export { array, boolean, number, record, string } from '../shared/decode.mts';
+export type { Decoder } from '../shared/decode.mts';
+import type { Decoder } from '../shared/decode.mts';
 /** Decode unknown JSON at transport boundaries, without discarding connector extensions. */
 import type {
   ApplyJob,
@@ -21,7 +21,7 @@ import type {
   Validation,
 } from './types.ts';
 
-import { array, boolean, number, record, string } from '../decode.mts';
+import { array, boolean, number, record, string } from '../shared/decode.mts';
 function optional<T>(value: unknown, decode: Decoder<T>): T | undefined {
   return value == null ? undefined : decode(value);
 }

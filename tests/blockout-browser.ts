@@ -7,7 +7,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Chrome } from './chrome.ts';
-import { array, number, record, string } from '../frontend/decode.mts';
+import { array, number, record, string } from '../frontend/shared/decode.mts';
 
 const folder = await mkdtemp(join(tmpdir(), 'forge-blockout-'));
 const root = join(folder, 'projects');

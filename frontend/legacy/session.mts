@@ -1,6 +1,6 @@
 import type { Scene } from './types.ts';
 /** Shared scene and interaction state; controllers own their transient UI state. */
-import type { Editor } from '../model.mts';
+import type { Editor } from '../scene/model.mts';
 import type {
   Brush,
   Catalog,

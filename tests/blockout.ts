@@ -7,10 +7,10 @@ import {
   climbEndpoint,
   dragRectangle,
   resizeRectangle,
-} from '../frontend/blockout.mts';
-import { definitionInstance } from '../frontend/object-definitions.mts';
-import type { ObjectDefinition } from '../frontend/object-definitions.mts';
-import { LayerEditor } from '../frontend/layers.mts';
+} from '../frontend/blockout/blockout.mts';
+import { definitionInstance } from '../frontend/objects/object-definitions.mts';
+import type { ObjectDefinition } from '../frontend/objects/object-definitions.mts';
+import { LayerEditor } from '../frontend/scene/layers.mts';
 
 const definition: ObjectDefinition = {
   id: '11111111-1111-4111-8111-111111111111',
@@ -114,7 +114,7 @@ await test('portable appearance metadata supports custom presets, safe color fal
 });
 
 await test('labels prioritize selection, avoid collisions and stay within the visible scene', async () => {
-  const { layoutLabels, intersects } = await import('../frontend/blockout-labels.mts');
+  const { layoutLabels, intersects } = await import('../frontend/blockout/blockout-labels.mts');
   const candidates = Array.from({ length: 1000 }, (_, i) => ({
     id: String(i),
     text: 'Long overlapping camera or marker caption ' + i,
@@ -149,7 +149,7 @@ await test('labels prioritize selection, avoid collisions and stay within the vi
   assert.equal(candidates[999].text, 'Long overlapping camera or marker caption 999');
 });
 await test('labels use effective metadata, preserve full saved captions and give markers priority over geometry', async () => {
-  const { labelCandidates } = await import('../frontend/blockout-labels.mts');
+  const { labelCandidates } = await import('../frontend/blockout/blockout-labels.mts');
   const item = { ...definitionInstance(definition, 16, 32), id: '1', name: 'A long name' };
   const [plain] = labelCandidates([item], [definition], new Set(), 4);
   assert.equal(plain.text, '1W A long name');

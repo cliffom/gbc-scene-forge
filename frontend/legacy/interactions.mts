@@ -1,5 +1,5 @@
-import { errorDetails } from '../errors.mts';
-import { canvasPoint, clone } from '../model.mts';
+import { errorDetails } from '../shared/errors.mts';
+import { canvasPoint, clone } from '../scene/model.mts';
 import type { Assets } from './assets.mts';
 import { $, requireValue } from './dom.mts';
 import type { Renderer } from './render.mts';

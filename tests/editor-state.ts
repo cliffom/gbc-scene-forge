@@ -2,14 +2,14 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
-import { DraftWriter } from '../frontend/drafts.mts';
-import { EditorLifetime } from '../frontend/editor-lifetime.mts';
-import { ExternalRefreshState } from '../frontend/editor-refresh-state.mts';
-import { SceneSession, WorkspaceState } from '../frontend/editor-state.mts';
-import { LayerEditor } from '../frontend/layers.mts';
-import { decodeLoaded, decodeProject } from '../frontend/project-contracts.mts';
-import { ProjectApi } from '../frontend/project-api.mts';
-import { mountProjectEditor } from '../frontend/project-editor.mts';
+import { DraftWriter } from '../frontend/project/drafts.mts';
+import { EditorLifetime } from '../frontend/editor/editor-lifetime.mts';
+import { ExternalRefreshState } from '../frontend/project/editor-refresh-state.mts';
+import { SceneSession, WorkspaceState } from '../frontend/editor/editor-state.mts';
+import { LayerEditor } from '../frontend/scene/layers.mts';
+import { decodeLoaded, decodeProject } from '../frontend/project/project-contracts.mts';
+import { ProjectApi } from '../frontend/project/project-api.mts';
+import { mountProjectEditor } from '../frontend/editor/project-editor.mts';
 
 const saved = () =>
   decodeLoaded({

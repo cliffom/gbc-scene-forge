@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import type { CollisionShape } from '../frontend/tile-metadata.mts';
-import type { SceneLayer } from '../frontend/layers.mts';
+import type { CollisionShape } from '../frontend/artwork/tile-metadata.mts';
+import type { SceneLayer } from '../frontend/scene/layers.mts';
 import { test } from 'node:test';
 import {
   MovementPreview,
@@ -8,8 +8,8 @@ import {
   parsePreviewPath,
   shapeOverlaps,
   sceneOverlaps,
-} from '../frontend/movement-preview.mts';
-import { emptyMetadata } from '../frontend/tile-metadata.mts';
+} from '../frontend/preview/movement-preview.mts';
+import { emptyMetadata } from '../frontend/artwork/tile-metadata.mts';
 
 const world = { width: 200, height: 200, blocked: () => false };
 const idle = { x: 0, y: 0 };

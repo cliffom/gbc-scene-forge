@@ -1,8 +1,8 @@
-import { HttpError, ProtocolError, errorDetails } from '../errors.mts';
+import { HttpError, ProtocolError, errorDetails } from '../shared/errors.mts';
 import type { Decoder } from './decode.mts';
 import { record } from './decode.mts';
 import type { ApiRoute, MutationRequests } from './types.ts';
-export { HttpError, ProtocolError, errorDetails } from '../errors.mts';
+export { HttpError, ProtocolError, errorDetails } from '../shared/errors.mts';
 
 export interface RequestOptions {
   timeoutMs?: number;

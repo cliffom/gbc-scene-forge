@@ -1,7 +1,7 @@
 /** Checkpoint races, retries and cleanup must preserve the most recent authored edits. */
 import assert from 'node:assert/strict';
-import { DraftWriter } from '../frontend/drafts.mts';
-import { HttpError } from '../frontend/errors.mts';
+import { DraftWriter } from '../frontend/project/drafts.mts';
+import { HttpError } from '../frontend/shared/errors.mts';
 
 const calls: { route: string; data: Record<string, unknown> }[] = [];
 const messages: string[] = [];

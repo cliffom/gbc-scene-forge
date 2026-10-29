@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { Chrome } from './chrome.ts';
-import { array, record, string } from '../frontend/decode.mts';
+import { array, record, string } from '../frontend/shared/decode.mts';
 
 const folder = await mkdtemp(join(tmpdir(), 'forge-mcp-'));
 const python = process.env.FORGE_MCP_PYTHON || '.venv/bin/python';

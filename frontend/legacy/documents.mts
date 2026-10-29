@@ -1,5 +1,5 @@
-import { errorDetails } from '../errors.mts';
-import { Editor, clone } from '../model.mts';
+import { errorDetails } from '../shared/errors.mts';
+import { Editor, clone } from '../scene/model.mts';
 import type { ApiClient } from './api.mts';
 import type { Assets } from './assets.mts';
 import * as decode from './decode.mts';

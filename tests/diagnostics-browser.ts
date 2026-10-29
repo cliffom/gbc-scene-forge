@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { Chrome } from './chrome.ts';
-import { string } from '../frontend/decode.mts';
+import { string } from '../frontend/shared/decode.mts';
 const folder = await mkdtemp(join(tmpdir(), 'forge-diagnostics-'));
 const root = join(folder, 'world');
 let server: ChildProcess | undefined;
