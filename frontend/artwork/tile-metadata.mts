@@ -7,6 +7,7 @@ export type CollisionShape = { id: number } & (
 );
 export interface TileMetadata {
   terrain: string;
+  terrain_mask?: number;
   solid: boolean;
   shapes: CollisionShape[];
   next_shape_id: number;
@@ -22,6 +23,7 @@ export function decodeMetadata(value: unknown): TileMetadata {
   const data = record(value);
   return {
     terrain: string(data.terrain),
+    ...(data.terrain_mask === undefined ? {} : { terrain_mask: number(data.terrain_mask) }),
     solid: boolean(data.solid),
     next_shape_id: number(data.next_shape_id),
     shapes: array(data.shapes, (value): CollisionShape => {
@@ -84,6 +86,12 @@ function intersects(a: Vertex, b: Vertex, c: Vertex, d: Vertex) {
 export function validateMetadata(value: TileMetadata, width: number, height: number) {
   if (value.terrain.length > 100) {
     throw Error('Terrain classification must contain at most 100 characters.');
+  }
+  if (
+    value.terrain_mask !== undefined &&
+    (!value.terrain.trim() || !integer(value.terrain_mask, 0, 15))
+  ) {
+    throw Error('Terrain transitions need a classification and a mask from 0 to 15.');
   }
   if (value.shapes.length > 32) {
     throw Error('Use at most 32 collision shapes per tile.');

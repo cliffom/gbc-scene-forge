@@ -49,7 +49,9 @@ Tile properties forge:terrain (string) and forge:solid (bool) retain authored
 classifications and collision flags. Tile objectgroup rectangles, ellipses and
 simple polygons retain collision geometry; a solid tile with no custom geometry
 has a full-bounds rectangle. forge:next_shape_id retains the next authored ID.
-Terrain classifications are custom labels, not Wang sets or automatic terrain.
+Optional forge:terrain_mask (int, 0..15) records Forge's north/east/south/west
+transition rule (bits 1/2/4/8). These are custom properties, not Wang sets or Tiled
+automapping rules. Resolved placements display without a terrain engine.
 Grid/collision view overlays are not baked into artwork. Export performs no game
 build, movement simulation or collision simulation.
 
@@ -167,6 +169,7 @@ def tileset_images(document, path):
                 in {
                     "forge:asset",
                     "forge:terrain",
+                    "forge:terrain_mask",
                     "forge:solid",
                     "forge:next_shape_id",
                     "forge:animation",
@@ -178,7 +181,7 @@ def tileset_images(document, path):
                 "bool"
                 if name == "forge:solid"
                 else "int"
-                if name == "forge:next_shape_id"
+                if name in ("forge:next_shape_id", "forge:terrain_mask")
                 else "string"
             )
             require(
@@ -186,6 +189,8 @@ def tileset_images(document, path):
                 and type(prop["value"]) is {"bool": bool, "int": int, "string": str}[kind],
                 f"Invalid tile property type in {path}",
             )
+            if name == "forge:terrain_mask":
+                require(0 <= prop["value"] <= 15, f"Invalid terrain mask in {path}")
         if "objectgroup" in tile:
             group = tile["objectgroup"]
             require(

@@ -77,7 +77,7 @@ entry. All other modules live with their owning domain:
 | `editor/` | Composition, editor session/interaction state, canvas/viewport, command wiring, layout, DOM and mounted lifetime. |
 | `project/` | Native transport/contracts, workspace adoption, recovery/checkpoints, external refresh and first-scene guide. |
 | `scene/` | Authoring model, layers/history, scene lifecycle, resizing and exports. |
-| `artwork/` | Imported images, atlas intake, tile metadata/transforms and tile inspector. |
+| `artwork/` | Imported images, atlas intake, tile metadata/transforms, terrain adjacency model and tile inspector. |
 | `objects/` | Objects/properties, reusable definitions, inspector and definition library. |
 | `compositions/` | Clipboard and reusable stamp model. Editor command wiring remains in `editor/`. |
 | `blockout/` | Blockout model, review UI and label layout/rendering. |
@@ -102,6 +102,8 @@ helper coverage now uses supported native contracts.
 
 ## Validation and maintenance
 
+- `tests/terrain.ts` and `tests/terrain-browser.ts`: four-neighbor transition rules,
+  collision-preserving neighbor changes, authored rule configuration and native save/reopen.
 - `tests/editor-state.ts`: import safety without a DOM, serialization/undo/dirty
   ownership, stable refresh fencing, resource cancellation and transport contracts.
 - `tests/editor-lifecycle-browser.ts`: real disposal/remount, overlay cleanup,

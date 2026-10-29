@@ -34,6 +34,10 @@ class ArtworkService:
         entry["tiles"].setdefault("sprites", atlas.sprite_mapping(entry))
         width, height = tile_metadata.dimensions(entry, group, asset)
         tile_metadata.check_metadata(value, width, height)
+        require(
+            group != "sprites" or "terrain_mask" not in value,
+            "Terrain transitions require a tile grid",
+        )
         entry.setdefault("metadata", {}).setdefault(group, {})[asset] = copy.deepcopy(value)
         filename = "sprites" if group == "sprites" else f"grid-{group}"
         path = f"assets/{atlas_id}/{filename}.tsj"

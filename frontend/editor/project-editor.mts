@@ -98,6 +98,7 @@ export function mountProjectEditor() {
     if (lifetime.disposed) {
       return;
     }
+    artworkController.updateTerrain();
     panelsController.renderObjectValidation();
     editorLayout.enableBlockout(
       blockoutDefinitions(workspaceState.project?.definitions ?? []).length > 0,

@@ -1,3 +1,4 @@
+import { terrainRules, ruleReport } from './terrain.mts';
 import { createGenericImport } from './generic-import.mts';
 import type { EditorLifetime } from '../editor/editor-lifetime.mts';
 import type { AtlasFolder } from './atlas-import.mts';
@@ -107,8 +108,71 @@ export function createArtworkController({
           : 'Choose a tile to paint or a sprite to place. Dimmed tiles need a smaller grid.';
   }
 
+  let terrainSignature = '';
+  function updateTerrain() {
+    const rules = terrainRules(workspaceState.project, sceneSession.loaded?.grid ?? 8);
+    const names = [...rules.families.keys()].sort();
+    const signature = JSON.stringify(names);
+    const control = select('terrain-brush');
+    if (signature !== terrainSignature) {
+      const previous = control.value;
+      control.replaceChildren(
+        new Option('Paint individual tiles', ''),
+        ...names.map((name) => new Option(name, name)),
+      );
+      control.value = names.includes(previous) ? previous : '';
+      terrainSignature = signature;
+    }
+    if (
+      brushes.brush ||
+      brushes.spriteBrush ||
+      brushes.objectBrush ||
+      brushes.definitionBrush ||
+      brushes.stampBrush
+    ) {
+      control.value = '';
+    }
+    element('terrain-tools', HTMLElement).hidden = !names.length;
+    control.disabled =
+      activity.busy ||
+      !sceneSession.editor ||
+      sceneSession.editor.active.type !== 'tilelayer' ||
+      !sceneSession.editor.active.visible ||
+      sceneSession.editor.stroke !== null;
+    element('terrain-report', HTMLElement).textContent = control.value
+      ? ruleReport(rules, control.value).join(' ') || 'All 16 transitions configured.'
+      : 'Configure transitions using Terrain & collision on each artwork tile.';
+  }
+  lifetime.assign(select('terrain-brush'), 'onchange', () => {
+    if (activity.busy || !sceneSession.editor || sceneSession.editor.stroke) {
+      return;
+    }
+    if (select('terrain-brush').value) {
+      brushes.brush = null;
+      brushes.spriteBrush = null;
+      brushes.objectBrush = null;
+      brushes.definitionBrush = null;
+      brushes.stampBrush = null;
+      element('palette', HTMLElement)
+        .querySelectorAll('button')
+        .forEach((b) => b.setAttribute('aria-pressed', 'false'));
+      const paint = document.querySelector<HTMLInputElement>('input[name="tool"][value="paint"]');
+      if (paint) {
+        paint.checked = true;
+      }
+      element('selected-brush', HTMLElement).textContent =
+        `Terrain: ${select('terrain-brush').value}`;
+      element('paint-label', HTMLElement).textContent = 'Paint terrain';
+    } else {
+      element('selected-brush', HTMLElement).textContent = 'Select a brush';
+      element('paint-label', HTMLElement).textContent = 'Paint';
+    }
+    ports.draw();
+  });
+
   function captureBrush() {
     return {
+      terrain: select('terrain-brush').value,
       artwork:
         brushes.brush || brushes.spriteBrush
           ? element('palette', HTMLElement).querySelector<HTMLButtonElement>(
@@ -131,6 +195,13 @@ export function createArtworkController({
     brushes.stampBrush = null;
     element('paint-label', HTMLElement).textContent = 'Paint';
     element('selected-brush', HTMLElement).textContent = 'Select a brush';
+    updateTerrain();
+    select('terrain-brush').value = choice.terrain;
+    if (select('terrain-brush').value && !choice.object && !choice.definition && !choice.stamp) {
+      element('paint-label', HTMLElement).textContent = 'Paint terrain';
+      element('selected-brush', HTMLElement).textContent = `Terrain: ${choice.terrain}`;
+      return;
+    }
     const definition = workspaceState.project?.definitions.find((d) => d.id === choice.definition);
     const stamp = workspaceState.project?.stamps.find((s) => s.id === choice.stamp);
     // Losing an active preset/stamp must not fall through to a background brush.
@@ -169,6 +240,7 @@ export function createArtworkController({
     if (!workspaceState.project) {
       return;
     }
+    select('terrain-brush').value = '';
     const size = sceneSession.loaded?.grid ?? 8;
     let initialBrush: (() => void) | null = null;
     for (const [id, atlas] of Object.entries(workspaceState.project.atlases)) {
@@ -245,6 +317,7 @@ export function createArtworkController({
         type.textContent = `${id} · ${region.kind}`;
         item.append(thumb, label, type);
         const selectBrush = () => {
+          select('terrain-brush').value = '';
           brushes.stampBrush = null;
           brushes.definitionBrush = null;
           brushes.objectBrush = null;
@@ -516,6 +589,7 @@ export function createArtworkController({
   });
   return {
     regions,
+    updateTerrain,
     tileMetadata,
     sprites,
     filterPalette,

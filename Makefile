@@ -12,7 +12,7 @@ DEMO_ROOT ?= .demo
 CHROME ?=
 TILED ?= tiled
 RASTERIZER ?= tmxrasterizer
-FRONTEND_TESTS := editor-state blockout model world object-definitions scene-size compositions drafts animation-preview movement-preview contracts timeouts atlas-import frontend-build
+FRONTEND_TESTS := terrain editor-state blockout model world object-definitions scene-size compositions drafts animation-preview movement-preview contracts timeouts atlas-import frontend-build
 FRONTEND_TEST_TARGETS := $(addprefix test-frontend-,$(FRONTEND_TESTS))
 .DEFAULT_GOAL := help
 
@@ -93,7 +93,7 @@ test-frontend: $(FRONTEND_TEST_TARGETS)
 $(FRONTEND_TEST_TARGETS): test-frontend-%:
 	$(NODE) tests/$*.ts
 
-test-browser: test-imports-browser test-editor-lifecycle-browser test-blockout-browser test-layout-browser test-first-use-browser test-standalone-browser test-drafts-browser test-compositions-browser test-definitions-browser test-world-browser test-diagnostics-browser
+test-browser: test-terrain-browser test-imports-browser test-editor-lifecycle-browser test-blockout-browser test-layout-browser test-first-use-browser test-standalone-browser test-drafts-browser test-compositions-browser test-definitions-browser test-world-browser test-diagnostics-browser
 
 test-blockout-browser: frontend
 	$(NODE) tests/blockout-browser.ts $(if $(CHROME),"$(CHROME)")
@@ -178,3 +178,7 @@ test-editor-lifecycle-browser: frontend
 .PHONY: test-imports-browser
 test-imports-browser: frontend
 	$(NODE) tests/imports-browser.ts $(if $(CHROME),"$(CHROME)")
+
+.PHONY: test-terrain-browser
+test-terrain-browser: frontend
+	$(NODE) tests/terrain-browser.ts $(if $(CHROME),"$(CHROME)")
