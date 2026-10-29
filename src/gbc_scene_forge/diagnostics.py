@@ -353,6 +353,10 @@ def report(document, scenes, config):
     assets(document.get("stamps", []))
     assets(definitions)
     assets(document.get("preview", {}))
+    # Preview preferences identify sprites by key rather than by value.
+    preview_sprite = document.get("preview", {}).get("sprite", {})
+    for collection in ("mappings", "selections"):
+        assets(list(preview_sprite.get(collection, {})))
     for entry in document["scenes"]:
         sid = entry["id"]
         if sid in excluded:

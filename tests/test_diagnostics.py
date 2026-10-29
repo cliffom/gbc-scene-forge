@@ -12,9 +12,9 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 from uuid import uuid4
 
-from atlas_fixture import bundle
+from atlas_fixture import bundle, sprite_bundle
 
-from gbc_scene_forge import diagnostics
+from gbc_scene_forge import diagnostics, preview_settings
 from gbc_scene_forge.documents import Conflict
 from gbc_scene_forge.projects import Project
 from gbc_scene_forge.standalone import make_handler
@@ -227,6 +227,35 @@ class DiagnosticsTests(unittest.TestCase):
             )
         )
 
+    def test_preview_asset_keys_count_as_usage(self):
+        path, _ = sprite_bundle(self.root / "sprites")
+        self.project.import_atlas(path, self.rev())
+
+        def unused_assets():
+            return {
+                finding["asset"]
+                for finding in self.report()["findings"]
+                if finding["code"] == "unused-asset"
+            }
+
+        self.assertIn("actors/idle", unused_assets())
+        for collection, value in (
+            ("mappings", {"idle:down": "idle"}),
+            ("selections", {"action": "idle", "direction": "down", "sequence": "idle"}),
+        ):
+            with self.subTest(collection=collection):
+                settings = preview_settings.defaults()
+                settings[collection] = {"actors/idle": value}
+                self.project.save_preview_settings(settings, self.rev())
+                before = self.files()
+                unused = unused_assets()
+                self.assertNotIn("actors/idle", unused)
+                self.assertIn("terrain/earth/0/0", unused)
+                self.assertEqual(self.files(), before)
+
+        self.project.save_preview_settings(preview_settings.defaults(), self.rev())
+        self.assertIn("actors/idle", unused_assets())
+
     def test_exact_collision_geometry_and_bounds(self):
         self.assertFalse(
             diagnostics.shape_overlap(
@@ -299,8 +328,6 @@ class DiagnosticsTests(unittest.TestCase):
                 diagnostics.options(value, document)
 
     def test_sprite_collision_uses_native_and_instance_origins(self):
-        from atlas_fixture import sprite_bundle
-
         path, _ = sprite_bundle(self.root / "sprites")
         self.project.import_atlas(path, self.rev())
         self.project.save_tile_metadata(
