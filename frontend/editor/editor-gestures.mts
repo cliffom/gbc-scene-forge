@@ -1,3 +1,4 @@
+import { paintTerrain, terrainRules } from '../artwork/terrain.mts';
 import type { EditorLifetime } from './editor-lifetime.mts';
 import type { createAnimationPreview } from '../preview/animation-preview.mts';
 import {
@@ -7,7 +8,7 @@ import {
   resizeRectangle,
 } from '../blockout/blockout.mts';
 import { paste } from '../compositions/compositions.mts';
-import { element, input } from './editor-dom.mts';
+import { element, input, select } from './editor-dom.mts';
 import { editorFocus } from './editor-focus.mts';
 import type {
   BrushState,
@@ -134,6 +135,30 @@ export function createGesturesController({
           w: Math.abs(p.x - gestures.anchor.x) + 1,
           h: Math.abs(p.y - gestures.anchor.y) + 1,
         };
+      } else if (
+        select('terrain-brush').value &&
+        sceneSession.editor.active.type === 'tilelayer' &&
+        !brushes.brush &&
+        !brushes.spriteBrush &&
+        !brushes.objectBrush &&
+        !brushes.definitionBrush &&
+        !brushes.stampBrush &&
+        (tool === 'paint' || tool === 'erase' || tool === 'fill')
+      ) {
+        if (tool === 'fill') {
+          throw Error('Terrain brushes support Paint and Erase. Choose individual tiles to Fill.');
+        }
+        const warnings = paintTerrain(
+          sceneSession.editor,
+          terrainRules(workspaceState.project, sceneSession.editor.scene.grid),
+          select('terrain-brush').value,
+          p.x,
+          p.y,
+          tool === 'erase',
+        );
+        status.textContent = warnings.length
+          ? warnings.join(' ')
+          : `Terrain ${tool === 'erase' ? 'erased' : 'painted'} with neighbor updates.`;
       } else if (tool === 'erase') {
         const hit = ports.hitObject(p.px, p.py);
         if (hit) {

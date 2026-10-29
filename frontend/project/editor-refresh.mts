@@ -16,6 +16,7 @@ import { decodeLoaded } from './project-contracts.mts';
 
 export interface Ports {
   captureBrush: () => {
+    terrain: string;
     artwork: string | undefined;
     object: 'point' | 'rectangle' | null;
     definition: string | null;

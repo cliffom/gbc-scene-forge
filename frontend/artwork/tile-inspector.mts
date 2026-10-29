@@ -48,6 +48,17 @@ export function createTileInspector(
     }
     input('tile-terrain').value = value.terrain;
     input('tile-solid').checked = value.solid;
+    element('tile-transition-fields', HTMLFieldSetElement).hidden = tile.group === 'sprites';
+    input('tile-transition').checked = value.terrain_mask !== undefined;
+    input('tile-transition').disabled = saving || tile.group === 'sprites';
+    ['north', 'east', 'south', 'west'].forEach((edge, i) => {
+      input(`tile-${edge}`).checked = Boolean((value.terrain_mask ?? 0) & (1 << i));
+      input(`tile-${edge}`).disabled = saving || value.terrain_mask === undefined;
+    });
+    element('tile-transition-mask', HTMLElement).textContent =
+      value.terrain_mask === undefined
+        ? 'Classification only; no transition rule.'
+        : `Connection mask: ${value.terrain_mask}`;
     select('tile-shapes').replaceChildren(
       ...value.shapes.map(
         (shape) =>
@@ -136,6 +147,14 @@ export function createTileInspector(
     const next = structuredClone(value);
     next.terrain = input('tile-terrain').value;
     next.solid = input('tile-solid').checked;
+    if (tile?.group !== 'sprites' && input('tile-transition').checked) {
+      next.terrain_mask = ['north', 'east', 'south', 'west'].reduce(
+        (mask, edge, i) => mask | (input(`tile-${edge}`).checked ? 1 << i : 0),
+        0,
+      );
+    } else {
+      delete next.terrain_mask;
+    }
     const shape = next.shapes.find((shape) => shape.id === selected);
     if (shape?.kind === 'polygon') {
       const raw = element('tile-points', HTMLTextAreaElement).value.trim();
@@ -174,6 +193,11 @@ export function createTileInspector(
   }
   for (const id of [
     'tile-terrain',
+    'tile-transition',
+    'tile-north',
+    'tile-east',
+    'tile-south',
+    'tile-west',
     'tile-solid',
     'tile-x',
     'tile-y',

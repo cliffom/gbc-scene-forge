@@ -1,9 +1,11 @@
 """Authored tileset properties and collision geometry survive project asset operations."""
 
 import copy
+import io
 import json
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 from unittest.mock import patch
 
@@ -49,6 +51,46 @@ class TileMetadataTests(unittest.TestCase):
             self.value if value is None else value,
             revision or self.revision(),
         )
+
+    def test_terrain_transition_persists_reimports_and_exports(self):
+        self.value["terrain_mask"] = 6
+        self.save()
+        tile = json.loads(self.tsj.read_bytes())["tiles"][0]
+        properties = {p["name"]: p["value"] for p in tile["properties"]}
+        self.assertEqual(properties["forge:terrain_mask"], 6)
+        payload, _ = self.project.export_bundle("project", self.revision())
+        with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+            exported = json.loads(archive.read("assets/terrain/grid-8.tsj"))
+            props = {p["name"]: p["value"] for p in exported["tiles"][0]["properties"]}
+            self.assertEqual(props["forge:terrain_mask"], 6)
+        before_shapes = tile["objectgroup"]
+        self.project.artwork.import_atlas(self.path, self.revision(), reimport=True)
+        reopened = Project(self.project.root)
+        self.assertEqual(
+            reopened.catalog()["project"]["atlases"]["terrain"]["metadata"]["8"][self.asset],
+            self.value,
+        )
+        tile = json.loads(self.tsj.read_bytes())["tiles"][0]
+        self.assertEqual(tile["objectgroup"], before_shapes)
+        # Removing a rule also removes the portable property, preserving collision.
+        del self.value["terrain_mask"]
+        self.save()
+        tile = json.loads(self.tsj.read_bytes())["tiles"][0]
+        self.assertNotIn("forge:terrain_mask", {p["name"] for p in tile["properties"]})
+        self.assertEqual(tile["objectgroup"], before_shapes)
+
+    def test_terrain_rule_validation_is_atomic(self):
+        revision = self.revision()
+        before = self.tsj.read_bytes()
+        for mask in (-1, 16, 1.5, True, "3", None):
+            with self.subTest(mask=mask), self.assertRaises(ValueError):
+                self.save(dict(self.value, terrain_mask=mask))
+            self.assertEqual(self.revision(), revision)
+            self.assertEqual(self.tsj.read_bytes(), before)
+        with self.assertRaises(ValueError):
+            self.save(dict(self.value, terrain="  ", terrain_mask=0))
+        for mask in range(16):
+            self.save(dict(self.value, terrain_mask=mask))
 
     def test_tsj_properties_shapes_and_source_separation(self):
         original = self.project.catalog()["project"]["atlases"]["terrain"]["manifest"]
@@ -119,6 +161,10 @@ class TileMetadataTests(unittest.TestCase):
         self.project.artwork.set_metadata(
             "actors", "sprites", "actors/idle", value, self.revision()
         )
+        with self.assertRaises(ValueError):
+            self.project.artwork.set_metadata(
+                "actors", "sprites", "actors/idle", dict(value, terrain_mask=0), self.revision()
+            )
         shape = json.loads((self.project.root / "assets/actors/sprites.tsj").read_bytes())["tiles"][
             0
         ]["objectgroup"]["objects"][0]

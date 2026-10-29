@@ -40,12 +40,18 @@ def intersects(a, b, c, d):
 
 def check_metadata(value, width, height):
     require(
-        isinstance(value, dict) and set(value) == set(DEFAULT), "Unsupported tile metadata fields"
+        isinstance(value, dict) and set(DEFAULT) <= set(value) <= set(DEFAULT) | {"terrain_mask"},
+        "Unsupported tile metadata fields",
     )
     require(
         isinstance(value["terrain"], str) and len(value["terrain"]) <= 100,
         "Terrain classification must contain at most 100 characters",
     )
+    if "terrain_mask" in value:
+        require(
+            bool(value["terrain"].strip()) and integer(value["terrain_mask"], 0, 15),
+            "Terrain transitions need a classification and a whole-number mask from 0 to 15",
+        )
     require(type(value["solid"]) is bool, "Collision solid flag must be boolean")
     shapes = value["shapes"]
     require(
@@ -120,6 +126,10 @@ def check_entry(entry):
         require(group in entry["tiles"] and isinstance(records, dict), "Unknown metadata tileset")
         for asset, value in records.items():
             check_metadata(value, *dimensions(entry, group, asset))
+            require(
+                group != "sprites" or "terrain_mask" not in value,
+                "Terrain transitions require a tile grid",
+            )
 
 
 def tile_fields(asset, value, width, height):
@@ -134,6 +144,10 @@ def tile_fields(asset, value, width, height):
             {"name": "forge:next_shape_id", "type": "int", "value": value["next_shape_id"]},
         ]
     )
+    if "terrain_mask" in value:
+        properties.append(
+            {"name": "forge:terrain_mask", "type": "int", "value": value["terrain_mask"]}
+        )
     objects = []
     shapes = value["shapes"]
     if not shapes and value["solid"]:

@@ -105,6 +105,11 @@
             <select id="kind-filter" aria-label="Filter asset kind"><option value="">All kinds</option><option value="tile">Tiles</option><option value="sprite">Sprites</option></select>
           </div>
           <button id="edit-tile" disabled>Terrain &amp; collision…</button>
+          <details id="terrain-tools" hidden><summary>Terrain brush</summary>
+            <label class="field">Terrain<select id="terrain-brush"><option value="">Paint individual tiles</option></select></label>
+            <p class="hint">Paint and Erase update four connected neighbors on the active tile layer. Fill uses individual tiles.</p>
+            <p id="terrain-report" class="hint" role="status"></p>
+          </details>
           <p id="library-hint" class="hint">Choose a tile to paint or a sprite to place. Imported artwork keeps its native size.</p>
           <div id="palette" class="assets" tabindex="-1" aria-label="Available assets"></div>
         </section>
@@ -302,6 +307,17 @@
       <label class="field">Cell<select id="tile-cell"></select></label><p id="tile-identity" class="hint"></p>
       <div class="tile-editor-layout"><div class="tile-preview-wrap"><canvas id="tile-preview" aria-label="Terrain and collision preview"></canvas></div><div>
         <label class="field">Terrain classification<input id="tile-terrain" maxlength="100" placeholder="grass, water, wall…"></label>
+        <fieldset id="tile-transition-fields"><legend>Terrain transition</legend>
+          <label><input id="tile-transition" type="checkbox"> Use this tile in a terrain brush</label>
+          <p class="hint">Check the edges that connect to the same terrain. Unchecked edges face empty space or another terrain. All 16 combinations form a complete set.</p>
+          <div class="terrain-edges" role="group" aria-label="Connected edges">
+            <label><input id="tile-north" type="checkbox"> North</label>
+            <label><input id="tile-east" type="checkbox"> East</label>
+            <label><input id="tile-south" type="checkbox"> South</label>
+            <label><input id="tile-west" type="checkbox"> West</label>
+          </div>
+          <p id="tile-transition-mask" class="hint"></p>
+        </fieldset>
         <label><input id="tile-solid" type="checkbox"> Solid</label><p class="hint">Solid without custom shapes uses the full tile. Custom shapes define their own footprint.</p>
         <div class="layer-actions"><button id="tile-undo" type="button" class="small">Undo draft edit</button><button id="tile-redo" type="button" class="small">Redo draft edit</button></div>
         <label class="field">Collision shapes<select id="tile-shapes" size="3"></select></label>
