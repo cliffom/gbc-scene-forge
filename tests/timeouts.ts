@@ -1,24 +1,10 @@
-/** Exercise native fetch aborts after response headers, for JSON, downloads and HTTP errors. */
+/** Exercise the supported transport's native aborts after response headers. */
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { test } from 'node:test';
-import { ApiClient, HttpError } from '../frontend/legacy/api.mts';
-import { activeApply } from '../frontend/legacy/decode.mts';
+import { ProjectApi } from '../frontend/project/project-api.mts';
 
-const exampleScene = {
-  version: 1,
-  connector: 'test',
-  id: 'test',
-  name: 'Test',
-  profile: 'test',
-  source_digest: 'revision',
-  width: 1,
-  height: 1,
-  cells: [['floor']],
-  references: [],
-};
-
-await test('deadlines cover response bodies and error-body parsing', async (t) => {
+await test('deadlines cover JSON, download and HTTP error response bodies', async () => {
   let status = 200,
     headersSent = 0;
   const server = createServer((_request, response) => {
@@ -26,35 +12,27 @@ await test('deadlines cover response bodies and error-body parsing', async (t) =
     response.flushHeaders();
     response.write('{"id":');
     headersSent++;
-    // Deliberately never finish this body; the client must abort it.
+    // Deliberately never finish this body; the transport deadline must abort it.
   });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   const address = server.address();
   assert(address && typeof address !== 'string');
-  const nativeFetch = globalThis.fetch;
-  t.mock.method(globalThis, 'fetch', (input: string | URL | Request, init?: RequestInit) =>
-    nativeFetch(
-      typeof input === 'string' ? new URL(input, `http://127.0.0.1:${address.port}`) : input,
-      init,
-    ),
-  );
-  const client = new ApiClient();
+  const client = new ProjectApi(`http://127.0.0.1:${address.port}`);
+  const aborted = (error: unknown) =>
+    error instanceof DOMException && ['AbortError', 'TimeoutError'].includes(error.name);
   try {
-    const timedOut = (error: unknown) =>
-      error instanceof HttpError && /did not respond within/.test(error.message);
     await assert.rejects(
-      client.json('apply-active', activeApply, undefined, { timeoutMs: 200 }),
-      timedOut,
+      (async () => {
+        await (await client.request('scene/room', undefined, 200)).json();
+      })(),
+      aborted,
     );
     await assert.rejects(
-      client.request('document', { scene: exampleScene }, { timeoutMs: 200 }),
-      timedOut,
+      (async () => (await client.request('export', { scene: 'room' }, 200)).blob())(),
+      aborted,
     );
     status = 503;
-    await assert.rejects(
-      client.json('apply-active', activeApply, undefined, { timeoutMs: 200 }),
-      timedOut,
-    );
+    await assert.rejects(client.request('catalog', undefined, 200), aborted);
     assert.equal(headersSent, 3);
   } finally {
     server.closeAllConnections();

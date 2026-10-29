@@ -1,7 +1,7 @@
 /** Freeze build identity into the browser bundle, including in installed distributions. */
 import { build } from 'esbuild';
 import { execFileSync } from 'node:child_process';
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, rm, writeFile } from 'node:fs/promises';
 
 const mode = process.env.FORGE_BUILD_MODE ?? 'development';
 if (!['development', 'production'].includes(mode)) {
@@ -22,20 +22,18 @@ if (mode !== 'production') {
   }
   label += `-${commit}`;
 }
-for (const entry of ['app', 'project']) {
-  const result = await build({
-    entryPoints: [`frontend/${entry}.ts`],
-    bundle: true,
-    format: 'esm',
-    platform: 'browser',
-    target: 'es2022',
-    sourcemap: true,
-    metafile: entry === 'app',
-    outfile: `src/gbc_scene_forge/static/${entry}.js`,
-    define: { __FORGE_BUILD_LABEL__: JSON.stringify(label) },
-  });
-  if (result.metafile) {
-    await writeFile('src/gbc_scene_forge/static/app.meta.json', JSON.stringify(result.metafile));
-  }
+// Clear artifacts from checkouts built before the historical frontend was removed.
+for (const name of ['app.js', 'app.js.map', 'app.meta.json']) {
+  await rm(`src/gbc_scene_forge/static/${name}`, { force: true });
 }
+await build({
+  entryPoints: ['frontend/project.ts'],
+  bundle: true,
+  format: 'esm',
+  platform: 'browser',
+  target: 'es2022',
+  sourcemap: true,
+  outfile: 'src/gbc_scene_forge/static/project.js',
+  define: { __FORGE_BUILD_LABEL__: JSON.stringify(label) },
+});
 await writeFile('src/gbc_scene_forge/static/build-info.json', JSON.stringify({ version: label }));

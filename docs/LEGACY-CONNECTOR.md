@@ -125,19 +125,10 @@ cleanup, bounded output, worker health, reconnectable status, conflict-aware
 rollback and interrupted-transaction recovery. Existing transaction/job formats
 are retained; history paths come from the workspace.
 
-## Independent acceptance fixture
+## Historical fixtures
 
-`tests/legacy/fixture_connector.py` provides a different 7 × 5 scene with four-pixel cells,
-opaque asset IDs, non-grid game content, JSON sources and a small Python compiler.
-It imports no host game, atlas library or imaging library. Run:
-
-```sh
-.venv/bin/python -m unittest discover -s tests -p 'test_*.py'
-.venv/bin/python tests/legacy/serve_fixture.py --root /tmp/forge-fixture --port 8777
-npm run test:browser -- http://127.0.0.1:8777/
-```
-
-The browser check requires a local Chrome installation; its third argument can
-override the default macOS executable. The fixture proves this contract is
-independent of one game. Additional real games may require explicit future
-capabilities rather than game-specific branches in the editor.
+`tests/legacy/fixture_connector.py` and the Python connector tests retain independent
+fixtures for backend history. The historical browser frontend, bundle and browser
+acceptance suite were removed in #62. Connector UI launch instructions no longer
+apply; use the supported standalone editor described in the README. Backend legacy
+removal remains separate work.

@@ -7,8 +7,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Readable, Writable } from 'node:stream';
 import { setTimeout as delay } from 'node:timers/promises';
-import { number, record, scene, string } from '../frontend/legacy/decode.mts';
-import { errorDetails } from '../frontend/legacy/api.mts';
+import { number, record, string } from '../frontend/shared/decode.mts';
+import { errorDetails } from '../frontend/shared/errors.mts';
 
 interface Pending {
   resolve: (value: Record<string, unknown>) => void;
@@ -192,16 +192,6 @@ export class Chrome {
 
   async click(expression: string) {
     await this.evaluate(`(${expression}).click()`);
-  }
-
-  async scene() {
-    await this.evaluate('window.__download=null');
-    await this.click("document.getElementById('download')");
-    await this.wait("window.__download?.type==='application/json'");
-    return scene(
-      await this.evaluate(`window.__download.text().then(JSON.parse).then(d=>d.version===2?
-      {...d.content,version:1,connector:d.connector,id:d.id,name:d.name,profile:d.target,source_digest:d.source_revision}:d)`),
-    );
   }
 
   async pointer(x: number, y: number, type = 'mousePressed', modifiers = 0) {

@@ -2,7 +2,12 @@
 import assert from 'node:assert/strict';
 import type { TileMetadata } from '../frontend/artwork/tile-metadata.mts';
 import { LayerEditor } from '../frontend/scene/layers.mts';
-import { capture, paste, eraseCaptured, transform } from '../frontend/compositions/compositions.mts';
+import {
+  capture,
+  paste,
+  eraseCaptured,
+  transform,
+} from '../frontend/compositions/compositions.mts';
 import type { CompositionSelection } from '../frontend/compositions/compositions.mts';
 import {
   tileParts,

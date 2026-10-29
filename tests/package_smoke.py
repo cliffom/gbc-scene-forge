@@ -54,10 +54,7 @@ class InstalledPackageSmokeTests(unittest.TestCase):
     def test_browser_assets_are_bundled(self):
         static = files("gbc_scene_forge").joinpath("static")
         for name in (
-            "index.html",
             "style.css",
-            "app.js",
-            "app.js.map",
             "project.html",
             "project.css",
             "project.js",
@@ -70,6 +67,8 @@ class InstalledPackageSmokeTests(unittest.TestCase):
         ):
             with self.subTest(asset=name):
                 self.assertTrue(static.joinpath(name).read_bytes())
+        for name in ("index.html", "app.js", "app.js.map", "app.meta.json"):
+            self.assertFalse(static.joinpath(name).is_file(), name)
         version = build_version()
         self.assertRegex(version, rf"^{__version__}(?:-[0-9a-f]{{7,40}})?$")
         self.assertIn(f'"{version}"', static.joinpath("project.js").read_text())

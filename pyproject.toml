@@ -37,8 +37,6 @@ core-metadata-version = "2.4"
 [tool.hatch.build.targets.wheel.force-include]
 "src/gbc_scene_forge/static/build-info.json" = "gbc_scene_forge/static/build-info.json"
 "assets/demo/project" = "gbc_scene_forge/demo_project"
-"src/gbc_scene_forge/static/app.js" = "gbc_scene_forge/static/app.js"
-"src/gbc_scene_forge/static/app.js.map" = "gbc_scene_forge/static/app.js.map"
 "src/gbc_scene_forge/static/project.js" = "gbc_scene_forge/static/project.js"
 "src/gbc_scene_forge/static/project.js.map" = "gbc_scene_forge/static/project.js.map"
 
@@ -52,9 +50,6 @@ include = [
 
 [tool.hatch.build.targets.sdist.force-include]
 "src/gbc_scene_forge/static/build-info.json" = "src/gbc_scene_forge/static/build-info.json"
-"src/gbc_scene_forge/static/app.js" = "src/gbc_scene_forge/static/app.js"
-"src/gbc_scene_forge/static/app.js.map" = "src/gbc_scene_forge/static/app.js.map"
-"src/gbc_scene_forge/static/app.meta.json" = "src/gbc_scene_forge/static/app.meta.json"
 "src/gbc_scene_forge/static/project.js" = "src/gbc_scene_forge/static/project.js"
 "src/gbc_scene_forge/static/project.js.map" = "src/gbc_scene_forge/static/project.js.map"
 

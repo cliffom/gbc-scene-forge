@@ -1,6 +1,11 @@
 import type { EditorLifetime } from './editor-lifetime.mts';
 import type { createAnimationPreview } from '../preview/animation-preview.mts';
-import { blockoutAppearance, definitionRole, dragRectangle, resizeRectangle } from '../blockout/blockout.mts';
+import {
+  blockoutAppearance,
+  definitionRole,
+  dragRectangle,
+  resizeRectangle,
+} from '../blockout/blockout.mts';
 import { paste } from '../compositions/compositions.mts';
 import { element, input } from './editor-dom.mts';
 import { editorFocus } from './editor-focus.mts';
