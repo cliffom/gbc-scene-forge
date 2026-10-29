@@ -86,7 +86,7 @@ try {
     );
   await chrome.call('Page.navigate', { url });
   await wait(
-    "document.getElementById('status')?.textContent==='Choose a scene, or import an atlas and create one.'",
+    "document.getElementById('status')?.textContent==='Choose a scene, or import an atlas and create one.' && !document.getElementById('scenes').disabled",
   );
   await set('scenes', id);
   await wait("document.getElementById('scene-save-state').textContent==='Saved'");
@@ -132,7 +132,7 @@ try {
   assert.deepEqual(objects((await saved()).scene), planObjects);
   await chrome.call('Page.reload');
   await wait(
-    "document.getElementById('status')?.textContent==='Choose a scene, or import an atlas and create one.'",
+    "document.getElementById('status')?.textContent==='Choose a scene, or import an atlas and create one.' && !document.getElementById('scenes').disabled",
   );
   await set('scenes', id);
   await wait("document.getElementById('scene-save-state').textContent==='Saved'");
