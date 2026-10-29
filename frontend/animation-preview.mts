@@ -1,3 +1,4 @@
+import { EditorLifetime } from './editor-lifetime.mts';
 import type { PreviewWorld } from './movement-preview.mts';
 import { createMovementPreview } from './movement-preview.mts';
 import type { SpritePreviewSettings } from './preview-settings.mts';
@@ -98,7 +99,10 @@ export class AnimationPlayback {
   }
 }
 
-export function createAnimationPreview(redraw: () => void) {
+export function createAnimationPreview(
+  redraw: () => void,
+  lifetime: EditorLifetime = new EditorLifetime(),
+) {
   function control<T extends HTMLElement>(id: string, type: new () => T): T {
     const element = document.getElementById(id);
     if (!(element instanceof type)) {
@@ -155,7 +159,7 @@ export function createAnimationPreview(redraw: () => void) {
     syncMovement();
     refresh();
     ensureTimer();
-  });
+  }, lifetime);
   function syncMovement() {
     if (!movement.active) {
       if (wasMovingPreview) {
@@ -198,7 +202,7 @@ export function createAnimationPreview(redraw: () => void) {
   function ensureTimer() {
     if (timer === undefined && (playback.playing || movement.active)) {
       lastTime = performance.now();
-      timer = requestAnimationFrame(tick);
+      timer = lifetime.frame(tick);
     }
   }
   function frame() {
@@ -268,13 +272,17 @@ export function createAnimationPreview(redraw: () => void) {
   }
   function stopTimer() {
     if (timer !== undefined) {
-      cancelAnimationFrame(timer);
+      lifetime.cancelFrame(timer);
     }
     timer = undefined;
   }
-  document.addEventListener('visibilitychange', () => {
-    lastTime = performance.now();
-  });
+  document.addEventListener(
+    'visibilitychange',
+    () => {
+      lastTime = performance.now();
+    },
+    { signal: lifetime.signal },
+  );
   function tick(time: number) {
     timer = undefined;
     if (!playback.playing && !movement.active) {
@@ -297,7 +305,7 @@ export function createAnimationPreview(redraw: () => void) {
       }
     }
     lastTime = time;
-    timer = requestAnimationFrame(tick);
+    timer = lifetime.frame(tick);
   }
   function chooseSequence() {
     stopTimer();
@@ -320,17 +328,21 @@ export function createAnimationPreview(redraw: () => void) {
       };
     }
   }
-  sequence.onchange = () => {
+  lifetime.assign(sequence, 'onchange', () => {
     manualSequence = sequence.value;
     rememberSelection();
     chooseSequence();
-  };
-  mode.onchange = facing.onchange = () => {
-    rememberSelection();
-    chooseSequence();
-  };
+  });
+  lifetime.assign(
+    mode,
+    'onchange',
+    lifetime.assign(facing, 'onchange', () => {
+      rememberSelection();
+      chooseSequence();
+    }),
+  );
   for (const entry of mappingControls) {
-    entry.select.onchange = () => {
+    lifetime.assign(entry.select, 'onchange', () => {
       if (!target) {
         return;
       }
@@ -338,31 +350,31 @@ export function createAnimationPreview(redraw: () => void) {
       if (action() === entry.action && direction() === entry.direction) {
         chooseSequence();
       }
-    };
+    });
   }
-  play.onclick = () => {
+  lifetime.assign(play, 'onclick', () => {
     playback.playing = !playback.playing;
     stopTimer();
     lastTime = performance.now();
     if (playback.playing) {
-      timer = requestAnimationFrame(tick);
+      timer = lifetime.frame(tick);
     }
     render();
-  };
-  previous.onclick = () => {
+  });
+  lifetime.assign(previous, 'onclick', () => {
     stopTimer();
     playback.step(-1);
     refresh();
-  };
-  next.onclick = () => {
+  });
+  lifetime.assign(next, 'onclick', () => {
     stopTimer();
     playback.step(1);
     refresh();
-  };
-  speed.onchange = () => {
+  });
+  lifetime.assign(speed, 'onchange', () => {
     playback.speed = Number(speed.value);
-  };
-  origin.onchange = refresh;
+  });
+  lifetime.assign(origin, 'onchange', refresh);
   return {
     configure(value: typeof target) {
       const nextSignature = value

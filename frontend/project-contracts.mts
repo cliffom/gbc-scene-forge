@@ -1,4 +1,4 @@
-/** Standalone project controller for atlas, layer and object authoring. */
+/** Runtime-validated native catalog and saved-scene contracts. */
 import type { SpriteAnimation } from './animation-preview.mts';
 import type { Composition } from './compositions.mts';
 import { array, boolean, number, record, string } from './decode.mts';

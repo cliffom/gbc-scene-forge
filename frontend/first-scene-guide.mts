@@ -1,3 +1,4 @@
+import { EditorLifetime } from './editor-lifetime.mts';
 /** Optional, offline instructions. Progress belongs to this browser and project URL. */
 const steps = [
   {
@@ -49,6 +50,7 @@ const button = (id: string) => element(id, HTMLButtonElement);
 export function createFirstSceneGuide(
   canAct: () => boolean,
   reveal?: (target: HTMLElement) => void,
+  lifetime: EditorLifetime = new EditorLifetime(),
 ) {
   const dialog = element('first-scene-guide', HTMLDialogElement);
   const title = element('guide-title', HTMLElement);
@@ -94,21 +96,21 @@ export function createFirstSceneGuide(
     render();
     dialog.showModal();
   }
-  previous.onclick = () => {
+  lifetime.assign(previous, 'onclick', () => {
     index--;
     render();
-  };
-  next.onclick = () => {
+  });
+  lifetime.assign(next, 'onclick', () => {
     index++;
     render();
-  };
-  button('guide-restart').onclick = () => {
+  });
+  lifetime.assign(button('guide-restart'), 'onclick', () => {
     index = 0;
     render();
-  };
-  button('guide-close').onclick = () => dialog.close();
-  button('show-first-scene-guide').onclick = show;
-  action.onclick = () => {
+  });
+  lifetime.assign(button('guide-close'), 'onclick', () => dialog.close());
+  lifetime.assign(button('show-first-scene-guide'), 'onclick', show);
+  lifetime.assign(action, 'onclick', () => {
     if (!canAct()) {
       return;
     }
@@ -126,7 +128,7 @@ export function createFirstSceneGuide(
       target?.focus();
     }
     target?.scrollIntoView({ block: 'nearest' });
-  };
+  });
   return {
     show,
     continueInProject() {

@@ -71,3 +71,6 @@ fixtures, not as a compatibility requirement. Supported imports and launchers
 must not import it. The root `__main__` and `mcp_server` modules are intentionally
 thin, stable module launchers. Do not move domain logic back into the old flat module layout
 or add connector compatibility shims.
+
+The companion [frontend architecture](FRONTEND-ARCHITECTURE.md) describes the supported
+browser composition, state owners, controller ports and resource lifecycle.

@@ -1,3 +1,4 @@
+import { EditorLifetime } from './editor-lifetime.mts';
 /** Debounced authoritative reports for the current canvas; stale replies never render. */
 import { array, number, record, string } from './decode.mts';
 
@@ -31,12 +32,15 @@ export function decodePaletteProfile(value: unknown): PaletteProfile | null {
   };
 }
 
-export function createPalettePanel(options: {
-  context: () => { payload: unknown; key: string } | null;
-  report: (preflight: boolean, payload: unknown) => Promise<unknown>;
-  save: (profile: PaletteProfile | null) => void;
-  navigate: (source: Record<string, unknown>) => void;
-}) {
+export function createPalettePanel(
+  options: {
+    context: () => { payload: unknown; key: string } | null;
+    report: (preflight: boolean, payload: unknown) => Promise<unknown>;
+    save: (profile: PaletteProfile | null) => void;
+    navigate: (source: Record<string, unknown>) => void;
+  },
+  lifetime: EditorLifetime = new EditorLifetime(),
+) {
   function element<T extends HTMLElement>(id: string, type: new () => T): T {
     const value = document.getElementById(id);
     if (!(value instanceof type)) {
@@ -74,7 +78,7 @@ export function createPalettePanel(options: {
   function invalidate(message: string) {
     renderedKey = renderedSignature = '';
     generation++;
-    clearTimeout(timer);
+    lifetime.cancelTimeout(timer);
     summary.textContent = message;
     summary.dataset.state = 'pending';
     findings.replaceChildren();
@@ -118,20 +122,24 @@ export function createPalettePanel(options: {
         }
         details.append(swatches);
         // Populate on demand so large scenes do not create thousands of controls per edit.
-        details.addEventListener('toggle', () => {
-          if (!details.open || details.dataset.populated) {
-            return;
-          }
-          details.dataset.populated = 'true';
-          for (const source of array(palette.contributors, record)) {
-            const link = document.createElement('button');
-            link.type = 'button';
-            link.className = 'palette-contributor small';
-            link.textContent = `${string(source.layer_name)} · ${source.object_id === null ? `cell ${number(source.x)}, ${number(source.y)}` : `object ${number(source.object_id)}`} · ${string(source.atlas)}/${string(source.region)} · local ${number(source.local_palette)}${source.animation === null ? '' : ` · ${string(source.animation)}`}`;
-            link.onclick = () => options.navigate(source);
-            details.append(link);
-          }
-        });
+        details.addEventListener(
+          'toggle',
+          () => {
+            if (!details.open || details.dataset.populated) {
+              return;
+            }
+            details.dataset.populated = 'true';
+            for (const source of array(palette.contributors, record)) {
+              const link = document.createElement('button');
+              link.type = 'button';
+              link.className = 'palette-contributor small';
+              link.textContent = `${string(source.layer_name)} · ${source.object_id === null ? `cell ${number(source.x)}, ${number(source.y)}` : `object ${number(source.object_id)}`} · ${string(source.atlas)}/${string(source.region)} · local ${number(source.local_palette)}${source.animation === null ? '' : ` · ${string(source.animation)}`}`;
+              lifetime.assign(link, 'onclick', () => options.navigate(source));
+              details.append(link);
+            }
+          },
+          { signal: lifetime.signal },
+        );
         findings.append(details);
       });
     }
@@ -146,12 +154,12 @@ export function createPalettePanel(options: {
       link.type = 'button';
       link.className = 'palette-contributor small';
       link.textContent = `${string(source.layer_name)} · ${string(source.asset)}: ${string(source.reason)}`;
-      link.onclick = () => options.navigate(source);
+      lifetime.assign(link, 'onclick', () => options.navigate(source));
       findings.append(link);
     }
   }
   async function check(explicit = false) {
-    if (!profile || busy || draftChanged) {
+    if (lifetime.disposed || !profile || busy || draftChanged) {
       return;
     }
     const context = options.context();
@@ -172,7 +180,7 @@ export function createPalettePanel(options: {
     activeRequests++;
     try {
       const report = await options.report(explicit, context.payload);
-      if (serial === generation && options.context()?.key === expected) {
+      if (!lifetime.disposed && serial === generation && options.context()?.key === expected) {
         const signature = JSON.stringify(report);
         if (explicit || signature !== renderedSignature) {
           render(report, explicit);
@@ -181,7 +189,7 @@ export function createPalettePanel(options: {
         renderedKey = expected;
       }
     } catch (error) {
-      if (serial === generation && options.context()?.key === expected) {
+      if (!lifetime.disposed && serial === generation && options.context()?.key === expected) {
         invalidate(
           `Palette check unavailable: ${error instanceof Error ? error.message : String(error)}`,
         );
@@ -223,30 +231,30 @@ export function createPalettePanel(options: {
                 : 'Palette report needs refresh…',
       );
       if (!blocked && value && !draftChanged && context) {
-        timer = setTimeout(() => {
+        timer = lifetime.timeout(() => {
           void check();
         }, 300);
       }
     }
   }
   for (const field of [enabled, bg, obj]) {
-    field.oninput = () => {
+    lifetime.assign(field, 'oninput', () => {
       draftChanged = true;
       sync(profile, busy);
-    };
+    });
   }
-  save.onclick = () => {
+  lifetime.assign(save, 'onclick', () => {
     try {
       options.save(draft());
     } catch (error) {
       invalidate(error instanceof Error ? error.message : String(error));
     }
-  };
-  preflight.onclick = () => {
+  });
+  lifetime.assign(preflight, 'onclick', () => {
     void check(true);
-  };
+  });
   // Recheck revision guards so an idle tab cannot indefinitely show an old passing report.
-  setInterval(() => {
+  lifetime.interval(() => {
     if (activeRequests === 0) {
       void check();
     }

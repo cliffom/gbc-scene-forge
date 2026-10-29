@@ -1,3 +1,4 @@
+import { EditorLifetime } from './editor-lifetime.mts';
 /** Shared tileset edits have their own draft history and an explicit project save. */
 import type { CollisionShape, TileMetadata } from './tile-metadata.mts';
 import { drawCollision, emptyMetadata, terrainColor, validateMetadata } from './tile-metadata.mts';
@@ -24,6 +25,7 @@ const select = (id: string) => element(id, HTMLSelectElement);
 export function createTileInspector(
   metadata: (tile: TileChoice) => TileMetadata | undefined,
   save: (tile: TileChoice, value: TileMetadata) => Promise<void>,
+  lifetime: EditorLifetime = new EditorLifetime(),
 ) {
   const dialog = element('tile-dialog', HTMLDialogElement),
     error = element('tile-error', HTMLElement);
@@ -38,6 +40,9 @@ export function createTileInspector(
     selected: number | null = null,
     saving = false;
   function render() {
+    if (lifetime.disposed) {
+      return;
+    }
     if (!tile) {
       return;
     }
@@ -161,6 +166,9 @@ export function createTileInspector(
     try {
       work();
     } catch (cause) {
+      if (lifetime.disposed) {
+        return;
+      }
       error.textContent = cause instanceof Error ? cause.message : String(cause);
     }
   }
@@ -172,17 +180,20 @@ export function createTileInspector(
     'tile-width',
     'tile-height',
   ]) {
-    input(id).onchange = () => attempt(readFields);
+    lifetime.assign(input(id), 'onchange', () => attempt(readFields));
   }
-  element('tile-points', HTMLTextAreaElement).onchange = () => attempt(readFields);
-  select('tile-shapes').onchange = () =>
+  lifetime.assign(element('tile-points', HTMLTextAreaElement), 'onchange', () =>
+    attempt(readFields),
+  );
+  lifetime.assign(select('tile-shapes'), 'onchange', () =>
     attempt(() => {
       const id = Number(select('tile-shapes').value);
       readFields();
       selected = id;
       render();
-    });
-  button('tile-add-shape').onclick = () =>
+    }),
+  );
+  lifetime.assign(button('tile-add-shape'), 'onclick', () =>
     attempt(() => {
       readFields();
       if (!tile) {
@@ -218,15 +229,17 @@ export function createTileInspector(
       next.shapes.push(shape);
       next.solid = true;
       commit(next);
-    });
-  button('tile-remove-shape').onclick = () =>
+    }),
+  );
+  lifetime.assign(button('tile-remove-shape'), 'onclick', () =>
     attempt(() => {
       const next = structuredClone(value);
       next.shapes = next.shapes.filter((shape) => shape.id !== selected);
       selected = next.shapes[0]?.id ?? null;
       commit(next);
-    });
-  button('tile-undo').onclick = () =>
+    }),
+  );
+  lifetime.assign(button('tile-undo'), 'onclick', () =>
     attempt(() => {
       const old = undo.pop();
       if (old) {
@@ -236,8 +249,9 @@ export function createTileInspector(
         error.textContent = '';
         render();
       }
-    });
-  button('tile-redo').onclick = () =>
+    }),
+  );
+  lifetime.assign(button('tile-redo'), 'onclick', () =>
     attempt(() => {
       const next = redo.pop();
       if (next) {
@@ -246,7 +260,8 @@ export function createTileInspector(
         selected = value.shapes[0]?.id ?? null;
         render();
       }
-    });
+    }),
+  );
   function choose(index: number) {
     tile = choices[index];
     if (!tile) {
@@ -262,8 +277,10 @@ export function createTileInspector(
       `${tile.asset} · ${tile.width} × ${tile.height}px · ${tile.group === 'sprites' ? 'Sprite tileset' : `${tile.group}px tileset`}`;
     render();
   }
-  select('tile-cell').onchange = () => attempt(() => choose(Number(select('tile-cell').value)));
-  form.onsubmit = async (event) => {
+  lifetime.assign(select('tile-cell'), 'onchange', () =>
+    attempt(() => choose(Number(select('tile-cell').value))),
+  );
+  lifetime.assign(form, 'onsubmit', async (event) => {
     event.preventDefault();
     if (saving || !tile) {
       return;
@@ -275,22 +292,25 @@ export function createTileInspector(
       await save(tile, structuredClone(value));
       dialog.close();
     } catch (cause) {
+      if (lifetime.disposed) {
+        return;
+      }
       error.textContent = cause instanceof Error ? cause.message : String(cause);
     } finally {
       saving = false;
       render();
     }
-  };
-  button('tile-cancel').onclick = () => {
+  });
+  lifetime.assign(button('tile-cancel'), 'onclick', () => {
     if (!saving) {
       dialog.close();
     }
-  };
-  dialog.oncancel = (event) => {
+  });
+  lifetime.assign(dialog, 'oncancel', (event) => {
     if (saving) {
       event.preventDefault();
     }
-  };
+  });
   return {
     open(options: TileChoice[]) {
       if (!options.length) {

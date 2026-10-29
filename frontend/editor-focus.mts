@@ -1,5 +1,11 @@
+import { EditorLifetime } from './editor-lifetime.mts';
 /** Return mouse-operated editor controls to the canvas without disrupting keyboard use. */
-export function editorFocus(root: HTMLElement, canvas: HTMLCanvasElement, enabled: () => boolean) {
+export function editorFocus(
+  root: HTMLElement,
+  canvas: HTMLCanvasElement,
+  enabled: () => boolean,
+  lifetime: EditorLifetime = new EditorLifetime(),
+) {
   const commands = [
     '.canvas-toolbar button',
     '.composition-tools button',
@@ -27,34 +33,50 @@ export function editorFocus(root: HTMLElement, canvas: HTMLCanvasElement, enable
       canvas.focus({ preventScroll: true });
     }
   }
-  root.addEventListener('click', (event) => {
-    if (event.detail === 0 || !(event.target instanceof Element) || excluded(event.target)) {
-      return;
-    }
-    if (event.target.closest(commands)) {
-      returnToCanvas();
-    }
-  });
-  root.addEventListener('pointerdown', (event) => {
-    pointerSelect =
-      event.target instanceof HTMLSelectElement && event.target.matches(dropdowns)
-        ? event.target
-        : null;
-  });
-  root.addEventListener('change', (event) => {
-    if (event.target === pointerSelect) {
-      pointerSelect = null;
-      returnToCanvas();
-    }
-  });
+  root.addEventListener(
+    'click',
+    (event) => {
+      if (event.detail === 0 || !(event.target instanceof Element) || excluded(event.target)) {
+        return;
+      }
+      if (event.target.closest(commands)) {
+        returnToCanvas();
+      }
+    },
+    { signal: lifetime.signal },
+  );
+  root.addEventListener(
+    'pointerdown',
+    (event) => {
+      pointerSelect =
+        event.target instanceof HTMLSelectElement && event.target.matches(dropdowns)
+          ? event.target
+          : null;
+    },
+    { signal: lifetime.signal },
+  );
+  root.addEventListener(
+    'change',
+    (event) => {
+      if (event.target === pointerSelect) {
+        pointerSelect = null;
+        returnToCanvas();
+      }
+    },
+    { signal: lifetime.signal },
+  );
   document.addEventListener(
     'keydown',
     () => {
       pointerSelect = null;
     },
-    true,
+    { capture: true, signal: lifetime.signal },
   );
-  window.addEventListener('blur', () => {
-    pointerSelect = null;
-  });
+  window.addEventListener(
+    'blur',
+    () => {
+      pointerSelect = null;
+    },
+    { signal: lifetime.signal },
+  );
 }

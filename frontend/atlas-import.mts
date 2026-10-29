@@ -102,12 +102,18 @@ export function folderFromFiles(files: File[]): AtlasFolder {
     },
   };
 }
-export async function chooseFolder(fallback: HTMLInputElement): Promise<AtlasFolder | null> {
+export async function chooseFolder(
+  fallback: HTMLInputElement,
+  signal?: AbortSignal,
+): Promise<AtlasFolder | null> {
+  signal?.throwIfAborted();
   if (window.showDirectoryPicker) {
     try {
-      return await folderFromHandle(
+      const folder = await folderFromHandle(
         await window.showDirectoryPicker({ id: 'forge-atlas', mode: 'read' }),
       );
+      signal?.throwIfAborted();
+      return folder;
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
         return null;
@@ -120,6 +126,7 @@ export async function chooseFolder(fallback: HTMLInputElement): Promise<AtlasFol
     const cleanup = () => {
       fallback.removeEventListener('change', changed);
       fallback.removeEventListener('cancel', cancelled);
+      signal?.removeEventListener('abort', cancelled);
     };
     const changed = () => {
       cleanup();
@@ -135,6 +142,7 @@ export async function chooseFolder(fallback: HTMLInputElement): Promise<AtlasFol
     };
     fallback.addEventListener('change', changed);
     fallback.addEventListener('cancel', cancelled);
+    signal?.addEventListener('abort', cancelled, { once: true });
     fallback.click();
   });
 }

@@ -1,3 +1,4 @@
+import { EditorLifetime } from './editor-lifetime.mts';
 /** Object editing is committed as one undoable change; Cancel leaves the scene intact. */
 import type { LayerEditor } from './layers.mts';
 import type { ObjectDefinition } from './object-definitions.mts';
@@ -17,6 +18,7 @@ export function createObjectInspector(
   current: () => { editor: LayerEditor; item: SceneObject } | null,
   changed: () => void,
   definitions: () => ObjectDefinition[] = () => [],
+  lifetime: EditorLifetime = new EditorLifetime(),
 ) {
   const dialog = element('object-dialog', HTMLDialogElement);
   const form = element('object-form', HTMLFormElement);
@@ -130,7 +132,7 @@ export function createObjectInspector(
         }
       }
       updateStep();
-      toggle.onchange = () => {
+      lifetime.assign(toggle, 'onchange', () => {
         retained = null;
         updateStep();
         control.disabled = !toggle.checked;
@@ -138,12 +140,16 @@ export function createObjectInspector(
           setValue(field.default);
         }
         validateDraft();
-      };
-      control.oninput = control.onchange = () => {
-        retained = null;
-        updateStep();
-        validateDraft();
-      };
+      });
+      lifetime.assign(
+        control,
+        'oninput',
+        lifetime.assign(control, 'onchange', () => {
+          retained = null;
+          updateStep();
+          validateDraft();
+        }),
+      );
       schemaValues.push(() =>
         !toggle.checked
           ? null
@@ -164,7 +170,7 @@ export function createObjectInspector(
     }
     validateDraft();
   }
-  definitionSelect.onchange = () => {
+  lifetime.assign(definitionSelect, 'onchange', () => {
     if (!draft) {
       return;
     }
@@ -181,7 +187,7 @@ export function createObjectInspector(
       error.textContent = String(cause);
       definitionSelect.value = draft.definition ?? '';
     }
-  };
+  });
   function propertyRow(prop: ObjectProperty) {
     const row = document.createElement('div');
     row.className = 'object-property';
@@ -211,27 +217,31 @@ export function createObjectInspector(
     } else {
       value.value = String(prop.value);
     }
-    type.onchange = () => {
+    lifetime.assign(type, 'onchange', () => {
       error.textContent = '';
       valueType();
       value.value = type.value === 'string' ? '' : '0';
       value.checked = false;
-    };
+    });
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.textContent = 'Remove';
     remove.setAttribute('aria-label', `Remove property ${prop.name || 'row'}`);
-    name.oninput = value.oninput = () => {
-      error.textContent = '';
-    };
-    remove.onclick = () => {
+    lifetime.assign(
+      name,
+      'oninput',
+      lifetime.assign(value, 'oninput', () => {
+        error.textContent = '';
+      }),
+    );
+    lifetime.assign(remove, 'onclick', () => {
       row.remove();
       error.textContent = '';
-    };
+    });
     row.append(name, type, value, remove);
     properties.append(row);
   }
-  element('object-add-property', HTMLButtonElement).onclick = () => {
+  lifetime.assign(element('object-add-property', HTMLButtonElement), 'onclick', () => {
     const limit = draft?.definition ? 128 : 256;
     if (
       properties.children.length +
@@ -242,14 +252,14 @@ export function createObjectInspector(
       return;
     }
     propertyRow({ name: '', type: 'string', value: '' });
-  };
-  input('object-default-origin').onchange = () => {
+  });
+  lifetime.assign(input('object-default-origin'), 'onchange', () => {
     for (const id of ['object-origin-x', 'object-origin-y']) {
       input(id).disabled = input('object-default-origin').checked;
     }
-  };
-  element('object-cancel', HTMLButtonElement).onclick = () => dialog.close();
-  form.onsubmit = (event) => {
+  });
+  lifetime.assign(element('object-cancel', HTMLButtonElement), 'onclick', () => dialog.close());
+  lifetime.assign(form, 'onsubmit', (event) => {
     event.preventDefault();
     try {
       const selected = current();
@@ -282,7 +292,7 @@ export function createObjectInspector(
     } catch (cause) {
       error.textContent = cause instanceof Error ? cause.message : String(cause);
     }
-  };
+  });
   function open() {
     const selected = current();
     if (!selected) {

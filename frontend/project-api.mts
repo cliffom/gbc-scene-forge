@@ -6,8 +6,11 @@ import { HttpError } from './errors.mts';
 export class ProjectApi {
   token = '';
   readonly base: string;
-  constructor(base: string) {
+  private signal: AbortSignal;
+
+  constructor(base: string, signal: AbortSignal = new AbortController().signal) {
     this.base = base;
+    this.signal = signal;
   }
   async request(
     route: string,
@@ -15,6 +18,7 @@ export class ProjectApi {
     timeout = 30000,
     base = this.base,
   ): Promise<Response> {
+    this.signal.throwIfAborted();
     const response = await fetch(`${base}/api/${route}`, {
       method: data === undefined ? 'GET' : 'POST',
       headers:
@@ -22,7 +26,7 @@ export class ProjectApi {
           ? {}
           : { 'Content-Type': 'application/json', 'X-Scene-Token': this.token },
       body: data === undefined ? undefined : JSON.stringify(data),
-      signal: AbortSignal.timeout(timeout),
+      signal: AbortSignal.any([this.signal, AbortSignal.timeout(timeout)]),
     });
     if (!response.ok && !(route === 'palette-preflight' && response.status === 422)) {
       const body: unknown = await response.json();
@@ -31,6 +35,8 @@ export class ProjectApi {
     return response;
   }
   async json<T>(route: string, decode: Decoder<T>, data?: unknown): Promise<T> {
-    return decode(await (await this.request(route, data)).json());
+    const value: unknown = await (await this.request(route, data)).json();
+    this.signal.throwIfAborted();
+    return decode(value);
   }
 }
