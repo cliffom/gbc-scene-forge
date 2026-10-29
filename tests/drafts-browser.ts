@@ -65,13 +65,13 @@ import json, sys
 from pathlib import Path
 sys.path.insert(0, 'tests')
 from atlas_fixture import bundle, sprite_bundle
-from gbc_scene_forge.projects import Project
+from gbc_scene_forge.project.application import Project
 root = Path(sys.argv[1])
 p = Project.create(root, 'Draft recovery example')
 for source in (bundle(root.parent / 'art')[0], sprite_bundle(root.parent / 'actors')[0]):
-    p.import_atlas(source, p.catalog()['revision'])
-a = p.create_scene('Room', 12, 10, 8, p.catalog()['revision'])
-b = p.create_scene('Other room', 12, 10, 8, p.catalog()['revision'])
+    p.artwork.import_atlas(source, p.catalog()['revision'])
+a = p.scenes.create('Room', 12, 10, 8, p.catalog()['revision'])
+b = p.scenes.create('Other room', 12, 10, 8, p.catalog()['revision'])
 print(json.dumps({'first': a['id'], 'second': b['id']}))
 `,
     root,

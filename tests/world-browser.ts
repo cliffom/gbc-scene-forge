@@ -19,18 +19,18 @@ try {
     `
 import json, sys
 from pathlib import Path
-from gbc_scene_forge.projects import Project
+from gbc_scene_forge.project.application import Project
 p = Project.create(Path(sys.argv[1]), 'Connected rooms')
-d = p.save_object_definition(dict(name='Door', kind='point', fields=[]), p.catalog()['revision'])['definition_id']
+d = p.objects.save_definition(dict(name='Door', kind='point', fields=[]), p.catalog()['revision'])['definition_id']
 ids = []
 for name in ('Forest', 'Cave'):
-    loaded = p.create_scene(name, 12, 10, 8, p.catalog()['revision'])
+    loaded = p.scenes.create(name, 12, 10, 8, p.catalog()['revision'])
     scene = dict(width=12, height=10, grid=8, next_layer_id=3, next_object_id=3, layers=[
         dict(id=1, name='Ground', type='tilelayer', visible=True, cells=[['']*12 for _ in range(10)]),
         dict(id=2, name='Doors', type='objectgroup', visible=name=='Forest', objects=[
             dict(id=1, kind='point', x=8, y=8, name='South exit', definition=d),
             dict(id=2, kind='point', x=24, y=8, name='North entrance', definition=d)])])
-    p.save_scene(loaded['id'], scene, loaded['revision'], p.catalog()['revision'])
+    p.scenes.save(loaded['id'], scene, loaded['revision'], p.catalog()['revision'])
     ids.append(loaded['id'])
 print(json.dumps(ids))
 `,

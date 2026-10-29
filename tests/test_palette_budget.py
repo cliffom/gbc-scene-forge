@@ -18,10 +18,12 @@ from urllib.request import Request, urlopen
 
 from atlas_fixture import image
 
-from gbc_scene_forge import palette_budget, tiled, transactions
-from gbc_scene_forge.documents import Conflict
-from gbc_scene_forge.projects import Project
-from gbc_scene_forge.standalone import make_handler
+from gbc_scene_forge.adapters.http.server import make_handler
+from gbc_scene_forge.analysis import palette_budget
+from gbc_scene_forge.core.errors import Conflict
+from gbc_scene_forge.formats import tiled
+from gbc_scene_forge.project.application import Project
+from gbc_scene_forge.storage import transactions
 
 FIXTURES = Path(__file__).parent / "fixtures/palette-semantics"
 PROFILE = {"version": 1, "bg_reserved": 0, "obj_reserved": 0}
@@ -34,8 +36,10 @@ class PaletteBudgetTests(unittest.TestCase):
         self.root = Path(self.temp.name) / "world"
         self.project = Project.create(self.root, "Palette examples")
         for name in ("mixed", "bank", "reordered"):
-            self.project.import_atlas(FIXTURES / name / f"{name}.atlas.json", self.revision())
-        self.loaded = self.project.create_scene("Boundary", 16, 4, 8, self.revision())
+            self.project.artwork.import_atlas(
+                FIXTURES / name / f"{name}.atlas.json", self.revision()
+            )
+        self.loaded = self.project.scenes.create("Boundary", 16, 4, 8, self.revision())
         self.scene = self.loaded["scene"]
         self.scene["cells"][0][:4] = [f"mixed/ground/{x}/{y}" for y in range(2) for x in range(2)]
         self.scene["cells"][1][:8] = [f"bank/strip/{x}/0" for x in range(8)]
@@ -44,13 +48,13 @@ class PaletteBudgetTests(unittest.TestCase):
             {"id": 2, "asset": "bank/actor", "x": 16, "y": 16},
         ]
         self.scene["next_object_id"] = 3
-        self.project.save_palette_profile(PROFILE, self.revision())
+        self.project.reports.save_profile(PROFILE, self.revision())
 
     def revision(self):
         return self.project.catalog()["revision"]
 
     def report(self, scene=None):
-        return self.project.palette_report(
+        return self.project.reports.palettes(
             self.loaded["id"],
             self.revision(),
             self.loaded["revision"],
@@ -81,7 +85,7 @@ class PaletteBudgetTests(unittest.TestCase):
         over = self.report()
         self.assertEqual(over["status"], "fail")
         self.assertEqual(over["pools"]["BG"]["required"], 9)
-        self.project.save_palette_profile({**PROFILE, "bg_reserved": None}, self.revision())
+        self.project.reports.save_profile({**PROFILE, "bg_reserved": None}, self.revision())
         self.assertEqual(self.report()["status"], "fail")
 
     def test_linked_animation_closure_keeps_tile_offsets_and_terminates_cycles(self):
@@ -108,8 +112,8 @@ class PaletteBudgetTests(unittest.TestCase):
         }
         path = folder / "motion.atlas.json"
         path.write_text(json.dumps(manifest))
-        self.project.import_atlas(path, self.revision())
-        self.loaded = self.project.load_scene(self.loaded["id"])
+        self.project.artwork.import_atlas(path, self.revision())
+        self.loaded = self.project.scenes.load(self.loaded["id"])
         scene = {"width": 1, "height": 1, "grid": 8, "cells": [["motion/a/0/0"]]}
         report = self.report(scene)
         self.assertEqual(report["pools"]["BG"]["required"], 3)
@@ -136,7 +140,7 @@ class PaletteBudgetTests(unittest.TestCase):
             ),
         ):
             with self.assertRaises(OSError):
-                self.project.save_palette_profile({**PROFILE, "bg_reserved": 2}, self.revision())
+                self.project.reports.save_profile({**PROFILE, "bg_reserved": 2}, self.revision())
         self.project = Project(self.root)
         self.assertEqual(self.project.catalog(), before)
         asset = self.root / "assets/mixed/atlas.png"
@@ -145,15 +149,15 @@ class PaletteBudgetTests(unittest.TestCase):
             self.report()
 
     def test_reservations_unknown_disabled_and_profile_validation(self):
-        self.project.save_palette_profile({**PROFILE, "bg_reserved": 1}, self.revision())
+        self.project.reports.save_profile({**PROFILE, "bg_reserved": 1}, self.revision())
         report = self.report()
         self.assertEqual(report["status"], "fail")
         self.assertEqual(report["pools"]["BG"]["available"], 7)
-        self.project.save_palette_profile({**PROFILE, "obj_reserved": None}, self.revision())
+        self.project.reports.save_profile({**PROFILE, "obj_reserved": None}, self.revision())
         report = self.report()
         self.assertEqual(report["status"], "unverified")
         self.assertIsNone(report["pools"]["OBJ"]["available"])
-        self.project.save_palette_profile(None, self.revision())
+        self.project.reports.save_profile(None, self.revision())
         self.assertEqual(self.report()["status"], "disabled")
         for value in (
             {},
@@ -165,7 +169,7 @@ class PaletteBudgetTests(unittest.TestCase):
             {**PROFILE, "extra": 1},
         ):
             with self.subTest(value=value), self.assertRaises(ValueError):
-                self.project.save_palette_profile(value, self.revision())
+                self.project.reports.save_profile(value, self.revision())
 
     def test_obj_boundary_separate_pools_and_missing_metadata(self):
         document = self.project.catalog()["project"]
@@ -217,11 +221,11 @@ class PaletteBudgetTests(unittest.TestCase):
         self.assertEqual([s["source_cells"] for s in sources], [[0, 4], [1, 5]])
 
     def test_persistence_move_export_reimport_and_revision_guards(self):
-        self.loaded = self.project.save_scene(
+        self.loaded = self.project.scenes.save(
             self.loaded["id"], self.scene, self.loaded["revision"], self.revision()
         )
         self.assertEqual(
-            self.project.palette_report(
+            self.project.reports.palettes(
                 self.loaded["id"], self.revision(), self.loaded["revision"]
             )["status"],
             "pass",
@@ -232,22 +236,26 @@ class PaletteBudgetTests(unittest.TestCase):
             archive.extractall(exported)
         reopened = Project(exported)
         self.assertEqual(reopened.catalog()["project"]["gbc_palette_profile"], PROFILE)
-        self.assertNotIn("gbc_palette_profile", self.project.load_scene(self.loaded["id"])["scene"])
+        self.assertNotIn(
+            "gbc_palette_profile", self.project.scenes.load(self.loaded["id"])["scene"]
+        )
         moved = Path(self.temp.name) / "moved"
         shutil.move(str(self.root), moved)
         self.root = moved
         self.project = Project(moved)
         self.assertEqual(self.report()["pools"]["BG"]["required"], 8)
         old = self.revision()
-        self.project.save_palette_profile({**PROFILE, "bg_reserved": 1}, old)
+        self.project.reports.save_profile({**PROFILE, "bg_reserved": 1}, old)
         with self.assertRaises(Conflict):
-            self.project.palette_report(self.loaded["id"], old, self.loaded["revision"], self.scene)
+            self.project.reports.palettes(
+                self.loaded["id"], old, self.loaded["revision"], self.scene
+            )
         with self.assertRaises(Conflict):
-            self.project.save_palette_profile(PROFILE, old)
-        self.project.import_atlas(
+            self.project.reports.save_profile(PROFILE, old)
+        self.project.artwork.import_atlas(
             FIXTURES / "mixed/mixed.atlas.json", self.revision(), reimport=True
         )
-        self.loaded = self.project.load_scene(self.loaded["id"])
+        self.loaded = self.project.scenes.load(self.loaded["id"])
         self.assertEqual(self.report()["status"], "fail")
         path = self.root / f"scenes/{self.loaded['id']}.tmj"
         path.write_bytes(path.read_bytes() + b"\n")
@@ -263,11 +271,11 @@ class PaletteBudgetTests(unittest.TestCase):
             return original(*args)
 
         with (
-            patch("gbc_scene_forge.palette_budget.report", side_effect=edit),
+            patch("gbc_scene_forge.analysis.palette_budget.report", side_effect=edit),
             self.assertRaises(Conflict),
         ):
             self.report()
-        self.loaded = self.project.load_scene(self.loaded["id"])
+        self.loaded = self.project.scenes.load(self.loaded["id"])
         command = [
             sys.executable,
             "-m",
@@ -280,7 +288,7 @@ class PaletteBudgetTests(unittest.TestCase):
         passing = subprocess.run(command, capture_output=True, text=True)
         self.assertEqual(passing.returncode, 0, passing.stderr)
         self.assertEqual(json.loads(passing.stdout)["status"], "pass")
-        self.project.save_palette_profile(None, self.revision())
+        self.project.reports.save_profile(None, self.revision())
         self.assertEqual(subprocess.run(command, capture_output=True).returncode, 1)
 
     def test_http_preflight_failure_and_token_protection(self):

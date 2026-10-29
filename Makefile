@@ -16,7 +16,7 @@ FRONTEND_TESTS := blockout model world object-definitions scene-size composition
 FRONTEND_TEST_TARGETS := $(addprefix test-frontend-,$(FRONTEND_TESTS))
 .DEFAULT_GOAL := help
 
-.PHONY: help setup check-deps deps frontend run demo check test test-python test-frontend test-browser test-blockout-browser test-layout-browser test-first-use-browser test-standalone-browser test-drafts-browser test-compositions-browser test-definitions-browser test-world-browser test-diagnostics-browser test-tiled lint typecheck format build check-dist clean clean-demo $(FRONTEND_TEST_TARGETS)
+.PHONY: typecheck-python help setup check-deps deps frontend run demo check test test-python test-frontend test-browser test-blockout-browser test-layout-browser test-first-use-browser test-standalone-browser test-drafts-browser test-compositions-browser test-definitions-browser test-world-browser test-diagnostics-browser test-tiled lint typecheck format build check-dist clean clean-demo $(FRONTEND_TEST_TARGETS)
 help:
 	@echo 'Getting started:'
 	@echo '  make setup PYTHON=python3.13  Install locked dependencies and build the UI'
@@ -50,6 +50,7 @@ help:
 	@echo '  make test-tiled              Check Tiled interoperability (TILED=/path RASTERIZER=/path)'
 	@echo '  make lint / make format      Check or apply source formatting and lint rules'
 	@echo '  make typecheck               Run strict TypeScript checking'
+	@echo '  make typecheck-python        Check typed Python storage/service boundaries'
 	@echo '  make build / make check-dist Build distributions / test the installed wheel'
 	@echo '  make clean                   Remove build outputs and node_modules; keep projects'
 	@echo '  make clean-demo              Delete the default .demo/ sample and its edits'
@@ -78,7 +79,7 @@ run: frontend
 	$(POETRY) run python -m gbc_scene_forge $(if $(PROJECT),--project "$(PROJECT)",--project-root "$(PROJECT_ROOT)") --port "$(PORT)"
 
 demo: frontend
-	$(POETRY) run python -m gbc_scene_forge.sample --reset --root "$(DEMO_ROOT)" --port "$(PORT)"
+	$(POETRY) run python -m gbc_scene_forge.adapters.sample --reset --root "$(DEMO_ROOT)" --port "$(PORT)"
 
 check: lint test test-browser
 
@@ -124,7 +125,11 @@ test-drafts-browser: frontend
 test-tiled:
 	$(POETRY) run python tests/tiled_interop.py --tiled "$(TILED)" --rasterizer "$(RASTERIZER)"
 
+typecheck-python:
+	$(POETRY) run mypy
+
 lint:
+	$(MAKE) typecheck-python
 	$(POETRY) run ruff check .
 	$(POETRY) run ruff format --check .
 	$(NPM) run lint

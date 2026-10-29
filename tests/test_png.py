@@ -4,7 +4,7 @@ import struct
 import unittest
 import zlib
 
-from gbc_scene_forge.png import decode
+from gbc_scene_forge.artwork.png import decode
 
 
 def chunk(kind, data):

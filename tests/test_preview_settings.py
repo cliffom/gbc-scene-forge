@@ -11,10 +11,13 @@ from unittest.mock import patch
 
 from atlas_fixture import bundle, sprite_bundle
 
-from gbc_scene_forge import exporting, preview_settings, transactions
-from gbc_scene_forge.documents import Conflict
-from gbc_scene_forge.projects import MANIFEST, Project
-from gbc_scene_forge.transactions import digest
+from gbc_scene_forge.core.errors import Conflict
+from gbc_scene_forge.formats import exporting
+from gbc_scene_forge.project.application import Project
+from gbc_scene_forge.project.schema import MANIFEST
+from gbc_scene_forge.scene_objects import preview as preview_settings
+from gbc_scene_forge.storage import transactions
+from gbc_scene_forge.storage.files import digest
 
 
 class PreviewSettingsTests(unittest.TestCase):
@@ -39,7 +42,7 @@ class PreviewSettingsTests(unittest.TestCase):
             },
         ]
         self.path.write_text(json.dumps(self.manifest))
-        self.project.import_atlas(self.path, self.revision())
+        self.project.artwork.import_atlas(self.path, self.revision())
         self.settings = preview_settings.defaults()
         self.settings.update(playback_speed=2, movement_speed=64, check_collisions=True)
         self.settings["mappings"] = {"actors/idle": {"idle:down": "idle", "walk:left": "walk"}}
@@ -51,17 +54,17 @@ class PreviewSettingsTests(unittest.TestCase):
         return self.project.catalog()["revision"]
 
     def test_settings_reopen_without_rewriting_scenes_or_assets_and_conflict(self):
-        loaded = self.project.create_scene("Room", 7, 5, 8, self.revision())
-        before = self.project.load_scene(loaded["id"])
+        loaded = self.project.scenes.create("Room", 7, 5, 8, self.revision())
+        before = self.project.scenes.load(loaded["id"])
         files = self.project.catalog()["project"]["files"]
         revision = self.revision()
-        self.project.save_preview_settings(self.settings, revision)
+        self.project.objects.save_preview(self.settings, revision)
         reopened = Project(self.project.root)
         self.assertEqual(reopened.catalog()["project"]["preview"]["sprite"], self.settings)
-        self.assertEqual(reopened.load_scene(loaded["id"]), before)
+        self.assertEqual(reopened.scenes.load(loaded["id"]), before)
         self.assertEqual(reopened.catalog()["project"]["files"], files)
         with self.assertRaises(Conflict):
-            self.project.save_preview_settings(self.settings, revision)
+            self.project.objects.save_preview(self.settings, revision)
         self.assertEqual(self.project.catalog()["project"]["preview"]["sprite"], self.settings)
 
     def test_interrupted_settings_save_recovers_previous_preferences(self):
@@ -80,7 +83,7 @@ class PreviewSettingsTests(unittest.TestCase):
             ),
         ):
             with self.assertRaises(OSError):
-                self.project.save_preview_settings(self.settings, before["revision"])
+                self.project.objects.save_preview(self.settings, before["revision"])
         self.assertEqual(Project(self.project.root).catalog(), before)
 
     def test_grid_split_animations_keep_ids_after_reordering_regions(self):
@@ -88,10 +91,10 @@ class PreviewSettingsTests(unittest.TestCase):
         for region in manifest["regions"]:
             region.update(x=0, width=16)
         path.write_text(json.dumps(manifest))
-        self.project.import_atlas(path, self.revision())
+        self.project.artwork.import_atlas(path, self.revision())
         manifest["regions"].reverse()
         path.write_text(json.dumps(manifest))
-        self.project.import_atlas(path, self.revision(), reimport=True)
+        self.project.artwork.import_atlas(path, self.revision(), reimport=True)
         payload, _ = self.project.export_bundle("project", self.revision())
         with zipfile.ZipFile(io.BytesIO(payload)) as archive:
             tileset = json.loads(archive.read("assets/terrain/grid-8.tsj"))
@@ -124,27 +127,27 @@ class PreviewSettingsTests(unittest.TestCase):
         before = (self.project.root / MANIFEST).read_bytes()
         for invalid_patch in invalid:
             with self.subTest(patch=invalid_patch), self.assertRaises(ValueError):
-                self.project.save_preview_settings(
+                self.project.objects.save_preview(
                     {**self.settings, **invalid_patch}, self.revision()
                 )
             self.assertEqual((self.project.root / MANIFEST).read_bytes(), before)
 
     def test_reimport_and_atlas_deletion_prune_obsolete_settings(self):
-        self.project.save_preview_settings(self.settings, self.revision())
+        self.project.objects.save_preview(self.settings, self.revision())
         self.manifest["animations"] = self.manifest["animations"][:1]
         self.path.write_text(json.dumps(self.manifest))
-        self.project.import_atlas(self.path, self.revision(), reimport=True)
+        self.project.artwork.import_atlas(self.path, self.revision(), reimport=True)
         settings = self.project.catalog()["project"]["preview"]["sprite"]
         self.assertEqual(settings["mappings"], {"actors/idle": {"idle:down": "idle"}})
-        self.project.delete_atlas("actors", self.revision())
+        self.project.artwork.delete_atlas("actors", self.revision())
         settings = self.project.catalog()["project"]["preview"]["sprite"]
         self.assertEqual(settings["mappings"], {})
         self.assertEqual(settings["selections"], {})
 
     def test_export_keeps_original_timing_and_local_ids_and_reopens_portably(self):
         path, _ = bundle(self.root / "terrain")
-        self.project.import_atlas(path, self.revision())
-        self.project.save_preview_settings(self.settings, self.revision())
+        self.project.artwork.import_atlas(path, self.revision())
+        self.project.objects.save_preview(self.settings, self.revision())
         before = {p: p.read_bytes() for p in self.project.root.rglob("*") if p.is_file()}
         payload, _ = self.project.export_bundle("project", self.revision())
         self.assertEqual(payload, self.project.export_bundle("project", self.revision())[0])
@@ -177,7 +180,7 @@ class PreviewSettingsTests(unittest.TestCase):
         self.assertEqual(reopened.catalog()["project"]["preview"]["sprite"], self.settings)
         for path, expected in reopened.catalog()["project"]["files"].items():
             self.assertEqual(digest(files[path]), expected)
-        reopened.create_scene("Room", 2, 2, 8, reopened.catalog()["revision"])
+        reopened.scenes.create("Room", 2, 2, 8, reopened.catalog()["revision"])
         self.assertEqual(
             {p: p.read_bytes() for p in self.project.root.rglob("*") if p.is_file()}, before
         )
@@ -185,7 +188,7 @@ class PreviewSettingsTests(unittest.TestCase):
     def test_shared_starting_tile_is_reported_instead_of_choosing_a_sequence(self):
         self.manifest["animations"][1]["frames"][0]["region"] = "idle"
         self.path.write_text(json.dumps(self.manifest))
-        self.project.import_atlas(self.path, self.revision(), reimport=True)
+        self.project.artwork.import_atlas(self.path, self.revision(), reimport=True)
         payload, _ = self.project.export_bundle("project", self.revision())
         with zipfile.ZipFile(io.BytesIO(payload)) as archive:
             sprite = json.loads(archive.read("assets/actors/sprites.tsj"))

@@ -3,7 +3,7 @@
 import argparse
 from pathlib import Path
 
-from gbc_scene_forge.projects import Project
+from gbc_scene_forge.project.application import Project
 
 
 def prepare(root, artwork_root=None):
@@ -12,12 +12,14 @@ def prepare(root, artwork_root=None):
         Path(artwork_root) if artwork_root else Path(__file__).parent / "fixtures/palette-semantics"
     )
     for name in ("mixed", "bank", "reordered"):
-        project.import_atlas(fixtures / name / f"{name}.atlas.json", project.catalog()["revision"])
-    project.save_palette_profile(
+        project.artwork.import_atlas(
+            fixtures / name / f"{name}.atlas.json", project.catalog()["revision"]
+        )
+    project.reports.save_profile(
         {"version": 1, "bg_reserved": 0, "obj_reserved": 0}, project.catalog()["revision"]
     )
     for title, over in (("Eight background palettes", False), ("Nine background palettes", True)):
-        loaded = project.create_scene(title, 16, 4, 8, project.catalog()["revision"])
+        loaded = project.scenes.create(title, 16, 4, 8, project.catalog()["revision"])
         scene = loaded["scene"]
         scene["cells"][0][:4] = [f"mixed/ground/{x}/{y}" for y in range(2) for x in range(2)]
         scene["cells"][1][:8] = [f"bank/strip/{x}/0" for x in range(8)]
@@ -28,7 +30,7 @@ def prepare(root, artwork_root=None):
             {"id": 2, "asset": "bank/actor", "x": 16, "y": 16},
         ]
         scene["next_object_id"] = 3
-        project.save_scene(loaded["id"], scene, loaded["revision"], project.catalog()["revision"])
+        project.scenes.save(loaded["id"], scene, loaded["revision"], project.catalog()["revision"])
     return project
 
 

@@ -16,11 +16,13 @@ from uuid import uuid4
 
 from atlas_fixture import sprite_bundle
 
-from gbc_scene_forge import object_definitions as definitions
-from gbc_scene_forge import tiled
-from gbc_scene_forge.documents import Conflict
-from gbc_scene_forge.projects import MANIFEST, Project
-from gbc_scene_forge.standalone import make_handler
+from gbc_scene_forge.adapters.http.server import make_handler
+from gbc_scene_forge.analysis import objects as object_report
+from gbc_scene_forge.core.errors import Conflict
+from gbc_scene_forge.formats import tiled
+from gbc_scene_forge.project.application import Project
+from gbc_scene_forge.project.schema import MANIFEST
+from gbc_scene_forge.scene_objects import definitions
 
 
 class DefinitionTests(unittest.TestCase):
@@ -29,7 +31,7 @@ class DefinitionTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.folder = Path(self.temp.name)
         self.project = Project.create(self.folder / "world", "Definitions")
-        self.loaded = self.project.create_scene("Room", 8, 8, 8, self.revision())
+        self.loaded = self.project.scenes.create("Room", 8, 8, 8, self.revision())
         self.path = self.project.root / f"scenes/{self.loaded['id']}.tmj"
         self.definition = self.store(
             {
@@ -79,7 +81,7 @@ class DefinitionTests(unittest.TestCase):
         return self.project.catalog()["revision"]
 
     def store(self, value):
-        result = self.project.save_object_definition(value, self.revision())
+        result = self.project.objects.save_definition(value, self.revision())
         return next(
             d
             for d in result["project"]["object_definitions"]["definitions"]
@@ -87,7 +89,7 @@ class DefinitionTests(unittest.TestCase):
         )
 
     def save(self):
-        self.loaded = self.project.save_scene(
+        self.loaded = self.project.scenes.save(
             self.loaded["id"], self.scene, self.loaded["revision"], self.revision()
         )
         return self.loaded
@@ -106,7 +108,7 @@ class DefinitionTests(unittest.TestCase):
         changed["fields"][3]["default"] = 9
         self.store(changed)
         self.assertEqual(self.path.read_bytes(), original)
-        reopened = Project(self.project.root).load_scene(self.loaded["id"])
+        reopened = Project(self.project.root).scenes.load(self.loaded["id"])
         self.assertEqual(reopened["scene"], self.scene)
         effective, findings = definitions.resolve(self.item, [changed])
         self.assertFalse(findings)
@@ -124,7 +126,7 @@ class DefinitionTests(unittest.TestCase):
         self.save()
         changed["fields"][0]["default"] = "south"
         self.store(changed)
-        reloaded = self.project.load_scene(self.loaded["id"])["scene"]["layers"][0]["objects"][0]
+        reloaded = self.project.scenes.load(self.loaded["id"])["scene"]["layers"][0]["objects"][0]
         effective, _ = definitions.resolve(reloaded, [changed])
         self.assertEqual(next(p["value"] for p in effective if p["name"] == "facing"), "north")
 
@@ -139,7 +141,7 @@ class DefinitionTests(unittest.TestCase):
         changed["fields"].append({"name": "destination", "type": "string", "required": True})
         self.store(changed)
         before = self.path.read_bytes()
-        report = self.project.object_report(
+        report = self.project.reports.objects(
             self.loaded["id"], self.revision(), self.loaded["revision"]
         )
         self.assertEqual(
@@ -152,17 +154,19 @@ class DefinitionTests(unittest.TestCase):
             )
         self.assertEqual(
             report,
-            self.project.object_report(self.loaded["id"], self.revision(), self.loaded["revision"]),
+            self.project.reports.objects(
+                self.loaded["id"], self.revision(), self.loaded["revision"]
+            ),
         )
         self.assertEqual(self.path.read_bytes(), before)
         self.save()  # Invalid instances remain saveable and repairable.
         self.assertEqual(self.loaded["scene"], self.scene)
-        self.project.delete_object_definition(changed["id"], self.revision())
-        self.assertEqual(self.project.load_scene(self.loaded["id"])["scene"], self.scene)
+        self.project.objects.delete_definition(changed["id"], self.revision())
+        self.assertEqual(self.project.scenes.load(self.loaded["id"])["scene"], self.scene)
         self.assertEqual(
-            self.project.object_report(self.loaded["id"], self.revision(), self.loaded["revision"])[
-                "findings"
-            ][0]["code"],
+            self.project.reports.objects(
+                self.loaded["id"], self.revision(), self.loaded["revision"]
+            )["findings"][0]["code"],
             "missing-definition",
         )
 
@@ -218,18 +222,18 @@ class DefinitionTests(unittest.TestCase):
                 if scope == "project":
                     archive.extractall(self.folder / "moved")
                     moved = Project(self.folder / "moved")
-                    self.assertEqual(moved.load_scene(self.loaded["id"])["scene"], self.scene)
+                    self.assertEqual(moved.scenes.load(self.loaded["id"])["scene"], self.scene)
         self.assertEqual(self.path.read_bytes(), original)
-        result = self.project.duplicate_scene(
+        result = self.project.scenes.duplicate(
             self.loaded["id"], "Copy", self.loaded["revision"], self.revision()
         )
-        copied = self.project.load_scene(result["duplicated"])
+        copied = self.project.scenes.load(result["duplicated"])
         self.assertEqual(copied["scene"], self.scene)
 
     def test_sprite_rectangle_definitions_and_atlas_dependency(self):
         path, _ = sprite_bundle(self.folder / "art")
-        self.project.import_atlas(path, self.revision())
-        self.loaded = self.project.load_scene(self.loaded["id"])
+        self.project.artwork.import_atlas(path, self.revision())
+        self.loaded = self.project.scenes.load(self.loaded["id"])
         sprite = self.store(
             {"name": "Guard", "kind": "sprite", "asset": "actors/idle", "fields": []}
         )
@@ -259,28 +263,28 @@ class DefinitionTests(unittest.TestCase):
         self.save()
         self.assertEqual(self.loaded["scene"], self.scene)
         with self.assertRaisesRegex(ValueError, "definition Guard"):
-            self.project.delete_atlas("actors", self.revision())
+            self.project.artwork.delete_atlas("actors", self.revision())
         # A definition alone also protects artwork, without a scene instance.
         self.scene["layers"][0]["objects"] = [self.item]
         self.save()
         with self.assertRaisesRegex(ValueError, "definition Guard"):
-            self.project.delete_atlas("actors", self.revision())
-        self.project.delete_object_definition(sprite["id"], self.revision())
-        self.project.delete_atlas("actors", self.revision())
+            self.project.artwork.delete_atlas("actors", self.revision())
+        self.project.objects.delete_definition(sprite["id"], self.revision())
+        self.project.artwork.delete_atlas("actors", self.revision())
 
     def test_revision_conflicts_and_interrupted_library_write(self):
         old = self.revision()
         self.store({**self.definition, "name": "Renamed"})
         with self.assertRaises(Conflict):
-            self.project.save_object_definition(self.definition, old)
+            self.project.objects.save_definition(self.definition, old)
         with self.assertRaises(Conflict):
-            self.project.delete_object_definition(self.definition["id"], old)
+            self.project.objects.delete_definition(self.definition["id"], old)
         self.save()
         with self.assertRaises(Conflict):
-            self.project.object_report(self.loaded["id"], self.revision(), "stale")
+            self.project.reports.objects(self.loaded["id"], self.revision(), "stale")
         original = (self.project.root / MANIFEST).read_bytes()
         # Simulate an interruption after replacement: recovery rolls the transaction back.
-        from gbc_scene_forge import transactions
+        from gbc_scene_forge.storage import transactions
 
         replace = transactions.atomic_write
 
@@ -333,7 +337,7 @@ class DefinitionTests(unittest.TestCase):
         ]
         self.save()
         self.assertEqual(
-            Project(self.project.root).load_scene(self.loaded["id"])["scene"], self.scene
+            Project(self.project.root).scenes.load(self.loaded["id"])["scene"], self.scene
         )
         self.assertEqual(len(definitions.resolve(self.item, [definition])[0]), 256)
         # Detaching preserves the complete effective set as ordinary Tiled properties.
@@ -341,7 +345,7 @@ class DefinitionTests(unittest.TestCase):
         self.item["properties"] = effective
         del self.item["definition"]
         self.save()
-        reopened = Project(self.project.root).load_scene(self.loaded["id"])["scene"]
+        reopened = Project(self.project.root).scenes.load(self.loaded["id"])["scene"]
         self.assertEqual(reopened, self.scene)
         self.assertEqual(len(reopened["layers"][0]["objects"][0]["properties"]), 256)
         self.item["properties"].append({"name": "overflow", "type": "int", "value": 0})
@@ -375,22 +379,24 @@ class DefinitionTests(unittest.TestCase):
         unsaved = copy.deepcopy(self.scene)
         unsaved["layers"][0]["objects"][0]["properties"] = []
         original = self.path.read_bytes()
-        result = self.project.object_report(
+        result = self.project.reports.objects(
             self.loaded["id"], self.revision(), self.loaded["revision"], unsaved
         )
         self.assertEqual(result["findings"][0]["code"], "required")
         self.assertEqual(self.path.read_bytes(), original)
-        analyze = definitions.report
+        analyze = object_report.report
 
         def external_edit(*args):
             self.path.write_bytes(original + b"\n")
             return analyze(*args)
 
         with (
-            patch.object(definitions, "report", side_effect=external_edit),
+            patch.object(object_report, "report", side_effect=external_edit),
             self.assertRaises(Conflict),
         ):
-            self.project.object_report(self.loaded["id"], self.revision(), self.loaded["revision"])
+            self.project.reports.objects(
+                self.loaded["id"], self.revision(), self.loaded["revision"]
+            )
 
     def test_http_mutation_token_and_report_conflicts(self):
         self.save()

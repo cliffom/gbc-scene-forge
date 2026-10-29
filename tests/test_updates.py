@@ -11,9 +11,10 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 from uuid import uuid4
 
-from gbc_scene_forge.projects import MANIFEST, Project
-from gbc_scene_forge.standalone import make_handler, make_root_handler
-from gbc_scene_forge.updates import Updates
+from gbc_scene_forge.adapters.http.server import make_handler, make_root_handler
+from gbc_scene_forge.project.application import Project
+from gbc_scene_forge.project.schema import MANIFEST
+from gbc_scene_forge.project.updates import Updates
 
 
 class UpdateTests(unittest.TestCase):
@@ -22,10 +23,10 @@ class UpdateTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.folder = Path(self.temp.name)
         self.project = Project.create(self.folder / "world", "World", starter="blockout")
-        self.scene = self.project.create_blockout_scene(
+        self.scene = self.project.planning.create_blockout(
             "Plan", {}, self.project.catalog()["revision"]
         )
-        self.updates = Updates(self.project)
+        self.updates = Updates(self.project.store)
 
     def test_idle_probes_do_not_read_or_decode_content(self):
         expected = self.updates.revisions(self.scene["id"])
@@ -55,12 +56,14 @@ class UpdateTests(unittest.TestCase):
         writer = Project(self.project.root)
         before = self.updates.snapshot(self.scene["id"])
         self.assertEqual(before["scene"]["revision"], self.scene["revision"])
-        writer.rename_scene(self.scene["id"], "Renamed", self.scene["revision"], before["revision"])
+        writer.scenes.rename(
+            self.scene["id"], "Renamed", self.scene["revision"], before["revision"]
+        )
         after = self.updates.snapshot(self.scene["id"])
         self.assertEqual(after["project"]["scenes"][0]["name"], "Renamed")
         self.assertEqual(after["scene"]["name"], "Renamed")
         self.assertNotEqual(before["revision"], after["revision"])
-        writer.delete_scene(self.scene["id"], self.scene["revision"], after["revision"])
+        writer.scenes.delete(self.scene["id"], self.scene["revision"], after["revision"])
         self.assertIsNone(self.updates.snapshot(self.scene["id"])["scene"])
 
     def test_unregistered_scene_files_are_not_probed(self):

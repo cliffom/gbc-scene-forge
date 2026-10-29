@@ -16,7 +16,7 @@ let chrome: Chrome | undefined;
 let url = '';
 async function start(root: string, fixture = true, single = true, demo = false) {
   const args = demo
-    ? ['-m', 'gbc_scene_forge.sample', '--root', root, '--reset', '--port', '0']
+    ? ['-m', 'gbc_scene_forge.adapters.sample', '--root', root, '--reset', '--port', '0']
     : fixture
       ? [
           'tests/serve_standalone_fixture.py',
@@ -156,8 +156,8 @@ try {
       `
 import json, sys, zipfile
 from pathlib import Path
-from gbc_scene_forge.projects import Project
-from gbc_scene_forge import png
+from gbc_scene_forge.project.application import Project
+from gbc_scene_forge.artwork import png
 root = Path(sys.argv[2]).resolve()
 with zipfile.ZipFile(sys.argv[1]) as archive:
     assert archive.testzip() is None
@@ -177,7 +177,7 @@ for scene in report['scenes']:
 result = {'report': report, 'names': names, 'maps': {s['id']: json.loads((root/s['path']).read_bytes()) for s in report['scenes']}}
 if (root/'forge.project.json').exists():
     project = Project(root)
-    result['reopened'] = {s['id']: project.load_scene(s['id'])['scene'] for s in report['scenes']}
+    result['reopened'] = {s['id']: project.scenes.load(s['id'])['scene'] for s in report['scenes']}
 print(json.dumps(result))
 `,
       zipPath,
@@ -577,7 +577,7 @@ print(json.dumps(result))
     `
 from pathlib import Path
 import sys
-from gbc_scene_forge import png
+from gbc_scene_forge.artwork import png
 path = Path(sys.argv[1])
 width, height, pixels = png.decode(path.read_bytes())
 rows = []
@@ -2348,7 +2348,7 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
       `
 import sys
 from pathlib import Path
-from gbc_scene_forge import png
+from gbc_scene_forge.artwork import png
 width, height, expected = png.decode(Path(sys.argv[1]).read_bytes())
 actual_width, actual_height, actual = png.decode(Path(sys.argv[2]).read_bytes())
 assert (actual_width, actual_height) == (width, height) == (224, 160)

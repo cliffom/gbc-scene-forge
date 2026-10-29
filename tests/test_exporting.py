@@ -12,10 +12,12 @@ from unittest.mock import patch
 
 from atlas_fixture import bundle, sprite_bundle
 
-from gbc_scene_forge import exporting, tiled
-from gbc_scene_forge.documents import Conflict, json_text
-from gbc_scene_forge.projects import MANIFEST, Project
-from gbc_scene_forge.transactions import digest
+from gbc_scene_forge.core.errors import Conflict
+from gbc_scene_forge.core.serialization import json_text
+from gbc_scene_forge.formats import exporting, tiled
+from gbc_scene_forge.project.application import Project
+from gbc_scene_forge.project.schema import MANIFEST
+from gbc_scene_forge.storage.files import digest
 
 
 class ExportTests(unittest.TestCase):
@@ -25,10 +27,10 @@ class ExportTests(unittest.TestCase):
         self.folder = Path(self.temp.name)
         self.project = Project.create(self.folder / "world", "Portable world")
         path, _ = bundle(self.folder / "input")
-        self.project.import_atlas(path, self.revision())
+        self.project.artwork.import_atlas(path, self.revision())
         path, _ = sprite_bundle(self.folder / "sprites")
-        self.project.import_atlas(path, self.revision())
-        loaded = self.project.create_scene("Room", 7, 5, 8, self.revision())
+        self.project.artwork.import_atlas(path, self.revision())
+        loaded = self.project.scenes.create("Room", 7, 5, 8, self.revision())
         self.scene = {
             "width": 7,
             "height": 5,
@@ -80,11 +82,11 @@ class ExportTests(unittest.TestCase):
             ],
         }
         self.scene["layers"][0]["cells"][1][1] = "terrain/earth/0/0"
-        self.loaded = self.project.save_scene(
+        self.loaded = self.project.scenes.save(
             loaded["id"], self.scene, loaded["revision"], self.revision()
         )
-        self.other = self.project.create_scene("Other room", 4, 4, 16, self.revision())
-        self.project.save_tile_metadata(
+        self.other = self.project.scenes.create("Other room", 4, 4, 16, self.revision())
+        self.project.artwork.set_metadata(
             "terrain",
             "8",
             "terrain/earth/0/0",
@@ -196,8 +198,8 @@ class ExportTests(unittest.TestCase):
         # Exported tilesets gain native animation data, so their inventory hashes change.
         original["files"] = {path: digest(files[path]) for path in original["files"]}
         self.assertEqual(reopened.catalog()["project"], original)
-        self.assertEqual(reopened.load_scene(self.loaded["id"])["scene"], self.scene)
-        reopened.create_scene("New room", 3, 3, 8, reopened.catalog()["revision"])
+        self.assertEqual(reopened.scenes.load(self.loaded["id"])["scene"], self.scene)
+        reopened.scenes.create("New room", 3, 3, 8, reopened.catalog()["revision"])
 
     def test_canvas_override_changes_only_downloaded_map(self):
         before = self.source_files()
@@ -226,7 +228,7 @@ class ExportTests(unittest.TestCase):
 
     def test_stale_project_or_scene_revisions_are_rejected(self):
         revision = self.revision()
-        self.project.create_scene("Another", 2, 2, 8, revision)
+        self.project.scenes.create("Another", 2, 2, 8, revision)
         with self.assertRaisesRegex(Conflict, "Project changed"):
             self.project.export_bundle("project", revision)
         before = self.map_path.read_bytes() + b"\n"

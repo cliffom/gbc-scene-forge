@@ -286,7 +286,7 @@ try {
   // Artwork import uses a separate native writer (not a new browser import).
   await promisify(execFile)('.venv/bin/python', [
     '-c',
-    "import sys;from pathlib import Path;sys.path.insert(0,'tests');from atlas_fixture import bundle;from gbc_scene_forge.projects import Project;p,_=bundle(Path(sys.argv[2]));w=Project(sys.argv[1]);w.import_atlas(p,w.catalog()['revision'])",
+    "import sys;from pathlib import Path;sys.path.insert(0,'tests');from atlas_fixture import bundle;from gbc_scene_forge.project.application import Project;p,_=bundle(Path(sys.argv[2]));w=Project(sys.argv[1]);w.artwork.import_atlas(p,w.catalog()['revision'])",
     root,
     join(folder, 'external-art'),
   ]);
@@ -338,7 +338,7 @@ try {
   // Delete an unused atlas while its brush is active. Never select a substitute.
   await promisify(execFile)('.venv/bin/python', [
     '-c',
-    "import sys;from pathlib import Path;sys.path.insert(0,'tests');from atlas_fixture import bundle;from gbc_scene_forge.projects import Project;p,_=bundle(Path(sys.argv[2]),'spare');w=Project(sys.argv[1]);w.import_atlas(p,w.catalog()['revision'])",
+    "import sys;from pathlib import Path;sys.path.insert(0,'tests');from atlas_fixture import bundle;from gbc_scene_forge.project.application import Project;p,_=bundle(Path(sys.argv[2]),'spare');w=Project(sys.argv[1]);w.artwork.import_atlas(p,w.catalog()['revision'])",
     root,
     join(folder, 'spare-art'),
   ]);
@@ -399,7 +399,7 @@ try {
   console.log('Refresh: automatic and manual adoption during sprite animation');
   const { stdout: spriteOutput } = await promisify(execFile)('.venv/bin/python', [
     '-c',
-    "import json,sys;from pathlib import Path;sys.path.insert(0,'tests');from atlas_fixture import sprite_bundle;from gbc_scene_forge.projects import Project;p,m=sprite_bundle(Path(sys.argv[2]));m['animations'][0]['frames']=[dict(region='idle',duration_ms=120),dict(region='idle',duration_ms=240)];p.write_text(json.dumps(m));w=Project(sys.argv[1]);w.import_atlas(p,w.catalog()['revision']);s=w.load_scene(sys.argv[3]);i=s['scene']['next_object_id'];l=next(l for l in s['scene']['layers'] if l['name']=='Camera guides');l['objects'].append(dict(id=i,asset='actors/idle',x=80,y=80));s['scene']['next_object_id']=i+1;w.save_scene(s['id'],s['scene'],s['revision'],w.catalog()['revision']);print(i)",
+    "import json,sys;from pathlib import Path;sys.path.insert(0,'tests');from atlas_fixture import sprite_bundle;from gbc_scene_forge.project.application import Project;p,m=sprite_bundle(Path(sys.argv[2]));m['animations'][0]['frames']=[dict(region='idle',duration_ms=120),dict(region='idle',duration_ms=240)];p.write_text(json.dumps(m));w=Project(sys.argv[1]);w.artwork.import_atlas(p,w.catalog()['revision']);s=w.scenes.load(sys.argv[3]);i=s['scene']['next_object_id'];l=next(l for l in s['scene']['layers'] if l['name']=='Camera guides');l['objects'].append(dict(id=i,asset='actors/idle',x=80,y=80));s['scene']['next_object_id']=i+1;w.scenes.save(s['id'],s['scene'],s['revision'],w.catalog()['revision']);print(i)",
     root,
     join(folder, 'animated-art'),
     id,

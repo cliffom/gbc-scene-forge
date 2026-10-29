@@ -8,8 +8,8 @@ from pathlib import Path
 
 from atlas_fixture import sprite_bundle
 
-from gbc_scene_forge.documents import Conflict
-from gbc_scene_forge.projects import Project
+from gbc_scene_forge.core.errors import Conflict
+from gbc_scene_forge.project.application import Project
 
 
 class ObjectTests(unittest.TestCase):
@@ -19,8 +19,8 @@ class ObjectTests(unittest.TestCase):
         self.folder = Path(self.temp.name)
         self.project = Project.create(self.folder / "world", "Objects")
         self.path, self.manifest = sprite_bundle(self.folder / "atlas")
-        self.project.import_atlas(self.path, self.revision())
-        self.loaded = self.project.create_scene("Room", 7, 5, 8, self.revision())
+        self.project.artwork.import_atlas(self.path, self.revision())
+        self.loaded = self.project.scenes.create("Room", 7, 5, 8, self.revision())
         self.map_path = self.project.root / f"scenes/{self.loaded['id']}.tmj"
         self.scene = {
             "width": 7,
@@ -83,7 +83,7 @@ class ObjectTests(unittest.TestCase):
         return self.project.catalog()["revision"]
 
     def save(self):
-        return self.project.save_scene(
+        return self.project.scenes.save(
             self.loaded["id"], self.scene, self.loaded["revision"], self.revision()
         )
 
@@ -108,16 +108,16 @@ class ObjectTests(unittest.TestCase):
                 {"name": "forge:origin_y", "type": "int", "value": 16},
             ],
         )
-        self.assertEqual(Project(self.project.root).load_scene(saved["id"])["scene"], self.scene)
+        self.assertEqual(Project(self.project.root).scenes.load(saved["id"])["scene"], self.scene)
         moved = self.folder / "moved"
         self.project.root.rename(moved)
-        self.assertEqual(Project(moved).load_scene(saved["id"])["scene"], self.scene)
+        self.assertEqual(Project(moved).scenes.load(saved["id"])["scene"], self.scene)
 
     def test_generic_objects_need_no_atlas_and_do_not_block_unused_atlas_deletion(self):
         self.scene["layers"][0]["objects"].pop()
         saved = self.save()
-        self.project.delete_atlas("actors", self.revision())
-        self.assertEqual(self.project.load_scene(saved["id"])["scene"], self.scene)
+        self.project.artwork.delete_atlas("actors", self.revision())
+        self.assertEqual(self.project.scenes.load(saved["id"])["scene"], self.scene)
         self.assertEqual(self.project.catalog()["project"]["atlases"], {})
 
     def test_origin_override_and_generic_metadata_survive_atlas_origin_changes(self):
@@ -127,8 +127,8 @@ class ObjectTests(unittest.TestCase):
         saved = self.save()
         self.manifest["regions"][0]["origin"] = [0, 0]
         self.path.write_text(json.dumps(self.manifest))
-        self.project.import_atlas(self.path, self.revision(), reimport=True)
-        self.assertEqual(self.project.load_scene(saved["id"])["scene"], self.scene)
+        self.project.artwork.import_atlas(self.path, self.revision(), reimport=True)
+        self.assertEqual(self.project.scenes.load(saved["id"])["scene"], self.scene)
         document = json.loads(self.map_path.read_text())
         override, inherited = document["layers"][0]["objects"][-2:]
         self.assertEqual((override["x"], override["y"]), (36, 48))
@@ -161,7 +161,7 @@ class ObjectTests(unittest.TestCase):
             variants.append(variant)
         for variant in variants:
             with self.subTest(variant=variant), self.assertRaises(ValueError):
-                self.project.save_scene(saved["id"], variant, saved["revision"], self.revision())
+                self.project.scenes.save(saved["id"], variant, saved["revision"], self.revision())
             self.assertEqual(self.map_path.read_bytes(), before)
         document = json.loads(before)
         for update in (
@@ -175,7 +175,7 @@ class ObjectTests(unittest.TestCase):
             self.map_path.write_text(json.dumps(candidate))
             changed = self.map_path.read_bytes()
             with self.subTest(update=update), self.assertRaises(ValueError):
-                self.project.load_scene(saved["id"])
+                self.project.scenes.load(saved["id"])
             self.assertEqual(self.map_path.read_bytes(), changed)
 
     def test_oversize_object_metadata_cannot_create_an_unreopenable_map(self):
@@ -191,7 +191,7 @@ class ObjectTests(unittest.TestCase):
             self.save()
         self.assertEqual(self.map_path.read_bytes(), before)
         self.assertEqual(self.revision(), revision)
-        self.project.load_scene(self.loaded["id"])
+        self.project.scenes.load(self.loaded["id"])
 
     def test_object_save_conflicts_preserve_external_edits(self):
         saved = self.save()
@@ -199,5 +199,5 @@ class ObjectTests(unittest.TestCase):
         self.map_path.write_bytes(external)
         self.scene["layers"][0]["objects"][0]["name"] = "New name"
         with self.assertRaises(Conflict):
-            self.project.save_scene(saved["id"], self.scene, saved["revision"], self.revision())
+            self.project.scenes.save(saved["id"], self.scene, saved["revision"], self.revision())
         self.assertEqual(self.map_path.read_bytes(), external)

@@ -21,16 +21,16 @@ import json, sys
 from pathlib import Path
 sys.path.insert(0, 'tests')
 from atlas_fixture import bundle
-from gbc_scene_forge.projects import Project
-from gbc_scene_forge import png
+from gbc_scene_forge.project.application import Project
+from gbc_scene_forge.artwork import png
 p = Project.create(Path(sys.argv[1]), 'Reusable rooms')
 source, _ = bundle(p.root.parent / 'art')
 pixels = b''.join(bytes([((0, 82), (165, 255))[y // 4][(x % 8) // 4]] * 3 + [255]) for y in range(8) for x in range(16))
 (source.parent / 'atlas.png').write_bytes(png.encode(16, 8, pixels))
-p.import_atlas(source, p.catalog()['revision'])
+p.artwork.import_atlas(source, p.catalog()['revision'])
 ids = []
 for name in ('Room', 'Other room', 'Missing layers'):
-    loaded = p.create_scene(name, 12, 10, 8, p.catalog()['revision'])
+    loaded = p.scenes.create(name, 12, 10, 8, p.catalog()['revision'])
     scene = loaded['scene']
     if name != 'Missing layers':
         scene['cells'][0][:2] = ['terrain/earth/0/0', 'terrain/stone/0/0']
@@ -39,7 +39,7 @@ for name in ('Room', 'Other room', 'Missing layers'):
             dict(id=2, name='Markers', type='objectgroup', visible=True, objects=[
                 dict(id=1, kind='point', x=1, y=1, name='spawn', properties=[dict(name='door', type='string', value='north')]),
                 dict(id=2, kind='rectangle', x=9, y=1, width=3, height=4, name='trigger')])])
-        p.save_scene(loaded['id'], scene, loaded['revision'], p.catalog()['revision'])
+        p.scenes.save(loaded['id'], scene, loaded['revision'], p.catalog()['revision'])
     ids.append(loaded['id'])
 print(json.dumps(ids))
 `,
