@@ -134,7 +134,8 @@ library contains configurable geometry, markers, notes and camera guides.
 Drawing/resizing uses scene Undo/Redo, and camera/full-route SVG review includes
 unsaved plan edits without saving them. The plan uses native objects, typed
 definitions and existing portable Tiled storage; artwork can be added on separate
-layers later. See the [blockout guide](BLOCKOUT.md) for dimensions, presets,
+layers later. Start with the [blockout tutorial](user/blockout-tutorial.md), or
+see the [blockout reference](BLOCKOUT.md) for dimensions, presets,
 camera intent, limits, the opening-forest example and shared services for MCP #51.
 
 ## Import and edit

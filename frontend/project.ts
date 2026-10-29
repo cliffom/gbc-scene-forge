@@ -1526,8 +1526,8 @@ const blockoutView = createBlockoutView(
     element('selected-brush', HTMLElement).textContent = definition.name;
     status.textContent =
       definition.kind === 'rectangle'
-        ? 'Drag to draw a region. Select to move or resize; double-click to edit properties.'
-        : 'Click to place a marker. Double-click to name it or edit its typed properties.';
+        ? 'Drag to draw a region. Select to move or resize; use Edit selected object for properties.'
+        : 'Click to place a marker. Use Edit selected object to name it or change typed properties.';
     draw();
   },
   focusBlockoutCamera,

@@ -4,6 +4,8 @@ Start with a spatial plan before preparing artwork. Blockout objects are ordinar
 point/rectangle objects on normal layers, with reusable typed definitions. Later
 artwork can be painted on separate tile/object layers without replacing the plan.
 
+For a guided first session, follow [Create your first level blockout](user/blockout-tutorial.md).
+
 ## Start a plan
 
 1. Create a project and choose **Blockout — no artwork needed**. The dimension
@@ -38,8 +40,8 @@ checkpoints, boss entrances/arenas, exits, named sections and design notes.
 
 Colors supplement labels, symbols and patterns. One-way platforms have a strong
 upper surface, unsafe regions have distinct patterns, climbs have ladder marks
-and labeled ENTRY/EXIT positions, and markers have symbols and names. Double-
-click an object to edit its name, class and typed fields. Design-note text is
+and labeled ENTRY/EXIT positions, and markers have symbols and names. Select an object and choose **Edit selected object** in the inspector to change
+its name, class and typed fields. Design-note text is
 retained in full; its first line is included in the planning label (up to 100
 characters). Activity bounds can name their intended `actor`; reward types and
 notes are project data, with no runtime behavior inferred from those names.

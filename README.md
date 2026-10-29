@@ -86,7 +86,9 @@ Choose **Blockout — no artwork needed** when creating a project, or **Scene
 actions → Create blockout scene…** in an existing project. Draw labeled ground,
 platforms, hazards and climb regions; place encounter/progression markers; and
 review the route through a configurable gameplay camera. The plan stays as native
-objects when you add artwork or export to Tiled. See the [blockout guide](docs/BLOCKOUT.md).
+objects when you add artwork or export to Tiled. Follow the
+[blockout tutorial](docs/user/blockout-tutorial.md) for a complete first session,
+or see the [blockout reference](docs/BLOCKOUT.md).
 
 ### Open another project
 
