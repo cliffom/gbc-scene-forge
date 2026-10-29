@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
-import { decodePreviewSettings, prunePreviewSettings } from '../frontend/preview-settings.mts';
-import { AnimationPlayback, SequenceMappings } from '../frontend/animation-preview.mts';
+import {
+  decodePreviewSettings,
+  prunePreviewSettings,
+} from '../frontend/preview/preview-settings.mts';
+import { AnimationPlayback, SequenceMappings } from '../frontend/preview/animation-preview.mts';
 
 const playback = new AnimationPlayback();
 const animation = {

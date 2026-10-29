@@ -7,7 +7,7 @@ import { mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { once } from 'node:events';
-import { record, string, array, number } from '../frontend/decode.mts';
+import { record, string, array, number } from '../frontend/shared/decode.mts';
 import { Chrome } from './chrome.ts';
 
 const folder = await mkdtemp(join(tmpdir(), 'forge-standalone-'));

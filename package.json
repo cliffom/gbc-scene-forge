@@ -12,7 +12,7 @@
     "format": "prettier --write frontend tests/*.ts *.json eslint.config.mjs .prettierrc.json",
     "format:check": "prettier --check frontend tests/*.ts *.json eslint.config.mjs .prettierrc.json",
     "test": "make test-frontend",
-    "test:browser": "node tests/browser.ts",
+    "test:browser": "make test-browser",
     "test:standalone": "node tests/standalone-browser.ts",
     "test:drafts": "node tests/drafts-browser.ts"
   },

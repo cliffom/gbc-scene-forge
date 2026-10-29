@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { Chrome } from './chrome.ts';
-import { array, record, string } from '../frontend/decode.mts';
+import { array, record, string } from '../frontend/shared/decode.mts';
 const folder = await mkdtemp(join(tmpdir(), 'forge-world-'));
 const root = join(folder, 'world');
 let server: ChildProcess | undefined;

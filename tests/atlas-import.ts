@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { folderFromFiles, readBundle, relativeParts } from '../frontend/atlas-import.mts';
+import { folderFromFiles, readBundle, relativeParts } from '../frontend/artwork/atlas-import.mts';
 
 function file(path: string, content: string) {
   const result = new File([content], path.split('/').at(-1) || 'file');

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import { LayerEditor } from '../frontend/layers.mts';
-import { resizeScene } from '../frontend/scene-size.mts';
+import { LayerEditor } from '../frontend/scene/layers.mts';
+import { resizeScene } from '../frontend/scene/scene-size.mts';
 const make = () =>
   new LayerEditor(
     {

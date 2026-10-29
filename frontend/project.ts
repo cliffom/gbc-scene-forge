@@ -1,5 +1,5 @@
 /** Supported browser entry point. */
-import { mountProjectEditor } from './project-editor.mts';
+import { mountProjectEditor } from './editor/project-editor.mts';
 export const editor = mountProjectEditor();
 export { mountProjectEditor };
 window.addEventListener('pagehide', (event) => {

@@ -1,15 +1,20 @@
 /** Clipboard, mixed layers, transforms and atomic rejection independent of the DOM. */
 import assert from 'node:assert/strict';
-import type { TileMetadata } from '../frontend/tile-metadata.mts';
-import { LayerEditor } from '../frontend/layers.mts';
-import { capture, paste, eraseCaptured, transform } from '../frontend/compositions.mts';
-import type { CompositionSelection } from '../frontend/compositions.mts';
+import type { TileMetadata } from '../frontend/artwork/tile-metadata.mts';
+import { LayerEditor } from '../frontend/scene/layers.mts';
+import {
+  capture,
+  paste,
+  eraseCaptured,
+  transform,
+} from '../frontend/compositions/compositions.mts';
+import type { CompositionSelection } from '../frontend/compositions/compositions.mts';
 import {
   tileParts,
   tilePoint,
   transformCell,
   transformMetadata,
-} from '../frontend/tile-transform.mts';
+} from '../frontend/artwork/tile-transform.mts';
 const make = () => {
   const editor = new LayerEditor(
     {

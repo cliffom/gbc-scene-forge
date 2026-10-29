@@ -1,6 +1,6 @@
 /** World graph diagnostics preserve endpoint identity across metadata changes. */
 import assert from 'node:assert/strict';
-import { decodeWorld, decodeWorldSnapshot, worldFindings } from '../frontend/world.mts';
+import { decodeWorld, decodeWorldSnapshot, worldFindings } from '../frontend/world/world.mts';
 const value = {
   version: 1,
   positions: { first: { x: -50, y: 30 } },

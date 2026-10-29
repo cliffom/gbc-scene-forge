@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
-import { record, array, string } from '../frontend/decode.mts';
+import { record, array, string } from '../frontend/shared/decode.mts';
 
 const repository = fileURLToPath(new URL('../', import.meta.url));
 await test('esbuild bundles nested modules, emits source maps and preserves assets after type errors', async () => {
@@ -20,7 +20,7 @@ await test('esbuild bundles nested modules, emits source maps and preserves asse
     await mkdir(join(root, 'frontend/nested'));
     const helper = join(root, 'frontend/nested/probe.mts');
     await writeFile(helper, "export const probe = 'nested dependency';\n");
-    const app = join(root, 'frontend/app.ts');
+    const app = join(root, 'frontend/project.ts');
     await writeFile(
       app,
       (await readFile(app, 'utf8')) +
@@ -32,18 +32,16 @@ await test('esbuild bundles nested modules, emits source maps and preserves asse
         encoding: 'utf8',
         env: { ...process.env, FORGE_BUILD_MODE: mode, FORGE_BUILD_COMMIT: commit },
       });
+    const oldStatic = join(root, 'src/gbc_scene_forge/static');
+    await mkdir(oldStatic, { recursive: true });
+    for (const name of ['app.js', 'app.js.map', 'app.meta.json']) {
+      await writeFile(join(oldStatic, name), 'obsolete');
+    }
     const successful = build();
     assert.equal(successful.status, 0, successful.stdout + successful.stderr);
     const staticDir = join(root, 'src/gbc_scene_forge/static');
-    assert.deepEqual(await readdir(staticDir), [
-      'app.js',
-      'app.js.map',
-      'app.meta.json',
-      'build-info.json',
-      'project.js',
-      'project.js.map',
-    ]);
-    const bundle = await readFile(join(staticDir, 'app.js'), 'utf8');
+    assert.deepEqual(await readdir(staticDir), ['build-info.json', 'project.js', 'project.js.map']);
+    const bundle = await readFile(join(staticDir, 'project.js'), 'utf8');
     const version = /^version = "([^"]+)"$/m.exec(
       await readFile(join(root, 'pyproject.toml'), 'utf8'),
     )?.[1];
@@ -70,9 +68,7 @@ await test('esbuild bundles nested modules, emits source maps and preserves asse
     assert.notEqual(build('development', '').status, 0);
     assert.match(bundle, /nested dependency/);
     assert.doesNotMatch(bundle, /from ["']\.\//);
-    const metadata = record(JSON.parse(await readFile(join(staticDir, 'app.meta.json'), 'utf8')));
-    assert('frontend/nested/probe.mts' in record(metadata.inputs));
-    const sourceMap = record(JSON.parse(await readFile(join(staticDir, 'app.js.map'), 'utf8')));
+    const sourceMap = record(JSON.parse(await readFile(join(staticDir, 'project.js.map'), 'utf8')));
     assert(array(sourceMap.sources, string).some((name) => name.endsWith('nested/probe.mts')));
     const projectMap = record(
       JSON.parse(await readFile(join(staticDir, 'project.js.map'), 'utf8')),
@@ -83,7 +79,10 @@ await test('esbuild bundles nested modules, emits source maps and preserves asse
     assert(!projectSources.some((name) => name.endsWith('/app.ts')));
     await writeFile(helper, "export const probe = 'updated nested dependency';\n");
     assert.equal(build().status, 0);
-    assert.match(await readFile(join(staticDir, 'app.js'), 'utf8'), /updated nested dependency/);
+    assert.match(
+      await readFile(join(staticDir, 'project.js'), 'utf8'),
+      /updated nested dependency/,
+    );
     const files = await readdir(staticDir);
     const before = await Promise.all(files.map((name) => readFile(join(staticDir, name), 'utf8')));
     await writeFile(helper, 'export const probe: string = 42;\n');

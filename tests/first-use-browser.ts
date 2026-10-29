@@ -6,7 +6,7 @@ import { mkdtemp, rm, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Chrome } from './chrome.ts';
-import { record, string } from '../frontend/decode.mts';
+import { record, string } from '../frontend/shared/decode.mts';
 
 const folder = await mkdtemp(join(tmpdir(), 'forge-first-use-'));
 const server = spawn(

@@ -21,8 +21,7 @@ make check-dist
 see [backend architecture](ARCHITECTURE.md) for the scope and native-payload typing policy.
 Use `make format` to apply formatting, and `make typecheck` for a standalone type check.
 
-`make build` runs strict TypeScript checking, bundles the supported `frontend/project.ts` and the historical
-`frontend/app.ts` fixture entry with esbuild, then uses the
+`make build` runs strict TypeScript checking, bundles the supported `frontend/project.ts` entry with esbuild, then uses the
 standard isolated Python build frontend: it creates the
 source distribution, then builds the wheel from that source distribution and
 checks metadata with Twine. Artifacts appear in `dist/`. `make build` and
@@ -170,6 +169,9 @@ unchanged.
 
 The frontend cleanup in #60 also retains 0.13.1 without a dedicated release.
 See [frontend architecture](FRONTEND-ARCHITECTURE.md) for entry points and ownership.
-After moving frontend modules, rebuild both bundles and verify the supported
-source map excludes `frontend/legacy/`. Run the full browser suite, including editor
+The folder organization and historical frontend removal in #62 likewise retain
+0.13.1: supported entry points, data formats and UI behavior are unchanged.
+After moving frontend modules, rebuild the supported bundle and verify its source
+map and the absence of historical `app.js`, its map/metadata and `index.html` from
+the distributions. Run the full browser suite, including editor
 disposal/remount acceptance, and installed-wheel first-use acceptance.
