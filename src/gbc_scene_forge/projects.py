@@ -7,6 +7,7 @@ from uuid import UUID, uuid4
 
 from . import (
     atlas,
+    diagnostics,
     exporting,
     object_definitions,
     palette_budget,
@@ -297,7 +298,23 @@ class Project:
             atlas.require(slot > previous.get(key, -1), "Invalid stamp layer mapping order")
             previous[key] = slot
 
+    def diagnostics_report(
+        self, revision, options=None, scene_id=None, scene_revision=None, scene=None
+    ):
+        return self._project_report(
+            revision,
+            scene_id,
+            scene_revision,
+            scene,
+            lambda document, scenes: diagnostics.report(
+                document, scenes, diagnostics.options(options, document)
+            ),
+        )
+
     def world_report(self, revision, scene_id=None, scene_revision=None, scene=None):
+        return self._project_report(revision, scene_id, scene_revision, scene, world.report)
+
+    def _project_report(self, revision, scene_id, scene_revision, scene, report):
         with self.transactions.locked():
             document = self._current(revision)
             scenes = {s["id"]: self._load_scene(s["id"], document) for s in document["scenes"]}
@@ -308,7 +325,7 @@ class Project:
                     raise Conflict("Scene changed on disk. Reopen it before inspecting the world.")
                 tiled.check_scene(scene, document)
                 scenes[scene_id] = {**scenes[scene_id], "scene": scene}
-            result = world.report(document, scenes)
+            result = report(document, scenes)
             self._current(revision)
             self._world_guards(document, guards)
             return {**result, "project_revision": revision, "scene_revisions": guards}

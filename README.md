@@ -253,6 +253,9 @@ points, rectangles and sprites.
 let you arrange scenes, author one-way or two-way links between object endpoints,
 and follow or repair connections with navigable findings.
 
+[Project diagnostics](docs/STANDALONE.md#project-diagnostics) reports content errors,
+unused assets, and movement findings under explicitly selected assumptions.
+
 Clipboard editing, duplication, transforms and reusable project stamps are described
 in the [composition guide](docs/STANDALONE.md#clipboard-and-reusable-stamps).
 

@@ -852,3 +852,93 @@ and the report's complete saved `scene_revisions` map. Both routes require the
 local mutation token. A stale manifest or scene snapshot rejects the operation;
 reopen World view after reviewing external changes. Saves use the existing
 conflict-checked durable project transaction. Reports are read-only.
+
+## Project diagnostics
+
+Open **Diagnostics…** to inspect the whole project without changing scenes, assets,
+world links, or undo history. The report combines saved scenes with the current
+scene's unsaved edits. It checks required fields, types, bounds, choices, missing
+or incompatible definitions, unknown overrides, both connection endpoints,
+overlapping spawns, and unused artwork. Findings have explicit error, warning, or
+information severity. **Inspect** selects the object and layer or opens World view
+for a missing scene. Moving to another scene follows the normal Save / Discard /
+Cancel flow. Unused artwork findings focus its palette region without deleting it.
+
+![Project diagnostics](screenshots/diagnostics/report.png)
+
+Choose which object definitions identify **spawns**, **entrances**, and **goals**;
+Forge does not infer gameplay roles from names or classes. World connection
+endpoints also count as entrances. The selected axis-aligned footprint, in native
+pixels relative to each marker, defines spawn overlap and entrance collision.
+Overlapping spawns are warnings, blocked entrances are errors, and unreachable goals
+are warnings. Object schema and broken endpoint failures are errors; unknown
+properties and unused artwork are warnings and information respectively.
+
+Movement starts **unspecified**. In this mode, reachability and blocked entrances
+are explicitly unverified. Opt into **Four-direction grid walking** to check these
+under the following rules:
+
+- Positions form a lattice at the centers of the scene's cells. Horizontal and
+  vertical neighbors connect only when the entire swept footprint is clear.
+- Markers connect to nearby lattice centers through a conservative rectangular
+  sweep. Scene boundaries block movement. Contact at an obstacle's edge is allowed.
+- Artwork uses authored rectangle, ellipse, and polygon collision shapes. The
+  whole artwork bounds block movement only when its solid flag is set and it has
+  no explicit shapes. Tile flips/rotations and sprite origins, including instance overrides, are respected.
+- Hidden layers are excluded unless explicitly included. Point/rectangle gameplay
+  markers do not implicitly become collision geometry.
+- Every spawn/entrance is checked against every goal within its own scene. This
+  does not simulate travel through world connections, jumping, climbing, one-way
+  platforms, dynamic actors, or game-specific movement. A grid route is not proof
+  of runtime reachability; the absence of one is not proof that gameplay is impossible.
+- Scenes above 65,536 cells, or above 4,096 start/goal pairs, report reachability as
+  unverified. Spawn overlap checks above 512 spawns are also unverified. Missing
+  starts or goals produce an explicit unverified finding.
+- Each scene also has a shared budget of 1,000,000 collision-work units for index
+  entries, queried buckets, candidate records, and shape checks (polygon vertices
+  count individually). Empty collision indexes skip bucket searches. Exhausting
+  the budget reports remaining entrance and reachability checks as unverified.
+
+Scene exclusions and comma-separated finding-code exclusions apply to this report
+only, and appear in its options and summary. They do not alter project data.
+Excluded and hidden scenes still retain artwork usage. Reusable stamps, definition
+artwork, preview preferences, and animation dependencies also retain assets. Asset
+usage is conservative: explicit asset identities anywhere in authored scene/library
+properties count as references. Unused findings identify both asset and grid.
+
+Results record the project and every saved scene revision. Before navigation,
+Forge rechecks them and the findings; external edits reject or invalidate stale
+results. Changing options clears the displayed results. Reopen diagnostics to
+refresh after editor changes; refresh the project after external manifest changes.
+
+Headless callers use the same Python service:
+
+```python
+from gbc_scene_forge.projects import Project
+
+project = Project('/path/to/project')
+report = project.diagnostics_report(
+    project.catalog()['revision'],
+    options={
+        'movement': 'grid-four-way',
+        'footprint': {'x': -4, 'y': -4, 'width': 8, 'height': 8},
+        'spawn_definitions': ['<definition UUID>'],
+        'entrance_definitions': [],
+        'goal_definitions': ['<definition UUID>'],
+        'include_hidden': False,
+        'excluded_scenes': [],
+        'excluded_codes': ['unused-asset'],
+    },
+)
+```
+
+The loopback API exposes token-protected `POST /api/diagnostics-report` with
+`project_revision`, optional `options`, and optional `scene_id`, `scene_revision`,
+`scene` for an unsaved scene snapshot. Invalid options return 400 and stale
+revisions return 409. Version 1 results include `options`, `project_revision`,
+`scene_revisions`, `scenes`, `findings`, `suppressed`, and `status`. Findings carry
+stable-within-report IDs, codes, severity, messages, and applicable scene/layer/object,
+pixel, asset/grid, field, start-object, or connection/endpoint locations. Status
+summarizes the selected scope as `fail`, `warning`, `unverified`, or `pass` in that
+order; a filtered report must always be interpreted with its options. All checks
+are read-only and use the same services as the browser.

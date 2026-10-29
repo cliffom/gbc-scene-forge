@@ -16,7 +16,7 @@ FRONTEND_TESTS := model world object-definitions scene-size compositions drafts 
 FRONTEND_TEST_TARGETS := $(addprefix test-frontend-,$(FRONTEND_TESTS))
 .DEFAULT_GOAL := help
 
-.PHONY: help setup check-deps deps frontend run demo check test test-python test-frontend test-browser test-standalone-browser test-drafts-browser test-compositions-browser test-definitions-browser test-world-browser test-tiled lint typecheck format build check-dist clean clean-demo $(FRONTEND_TEST_TARGETS)
+.PHONY: help setup check-deps deps frontend run demo check test test-python test-frontend test-browser test-standalone-browser test-drafts-browser test-compositions-browser test-definitions-browser test-world-browser test-diagnostics-browser test-tiled lint typecheck format build check-dist clean clean-demo $(FRONTEND_TEST_TARGETS)
 help:
 	@echo 'Getting started:'
 	@echo '  make setup PYTHON=python3.13  Install locked dependencies and build the UI'
@@ -40,6 +40,7 @@ help:
 	@echo '  make test-drafts-browser     Run unsaved draft recovery Chrome acceptance'
 	@echo '  make test-definitions-browser Run object definition Chrome acceptance'
 	@echo '  make test-world-browser     Run world and connection Chrome acceptance'
+	@echo '  make test-diagnostics-browser Run project diagnostics Chrome acceptance'
 	@echo '  make test-compositions-browser Run clipboard and stamp Chrome acceptance'
 	@echo '  make test-tiled              Check Tiled interoperability (TILED=/path RASTERIZER=/path)'
 	@echo '  make lint / make format      Check or apply source formatting and lint rules'
@@ -86,13 +87,16 @@ test-frontend: $(FRONTEND_TEST_TARGETS)
 $(FRONTEND_TEST_TARGETS): test-frontend-%:
 	$(NODE) tests/$*.ts
 
-test-browser: test-standalone-browser test-drafts-browser test-compositions-browser test-definitions-browser test-world-browser
+test-browser: test-standalone-browser test-drafts-browser test-compositions-browser test-definitions-browser test-world-browser test-diagnostics-browser
 
 test-standalone-browser: frontend
 	$(NPM) run test:standalone -- $(if $(CHROME),"$(CHROME)")
 
 test-compositions-browser: frontend
 	$(NODE) tests/compositions-browser.ts $(if $(CHROME),"$(CHROME)")
+
+test-diagnostics-browser: frontend
+	$(NODE) tests/diagnostics-browser.ts $(if $(CHROME),"$(CHROME)")
 
 test-world-browser: frontend
 	$(NODE) tests/world-browser.ts $(if $(CHROME),"$(CHROME)")
