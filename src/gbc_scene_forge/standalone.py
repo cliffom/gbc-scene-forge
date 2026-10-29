@@ -135,17 +135,36 @@ def make_handler(root, token):
                 if route == "/api/create-project":
                     require(project is None, "A project is already open")
                     starter = data.get("starter", "empty")
-                    require(starter in ("empty", "sample"), "Choose an empty or sample project")
+                    require(
+                        starter in ("empty", "sample", "blockout"),
+                        "Choose an empty, sample or blockout project",
+                    )
                     if starter == "sample":
                         from .sample import prepare
 
                         project = prepare(root, title=name(data.get("name")))
                     else:
-                        project = Project.create(root, data.get("name"))
+                        project = Project.create(root, data.get("name"), starter=starter)
                     self.reply(project.catalog())
                     return
                 require(project is not None, "Create a project first")
-                if route == "/api/create-scene":
+                if route == "/api/create-blockout-scene":
+                    self.reply(
+                        project.create_blockout_scene(
+                            data.get("name"), data.get("options"), data.get("project_revision")
+                        )
+                    )
+                elif route == "/api/blockout-review":
+                    self.reply(
+                        project.blockout_review(
+                            data.get("scene_id"),
+                            data.get("project_revision"),
+                            data.get("scene_revision"),
+                            data.get("scene"),
+                            data.get("camera_id"),
+                        )
+                    )
+                elif route == "/api/create-scene":
                     self.reply(
                         project.create_scene(
                             data.get("name"),

@@ -37,7 +37,7 @@
     <form id="project-form" class="welcome" hidden>
       <h2>Create a project</h2>
       <label class="field">Project name<input id="project-title" required maxlength="100" autocomplete="off" placeholder="My world" autofocus></label>
-      <label class="field">Start with<select id="project-starter"><option value="empty">Empty project</option><option value="sample">Sample artwork and scenes</option></select></label>
+      <label class="field">Start with<select id="project-starter"><option value="empty">Empty project</option><option value="sample">Sample artwork and scenes</option><option value="blockout">Blockout — no artwork needed</option></select></label>
       <p class="hint">The sample includes original MIT-licensed tiles, sprites and two scenes. A private editable copy stays in your project folder and works offline.</p>
       <label><input id="continue-guide" type="checkbox"> Continue first-scene guide after creation</label>
       <p class="form-error error" role="alert"></p>
@@ -65,6 +65,7 @@
         <div id="scene-command-panel" class="command-panel" popover aria-label="Scene actions">
           <p class="command-heading">Scene</p>
           <button id="show-create">Create scene…</button>
+          <button id="show-blockout-create">Create blockout scene…</button>
           <button id="show-rename" disabled>Rename scene…</button>
           <button id="show-duplicate-scene" disabled>Duplicate scene…</button>
           <button id="show-resize" disabled>Resize / crop…</button>
@@ -89,6 +90,7 @@
         <div class="library-tabs" role="tablist" aria-label="Library categories">
           <button id="artwork-tab" role="tab" aria-selected="true" aria-controls="artwork-panel" tabindex="0">Artwork</button>
           <button id="objects-tab" role="tab" aria-selected="false" aria-controls="objects-panel" tabindex="-1">Objects</button>
+          <button id="blockout-tab" role="tab" aria-selected="false" aria-controls="blockout-panel" tabindex="-1" hidden>Blockout</button>
           <button id="stamps-tab" role="tab" aria-selected="false" aria-controls="stamps-panel" tabindex="-1">Stamps</button>
         </div>
         <section id="artwork-panel" class="library-panel" role="tabpanel" aria-labelledby="artwork-tab">
@@ -107,6 +109,19 @@
           <h3>Markers &amp; areas</h3>
           <div class="object-tools"><div class="layer-actions"><button id="place-point" disabled>Spawn point</button><button id="place-rectangle" disabled>Trigger area</button></div><p class="hint">Place a marker or area, then edit its class and properties in the inspector.</p></div>
           <div class="definition-tools"><h3>Reusable definitions</h3><button id="manage-definitions" disabled>Manage definitions…</button><label class="field">Definition<select id="object-definition-brush"><option value="">Choose definition…</option></select></label><button id="place-definition" disabled>Place instance</button><p class="hint">Definitions share typed fields and defaults between objects.</p></div>
+        </section>
+        <section id="blockout-panel" class="library-panel" role="tabpanel" aria-labelledby="blockout-tab" hidden>
+          <h3>Spatial blockout</h3>
+          <p id="blockout-metrics" class="hint"></p>
+          <button id="blockout-new-scene">New blockout scene…</button>
+          <div id="blockout-presets" role="group" aria-label="Blockout presets"></div>
+          <p class="hint">Drag regions or click markers. Select to move or resize; use Edit selected object for properties. Alt bypasses snapping.</p>
+          <h3>Camera framing</h3>
+          <label class="field">Camera<select id="blockout-cameras" aria-label="Blockout camera"></select></label>
+          <div class="layer-actions"><button id="blockout-camera-select">Select / move</button><button id="blockout-camera-edit">Settings…</button></div>
+          <button id="blockout-review">Camera &amp; overview…</button>
+          <button id="blockout-customize">Customize presets…</button>
+          <p class="hint">Planning only; no jump or climb reachability is established.</p>
         </section>
         <section id="stamps-panel" class="library-panel" role="tabpanel" aria-labelledby="stamps-tab" hidden>
           <h3>Reusable stamps</h3>
@@ -346,6 +361,32 @@
       <p id="object-error" class="error" role="alert"></p>
       <div class="dialog-actions"><button id="object-cancel" type="button">Cancel</button><button id="object-apply" class="primary">Apply object changes</button></div>
     </form>
+  </dialog>
+  <dialog id="create-blockout-dialog" aria-labelledby="blockout-create-heading">
+    <form id="blockout-scene-form">
+      <h2 id="blockout-create-heading">Create a blockout scene</h2>
+      <p>Plan with labeled geometry and markers. Artwork can be added later on its own layer.</p>
+      <label class="field">Scene name<input id="blockout-title" value="First blockout" maxlength="100" required autofocus></label>
+      <div class="property-grid"><label class="field">Dimensions in<select id="blockout-units"><option value="pixels">Pixels</option><option value="cells">Cells</option></select></label><label class="field">Grid<select id="blockout-grid"><option value="8">8 px</option><option value="16">16 px</option><option value="32">32 px</option></select></label></div>
+      <div class="property-grid"><label class="field">Width<input id="blockout-width" type="number" value="960" min="1" max="8192" step="1" required></label><label class="field">Height<input id="blockout-height" type="number" value="272" min="1" max="8192" step="1" required></label></div>
+      <h3>Gameplay camera</h3>
+      <div class="property-grid"><label class="field">Width (px)<input id="blockout-camera-width" type="number" value="160" min="1" max="8192" step="1" required></label><label class="field">Height (px)<input id="blockout-camera-height" type="number" value="136" min="1" max="8192" step="1" required></label></div>
+      <div class="layer-actions"><label><input id="blockout-scroll-x" type="checkbox" checked> Scroll horizontally</label><label><input id="blockout-scroll-y" type="checkbox"> Scroll vertically</label></div>
+      <p id="blockout-create-metrics" class="hint" aria-live="polite"></p>
+      <p class="hint">Pixels must divide evenly by the grid. Each axis supports up to 256 cells; the camera must fit inside the scene. These are configurable planning values, not a runtime camera controller.</p>
+      <p class="form-error error" role="alert"></p>
+      <div class="dialog-actions"><button id="blockout-create-cancel" type="button">Cancel</button><button id="blockout-create-confirm" class="primary">Create blockout</button></div>
+    </form>
+  </dialog>
+  <dialog id="blockout-review-dialog" aria-labelledby="blockout-review-heading">
+    <h2 id="blockout-review-heading">Blockout camera &amp; overview</h2>
+    <p id="blockout-review-summary"></p>
+    <p class="hint">A read-only snapshot of visible plan layers, including unsaved edits. Artwork is reviewed alongside the plan on the main canvas; these SVGs show planning geometry only. This is not a jump, climbing or physics simulation.</p>
+    <h3>Full route</h3><div class="blockout-overview"><img id="blockout-overview-image" alt="Full blockout route with geometry, labels and camera guides"></div>
+    <a id="blockout-overview-download" download="blockout-overview.svg">Download overview SVG</a>
+    <h3>Player camera</h3><div class="blockout-camera"><img id="blockout-camera-image" alt="Blockout from the selected gameplay camera frame"></div>
+    <a id="blockout-camera-download" download="blockout-camera.svg">Download camera SVG</a>
+    <div class="dialog-actions"><button id="blockout-review-close">Close review</button></div>
   </dialog>
   <dialog id="create-scene-dialog" aria-labelledby="create-heading">
     <form id="scene-form">

@@ -15,7 +15,7 @@ Your projects stay on your computer.
 Install the release with Python 3.10 or newer:
 
 ```sh
-python -m pip install gbc-scene-forge==0.10.0
+python -m pip install gbc-scene-forge==0.11.0
 gbc-scene-forge
 ```
 
@@ -80,6 +80,16 @@ runs in Chrome on macOS and Linux; the package CI checks Python 3.10–3.14 on L
 Choose a scene from the scene dropdown to open it. If the current scene has
 unsaved edits, choose whether to save, discard, or keep editing before switching.
 
+### Plan before importing artwork
+
+Choose **Blockout — no artwork needed** when creating a project, or **Scene
+actions → Create blockout scene…** in an existing project. Draw labeled ground,
+platforms, hazards and climb regions; place encounter/progression markers; and
+review the route through a configurable gameplay camera. The plan stays as native
+objects when you add artwork or export to Tiled. Follow the
+[blockout tutorial](docs/user/blockout-tutorial.md) for a complete first session,
+or see the [blockout reference](docs/BLOCKOUT.md).
+
 ### Open another project
 
 Use the **Project** dropdown beside the scene selector to open another project.
@@ -128,9 +138,9 @@ make run PROJECT_ROOT="$HOME/Scene Forge Projects"
 
 Use the same location on later launches to see those projects again. Unsupported
 or damaged manifests are reported in the selector so you can identify the folder
-that needs attention. Version 0.10.0 continues to use manifest format version 1.
+that needs attention. Version 0.11.0 continues to use manifest format version 1.
 
-### Bring an existing project into 0.10.0
+### Bring an existing project into 0.11.0
 
 Existing 0.2.0 projects keep their artwork, scene IDs and manifest format. To add
 one to the selector, stop Forge and move the whole project folder into your
@@ -279,7 +289,7 @@ unused assets, and movement findings under explicitly selected assumptions.
 Clipboard editing, duplication, transforms and reusable project stamps are described
 in the [composition guide](docs/STANDALONE.md#clipboard-and-reusable-stamps).
 
-See [the 0.10.0 release notes](docs/RELEASE-0.10.0.md) and
+See [the 0.11.0 release notes](docs/RELEASE-0.11.0.md) and
 [building and releasing](docs/RELEASING.md) for release validation and publication.
 
 ## License

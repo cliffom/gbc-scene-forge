@@ -107,7 +107,8 @@ GBC palette checks. A warning beside Project tools remains visible when a scene
 exceeds its configured palette budget. Open a command group with Enter or Space;
 Tab moves between its buttons and Escape dismisses it.
 
-The left library separates **Artwork**, **Objects** and **Stamps**. Arrow keys move
+The left library separates **Artwork**, **Objects** and **Stamps**, with a
+**Blockout** tab when planning presets are available. Arrow keys move
 between tabs; Home/End choose the first/last tab. Artwork contains import, search,
 filters and tile metadata. Objects contains markers and reusable definitions.
 Stamps provides a full-width selector, placement and deletion; long names are
@@ -124,6 +125,18 @@ canvas scrolls independently of the library and inspector.
 
 See [layout guidelines](UI-DESIGN.md) for the grouping and sizing rules used by the
 editor, including the reserved space for dropdown arrows.
+
+## Artwork-free blockout
+
+Choose **Blockout — no artwork needed** during project creation, or **Scene
+actions → Create blockout scene…** in an existing project. The optional Blockout
+library contains configurable geometry, markers, notes and camera guides.
+Drawing/resizing uses scene Undo/Redo, and camera/full-route SVG review includes
+unsaved plan edits without saving them. The plan uses native objects, typed
+definitions and existing portable Tiled storage; artwork can be added on separate
+layers later. Start with the [blockout tutorial](user/blockout-tutorial.md), or
+see the [blockout reference](BLOCKOUT.md) for dimensions, presets,
+camera intent, limits, the opening-forest example and shared services for MCP #51.
 
 ## Import and edit
 

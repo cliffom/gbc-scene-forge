@@ -7,6 +7,7 @@ from uuid import UUID, uuid4
 
 from . import (
     atlas,
+    blockout,
     diagnostics,
     exporting,
     object_definitions,
@@ -94,7 +95,8 @@ class Project:
         raise ValueError("Create a project in a new or empty directory")
 
     @classmethod
-    def create(cls, root, title):
+    def create(cls, root, title, *, starter="empty"):
+        atlas.require(starter in ("empty", "blockout"), "Choose an empty or blockout project")
         root = Path(root).absolute()
         title = name(title)
         # Creation only claims empty folders or its own recoverable creation journal.
@@ -111,6 +113,8 @@ class Project:
             "files": {},
             "preview": {"zoom": 3, "grid": True},
         }
+        if starter == "blockout":
+            blockout.initialize(document)
         Transactions(root, ".forge/history").apply(
             {MANIFEST: json_text(document).encode()}, {MANIFEST: None}, "Create project"
         )
@@ -514,6 +518,35 @@ class Project:
             if digest(data) != document["files"][path]:
                 raise Conflict("Project asset changed on disk. Restore it or reimport the atlas.")
             return data
+
+    def create_blockout_scene(self, title, settings, revision):
+        document = self._current(revision)
+        title = name(title)
+        scene = blockout.new_scene(document, settings)
+        scene_id = str(uuid4())
+        path = f"scenes/{scene_id}.tmj"
+        document["scenes"].append({"id": scene_id, "name": title, "path": path})
+        encoded = json_text(tiled.encode(scene, document)).encode()
+        self._commit(document, revision, {path: encoded}, {path: None}, "Create blockout scene")
+        return {"id": scene_id, "name": title, "revision": digest(encoded), "scene": scene}
+
+    def blockout_review(self, scene_id, revision, scene_revision, scene=None, camera_id=None):
+        with self.transactions.locked():
+            document = self._current(revision)
+            current = self._load_scene(scene_id, document)
+            if current["revision"] != scene_revision:
+                raise Conflict("Scene changed on disk. Reopen before reviewing the blockout.")
+            candidate = current["scene"] if scene is None else scene
+            result = blockout.review(candidate, document, camera_id)
+            self._current(revision)
+            if self._load_scene(scene_id, document)["revision"] != scene_revision:
+                raise Conflict("Scene changed while reviewing the blockout.")
+            return {
+                **result,
+                "scene_id": scene_id,
+                "project_revision": revision,
+                "scene_revision": scene_revision,
+            }
 
     def create_scene(self, title, width, height, grid, revision):
         document = self._current(revision)

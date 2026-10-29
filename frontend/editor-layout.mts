@@ -1,5 +1,5 @@
 /** Native command popovers and keyboard-operable authoring library tabs. */
-export type LibraryCategory = 'artwork' | 'objects' | 'stamps';
+export type LibraryCategory = 'artwork' | 'objects' | 'stamps' | 'blockout';
 
 function element<T extends HTMLElement>(id: string, type: new () => T): T {
   const value = document.getElementById(id);
@@ -10,7 +10,7 @@ function element<T extends HTMLElement>(id: string, type: new () => T): T {
 }
 
 export function createEditorLayout() {
-  const categories: LibraryCategory[] = ['artwork', 'objects', 'stamps'];
+  const categories: LibraryCategory[] = ['artwork', 'objects', 'blockout', 'stamps'];
   function showLibrary(category: LibraryCategory, focus = false) {
     for (const name of categories) {
       const selected = name === category;
@@ -23,29 +23,33 @@ export function createEditorLayout() {
       }
     }
   }
-  for (const [index, category] of categories.entries()) {
+  for (const category of categories) {
     const tab = element(`${category}-tab`, HTMLButtonElement);
     tab.onclick = () => showLibrary(category);
     tab.onkeydown = (event) => {
+      const available = categories.filter(
+        (name) => !element(`${name}-tab`, HTMLButtonElement).hidden,
+      );
+      const index = available.indexOf(category);
       let next: number;
       switch (event.key) {
         case 'ArrowRight':
-          next = (index + 1) % categories.length;
+          next = (index + 1) % available.length;
           break;
         case 'ArrowLeft':
-          next = (index + categories.length - 1) % categories.length;
+          next = (index + available.length - 1) % available.length;
           break;
         case 'Home':
           next = 0;
           break;
         case 'End':
-          next = categories.length - 1;
+          next = available.length - 1;
           break;
         default:
           return;
       }
       event.preventDefault();
-      showLibrary(categories[next], true);
+      showLibrary(available[next], true);
     };
   }
   for (const name of ['scene', 'project', 'transform']) {
@@ -102,6 +106,13 @@ export function createEditorLayout() {
   reflectPaletteState();
   return {
     showLibrary,
+    enableBlockout(enabled: boolean) {
+      const tab = element('blockout-tab', HTMLButtonElement);
+      tab.hidden = !enabled;
+      if (!enabled && tab.getAttribute('aria-selected') === 'true') {
+        showLibrary('artwork');
+      }
+    },
     reveal(this: void, target: HTMLElement) {
       const panel = target.closest('[role=tabpanel]');
       const category = categories.find((name) => panel?.id === `${name}-panel`);

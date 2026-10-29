@@ -1974,6 +1974,8 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
     true,
     'The Space-pan fixture must have vertical scroll room',
   );
+  await evaluate(`document.getElementById('viewport').addEventListener('pointerdown',
+    event => {window.__activePanPointer = event.pointerId}, {capture:true, once:true})`);
   await browser.call('Input.dispatchMouseEvent', {
     type: 'mousePressed',
     x: panPoint[0],
@@ -1985,6 +1987,14 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   assert.equal(
     await evaluate("getComputedStyle(document.getElementById('viewport')).cursor"),
     'grabbing',
+  );
+  // A delayed loss from the canvas's prior capture must not cancel viewport ownership.
+  await evaluate(`document.getElementById('scene').dispatchEvent(new PointerEvent(
+    'lostpointercapture', {pointerId:window.__activePanPointer,bubbles:true}))`);
+  assert.equal(
+    await evaluate("getComputedStyle(document.getElementById('viewport')).cursor"),
+    'grabbing',
+    'Losing a child canvas capture must preserve the active viewport pan',
   );
   await browser.call('Input.dispatchMouseEvent', {
     type: 'mouseMoved',

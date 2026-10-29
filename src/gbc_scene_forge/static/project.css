@@ -341,3 +341,21 @@
 #first-scene-guide h3 {margin-top:16px;font-size:18px;color:var(--accent)}
 #first-scene-guide .dialog-actions {flex-wrap:wrap}
 #first-scene-guide #guide-text {margin:12px 0}
+
+/* Blockout extends the library only for projects that have planning definitions. */
+.library-tabs:has(#blockout-tab:not([hidden])) {grid-template-columns:repeat(2,minmax(0,1fr))}
+#blockout-panel {overflow:auto}
+#blockout-presets {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;align-content:start}
+#blockout-presets button {display:flex;align-items:center;gap:6px;text-align:left;white-space:normal;font-size:11px;padding:6px;min-width:0;overflow-wrap:anywhere}
+.preset-symbol {flex:none;min-width:20px;text-align:center;font-weight:700;color:var(--accent)}
+#blockout-presets [aria-pressed=true] {border-color:var(--accent);background:#373729}
+#blockout-panel .layer-actions {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin:0}
+#blockout-panel .layer-actions button {padding:6px;font-size:11px}
+#blockout-review-dialog {width:min(1100px,calc(100vw - 40px));max-height:calc(100dvh - 32px);overflow:auto}
+#blockout-review-dialog h3 {margin:16px 0 8px}
+#blockout-review-dialog a {display:inline-block;color:var(--accent);padding:6px 0}
+#blockout-review-dialog>.dialog-actions {position:sticky;bottom:-24px;background:var(--panel);padding:12px 0;border-top:1px solid var(--line)}
+.blockout-overview,.blockout-camera {padding:12px;background:#151a18;border:1px solid var(--line);overflow:auto}
+.blockout-overview img {display:block;width:100%;height:auto}
+.blockout-camera img {display:block;min-width:160px;width:480px;max-width:100%;height:auto}
+#create-blockout-dialog {max-height:calc(100dvh - 32px);overflow:auto}

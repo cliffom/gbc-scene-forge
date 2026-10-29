@@ -60,7 +60,10 @@ class ProjectRoot:
         }
 
     def create(self, title, *, starter="empty"):
-        require(starter in ("empty", "sample"), "Choose an empty or sample project")
+        require(
+            starter in ("empty", "sample", "blockout"),
+            "Choose an empty, sample or blockout project",
+        )
         directory = slug(title)
         path = self.path(directory)
         try:
@@ -79,5 +82,5 @@ class ProjectRoot:
 
             prepare(path, title=title)
         else:
-            Project.create(path, title)
+            Project.create(path, title, starter=starter)
         return directory
