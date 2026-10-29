@@ -44,6 +44,33 @@ try {
     evaluate(
       `(()=>{const c=document.getElementById(${JSON.stringify(id)});c.value=${JSON.stringify(value)};c.dispatchEvent(new Event(c.tagName==='SELECT'?'change':'input',{bubbles:true}));})()`,
     );
+  const checkLabels = async () => {
+    await evaluate(
+      'new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))',
+    );
+    assert.equal(
+      await evaluate(`(()=>{
+      const labels=[...document.querySelectorAll('.blockout-label')];
+      const canvas=document.getElementById('scene').getBoundingClientRect();
+      const viewport=document.getElementById('viewport').getBoundingClientRect();
+      return labels.length>0 && labels.every((node,index)=>{
+        const rect=node.getBoundingClientRect(), style=getComputedStyle(node);
+        return style.fontSize==='13px' && style.pointerEvents==='none' &&
+          node.scrollWidth<=node.clientWidth &&
+          rect.left>=Math.max(canvas.left,viewport.left) &&
+          rect.top>=Math.max(canvas.top,viewport.top) &&
+          rect.right<=Math.min(canvas.right,viewport.right)+1 &&
+          rect.bottom<=Math.min(canvas.bottom,viewport.bottom)+1 &&
+          labels.slice(index+1).every(other=>{
+            const b=other.getBoundingClientRect();
+            return rect.right<=b.left || b.right<=rect.left || rect.bottom<=b.top || b.bottom<=rect.top;
+          });
+      });
+    })()`),
+      true,
+      'Display-resolution captions fit the visible scene without clipping or overlap',
+    );
+  };
   const role = (name: string) =>
     chrome.click(
       `document.querySelector('#blockout-presets [data-blockout-role=${JSON.stringify(name)}]')`,
@@ -216,6 +243,8 @@ try {
   await click('save');
   await wait("document.getElementById('status').textContent==='Scene saved.'");
   const withArt = await saved();
+  await checkLabels();
+  await chrome.screenshot('blockout-labels-with-artwork');
   assert.deepEqual(
     array(record(withArt.scene).layers, record).flatMap((layer) =>
       array(layer.objects ?? [], record),
@@ -256,6 +285,93 @@ try {
   await click('blockout-tab');
   await click('fit-scene');
   await chrome.screenshot('blockout-opening-forest');
+  await checkLabels();
+  // Display text stays crisp at every zoom and at both standard and Retina densities.
+  for (const deviceScaleFactor of [1, 2]) {
+    await chrome.call('Emulation.setDeviceMetricsOverride', {
+      width: 1440,
+      height: 1100,
+      deviceScaleFactor,
+      mobile: false,
+    });
+    for (const zoom of ['0.5', '1', '2', '4']) {
+      await set('zoom', zoom);
+      await checkLabels();
+    }
+  }
+  await click('blockout-camera-select');
+  await click('blockout-camera-edit');
+  const longCameraName = 'Gameplay camera 160 × 136 with a deliberately long framing description';
+  await set('object-name', longCameraName);
+  await click('object-apply');
+  await checkLabels();
+  assert.equal(
+    await evaluate(
+      `document.querySelector('.blockout-label[data-priority="0"]')?.textContent.endsWith('…')`,
+    ),
+    true,
+  );
+  assert.equal(
+    await evaluate("document.getElementById('selection-name').textContent"),
+    longCameraName,
+  );
+  await evaluate("document.getElementById('viewport').scrollTo(80,160)");
+  await checkLabels();
+  assert.equal(
+    await evaluate(`(()=>{
+    const canvas=document.getElementById('scene').getBoundingClientRect();
+    const label=document.querySelector('.blockout-label[data-object-id="1"]').getBoundingClientRect();
+    return Math.abs(label.top-(canvas.top+136*4))<=64;
+  })()`),
+    true,
+    'The selected camera caption follows its scene-space anchor while panning',
+  );
+  await chrome.screenshot('blockout-labels-4x-retina');
+  await chrome.click('document.querySelector(\'#layers [data-layer-id="4"] input\')');
+  const noteId = string(
+    await evaluate(
+      "[...document.getElementById('object-list').options].find(o=>o.textContent.includes('Stage pacing')).value",
+    ),
+  );
+  await set('object-list', noteId);
+  assert.equal(await evaluate("document.getElementById('selection-note').hidden"), false);
+  assert.equal(
+    await evaluate(
+      "document.getElementById('selection-note').textContent.includes('full stage length remains undecided')",
+    ),
+    true,
+  );
+  await chrome.call('Emulation.setDeviceMetricsOverride', {
+    width: 1440,
+    height: 1100,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await click('fit-scene');
+  await checkLabels();
+  await chrome.call('Emulation.setDeviceMetricsOverride', {
+    width: 1200,
+    height: 900,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await checkLabels();
+  await chrome.call('Emulation.setDeviceMetricsOverride', {
+    width: 1440,
+    height: 1100,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await checkLabels();
+  await chrome.click('document.querySelector(\'#layers [data-layer-id="4"] .layer-eye\')');
+  await checkLabels();
+  assert.equal(
+    await evaluate(
+      `Boolean(document.querySelector('.blockout-label[data-object-id="${noteId}"]'))`,
+    ),
+    false,
+  );
+  await chrome.click('document.querySelector(\'#layers [data-layer-id="4"] .layer-eye\')');
   await click('blockout-review');
   await wait(
     "document.getElementById('blockout-review-dialog').open && document.getElementById('blockout-camera-image').naturalWidth===160",

@@ -267,3 +267,33 @@ whole-project ZIP downloads successfully.
 
 For preset customization, storage details, preview limits and the shared service
 boundary, see the [blockout reference](../BLOCKOUT.md).
+
+## Reading labels in a dense plan
+
+Canvas labels stay at 13 display pixels as you zoom, independently of the pixel
+artwork. Captions use an opaque dark background and a colored edge matching the
+object. The selected object's caption gets first placement, followed by cameras,
+gameplay markers, design notes/sections, geometry, and climb entry/exit captions.
+Labels try nearby positions and are omitted when those positions are occupied.
+At most 160 captions are displayed in the visible part of the scene.
+
+Long captions are shortened with an ellipsis. Select an object on the canvas or
+through its layer's object list to prioritize its caption and read its complete
+name and design note in the Selection inspector. **Edit selected object** exposes
+all typed properties, including camera scrolling and climb endpoints. Notes stay
+in the inspector instead of expanding across the plan.
+
+Panning and resizing recalculate captions for the visible scene. Labels do not
+intercept canvas clicks or change selection, geometry, saved files, or Undo.
+Zooming in gives nearby labels more room; hiding a layer also hides its labels.
+
+Downloaded and MCP SVG reviews use vector text with the same role hierarchy,
+nearby placement, shortening, collision suppression, and a 160-caption limit.
+Their captions use a fixed 11 scene-pixel font and scale with the SVG, unlike the
+browser's display-size text. SVG object titles retain names and notes even when
+captions are omitted; native scene data and the browser inspector remain the
+complete reference. The camera review lays out captions inside its own frame.
+
+See the [before](../screenshots/blockout-labels/before.png),
+[after](../screenshots/blockout-labels/after.png), and
+[4× Retina view](../screenshots/blockout-labels/4x-retina.png).

@@ -367,6 +367,56 @@ def xml_text(text):
     )
 
 
+def svg_labels(candidates, view):
+    """Bounded, deterministic vector captions using explicit monospace metrics.
+
+    Priority matches the browser: cameras, markers, notes, geometry, endpoints.
+    Full captions remain available in SVG titles and the native scene inspector.
+    """
+    placed, body = [], []
+    left, top = view["x"], view["y"]
+    right, bottom = left + view["width"], top + view["height"]
+    height, gap = 20, 4
+    max_chars = min(32, int((view["width"] - 2 * gap - 16) / 7))
+    if max_chars < 2 or view["height"] < height + 2 * gap:
+        return body
+    for priority, x, y, width, item_height, label, color in sorted(
+        candidates, key=lambda candidate: candidate[0]
+    ):
+        if x >= right or y >= bottom or x + width <= left or y + item_height <= top:
+            continue
+        caption = label if len(label) <= max_chars else label[: max_chars - 1] + "…"
+        w = len(caption) * 7 + 16
+        anchor_x, anchor_y = max(left, x), max(top, y)
+        for dx, dy in (
+            (6, -height - 6),
+            (6, 6),
+            (6, height + 10),
+            (6, -height * 2 - 10),
+            (-w - 6, 6),
+        ):
+            px = max(left + gap, min(anchor_x + dx, right - w - gap))
+            py = max(top + gap, min(anchor_y + dy, bottom - height - gap))
+            if any(
+                px < ox + ow + gap
+                and px + w + gap > ox
+                and py < oy + height + gap
+                and py + height + gap > oy
+                for ox, oy, ow in placed
+            ):
+                continue
+            placed.append((px, py, w))
+            body.append(
+                f'<g class="blockout-label"><title>{xml_text(label)}</title>'
+                f'<rect x="{px}" y="{py}" width="{w}" height="{height}" rx="3" fill="#17201a" stroke="{color}"/>'
+                f'<text x="{px + 8}" y="{py + 14}" fill="#f4f6ef" font-family="monospace" font-size="11" textLength="{len(caption) * 7}" lengthAdjust="spacingAndGlyphs">{xml_text(caption)}</text></g>'
+            )
+            break
+        if len(placed) >= 160:
+            break
+    return body
+
+
 def render_svg(scene, project, camera=None):
     """Portable, escaped planning preview. Artwork stays in the main editor/export.
 
@@ -381,7 +431,7 @@ def render_svg(scene, project, camera=None):
         <= 4096,
         "SVG review supports at most 4096 visible objects; hide layers to review a subset",
     )
-    body = []
+    body, labels = [], []
     for layer in tiled.scene_layers(scene):
         if not layer["visible"]:
             continue
@@ -390,9 +440,10 @@ def render_svg(scene, project, camera=None):
             if style is None or (camera and style["role"] == "camera"):
                 continue
             x, y, color = item["x"], item["y"], style["color"]
-            label = f"{style['symbol']} {item.get('name') or style['role']}"[:100]
+            label = f"{style['symbol']} {item.get('name') or style['role']}"
             if style["role"] in ("note", "section") and style["properties"].get("design_note"):
-                label += " · " + str(style["properties"]["design_note"]).splitlines()[0][:100]
+                label += " · " + str(style["properties"]["design_note"])
+            body.append(f"<g><title>{xml_text(label)}</title>")
             dash = ' stroke-dasharray="4 3"' if style["pattern"] in ("outline", "one-way") else ""
             if item.get("kind") == "rectangle":
                 w, h = item["width"], item["height"]
@@ -422,23 +473,39 @@ def render_svg(scene, project, camera=None):
                 if style["role"] == "climb":
                     for prefix in ("entry", "exit"):
                         px, py = endpoint(item, style["properties"], prefix)
-                        body.append(
-                            f'<circle cx="{px}" cy="{py}" r="3" fill="{color}"/><text x="{px + 4}" y="{py}" fill="{color}" font-size="7">{prefix.upper()}</text>'
-                        )
-                ty = y + 8
+                        body.append(f'<circle cx="{px}" cy="{py}" r="3" fill="{color}"/>')
+                        labels.append((5, px, py, 1, 1, prefix.upper(), color))
             else:
                 body.append(
                     f'<path d="M{x} {y - 5}l5 5 -5 5 -5 -5Z" fill="{color}" fill-opacity="0.4" stroke="{color}"/>'
                 )
-                ty = y - 7
+
             if style["role"] == "camera":
                 props = style["properties"]
                 label += f" · X {camera_axis(props.get('scroll_x'))} · Y {camera_axis(props.get('scroll_y'))}"
-            label_x = max(2, min(x + 2, width - len(label) * 4 - 2))
-            ty = max(8, min(ty, height - 2))
-            body.append(
-                f'<text x="{label_x}" y="{ty}" fill="{color}" stroke="#151a18" stroke-width="2" paint-order="stroke" font-family="sans-serif" font-size="7">{xml_text(label)}</text>'
+            priority = (
+                1
+                if style["role"] == "camera"
+                else 2
+                if item["kind"] == "point" and style["role"] != "note"
+                else 3
+                if style["role"] in ("note", "section")
+                else 4
             )
+            point = item["kind"] == "point"
+            labels.append(
+                (
+                    priority,
+                    x - (5 if point else 0),
+                    y - (5 if point else 0),
+                    10 if point else item["width"],
+                    10 if point else item["height"],
+                    label,
+                    color,
+                )
+            )
+            body.append("</g>")
+    body.extend(svg_labels(labels, view))
     require(
         sum(len(part.encode("utf-8")) for part in body) <= 2 * 1024 * 1024,
         "Review exceeds 2 MiB; hide layers to review a subset",

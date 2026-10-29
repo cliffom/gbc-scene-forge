@@ -112,3 +112,68 @@ await test('portable appearance metadata supports custom presets, safe color fal
     { x: 40, y: 64 },
   );
 });
+
+await test('labels prioritize selection, avoid collisions and stay within the visible scene', async () => {
+  const { layoutLabels, intersects } = await import('../frontend/blockout-labels.mts');
+  const candidates = Array.from({ length: 1000 }, (_, i) => ({
+    id: String(i),
+    text: 'Long overlapping camera or marker caption ' + i,
+    color: '#ffffff',
+    priority: i === 999 ? 0 : 4,
+    x: 10,
+    y: 10,
+    width: 100,
+    height: 80,
+  }));
+  const view = { x: 0, y: 0, width: 200, height: 100 };
+  const labels = layoutLabels(candidates, view, (text) => [...text].length * 7);
+  assert.equal(labels[0].candidate.id, '999');
+  assert.ok(labels.length < candidates.length);
+  assert.ok(labels[0].text.endsWith('…'));
+  for (const [index, label] of labels.entries()) {
+    assert.ok(label.x >= 0 && label.y >= 0);
+    assert.ok(label.x + label.width <= view.width);
+    assert.ok(label.y + label.height <= view.height);
+    for (const other of labels.slice(index + 1)) {
+      assert.equal(intersects(label, other, 4), false);
+    }
+  }
+  assert.deepEqual(
+    layoutLabels(candidates, { ...view, x: 500 }, () => 10),
+    [],
+  );
+  assert.deepEqual(
+    layoutLabels(candidates, { ...view, width: 10 }, () => 10),
+    [],
+  );
+  assert.equal(candidates[999].text, 'Long overlapping camera or marker caption 999');
+});
+await test('labels use effective metadata, preserve full saved captions and give markers priority over geometry', async () => {
+  const { labelCandidates } = await import('../frontend/blockout-labels.mts');
+  const item = { ...definitionInstance(definition, 16, 32), id: '1', name: 'A long name' };
+  const [plain] = labelCandidates([item], [definition], new Set(), 4);
+  assert.equal(plain.text, '1W A long name');
+  assert.equal(plain.x, 64);
+  assert.equal(plain.y, 128);
+  assert.equal(plain.width, 128);
+  const [selected] = labelCandidates([item], [definition], new Set(['1']), 0.5);
+  assert.equal(selected.priority, 0);
+  assert.equal(selected.x, 8);
+  const [marker] = labelCandidates(
+    [
+      {
+        id: '2',
+        kind: 'point',
+        x: 0,
+        y: 0,
+        name: 'Marker',
+        class: '',
+        properties: [{ name: 'blockout_role', type: 'string', value: 'spawn' }],
+      },
+    ],
+    [],
+    new Set(),
+    1,
+  );
+  assert.ok(marker.priority < plain.priority);
+});

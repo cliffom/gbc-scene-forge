@@ -95,7 +95,6 @@ export function drawBlockout(
   context: CanvasRenderingContext2D,
   item: SceneObject,
   definitions: ObjectDefinition[],
-  zoom: number,
 ): boolean {
   const style = blockoutAppearance(item, definitions);
   if (!style) {
@@ -153,8 +152,6 @@ export function drawBlockout(
         context.beginPath();
         context.arc(p.x, p.y, 3, 0, Math.PI * 2);
         context.fill();
-        context.font = '7px sans-serif';
-        context.fillText(prefix.toUpperCase(), p.x + 4, p.y);
       }
     }
   } else {
@@ -169,28 +166,6 @@ export function drawBlockout(
     context.globalAlpha = 1;
     context.stroke();
   }
-  let label = `${style.symbol} ${item.name || style.role}`.slice(0, 100);
-  if (style.role === 'camera') {
-    label += ` · X ${cameraAxis(style.properties.scroll_x)} · Y ${cameraAxis(style.properties.scroll_y)}`;
-  }
-  if (['note', 'section'].includes(style.role) && style.properties.design_note) {
-    label += ` · ${String(style.properties.design_note).split('\n')[0].slice(0, 100)}`;
-  }
-  context.setLineDash([]);
-  // Keep labels legible during a normal editing zoom without covering the entire plan.
-  context.font = `${Math.max(7, Math.min(22, 11 / zoom))}px sans-serif`;
-  const ty = Math.max(
-    9,
-    Math.min(item.kind === 'point' ? y - 7 : y + 9, context.canvas.height - 2),
-  );
-  const labelX = Math.max(
-    2,
-    Math.min(x + 2, context.canvas.width - context.measureText(label).width - 2),
-  );
-  context.lineWidth = 2;
-  context.strokeStyle = '#151a18';
-  context.strokeText(label, labelX, ty);
-  context.fillText(label, labelX, ty);
   context.restore();
   return true;
 }
