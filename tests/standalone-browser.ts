@@ -1340,6 +1340,12 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
     })()`),
       number,
     );
+    await evaluate(`window.__layerCaptureReady=false;
+      document.getElementById('layers').addEventListener('gotpointercapture',event=>{
+        if(event.isTrusted && event.target===document.getElementById('layers')) {
+          window.__layerCaptureReady=true;
+        }
+      },{once:true})`);
     await browser.call('Input.dispatchMouseEvent', {
       type: 'mousePressed',
       x: points[0],
@@ -1348,8 +1354,19 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
       buttons: 1,
       clickCount: 1,
     });
+    // setPointerCapture establishes a pending override. Flush native capture before
+    // the large drag movement instead of racing Chrome's CDP event delivery.
     await browser.call('Input.dispatchMouseEvent', {
       type: 'mouseMoved',
+      button: 'left',
+      x: points[0],
+      y: points[1] + 1,
+      buttons: 1,
+    });
+    await wait('window.__layerCaptureReady');
+    await browser.call('Input.dispatchMouseEvent', {
+      type: 'mouseMoved',
+      button: 'left',
       x: points[0],
       y: points[2],
       buttons: 1,
@@ -1433,6 +1450,7 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   );
   await browser.call('Input.dispatchMouseEvent', {
     type: 'mouseMoved',
+    button: 'left',
     x: dragPoints[0],
     y: edgeY,
     buttons: 1,
@@ -1995,6 +2013,12 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   })()`);
   await evaluate(`document.getElementById('viewport').addEventListener('pointerdown',
     event => {window.__activePanPointer = event.pointerId}, {capture:true, once:true})`);
+  await evaluate(`window.__panCaptureReady=false;
+    document.getElementById('viewport').addEventListener('gotpointercapture',event=>{
+      if(event.isTrusted && event.target===document.getElementById('viewport')) {
+        window.__panCaptureReady=true;
+      }
+    },{once:true})`);
   await browser.call('Input.dispatchMouseEvent', {
     type: 'mousePressed',
     x: panPoint[0],
@@ -2007,6 +2031,16 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
     await evaluate("getComputedStyle(document.getElementById('viewport')).cursor"),
     'grabbing',
   );
+  // Wait for the native transfer before injecting a delayed child-capture loss.
+  // A pending setPointerCapture override is not a delivered gotpointercapture event.
+  await browser.call('Input.dispatchMouseEvent', {
+    type: 'mouseMoved',
+    button: 'left',
+    x: panPoint[0],
+    y: panPoint[1] + 1,
+    buttons: 1,
+  });
+  await wait('window.__panCaptureReady');
   // A delayed loss from the canvas's prior capture must not cancel viewport ownership.
   // Preserve the active mouse's button state in the simulated capture transfer.
   await evaluate(`document.getElementById('scene').dispatchEvent(new PointerEvent(
@@ -2019,6 +2053,7 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   );
   await browser.call('Input.dispatchMouseEvent', {
     type: 'mouseMoved',
+    button: 'left',
     x: panPoint[0],
     y: panPoint[1] - 60,
     buttons: 1,
@@ -2041,6 +2076,7 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   );
   await browser.call('Input.dispatchMouseEvent', {
     type: 'mouseMoved',
+    button: 'left',
     x: panPoint[0] + 50,
     y: panPoint[1] - 80,
     buttons: 1,
