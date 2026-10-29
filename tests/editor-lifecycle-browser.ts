@@ -188,6 +188,59 @@ try {
     canvas:document.getElementById('scene').toDataURL()})`),
     displayed,
   );
+  // Pending definition mutations temporarily disable the form. Disposal must
+  // restore its previous states now, before a replacement reuses the same DOM.
+  for (const route of ['save-object-definition', 'delete-object-definition']) {
+    await evaluate(`document.getElementById('manage-definitions').click();
+      if(${JSON.stringify(route)}==='delete-object-definition') {
+        const list=document.getElementById('definition-list');
+        list.value=[...list.options].find(option=>option.textContent==='Interrupted definition save').value;
+        list.dispatchEvent(new Event('change'));
+      } else {
+        document.getElementById('definition-name').value='Interrupted definition save';
+        document.getElementById('definition-add-field').click();
+        document.querySelector('.field-name').value='label';
+      }
+      window.__mutationHeld=false;
+      window.fetch=async(...args)=>{
+        const response=await window.__fetch(...args);
+        if(String(args[0]).endsWith('/api/'+${JSON.stringify(route)})) {
+          window.__mutationHeld=true;
+          await new Promise(resolve=>{window.__releaseMutation=resolve});
+        }
+        return response;
+      };`);
+    const controlStates = `Array.from(document.querySelectorAll('#definition-form input, #definition-form button, #definition-form select, #definition-form textarea'), control=>control.disabled)`;
+    const before = await evaluate(controlStates);
+    await evaluate(
+      route === 'save-object-definition'
+        ? "document.getElementById('definition-save').click()"
+        : `window.__confirm=window.confirm;window.confirm=()=>true;
+           document.getElementById('definition-delete').click();window.confirm=window.__confirm`,
+    );
+    await chrome.wait('window.__mutationHeld');
+    assert.equal(await evaluate(`(${controlStates}).every(Boolean)`), true);
+    await evaluate('window.__mounted.dispose()');
+    assert.deepEqual(await evaluate(controlStates), before);
+    await evaluate(`window.fetch=window.__fetch;
+      document.getElementById('status').textContent='Loading replacement';
+      window.__mounted=window.__module.mountProjectEditor()`);
+    await chrome.wait(
+      "document.getElementById('status').textContent === 'Choose a scene, or import an atlas and create one.'",
+    );
+    await evaluate("document.getElementById('manage-definitions').click()");
+    const replacementStates = await evaluate(controlStates);
+    assert.equal(await evaluate("document.getElementById('definition-name').disabled"), false);
+    assert.equal(await evaluate("document.getElementById('definition-kind').disabled"), false);
+    assert.equal(await evaluate("document.getElementById('definition-save').disabled"), false);
+    assert.equal(await evaluate("document.getElementById('definition-close').disabled"), false);
+    await evaluate('window.__releaseMutation()');
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    assert.equal(await evaluate("document.getElementById('definitions-dialog').open"), true);
+    assert.deepEqual(await evaluate(controlStates), replacementStates);
+    await evaluate("document.getElementById('definition-close').click()");
+    assert.equal(await evaluate("document.getElementById('definitions-dialog').open"), false);
+  }
   await evaluate('window.__mounted.dispose()');
   assert.deepEqual(chrome.errors, []);
   console.log(

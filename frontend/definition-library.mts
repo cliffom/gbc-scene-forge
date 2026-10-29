@@ -32,6 +32,8 @@ export function createDefinitionLibrary(
   const error = get('definition-error');
   let id: string | undefined;
   let working = false;
+  let restoreControls: (() => void) | undefined;
+  lifetime.cleanup(() => restoreControls?.());
   const label = (text: string, control: HTMLElement) => {
     const l = document.createElement('label');
     l.className =
@@ -172,7 +174,7 @@ export function createDefinitionLibrary(
     }
   });
   async function commit(work: () => Promise<void>) {
-    if (working) {
+    if (working || lifetime.disposed) {
       return;
     }
     working = true;
@@ -182,12 +184,20 @@ export function createDefinitionLibrary(
       >('input,button,select,textarea'),
     ];
     const disabled = controls.map((c) => c.disabled);
+    restoreControls = () => {
+      controls.forEach((c, i) => {
+        c.disabled = disabled[i];
+      });
+      restoreControls = undefined;
+    };
     controls.forEach((c) => {
       c.disabled = true;
     });
     try {
       await work();
-      dialog.close();
+      if (!lifetime.disposed) {
+        dialog.close();
+      }
     } catch (cause) {
       if (lifetime.disposed) {
         return;
@@ -195,9 +205,7 @@ export function createDefinitionLibrary(
       error.textContent = cause instanceof Error ? cause.message : String(cause);
     } finally {
       if (!lifetime.disposed) {
-        controls.forEach((c, i) => {
-          c.disabled = disabled[i];
-        });
+        restoreControls?.();
       }
       working = false;
     }
