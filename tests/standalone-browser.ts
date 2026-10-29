@@ -1354,10 +1354,12 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
       y: points[2],
       buttons: 1,
     });
+    // CDP can acknowledge mouse movement before Chrome delivers its pointer event.
+    await wait("document.getElementById('layers').dataset.dragging === 'true'");
     return points;
   };
-  const dropLayer = async (points: number[]) =>
-    browser.call('Input.dispatchMouseEvent', {
+  const dropLayer = async (points: number[]) => {
+    await browser.call('Input.dispatchMouseEvent', {
       type: 'mouseReleased',
       x: points[0],
       y: points[2],
@@ -1365,6 +1367,8 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
       buttons: 0,
       clickCount: 1,
     });
+    await wait("document.getElementById('layers').dataset.dragging !== 'true'");
+  };
   let dragPoints = await startLayerDrag('1', '3');
   // Chrome can acknowledge a mouse move before delivering its pointer event.
   await wait("document.getElementById('layers').dataset.dragging === 'true'");
@@ -2004,8 +2008,10 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
     'grabbing',
   );
   // A delayed loss from the canvas's prior capture must not cancel viewport ownership.
+  // Preserve the active mouse's button state in the simulated capture transfer.
   await evaluate(`document.getElementById('scene').dispatchEvent(new PointerEvent(
-    'lostpointercapture', {pointerId:window.__activePanPointer,bubbles:true}))`);
+    'lostpointercapture', {pointerId:window.__activePanPointer,bubbles:true,
+      pointerType:'mouse',isPrimary:true,buttons:1}))`);
   assert.equal(
     await evaluate("getComputedStyle(document.getElementById('viewport')).cursor"),
     'grabbing',
