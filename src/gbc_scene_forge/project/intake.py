@@ -1,5 +1,6 @@
 """Atomic external map intake coordinating artwork, scenes and guarded persistence."""
 
+import copy
 from uuid import uuid4
 
 from gbc_scene_forge.core.errors import Conflict
@@ -19,6 +20,20 @@ class IntakeService:
         fingerprint = digest(json_text({"payload": payload, "revision": revision}).encode())
         try:
             title, scene, entries, changes, dependencies = intake.prepare(payload, document)
+            # Existing maps reference numeric ranges: decode before adding the new artwork.
+            scenes = [self.store.load_scene(item["id"], document) for item in document["scenes"]]
+            document["atlases"].update(entries)
+            expected = {}
+            for loaded in scenes:
+                path = f"scenes/{loaded['id']}.tmj"
+                changes[path] = json_text(tiled.encode(loaded["scene"], document)).encode()
+                expected[path] = loaded["revision"]
+            scene_id = str(uuid4())
+            path = f"scenes/{scene_id}.tmj"
+            changes[path] = json_text(tiled.encode(scene, document)).encode()
+            expected[path] = None
+            document["scenes"].append({"id": scene_id, "name": title, "path": path})
+            self.store.prepare_commit(copy.deepcopy(document), dict(changes))
         except (ValueError, KeyError, TypeError) as error:
             if not dry_run:
                 raise ValueError(str(error)) from error
@@ -49,18 +64,5 @@ class IntakeService:
             return report
         if confirmation != fingerprint:
             raise Conflict("Import inputs changed. Run preflight again before importing.")
-        # Existing maps reference numeric ranges: decode before adding the new artwork.
-        scenes = [self.store.load_scene(item["id"], document) for item in document["scenes"]]
-        document["atlases"].update(entries)
-        expected = {}
-        for loaded in scenes:
-            path = f"scenes/{loaded['id']}.tmj"
-            changes[path] = json_text(tiled.encode(loaded["scene"], document)).encode()
-            expected[path] = loaded["revision"]
-        scene_id = str(uuid4())
-        path = f"scenes/{scene_id}.tmj"
-        changes[path] = json_text(tiled.encode(scene, document)).encode()
-        expected[path] = None
-        document["scenes"].append({"id": scene_id, "name": title, "path": path})
         self.store.commit(document, revision, changes, expected, "Import Tiled map")
         return {**report, "imported": scene_id}

@@ -17,6 +17,7 @@ from gbc_scene_forge.analysis import palette_budget
 from gbc_scene_forge.artwork import png
 from gbc_scene_forge.artwork.metadata import DEFAULT
 from gbc_scene_forge.core.errors import Conflict
+from gbc_scene_forge.core.serialization import json_text
 from gbc_scene_forge.project.application import Project
 
 
@@ -212,6 +213,53 @@ class IntakeTests(unittest.TestCase):
         reopened = Project(extracted)
         self.assertEqual(reopened.scenes.load(loaded["id"])["scene"], loaded["scene"])
         self.assertEqual(payload, external())
+
+    def test_preflight_rejects_compact_map_exceeding_persisted_scene_limit(self):
+        payload = external()
+        source = json.loads(payload["files"]["map.tmj"])
+        source.update(width=256, height=256, nextlayerid=7)
+        source["layers"] = [
+            {
+                "id": index + 1,
+                "name": f"Layer {index + 1}",
+                "type": "tilelayer",
+                "width": 256,
+                "height": 256,
+                "data": [0] * (256 * 256),
+            }
+            for index in range(6)
+        ]
+        payload["files"]["map.tmj"] = json.dumps(source, separators=(",", ":"))
+        self.assertLess(len(payload["files"]["map.tmj"]), 1024 * 1024)
+        before = self.snapshot()
+        revision = self.revision()
+        report = self.project.imports.tiled(payload, revision)
+        self.assertFalse(report["compatible"])
+        self.assertIn("Scene exceeds 4 MiB", report["errors"][0])
+        self.assertNotIn("confirmation", report)
+        with self.assertRaisesRegex(ValueError, "Scene exceeds 4 MiB"):
+            self.project.imports.tiled(payload, revision, dry_run=False)
+        self.assertEqual(self.snapshot(), before)
+        # The neighboring supported case must still confirm, persist and reopen.
+        source["layers"].pop()
+        payload["files"]["map.tmj"] = json.dumps(source, separators=(",", ":"))
+        result = self.import_map(payload)
+        self.assertEqual(len(self.project.scenes.load(result["imported"])["scene"]["layers"]), 5)
+
+    def test_preflight_rejects_growth_beyond_manifest_limit(self):
+        document = self.project.catalog()["project"]
+        document["preview"]["notes"] = ""
+        spare = 8 * 1024 * 1024 - len(json_text(document).encode()) - 64
+        document["preview"]["notes"] = "x" * spare
+        path = self.project.root / "forge.project.json"
+        path.write_text(json_text(document), encoding="utf-8")
+        revision = self.revision()
+        before = self.snapshot()
+        report = self.project.imports.tiled(external(), revision)
+        self.assertFalse(report["compatible"])
+        self.assertIn("Project manifest exceeds 8 MiB", report["errors"][0])
+        self.assertNotIn("confirmation", report)
+        self.assertEqual(self.snapshot(), before)
 
     def test_embedded_tilesets_and_multiple_layers(self):
         payload = external()

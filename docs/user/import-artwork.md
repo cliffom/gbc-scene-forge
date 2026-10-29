@@ -62,6 +62,8 @@ hardware compatibility. Ordinary editing/export remains available.
 - JSON-array tile data, empty cells, horizontal/vertical/diagonal tile transforms.
 - 1–16 PNG sheet tilesets with matching grid, margins and spacing. Each sheet has
   the same PNG and 255-tile limits described above.
+- Persisted scenes must fit 4 MiB and the resulting project manifest 8 MiB.
+  Preflight checks these serialized output limits as well as the source sizes.
 - Up to 65 selected PNG/JSON/map/tileset files, with at most 7 MiB of encoded file
   content (the entire HTTP request must fit the existing 8 MiB limit).
 

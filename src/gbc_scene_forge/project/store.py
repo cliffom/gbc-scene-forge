@@ -108,6 +108,23 @@ class ProjectStore:
         expected: dict[str, str | None],
         label: str,
     ) -> None:
+        expected = {**document["files"], **expected, MANIFEST: revision}
+        self.prepare_commit(document, changes)
+        for path in changes:
+            if path.startswith("assets/"):
+                expected.setdefault(path, None)
+        try:
+            self.transactions.apply(changes, expected, label)
+        except ValueError as error:
+            raise Conflict(str(error)) from error
+
+    def prepare_commit(self, document: NativeDocument, changes: dict[str, bytes | None]) -> None:
+        """Materialize candidate bytes and enforce persistence limits without writing.
+
+        Both preflight and commit use this preparation; transaction guards are
+        still authoritative when the prepared candidate is actually committed.
+        Mutates only the supplied document/change set and reads declared assets.
+        """
         preview_settings.prune(document)
         # Materialize sprite tilesets for previously imported projects on an explicit
         # mutation, guarded and committed together with that operation's other files.
@@ -123,7 +140,6 @@ class ProjectStore:
                 width, _, pixels = png.decode(image)
                 for path, data in atlas.build_sprites(entry, width, pixels).items():
                     changes.setdefault(path, data)
-        expected = {**document["files"], **expected, MANIFEST: revision}
         for path, data in changes.items():
             if path.startswith("scenes/") and data is not None:
                 require(
@@ -131,7 +147,6 @@ class ProjectStore:
                     "Scene exceeds 4 MiB. Reduce layers, objects or property text.",
                 )
             if path.startswith("assets/"):
-                expected.setdefault(path, None)
                 if data is None:
                     document["files"].pop(path, None)
                 else:
@@ -139,10 +154,6 @@ class ProjectStore:
         manifest_bytes = json_text(document).encode()
         changes[MANIFEST] = manifest_bytes
         require(len(manifest_bytes) <= 8 * 1024 * 1024, "Project manifest exceeds 8 MiB")
-        try:
-            self.transactions.apply(changes, expected, label)
-        except ValueError as error:
-            raise Conflict(str(error)) from error
 
     def catalog(self) -> ProjectCatalog:
         """Read the UI/native inventory and its exact saved manifest revision."""
