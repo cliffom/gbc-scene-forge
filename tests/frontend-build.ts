@@ -74,6 +74,13 @@ await test('esbuild bundles nested modules, emits source maps and preserves asse
     assert('frontend/nested/probe.mts' in record(metadata.inputs));
     const sourceMap = record(JSON.parse(await readFile(join(staticDir, 'app.js.map'), 'utf8')));
     assert(array(sourceMap.sources, string).some((name) => name.endsWith('nested/probe.mts')));
+    const projectMap = record(
+      JSON.parse(await readFile(join(staticDir, 'project.js.map'), 'utf8')),
+    );
+    const projectSources = array(projectMap.sources, string);
+    assert(projectSources.some((name) => name.endsWith('project-editor.mts')));
+    assert(!projectSources.some((name) => name.includes('/legacy/')));
+    assert(!projectSources.some((name) => name.endsWith('/app.ts')));
     await writeFile(helper, "export const probe = 'updated nested dependency';\n");
     assert.equal(build().status, 0);
     assert.match(await readFile(join(staticDir, 'app.js'), 'utf8'), /updated nested dependency/);

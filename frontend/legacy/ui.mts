@@ -1,5 +1,5 @@
+import { errorDetails } from '../errors.mts';
 import { $ } from './dom.mts';
-import { errorDetails } from './errors.mts';
 export const status = (message: string) => {
   $('status').textContent = message;
 };

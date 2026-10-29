@@ -1,13 +1,13 @@
-import { $, requireValue } from './dom.mts';
-import { download, guarded, loadImage, status } from './ui.mts';
-import { errorDetails, ProtocolError } from './errors.mts';
-import { progressView } from './progress.mts';
-import * as decode from './decode.mts';
+import { errorDetails, ProtocolError } from '../errors.mts';
 import type { ApiClient } from './api.mts';
+import * as decode from './decode.mts';
 import type { Documents } from './documents.mts';
+import { $, requireValue } from './dom.mts';
+import { progressView } from './progress.mts';
 import type { Renderer } from './render.mts';
 import type { EditorSession } from './session.mts';
 import type { ApplyJob, LastApply } from './types.ts';
+import { download, guarded, loadImage, status } from './ui.mts';
 export function createApply(
   state: EditorSession,
   client: ApiClient,

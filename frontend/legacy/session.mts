@@ -1,5 +1,6 @@
+import type { Scene } from './types.ts';
 /** Shared scene and interaction state; controllers own their transient UI state. */
-import type { Editor } from './model.mts';
+import type { Editor } from '../model.mts';
 import type {
   Brush,
   Catalog,
@@ -7,13 +8,12 @@ import type {
   Gesture,
   Marker,
   Point,
-  Scene,
   Selection,
   Tool,
 } from './types.ts';
 export class EditorSession {
   private activeCatalog: Catalog | null = null;
-  private activeEditor: Editor | null = null;
+  private activeEditor: Editor<Scene> | null = null;
   get catalog(): Catalog {
     if (!this.activeCatalog) {
       throw Error('Catalog has not loaded');
@@ -23,13 +23,13 @@ export class EditorSession {
   set catalog(value: Catalog) {
     this.activeCatalog = value;
   }
-  get editor(): Editor {
+  get editor(): Editor<Scene> {
     if (!this.activeEditor) {
       throw Error('No scene is open');
     }
     return this.activeEditor;
   }
-  set editor(value: Editor) {
+  set editor(value: Editor<Scene>) {
     this.activeEditor = value;
   }
   get ready(): boolean {

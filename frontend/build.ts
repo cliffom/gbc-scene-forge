@@ -1,7 +1,7 @@
 /** Freeze build identity into the browser bundle, including in installed distributions. */
+import { build } from 'esbuild';
 import { execFileSync } from 'node:child_process';
 import { readFile, writeFile } from 'node:fs/promises';
-import { build } from 'esbuild';
 
 const mode = process.env.FORGE_BUILD_MODE ?? 'development';
 if (!['development', 'production'].includes(mode)) {

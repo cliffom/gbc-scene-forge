@@ -1,7 +1,9 @@
+import { EditorLifetime } from './editor-lifetime.mts';
 /** Pointer-driven layer reordering; the model changes only when a drag is dropped. */
 export function layerDragging(
   list: HTMLElement,
   move: (id: number, beforeId: number | null) => void,
+  lifetime: EditorLifetime = new EditorLifetime(),
 ) {
   let drag: {
     pointer: number;
@@ -15,7 +17,7 @@ export function layerDragging(
   } | null = null;
   let frame = 0;
   function clear() {
-    cancelAnimationFrame(frame);
+    lifetime.cancelFrame(frame);
     frame = 0;
     delete list.dataset.dragging;
     list.querySelectorAll<HTMLElement>('.layer-row').forEach((row) => {
@@ -54,63 +56,76 @@ export function layerDragging(
       list.scrollTop += speed;
     }
     indicate();
-    frame = requestAnimationFrame(scroll);
+    frame = lifetime.frame(scroll);
   }
-  list.addEventListener('pointerdown', (event) => {
-    const grip = event.target instanceof Element ? event.target.closest('.layer-grip') : null;
-    const row = grip?.closest<HTMLElement>('.layer-row');
-    if (!row || !event.isPrimary || event.button !== 0 || row.querySelector('input')?.disabled) {
-      return;
-    }
-    event.preventDefault();
-    drag = {
-      pointer: event.pointerId,
-      id: Number(row.dataset.layerId),
-      startX: event.clientX,
-      startY: event.clientY,
-      x: event.clientX,
-      y: event.clientY,
-      active: false,
-      before: null,
-    };
-    list.setPointerCapture(event.pointerId);
-  });
-  list.addEventListener('pointermove', (event) => {
-    if (!drag || event.pointerId !== drag.pointer) {
-      return;
-    }
-    drag.x = event.clientX;
-    drag.y = event.clientY;
-    if (!drag.active && Math.hypot(drag.x - drag.startX, drag.y - drag.startY) >= 4) {
-      drag.active = true;
-      list.dataset.dragging = 'true';
-      const row = list.querySelector<HTMLElement>(`[data-layer-id="${drag.id}"]`);
-      if (row) {
-        row.dataset.dragging = 'true';
+  list.addEventListener(
+    'pointerdown',
+    (event) => {
+      const grip = event.target instanceof Element ? event.target.closest('.layer-grip') : null;
+      const row = grip?.closest<HTMLElement>('.layer-row');
+      if (!row || !event.isPrimary || event.button !== 0 || row.querySelector('input')?.disabled) {
+        return;
       }
-      scroll();
-    }
-    indicate();
-  });
-  list.addEventListener('pointerup', (event) => {
-    if (!drag || event.pointerId !== drag.pointer) {
-      return;
-    }
-    const rect = list.getBoundingClientRect();
-    const commit =
-      drag.active &&
-      event.clientX >= rect.left &&
-      event.clientX <= rect.right &&
-      event.clientY >= rect.top &&
-      event.clientY <= rect.bottom;
-    const { id, before } = drag;
-    clear();
-    if (commit) {
-      move(id, before);
-    }
-  });
-  list.addEventListener('pointercancel', clear);
-  list.addEventListener('lostpointercapture', clear);
+      event.preventDefault();
+      drag = {
+        pointer: event.pointerId,
+        id: Number(row.dataset.layerId),
+        startX: event.clientX,
+        startY: event.clientY,
+        x: event.clientX,
+        y: event.clientY,
+        active: false,
+        before: null,
+      };
+      lifetime.capture(list, event.pointerId);
+    },
+    { signal: lifetime.signal },
+  );
+  list.addEventListener(
+    'pointermove',
+    (event) => {
+      if (!drag || event.pointerId !== drag.pointer) {
+        return;
+      }
+      drag.x = event.clientX;
+      drag.y = event.clientY;
+      if (!drag.active && Math.hypot(drag.x - drag.startX, drag.y - drag.startY) >= 4) {
+        drag.active = true;
+        list.dataset.dragging = 'true';
+        const row = list.querySelector<HTMLElement>(`[data-layer-id="${drag.id}"]`);
+        if (row) {
+          row.dataset.dragging = 'true';
+        }
+        scroll();
+      }
+      indicate();
+    },
+    { signal: lifetime.signal },
+  );
+  list.addEventListener(
+    'pointerup',
+    (event) => {
+      if (!drag || event.pointerId !== drag.pointer) {
+        return;
+      }
+      const rect = list.getBoundingClientRect();
+      const commit =
+        drag.active &&
+        event.clientX >= rect.left &&
+        event.clientX <= rect.right &&
+        event.clientY >= rect.top &&
+        event.clientY <= rect.bottom;
+      const { id, before } = drag;
+      clear();
+      if (commit) {
+        move(id, before);
+      }
+    },
+    { signal: lifetime.signal },
+  );
+  lifetime.cleanup(clear);
+  list.addEventListener('pointercancel', clear, { signal: lifetime.signal });
+  list.addEventListener('lostpointercapture', clear, { signal: lifetime.signal });
   document.addEventListener(
     'keydown',
     (event) => {
@@ -120,6 +135,6 @@ export function layerDragging(
         clear();
       }
     },
-    true,
+    { capture: true, signal: lifetime.signal },
   );
 }

@@ -1,3 +1,4 @@
+import { EditorLifetime } from './editor-lifetime.mts';
 /** Read-only diagnostic options and findings; the server owns all validation rules. */
 import { array, record, string } from './decode.mts';
 export interface DiagnosticLocation {
@@ -16,6 +17,7 @@ export function createDiagnosticsView(
   },
   load: (options: Record<string, unknown>) => Promise<Record<string, unknown>>,
   navigate: (location: DiagnosticLocation) => void,
+  lifetime: EditorLifetime = new EditorLifetime(),
 ) {
   const dialog = document.createElement('dialog');
   dialog.id = 'diagnostics-dialog';
@@ -44,6 +46,10 @@ export function createDiagnosticsView(
     <ol id="diagnostics-findings"></ol>
     <div class="diagnostics-footer"><button id="diagnostics-close" type="button">Close</button></div>`;
   document.body.append(dialog);
+  lifetime.cleanup(() => {
+    generation++;
+    dialog.remove();
+  });
   const form = dialog.querySelector('form');
   const state = dialog.querySelector('#diagnostics-state');
   const error = dialog.querySelector('#diagnostics-error');
@@ -53,14 +59,14 @@ export function createDiagnosticsView(
   }
   let working = false;
   let generation = 0;
-  dialog.onclose = () => {
+  lifetime.assign(dialog, 'onclose', () => {
     if (!dialog.open) {
       generation++;
     }
-  };
+  });
   const close = dialog.querySelector<HTMLButtonElement>('#diagnostics-close');
   if (close) {
-    close.onclick = () => dialog.close();
+    lifetime.assign(close, 'onclick', () => dialog.close());
   }
   function select(name: string) {
     const node = form?.elements.namedItem(name);
@@ -106,6 +112,9 @@ export function createDiagnosticsView(
     return JSON.stringify([report.project_revision, report.scene_revisions, report.findings]);
   }
   function controls(disabled: boolean) {
+    if (lifetime.disposed) {
+      return;
+    }
     working = disabled;
     for (const node of form?.querySelectorAll<
       HTMLInputElement | HTMLSelectElement | HTMLButtonElement
@@ -116,12 +125,12 @@ export function createDiagnosticsView(
       node.disabled = disabled;
     }
   }
-  form.onchange = () => {
+  lifetime.assign(form, 'onchange', () => {
     generation++;
     list.replaceChildren();
     state.textContent = 'Options changed. Run diagnostics again.';
-  };
-  form.onsubmit = (event) => {
+  });
+  lifetime.assign(form, 'onsubmit', (event) => {
     event.preventDefault();
     if (working) {
       return;
@@ -134,7 +143,7 @@ export function createDiagnosticsView(
     controls(true);
     void load(config)
       .then((report) => {
-        if (current !== generation) {
+        if (lifetime.disposed || current !== generation) {
           return;
         }
         const findings = array(report.findings, record);
@@ -150,12 +159,12 @@ export function createDiagnosticsView(
             const button = document.createElement('button');
             button.type = 'button';
             button.textContent = 'Inspect';
-            button.onclick = () => {
+            lifetime.assign(button, 'onclick', () => {
               controls(true);
               error.textContent = '';
               void load(config)
                 .then((fresh) => {
-                  if (current !== generation || !dialog.open) {
+                  if (lifetime.disposed || current !== generation || !dialog.open) {
                     return;
                   }
                   if (signature(fresh) !== signature(report)) {
@@ -178,28 +187,28 @@ export function createDiagnosticsView(
                   navigate(location);
                 })
                 .catch((e: unknown) => {
-                  if (current !== generation) {
+                  if (lifetime.disposed || current !== generation) {
                     return;
                   }
                   error.textContent = `Results may be stale: ${e instanceof Error ? e.message : String(e)}`;
                   list.replaceChildren();
                 })
                 .finally(() => controls(false));
-            };
+            });
             row.append(button);
           }
           list.append(row);
         }
       })
       .catch((e: unknown) => {
-        if (current !== generation) {
+        if (lifetime.disposed || current !== generation) {
           return;
         }
         error.textContent = e instanceof Error ? e.message : String(e);
         state.textContent = 'Report unavailable. Refresh the project after external changes.';
       })
       .finally(() => controls(false));
-  };
+  });
   return {
     open() {
       const values = catalog();

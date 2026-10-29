@@ -1,4 +1,4 @@
-import type { Coordinate, EditorDescriptor, Scene, Selection } from './types.ts';
+import type { Coordinate, EditorDescriptor, Selection, TileScene } from './types.ts';
 // Editing operations use native scene pixels and semantic cell identifiers.
 export const clone = <T,>(value: T): T => structuredClone(value);
 
@@ -14,7 +14,7 @@ export function canvasPoint(
   };
 }
 
-export class Editor<T extends { width: number; height: number; cells?: string[][] } = Scene> {
+export class Editor<T extends { width: number; height: number; cells?: string[][] } = TileScene> {
   descriptor: EditorDescriptor;
   reasons: Map<string, string>;
   scene: T;

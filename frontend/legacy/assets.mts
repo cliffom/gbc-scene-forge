@@ -1,7 +1,7 @@
 import { $, context, requireValue } from './dom.mts';
-import { loadImage, status } from './ui.mts';
 import type { EditorSession } from './session.mts';
 import type { Brush, Tool } from './types.ts';
+import { loadImage, status } from './ui.mts';
 export function createAssets(state: EditorSession, selectTool: (tool: Tool) => void) {
   const images = new Map<string, HTMLImageElement>();
   function assetEntry(id: string) {

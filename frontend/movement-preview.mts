@@ -1,7 +1,8 @@
+import { EditorLifetime } from './editor-lifetime.mts';
 /** Movement and geometry used only by transient previews. Coordinates are native pixels. */
-import type { SpritePreviewSettings } from './preview-settings.mts';
 import type { SceneLayer } from './layers.mts';
 import type { SceneObject } from './objects.mts';
+import type { SpritePreviewSettings } from './preview-settings.mts';
 import type { CollisionShape, TileMetadata } from './tile-metadata.mts';
 
 export interface PreviewPoint {
@@ -235,7 +236,10 @@ export class MovementPreview {
   }
 }
 
-export function createMovementPreview(changed: () => void) {
+export function createMovementPreview(
+  changed: () => void,
+  lifetime: EditorLifetime = new EditorLifetime(),
+) {
   function control<T extends HTMLElement>(id: string, type: new () => T): T {
     const element = document.getElementById(id);
     if (!(element instanceof type)) {
@@ -274,21 +278,21 @@ export function createMovementPreview(changed: () => void) {
     }
     error = '';
   }
-  enabled.onchange = () => {
+  lifetime.assign(enabled, 'onchange', () => {
     clear();
     settings();
-  };
-  pause.onclick = () => {
+  });
+  lifetime.assign(pause, 'onclick', () => {
     keys.clear();
     model.paused = !model.paused;
     render();
     changed();
-  };
-  reset.onclick = () => {
+  });
+  lifetime.assign(reset, 'onclick', () => {
     clear();
     render();
     changed();
-  };
+  });
   function settings() {
     const values = fields.map((field) => Number(field.value));
     if (
@@ -315,9 +319,9 @@ export function createMovementPreview(changed: () => void) {
     changed();
   }
   for (const field of [...fields, speed, collision]) {
-    field.onchange = settings;
+    lifetime.assign(field, 'onchange', settings);
   }
-  follow.onclick = () => {
+  lifetime.assign(follow, 'onclick', () => {
     if (!enabled.checked || !target) {
       return;
     }
@@ -342,19 +346,29 @@ export function createMovementPreview(changed: () => void) {
     }
     render();
     changed();
-  };
-  window.addEventListener('keyup', (event) => keys.delete(event.key.toLowerCase()));
-  window.addEventListener('blur', () => {
-    keys.clear();
-    model.path = [];
-    model.moving = false;
-    changed();
   });
-  document.addEventListener('visibilitychange', () => {
-    keys.clear();
-    model.path = [];
-    model.moving = false;
+  window.addEventListener('keyup', (event) => keys.delete(event.key.toLowerCase()), {
+    signal: lifetime.signal,
   });
+  window.addEventListener(
+    'blur',
+    () => {
+      keys.clear();
+      model.path = [];
+      model.moving = false;
+      changed();
+    },
+    { signal: lifetime.signal },
+  );
+  document.addEventListener(
+    'visibilitychange',
+    () => {
+      keys.clear();
+      model.path = [];
+      model.moving = false;
+    },
+    { signal: lifetime.signal },
+  );
   return {
     preferences() {
       const values = fields.map((field) => Number(field.value));

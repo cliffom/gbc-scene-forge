@@ -1,3 +1,4 @@
+import { EditorLifetime } from './editor-lifetime.mts';
 /** Screen-resolution annotations; geometry and pointer hit testing stay on the pixel canvas. */
 import { blockoutAppearance, cameraAxis, climbEndpoint } from './blockout.mts';
 import type { ObjectDefinition } from './object-definitions.mts';
@@ -144,7 +145,11 @@ export function labelCandidates(
   });
 }
 
-export function createBlockoutLabels(canvas: HTMLCanvasElement, viewport: HTMLElement) {
+export function createBlockoutLabels(
+  canvas: HTMLCanvasElement,
+  viewport: HTMLElement,
+  lifetime: EditorLifetime = new EditorLifetime(),
+) {
   const wrapper = document.createElement('div');
   wrapper.className = 'scene-surface';
   canvas.before(wrapper);
@@ -153,6 +158,10 @@ export function createBlockoutLabels(canvas: HTMLCanvasElement, viewport: HTMLEl
   overlay.id = 'blockout-labels';
   overlay.setAttribute('aria-hidden', 'true');
   wrapper.append(overlay);
+  lifetime.cleanup(() => {
+    wrapper.before(canvas);
+    wrapper.remove();
+  });
   const measureContext = document.createElement('canvas').getContext('2d');
   let candidates: LabelCandidate[] = [];
   let pending = false;
@@ -161,7 +170,7 @@ export function createBlockoutLabels(canvas: HTMLCanvasElement, viewport: HTMLEl
       return;
     }
     pending = true;
-    requestAnimationFrame(() => {
+    lifetime.frame(() => {
       pending = false;
       const scene = canvas.getBoundingClientRect(),
         port = viewport.getBoundingClientRect();
@@ -195,8 +204,8 @@ export function createBlockoutLabels(canvas: HTMLCanvasElement, viewport: HTMLEl
       );
     });
   }
-  viewport.addEventListener('scroll', schedule, { passive: true });
-  const observer = new ResizeObserver(schedule);
+  viewport.addEventListener('scroll', schedule, { ...{ passive: true }, signal: lifetime.signal });
+  const observer = lifetime.observe(new ResizeObserver(schedule));
   observer.observe(viewport);
   observer.observe(wrapper);
   return {

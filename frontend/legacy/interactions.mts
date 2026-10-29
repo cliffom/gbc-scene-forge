@@ -1,11 +1,11 @@
-import { $, requireValue } from './dom.mts';
-import { canvasPoint, clone } from './model.mts';
-import { guarded, status } from './ui.mts';
-import { errorDetails } from './errors.mts';
+import { errorDetails } from '../errors.mts';
+import { canvasPoint, clone } from '../model.mts';
 import type { Assets } from './assets.mts';
+import { $, requireValue } from './dom.mts';
 import type { Renderer } from './render.mts';
 import type { EditorSession } from './session.mts';
 import type { Point, Tool } from './types.ts';
+import { guarded, status } from './ui.mts';
 export interface EditActions {
   changed: () => void;
   markChanged: () => void;

@@ -1,6 +1,7 @@
+import { EditorLifetime } from './editor-lifetime.mts';
 /** Blockout controls and revision-matched, read-only SVG review. */
+import { blockoutDefinitions, cameraAxis, definitionRole } from './blockout.mts';
 import { number, record, string } from './decode.mts';
-import { blockoutDefinitions, definitionRole, cameraAxis } from './blockout.mts';
 import type { ObjectDefinition } from './object-definitions.mts';
 import type { SceneObject } from './objects.mts';
 function element<T extends HTMLElement>(id: string, type: new () => T): T {
@@ -28,10 +29,16 @@ export function createBlockoutView(
   choose: (definition: ObjectDefinition) => void,
   camera: (id: string, edit: boolean) => void,
   review: (id: string) => void,
+  lifetime: EditorLifetime = new EditorLifetime(),
 ) {
   const createDialog = element('create-blockout-dialog', HTMLDialogElement);
   const reviewDialog = element('blockout-review-dialog', HTMLDialogElement);
   let urls: string[] = [];
+  function revokePreviews() {
+    urls.forEach((url) => URL.revokeObjectURL(url));
+    urls = [];
+  }
+  lifetime.cleanup(revokePreviews);
   let signature = '';
   let cameraDefaults = '';
   let pendingCreate = false;
@@ -59,10 +66,10 @@ export function createBlockoutView(
     }
     createDialog.showModal();
   }
-  button('show-blockout-create').onclick = showCreate;
-  button('blockout-new-scene').onclick = showCreate;
-  button('blockout-create-cancel').onclick = () => createDialog.close();
-  element('blockout-scene-form', HTMLFormElement).onsubmit = (event) => {
+  lifetime.assign(button('show-blockout-create'), 'onclick', showCreate);
+  lifetime.assign(button('blockout-new-scene'), 'onclick', showCreate);
+  lifetime.assign(button('blockout-create-cancel'), 'onclick', () => createDialog.close());
+  lifetime.assign(element('blockout-scene-form', HTMLFormElement), 'onsubmit', (event) => {
     event.preventDefault();
     create(input('blockout-title').value, {
       width: Number(input('blockout-width').value),
@@ -74,9 +81,9 @@ export function createBlockoutView(
       scroll_x: input('blockout-scroll-x').checked,
       scroll_y: input('blockout-scroll-y').checked,
     });
-  };
+  });
   let units = 'pixels';
-  select('blockout-units').onchange = () => {
+  lifetime.assign(select('blockout-units'), 'onchange', () => {
     const next = select('blockout-units').value;
     if (next !== units) {
       const factor = Number(select('blockout-grid').value);
@@ -88,7 +95,7 @@ export function createBlockoutView(
       units = next;
     }
     dimensions();
-  };
+  });
   function dimensions() {
     const grid = Number(select('blockout-grid').value),
       factor = select('blockout-units').value === 'pixels' ? 1 : grid;
@@ -110,19 +117,24 @@ export function createBlockoutView(
     'blockout-camera-width',
     'blockout-camera-height',
   ]) {
-    input(id).oninput = dimensions;
+    lifetime.assign(input(id), 'oninput', dimensions);
   }
-  select('blockout-grid').onchange = dimensions;
+  lifetime.assign(select('blockout-grid'), 'onchange', dimensions);
   dimensions();
-  button('blockout-customize').onclick = () => button('manage-definitions').click();
-  button('blockout-camera-select').onclick = () => camera(select('blockout-cameras').value, false);
-  button('blockout-camera-edit').onclick = () => camera(select('blockout-cameras').value, true);
-  button('blockout-review').onclick = () => review(select('blockout-cameras').value);
-  button('blockout-review-close').onclick = () => reviewDialog.close();
-  reviewDialog.addEventListener('close', () => {
-    urls.forEach((url) => URL.revokeObjectURL(url));
-    urls = [];
-  });
+  lifetime.assign(button('blockout-customize'), 'onclick', () =>
+    button('manage-definitions').click(),
+  );
+  lifetime.assign(button('blockout-camera-select'), 'onclick', () =>
+    camera(select('blockout-cameras').value, false),
+  );
+  lifetime.assign(button('blockout-camera-edit'), 'onclick', () =>
+    camera(select('blockout-cameras').value, true),
+  );
+  lifetime.assign(button('blockout-review'), 'onclick', () =>
+    review(select('blockout-cameras').value),
+  );
+  lifetime.assign(button('blockout-review-close'), 'onclick', () => reviewDialog.close());
+  reviewDialog.addEventListener('close', revokePreviews, { signal: lifetime.signal });
   function sync() {
     const state = context();
     const definitions = blockoutDefinitions(state.definitions);
@@ -147,7 +159,7 @@ export function createBlockoutView(
           badge.style.color = color;
         }
         item.prepend(badge);
-        item.onclick = () => choose(d);
+        lifetime.assign(item, 'onclick', () => choose(d));
         list.append(item);
       }
     }
@@ -195,7 +207,7 @@ export function createBlockoutView(
       showCreate();
     }
   }
-  select('blockout-cameras').onchange = sync;
+  lifetime.assign(select('blockout-cameras'), 'onchange', sync);
   return {
     sync,
     showCreate,
@@ -203,11 +215,11 @@ export function createBlockoutView(
       createDialog.close();
     },
     present(value: unknown) {
-      const data = record(value);
-      for (const url of urls) {
-        URL.revokeObjectURL(url);
+      if (lifetime.disposed) {
+        return;
       }
-      urls = [];
+      const data = record(value);
+      revokePreviews();
       for (const [key, target, download] of [
         ['overview_svg', 'blockout-overview-image', 'blockout-overview-download'],
         ['camera_svg', 'blockout-camera-image', 'blockout-camera-download'],

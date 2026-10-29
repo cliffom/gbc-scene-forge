@@ -2,8 +2,8 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { test } from 'node:test';
-import { ApiClient, HttpError } from '../frontend/api.mts';
-import { activeApply } from '../frontend/decode.mts';
+import { ApiClient, HttpError } from '../frontend/legacy/api.mts';
+import { activeApply } from '../frontend/legacy/decode.mts';
 
 const exampleScene = {
   version: 1,

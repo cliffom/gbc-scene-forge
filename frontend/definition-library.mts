@@ -1,7 +1,8 @@
+import { EditorLifetime } from './editor-lifetime.mts';
 /** Definition library editing commits project metadata independently of scene history. */
-import { objectKind, fieldType } from './object-definitions.mts';
-import { propertyValue } from './objects.mts';
 import type { DefinitionField, ObjectDefinition } from './object-definitions.mts';
+import { fieldType, objectKind } from './object-definitions.mts';
+import { propertyValue } from './objects.mts';
 const get = (id: string) => {
   const node = document.getElementById(id);
   if (!node) {
@@ -23,6 +24,7 @@ export function createDefinitionLibrary(
   sprites: () => string[],
   save: (definition: Omit<ObjectDefinition, 'id'> & { id?: string }) => Promise<void>,
   remove: (id: string) => Promise<void>,
+  lifetime: EditorLifetime = new EditorLifetime(),
 ) {
   const dialog = typed('definitions-dialog', HTMLDialogElement);
   const form = typed('definition-form', HTMLFormElement);
@@ -30,6 +32,8 @@ export function createDefinitionLibrary(
   const error = get('definition-error');
   let id: string | undefined;
   let working = false;
+  let restoreControls: (() => void) | undefined;
+  lifetime.cleanup(() => restoreControls?.());
   const label = (text: string, control: HTMLElement) => {
     const l = document.createElement('label');
     l.className =
@@ -99,16 +103,16 @@ export function createDefinitionLibrary(
     } else {
       value.value = field?.default === undefined ? '' : String(field.default);
     }
-    type.onchange = () => {
+    lifetime.assign(type, 'onchange', () => {
       value.value = '';
       value.checked = false;
       controls();
-    };
-    hasDefault.onchange = controls;
+    });
+    lifetime.assign(hasDefault, 'onchange', controls);
     const deleteButton = document.createElement('button');
     deleteButton.type = 'button';
     deleteButton.textContent = 'Remove field';
-    deleteButton.onclick = () => box.remove();
+    lifetime.assign(deleteButton, 'onclick', () => box.remove());
     box.append(
       label('Field name', name),
       label('Type', type),
@@ -150,26 +154,27 @@ export function createDefinitionLibrary(
     error.textContent = '';
     geometry();
   }
-  select('definition-kind').onchange = geometry;
-  get('definition-add-field').onclick = () => row();
-  get('definition-new').onclick = () => {
+  lifetime.assign(select('definition-kind'), 'onchange', geometry);
+  lifetime.assign(get('definition-add-field'), 'onclick', () => row());
+  lifetime.assign(get('definition-new'), 'onclick', () => {
     select('definition-list').value = '';
     load();
-  };
-  select('definition-list').onchange = () =>
-    load(definitions().find((d) => d.id === select('definition-list').value));
-  get('definition-close').onclick = () => {
+  });
+  lifetime.assign(select('definition-list'), 'onchange', () =>
+    load(definitions().find((d) => d.id === select('definition-list').value)),
+  );
+  lifetime.assign(get('definition-close'), 'onclick', () => {
     if (!working) {
       dialog.close();
     }
-  };
-  dialog.oncancel = (e) => {
+  });
+  lifetime.assign(dialog, 'oncancel', (e) => {
     if (working) {
       e.preventDefault();
     }
-  };
+  });
   async function commit(work: () => Promise<void>) {
-    if (working) {
+    if (working || lifetime.disposed) {
       return;
     }
     working = true;
@@ -179,22 +184,33 @@ export function createDefinitionLibrary(
       >('input,button,select,textarea'),
     ];
     const disabled = controls.map((c) => c.disabled);
+    restoreControls = () => {
+      controls.forEach((c, i) => {
+        c.disabled = disabled[i];
+      });
+      restoreControls = undefined;
+    };
     controls.forEach((c) => {
       c.disabled = true;
     });
     try {
       await work();
-      dialog.close();
+      if (!lifetime.disposed) {
+        dialog.close();
+      }
     } catch (cause) {
+      if (lifetime.disposed) {
+        return;
+      }
       error.textContent = cause instanceof Error ? cause.message : String(cause);
     } finally {
-      controls.forEach((c, i) => {
-        c.disabled = disabled[i];
-      });
+      if (!lifetime.disposed) {
+        restoreControls?.();
+      }
       working = false;
     }
   }
-  get('definition-delete').onclick = () => {
+  lifetime.assign(get('definition-delete'), 'onclick', () => {
     if (
       !id ||
       !window.confirm(
@@ -205,8 +221,8 @@ export function createDefinitionLibrary(
     }
     const chosen = id;
     void commit(() => remove(chosen));
-  };
-  form.onsubmit = (e) => {
+  });
+  lifetime.assign(form, 'onsubmit', (e) => {
     e.preventDefault();
     try {
       const fields = [...rows.children].map((box) => {
@@ -256,9 +272,12 @@ export function createDefinitionLibrary(
       };
       void commit(() => save(definition));
     } catch (cause) {
+      if (lifetime.disposed) {
+        return;
+      }
       error.textContent = String(cause);
     }
-  };
+  });
   return {
     open() {
       select('definition-list').replaceChildren(

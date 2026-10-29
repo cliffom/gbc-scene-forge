@@ -114,6 +114,12 @@ export class DraftWriter {
     });
     return this.pending;
   }
+  /** Stop background work without deleting a recoverable checkpoint. */
+  stop() {
+    clearTimeout(this.timer);
+    this.timer = undefined;
+    this.stopped = true;
+  }
   async clear() {
     clearTimeout(this.timer);
     // Fence queued writes before deleting; a late response cannot recreate a draft.

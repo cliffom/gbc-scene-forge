@@ -1,7 +1,7 @@
 /** Standalone layer and object editing, with shared scene history. */
 import { Editor } from './model.mts';
-import { validateObject } from './objects.mts';
 import type { NewObject, ObjectRegion, SceneObject } from './objects.mts';
+import { validateObject } from './objects.mts';
 
 export type SceneLayer = {
   id: number;

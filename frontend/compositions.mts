@@ -1,8 +1,7 @@
 /** Immutable clipboard snapshots and atomic, validated multi-layer placement. */
-import type { LayerEditor } from './layers.mts';
-import type { LayerScene, SceneLayer } from './layers.mts';
+import type { LayerEditor, LayerScene, SceneLayer } from './layers.mts';
+import { tileParts, transformCell } from './tile-transform.mts';
 import type { Selection } from './types.ts';
-import { transformCell, tileParts } from './tile-transform.mts';
 export interface Composition {
   project: string;
   slots: number[];

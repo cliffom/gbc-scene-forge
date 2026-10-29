@@ -372,11 +372,21 @@ try {
     false,
   );
   await chrome.click('document.querySelector(\'#layers [data-layer-id="4"] .layer-eye\')');
+  await evaluate(`window.__previewURLs=[];window.__revokedURLs=[];
+    window.__createURL=URL.createObjectURL;window.__revokeURL=URL.revokeObjectURL;
+    URL.createObjectURL=(blob)=>{const url=window.__createURL(blob);window.__previewURLs.push(url);return url};
+    URL.revokeObjectURL=(url)=>{window.__revokedURLs.push(url);window.__revokeURL(url)};`);
   await click('blockout-review');
   await wait(
     "document.getElementById('blockout-review-dialog').open && document.getElementById('blockout-camera-image').naturalWidth===160",
   );
   await chrome.screenshot('blockout-opening-forest-review');
+  assert.equal(await evaluate('window.__previewURLs.length'), 2);
+  await evaluate(
+    `(async()=>{const {editor}=await import('/project.js');editor.dispose();editor.dispose()})()`,
+  );
+  assert.deepEqual(await evaluate('window.__revokedURLs'), await evaluate('window.__previewURLs'));
+  await evaluate('URL.createObjectURL=window.__createURL;URL.revokeObjectURL=window.__revokeURL');
   assert.deepEqual(chrome.errors, []);
   console.log(
     'Blockout browser passed: artwork-free start, units, drawing/resizing/undo, typed camera settings, unsaved SVG review, persistence/export, later artwork, forest example.',

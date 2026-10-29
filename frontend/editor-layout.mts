@@ -1,3 +1,4 @@
+import { EditorLifetime } from './editor-lifetime.mts';
 /** Native command popovers and keyboard-operable authoring library tabs. */
 export type LibraryCategory = 'artwork' | 'objects' | 'stamps' | 'blockout';
 
@@ -9,7 +10,7 @@ function element<T extends HTMLElement>(id: string, type: new () => T): T {
   return value;
 }
 
-export function createEditorLayout() {
+export function createEditorLayout(lifetime: EditorLifetime = new EditorLifetime()) {
   const categories: LibraryCategory[] = ['artwork', 'objects', 'blockout', 'stamps'];
   function showLibrary(category: LibraryCategory, focus = false) {
     for (const name of categories) {
@@ -25,8 +26,8 @@ export function createEditorLayout() {
   }
   for (const category of categories) {
     const tab = element(`${category}-tab`, HTMLButtonElement);
-    tab.onclick = () => showLibrary(category);
-    tab.onkeydown = (event) => {
+    lifetime.assign(tab, 'onclick', () => showLibrary(category));
+    lifetime.assign(tab, 'onkeydown', (event) => {
       const available = categories.filter(
         (name) => !element(`${name}-tab`, HTMLButtonElement).hidden,
       );
@@ -50,7 +51,7 @@ export function createEditorLayout() {
       }
       event.preventDefault();
       showLibrary(available[next], true);
-    };
+    });
   }
   for (const name of ['scene', 'project', 'transform']) {
     const trigger = element(`${name}-commands`, HTMLButtonElement);
@@ -69,10 +70,14 @@ export function createEditorLayout() {
         below + bounds.height <= innerHeight - 12 ? below : anchor.top - bounds.height - 6;
       panel.style.top = `${Math.max(12, Math.min(top, innerHeight - bounds.height - 12))}px`;
     }
-    panel.addEventListener('toggle', () => {
-      trigger.setAttribute('aria-expanded', String(panel.matches(':popover-open')));
-      position();
-    });
+    panel.addEventListener(
+      'toggle',
+      () => {
+        trigger.setAttribute('aria-expanded', String(panel.matches(':popover-open')));
+        position();
+      },
+      { signal: lifetime.signal },
+    );
     // Close before command handlers open a modal, preserving its autofocus target.
     panel.addEventListener(
       'click',
@@ -82,9 +87,9 @@ export function createEditorLayout() {
           panel.hidePopover();
         }
       },
-      true,
+      { capture: true, signal: lifetime.signal },
     );
-    window.addEventListener('resize', position);
+    window.addEventListener('resize', position, { signal: lifetime.signal });
   }
   const palette = element('show-palettes', HTMLButtonElement);
   const project = element('project-commands', HTMLButtonElement);
@@ -99,7 +104,7 @@ export function createEditorLayout() {
       ? 'GBC palette budget exceeded. Open Project tools to inspect.'
       : 'World connections, diagnostics and GBC palette checks';
   }
-  new MutationObserver(reflectPaletteState).observe(palette, {
+  lifetime.observe(new MutationObserver(reflectPaletteState)).observe(palette, {
     attributes: true,
     attributeFilter: ['data-state'],
   });
