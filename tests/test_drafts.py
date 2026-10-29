@@ -15,10 +15,10 @@ from uuid import uuid4
 
 from atlas_fixture import bundle, sprite_bundle
 
-from gbc_scene_forge.documents import Conflict
-from gbc_scene_forge.drafts import Drafts
-from gbc_scene_forge.projects import Project
-from gbc_scene_forge.standalone import make_handler
+from gbc_scene_forge.adapters.http.server import make_handler
+from gbc_scene_forge.core.errors import Conflict
+from gbc_scene_forge.project.application import Project
+from gbc_scene_forge.project.drafts import Drafts
 
 
 class DraftTests(unittest.TestCase):
@@ -28,9 +28,9 @@ class DraftTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.project = Project.create(self.root / "world", "World")
         path, _ = bundle(self.root / "art")
-        self.project.import_atlas(path, self.project.catalog()["revision"])
-        self.scene = self.project.create_scene("Room", 7, 5, 8, self.project.catalog()["revision"])
-        self.store = Drafts(self.project)
+        self.project.artwork.import_atlas(path, self.project.catalog()["revision"])
+        self.scene = self.project.scenes.create("Room", 7, 5, 8, self.project.catalog()["revision"])
+        self.store = Drafts(self.project.store)
         document, revision = self.project.read()
         self.payload = {
             "id": str(uuid4()),
@@ -69,8 +69,8 @@ class DraftTests(unittest.TestCase):
         restored = self.store.restore(self.payload["id"], self.payload["revision"])
         self.assertEqual(restored["scene"]["cells"][1][1], "terrain/earth/0/0#7")
         self.assertEqual(restored["scene"]["objects"], scene["objects"])
-        self.assertEqual(self.project.load_scene(self.scene["id"])["scene"]["cells"][1][1], "")
-        saved = self.project.save_scene(
+        self.assertEqual(self.project.scenes.load(self.scene["id"])["scene"]["cells"][1][1], "")
+        saved = self.project.scenes.save(
             self.scene["id"],
             restored["scene"],
             restored["revision"],
@@ -80,29 +80,29 @@ class DraftTests(unittest.TestCase):
 
     def test_restart_move_restore_does_not_commit_until_explicit_save(self):
         self.checkpoint()
-        original = self.project.load_scene(self.scene["id"])
+        original = self.project.scenes.load(self.scene["id"])
         moved = self.root / "moved"
         shutil.move(self.project.root, moved)
         reopened = Project(moved)
-        store = Drafts(reopened)
+        store = Drafts(reopened.store)
         self.assertEqual(len(store.list()["drafts"]), 1)
         restored = store.restore(self.payload["id"], self.payload["revision"])
         self.assertEqual(restored["scene"]["cells"][1][1], "terrain/earth/0/0")
-        self.assertEqual(reopened.load_scene(self.scene["id"]), original)
-        saved = reopened.save_scene(
+        self.assertEqual(reopened.scenes.load(self.scene["id"]), original)
+        saved = reopened.scenes.save(
             restored["id"], restored["scene"], restored["revision"], reopened.catalog()["revision"]
         )
         store.delete(self.payload["id"], self.payload["revision"])
         self.assertEqual(store.list()["drafts"], [])
-        self.assertEqual(reopened.load_scene(saved["id"])["scene"], saved["scene"])
+        self.assertEqual(reopened.scenes.load(saved["id"])["scene"], saved["scene"])
         raw, _ = reopened.export_bundle("project", reopened.catalog()["revision"])
         self.assertTrue(raw)
 
     def test_layered_objects_properties_and_asset_references_round_trip(self):
         path, _ = sprite_bundle(self.root / "actors")
-        self.project.import_atlas(path, self.project.catalog()["revision"])
+        self.project.artwork.import_atlas(path, self.project.catalog()["revision"])
         self.payload["project_revision"] = self.project.catalog()["revision"]
-        self.payload["scene_revision"] = self.project.load_scene(self.scene["id"])["revision"]
+        self.payload["scene_revision"] = self.project.scenes.load(self.scene["id"])["revision"]
         self.payload["scene"] = {
             "width": 7,
             "height": 5,
@@ -140,13 +140,13 @@ class DraftTests(unittest.TestCase):
         self.checkpoint()
         restored = self.store.restore(self.payload["id"], self.payload["revision"])
         self.assertEqual(restored["scene"], self.payload["scene"])
-        self.project.save_scene(
+        self.project.scenes.save(
             restored["id"],
             restored["scene"],
             restored["revision"],
             self.payload["project_revision"],
         )
-        self.assertEqual(self.project.load_scene(restored["id"])["scene"], self.payload["scene"])
+        self.assertEqual(self.project.scenes.load(restored["id"])["scene"], self.payload["scene"])
 
     def test_interrupted_replace_keeps_last_complete_record(self):
         before = self.checkpoint()
@@ -213,7 +213,7 @@ class DraftTests(unittest.TestCase):
             self.store.download(self.payload["id"], self.payload["revision"])["scene"],
             self.payload["scene"],
         )
-        self.project.delete_scene(
+        self.project.scenes.delete(
             self.scene["id"], self.scene["revision"], self.project.catalog()["revision"]
         )
         self.assertEqual(len(self.store.list()["drafts"]), 1)
@@ -225,14 +225,14 @@ class DraftTests(unittest.TestCase):
     def test_limits_failed_write_and_damaged_record_preserve_last_checkpoint(self):
         before = self.checkpoint()
         self.payload["scene"]["cells"][2][2] = "terrain/earth/0/0"
-        with patch("gbc_scene_forge.drafts.atomic_write", side_effect=OSError("disk full")):
+        with patch("gbc_scene_forge.project.drafts.atomic_write", side_effect=OSError("disk full")):
             with self.assertRaises(OSError):
                 self.store.write(self.payload)
         self.assertEqual(self.store.read(self.payload["id"])[1], before)
         for constant, value in (("MAX_BYTES", 20), ("MAX_TOTAL", 20), ("MAX_DRAFTS", 1)):
             with (
                 self.subTest(constant=constant),
-                patch(f"gbc_scene_forge.drafts.{constant}", value),
+                patch(f"gbc_scene_forge.project.drafts.{constant}", value),
             ):
                 request = {**self.payload, "id": str(uuid4()), "revision": None}
                 with self.assertRaises(ValueError):

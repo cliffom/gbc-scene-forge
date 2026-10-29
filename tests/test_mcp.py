@@ -18,10 +18,14 @@ from uuid import uuid4
 from atlas_fixture import bundle
 from blockout_fixture import opening_forest
 
-from gbc_scene_forge import authoring, blockout, tiled, transactions
-from gbc_scene_forge.documents import Conflict
-from gbc_scene_forge.mcp_tools import MAX_ARTIFACT, MAX_CACHE, TOOLS, Adapter
-from gbc_scene_forge.projects import MANIFEST, Project
+from gbc_scene_forge.adapters.mcp.tools import MAX_ARTIFACT, MAX_CACHE, TOOLS, Adapter
+from gbc_scene_forge.core.errors import Conflict
+from gbc_scene_forge.formats import tiled
+from gbc_scene_forge.planning import blockout
+from gbc_scene_forge.project.application import Project
+from gbc_scene_forge.project.schema import MANIFEST
+from gbc_scene_forge.scenes import authoring
+from gbc_scene_forge.storage import transactions
 
 
 class AdapterTests(unittest.TestCase):
@@ -39,7 +43,7 @@ class AdapterTests(unittest.TestCase):
             project="plan",
             project_revision=self.project.catalog()["revision"],
             scene_id=self.loaded["id"],
-            scene_revision=self.project.load_scene(self.loaded["id"])["revision"],
+            scene_revision=self.project.scenes.load(self.loaded["id"])["revision"],
         )
 
     def test_discovery_canonical_equivalence_and_export(self):
@@ -71,7 +75,7 @@ class AdapterTests(unittest.TestCase):
             ],
         }
         preview = self.adapter.call("edit_scene", {**args, "dry_run": True})
-        self.assertEqual(self.project.load_scene(self.loaded["id"])["scene"], original)
+        self.assertEqual(self.project.scenes.load(self.loaded["id"])["scene"], original)
         self.assertEqual(preview["changes"]["object_change_count"], 3)
         report = self.adapter.call("review_blockout", {**self.args(), "scene": preview["scene"]})
         self.assertEqual(report["snapshot_revision"], preview["changes"]["after_snapshot"])
@@ -83,15 +87,15 @@ class AdapterTests(unittest.TestCase):
         saved = self.adapter.call("save_scene", {**self.args(), "scene": preview["scene"]})
         self.assertEqual(saved["scene"], preview["scene"])
         self.assertEqual(self.loaded["scene"], original)
-        self.assertEqual(self.project.load_scene(saved["id"])["scene"], saved["scene"])
+        self.assertEqual(self.project.scenes.load(saved["id"])["scene"], saved["scene"])
         definitions = self.project.catalog()["project"]["object_definitions"]
         source, _ = bundle(self.root / "art")
-        self.project.import_atlas(source, self.project.catalog()["revision"])
-        self.assertEqual(self.project.load_scene(saved["id"])["scene"], saved["scene"])
+        self.project.artwork.import_atlas(source, self.project.catalog()["revision"])
+        self.assertEqual(self.project.scenes.load(saved["id"])["scene"], saved["scene"])
         self.assertEqual(self.project.catalog()["project"]["object_definitions"], definitions)
 
     def test_atomic_invalid_and_oversized_batches(self):
-        before = self.project.load_scene(self.loaded["id"])
+        before = self.project.scenes.load(self.loaded["id"])
         for operations in (
             [
                 dict(op="delete", object_id=self.identities["Short vine"]),
@@ -105,7 +109,7 @@ class AdapterTests(unittest.TestCase):
         ):
             with self.subTest(operations=operations[:2]), self.assertRaises(ValueError):
                 self.adapter.call("edit_scene", {**self.args(), "operations": operations})
-            self.assertEqual(self.project.load_scene(self.loaded["id"]), before)
+            self.assertEqual(self.project.scenes.load(self.loaded["id"]), before)
         with self.assertRaisesRegex(ValueError, "4 MiB"):
             self.adapter.call("capabilities", {"x": "x" * (authoring.MAX_INPUT + 1)})
 
@@ -125,25 +129,25 @@ class AdapterTests(unittest.TestCase):
             },
         )
         with self.assertRaises(Conflict):
-            self.project.save_scene(
+            self.project.scenes.save(
                 self.loaded["id"], browser, old["scene_revision"], old["project_revision"]
             )
         with self.assertRaises(Conflict):
             self.adapter.call("edit_scene", {**old, "operations": [dict(op="delete", object_id=1)]})
         self.assertEqual(browser["layers"][-1]["objects"][0]["x"], 16)
-        self.assertEqual(self.project.load_scene(self.loaded["id"])["scene"], result["scene"])
+        self.assertEqual(self.project.scenes.load(self.loaded["id"])["scene"], result["scene"])
         definition = copy.deepcopy(
             self.project.catalog()["project"]["object_definitions"]["definitions"][0]
         )
         definition["name"] = "Changed by browser"
-        self.project.save_object_definition(definition, old["project_revision"])
+        self.project.objects.save_definition(definition, old["project_revision"])
         with self.assertRaises(Conflict):
             self.adapter.call(
                 "diagnostics", dict(project="plan", project_revision=old["project_revision"])
             )
 
     def test_interrupted_write_uses_native_recovery(self):
-        original = self.project.load_scene(self.loaded["id"])
+        original = self.project.scenes.load(self.loaded["id"])
         real = transactions.atomic_write
         failed = False
 
@@ -181,7 +185,7 @@ class AdapterTests(unittest.TestCase):
         path = self.project.root / "scenes" / f"{self.loaded['id']}.tmj"
         self.assertNotEqual(transactions.digest(path.read_bytes()), original["revision"])
         reopened = Project(self.project.root)
-        self.assertEqual(reopened.load_scene(self.loaded["id"]), original)
+        self.assertEqual(reopened.scenes.load(self.loaded["id"]), original)
         self.assertTrue(any(r["status"] == "recovered" for r in reopened.transactions.records()))
 
     def test_declared_paths_and_artifacts(self):
@@ -296,7 +300,7 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(plain["scene"]["width"], 4)
 
     def test_semantic_placement_matches_shared_browser_service(self):
-        loaded = self.project.create_blockout_scene(
+        loaded = self.project.planning.create_blockout(
             "Equivalent", {}, self.project.catalog()["revision"]
         )
         document = self.project.catalog()["project"]
@@ -324,7 +328,7 @@ class AdapterTests(unittest.TestCase):
 
     def test_canonical_tile_edits_and_broken_world_link_guard(self):
         source, _ = bundle(self.root / "art")
-        self.project.import_atlas(source, self.project.catalog()["revision"])
+        self.project.artwork.import_atlas(source, self.project.catalog()["revision"])
         scene = copy.deepcopy(self.loaded["scene"])
         scene["layers"][0]["cells"][0][0] = "terrain/earth/0/0"
         saved = self.adapter.call("save_scene", {**self.args(), "scene": scene})
@@ -347,7 +351,7 @@ class AdapterTests(unittest.TestCase):
                 )
             ],
         )
-        self.project.save_world(
+        self.project.planning.save_world(
             world, self.args()["project_revision"], {self.loaded["id"]: saved["revision"]}
         )
         with self.assertRaisesRegex(ValueError, "linked objects"):
@@ -358,7 +362,7 @@ class AdapterTests(unittest.TestCase):
                     "operations": [dict(op="delete", object_id=self.identities["Player spawn"])],
                 },
             )
-        self.assertEqual(self.project.load_scene(saved["id"])["scene"], saved["scene"])
+        self.assertEqual(self.project.scenes.load(saved["id"])["scene"], saved["scene"])
 
 
 @unittest.skipUnless(
@@ -377,7 +381,7 @@ class ProtocolTests(unittest.TestCase):
                 command=sys.executable,
                 args=[
                     "-m",
-                    "gbc_scene_forge.mcp_server",
+                    "gbc_scene_forge.adapters.mcp.server",
                     "--project-root",
                     folder,
                 ],

@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-`src/gbc_scene_forge/` contains the Python package: standalone project storage, atlas import, Tiled serialization, the loopback HTTP service, and durable transactions. Legacy connector, document, and Apply modules remain in the tree but are not the supported product direction. Browser HTML, CSS, and generated JavaScript live in `src/gbc_scene_forge/static/`; editable TypeScript lives in `frontend/`. `tests/` contains Python project/storage tests, TypeScript model checks, standalone Chrome acceptance checks, Tiled interoperability checks, and a separate installed-package smoke test. It also contains legacy connector fixtures and tests. `docs/RELEASING.md` documents releases.
+`src/gbc_scene_forge/` is organized by domain: `project/`, `scenes/`, `scene_objects/`, `artwork/`, `planning/`, `analysis/`, `formats/`, `storage/`, `core/`, and `adapters/`. See `docs/ARCHITECTURE.md` for ownership, dependency direction and guarded-read/transaction contracts. `project.application.Project` composes domain services; add operations to their owning services rather than expanding that facade. Unsupported connector/document/Apply code is isolated in `legacy/` and must not be imported by supported standalone entry points. Browser HTML, CSS, and generated JavaScript live in `src/gbc_scene_forge/static/`; editable TypeScript lives in `frontend/`. `tests/` contains domain Python tests, TypeScript checks, Chrome acceptance, Tiled interoperability, and installed-wheel smoke tests; historical connector fixtures/tests live under `tests/legacy/`. `docs/RELEASING.md` documents releases.
 
 ## Build, Test, and Development Commands
 
@@ -13,7 +13,8 @@ Install Python 3.13, Poetry 2.4–2.x, Node 24 (24.12+), npm, and Make on `PATH`
 - `make demo`: rebuild, restore the tracked `assets/demo/project/` into `.demo/`, and serve it. Each launch resets demo scenes and assets; use `make run PROJECT=.demo` to preserve edits.
 - `make check-deps`: check installed tools and Poetry/project compatibility.
 - `make setup PYTHON=python3.13`: use Poetry to manage `.venv`, install locked dependencies, and bundle the frontend.
-- `make lint`: run Ruff, ESLint, Prettier, and strict TypeScript checks.
+- `make lint`: run Ruff, scoped Python mypy checks, ESLint, Prettier, and strict TypeScript checks.
+- `make typecheck-python`: check shared primitives, file helpers and saved-read contracts.
 - `make test`: run Python `unittest` discovery and TypeScript model/API/build checks.
 - `make test-frontend-<suite>`: run one TypeScript suite, such as `drafts` or `model`; `npm test` delegates to `make test-frontend`.
 - `make build`: bundle the frontend, build source/wheel distributions, and check metadata.

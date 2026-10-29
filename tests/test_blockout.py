@@ -16,11 +16,13 @@ from xml.etree import ElementTree
 from atlas_fixture import bundle
 from blockout_fixture import opening_forest
 
-from gbc_scene_forge import blockout, tiled
-from gbc_scene_forge.documents import Conflict
-from gbc_scene_forge.projects import MANIFEST, Project
-from gbc_scene_forge.standalone import make_root_handler
-from gbc_scene_forge.workspaces import ProjectRoot
+from gbc_scene_forge.adapters.http.server import make_root_handler
+from gbc_scene_forge.core.errors import Conflict
+from gbc_scene_forge.formats import tiled
+from gbc_scene_forge.planning import blockout
+from gbc_scene_forge.project.application import Project
+from gbc_scene_forge.project.schema import MANIFEST
+from gbc_scene_forge.project.workspaces import ProjectRoot
 
 
 class BlockoutTests(unittest.TestCase):
@@ -68,14 +70,14 @@ class BlockoutTests(unittest.TestCase):
         definitions = document["object_definitions"]["definitions"]
         self.assertEqual(len(definitions), len(blockout.PRESETS))
         self.assertEqual(len({d["id"] for d in definitions}), len(definitions))
-        loaded = self.project.create_blockout_scene(
+        loaded = self.project.planning.create_blockout(
             "Forest", {}, self.project.catalog()["revision"]
         )
         scene = loaded["scene"]
         self.assertEqual((scene["width"], scene["height"], scene["grid"]), (120, 34, 8))
         self.assertEqual(len(scene["layers"]), 5)
         self.assertEqual(scene["next_object_id"], 2)
-        self.assertEqual(self.project.load_scene(loaded["id"])["scene"], scene)
+        self.assertEqual(self.project.scenes.load(loaded["id"])["scene"], scene)
         path = self.project.root / "scenes" / f"{loaded['id']}.tmj"
         native = json.loads(path.read_bytes())
         self.assertEqual(native["tilesets"], [])
@@ -103,9 +105,9 @@ class BlockoutTests(unittest.TestCase):
         ]
         for settings in bad:
             with self.subTest(settings=settings), self.assertRaises(ValueError):
-                empty.create_blockout_scene("Bad", settings, empty.catalog()["revision"])
+                empty.planning.create_blockout("Bad", settings, empty.catalog()["revision"])
             self.assertEqual((empty.root / MANIFEST).read_bytes(), before)
-        scene = empty.create_blockout_scene(
+        scene = empty.planning.create_blockout(
             "Cells", dict(units="cells", width=120, height=34), empty.catalog()["revision"]
         )
         self.assertEqual(scene["scene"]["width"], 120)
@@ -124,13 +126,13 @@ class BlockoutTests(unittest.TestCase):
         )
         camera["width"], camera["height"] = 128, 128
         next(f for f in camera["fields"] if f["name"] == "scroll_y")["default"] = True
-        self.project.save_object_definition(camera, self.project.catalog()["revision"])
-        loaded = self.project.create_blockout_scene(
+        self.project.objects.save_definition(camera, self.project.catalog()["revision"])
+        loaded = self.project.planning.create_blockout(
             "Custom", {}, self.project.catalog()["revision"]
         )
         camera = loaded["scene"]["layers"][-1]["objects"][0]
         self.assertEqual((camera["width"], camera["height"]), (128, 128))
-        report = self.project.blockout_review(
+        report = self.project.planning.review_blockout(
             loaded["id"], self.project.catalog()["revision"], loaded["revision"]
         )
         self.assertTrue(report["camera_properties"]["scroll_y"])
@@ -140,7 +142,9 @@ class BlockoutTests(unittest.TestCase):
         self.assertEqual(document, before)
 
     def test_shared_place_is_validated_and_preserves_identity_and_inputs(self):
-        loaded = self.project.create_blockout_scene("Plan", {}, self.project.catalog()["revision"])
+        loaded = self.project.planning.create_blockout(
+            "Plan", {}, self.project.catalog()["revision"]
+        )
         document, original = self.project.catalog()["project"], copy.deepcopy(loaded["scene"])
         solid = next(
             d for d in document["object_definitions"]["definitions"] if d["name"] == "Solid ground"
@@ -172,7 +176,7 @@ class BlockoutTests(unittest.TestCase):
             for p in self.project.root.rglob("*")
             if p.is_file()
         }
-        report = self.project.blockout_review(
+        report = self.project.planning.review_blockout(
             loaded["id"], self.project.catalog()["revision"], loaded["revision"]
         )
         self.assertEqual(
@@ -203,8 +207,8 @@ class BlockoutTests(unittest.TestCase):
         )
         old_scene = copy.deepcopy(loaded["scene"])
         source, _ = bundle(self.root / "art")
-        self.project.import_atlas(source, self.project.catalog()["revision"])
-        self.assertEqual(self.project.load_scene(loaded["id"])["scene"], old_scene)
+        self.project.artwork.import_atlas(source, self.project.catalog()["revision"])
+        self.assertEqual(self.project.scenes.load(loaded["id"])["scene"], old_scene)
         payload, _ = self.project.export_bundle("project", self.project.catalog()["revision"])
         with zipfile.ZipFile(io.BytesIO(payload)) as archive:
             exported = json.loads(archive.read(f"scenes/{loaded['id']}.tmj"))
@@ -220,33 +224,43 @@ class BlockoutTests(unittest.TestCase):
         revision = self.project.catalog()["revision"]
         changed = copy.deepcopy(loaded["scene"])
         changed["layers"][1]["objects"][0]["name"] = "Unsaved landing"
-        report = self.project.blockout_review(loaded["id"], revision, loaded["revision"], changed)
+        report = self.project.planning.review_blockout(
+            loaded["id"], revision, loaded["revision"], changed
+        )
         self.assertIn("Unsaved landing", report["overview_svg"])
-        saved = self.project.blockout_review(loaded["id"], revision, loaded["revision"])
+        saved = self.project.planning.review_blockout(loaded["id"], revision, loaded["revision"])
         self.assertNotEqual(saved["snapshot_revision"], report["snapshot_revision"])
         self.assertEqual(report["scene_id"], loaded["id"])
-        self.assertNotIn("Unsaved landing", json.dumps(self.project.load_scene(loaded["id"])))
+        self.assertNotIn("Unsaved landing", json.dumps(self.project.scenes.load(loaded["id"])))
         changed["layers"][1]["visible"] = False
         self.assertNotIn(
             "Unsaved landing",
-            self.project.blockout_review(loaded["id"], revision, loaded["revision"], changed)[
-                "overview_svg"
-            ],
+            self.project.planning.review_blockout(
+                loaded["id"], revision, loaded["revision"], changed
+            )["overview_svg"],
         )
         changed["layers"][-1]["visible"] = False
         with self.assertRaisesRegex(ValueError, "camera"):
-            self.project.blockout_review(loaded["id"], revision, loaded["revision"], changed)
+            self.project.planning.review_blockout(
+                loaded["id"], revision, loaded["revision"], changed
+            )
         for project_revision, scene_revision in (
             ("stale", loaded["revision"]),
             (revision, "stale"),
         ):
             with self.assertRaises(Conflict):
-                self.project.blockout_review(loaded["id"], project_revision, scene_revision)
+                self.project.planning.review_blockout(
+                    loaded["id"], project_revision, scene_revision
+                )
         with self.assertRaises(ValueError):
-            self.project.blockout_review(loaded["id"], revision, loaded["revision"], camera_id=True)
+            self.project.planning.review_blockout(
+                loaded["id"], revision, loaded["revision"], camera_id=True
+            )
 
     def test_review_escapes_text_and_bounds_dense_work(self):
-        loaded = self.project.create_blockout_scene("Plan", {}, self.project.catalog()["revision"])
+        loaded = self.project.planning.create_blockout(
+            "Plan", {}, self.project.catalog()["revision"]
+        )
         scene = loaded["scene"]
         camera = scene["layers"][-1]["objects"][0]
         camera["name"] = '<script>&"\x00'
@@ -266,7 +280,9 @@ class BlockoutTests(unittest.TestCase):
             blockout.review(scene, self.project.catalog()["project"])
 
     def test_retained_camera_override_is_not_reported_as_fixed(self):
-        loaded = self.project.create_blockout_scene("Plan", {}, self.project.catalog()["revision"])
+        loaded = self.project.planning.create_blockout(
+            "Plan", {}, self.project.catalog()["revision"]
+        )
         scene = loaded["scene"]
         camera = scene["layers"][-1]["objects"][0]
         camera["properties"][0] = dict(name="scroll_x", type="string", value="undecided")

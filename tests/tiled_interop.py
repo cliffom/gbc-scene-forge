@@ -11,8 +11,9 @@ from pathlib import Path
 
 from atlas_fixture import bundle, sprite_bundle
 
-from gbc_scene_forge import png, tiled
-from gbc_scene_forge.projects import Project
+from gbc_scene_forge.artwork import png
+from gbc_scene_forge.formats import tiled
+from gbc_scene_forge.project.application import Project
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--tiled", required=True, help="Official Tiled executable")
@@ -23,14 +24,14 @@ with tempfile.TemporaryDirectory(prefix="forge-tiled-") as folder:
     root = Path(folder)
     project = Project.create(root / "world", "Tiled interoperability")
     source, _ = bundle(root / "input")
-    project.import_atlas(source, project.catalog()["revision"])
+    project.artwork.import_atlas(source, project.catalog()["revision"])
     source, _ = sprite_bundle(root / "sprites")
-    project.import_atlas(source, project.catalog()["revision"])
-    loaded = project.create_scene("Village", 7, 5, 8, project.catalog()["revision"])
+    project.artwork.import_atlas(source, project.catalog()["revision"])
+    loaded = project.scenes.create("Village", 7, 5, 8, project.catalog()["revision"])
     loaded["scene"]["cells"][1][1] = "terrain/earth/0/0"
     loaded["scene"]["objects"] = [{"id": 1, "asset": "actors/idle", "x": 32, "y": 24}]
     loaded["scene"]["next_object_id"] = 2
-    saved = project.save_scene(
+    saved = project.scenes.save(
         loaded["id"], loaded["scene"], loaded["revision"], project.catalog()["revision"]
     )
     terrain = {
@@ -43,10 +44,10 @@ with tempfile.TemporaryDirectory(prefix="forge-tiled-") as folder:
             {"id": 7, "kind": "polygon", "points": [[0, 8], [8, 8], [8, 0]]},
         ],
     }
-    project.save_tile_metadata(
+    project.artwork.set_metadata(
         "terrain", "8", "terrain/earth/0/0", terrain, project.catalog()["revision"]
     )
-    project.save_tile_metadata(
+    project.artwork.set_metadata(
         "actors",
         "sprites",
         "actors/idle",
@@ -187,7 +188,7 @@ with tempfile.TemporaryDirectory(prefix="forge-tiled-") as folder:
         layered["layers"][1]["cells"][2][flags - 1] = f"terrain/earth/0/0#{flags}"
     # Cover a known opaque sprite pixel with an opaque tile.
     layered["layers"][1]["cells"][0][3] = "terrain/earth/0/0"
-    project.save_scene(loaded["id"], layered, saved["revision"], project.catalog()["revision"])
+    project.scenes.save(loaded["id"], layered, saved["revision"], project.catalog()["revision"])
     subprocess.run(
         [args.tiled, "--export-map", "json", str(path), str(exported)], check=True, timeout=30
     )
@@ -200,7 +201,7 @@ with tempfile.TemporaryDirectory(prefix="forge-tiled-") as folder:
     assert pixels[:4] == bytes([0, 0, 0, 0])
     assert pixels[(39 * width) * 4 : (39 * width) * 4 + 4] == bytes([0, 0, 0, 0])
     # Verify real ZIP output after extraction, relocation and removal of all sources.
-    project.create_scene("Other", 4, 4, 16, project.catalog()["revision"])
+    project.scenes.create("Other", 4, 4, 16, project.catalog()["revision"])
     project_document = project.catalog()["project"]
     exports = []
     for scope in ("scene", "project"):
@@ -248,7 +249,7 @@ with tempfile.TemporaryDirectory(prefix="forge-tiled-") as folder:
         assert pixels[:4] == bytes([0, 0, 0, 0])
         if scope == "project":
             reopened = Project(moved)
-            assert reopened.load_scene(loaded["id"])["scene"] == layered
+            assert reopened.scenes.load(loaded["id"])["scene"] == layered
 
 print(
     "Official Tiled verified moved scene/project ZIP exports, animation frame order/timing, object/property/origin and terrain/collision data, and rasterized layers."

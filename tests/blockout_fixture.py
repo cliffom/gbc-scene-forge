@@ -1,10 +1,10 @@
 """Independent opening-forest planning example, using only public standalone services."""
 
-from gbc_scene_forge import blockout
+from gbc_scene_forge.planning import blockout
 
 
 def opening_forest(project):
-    loaded = project.create_blockout_scene("Opening forest", {}, project.catalog()["revision"])
+    loaded = project.planning.create_blockout("Opening forest", {}, project.catalog()["revision"])
     document = project.catalog()["project"]
     definitions = {
         next(f["default"] for f in definition["fields"] if f["name"] == blockout.ROLE): definition[
@@ -62,6 +62,6 @@ def opening_forest(project):
             properties=props,
         )
         identities[name] = identity
-    return project.save_scene(
+    return project.scenes.save(
         loaded["id"], scene, loaded["revision"], project.catalog()["revision"]
     ), identities

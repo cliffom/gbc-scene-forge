@@ -5,7 +5,7 @@ from pathlib import Path
 
 from atlas_fixture import bundle, sprite_bundle
 
-from gbc_scene_forge.standalone import serve
+from gbc_scene_forge.adapters.http.server import serve
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--root", type=Path, required=True)

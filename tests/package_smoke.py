@@ -15,12 +15,12 @@ from importlib.resources import files
 from pathlib import Path
 from urllib.request import Request, urlopen
 
-from gbc_scene_forge import __version__, standalone
+from gbc_scene_forge import __version__
+from gbc_scene_forge.adapters.console import ServerConsole
+from gbc_scene_forge.adapters.http import server as standalone
 from gbc_scene_forge.build_info import build_version
-from gbc_scene_forge.console import ServerConsole
-from gbc_scene_forge.projects import Project
-from gbc_scene_forge.sample import prepare
-from gbc_scene_forge.workspaces import ProjectRoot
+from gbc_scene_forge.project.application import Project
+from gbc_scene_forge.project.workspaces import ProjectRoot
 
 
 class InstalledPackageSmokeTests(unittest.TestCase):
@@ -39,6 +39,17 @@ class InstalledPackageSmokeTests(unittest.TestCase):
             entry for entry in package.entry_points if entry.name == "gbc-scene-forge-mcp"
         )
         self.assertTrue(callable(mcp_launcher.load()))
+        # Both console scripts and the documented module launchers stay usable
+        # while implementation modules are free to move between domains.
+        for module in ("gbc_scene_forge", "gbc_scene_forge.mcp_server"):
+            result = subprocess.run(
+                [sys.executable, "-I", "-m", module, "--help"],
+                capture_output=True,
+                text=True,
+                check=True,
+                timeout=10,
+            )
+            self.assertIn("--project", result.stdout)
 
     def test_browser_assets_are_bundled(self):
         static = files("gbc_scene_forge").joinpath("static")
@@ -68,20 +79,20 @@ class InstalledPackageSmokeTests(unittest.TestCase):
 
     def test_sample_project_loads(self):
         with tempfile.TemporaryDirectory() as folder:
-            project = prepare(Path(folder) / "demo")
+            project = Project.from_sample(Path(folder) / "demo")
             scenes = project.catalog()["project"]["scenes"]
             self.assertEqual(len(scenes), 2)
             for scene in scenes:
                 with self.subTest(scene=scene["name"]):
-                    self.assertTrue(project.load_scene(scene["id"])["scene"]["layers"])
-            original = project.load_scene(scenes[0]["id"])
-            changed = project.load_scene(scenes[0]["id"])
+                    self.assertTrue(project.scenes.load(scene["id"])["scene"]["layers"])
+            original = project.scenes.load(scenes[0]["id"])
+            changed = project.scenes.load(scenes[0]["id"])
             changed["scene"]["layers"][0]["cells"][2][2] = "sample/path/0/0"
-            project.save_scene(
+            project.scenes.save(
                 changed["id"], changed["scene"], changed["revision"], project.catalog()["revision"]
             )
-            restored = prepare(project.root, reset=True)
-            self.assertEqual(restored.load_scene(original["id"])["scene"], original["scene"])
+            restored = Project.from_sample(project.root, reset=True)
+            self.assertEqual(restored.scenes.load(original["id"])["scene"], original["scene"])
 
     def test_project_root_creates_and_discovers_named_projects(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -149,9 +160,9 @@ class InstalledPackageSmokeTests(unittest.TestCase):
     def test_standalone_project_reopens(self):
         with tempfile.TemporaryDirectory() as folder:
             project = Project.create(Path(folder) / "world", "Portable world")
-            scene = project.create_scene("Village", 7, 5, 8, project.catalog()["revision"])
+            scene = project.scenes.create("Village", 7, 5, 8, project.catalog()["revision"])
             reopened = Project(project.root)
-            self.assertEqual(reopened.load_scene(scene["id"])["scene"]["width"], 7)
+            self.assertEqual(reopened.scenes.load(scene["id"])["scene"]["width"], 7)
             payload, _ = reopened.export_bundle("project", reopened.catalog()["revision"])
             with zipfile.ZipFile(io.BytesIO(payload)) as archive:
                 self.assertIn("forge.project.json", archive.namelist())

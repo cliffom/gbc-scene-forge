@@ -9,9 +9,11 @@ from unittest.mock import patch
 
 from atlas_fixture import bundle, sprite_bundle
 
-from gbc_scene_forge import tile_metadata, transactions
-from gbc_scene_forge.documents import Conflict
-from gbc_scene_forge.projects import MANIFEST, Project
+from gbc_scene_forge.artwork import metadata as tile_metadata
+from gbc_scene_forge.core.errors import Conflict
+from gbc_scene_forge.project.application import Project
+from gbc_scene_forge.project.schema import MANIFEST
+from gbc_scene_forge.storage import transactions
 
 
 class TileMetadataTests(unittest.TestCase):
@@ -21,8 +23,8 @@ class TileMetadataTests(unittest.TestCase):
         self.folder = Path(self.temp.name)
         self.project = Project.create(self.folder / "world", "Terrain")
         self.path, self.manifest = bundle(self.folder / "input")
-        self.project.import_atlas(self.path, self.revision())
-        self.loaded = self.project.create_scene("Room", 7, 5, 8, self.revision())
+        self.project.artwork.import_atlas(self.path, self.revision())
+        self.loaded = self.project.scenes.create("Room", 7, 5, 8, self.revision())
         self.asset = "terrain/earth/0/0"
         self.tsj = self.project.root / "assets/terrain/grid-8.tsj"
         self.value = {
@@ -40,7 +42,7 @@ class TileMetadataTests(unittest.TestCase):
         return self.project.catalog()["revision"]
 
     def save(self, value=None, revision=None):
-        return self.project.save_tile_metadata(
+        return self.project.artwork.set_metadata(
             "terrain",
             "8",
             self.asset,
@@ -53,7 +55,7 @@ class TileMetadataTests(unittest.TestCase):
         source_before = self.path.read_bytes()
         runtime = self.project.root / "assets/terrain/terrain.atlas.json"
         runtime_before = runtime.read_bytes()
-        map_before = self.project.load_scene(self.loaded["id"])
+        map_before = self.project.scenes.load(self.loaded["id"])
         before_revision = self.revision()
         result = self.save()
         self.assertNotEqual(result["revision"], before_revision)
@@ -63,7 +65,7 @@ class TileMetadataTests(unittest.TestCase):
         self.assertEqual(result["project"]["atlases"]["terrain"]["manifest"], original)
         self.assertEqual(self.path.read_bytes(), source_before)
         self.assertEqual(runtime.read_bytes(), runtime_before)
-        self.assertEqual(self.project.load_scene(self.loaded["id"]), map_before)
+        self.assertEqual(self.project.scenes.load(self.loaded["id"]), map_before)
         tile = json.loads(self.tsj.read_bytes())["tiles"][0]
         properties = {p["name"]: (p["type"], p["value"]) for p in tile["properties"]}
         self.assertEqual(properties["forge:terrain"], ("string", "water"))
@@ -80,14 +82,14 @@ class TileMetadataTests(unittest.TestCase):
             transactions.digest(self.tsj.read_bytes()),
         )
         # The current project revision can save the still-open scene revision.
-        self.project.save_scene(
+        self.project.scenes.save(
             self.loaded["id"], self.loaded["scene"], self.loaded["revision"], result["revision"]
         )
 
     def test_metadata_survives_artwork_reimport_restart_and_project_move(self):
         self.save()
         bundle(self.path.parent, rgb=(82, 82, 82))
-        self.project.import_atlas(self.path, self.revision(), reimport=True)
+        self.project.artwork.import_atlas(self.path, self.revision(), reimport=True)
         before = self.tsj.read_bytes()
         moved = self.folder / "moved"
         self.project.root.rename(moved)
@@ -107,14 +109,16 @@ class TileMetadataTests(unittest.TestCase):
         shape = json.loads(self.tsj.read_bytes())["tiles"][0]["objectgroup"]["objects"][0]
         self.assertEqual((shape["x"], shape["y"], shape["width"], shape["height"]), (0, 0, 8, 8))
         path, _ = sprite_bundle(self.folder / "sprites")
-        self.project.import_atlas(path, self.revision())
+        self.project.artwork.import_atlas(path, self.revision())
         value = {
             "terrain": "actor",
             "solid": False,
             "shapes": [{"id": 1, "kind": "ellipse", "x": 0, "y": 24, "width": 16, "height": 8}],
             "next_shape_id": 2,
         }
-        self.project.save_tile_metadata("actors", "sprites", "actors/idle", value, self.revision())
+        self.project.artwork.set_metadata(
+            "actors", "sprites", "actors/idle", value, self.revision()
+        )
         shape = json.loads((self.project.root / "assets/actors/sprites.tsj").read_bytes())["tiles"][
             0
         ]["objectgroup"]["objects"][0]
@@ -149,7 +153,7 @@ class TileMetadataTests(unittest.TestCase):
             self.assertEqual(self.revision(), revision)
         for group, asset in (("16", self.asset), ("bad", self.asset), ("8", "other/key")):
             with self.subTest(group=group), self.assertRaises(ValueError):
-                self.project.save_tile_metadata("terrain", group, asset, self.value, revision)
+                self.project.artwork.set_metadata("terrain", group, asset, self.value, revision)
 
     def test_revision_and_external_asset_conflicts_preserve_data(self):
         revision = self.revision()

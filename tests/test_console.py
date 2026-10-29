@@ -12,16 +12,16 @@ from pathlib import Path
 from socket import create_connection
 from unittest.mock import patch
 
-from gbc_scene_forge.build_info import build_version
-from gbc_scene_forge.console import ServerConsole
-from gbc_scene_forge.png import decode
-from gbc_scene_forge.standalone import (
+from gbc_scene_forge.adapters.console import ServerConsole
+from gbc_scene_forge.adapters.http.server import (
     StandaloneServer,
     make_handler,
     make_root_handler,
     open_editor,
     serve,
 )
+from gbc_scene_forge.artwork.png import decode
+from gbc_scene_forge.build_info import build_version
 
 
 class ConsoleTests(unittest.TestCase):
@@ -42,9 +42,9 @@ class ConsoleTests(unittest.TestCase):
             server.serve_forever.side_effect = traffic
             stream = io.StringIO()
             with (
-                patch("gbc_scene_forge.standalone.StandaloneServer", return_value=server),
-                patch("gbc_scene_forge.standalone.make_root_handler"),
-                patch("gbc_scene_forge.standalone.Path.cwd", return_value=Path(folder)),
+                patch("gbc_scene_forge.adapters.http.server.StandaloneServer", return_value=server),
+                patch("gbc_scene_forge.adapters.http.server.make_root_handler"),
+                patch("gbc_scene_forge.adapters.http.server.Path.cwd", return_value=Path(folder)),
                 patch("sys.stdout", stream),
             ):
                 serve(Path(folder) / "projects")
@@ -76,7 +76,7 @@ class ConsoleTests(unittest.TestCase):
         for result in (False, OSError("no desktop")):
             with (
                 self.subTest(result=result),
-                patch("gbc_scene_forge.standalone.webbrowser.open") as browser,
+                patch("gbc_scene_forge.adapters.http.server.webbrowser.open") as browser,
                 patch("sys.stdout", new_callable=io.StringIO) as output,
             ):
                 if isinstance(result, Exception):
@@ -88,9 +88,9 @@ class ConsoleTests(unittest.TestCase):
                 self.assertIn("Open http://127.0.0.1:12345/ manually", output.getvalue())
         with tempfile.TemporaryDirectory() as folder:
             with (
-                patch("gbc_scene_forge.standalone.StandaloneServer") as server_type,
-                patch("gbc_scene_forge.standalone.Thread") as thread,
-                patch("gbc_scene_forge.standalone.Path.cwd", return_value=Path(folder)),
+                patch("gbc_scene_forge.adapters.http.server.StandaloneServer") as server_type,
+                patch("gbc_scene_forge.adapters.http.server.Thread") as thread,
+                patch("gbc_scene_forge.adapters.http.server.Path.cwd", return_value=Path(folder)),
                 patch("sys.stdout", new_callable=io.StringIO),
             ):
                 server = server_type.return_value
@@ -101,7 +101,7 @@ class ConsoleTests(unittest.TestCase):
                 thread.return_value.start.assert_called_once()
             with (
                 patch(
-                    "gbc_scene_forge.standalone.StandaloneServer",
+                    "gbc_scene_forge.adapters.http.server.StandaloneServer",
                     side_effect=OSError(errno.EADDRINUSE, "busy"),
                 ),
                 self.assertRaisesRegex(ValueError, "--port 8777"),

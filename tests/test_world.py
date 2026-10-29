@@ -15,10 +15,11 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 from uuid import uuid4
 
-from gbc_scene_forge import world
-from gbc_scene_forge.documents import Conflict
-from gbc_scene_forge.projects import MANIFEST, Project
-from gbc_scene_forge.standalone import make_handler
+from gbc_scene_forge.adapters.http.server import make_handler
+from gbc_scene_forge.core.errors import Conflict
+from gbc_scene_forge.planning import world
+from gbc_scene_forge.project.application import Project
+from gbc_scene_forge.project.schema import MANIFEST
 
 
 class WorldTests(unittest.TestCase):
@@ -27,13 +28,13 @@ class WorldTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name) / "project"
         self.project = Project.create(self.root, "Connected rooms")
-        result = self.project.save_object_definition(
+        result = self.project.objects.save_definition(
             {"name": "Entrance", "kind": "point", "fields": []}, self.revision()
         )
         self.definition = result["definition_id"]
         self.rooms = []
         for name in ("Forest", "Cave"):
-            room = self.project.create_scene(name, 10, 8, 8, self.revision())
+            room = self.project.scenes.create(name, 10, 8, 8, self.revision())
             scene = {
                 "width": 10,
                 "height": 8,
@@ -61,7 +62,7 @@ class WorldTests(unittest.TestCase):
                 ],
             }
             self.rooms.append(
-                self.project.save_scene(room["id"], scene, room["revision"], self.revision())
+                self.project.scenes.save(room["id"], scene, room["revision"], self.revision())
             )
         self.link = {
             "id": str(uuid4()),
@@ -83,10 +84,10 @@ class WorldTests(unittest.TestCase):
         return self.project.catalog()["revision"]
 
     def report(self, **kwargs):
-        return self.project.world_report(self.revision(), **kwargs)
+        return self.project.reports.world(self.revision(), **kwargs)
 
     def save(self):
-        return self.project.save_world(
+        return self.project.planning.save_world(
             self.value, self.revision(), self.report()["scene_revisions"]
         )
 
@@ -116,16 +117,16 @@ class WorldTests(unittest.TestCase):
         shutil.copytree(self.root, moved)
         reopened = Project(moved)
         self.assertEqual(reopened.catalog()["project"]["world"], self.value)
-        self.assertEqual(reopened.world_report(self.revision()), self.report())
+        self.assertEqual(reopened.reports.world(self.revision()), self.report())
 
     def test_rename_and_duplicate_preserve_original_connections(self):
         self.save()
         first = self.rooms[0]
-        self.project.rename_scene(first["id"], "Woodland", first["revision"], self.revision())
+        self.project.scenes.rename(first["id"], "Woodland", first["revision"], self.revision())
         scene = copy.deepcopy(first["scene"])
         scene["layers"][0]["objects"][0]["name"] = "South gate"
-        first = self.project.save_scene(first["id"], scene, first["revision"], self.revision())
-        result = self.project.duplicate_scene(
+        first = self.project.scenes.save(first["id"], scene, first["revision"], self.revision())
+        result = self.project.scenes.duplicate(
             first["id"], "Woodland copy", first["revision"], self.revision()
         )
         value = result["project"]["world"]
@@ -150,7 +151,7 @@ class WorldTests(unittest.TestCase):
         original = self.files()
         for confirm in (False, 1, "true"):
             with self.assertRaisesRegex(ValueError, "Confirm broken"):
-                self.project.save_scene(
+                self.project.scenes.save(
                     first["id"],
                     scene,
                     first["revision"],
@@ -158,13 +159,13 @@ class WorldTests(unittest.TestCase):
                     confirm_broken_links=confirm,
                 )
             self.assertEqual(self.files(), original)
-        saved = self.project.save_scene(
+        saved = self.project.scenes.save(
             first["id"], scene, first["revision"], self.revision(), confirm_broken_links=True
         )
         self.assertEqual([f["code"] for f in self.report()["findings"]], ["missing-object"])
         self.assertEqual(self.project.catalog()["project"]["world"], self.value)
         # Restoring the original object ID repairs the connection, as Undo + Save does.
-        self.project.save_scene(first["id"], first["scene"], saved["revision"], self.revision())
+        self.project.scenes.save(first["id"], first["scene"], saved["revision"], self.revision())
         self.assertEqual(self.report()["status"], "pass")
 
     def test_scene_deletion_requires_confirmation_and_retains_repairable_links(self):
@@ -172,9 +173,9 @@ class WorldTests(unittest.TestCase):
         second = self.rooms[1]
         original = self.files()
         with self.assertRaisesRegex(ValueError, "Confirm"):
-            self.project.delete_scene(second["id"], second["revision"], self.revision())
+            self.project.scenes.delete(second["id"], second["revision"], self.revision())
         self.assertEqual(self.files(), original)
-        self.project.delete_scene(
+        self.project.scenes.delete(
             second["id"], second["revision"], self.revision(), confirm_broken_links=True
         )
         result = self.project.catalog()["project"]["world"]
@@ -189,7 +190,7 @@ class WorldTests(unittest.TestCase):
 
     def test_missing_definition_and_schema_mismatch_are_located(self):
         self.save()
-        self.project.delete_object_definition(self.definition, self.revision())
+        self.project.objects.delete_definition(self.definition, self.revision())
         report = self.report()
         self.assertEqual([f["code"] for f in report["findings"]], ["missing-definition"] * 2)
         self.assertEqual(report["findings"][1]["layer"], 2)
@@ -198,7 +199,7 @@ class WorldTests(unittest.TestCase):
 
     def test_required_fields_and_missing_definition_attachment(self):
         self.save()
-        self.project.save_object_definition(
+        self.project.objects.save_definition(
             {
                 "id": self.definition,
                 "name": "Entrance",
@@ -240,30 +241,30 @@ class WorldTests(unittest.TestCase):
         self.save()
         original = self.files()
         with self.assertRaises(Conflict):
-            self.project.save_world(self.value, revision, guards)
+            self.project.planning.save_world(self.value, revision, guards)
         self.assertEqual(self.files(), original)
         path = self.root / f"scenes/{self.rooms[1]['id']}.tmj"
         path.write_bytes(path.read_bytes() + b"\n")
         original = self.files()
         with self.assertRaises(Conflict):
-            self.project.save_world(self.value, self.revision(), guards)
+            self.project.planning.save_world(self.value, self.revision(), guards)
         self.assertEqual(self.files(), original)
         with self.assertRaises(ValueError):
-            self.project.save_world(self.value, self.revision(), {})
+            self.project.planning.save_world(self.value, self.revision(), {})
 
     def test_world_commit_checks_scene_guards_at_transaction_boundary(self):
         guards = self.report()["scene_revisions"]
         before = (self.root / MANIFEST).read_bytes()
-        commit = self.project._commit
+        commit = self.project.store.commit
 
         def edit_then_commit(*args):
             path = self.root / f"scenes/{self.rooms[0]['id']}.tmj"
             path.write_bytes(path.read_bytes() + b"\n")
             return commit(*args)
 
-        with patch.object(self.project, "_commit", side_effect=edit_then_commit):
+        with patch.object(self.project.store, "commit", side_effect=edit_then_commit):
             with self.assertRaises(Conflict):
-                self.project.save_world(self.value, self.revision(), guards)
+                self.project.planning.save_world(self.value, self.revision(), guards)
         self.assertEqual((self.root / MANIFEST).read_bytes(), before)
 
     def test_noncooperating_edit_during_report_is_detected(self):
@@ -275,7 +276,7 @@ class WorldTests(unittest.TestCase):
             path.write_bytes(path.read_bytes() + b"\n")
             return result
 
-        with patch("gbc_scene_forge.world.report", side_effect=edit):
+        with patch("gbc_scene_forge.planning.world.report", side_effect=edit):
             with self.assertRaises(Conflict):
                 self.report()
 
@@ -297,7 +298,7 @@ class WorldTests(unittest.TestCase):
                     archive.extractall(target)
                     reopened = Project(target)
                     self.assertEqual(
-                        reopened.world_report(reopened.catalog()["revision"])["status"], "pass"
+                        reopened.reports.world(reopened.catalog()["revision"])["status"], "pass"
                     )
         self.assertEqual(self.files(), original)
 
@@ -321,14 +322,16 @@ class WorldTests(unittest.TestCase):
                 value = copy.deepcopy(self.value)
                 mutate(value)
                 with self.assertRaises(ValueError):
-                    self.project.save_world(
+                    self.project.planning.save_world(
                         value, self.revision(), self.report()["scene_revisions"]
                     )
                 self.assertEqual(self.files(), original)
         value = copy.deepcopy(self.value)
         value["positions"][str(uuid4())] = {"x": 0, "y": 0}
         with self.assertRaisesRegex(ValueError, "existing scenes"):
-            self.project.save_world(value, self.revision(), self.report()["scene_revisions"])
+            self.project.planning.save_world(
+                value, self.revision(), self.report()["scene_revisions"]
+            )
         value = copy.deepcopy(self.value)
         value["positions"][self.rooms[0]["id"]] = {"x": -100000, "y": 100000}
         world.check(value)

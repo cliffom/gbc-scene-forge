@@ -14,10 +14,11 @@ from uuid import uuid4
 
 from atlas_fixture import bundle, sprite_bundle
 
-from gbc_scene_forge import diagnostics, preview_settings
-from gbc_scene_forge.documents import Conflict
-from gbc_scene_forge.projects import Project
-from gbc_scene_forge.standalone import make_handler
+from gbc_scene_forge.adapters.http.server import make_handler
+from gbc_scene_forge.analysis import diagnostics
+from gbc_scene_forge.core.errors import Conflict
+from gbc_scene_forge.project.application import Project
+from gbc_scene_forge.scene_objects import preview as preview_settings
 
 
 class DiagnosticsTests(unittest.TestCase):
@@ -27,8 +28,8 @@ class DiagnosticsTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.project = Project.create(self.root / "project", "Diagnostics")
         path, _ = bundle(self.root / "atlas")
-        self.project.import_atlas(path, self.rev())
-        self.spawn = self.project.save_object_definition(
+        self.project.artwork.import_atlas(path, self.rev())
+        self.spawn = self.project.objects.save_definition(
             {
                 "name": "Spawn",
                 "kind": "point",
@@ -36,12 +37,12 @@ class DiagnosticsTests(unittest.TestCase):
             },
             self.rev(),
         )["definition_id"]
-        self.goal = self.project.save_object_definition(
+        self.goal = self.project.objects.save_definition(
             {"name": "Goal", "kind": "point", "fields": []}, self.rev()
         )["definition_id"]
         self.rooms = []
         for name in ("Forest", "Cave"):
-            room = self.project.create_scene(name, 8, 6, 8, self.rev())
+            room = self.project.scenes.create(name, 8, 6, 8, self.rev())
             scene = {
                 "width": 8,
                 "height": 6,
@@ -70,7 +71,7 @@ class DiagnosticsTests(unittest.TestCase):
                 ],
             }
             self.rooms.append(
-                self.project.save_scene(room["id"], scene, room["revision"], self.rev())
+                self.project.scenes.save(room["id"], scene, room["revision"], self.rev())
             )
         self.config = {
             "movement": "grid-four-way",
@@ -83,14 +84,14 @@ class DiagnosticsTests(unittest.TestCase):
         return self.project.catalog()["revision"]
 
     def report(self, **kwargs):
-        return self.project.diagnostics_report(self.rev(), self.config, **kwargs)
+        return self.project.reports.diagnostics(self.rev(), self.config, **kwargs)
 
     def files(self):
         return {str(p): p.read_bytes() for p in self.project.root.rglob("*") if p.is_file()}
 
     def save_scene(self, scene):
         room = self.rooms[0]
-        self.rooms[0] = self.project.save_scene(room["id"], scene, room["revision"], self.rev())
+        self.rooms[0] = self.project.scenes.save(room["id"], scene, room["revision"], self.rev())
 
     def test_multi_scene_deterministic_read_only_and_locations(self):
         before = self.files()
@@ -107,7 +108,7 @@ class DiagnosticsTests(unittest.TestCase):
 
     def test_wall_blocks_entrance_and_routes_with_navigable_locations(self):
         asset = "terrain/earth/0/0"
-        self.project.save_tile_metadata(
+        self.project.artwork.set_metadata(
             "terrain",
             "8",
             asset,
@@ -162,7 +163,7 @@ class DiagnosticsTests(unittest.TestCase):
             self.report()
 
     def test_connections_and_unsaved_snapshot(self):
-        report = self.project.world_report(self.rev())
+        report = self.project.reports.world(self.rev())
         link = {
             "id": str(uuid4()),
             "name": "Broken",
@@ -170,7 +171,7 @@ class DiagnosticsTests(unittest.TestCase):
             "destination": {"scene": str(uuid4()), "object": 9},
             "direction": "one-way",
         }
-        self.project.save_world(
+        self.project.planning.save_world(
             {"version": 1, "positions": {}, "connections": [link]},
             self.rev(),
             report["scene_revisions"],
@@ -211,7 +212,7 @@ class DiagnosticsTests(unittest.TestCase):
             return result
 
         with (
-            patch("gbc_scene_forge.diagnostics.report", side_effect=raced),
+            patch("gbc_scene_forge.analysis.diagnostics.report", side_effect=raced),
             self.assertRaises(Conflict),
         ):
             self.report()
@@ -229,7 +230,7 @@ class DiagnosticsTests(unittest.TestCase):
 
     def test_preview_asset_keys_count_as_usage(self):
         path, _ = sprite_bundle(self.root / "sprites")
-        self.project.import_atlas(path, self.rev())
+        self.project.artwork.import_atlas(path, self.rev())
 
         def unused_assets():
             return {
@@ -246,14 +247,14 @@ class DiagnosticsTests(unittest.TestCase):
             with self.subTest(collection=collection):
                 settings = preview_settings.defaults()
                 settings[collection] = {"actors/idle": value}
-                self.project.save_preview_settings(settings, self.rev())
+                self.project.objects.save_preview(settings, self.rev())
                 before = self.files()
                 unused = unused_assets()
                 self.assertNotIn("actors/idle", unused)
                 self.assertIn("terrain/earth/0/0", unused)
                 self.assertEqual(self.files(), before)
 
-        self.project.save_preview_settings(preview_settings.defaults(), self.rev())
+        self.project.objects.save_preview(preview_settings.defaults(), self.rev())
         self.assertIn("actors/idle", unused_assets())
 
     def test_exact_collision_geometry_and_bounds(self):
@@ -372,8 +373,8 @@ class DiagnosticsTests(unittest.TestCase):
 
     def test_sprite_collision_uses_native_and_instance_origins(self):
         path, _ = sprite_bundle(self.root / "sprites")
-        self.project.import_atlas(path, self.rev())
-        self.project.save_tile_metadata(
+        self.project.artwork.import_atlas(path, self.rev())
+        self.project.artwork.set_metadata(
             "actors",
             "sprites",
             "actors/idle",
@@ -396,7 +397,7 @@ class DiagnosticsTests(unittest.TestCase):
 
     def test_transformed_tiles_keep_collision_and_asset_usage(self):
         asset = "terrain/earth/0/0"
-        self.project.save_tile_metadata(
+        self.project.artwork.set_metadata(
             "terrain",
             "8",
             asset,
@@ -418,7 +419,7 @@ class DiagnosticsTests(unittest.TestCase):
         blocked = diagnostics.collision_test(scene, document, False)
         self.assertTrue(blocked((0, 0, 2, 2)))
         self.assertFalse(blocked((0, 6, 2, 2)))
-        self.project.save_stamp("Rotated wall", scene, [0, 0], self.rev())
+        self.project.objects.save_stamp("Rotated wall", scene, [0, 0], self.rev())
         self.assertFalse(
             any(
                 f["code"] == "unused-asset" and f["asset"] == asset

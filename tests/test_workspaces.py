@@ -11,11 +11,12 @@ from unittest.mock import patch
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
-from gbc_scene_forge import transactions
 from gbc_scene_forge.__main__ import main
-from gbc_scene_forge.projects import MANIFEST, Project
-from gbc_scene_forge.standalone import make_handler, make_root_handler
-from gbc_scene_forge.workspaces import ProjectRoot, slug
+from gbc_scene_forge.adapters.http.server import make_handler, make_root_handler
+from gbc_scene_forge.project.application import Project
+from gbc_scene_forge.project.schema import MANIFEST
+from gbc_scene_forge.project.workspaces import ProjectRoot, slug
+from gbc_scene_forge.storage import transactions
 
 
 class ProjectRootTests(unittest.TestCase):
@@ -81,7 +82,7 @@ class ProjectRootTests(unittest.TestCase):
         document["version"] = 2
         manifest.write_text(json.dumps(document))
         before = {str(p): p.read_bytes() for p in project.root.rglob("*") if p.is_file()}
-        with patch("gbc_scene_forge.transactions.Transactions.recover") as recover:
+        with patch("gbc_scene_forge.storage.transactions.Transactions.recover") as recover:
             for open_project in (
                 lambda: Project(project.root),
                 lambda: make_handler(project.root, "t"),
@@ -121,7 +122,7 @@ class ProjectRootTests(unittest.TestCase):
         self.assertEqual((unrelated / "keep.txt").read_text(), "Keep me")
 
     def test_sample_creation_is_named_isolated_and_never_overwrites(self):
-        from gbc_scene_forge.sample import template_path
+        from gbc_scene_forge.project.sample import template_path
 
         source = template_path()
         before = {p.relative_to(source): p.read_bytes() for p in source.rglob("*") if p.is_file()}
@@ -133,12 +134,12 @@ class ProjectRootTests(unittest.TestCase):
         self.assertEqual(document["name"], "My first scene")
         self.assertNotEqual(document["id"], other.catalog()["project"]["id"])
         self.assertEqual(len(document["scenes"]), 2)
-        scene = project.load_scene(document["scenes"][0]["id"])
+        scene = project.scenes.load(document["scenes"][0]["id"])
         scene["scene"]["layers"][0]["cells"][0][0] = "sample/path/0/0"
-        project.save_scene(
+        project.scenes.save(
             scene["id"], scene["scene"], scene["revision"], project.catalog()["revision"]
         )
-        self.assertNotEqual(project.load_scene(scene["id"]), other.load_scene(scene["id"]))
+        self.assertNotEqual(project.scenes.load(scene["id"]), other.scenes.load(scene["id"]))
         with self.assertRaisesRegex(ValueError, "already exists"):
             self.workspace.create("My first scene", starter="sample")
         for starter in ("unknown", None, True, {}):
@@ -166,13 +167,13 @@ class ProjectRootTests(unittest.TestCase):
             with (
                 self.subTest(args=args),
                 patch("sys.argv", ["forge", *args]),
-                patch("gbc_scene_forge.__main__.serve") as serve,
+                patch("gbc_scene_forge.adapters.cli.serve") as serve,
             ):
                 main()
                 serve.assert_called_once_with(root, 8765, single_project=single, open_browser=True)
         with (
             patch("sys.argv", ["forge", "--no-browser", "--port", "0"]),
-            patch("gbc_scene_forge.__main__.serve") as serve,
+            patch("gbc_scene_forge.adapters.cli.serve") as serve,
         ):
             main()
             serve.assert_called_once_with(

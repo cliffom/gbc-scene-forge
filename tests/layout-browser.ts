@@ -16,9 +16,9 @@ const { stdout } = await promisify(execFile)('.venv/bin/python', [
   `
 import sys
 from pathlib import Path
-from gbc_scene_forge.sample import prepare
-p = prepare(Path(sys.argv[1]), title='Forest and village')
-p.save_stamp('Forest entrance with a long descriptive stamp name', dict(width=1, height=1, grid=8,
+from gbc_scene_forge.project.application import Project
+p = Project.from_sample(Path(sys.argv[1]), title='Forest and village')
+p.objects.save_stamp('Forest entrance with a long descriptive stamp name', dict(width=1, height=1, grid=8,
     cells=[['sample/grass/0/0']]), [0], p.catalog()['revision'])
 print(p.catalog()['project']['scenes'][0]['id'])
 `,

@@ -24,3 +24,5 @@ node_modules/
 /src/gbc_scene_forge/static/*.map
 /src/gbc_scene_forge/static/app.meta.json
 /src/gbc_scene_forge/static/build-info.json
+
+.mypy_cache/

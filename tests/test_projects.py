@@ -17,11 +17,15 @@ from urllib.request import Request, urlopen
 
 from atlas_fixture import bundle, image, sprite_bundle
 
-from gbc_scene_forge import atlas, png, preview_settings, tiled, transactions
-from gbc_scene_forge.atlas import load_bundle
-from gbc_scene_forge.documents import Conflict
-from gbc_scene_forge.projects import MANIFEST, Project
-from gbc_scene_forge.standalone import make_handler
+from gbc_scene_forge.adapters.http.server import make_handler
+from gbc_scene_forge.artwork import atlas, png
+from gbc_scene_forge.artwork.atlas import load_bundle
+from gbc_scene_forge.core.errors import Conflict
+from gbc_scene_forge.formats import tiled
+from gbc_scene_forge.project.application import Project
+from gbc_scene_forge.project.schema import MANIFEST
+from gbc_scene_forge.scene_objects import preview as preview_settings
+from gbc_scene_forge.storage import transactions
 
 
 class ProjectTests(unittest.TestCase):
@@ -36,18 +40,18 @@ class ProjectTests(unittest.TestCase):
         return self.project.catalog()["revision"]
 
     def import_atlas(self, **kwargs):
-        return self.project.import_atlas(self.path, self.revision(), **kwargs)
+        return self.project.artwork.import_atlas(self.path, self.revision(), **kwargs)
 
     def write_manifest(self):
         self.path.write_text(json.dumps(self.manifest))
 
     def scene(self, title="Village", grid=8):
-        return self.project.create_scene(title, 7, 5, grid, self.revision())
+        return self.project.scenes.create(title, 7, 5, grid, self.revision())
 
     def test_ordered_layers_survive_save_reopen_and_atlas_rewrites(self):
         self.import_atlas()
         path, _ = sprite_bundle(self.folder / "sprites")
-        self.project.import_atlas(path, self.revision())
+        self.project.artwork.import_atlas(path, self.revision())
         loaded = self.scene()
         cells = loaded["scene"]["cells"]
         cells[1][1] = "terrain/earth/0/0"
@@ -75,9 +79,9 @@ class ProjectTests(unittest.TestCase):
                 },
             ],
         }
-        saved = self.project.save_scene(loaded["id"], scene, loaded["revision"], self.revision())
+        saved = self.project.scenes.save(loaded["id"], scene, loaded["revision"], self.revision())
         self.assertEqual(saved["scene"], scene)
-        self.assertEqual(Project(self.project.root).load_scene(loaded["id"])["scene"], scene)
+        self.assertEqual(Project(self.project.root).scenes.load(loaded["id"])["scene"], scene)
         document = json.loads((self.project.root / f"scenes/{loaded['id']}.tmj").read_text())
         self.assertEqual([layer["id"] for layer in document["layers"]], [4, 8, 11])
         self.assertFalse(document["layers"][1]["visible"])
@@ -86,9 +90,9 @@ class ProjectTests(unittest.TestCase):
         # Hidden and non-ground layers protect their dependencies from deletion.
         for atlas_id in ("terrain", "actors"):
             with self.assertRaisesRegex(ValueError, "Village"):
-                self.project.delete_atlas(atlas_id, self.revision())
-        self.project.import_atlas(self.path, self.revision(), reimport=True)
-        self.assertEqual(self.project.load_scene(loaded["id"])["scene"], scene)
+                self.project.artwork.delete_atlas(atlas_id, self.revision())
+        self.project.artwork.import_atlas(self.path, self.revision(), reimport=True)
+        self.assertEqual(self.project.scenes.load(loaded["id"])["scene"], scene)
         # Duplicate IDs, unsupported fields and transforms must never be dropped.
         variants = []
         for update in (
@@ -124,16 +128,16 @@ class ProjectTests(unittest.TestCase):
         self.import_atlas()
         first, second = self.scene(), self.scene("River")
         first["scene"]["cells"][1][2] = "terrain/earth/0/0"
-        saved = self.project.save_scene(
+        saved = self.project.scenes.save(
             first["id"], first["scene"], first["revision"], self.revision()
         )
         self.assertEqual(saved.pop("project_revision"), self.revision())
-        self.assertEqual(self.project.load_scene(second["id"])["scene"]["cells"][1][2], "")
+        self.assertEqual(self.project.scenes.load(second["id"])["scene"]["cells"][1][2], "")
         target = self.folder / "moved"
         shutil.move(str(self.project.root), target)
         shutil.rmtree(self.path.parent)
         reopened = Project(target)
-        self.assertEqual(reopened.load_scene(first["id"]), saved)
+        self.assertEqual(reopened.scenes.load(first["id"]), saved)
         catalog = reopened.catalog()["project"]
         self.assertEqual(catalog["name"], "My world")
         self.assertEqual(len(catalog["scenes"]), 2)
@@ -151,7 +155,7 @@ class ProjectTests(unittest.TestCase):
         self.import_atlas()
         scene = self.scene()
         scene["scene"]["cells"][0][0] = "terrain/stone/0/0"
-        self.project.save_scene(scene["id"], scene["scene"], scene["revision"], self.revision())
+        self.project.scenes.save(scene["id"], scene["scene"], scene["revision"], self.revision())
         old = copy.deepcopy(self.project.catalog()["project"]["atlases"])
         self.assertFalse(self.import_atlas(reimport=True)["artwork_changed"])
         self.assertEqual(self.project.catalog()["project"]["atlases"], old)
@@ -169,18 +173,18 @@ class ProjectTests(unittest.TestCase):
             old["terrain"]["tiles"],
         )
         self.assertEqual(
-            self.project.load_scene(scene["id"])["scene"]["cells"][0][0], "terrain/stone/0/0"
+            self.project.scenes.load(scene["id"])["scene"]["cells"][0][0], "terrain/stone/0/0"
         )
         with self.assertRaisesRegex(ValueError, "explicit reimport"):
             self.import_atlas()
 
     def test_scene_read_cannot_mix_reimported_map_with_old_sprite_origin(self):
         path, manifest = sprite_bundle(self.folder / "sprites")
-        self.project.import_atlas(path, self.revision())
+        self.project.artwork.import_atlas(path, self.revision())
         scene = self.scene()
         scene["scene"]["objects"] = [{"id": 1, "asset": "actors/idle", "x": 32, "y": 24}]
         scene["scene"]["next_object_id"] = 2
-        saved = self.project.save_scene(
+        saved = self.project.scenes.save(
             scene["id"], scene["scene"], scene["revision"], self.revision()
         )
         manifest["regions"][0]["origin"] = [7, 20]
@@ -193,15 +197,15 @@ class ProjectTests(unittest.TestCase):
             original(file, data)
             if file == target:
                 try:
-                    observed.append(self.project.load_scene(scene["id"])["scene"]["objects"])
+                    observed.append(self.project.scenes.load(scene["id"])["scene"]["objects"])
                 except ValueError:
                     observed.append("blocked")
 
         with patch.object(transactions, "atomic_write", side_effect=read_during_write):
-            self.project.import_atlas(path, self.revision(), reimport=True)
+            self.project.artwork.import_atlas(path, self.revision(), reimport=True)
         self.assertEqual(observed, ["blocked"])
         self.assertEqual(
-            self.project.load_scene(scene["id"])["scene"]["objects"], saved["scene"]["objects"]
+            self.project.scenes.load(scene["id"])["scene"]["objects"], saved["scene"]["objects"]
         )
 
     def test_save_acknowledges_its_own_bytes_even_if_an_external_edit_follows(self):
@@ -209,7 +213,7 @@ class ProjectTests(unittest.TestCase):
         scene = self.scene()
         scene["scene"]["cells"][0][0] = "terrain/earth/0/0"
         target = self.project.root / f"scenes/{scene['id']}.tmj"
-        commit = self.project._commit
+        commit = self.project.store.commit
         expected_project_revision = self.revision()
 
         def external_edit_after_commit(*args):
@@ -222,46 +226,46 @@ class ProjectTests(unittest.TestCase):
             value["name"] = "Renamed externally"
             manifest.write_text(json.dumps(value))
 
-        with patch.object(self.project, "_commit", side_effect=external_edit_after_commit):
-            result = self.project.save_scene(
+        with patch.object(self.project.store, "commit", side_effect=external_edit_after_commit):
+            result = self.project.scenes.save(
                 scene["id"], scene["scene"], scene["revision"], self.revision()
             )
         self.assertEqual(result["project_revision"], expected_project_revision)
         self.assertNotEqual(result["project_revision"], self.revision())
         self.assertEqual(result["scene"]["cells"][0][0], "terrain/earth/0/0")
         self.assertEqual(
-            self.project.load_scene(scene["id"])["scene"]["cells"][0][0], "terrain/stone/0/0"
+            self.project.scenes.load(scene["id"])["scene"]["cells"][0][0], "terrain/stone/0/0"
         )
         with self.assertRaises(Conflict):
-            self.project.save_scene(
+            self.project.scenes.save(
                 scene["id"], result["scene"], result["revision"], self.revision()
             )
 
     def test_asset_reads_reject_stale_catalogs_and_external_changes(self):
         self.import_atlas()
         revision = self.revision()
-        data = self.project.asset("assets/terrain/atlas.png", revision)
+        data = self.project.artwork.asset("assets/terrain/atlas.png", revision)
         self.scene()
         with self.assertRaises(Conflict):
-            self.project.asset("assets/terrain/atlas.png", revision)
+            self.project.artwork.asset("assets/terrain/atlas.png", revision)
         path = self.project.root / "assets/terrain/atlas.png"
         path.write_bytes(b"external edit")
         with self.assertRaises(Conflict):
-            self.project.asset("assets/terrain/atlas.png", self.revision())
+            self.project.artwork.asset("assets/terrain/atlas.png", self.revision())
         self.assertNotEqual(path.read_bytes(), data)
 
     def test_added_regions_rewrite_gid_ranges_without_changing_other_atlas_placements(self):
         self.import_atlas()
         other, _ = bundle(self.folder / "other", "water")
-        self.project.import_atlas(other, self.revision())
+        self.project.artwork.import_atlas(other, self.revision())
         scene = self.scene()
         scene["scene"]["cells"][0][:2] = ["terrain/stone/0/0", "water/earth/0/0"]
-        self.project.save_scene(scene["id"], scene["scene"], scene["revision"], self.revision())
+        self.project.scenes.save(scene["id"], scene["scene"], scene["revision"], self.revision())
         # Overlapping same-kind regions are legal and receive independent stable identities.
         self.manifest["regions"].append(dict(self.manifest["regions"][0], name="grass"))
         self.write_manifest()
         self.assertEqual(self.import_atlas(reimport=True)["added"], ["grass"])
-        reopened = self.project.load_scene(scene["id"])
+        reopened = self.project.scenes.load(scene["id"])
         self.assertEqual(reopened["scene"]["cells"][0][:2], scene["scene"]["cells"][0][:2])
         self.assertEqual(
             self.project.catalog()["project"]["atlases"]["terrain"]["tiles"]["8"][
@@ -302,20 +306,20 @@ class ProjectTests(unittest.TestCase):
 
     def test_browser_bundle_matches_path_import_and_preserves_source_files(self):
         before = self.path.read_bytes(), (self.path.parent / "atlas.png").read_bytes()
-        self.project.import_bundle(self.uploaded_bundle(), self.revision())
+        self.project.artwork.import_bundle(self.uploaded_bundle(), self.revision())
         first = self.project.catalog()["project"]["atlases"]
-        self.project.import_atlas(self.path, self.revision(), reimport=True)
+        self.project.artwork.import_atlas(self.path, self.revision(), reimport=True)
         self.assertEqual(self.project.catalog()["project"]["atlases"], first)
         self.assertEqual(
             (self.path.read_bytes(), (self.path.parent / "atlas.png").read_bytes()), before
         )
         scene = self.scene()
         scene["scene"]["cells"][0][0] = "terrain/earth/0/0"
-        saved = self.project.save_scene(
+        saved = self.project.scenes.save(
             scene["id"], scene["scene"], scene["revision"], self.revision()
         )
-        self.project.import_bundle(self.uploaded_bundle(), self.revision(), reimport=True)
-        self.assertEqual(self.project.load_scene(scene["id"])["scene"], saved["scene"])
+        self.project.artwork.import_bundle(self.uploaded_bundle(), self.revision(), reimport=True)
+        self.assertEqual(self.project.scenes.load(scene["id"])["scene"], saved["scene"])
 
     def test_browser_bundle_rejects_invalid_input_without_project_changes(self):
         before = self.project.catalog()
@@ -328,12 +332,12 @@ class ProjectTests(unittest.TestCase):
             {"png": ""},
         ):
             with self.subTest(update=update), self.assertRaises(ValueError):
-                self.project.import_bundle(dict(uploaded, **update), self.revision())
+                self.project.artwork.import_bundle(dict(uploaded, **update), self.revision())
             self.assertEqual(self.project.catalog(), before)
         for png_path in ("../escape.png", "/tmp/escape.png", "C:escape.png", "folder\\escape.png"):
             modified = dict(self.manifest, png=png_path)
             with self.subTest(path=png_path), self.assertRaises(ValueError):
-                self.project.import_bundle(
+                self.project.artwork.import_bundle(
                     dict(uploaded, manifest=json.dumps(modified)), self.revision()
                 )
             self.assertEqual(self.project.catalog(), before)
@@ -344,19 +348,19 @@ class ProjectTests(unittest.TestCase):
         stale = self.revision()
         self.scene()
         with self.assertRaises(Conflict):
-            self.project.import_bundle(uploaded, stale)
-        self.project.import_bundle(uploaded, self.revision())
+            self.project.artwork.import_bundle(uploaded, stale)
+        self.project.artwork.import_bundle(uploaded, self.revision())
         self.assertTrue((self.project.root / "assets/terrain/atlas.png").is_file())
 
     def test_sprite_objects_have_native_size_origin_and_stable_references(self):
         path, manifest = sprite_bundle(self.folder / "sprites")
-        self.project.import_atlas(path, self.revision())
+        self.project.artwork.import_atlas(path, self.revision())
         for grid in (8, 16, 32):
             with self.subTest(grid=grid):
                 scene = self.scene(grid=grid)
                 scene["scene"]["objects"] = [{"id": 7, "asset": "actors/idle", "x": 24, "y": 25}]
                 scene["scene"]["next_object_id"] = 8
-                saved = self.project.save_scene(
+                saved = self.project.scenes.save(
                     scene["id"], scene["scene"], scene["revision"], self.revision()
                 )
                 map_path = self.project.root / f"scenes/{scene['id']}.tmj"
@@ -367,21 +371,21 @@ class ProjectTests(unittest.TestCase):
                 )
                 self.assertEqual(document["nextobjectid"], 8)
                 self.assertEqual(saved.pop("project_revision"), self.revision())
-                self.assertEqual(Project(self.project.root).load_scene(scene["id"]), saved)
-        self.project.import_atlas(path, self.revision(), reimport=True)
+                self.assertEqual(Project(self.project.root).scenes.load(scene["id"]), saved)
+        self.project.artwork.import_atlas(path, self.revision(), reimport=True)
         self.assertEqual(
-            self.project.load_scene(scene["id"])["scene"]["objects"], saved["scene"]["objects"]
+            self.project.scenes.load(scene["id"])["scene"]["objects"], saved["scene"]["objects"]
         )
         manifest["regions"][0]["origin"] = [7, 20]
         path.write_text(json.dumps(manifest))
-        self.project.import_atlas(path, self.revision(), reimport=True)
+        self.project.artwork.import_atlas(path, self.revision(), reimport=True)
         self.assertEqual(
-            self.project.load_scene(scene["id"])["scene"]["objects"], saved["scene"]["objects"]
+            self.project.scenes.load(scene["id"])["scene"]["objects"], saved["scene"]["objects"]
         )
 
     def test_existing_imports_gain_sprite_support_on_explicit_save(self):
         path, _ = sprite_bundle(self.folder / "sprites")
-        self.project.import_atlas(path, self.revision())
+        self.project.artwork.import_atlas(path, self.revision())
         scene = self.scene()
         # Simulate an existing project made before sprite placement support.
         document, _ = self.project.read()
@@ -400,14 +404,16 @@ class ProjectTests(unittest.TestCase):
         self.assertEqual((self.project.root / MANIFEST).read_bytes(), before)
         scene["scene"]["objects"] = [{"id": 1, "asset": "actors/idle", "x": 8, "y": 10}]
         scene["scene"]["next_object_id"] = 2
-        saved = reopened.save_scene(scene["id"], scene["scene"], scene["revision"], self.revision())
+        saved = reopened.scenes.save(
+            scene["id"], scene["scene"], scene["revision"], self.revision()
+        )
         self.assertEqual(saved["project_revision"], self.revision())
         self.assertEqual(saved["scene"]["objects"], scene["scene"]["objects"])
         self.assertTrue((self.project.root / "assets/actors/sprites.tsj").is_file())
 
     def test_invalid_sprites_and_unsupported_object_properties_are_preserved(self):
         path, _ = sprite_bundle(self.folder / "sprites")
-        self.project.import_atlas(path, self.revision())
+        self.project.artwork.import_atlas(path, self.revision())
         loaded = self.scene()
         for objects in (
             [{"id": 1, "asset": "missing/idle", "x": 1, "y": 1}],
@@ -416,13 +422,13 @@ class ProjectTests(unittest.TestCase):
         ):
             scene = dict(loaded["scene"], objects=objects, next_object_id=2)
             with self.subTest(objects=objects), self.assertRaises(ValueError):
-                self.project.save_scene(loaded["id"], scene, loaded["revision"], self.revision())
+                self.project.scenes.save(loaded["id"], scene, loaded["revision"], self.revision())
         scene = dict(
             loaded["scene"],
             objects=[{"id": 1, "asset": "actors/idle", "x": 8, "y": 10}],
             next_object_id=2,
         )
-        saved = self.project.save_scene(loaded["id"], scene, loaded["revision"], self.revision())
+        saved = self.project.scenes.save(loaded["id"], scene, loaded["revision"], self.revision())
         map_path = self.project.root / f"scenes/{loaded['id']}.tmj"
         document = json.loads(map_path.read_bytes())
         for extra in (
@@ -436,7 +442,7 @@ class ProjectTests(unittest.TestCase):
             map_path.write_text(json.dumps(candidate))
             before = map_path.read_bytes()
             with self.subTest(extra=extra), self.assertRaises(ValueError):
-                self.project.load_scene(saved["id"])
+                self.project.scenes.load(saved["id"])
             self.assertEqual(map_path.read_bytes(), before)
 
     def test_project_scene_and_asset_conflicts_preserve_bytes(self):
@@ -444,11 +450,13 @@ class ProjectTests(unittest.TestCase):
         revision = self.revision()
         self.scene("Other")
         with self.assertRaises(Conflict):
-            self.project.save_scene(scene["id"], scene["scene"], scene["revision"], revision)
+            self.project.scenes.save(scene["id"], scene["scene"], scene["revision"], revision)
         path = self.project.root / f"scenes/{scene['id']}.tmj"
         path.write_bytes(path.read_bytes() + b"\n")
         with self.assertRaises(Conflict):
-            self.project.save_scene(scene["id"], scene["scene"], scene["revision"], self.revision())
+            self.project.scenes.save(
+                scene["id"], scene["scene"], scene["revision"], self.revision()
+            )
         self.import_atlas()
         image_path = self.project.root / "assets/terrain/atlas.png"
         image_path.write_bytes(b"external edit")
@@ -460,7 +468,7 @@ class ProjectTests(unittest.TestCase):
         loaded = self.scene()
         path = self.project.root / f"scenes/{loaded['id']}.tmj"
         before = path.read_bytes()
-        result = self.project.rename_scene(
+        result = self.project.scenes.rename(
             loaded["id"], "  Courtyard  ", loaded["revision"], self.revision()
         )
         self.assertEqual(
@@ -469,7 +477,7 @@ class ProjectTests(unittest.TestCase):
         )
         self.assertEqual(path.read_bytes(), before)
         self.assertEqual(
-            Project(self.project.root).load_scene(loaded["id"]), dict(loaded, name="Courtyard")
+            Project(self.project.root).scenes.load(loaded["id"]), dict(loaded, name="Courtyard")
         )
 
     def test_duplicate_saved_and_unsaved_keep_source_and_share_assets(self):
@@ -478,25 +486,25 @@ class ProjectTests(unittest.TestCase):
         candidate = copy.deepcopy(loaded["scene"])
         candidate["cells"][0][0] = "terrain/earth/0/0#1"
         before = self.project.catalog()["project"]["files"]
-        first = self.project.duplicate_scene(
+        first = self.project.scenes.duplicate(
             loaded["id"], "Saved copy", loaded["revision"], self.revision()
         )["duplicated"]
-        second = self.project.duplicate_scene(
+        second = self.project.scenes.duplicate(
             loaded["id"], "Canvas copy", loaded["revision"], self.revision(), candidate
         )["duplicated"]
         self.assertEqual(len({first, second, loaded["id"]}), 3)
-        self.assertEqual(self.project.load_scene(first)["scene"], loaded["scene"])
-        self.assertEqual(self.project.load_scene(second)["scene"]["cells"], candidate["cells"])
-        self.assertEqual(self.project.load_scene(loaded["id"]), loaded)
+        self.assertEqual(self.project.scenes.load(first)["scene"], loaded["scene"])
+        self.assertEqual(self.project.scenes.load(second)["scene"]["cells"], candidate["cells"])
+        self.assertEqual(self.project.scenes.load(loaded["id"]), loaded)
         self.assertEqual(self.project.catalog()["project"]["files"], before)
-        changed = self.project.load_scene(first)
+        changed = self.project.scenes.load(first)
         changed["scene"]["cells"][0][1] = "terrain/stone/0/0"
-        self.project.save_scene(first, changed["scene"], changed["revision"], self.revision())
-        self.assertEqual(self.project.load_scene(loaded["id"]), loaded)
+        self.project.scenes.save(first, changed["scene"], changed["revision"], self.revision())
+        self.assertEqual(self.project.scenes.load(loaded["id"]), loaded)
         moved = self.folder / "moved"
         shutil.move(self.project.root, moved)
         reopened = Project(moved)
-        self.assertEqual(reopened.load_scene(second)["scene"]["cells"], candidate["cells"])
+        self.assertEqual(reopened.scenes.load(second)["scene"]["cells"], candidate["cells"])
         payload, _ = reopened.export_bundle("project", reopened.catalog()["revision"])
         with zipfile.ZipFile(io.BytesIO(payload)) as archive:
             self.assertTrue(any(second in path for path in archive.namelist()))
@@ -505,7 +513,7 @@ class ProjectTests(unittest.TestCase):
         loaded = self.scene()
         stale = self.revision()
         self.scene("Other")
-        for method in (self.project.rename_scene, self.project.duplicate_scene):
+        for method in (self.project.scenes.rename, self.project.scenes.duplicate):
             with self.assertRaises(Conflict):
                 method(loaded["id"], "Changed", loaded["revision"], stale)
             before = self.project.catalog()
@@ -514,13 +522,13 @@ class ProjectTests(unittest.TestCase):
                     method(loaded["id"], title, loaded["revision"], self.revision())
             self.assertEqual(self.project.catalog(), before)
         with self.assertRaises(ValueError):
-            self.project.duplicate_scene(
+            self.project.scenes.duplicate(
                 loaded["id"], "Bad", loaded["revision"], self.revision(), {"width": 0}
             )
         path = self.project.root / f"scenes/{loaded['id']}.tmj"
         path.write_bytes(path.read_bytes() + b"\n")
         before = self.project.catalog()
-        for method in (self.project.rename_scene, self.project.duplicate_scene):
+        for method in (self.project.scenes.rename, self.project.scenes.duplicate):
             with self.assertRaises(Conflict):
                 method(loaded["id"], "Changed", loaded["revision"], self.revision())
         self.assertEqual(self.project.catalog(), before)
@@ -528,16 +536,16 @@ class ProjectTests(unittest.TestCase):
     def test_management_guards_source_again_at_publication(self):
         loaded = self.scene()
         path = self.project.root / f"scenes/{loaded['id']}.tmj"
-        original = self.project._commit
+        original = self.project.store.commit
 
         def external_change(*args, **kwargs):
             path.write_bytes(path.read_bytes() + b"\n")
             return original(*args, **kwargs)
 
-        for method in (self.project.rename_scene, self.project.duplicate_scene):
-            loaded = self.project.load_scene(loaded["id"])
+        for method in (self.project.scenes.rename, self.project.scenes.duplicate):
+            loaded = self.project.scenes.load(loaded["id"])
             before = self.project.catalog()
-            with patch.object(self.project, "_commit", side_effect=external_change):
+            with patch.object(self.project.store, "commit", side_effect=external_change):
                 with self.assertRaises(Conflict):
                     method(loaded["id"], "Changed", loaded["revision"], self.revision())
             self.assertEqual(self.project.catalog(), before)
@@ -581,10 +589,10 @@ class ProjectTests(unittest.TestCase):
                 },
             ],
         }
-        duplicate = self.project.duplicate_scene(
+        duplicate = self.project.scenes.duplicate(
             source["id"], "Resized snapshot", source["revision"], self.revision(), candidate
         )["duplicated"]
-        self.assertEqual(self.project.load_scene(duplicate)["scene"], candidate)
+        self.assertEqual(self.project.scenes.load(duplicate)["scene"], candidate)
         payload, _ = self.project.export_bundle("scene", self.revision(), duplicate)
         with zipfile.ZipFile(io.BytesIO(payload)) as archive:
             maps = [entry for entry in archive.namelist() if entry.endswith(".tmj")]
@@ -607,15 +615,15 @@ class ProjectTests(unittest.TestCase):
             ),
         ):
             with self.assertRaises(OSError):
-                self.project.save_scene(
+                self.project.scenes.save(
                     source["id"], candidate, source["revision"], self.revision()
                 )
         reopened = Project(self.project.root)
         self.assertEqual(reopened.catalog(), before)
-        self.assertEqual(reopened.load_scene(source["id"]), source)
-        saved = reopened.save_scene(source["id"], candidate, source["revision"], self.revision())
+        self.assertEqual(reopened.scenes.load(source["id"]), source)
+        saved = reopened.scenes.save(source["id"], candidate, source["revision"], self.revision())
         self.assertEqual(saved["scene"], candidate)
-        self.assertEqual(Project(self.project.root).load_scene(source["id"])["scene"], candidate)
+        self.assertEqual(Project(self.project.root).scenes.load(source["id"])["scene"], candidate)
 
     def test_duplicate_interruption_recovers_map_and_manifest_together(self):
         loaded = self.scene()
@@ -634,25 +642,25 @@ class ProjectTests(unittest.TestCase):
             ),
         ):
             with self.assertRaises(OSError):
-                self.project.duplicate_scene(
+                self.project.scenes.duplicate(
                     loaded["id"], "Copy", loaded["revision"], self.revision()
                 )
         self.assertEqual(len(list((self.project.root / "scenes").glob("*.tmj"))), 2)
         reopened = Project(self.project.root)
         self.assertEqual(reopened.catalog(), before)
         self.assertEqual(len(list((self.project.root / "scenes").glob("*.tmj"))), 1)
-        self.assertEqual(reopened.load_scene(loaded["id"]), loaded)
+        self.assertEqual(reopened.scenes.load(loaded["id"]), loaded)
 
     def test_delete_scene_keeps_shared_assets_and_other_scenes(self):
         self.import_atlas()
         first, second = self.scene(), self.scene("River")
         files = self.project.catalog()["project"]["files"].copy()
-        result = self.project.delete_scene(first["id"], first["revision"], self.revision())
+        result = self.project.scenes.delete(first["id"], first["revision"], self.revision())
         self.assertEqual(result["deleted"], first["id"])
         self.assertFalse((self.project.root / f"scenes/{first['id']}.tmj").exists())
-        self.assertEqual(self.project.load_scene(second["id"]), second)
+        self.assertEqual(self.project.scenes.load(second["id"]), second)
         self.assertEqual(self.project.catalog()["project"]["files"], files)
-        self.project.delete_scene(second["id"], second["revision"], self.revision())
+        self.project.scenes.delete(second["id"], second["revision"], self.revision())
         self.assertEqual(Project(self.project.root).catalog()["project"]["scenes"], [])
         for path in files:
             self.assertTrue((self.project.root / path).is_file())
@@ -662,14 +670,14 @@ class ProjectTests(unittest.TestCase):
         old_revision = self.revision()
         self.scene("Other")
         with self.assertRaises(Conflict):
-            self.project.delete_scene(first["id"], first["revision"], old_revision)
+            self.project.scenes.delete(first["id"], first["revision"], old_revision)
         path = self.project.root / f"scenes/{first['id']}.tmj"
         path.write_bytes(path.read_bytes() + b"\n")
         before = self.project.catalog()
         with self.assertRaises(Conflict):
-            self.project.delete_scene(first["id"], first["revision"], self.revision())
+            self.project.scenes.delete(first["id"], first["revision"], self.revision())
         with self.assertRaises(Conflict):
-            self.project.delete_scene(first["id"], None, self.revision())
+            self.project.scenes.delete(first["id"], None, self.revision())
         self.assertEqual(self.project.catalog(), before)
         self.assertTrue(path.is_file())
 
@@ -690,20 +698,20 @@ class ProjectTests(unittest.TestCase):
             ),
         ):
             with self.assertRaises(OSError):
-                self.project.delete_scene(scene["id"], scene["revision"], self.revision())
+                self.project.scenes.delete(scene["id"], scene["revision"], self.revision())
         self.assertFalse((self.project.root / f"scenes/{scene['id']}.tmj").exists())
         reopened = Project(self.project.root)
         self.assertEqual(reopened.catalog(), before)
-        self.assertEqual(reopened.load_scene(scene["id"]), scene)
+        self.assertEqual(reopened.scenes.load(scene["id"]), scene)
 
     def test_delete_unused_atlas_preserves_other_assets_and_remaps_gids(self):
         self.import_atlas()
         path, _ = bundle(self.folder / "other", "aaa")
         source_before = path.read_bytes(), (path.parent / "atlas.png").read_bytes()
-        self.project.import_atlas(path, self.revision())
+        self.project.artwork.import_atlas(path, self.revision())
         scene = self.scene()
         scene["scene"]["cells"][0][0] = "terrain/earth/0/0"
-        saved = self.project.save_scene(
+        saved = self.project.scenes.save(
             scene["id"], scene["scene"], scene["revision"], self.revision()
         )
         map_path = self.project.root / f"scenes/{scene['id']}.tmj"
@@ -713,12 +721,12 @@ class ProjectTests(unittest.TestCase):
         }
         unmanaged = self.project.root / "assets/aaa/notes.txt"
         unmanaged.write_text("User-owned notes")
-        result = self.project.delete_atlas(
+        result = self.project.artwork.delete_atlas(
             "aaa", self.revision(), scene_guard={"id": scene["id"], "revision": saved["revision"]}
         )
         self.assertEqual(result["deleted"], "aaa")
         reopened = Project(self.project.root)
-        current = reopened.load_scene(scene["id"])
+        current = reopened.scenes.load(scene["id"])
         self.assertEqual(current["scene"], saved["scene"])
         self.assertEqual(result["scene_revisions"][scene["id"]], current["revision"])
         document = json.loads(map_path.read_bytes())
@@ -734,19 +742,19 @@ class ProjectTests(unittest.TestCase):
     def test_delete_atlas_blocks_saved_tile_and_sprite_placements(self):
         self.import_atlas()
         path, _ = sprite_bundle(self.folder / "sprites")
-        self.project.import_atlas(path, self.revision())
+        self.project.artwork.import_atlas(path, self.revision())
         tile_scene, sprite_scene = self.scene("Tiles"), self.scene("Actors")
         tile_scene["scene"]["cells"][0][0] = "terrain/earth/0/0"
         sprite_scene["scene"]["objects"] = [{"id": 1, "asset": "actors/idle", "x": 8, "y": 8}]
         sprite_scene["scene"]["next_object_id"] = 2
         for loaded in (tile_scene, sprite_scene):
-            self.project.save_scene(
+            self.project.scenes.save(
                 loaded["id"], loaded["scene"], loaded["revision"], self.revision()
             )
         before = self.project.catalog()
         for atlas_id, title in (("terrain", "Tiles"), ("actors", "Actors")):
             with self.subTest(atlas=atlas_id), self.assertRaisesRegex(ValueError, title):
-                self.project.delete_atlas(atlas_id, self.revision())
+                self.project.artwork.delete_atlas(atlas_id, self.revision())
             self.assertEqual(self.project.catalog(), before)
 
     def test_delete_atlas_checks_project_scene_and_asset_revisions(self):
@@ -754,11 +762,11 @@ class ProjectTests(unittest.TestCase):
         stale = self.revision()
         scene = self.scene()
         with self.assertRaises(Conflict):
-            self.project.delete_atlas("terrain", stale)
+            self.project.artwork.delete_atlas("terrain", stale)
         path = self.project.root / f"scenes/{scene['id']}.tmj"
         path.write_bytes(path.read_bytes() + b"\n")
         with self.assertRaisesRegex(Conflict, "open scene changed"):
-            self.project.delete_atlas(
+            self.project.artwork.delete_atlas(
                 "terrain",
                 self.revision(),
                 scene_guard={"id": scene["id"], "revision": scene["revision"]},
@@ -766,7 +774,7 @@ class ProjectTests(unittest.TestCase):
         image = self.project.root / "assets/terrain/atlas.png"
         image.write_bytes(b"external edit")
         with self.assertRaises(Conflict):
-            self.project.delete_atlas("terrain", self.revision())
+            self.project.artwork.delete_atlas("terrain", self.revision())
         self.assertEqual(image.read_bytes(), b"external edit")
 
     def test_interrupted_atlas_deletion_restores_assets_maps_and_manifest(self):
@@ -787,10 +795,10 @@ class ProjectTests(unittest.TestCase):
             ),
         ):
             with self.assertRaises(OSError):
-                self.project.delete_atlas("terrain", self.revision())
+                self.project.artwork.delete_atlas("terrain", self.revision())
         reopened = Project(self.project.root)
         self.assertEqual(reopened.catalog(), before)
-        self.assertEqual(reopened.load_scene(scene["id"])["scene"], scene["scene"])
+        self.assertEqual(reopened.scenes.load(scene["id"])["scene"], scene["scene"])
         for path, revision in before["project"]["files"].items():
             self.assertEqual(transactions.digest((self.project.root / path).read_bytes()), revision)
 
@@ -852,7 +860,7 @@ class ProjectTests(unittest.TestCase):
             asset_path.write_bytes(b"external edit during preparation")
             return result
 
-        with patch("gbc_scene_forge.atlas.build_assets", side_effect=external_edit):
+        with patch("gbc_scene_forge.artwork.atlas.build_assets", side_effect=external_edit):
             with self.assertRaises(Conflict):
                 self.import_atlas(reimport=True)
         self.assertEqual(self.project.catalog(), before)
@@ -875,7 +883,7 @@ class ProjectTests(unittest.TestCase):
             ),
         ):
             with self.assertRaises(OSError):
-                self.project.save_scene(
+                self.project.scenes.save(
                     scene["id"], scene["scene"], scene["revision"], self.revision()
                 )
         path.write_bytes(b"external edit")
@@ -897,17 +905,19 @@ class ProjectTests(unittest.TestCase):
                 path.write_text(json.dumps(modified))
                 before = path.read_bytes()
                 with self.assertRaises(ValueError):
-                    self.project.load_scene(scene["id"])
+                    self.project.scenes.load(scene["id"])
                 self.assertEqual(path.read_bytes(), before)
 
     def test_bad_dimensions_references_and_project_versions(self):
         for value in (True, 0, 257, "7"):
             with self.subTest(width=value), self.assertRaises(ValueError):
-                self.project.create_scene("Invalid", value, 5, 8, self.revision())
+                self.project.scenes.create("Invalid", value, 5, 8, self.revision())
         scene = self.scene()
         scene["scene"]["cells"][0][0] = "missing/region/0/0"
         with self.assertRaises(ValueError):
-            self.project.save_scene(scene["id"], scene["scene"], scene["revision"], self.revision())
+            self.project.scenes.save(
+                scene["id"], scene["scene"], scene["revision"], self.revision()
+            )
         path = self.project.root / MANIFEST
         manifest = json.loads(path.read_bytes())
         manifest["version"] = 2
@@ -970,17 +980,17 @@ class ProjectTests(unittest.TestCase):
                 encoded["layers"][0]["data"][flags],
                 base | ((flags & 1) << 31) | ((flags & 2) << 29) | ((flags & 4) << 27),
             )
-        saved = self.project.save_scene(
+        saved = self.project.scenes.save(
             loaded["id"], loaded["scene"], loaded["revision"], self.revision()
         )
         self.assertEqual(saved["scene"]["cells"], cells)
-        self.assertEqual(self.project.load_scene(saved["id"])["scene"]["cells"], cells)
+        self.assertEqual(self.project.scenes.load(saved["id"])["scene"]["cells"], cells)
         archive, _ = self.project.export_bundle("project", self.revision())
         with zipfile.ZipFile(io.BytesIO(archive)) as exported:
             document = json.loads(exported.read(f"scenes/{saved['id']}.tmj"))
             self.assertEqual(tiled.decode(document, project)["cells"], cells)
         self.import_atlas(reimport=True)
-        self.assertEqual(self.project.load_scene(saved["id"])["scene"]["cells"], cells)
+        self.assertEqual(self.project.scenes.load(saved["id"])["scene"]["cells"], cells)
         for invalid in ("#1", "terrain/earth/0/0#8", "terrain/earth/0/0#0", "unknown#1"):
             loaded["scene"]["cells"][0][0] = invalid
             with self.assertRaises(ValueError):
@@ -991,26 +1001,26 @@ class ProjectTests(unittest.TestCase):
         scene = self.scene()["scene"]
         scene["cells"][0][0] = "terrain/earth/0/0#5"
         before = self.revision()
-        result = self.project.save_stamp("Doorway", scene, [0], before)
+        result = self.project.objects.save_stamp("Doorway", scene, [0], before)
         stamp = result["project"]["stamps"][0]
         reopened = Project(self.project.root)
         self.assertEqual(reopened.catalog()["project"]["stamps"][0], stamp)
         with self.assertRaises(Conflict):
-            self.project.save_stamp("Stale", scene, [0], before)
+            self.project.objects.save_stamp("Stale", scene, [0], before)
         with self.assertRaisesRegex(ValueError, "stamp layer mapping"):
-            self.project.save_stamp("Bad", scene, [], self.revision())
+            self.project.objects.save_stamp("Bad", scene, [], self.revision())
         with self.assertRaisesRegex(ValueError, "stamp Doorway"):
-            self.project.delete_atlas("terrain", self.revision())
+            self.project.artwork.delete_atlas("terrain", self.revision())
         self.import_atlas(reimport=True)
         archive, _ = self.project.export_bundle("project", self.revision())
         with zipfile.ZipFile(io.BytesIO(archive)) as exported:
             manifest = json.loads(exported.read(MANIFEST))
             self.assertEqual(manifest["stamps"], [stamp])
         with self.assertRaises(Conflict):
-            self.project.delete_stamp(stamp["id"], before)
-        self.project.delete_stamp(stamp["id"], self.revision())
+            self.project.objects.delete_stamp(stamp["id"], before)
+        self.project.objects.delete_stamp(stamp["id"], self.revision())
         self.assertEqual(self.project.catalog()["project"]["stamps"], [])
-        self.project.delete_atlas("terrain", self.revision())
+        self.project.artwork.delete_atlas("terrain", self.revision())
 
     def test_hex_flags_and_unknown_tilesets_are_rejected(self):
         self.import_atlas()

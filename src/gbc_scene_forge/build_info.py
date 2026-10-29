@@ -3,7 +3,7 @@
 import json
 from importlib.resources import files
 
-from . import __version__
+from gbc_scene_forge import __version__
 
 
 def build_version():

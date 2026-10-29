@@ -265,7 +265,7 @@ try {
   );
   await promisify(execFile)('.venv/bin/python', [
     '-c',
-    `import io,sys,base64,zipfile,json;from gbc_scene_forge import tiled;z=zipfile.ZipFile(io.BytesIO(base64.b64decode(sys.argv[1])));p=json.loads(z.read('forge.project.json'));s=tiled.decode(json.loads(z.read('scenes/'+sys.argv[2]+'.tmj')),p);assert len([o for l in s['layers'] for o in l.get('objects',[])])==8;assert p['atlases']`,
+    `import io,sys,base64,zipfile,json;from gbc_scene_forge.formats import tiled;z=zipfile.ZipFile(io.BytesIO(base64.b64decode(sys.argv[1])));p=json.loads(z.read('forge.project.json'));s=tiled.decode(json.loads(z.read('scenes/'+sys.argv[2]+'.tmj')),p);assert len([o for l in s['layers'] for o in l.get('objects',[])])==8;assert p['atlases']`,
     archive,
     id,
   ]);
@@ -273,7 +273,7 @@ try {
   const exampleRoot = join(root, 'forest-example');
   const { stdout: example } = await promisify(execFile)('.venv/bin/python', [
     '-c',
-    `import sys;from pathlib import Path;sys.path.insert(0,'tests');from blockout_fixture import opening_forest;from gbc_scene_forge.projects import Project;p=Project.create(Path(sys.argv[1]),'Opening forest example',starter='blockout');s,_=opening_forest(p);print(s['id'])`,
+    `import sys;from pathlib import Path;sys.path.insert(0,'tests');from blockout_fixture import opening_forest;from gbc_scene_forge.project.application import Project;p=Project.create(Path(sys.argv[1]),'Opening forest example',starter='blockout');s,_=opening_forest(p);print(s['id'])`,
     exampleRoot,
   ]);
   await chrome.call('Page.navigate', { url: new URL('/projects/forest-example/', url).href });
