@@ -1002,10 +1002,10 @@ refresh after editor changes; refresh the project after external manifest change
 Headless callers use the same Python service:
 
 ```python
-from gbc_scene_forge.projects import Project
+from gbc_scene_forge.project.application import Project
 
 project = Project('/path/to/project')
-report = project.diagnostics_report(
+report = project.reports.diagnostics(
     project.catalog()['revision'],
     options={
         'movement': 'grid-four-way',

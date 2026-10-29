@@ -16,7 +16,9 @@ make build
 make check-dist
 ```
 
-`make lint` includes ESLint, Prettier, and strict TypeScript checks alongside Ruff.
+`make lint` includes scoped Python mypy checks, ESLint, Prettier, and strict TypeScript checks alongside Ruff.
+`make typecheck-python` checks shared primitives, file helpers and saved-read contracts;
+see [backend architecture](ARCHITECTURE.md) for the scope and native-payload typing policy.
 Use `make format` to apply formatting, and `make typecheck` for a standalone type check.
 
 `make build` runs strict TypeScript checking, bundles `frontend/app.ts` and its
@@ -149,3 +151,19 @@ notes, commit the release changes, and use the publication workflow above.
 Keep the README installation example and release notes aligned with the tagged version.
 Verify a fresh install and the standalone launcher before announcing the release.
 Editable sibling checkouts remain an option for development.
+
+## Internal backend refactors
+
+Domain packages and installed entry point targets are included automatically by
+the existing wheel/source build. After moving Python modules, update adapters,
+fixtures, examples and maintained documentation together. Verify the plain installed
+launcher and its bundled sample/assets, and install the optional SDK into a fresh
+wheel environment for MCP tests. Supported imports must not load `legacy` or the
+optional SDK during ordinary editor startup.
+
+Behavior-preserving internal cleanup does not require a dedicated version bump.
+Keep the package/runtime versions synchronized; the eventual release must choose
+an unpublished version before tagging. Do not publish a rebuilt package over an
+existing version. The domain reorganization in #58 retains version 0.13.1 pending
+a separately requested release; native schemas and user-facing entry points are
+unchanged.

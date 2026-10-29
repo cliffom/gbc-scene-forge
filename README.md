@@ -250,7 +250,8 @@ dependencies and builds the browser UI. It does not install Poetry itself.
 | `make run PORT=8777` | Use another local port; also works with `make demo` |
 | `make check-deps` | Check tools and the Python dependency lock without installing |
 | `make frontend` | Type-check and rebuild the browser UI |
-| `make lint` / `make format` | Check code style or apply formatting |
+| `make lint` / `make format` | Check code style, scoped Python types, or apply formatting |
+| `make typecheck-python` | Check Python shared primitives and saved-read contracts |
 | `make typecheck` | Run strict TypeScript checks |
 | `make test` | Run Python and TypeScript tests |
 | `make test-python` / `make test-frontend` | Run Python tests or all TypeScript suites |
@@ -301,3 +302,6 @@ See [the 0.13.1 release notes](docs/RELEASE-0.13.1.md) and
 ## License
 
 [MIT](LICENSE). Copyright (c) 2026 Michael Clifford.
+
+Python contributors: see the [backend domain map](docs/ARCHITECTURE.md) for service
+ownership, guarded reads, transaction boundaries and the isolated legacy code.

@@ -147,17 +147,17 @@ TypeScript tests check geometry, typed appearance and history.
 
 ## Shared service boundary for MCP (#51)
 
-The browser does not own a separate planning format. `gbc_scene_forge.blockout`
+The browser does not own a separate planning format. `gbc_scene_forge.planning.blockout`
 provides preset initialization, option normalization, native scene construction,
 validated object placement, appearance/relative climb geometry and standalone SVG
-review. `Project.create_blockout_scene()` commits the scene and any initial
-presets together; `Project.blockout_review()` guards a read-only saved or supplied
+review. `Project.planning.create_blockout()` commits the scene and any initial
+presets together; `Project.planning.review_blockout()` guards a read-only saved or supplied
 snapshot. The loopback endpoints `POST /api/create-blockout-scene` and
 `POST /api/blockout-review` retain the existing mutation token and workspace scope.
 
 An MCP adapter can discover the ordinary definition/layer IDs, load a scene,
 call `blockout.place()` to obtain a validated candidate and allocated identity,
-and commit through `Project.save_scene()` with expected project/scene revisions.
+and commit through `Project.scenes.save()` with expected project/scene revisions.
 Placement accepts an explicit visible object-layer ID; otherwise it prefers the
 same role-based layer names used by the browser, then a visible object layer.
 Input scenes are not mutated by placement. Keep current browser drafts separate

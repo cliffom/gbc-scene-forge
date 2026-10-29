@@ -13,7 +13,7 @@ Install the package through the host project's locked dependencies. A host launc
 constructs its connector and calls:
 
 ```python
-from gbc_scene_forge.server import serve
+from gbc_scene_forge.legacy.server import serve
 
 serve(connector, port=8765)
 ```
@@ -25,7 +25,7 @@ existing transactions before importing game modules that require approved source
 
 ## Connector contract version 1
 
-`gbc_scene_forge.contract.Connector` specifies the interface. Its implementation
+`gbc_scene_forge.legacy.contract.Connector` specifies the interface. Its implementation
 supplies:
 
 | Method | Responsibility |
@@ -127,13 +127,13 @@ are retained; history paths come from the workspace.
 
 ## Independent acceptance fixture
 
-`tests/fixture_connector.py` provides a different 7 × 5 scene with four-pixel cells,
+`tests/legacy/fixture_connector.py` provides a different 7 × 5 scene with four-pixel cells,
 opaque asset IDs, non-grid game content, JSON sources and a small Python compiler.
 It imports no host game, atlas library or imaging library. Run:
 
 ```sh
 .venv/bin/python -m unittest discover -s tests -p 'test_*.py'
-.venv/bin/python tests/serve_fixture.py --root /tmp/forge-fixture --port 8777
+.venv/bin/python tests/legacy/serve_fixture.py --root /tmp/forge-fixture --port 8777
 npm run test:browser -- http://127.0.0.1:8777/
 ```
 
