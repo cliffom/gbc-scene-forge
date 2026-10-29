@@ -69,6 +69,10 @@ class InstalledPackageSmokeTests(unittest.TestCase):
                 self.assertTrue(static.joinpath(name).read_bytes())
         for name in ("index.html", "app.js", "app.js.map", "app.meta.json"):
             self.assertFalse(static.joinpath(name).is_file(), name)
+        notices = static.joinpath("third-party-notices.txt").read_text()
+        self.assertIn("Valibot", notices)
+        self.assertIn("Copyright (c) Fabian Hiller", notices)
+        self.assertIn("Permission is hereby granted", notices)
         version = build_version()
         self.assertRegex(version, rf"^{__version__}(?:-[0-9a-f]{{7,40}})?$")
         self.assertIn(f'"{version}"', static.joinpath("project.js").read_text())

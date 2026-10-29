@@ -68,6 +68,7 @@ await test('esbuild bundles nested modules, emits source maps and preserves asse
     assert.notEqual(build('development', '').status, 0);
     assert.match(bundle, /nested dependency/);
     assert.doesNotMatch(bundle, /from ["']\.\//);
+    assert.doesNotMatch(bundle, /from ["']valibot["']/);
     const sourceMap = record(JSON.parse(await readFile(join(staticDir, 'project.js.map'), 'utf8')));
     assert(array(sourceMap.sources, string).some((name) => name.endsWith('nested/probe.mts')));
     const projectMap = record(
@@ -75,6 +76,7 @@ await test('esbuild bundles nested modules, emits source maps and preserves asse
     );
     const projectSources = array(projectMap.sources, string);
     assert(projectSources.some((name) => name.endsWith('project-editor.mts')));
+    assert(projectSources.some((name) => name.includes('valibot/dist/')));
     assert(!projectSources.some((name) => name.includes('/legacy/')));
     assert(!projectSources.some((name) => name.endsWith('/app.ts')));
     await writeFile(helper, "export const probe = 'updated nested dependency';\n");

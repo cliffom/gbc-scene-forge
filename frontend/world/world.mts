@@ -1,5 +1,7 @@
 /** Portable world metadata and deterministic endpoint diagnostics. */
+import * as v from 'valibot';
 import { array, number, record, string } from '../shared/decode.mts';
+import { finite, text, jsonObject, jsonDictionary, jsonArray, parse } from '../shared/schema.mts';
 export interface Endpoint {
   scene: string;
   object: number;
@@ -15,28 +17,6 @@ export interface World {
   version: 1;
   positions: Record<string, { x: number; y: number }>;
   connections: Connection[];
-}
-export interface WorldMarker {
-  id: number;
-  name: string;
-  layer: number;
-  visible: boolean;
-  x: number;
-  y: number;
-  errors: { code: string; field: string }[];
-}
-export interface WorldScene {
-  id: string;
-  name: string;
-  revision: string;
-  width: number;
-  height: number;
-  grid: number;
-  objects: WorldMarker[];
-}
-export interface WorldSnapshot {
-  scenes: WorldScene[];
-  revisions: Record<string, string>;
 }
 export function decodeWorld(value: unknown): World {
   if (value === undefined) {
@@ -73,39 +53,40 @@ export function decodeWorld(value: unknown): World {
     }),
   };
 }
+const markerSchema = jsonObject({
+  id: finite,
+  name: text,
+  layer: finite,
+  visible: v.pipe(
+    v.unknown(),
+    v.transform((value) => value === true),
+  ),
+  x: finite,
+  y: finite,
+  errors: jsonArray(jsonObject({ code: text, field: text })),
+});
+const sceneSchema = jsonObject({
+  id: text,
+  name: text,
+  revision: text,
+  width: finite,
+  height: finite,
+  grid: finite,
+  objects: jsonArray(markerSchema),
+});
+const snapshotSchema = v.pipe(
+  jsonObject({
+    scene_revisions: jsonDictionary(text),
+    scenes: jsonArray(sceneSchema),
+  }),
+  v.transform(({ scene_revisions, scenes }) => ({ revisions: scene_revisions, scenes })),
+);
+export type WorldMarker = v.InferOutput<typeof markerSchema>;
+export type WorldScene = v.InferOutput<typeof sceneSchema>;
+export type WorldSnapshot = v.InferOutput<typeof snapshotSchema>;
+
 export function decodeWorldSnapshot(value: unknown): WorldSnapshot {
-  const data = record(value);
-  return {
-    revisions: Object.fromEntries(
-      Object.entries(record(data.scene_revisions)).map(([id, v]) => [id, string(v)]),
-    ),
-    scenes: array(data.scenes, (value) => {
-      const s = record(value);
-      return {
-        id: string(s.id),
-        name: string(s.name),
-        revision: string(s.revision),
-        width: number(s.width),
-        height: number(s.height),
-        grid: number(s.grid),
-        objects: array(s.objects, (value) => {
-          const o = record(value);
-          return {
-            id: number(o.id),
-            name: string(o.name),
-            layer: number(o.layer),
-            visible: o.visible === true,
-            x: number(o.x),
-            y: number(o.y),
-            errors: array(o.errors, (value) => {
-              const e = record(value);
-              return { code: string(e.code), field: string(e.field) };
-            }),
-          };
-        }),
-      };
-    }),
-  };
+  return parse(snapshotSchema, value);
 }
 export function worldFindings(world: World, scenes: WorldScene[]) {
   return world.connections.flatMap((link) =>

@@ -121,3 +121,16 @@ Run `make lint test build check-dist`, `make test-browser`, and optional-SDK
 `make test-mcp test-mcp-browser`. See [RELEASING.md](RELEASING.md). Behavior-preserving
 internal cleanup retains 0.13.1; publication requires a separately chosen,
 unpublished version and release authorization.
+
+## Response schemas
+
+World-report snapshots, project catalogs and saved scenes use pinned Valibot
+schemas with inferred output types and the existing decoder callback boundaries.
+`shared/schema.mts` owns JSON object/array/dictionary checks, primitive messages,
+first-error parsing and a bridge to existing domain decoders. Specialized domain
+rules remain explicit; migrate other response contracts progressively rather than
+duplicating their validation during conversion. See the
+[adoption evaluation](evaluations/valibot-pilot.md) for compatibility requirements,
+measured cumulative/marginal bundle cost and dependency/license handling.
+Browser dependencies are bundled during build; the installed Python editor still
+requires no Node or CDN requests.

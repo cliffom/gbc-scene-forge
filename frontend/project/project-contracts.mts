@@ -1,217 +1,227 @@
 /** Runtime-validated native catalog and saved-scene contracts. */
-import type { SpriteAnimation } from '../preview/animation-preview.mts';
-import type { Composition } from '../compositions/compositions.mts';
-import { array, boolean, number, record, string } from '../shared/decode.mts';
+import * as v from 'valibot';
+import { array, record } from '../shared/decode.mts';
+import {
+  bool,
+  decoded,
+  finite,
+  jsonArray,
+  jsonDictionary,
+  jsonObject,
+  parse,
+  text,
+} from '../shared/schema.mts';
 import type { SceneLayer } from '../scene/layers.mts';
-import type { ObjectDefinition } from '../objects/object-definitions.mts';
 import { decodeDefinitions } from '../objects/object-definitions.mts';
 import { decodeObject } from '../objects/objects.mts';
-import type { PaletteProfile } from '../diagnostics/palette-budget.mts';
 import { decodePaletteProfile } from '../diagnostics/palette-budget.mts';
-import type { MetadataSets } from '../artwork/tile-metadata.mts';
 import { decodeMetadataSets } from '../artwork/tile-metadata.mts';
-import type { World } from '../world/world.mts';
 import { decodeWorld } from '../world/world.mts';
 
-export interface Region {
-  name: string;
-  kind: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  origin: [number, number];
-}
-export interface Atlas {
-  png: string;
-  regions: Region[];
-  mappings: Record<string, Record<string, number>>;
-  animations: SpriteAnimation[];
-  metadata: MetadataSets;
-}
-export interface Project {
-  id: string;
-  name: string;
-  paletteProfile: PaletteProfile | null;
-  definitions: ObjectDefinition[];
-  world: World;
-  stamps: { id: string; name: string; composition: Composition }[];
-  scenes: { id: string; name: string }[];
-  atlases: Record<string, Atlas>;
-}
-export interface Loaded {
-  id: string;
-  name: string;
-  revision: string;
-  width: number;
-  height: number;
-  grid: number;
-  layers: SceneLayer[];
-  nextLayerId: number;
-  nextObjectId: number;
-}
-export function decodeLoaded(value: unknown): Loaded {
-  const data = record(value);
-  const scene = record(data.scene);
-  const result = {
-    id: string(data.id),
-    name: string(data.name),
-    revision: string(data.revision),
-    width: number(scene.width),
-    height: number(scene.height),
-    grid: number(scene.grid),
-    layers:
-      scene.layers === undefined
-        ? [
-            {
-              id: 1,
-              name: 'Ground',
-              type: 'tilelayer' as const,
-              visible: true,
-              cells: array(scene.cells, (row) => array(row, string)).map((row) =>
-                row.map((cell) => cell || 'empty'),
-              ),
-            },
-            {
-              id: 2,
-              name: 'Sprites',
-              type: 'objectgroup' as const,
-              visible: true,
-              objects: array(scene.objects ?? [], decodeObject),
-            },
-          ]
-        : array(scene.layers, (value): SceneLayer => {
-            const layer = record(value);
-            const common = {
-              id: number(layer.id),
-              name: string(layer.name),
-              visible: boolean(layer.visible),
-            };
-            if (layer.type === 'tilelayer') {
-              return {
-                ...common,
-                type: 'tilelayer',
-                cells: array(layer.cells, (row) => array(row, string)).map((row) =>
-                  row.map((cell) => cell || 'empty'),
-                ),
-              };
-            }
-            if (layer.type !== 'objectgroup') {
-              throw Error('Unsupported layer type');
-            }
-            return {
-              ...common,
-              type: 'objectgroup',
-              objects: array(layer.objects, decodeObject),
-            };
-          }),
-    nextLayerId: number(scene.next_layer_id ?? 3),
-    nextObjectId: number(scene.next_object_id ?? 1),
-  };
-  if (
-    !Number.isInteger(result.width) ||
-    !Number.isInteger(result.height) ||
-    result.width < 1 ||
-    result.width > 256 ||
-    result.height < 1 ||
-    result.height > 256 ||
-    ![8, 16, 32].includes(result.grid) ||
-    !result.layers.length ||
-    result.layers.some(
-      (layer) =>
-        layer.type === 'tilelayer' &&
-        (layer.cells.length !== result.height ||
-          layer.cells.some((row) => row.length !== result.width)),
-    )
-  ) {
-    throw Error('Invalid scene response');
-  }
-  return result;
-}
-export function decodeProject(value: unknown): Project {
-  const data = record(value);
-  const atlases: Record<string, Atlas> = {};
-  for (const [id, item] of Object.entries(record(data.atlases))) {
-    const entry = record(item);
-    const mappings: Record<string, Record<string, number>> = {};
-    for (const [grid, map] of Object.entries(record(entry.tiles))) {
-      mappings[grid] = Object.fromEntries(
-        Object.entries(record(map)).map(([k, v]) => [k, number(v)]),
-      );
+const cellsSchema = jsonArray(
+  jsonArray(
+    v.pipe(
+      text,
+      v.transform((cell) => cell || 'empty'),
+    ),
+  ),
+);
+const objectsSchema = jsonArray(decoded(decodeObject));
+const layerSchema = v.pipe(
+  jsonObject({
+    id: finite,
+    name: text,
+    visible: bool,
+    type: v.unknown(),
+    cells: v.unknown(),
+    objects: v.unknown(),
+  }),
+  v.transform((layer): SceneLayer => {
+    const common = { id: layer.id, name: layer.name, visible: layer.visible };
+    if (layer.type === 'tilelayer') {
+      return { ...common, type: 'tilelayer', cells: parse(cellsSchema, layer.cells) };
     }
-    atlases[id] = {
-      png: string(entry.png),
-      metadata: decodeMetadataSets(entry.metadata),
-      mappings,
-      animations: array(record(entry.manifest).animations ?? [], (value) => {
-        const animation = record(value);
-        return {
-          name: string(animation.name),
-          frames: array(animation.frames, (value) => {
-            const frame = record(value);
-            const region = array(record(entry.manifest).regions, record).find(
-              (region) => region.name === frame.region,
-            );
-            return {
-              region: string(frame.region),
-              duration: number(frame.duration_ms ?? region?.duration_ms),
-            };
-          }),
-        };
-      }),
-      regions: array(record(entry.manifest).regions, (value) => {
-        const r = record(value);
-        const origin = array(r.origin ?? [0, 0], number);
-        if (origin.length !== 2) {
-          throw Error('Invalid region origin');
-        }
-        return {
-          name: string(r.name),
-          kind: string(r.kind),
-          x: number(r.x),
-          y: number(r.y),
-          width: number(r.width),
-          height: number(r.height),
-          origin: [origin[0], origin[1]],
-        };
-      }),
+    if (layer.type !== 'objectgroup') {
+      throw Error('Unsupported layer type');
+    }
+    return {
+      ...common,
+      type: 'objectgroup',
+      objects: parse(objectsSchema, layer.objects),
     };
-  }
+  }),
+);
+const sceneSchema = v.pipe(
+  v.unknown(),
+  v.transform((value): unknown => {
+    const scene = record(value);
+    // Normalize the older flat scene before validating the common layer shape.
+    return {
+      ...scene,
+      layers:
+        scene.layers === undefined
+          ? [
+              { id: 1, name: 'Ground', type: 'tilelayer', visible: true, cells: scene.cells },
+              {
+                id: 2,
+                name: 'Sprites',
+                type: 'objectgroup',
+                visible: true,
+                objects: scene.objects ?? [],
+              },
+            ]
+          : scene.layers,
+    };
+  }),
+  jsonObject({
+    width: finite,
+    height: finite,
+    grid: finite,
+    layers: jsonArray(layerSchema),
+    next_layer_id: v.nullish(finite, 3),
+    next_object_id: v.nullish(finite, 1),
+  }),
+  v.transform((scene) => ({
+    width: scene.width,
+    height: scene.height,
+    grid: scene.grid,
+    layers: scene.layers,
+    nextLayerId: scene.next_layer_id,
+    nextObjectId: scene.next_object_id,
+  })),
+  v.check(
+    (scene) =>
+      Number.isInteger(scene.width) &&
+      Number.isInteger(scene.height) &&
+      scene.width >= 1 &&
+      scene.width <= 256 &&
+      scene.height >= 1 &&
+      scene.height <= 256 &&
+      [8, 16, 32].includes(scene.grid) &&
+      scene.layers.length > 0 &&
+      scene.layers.every(
+        (layer) =>
+          layer.type !== 'tilelayer' ||
+          (layer.cells.length === scene.height &&
+            layer.cells.every((row) => row.length === scene.width)),
+      ),
+    'Invalid scene response',
+  ),
+);
+const loadedSchema = v.pipe(
+  v.unknown(),
+  v.transform((value): unknown => {
+    const data = record(value);
+    // The scene envelope was checked before identity fields in the original decoder.
+    return { ...data, scene: record(data.scene) };
+  }),
+  jsonObject({ id: text, name: text, revision: text, scene: sceneSchema }),
+  v.transform(({ id, name, revision, scene }) => ({ id, name, revision, ...scene })),
+);
+export type Loaded = v.InferOutput<typeof loadedSchema>;
+export function decodeLoaded(value: unknown): Loaded {
+  return parse(loadedSchema, value);
+}
+
+const originSchema = v.pipe(
+  v.nullish(jsonArray(finite), [0, 0]),
+  v.length(2, 'Invalid region origin'),
+  v.transform((origin): [number, number] => [origin[0], origin[1]]),
+);
+const regionSchema = jsonObject({
+  origin: originSchema,
+  name: text,
+  kind: text,
+  x: finite,
+  y: finite,
+  width: finite,
+  height: finite,
+});
+export type Region = v.InferOutput<typeof regionSchema>;
+
+function manifestSchema(regions: unknown) {
+  const frameSchema = v.pipe(
+    v.unknown(),
+    v.transform((value): unknown => {
+      const frame = record(value);
+      const region = array(regions, record).find((region) => region.name === frame.region);
+      return { region: frame.region, duration: frame.duration_ms ?? region?.duration_ms };
+    }),
+    jsonObject({ region: text, duration: finite }),
+  );
+  return jsonObject({
+    animations: v.nullish(
+      jsonArray(jsonObject({ name: text, frames: jsonArray(frameSchema) })),
+      [],
+    ),
+    regions: jsonArray(regionSchema),
+  });
+}
+const atlasSchema = v.pipe(
+  jsonObject({
+    tiles: jsonDictionary(jsonDictionary(finite)),
+    png: text,
+    metadata: decoded(decodeMetadataSets),
+    manifest: decoded((value) => {
+      const manifest = record(value);
+      return parse(manifestSchema(manifest.regions), manifest);
+    }),
+  }),
+  v.transform(({ tiles, png, metadata, manifest }) => ({
+    png,
+    metadata,
+    mappings: tiles,
+    animations: manifest.animations,
+    regions: manifest.regions,
+  })),
+);
+export type Atlas = v.InferOutput<typeof atlasSchema>;
+
+const stampSchema = decoded((value) => {
+  const stamp = record(value);
+  const loaded = decodeLoaded({ id: stamp.id, name: stamp.name, revision: '', scene: stamp.scene });
   return {
-    id: string(data.id),
-    name: string(data.name),
-    paletteProfile: decodePaletteProfile(data.gbc_palette_profile),
-    definitions: decodeDefinitions(data.object_definitions),
-    world: decodeWorld(data.world),
-    stamps: array(data.stamps ?? [], (value) => {
-      const stamp = record(value);
-      const loaded = decodeLoaded({
-        id: stamp.id,
-        name: stamp.name,
-        revision: '',
-        scene: stamp.scene,
-      });
-      return {
-        id: string(stamp.id),
-        name: string(stamp.name),
-        composition: {
-          project: string(data.id),
-          slots: array(stamp.slots, number),
-          scene: {
-            width: loaded.width,
-            height: loaded.height,
-            grid: loaded.grid,
-            layers: loaded.layers,
-            next_layer_id: loaded.nextLayerId,
-            next_object_id: loaded.nextObjectId,
-          },
-        },
-      };
-    }),
-    atlases,
-    scenes: array(data.scenes, (value) => {
-      const scene = record(value);
-      return { id: string(scene.id), name: string(scene.name) };
-    }),
+    id: loaded.id,
+    name: loaded.name,
+    slots: parse(jsonArray(finite), stamp.slots),
+    scene: {
+      width: loaded.width,
+      height: loaded.height,
+      grid: loaded.grid,
+      layers: loaded.layers,
+      next_layer_id: loaded.nextLayerId,
+      next_object_id: loaded.nextObjectId,
+    },
   };
+});
+const projectSchema = v.pipe(
+  jsonObject({
+    // Preserve validation order: artwork is decoded before the catalog identity.
+    atlases: jsonDictionary(atlasSchema),
+    id: text,
+    name: text,
+    gbc_palette_profile: decoded(decodePaletteProfile),
+    object_definitions: decoded(decodeDefinitions),
+    world: decoded(decodeWorld),
+    stamps: v.nullish(jsonArray(stampSchema), []),
+    scenes: jsonArray(jsonObject({ id: text, name: text })),
+  }),
+  v.transform((project) => ({
+    id: project.id,
+    name: project.name,
+    paletteProfile: project.gbc_palette_profile,
+    definitions: project.object_definitions,
+    world: project.world,
+    stamps: project.stamps.map(({ id, name, slots, scene }) => ({
+      id,
+      name,
+      composition: { project: project.id, slots, scene },
+    })),
+    atlases: project.atlases,
+    scenes: project.scenes,
+  })),
+);
+export type Project = v.InferOutput<typeof projectSchema>;
+export function decodeProject(value: unknown): Project {
+  return parse(projectSchema, value);
 }

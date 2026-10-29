@@ -97,7 +97,7 @@ publishing page. Use the official [trusted publisher setup guide](https://docs.p
 The workflow follows the [Python Packaging User Guide](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/)
 and uses short-lived OIDC credentials; no PyPI API token is stored in the repository.
 
-After reviewing and committing a release, create and push an annotated `v0.16.0`
+After reviewing and committing a release, create and push an annotated `v0.16.1`
 tag (or the matching next version). Run **Publish package** manually against that
 tag, selecting `testpypi` first when its trusted publisher is configured. TestPyPI
 is currently unconfigured; its 0.1.4 upload failed with `invalid-publisher`. Until
@@ -106,6 +106,17 @@ Chrome fixture suite, then run the workflow for `pypi`. Verify a fresh PyPI inst
 with `tests/package_smoke.py` after publication. The workflow rebuilds and
 checks the distributions, checks the tag against the package version, then uploads
 only those verified artifacts. Pushing a tag alone does not publish.
+
+## Release 0.16.1
+
+Version 0.16.1 publishes the HTTP routing cleanup and schema-derived frontend
+response contracts. See [release notes](RELEASE-0.16.1.md) and the
+[Valibot adoption evaluation](evaluations/valibot-pilot.md). Existing projects,
+portable formats and user workflows are unchanged. Valibot is bundled browser
+code; its MIT notice is included in the distributions. No Node or additional
+Python dependency is required by the installed editor. Run `make lint test build
+check-dist`, the full browser suite, optional MCP checks, and fresh plain/MCP
+installed-package verification before announcing publication.
 
 ## Release 0.16.0
 
