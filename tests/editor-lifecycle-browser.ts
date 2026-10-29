@@ -65,7 +65,7 @@ try {
   });
   await chrome.call('Page.navigate', { url });
   await chrome.wait(
-    "document.getElementById('status')?.textContent === 'Choose a scene, or import an atlas and create one.'",
+    "document.getElementById('status')?.textContent === 'Choose a scene, or import an atlas and create one.' && document.getElementById('scenes')?.disabled === false",
   );
   await chrome.evaluate(
     `document.getElementById('scenes').value=${JSON.stringify(scene)}; document.getElementById('scenes').dispatchEvent(new Event('change'));`,
@@ -87,7 +87,7 @@ try {
       "document.getElementById('status').textContent='Loading replacement';window.__mounted=window.__module.mountProjectEditor()",
     );
     await chrome.wait(
-      "document.getElementById('status').textContent === 'Choose a scene, or import an atlas and create one.'",
+      "document.getElementById('status').textContent === 'Choose a scene, or import an atlas and create one.' && document.getElementById('scenes')?.disabled === false",
     );
     assert.equal(await evaluate("document.querySelectorAll('.scene-surface').length"), 1);
     assert.equal(await evaluate("document.querySelectorAll('#diagnostics-dialog').length"), 1);
@@ -119,7 +119,7 @@ try {
   await evaluate(`window.__stale.dispose();window.fetch=window.__fetch;
     document.getElementById('status').textContent='Loading replacement';window.__mounted=window.__module.mountProjectEditor()`);
   await chrome.wait(
-    "document.getElementById('status').textContent === 'Choose a scene, or import an atlas and create one.'",
+    "document.getElementById('status').textContent === 'Choose a scene, or import an atlas and create one.' && document.getElementById('scenes')?.disabled === false",
   );
   await evaluate('window.__release()');
   await new Promise((resolve) => setTimeout(resolve, 50));
@@ -138,7 +138,7 @@ try {
     "document.getElementById('status').textContent='Loading replacement';window.__mounted=window.__module.mountProjectEditor()",
   );
   await chrome.wait(
-    "document.getElementById('status').textContent === 'Choose a scene, or import an atlas and create one.'",
+    "document.getElementById('status').textContent === 'Choose a scene, or import an atlas and create one.' && document.getElementById('scenes')?.disabled === false",
   );
   await evaluate("document.getElementById('project-command-panel').showPopover()");
   await evaluate('window.__mounted.dispose()');
@@ -150,7 +150,7 @@ try {
     "document.getElementById('status').textContent='Loading replacement';window.__mounted=window.__module.mountProjectEditor()",
   );
   await chrome.wait(
-    "document.getElementById('status').textContent === 'Choose a scene, or import an atlas and create one.'",
+    "document.getElementById('status').textContent === 'Choose a scene, or import an atlas and create one.' && document.getElementById('scenes')?.disabled === false",
   );
   await evaluate(`window.__decode=HTMLImageElement.prototype.decode;
     window.__decoding=false;
@@ -168,7 +168,7 @@ try {
     HTMLImageElement.prototype.decode=window.__decode;
     document.getElementById('status').textContent='Loading replacement';window.__mounted=window.__module.mountProjectEditor()`);
   await chrome.wait(
-    "document.getElementById('status').textContent === 'Choose a scene, or import an atlas and create one.'",
+    "document.getElementById('status').textContent === 'Choose a scene, or import an atlas and create one.' && document.getElementById('scenes')?.disabled === false",
   );
   await evaluate(`const scenes=document.getElementById('scenes');
     window.__replacementScene=[...scenes.options].find(option=>option.value && option.value!==${JSON.stringify(scene)}).value;
@@ -226,7 +226,7 @@ try {
       document.getElementById('status').textContent='Loading replacement';
       window.__mounted=window.__module.mountProjectEditor()`);
     await chrome.wait(
-      "document.getElementById('status').textContent === 'Choose a scene, or import an atlas and create one.'",
+      "document.getElementById('status').textContent === 'Choose a scene, or import an atlas and create one.' && document.getElementById('scenes')?.disabled === false",
     );
     await evaluate("document.getElementById('manage-definitions').click()");
     const replacementStates = await evaluate(controlStates);
@@ -269,7 +269,7 @@ try {
       document.getElementById('status').textContent='Loading replacement';
       window.__mounted=window.__module.mountProjectEditor()`);
     await chrome.wait(
-      "document.getElementById('status').textContent === 'Choose a scene, or import an atlas and create one.'",
+      "document.getElementById('status').textContent === 'Choose a scene, or import an atlas and create one.' && document.getElementById('scenes')?.disabled === false",
     );
     await evaluate(
       "document.getElementById('draft-status').textContent='Replacement draft status';window.__releaseCleanup()",
