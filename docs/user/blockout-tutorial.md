@@ -10,18 +10,20 @@ section; it does not prescribe the final length of a complete stage.
 
 ## Before you begin
 
-Use a Forge build containing the blockout workflow. While
-[PR #52](https://github.com/cliffom/gbc-scene-forge/pull/52) is under review, start
-it from a checkout configured with the [development setup](../../README.md#development):
+Install Scene Forge 0.11.0 or newer with Python 3.10+ and start it:
 
 ```sh
-git switch feat/46-level-blockout
-make run PORT=0
+python -m pip install --upgrade gbc-scene-forge==0.11.0
+gbc-scene-forge
 ```
 
-This starts a fresh server on an available port and opens your browser. Keep that
-terminal running while you edit. Once the feature is released, you can use the
-installed editor's normal `gbc-scene-forge` launcher instead.
+Forge opens your browser. Keep the terminal running while you edit. If a server
+is already using the default port, start this session with
+`gbc-scene-forge --port 0` to choose an available port.
+
+From a checkout configured with the [development setup](../../README.md#development),
+use `make run PORT=0` instead. See the [launch guide](../../README.md#start-editing)
+for project locations and manual browser opening.
 
 No atlas, artwork, Tiled installation or game project is needed for this tutorial.
 
@@ -249,7 +251,7 @@ There is no need to redraw the plan as artwork arrives.
 
 | What you see | What to check |
 | --- | --- |
-| No Blockout project option or scene command | Start the build containing PR #52. Restart the server after switching branches; refreshing an older server does not add the new endpoints. |
+| No Blockout project option or scene command | Install 0.11.0 or newer and restart Forge. Refreshing an older running server does not load the upgraded package. |
 | Pixel dimensions are rejected | Each pixel dimension must divide evenly by the selected grid. For example, 960×272 works with an 8px grid. Each axis is limited to 256 cells. |
 | Clicking creates another object | Switch from the placement tool to Select before picking an existing object. |
 | An object cannot be selected | Activate its object layer and make sure that layer is visible. Use the object list, or the camera's Select / move button for a camera frame. |
