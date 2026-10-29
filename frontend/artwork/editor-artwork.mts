@@ -1,3 +1,4 @@
+import { createGenericImport } from './generic-import.mts';
 import type { EditorLifetime } from '../editor/editor-lifetime.mts';
 import type { AtlasFolder } from './atlas-import.mts';
 import { chooseFolder, readBundle } from './atlas-import.mts';
@@ -313,8 +314,20 @@ export function createArtworkController({
     filterPalette();
   }
 
+  createGenericImport({
+    lifetime,
+    api,
+    ports,
+    revision: () => workspaceState.revision,
+    sceneId: () => sceneSession.loaded?.id,
+    status,
+  });
+
   lifetime.assign(form('import-form'), 'onsubmit', async (event) => {
     event.preventDefault();
+    if (select('import-kind').value !== 'atlas') {
+      return;
+    }
     if (!(await ports.discard())) {
       return;
     }

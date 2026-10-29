@@ -3,7 +3,7 @@
 import copy
 import json
 
-from gbc_scene_forge.artwork import atlas, png
+from gbc_scene_forge.artwork import atlas, png, tilesheet
 from gbc_scene_forge.artwork import metadata as tile_metadata
 from gbc_scene_forge.core.errors import Conflict
 from gbc_scene_forge.core.records import NativeDocument
@@ -153,7 +153,13 @@ class ArtworkService:
         """Validate an uploaded atlas bundle before preparing its guarded import."""
         return self._import_bundle(atlas.load_uploaded_bundle(bundle), revision, reimport=reimport)
 
-    def _import_bundle(self, bundle, revision, *, reimport=False):
+    def import_tilesheet(self, value, revision, *, reimport=False, dry_run=False):
+        require(type(reimport) is bool and type(dry_run) is bool, "Invalid import options")
+        return self._import_bundle(
+            tilesheet.bundle(value), revision, reimport=reimport, dry_run=dry_run
+        )
+
+    def _import_bundle(self, bundle, revision, *, reimport=False, dry_run=False):
         manifest, image, width, pixels = bundle
         document = self.store.current(revision)
         atlas_id = manifest["id"]
@@ -165,6 +171,11 @@ class ArtworkService:
         require(previous is not None or not reimport, "Reimport requires an existing atlas ID")
         report = {"atlas": atlas_id, "added": [], "changed": [], "removed": []}
         if previous:
+            require(
+                previous["manifest"].get("source_format") == manifest.get("source_format")
+                and previous["manifest"].get("slicing") == manifest.get("slicing"),
+                "Reimport must retain the input format, grid, margin and spacing",
+            )
             old_regions = {r["name"]: r for r in previous["manifest"]["regions"]}
             new_regions = {r["name"]: r for r in manifest["regions"]}
             report["removed"] = sorted(set(old_regions) - set(new_regions))
@@ -188,6 +199,14 @@ class ArtworkService:
             report["metadata_changed"] = previous["manifest"] != manifest
         else:
             report["added"] = [r["name"] for r in manifest["regions"]]
+        if dry_run:
+            return {
+                **report,
+                "regions": manifest["regions"],
+                "width": width,
+                "height": len(pixels) // (width * 4),
+                "dry_run": True,
+            }
         # Decode maps with the old tileset ranges before adding local IDs/atlases.
         scenes = [self.store.load_scene(item["id"], document) for item in document["scenes"]]
         entry, changes = atlas.build_assets(manifest, image, width, pixels, previous)

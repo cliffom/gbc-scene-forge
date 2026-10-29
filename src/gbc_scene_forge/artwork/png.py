@@ -1,4 +1,4 @@
-"""Small bounded PNG reader for non-interlaced 8-bit RGB/RGBA and indexed atlases."""
+"""Bounded non-interlaced RGB/RGBA/indexed PNG reader for atlases and generic sheets."""
 
 import struct
 import zlib
@@ -21,7 +21,7 @@ def encode(width, height, pixels):
     )
 
 
-def decode(data):
+def decode(data, *, generic=False):
     if not data.startswith(SIGNATURE) or len(data) > 4 * 1024 * 1024:
         raise ValueError("Expected a PNG atlas no larger than 4 MiB")
     offset, chunks, ended = 8, {}, False
@@ -50,7 +50,10 @@ def decode(data):
     width, height, depth, color, compression, filtering, interlace = struct.unpack(
         ">IIBBBBB", chunks[b"IHDR"]
     )
-    if not (8 <= width <= 256 and 8 <= height <= 256 and width % 8 == height % 8 == 0):
+    if generic:
+        if not (1 <= width <= 2048 and 1 <= height <= 2048):
+            raise ValueError("PNG dimensions must be within 1..2048")
+    elif not (8 <= width <= 256 and 8 <= height <= 256 and width % 8 == height % 8 == 0):
         raise ValueError("Atlas dimensions must be multiples of eight within 8..256")
     if (
         compression

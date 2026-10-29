@@ -14,6 +14,7 @@ from gbc_scene_forge.scenes.service import SceneService
 from gbc_scene_forge.storage.paths import safe_path
 
 from . import lifecycle
+from .intake import IntakeService
 from .schema import MANIFEST
 from .store import ProjectStore
 
@@ -32,6 +33,7 @@ class Project:
         self.transactions = self.store.transactions
         self.scenes = SceneService(self.store)
         self.artwork = ArtworkService(self.store)
+        self.imports = IntakeService(self.store)
         self.objects = ObjectService(self.store)
         self.planning = PlanningService(self.store)
         self.reports = ReportService(self.store)

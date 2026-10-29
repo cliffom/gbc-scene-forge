@@ -219,6 +219,24 @@ class ProjectAPI:
                     scene_guard=data.get("scene"),
                 )
             )
+        elif route == "/api/import-tilesheet":
+            return Response(
+                project.artwork.import_tilesheet(
+                    data.get("sheet"),
+                    data.get("project_revision"),
+                    reimport=data.get("reimport", False),
+                    dry_run=data.get("dry_run", True),
+                )
+            )
+        elif route == "/api/import-tiled":
+            return Response(
+                project.imports.tiled(
+                    data.get("bundle"),
+                    data.get("project_revision"),
+                    dry_run=data.get("dry_run", True),
+                    confirmation=data.get("confirmation"),
+                )
+            )
         elif route == "/api/import-atlas":
             require(
                 ("path" in data) != ("bundle" in data),

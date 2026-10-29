@@ -93,7 +93,11 @@ try {
     if (target && !(await evaluate(`document.getElementById('${target[0]}').open`))) {
       await click(target[1]);
     }
-    await browser.click(`document.querySelector('#${id} button.primary')`);
+    await browser.click(
+      id === 'import-form'
+        ? "document.getElementById('atlas-apply')"
+        : `document.querySelector('#${id} button.primary')`,
+    );
   };
   const wait = browser.wait.bind(browser);
   const checkBuildLabel = async () => {

@@ -74,3 +74,10 @@ or add connector compatibility shims.
 
 The companion [frontend architecture](FRONTEND-ARCHITECTURE.md) describes the supported
 browser composition, state owners, controller ports and resource lifecycle.
+
+External artwork intake keeps PNG slicing in `artwork/tilesheet.py` and strict
+external Tiled JSON conversion in `formats/intake.py`. `project/intake.py`
+coordinates the atomic artwork-and-scene transaction; HTTP adapters only decode
+options and dispatch. Preflight uses the same conversion as commit and binds its
+confirmation to the input bytes/options and project revision. Source folders are
+browser-owned read-only selections, never undeclared server filesystem paths.

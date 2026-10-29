@@ -93,7 +93,7 @@ test-frontend: $(FRONTEND_TEST_TARGETS)
 $(FRONTEND_TEST_TARGETS): test-frontend-%:
 	$(NODE) tests/$*.ts
 
-test-browser: test-editor-lifecycle-browser test-blockout-browser test-layout-browser test-first-use-browser test-standalone-browser test-drafts-browser test-compositions-browser test-definitions-browser test-world-browser test-diagnostics-browser
+test-browser: test-imports-browser test-editor-lifecycle-browser test-blockout-browser test-layout-browser test-first-use-browser test-standalone-browser test-drafts-browser test-compositions-browser test-definitions-browser test-world-browser test-diagnostics-browser
 
 test-blockout-browser: frontend
 	$(NODE) tests/blockout-browser.ts $(if $(CHROME),"$(CHROME)")
@@ -174,3 +174,7 @@ test-mcp-browser: frontend
 .PHONY: test-editor-lifecycle-browser
 test-editor-lifecycle-browser: frontend
 	$(NODE) tests/editor-lifecycle-browser.ts $(if $(CHROME),"$(CHROME)")
+
+.PHONY: test-imports-browser
+test-imports-browser: frontend
+	$(NODE) tests/imports-browser.ts $(if $(CHROME),"$(CHROME)")

@@ -121,7 +121,7 @@ try {
   await click('artwork-tab');
   await click('library-import');
   await set('atlas-path', source.trim());
-  await chrome.click("document.querySelector('#import-form button.primary')");
+  await chrome.click("document.getElementById('atlas-apply')");
   await wait("document.getElementById('status').textContent.includes('Atlas imported')");
   await chrome.click("document.querySelector('#palette button.asset')");
   await set('zoom', '1');
