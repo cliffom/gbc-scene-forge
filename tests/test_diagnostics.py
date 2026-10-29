@@ -327,6 +327,49 @@ class DiagnosticsTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 diagnostics.options(value, document)
 
+    def test_large_footprint_skips_empty_buckets_and_bounds_collision_work(self):
+        document = self.project.catalog()["project"]
+        config = diagnostics.options(
+            {
+                **self.config,
+                "footprint": {"x": -2048, "y": -2048, "width": 4096, "height": 4096},
+            },
+            document,
+        )
+        scene = {"width": 256, "height": 256, "grid": 32, "layers": []}
+        markers = [
+            {"id": 1, "x": 4096, "y": 4096, "spawn": True, "entrance": True, "goal": False},
+            {"id": 2, "x": 4128, "y": 4096, "spawn": False, "entrance": False, "goal": True},
+        ]
+        findings = []
+
+        def emit(code, severity, message, marker=None, **extra):
+            findings.append((code, message))
+
+        # Even a zero budget permits the empty-artwork scene: no buckets are scanned.
+        with patch.object(diagnostics, "COLLISION_WORK_LIMIT", 0):
+            diagnostics.movement(scene, document, config, markers, emit)
+        self.assertEqual(findings, [])
+
+        # One distant solid tile activates the index without blocking these markers.
+        cells = [[""] * 256 for _ in range(256)]
+        cells[0][0] = "terrain/earth/0/0"
+        scene["layers"] = [{"id": 1, "type": "tilelayer", "visible": True, "cells": cells}]
+        document["atlases"]["terrain"]["metadata"] = {
+            "32": {"terrain/earth/0/0": {"solid": True, "shapes": []}}
+        }
+        diagnostics.movement(scene, document, config, markers, emit)
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0][0], "unverified-movement")
+        self.assertIn("Collision-work budget exceeded", findings[0][1])
+
+        # Index construction also shares the budget and cannot scan unbounded buckets.
+        findings.clear()
+        with patch.object(diagnostics, "COLLISION_WORK_LIMIT", 0):
+            diagnostics.movement(scene, document, config, markers, emit)
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0][0], "unverified-movement")
+
     def test_sprite_collision_uses_native_and_instance_origins(self):
         path, _ = sprite_bundle(self.root / "sprites")
         self.project.import_atlas(path, self.rev())

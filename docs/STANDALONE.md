@@ -894,6 +894,10 @@ under the following rules:
 - Scenes above 65,536 cells, or above 4,096 start/goal pairs, report reachability as
   unverified. Spawn overlap checks above 512 spawns are also unverified. Missing
   starts or goals produce an explicit unverified finding.
+- Each scene also has a shared budget of 1,000,000 collision-work units for index
+  entries, queried buckets, candidate records, and shape checks (polygon vertices
+  count individually). Empty collision indexes skip bucket searches. Exhausting
+  the budget reports remaining entrance and reachability checks as unverified.
 
 Scene exclusions and comma-separated finding-code exclusions apply to this report
 only, and appear in its options and summary. They do not alter project data.

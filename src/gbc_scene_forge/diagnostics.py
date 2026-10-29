@@ -25,6 +25,11 @@ CODES = (
     "choices",
     "unknown-field",
 )
+COLLISION_WORK_LIMIT = 1_000_000
+
+
+class CollisionWorkExceeded(Exception):
+    """The scene's shared collision-work budget has been exhausted."""
 
 
 def options(value, document):
@@ -151,6 +156,14 @@ def collision_test(scene, document, include_hidden):
     """Index authored artwork collision shapes; touching edges remain walkable."""
     grid = scene["grid"]
     buckets = {}
+    remaining = COLLISION_WORK_LIMIT
+
+    def spend(amount=1):
+        nonlocal remaining
+        remaining -= amount
+        if remaining < 0:
+            raise CollisionWorkExceeded
+
     for layer in scene_layers(scene):
         if not include_hidden and not layer["visible"]:
             continue
@@ -189,27 +202,45 @@ def collision_test(scene, document, include_hidden):
             record = (x, y, w, h, metadata)
             for by in range(math.floor(y / grid), math.ceil((y + h) / grid)):
                 for bx in range(math.floor(x / grid), math.ceil((x + w) / grid)):
+                    spend()
                     buckets.setdefault((bx, by), []).append(record)
 
     def blocked(rect):
         x, y, w, h = rect
         if x < 0 or y < 0 or x + w > scene["width"] * grid or y + h > scene["height"] * grid:
             return True
+        if not buckets:
+            return False
         for by in range(math.floor(y / grid), math.ceil((y + h) / grid)):
             for bx in range(math.floor(x / grid), math.ceil((x + w) / grid)):
+                spend()
                 for ox, oy, ow, oh, meta in buckets.get((bx, by), []):
+                    spend()
                     if not overlap(rect, (ox, oy, ow, oh)):
                         continue
-                    if not meta["shapes"] or any(
-                        shape_overlap((x - ox, y - oy, w, h), s) for s in meta["shapes"]
-                    ):
+                    if not meta["shapes"]:
                         return True
+                    for shape in meta["shapes"]:
+                        spend(len(shape["points"]) if shape["kind"] == "polygon" else 1)
+                        if shape_overlap((x - ox, y - oy, w, h), shape):
+                            return True
         return False
 
     return blocked
 
 
 def movement(scene, document, config, markers, emit):
+    try:
+        _movement(scene, document, config, markers, emit)
+    except CollisionWorkExceeded:
+        emit(
+            "unverified-movement",
+            "info",
+            "Collision-work budget exceeded; remaining entrance and reachability checks were not run.",
+        )
+
+
+def _movement(scene, document, config, markers, emit):
     entrances = [m for m in markers if m["entrance"]]
     starts = [m for m in markers if m["spawn"] or m["entrance"]]
     goals = [m for m in markers if m["goal"]]
