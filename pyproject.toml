@@ -19,8 +19,12 @@ Repository = "https://github.com/cliffom/gbc-scene-forge"
 Documentation = "https://github.com/cliffom/gbc-scene-forge/blob/main/README.md"
 Issues = "https://github.com/cliffom/gbc-scene-forge/issues"
 
+[project.optional-dependencies]
+mcp = ["mcp>=1.30,<2"]
+
 [project.scripts]
 gbc-scene-forge = "gbc_scene_forge.__main__:main"
+gbc-scene-forge-mcp = "gbc_scene_forge.mcp_server:main"
 
 [tool.poetry]
 requires-poetry = ">=2.4,<3.0"
@@ -41,7 +45,7 @@ core-metadata-version = "2.4"
 [tool.hatch.build.targets.sdist]
 core-metadata-version = "2.4"
 include = [
-    "/src", "/frontend", "/tests", "/docs", "/assets", "/Makefile", "/README.md",
+    "/src", "/frontend", "/tests", "/docs", "/assets", "/examples", "/Makefile", "/README.md",
     "/LICENSE", "/pyproject.toml", "/poetry.lock", "/package.json", "/package-lock.json",
     "/tsconfig.json", "/eslint.config.mjs", "/.prettierrc.json", "/.gitignore",
 ]

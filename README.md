@@ -90,6 +90,9 @@ objects when you add artwork or export to Tiled. Follow the
 [blockout tutorial](docs/user/blockout-tutorial.md) for a complete first session,
 or see the [blockout reference](docs/BLOCKOUT.md).
 
+Agents can author saved projects through the optional [local MCP server](docs/MCP.md),
+including an artwork-free blockout proof of concept. The ordinary editor needs no MCP dependencies.
+
 ### Open another project
 
 Use the **Project** dropdown beside the scene selector to open another project.

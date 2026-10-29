@@ -37,6 +37,8 @@ help:
 	@echo '  make test-frontend-<suite>   Run one suite (model, drafts, contracts, etc.)'
 	@echo '  make test-browser            Run all Chrome acceptance suites (CHROME=/path)'
 	@echo '  make test-blockout-browser   Run artwork-free blockout acceptance'
+	@echo '  make test-mcp                Run optional MCP SDK/service checks'
+	@echo '  make test-mcp-browser        Run agent/browser draft-conflict acceptance'
 	@echo '  make test-layout-browser     Check editor layout and keyboard navigation'
 	@echo '  make test-first-use-browser  Run the first-scene Chrome acceptance path'
 	@echo '  make test-standalone-browser Run standalone editor Chrome acceptance'
@@ -153,3 +155,12 @@ clean:
 
 clean-demo:
 	rm -rf .demo
+
+# Optional protocol checks require the [mcp] extra in FORGE_MCP_PYTHON.
+.PHONY: test-mcp test-mcp-browser
+test-mcp:
+	"$(or $(FORGE_MCP_PYTHON),.venv/bin/python)" -c "import mcp"
+	"$(or $(FORGE_MCP_PYTHON),.venv/bin/python)" -m unittest discover -s tests -p test_mcp.py
+
+test-mcp-browser: frontend
+	FORGE_MCP_PYTHON="$(or $(FORGE_MCP_PYTHON),.venv/bin/python)" $(NODE) tests/mcp-browser.ts $(if $(CHROME),"$(CHROME)")

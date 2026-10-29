@@ -27,10 +27,18 @@ class InstalledPackageSmokeTests(unittest.TestCase):
     def test_imports_and_metadata(self):
         package = distribution("gbc-scene-forge")
         self.assertEqual(package.version, __version__)
-        self.assertFalse(package.requires, "The package must not require runtime dependencies")
+        for requirement in package.requires or []:
+            dependency, separator, marker = requirement.partition(";")
+            self.assertTrue(dependency.startswith("mcp"), "Only the optional MCP SDK is allowed")
+            self.assertTrue(separator, "The plain editor must not require runtime dependencies")
+            self.assertEqual(marker.strip().replace('"', "'"), "extra == 'mcp'")
         self.assertTrue(callable(standalone.serve))
         launcher = next(entry for entry in package.entry_points if entry.name == "gbc-scene-forge")
         self.assertTrue(callable(launcher.load()))
+        mcp_launcher = next(
+            entry for entry in package.entry_points if entry.name == "gbc-scene-forge-mcp"
+        )
+        self.assertTrue(callable(mcp_launcher.load()))
 
     def test_browser_assets_are_bundled(self):
         static = files("gbc_scene_forge").joinpath("static")

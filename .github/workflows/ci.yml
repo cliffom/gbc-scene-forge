@@ -23,6 +23,13 @@ jobs:
       - run: make lint test-frontend build check-dist
       - name: Browser acceptance checks
         run: make test-browser CHROME=/usr/bin/google-chrome
+      - name: Optional MCP installed-wheel and browser checks
+        run: |
+          python -m venv build/mcp-ci
+          for forge_wheel in dist/*.whl; do
+            build/mcp-ci/bin/python -m pip install "${forge_wheel}[mcp]"
+          done
+          FORGE_MCP_PYTHON="$PWD/build/mcp-ci/bin/python" make test-mcp test-mcp-browser CHROME=/usr/bin/google-chrome
       - uses: actions/upload-artifact@v7.0.2
         with:
           name: compatibility-wheel
@@ -50,3 +57,7 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_*.py'
       - name: Installed-wheel smoke test
         run: python -I tests/package_smoke.py
+      - name: Optional MCP protocol compatibility
+        run: |
+          python -m pip install 'mcp>=1.30,<2'
+          python -m unittest discover -s tests -p test_mcp.py
