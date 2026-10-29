@@ -3862,11 +3862,19 @@ async function checkExternalChanges(manual = false) {
     return;
   }
   liveRequest = true;
-  const before = { epoch: liveEpoch, loaded, revision, editor };
+  const before = {
+    epoch: liveEpoch,
+    sceneId: loaded?.id,
+    sceneRevision: loaded?.revision,
+    revision,
+    editor,
+  };
   const current = () =>
     liveReady() &&
     liveEpoch === before.epoch &&
-    loaded === before.loaded &&
+    // Animation frames redraw and replace `loaded` without changing saved content.
+    loaded?.id === before.sceneId &&
+    loaded?.revision === before.sceneRevision &&
     editor === before.editor &&
     revision === before.revision &&
     (manual || input('auto-refresh').checked);
@@ -3937,7 +3945,7 @@ async function checkExternalChanges(manual = false) {
           : null;
       draw();
       viewport.scrollTo(view.left, view.top);
-    } else if (before.loaded) {
+    } else if (before.sceneId) {
       loaded = committed = null;
       editor = null;
       baseline = '';
@@ -3956,7 +3964,7 @@ async function checkExternalChanges(manual = false) {
     }
     syncMessage();
     status.textContent =
-      before.loaded && !next
+      before.sceneId && !next
         ? 'The open scene was removed externally. Choose another scene; saved recovery drafts remain available.'
         : 'External changes loaded. Undo/Redo history was cleared.';
   } catch (error) {

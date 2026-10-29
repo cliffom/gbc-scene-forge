@@ -296,6 +296,63 @@ try {
   await evaluate("document.getElementById('project-command-panel').showPopover()");
   await chrome.screenshot('external-refresh');
   await evaluate("document.getElementById('project-command-panel').hidePopover()");
+  console.log('Refresh: automatic and manual adoption during sprite animation');
+  const { stdout: spriteOutput } = await promisify(execFile)('.venv/bin/python', [
+    '-c',
+    "import json,sys;from pathlib import Path;sys.path.insert(0,'tests');from atlas_fixture import sprite_bundle;from gbc_scene_forge.projects import Project;p,m=sprite_bundle(Path(sys.argv[2]));m['animations'][0]['frames']=[dict(region='idle',duration_ms=120),dict(region='idle',duration_ms=240)];p.write_text(json.dumps(m));w=Project(sys.argv[1]);w.import_atlas(p,w.catalog()['revision']);s=w.load_scene(sys.argv[3]);i=s['scene']['next_object_id'];l=next(l for l in s['scene']['layers'] if l['name']=='Camera guides');l['objects'].append(dict(id=i,asset='actors/idle',x=80,y=80));s['scene']['next_object_id']=i+1;w.save_scene(s['id'],s['scene'],s['revision'],w.catalog()['revision']);print(i)",
+    root,
+    join(folder, 'animated-art'),
+    id,
+  ]);
+  const spriteId = spriteOutput.trim();
+  await tick();
+  await wait(`document.querySelector('#object-list option[value="${spriteId}"]')!==null`);
+  for (const manual of [false, true]) {
+    if (manual) {
+      await evaluate("document.getElementById('project-command-panel').showPopover()");
+      await click('auto-refresh');
+    }
+    await set('object-list', spriteId);
+    await set('preview-animation', 'idle');
+    await set('preview-speed', '1');
+    await click('preview-play');
+    await wait("document.getElementById('preview-play').textContent==='Pause'");
+    // Make every snapshot span real animation frames, so replacing the loaded
+    // display object cannot masquerade as a scene switch or an authored edit.
+    await evaluate(`window.__animatedSnapshots=0;window.fetch=async(...args)=>{
+      const response=await window.__realFetch(...args);
+      if(String(args[0]).includes('/api/snapshot')){
+        await new Promise((resolve,reject)=>{
+          const detail=document.getElementById('preview-frame');
+          let previous=detail.textContent, frames=0;
+          const timeout=setTimeout(()=>{observer.disconnect();reject(Error('Animation stopped before snapshot completed'))},5000);
+          const observer=new MutationObserver(()=>{
+            if(detail.textContent!==previous){previous=detail.textContent;frames++;}
+            if(frames>=2){clearTimeout(timeout);observer.disconnect();resolve();}
+          });
+          observer.observe(detail,{childList:true,subtree:true,characterData:true});
+        });
+        window.__animatedSnapshots++;
+      }
+      return response;
+    }`);
+    const x = manual ? 88 : 80;
+    await moveCamera(x);
+    if (manual) {
+      await evaluate("document.getElementById('project-command-panel').showPopover()");
+      await click('check-external');
+    } else {
+      await tick();
+    }
+    await wait("document.getElementById('status').textContent.includes('External changes loaded')");
+    assert.ok(Number(await evaluate('window.__animatedSnapshots')) >= 1);
+    await evaluate('window.fetch=window.__realFetch');
+    assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
+    await inspectCamera(x);
+  }
+  // Restore automatic refresh for the inventory/deletion checks below.
+  await evaluate("document.getElementById('project-command-panel').showPopover()");
+  await click('auto-refresh');
   console.log('Refresh: scene creation and external deletion');
   await agent('create_scene', {
     project_revision: (await catalog()).revision,
@@ -321,7 +378,7 @@ try {
   await chrome.screenshot('external-scene-deleted');
   assert.deepEqual(chrome.errors, []);
   console.log(
-    'Refresh browser passed: real MCP saves, view preservation, forms, paused dirty polling, save conflicts, manual checks, in-flight edits, reconnect, inventories and deletion.',
+    'Refresh browser passed: real MCP saves, view preservation, forms, paused dirty polling, save conflicts, manual checks, in-flight edits, animated sprites, reconnect, inventories and deletion.',
   );
 } finally {
   await browser?.close();
