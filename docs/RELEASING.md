@@ -97,7 +97,7 @@ publishing page. Use the official [trusted publisher setup guide](https://docs.p
 The workflow follows the [Python Packaging User Guide](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/)
 and uses short-lived OIDC credentials; no PyPI API token is stored in the repository.
 
-After reviewing and committing a release, create and push an annotated `v0.15.0`
+After reviewing and committing a release, create and push an annotated `v0.16.0`
 tag (or the matching next version). Run **Publish package** manually against that
 tag, selecting `testpypi` first when its trusted publisher is configured. TestPyPI
 is currently unconfigured; its 0.1.4 upload failed with `invalid-publisher`. Until
@@ -106,6 +106,16 @@ Chrome fixture suite, then run the workflow for `pypi`. Verify a fresh PyPI inst
 with `tests/package_smoke.py` after publication. The workflow rebuilds and
 checks the distributions, checks the tag against the package version, then uploads
 only those verified artifacts. Pushing a tag alone does not publish.
+
+## Release 0.16.0
+
+Version 0.16.0 adds optional versioned GBC static tile/OAM estimates alongside
+existing palette budgets. See [release notes](RELEASE-0.16.0.md) and the
+[target-budget guide](user/gbc-budgets.md). Run `make lint test build check-dist`,
+the full browser suite and optional MCP checks. Existing palette-only profiles
+remain version 1; enabling hardware estimates writes profile version 2, which
+requires Forge 0.16.0 or later. The project manifest stays version 1 and portable
+Tiled maps do not acquire target-specific fields. No runtime dependency is added.
 
 ## Release 0.15.0
 

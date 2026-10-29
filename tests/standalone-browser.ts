@@ -2591,6 +2591,57 @@ for y in range(height):
   );
   await writeFile(paletteManifestPath, paletteManifestBytes);
   await wait("document.getElementById('palette-summary').dataset.state === 'pass'");
+  // Versioned hardware estimates reuse guarded profile save and contributor navigation.
+  await browser.click("document.querySelector('#hardware-settings summary')");
+  await click('hardware-enabled');
+  await set('hardware-bg_tiles-reserved', '0');
+  await set('hardware-obj_tiles-reserved', '0');
+  await set('hardware-oam-reserved', '39');
+  assert.equal(await evaluate("document.getElementById('palette-preflight').disabled"), true);
+  await click('palette-save-profile');
+  await wait(
+    "document.getElementById('palette-findings').textContent.includes('OAM entries: 2 estimated / 1 available · over-estimate')",
+  );
+  assert.equal(
+    await evaluate("document.getElementById('palette-summary').dataset.state"),
+    'unverified',
+  );
+  assert.equal(record(record((await catalog()).project).gbc_palette_profile).version, 2);
+  await click('palette-preflight');
+  await wait(
+    "document.getElementById('palette-summary').textContent === 'GBC budget preflight unverified.'",
+  );
+  await browser.screenshot('gbc-target-budgets');
+  await browser.call('Emulation.setDeviceMetricsOverride', {
+    width: 1024,
+    height: 768,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  assert.equal(
+    await evaluate(`(() => {
+    const dialog = document.getElementById('palette-dialog').getBoundingClientRect();
+    const close = document.getElementById('palette-close').getBoundingClientRect();
+    return close.bottom <= dialog.bottom && dialog.bottom <= innerHeight;
+  })()`),
+    true,
+  );
+  await browser.screenshot('gbc-target-budgets-compact');
+  await browser.call('Emulation.setDeviceMetricsOverride', {
+    width: 1440,
+    height: 1000,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await browser.click("document.querySelector('#palette-findings details summary')");
+  await wait("document.querySelector('#palette-findings .palette-contributor') !== null");
+  await browser.click("document.querySelector('#palette-findings .palette-contributor')");
+  await wait("!document.getElementById('palette-dialog').open");
+  await click('show-palettes');
+  await click('hardware-enabled');
+  await click('palette-save-profile');
+  await wait("document.getElementById('palette-summary').dataset.state === 'pass'");
+  assert.equal(record(record((await catalog()).project).gbc_palette_profile).version, 1);
   await click('palette-enabled');
   await click('palette-save-profile');
   await wait(

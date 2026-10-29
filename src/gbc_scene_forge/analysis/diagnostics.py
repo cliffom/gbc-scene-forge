@@ -3,6 +3,7 @@
 import math
 from collections import deque
 
+from gbc_scene_forge.analysis import palette_budget
 from gbc_scene_forge.artwork import atlas
 from gbc_scene_forge.core.validation import require
 from gbc_scene_forge.formats.tiled import cell_parts, scene_layers
@@ -11,6 +12,7 @@ from gbc_scene_forge.scene_objects import definitions as object_definitions
 from gbc_scene_forge.scene_objects.preview import finite
 
 CODES = (
+    "gbc-budget",
     "overlapping-spawns",
     "blocked-entrance",
     "unreachable",
@@ -418,6 +420,22 @@ def report(document, scenes, config):
                 }
             )
 
+        profile = document.get("gbc_palette_profile")
+        if profile is not None and profile["version"] == 2:
+            budget = palette_budget.report(scene, document, profile, sid)
+            emit(
+                "gbc-budget",
+                "info",
+                "GBC runtime compatibility is unverified; open GBC budgets for assumptions and contributors.",
+            )
+            for pool, metric in budget["hardware"]["metrics"].items():
+                emit(
+                    "gbc-budget",
+                    "warning" if metric["status"] == "over-estimate" else "info",
+                    f"{pool}: {metric['required']} estimated; {metric['available']} available — {metric['status']}.",
+                )
+            for message in budget["errors"]:
+                emit("gbc-budget", "error", message)
         markers = []
         for layer in scene_layers(scene):
             if not config["include_hidden"] and not layer["visible"]:
@@ -502,7 +520,7 @@ def report(document, scenes, config):
         else "warning"
         if any(f["severity"] == "warning" for f in findings)
         else "unverified"
-        if any(f["code"] == "unverified-movement" for f in findings)
+        if any(f["code"] in ("unverified-movement", "gbc-budget") for f in findings)
         else "pass",
         "scenes": [{"id": e["id"], "name": e["name"]} for e in document["scenes"]],
     }
