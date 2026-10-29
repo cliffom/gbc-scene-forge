@@ -187,7 +187,7 @@ try {
   await chrome.call('Page.enable');
   await chrome.call('Runtime.enable');
   await chrome.call('Page.navigate', { url });
-  await wait("document.getElementById('recovery-dialog').open");
+  await wait("document.getElementById('recovery-dialog')?.open === true");
   await click('recovery-restore');
   await wait(
     "document.querySelector('#recovery-dialog .form-error').textContent.includes('changed')",
