@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { decodeLoaded, decodeProject } from '../frontend/project/project-contracts.mts';
+import { decodeWorldSnapshot } from '../frontend/world/world.mts';
 import { decodePaletteProfile } from '../frontend/diagnostics/palette-budget.mts';
 import { ProjectApi } from '../frontend/project/project-api.mts';
 import { HttpError } from '../frontend/shared/errors.mts';
@@ -113,4 +114,154 @@ await test('optional GBC profiles decode palette-only and versioned hardware set
     assert.throws(() => decodePaletteProfile({ ...target, hardware }));
   }
   assert.throws(() => decodePaletteProfile({ ...palettes, version: 3 }));
+});
+
+const worldReport = {
+  scene_revisions: { room: 'revision-a' },
+  scenes: [
+    {
+      id: 'room',
+      name: 'Room',
+      revision: 'revision-a',
+      width: 8,
+      height: 16,
+      grid: 8,
+      objects: [
+        {
+          id: 1,
+          name: 'Exit',
+          layer: 2,
+          visible: true,
+          x: -8.5,
+          y: 16,
+          errors: [{ code: 'required', field: 'destination' }],
+        },
+      ],
+    },
+  ],
+};
+
+await test('world snapshots normalize visibility, rename revisions and drop unknown fields without mutation', () => {
+  const expected = { revisions: worldReport.scene_revisions, scenes: worldReport.scenes };
+  assert.deepEqual(decodeWorldSnapshot(worldReport), expected);
+  const input = {
+    ...structuredClone(worldReport),
+    extra: 'ignored',
+    scenes: worldReport.scenes.map((scene) => ({
+      ...scene,
+      extra: 'ignored',
+      objects: scene.objects.map((object) => ({
+        ...object,
+        extra: 'ignored',
+        errors: object.errors.map((error) => ({ ...error, extra: 'ignored' })),
+      })),
+    })),
+  };
+  const before = structuredClone(input);
+  assert.deepEqual(decodeWorldSnapshot(input), expected);
+  assert.deepEqual(input, before);
+  for (const visible of [undefined, null, false, 0, 1, 'true', {}, []]) {
+    const marker = { ...worldReport.scenes[0].objects[0], visible };
+    if (visible === undefined) {
+      delete marker.visible;
+    }
+    const result = decodeWorldSnapshot({
+      ...worldReport,
+      scenes: [{ ...worldReport.scenes[0], objects: [marker] }],
+    });
+    assert.equal(result.scenes[0].objects[0].visible, false);
+  }
+  assert.deepEqual(decodeWorldSnapshot({ scene_revisions: {}, scenes: [] }), {
+    revisions: {},
+    scenes: [],
+  });
+});
+
+await test('world snapshots retain and validate all own revision keys safely', () => {
+  const revisions: unknown = JSON.parse(
+    '{"__proto__":"a","constructor":"b","prototype":"c","room":"d"}',
+  );
+  const decoded = decodeWorldSnapshot({ ...worldReport, scene_revisions: revisions });
+  assert.deepEqual(decoded.revisions, revisions);
+  assert.equal(Object.getPrototypeOf(decoded.revisions), Object.prototype);
+  assert.equal(Object.hasOwn(decoded.revisions, '__proto__'), true);
+  for (const key of ['__proto__', 'constructor', 'prototype', 'room']) {
+    const bad = { ...record(revisions), [key]: 1 };
+    assert.throws(() => decodeWorldSnapshot({ ...worldReport, scene_revisions: bad }), {
+      message: 'Expected a string',
+    });
+  }
+});
+
+await test('world snapshot errors retain finite-number, missing-field, array and object semantics', () => {
+  // Each path exercises the existing public decoder boundary, with the error
+  // message authors already see. Missing required values are not defaulted.
+  const cases: { paths: string[][]; invalid: unknown[]; message: string }[] = [
+    {
+      paths: [
+        [],
+        ['scene_revisions'],
+        ['scenes', '0'],
+        ['scenes', '0', 'objects', '0'],
+        ['scenes', '0', 'objects', '0', 'errors', '0'],
+      ],
+      invalid: [undefined, null, [], 1, 'object'],
+      message: 'Expected a JSON object',
+    },
+    {
+      paths: [['scenes'], ['scenes', '0', 'objects'], ['scenes', '0', 'objects', '0', 'errors']],
+      invalid: [undefined, null, {}, 1, 'array'],
+      message: 'Expected an array',
+    },
+    {
+      paths: [
+        ['scene_revisions', 'room'],
+        ...['id', 'name', 'revision'].map((key) => ['scenes', '0', key]),
+        ['scenes', '0', 'objects', '0', 'name'],
+        ...['code', 'field'].map((key) => ['scenes', '0', 'objects', '0', 'errors', '0', key]),
+      ],
+      invalid: [undefined, null, 1, false, {}, []],
+      message: 'Expected a string',
+    },
+    {
+      paths: [
+        ...['width', 'height', 'grid'].map((key) => ['scenes', '0', key]),
+        ...['id', 'layer', 'x', 'y'].map((key) => ['scenes', '0', 'objects', '0', key]),
+      ],
+      invalid: [undefined, null, '8', false, NaN, Infinity, -Infinity],
+      message: 'Expected a finite number',
+    },
+  ];
+  for (const { paths, invalid, message } of cases) {
+    for (const path of paths) {
+      for (const value of invalid) {
+        let input: unknown = structuredClone(worldReport);
+        if (!path.length) {
+          input = value;
+        } else {
+          let parent: unknown = input;
+          for (const key of path.slice(0, -1)) {
+            parent = Array.isArray(parent) ? parent[Number(key)] : record(parent)[key];
+          }
+          const key = path.at(-1);
+          assert(key !== undefined);
+          if (Array.isArray(parent)) {
+            parent[Number(key)] = value;
+          } else {
+            const fields = record(parent);
+            if (value === undefined && path[0] !== 'scene_revisions') {
+              delete fields[key];
+            } else {
+              fields[key] = value;
+            }
+          }
+        }
+        assert.throws(() => decodeWorldSnapshot(input), { message }, path.join('.'));
+      }
+    }
+  }
+  const input = structuredClone(worldReport);
+  record(input.scenes[0]).name = 1;
+  input.scenes[0].width = NaN;
+  assert.throws(() => decodeWorldSnapshot(input), { message: 'Expected a string' });
 });
