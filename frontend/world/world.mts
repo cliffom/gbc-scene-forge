@@ -1,6 +1,7 @@
 /** Portable world metadata and deterministic endpoint diagnostics. */
 import * as v from 'valibot';
 import { array, number, record, string } from '../shared/decode.mts';
+import { finite, text, jsonObject, jsonDictionary, jsonArray, parse } from '../shared/schema.mts';
 export interface Endpoint {
   scene: string;
   object: number;
@@ -52,21 +53,7 @@ export function decodeWorld(value: unknown): World {
     }),
   };
 }
-// Keep the existing JSON-object check and missing-field errors. Valibot's object
-// schema alone accepts arrays and reports missing keys before their value schema.
-function snapshotObject<T extends v.ObjectEntries>(entries: T) {
-  return v.pipe(
-    v.unknown(),
-    v.transform((value) => {
-      const data = record(value);
-      return Object.fromEntries(Object.keys(entries).map((key) => [key, data[key]]));
-    }),
-    v.object(entries),
-  );
-}
-const text = v.string('Expected a string');
-const finite = v.pipe(v.number('Expected a finite number'), v.finite('Expected a finite number'));
-const markerSchema = snapshotObject({
+const markerSchema = jsonObject({
   id: finite,
   name: text,
   layer: finite,
@@ -76,28 +63,21 @@ const markerSchema = snapshotObject({
   ),
   x: finite,
   y: finite,
-  errors: v.array(snapshotObject({ code: text, field: text }), 'Expected an array'),
+  errors: jsonArray(jsonObject({ code: text, field: text })),
 });
-const sceneSchema = snapshotObject({
+const sceneSchema = jsonObject({
   id: text,
   name: text,
   revision: text,
   width: finite,
   height: finite,
   grid: finite,
-  objects: v.array(markerSchema, 'Expected an array'),
+  objects: jsonArray(markerSchema),
 });
 const snapshotSchema = v.pipe(
-  snapshotObject({
-    // v.record filters special keys. Preserve the existing own-entry dictionary
-    // behavior safely with Object.fromEntries, including __proto__ as data.
-    scene_revisions: v.pipe(
-      v.unknown(),
-      v.transform((value) => Object.entries(record(value))),
-      v.array(v.tuple([text, text])),
-      v.transform((entries) => Object.fromEntries(entries)),
-    ),
-    scenes: v.array(sceneSchema, 'Expected an array'),
+  jsonObject({
+    scene_revisions: jsonDictionary(text),
+    scenes: jsonArray(sceneSchema),
   }),
   v.transform(({ scene_revisions, scenes }) => ({ revisions: scene_revisions, scenes })),
 );
@@ -106,7 +86,7 @@ export type WorldScene = v.InferOutput<typeof sceneSchema>;
 export type WorldSnapshot = v.InferOutput<typeof snapshotSchema>;
 
 export function decodeWorldSnapshot(value: unknown): WorldSnapshot {
-  return v.parse(snapshotSchema, value, { abortEarly: true });
+  return parse(snapshotSchema, value);
 }
 export function worldFindings(world: World, scenes: WorldScene[]) {
   return world.connections.flatMap((link) =>

@@ -265,3 +265,162 @@ await test('world snapshot errors retain finite-number, missing-field, array and
   input.scenes[0].width = NaN;
   assert.throws(() => decodeWorldSnapshot(input), { message: 'Expected a string' });
 });
+
+const catalog = {
+  ...project,
+  atlases: {
+    art: {
+      png: 'assets/art/atlas.png',
+      tiles: { '8': { '0/0': 0 } },
+      manifest: {
+        regions: [
+          { name: 'idle', kind: 'sprite', x: 0, y: 0, width: 8, height: 8, duration_ms: 120 },
+        ],
+        animations: [
+          { name: 'idle', frames: [{ region: 'idle' }, { region: 'idle', duration_ms: 80 }] },
+        ],
+      },
+    },
+  },
+  stamps: [{ id: 'stamp', name: 'Stamp', slots: [1], scene }],
+};
+await test('schema catalogs preserve atlas normalization, animation fallback, stamps and defaults', () => {
+  const before = structuredClone(catalog);
+  const decoded = decodeProject(catalog);
+  assert.deepEqual(decoded.atlases.art, {
+    png: 'assets/art/atlas.png',
+    mappings: { '8': { '0/0': 0 } },
+    metadata: {},
+    animations: [
+      {
+        name: 'idle',
+        frames: [
+          { region: 'idle', duration: 120 },
+          { region: 'idle', duration: 80 },
+        ],
+      },
+    ],
+    regions: [{ name: 'idle', kind: 'sprite', x: 0, y: 0, width: 8, height: 8, origin: [0, 0] }],
+  });
+  assert.deepEqual(decoded.stamps, [
+    { id: 'stamp', name: 'Stamp', composition: { project: 'project', slots: [1], scene } },
+  ]);
+  assert.deepEqual(catalog, before);
+  const defaults = decodeProject(project);
+  assert.equal(defaults.paletteProfile, null);
+  assert.deepEqual(defaults.definitions, []);
+  assert.deepEqual(defaults.world, { version: 1, positions: {}, connections: [] });
+  assert.deepEqual(defaults.stamps, []);
+});
+
+await test('schema scenes retain flat-scene compatibility, object defaults and empty-cell normalization', () => {
+  const point = { id: 7, kind: 'point', x: 0, y: 0 };
+  const flat = {
+    id: 'flat',
+    name: 'Flat',
+    revision: 'r',
+    scene: { width: 1, height: 1, grid: 8, cells: [['']], objects: [point], next_layer_id: null },
+  };
+  const result = decodeLoaded(flat);
+  assert.deepEqual(result, {
+    id: 'flat',
+    name: 'Flat',
+    revision: 'r',
+    width: 1,
+    height: 1,
+    grid: 8,
+    nextLayerId: 3,
+    nextObjectId: 1,
+    layers: [
+      { id: 1, name: 'Ground', type: 'tilelayer', visible: true, cells: [['empty']] },
+      {
+        id: 2,
+        name: 'Sprites',
+        type: 'objectgroup',
+        visible: true,
+        objects: [{ id: '7', kind: 'point', x: 0, y: 0, name: '', class: '', properties: [] }],
+      },
+    ],
+  });
+  assert.deepEqual(decodeLoaded({ ...flat, scene: { ...flat.scene, objects: null } }).layers[1], {
+    id: 2,
+    name: 'Sprites',
+    type: 'objectgroup',
+    visible: true,
+    objects: [],
+  });
+  const unknown = {
+    ...saved,
+    extra: 1,
+    scene: { ...scene, extra: 1, layers: scene.layers.map((layer) => ({ ...layer, extra: 1 })) },
+  };
+  assert.deepEqual(decodeLoaded(unknown), decodeLoaded(saved));
+});
+
+await test('scene and catalog schemas retain structural errors and domain error precedence', () => {
+  const cases: [unknown, string][] = [
+    [{ ...saved, id: 1, scene: null }, 'Expected a JSON object'],
+    [{ ...saved, id: 1, scene: { ...scene, width: '2' } }, 'Expected a string'],
+    [{ ...saved, scene: { ...scene, width: '2' } }, 'Expected a finite number'],
+    [{ ...saved, scene: { ...scene, layers: {} } }, 'Expected an array'],
+    [{ ...saved, scene: { ...scene, layers: [null] } }, 'Expected a JSON object'],
+    [
+      { ...saved, scene: { ...scene, layers: [{ ...scene.layers[0], visible: null }] } },
+      'Expected a boolean',
+    ],
+    [
+      { ...saved, scene: { ...scene, layers: [{ ...scene.layers[0], type: 'unknown' }] } },
+      'Unsupported layer type',
+    ],
+    [
+      { ...saved, scene: { ...scene, layers: [{ ...scene.layers[0], cells: [[null]] }] } },
+      'Expected a string',
+    ],
+    [{ ...saved, scene: { ...scene, width: 3, next_object_id: '1' } }, 'Expected a finite number'],
+    [{ ...saved, scene: { ...scene, width: 3 } }, 'Invalid scene response'],
+  ];
+  for (const [value, message] of cases) {
+    assert.throws(() => decodeLoaded(value), { message });
+  }
+  const atlas = catalog.atlases.art;
+  const region = atlas.manifest.regions[0];
+  const atlasCases: [unknown, string][] = [
+    [{ ...atlas, tiles: null, png: null }, 'Expected a JSON object'],
+    [{ ...atlas, png: 1 }, 'Expected a string'],
+    [{ ...atlas, tiles: { '8': { '0/0': Infinity } } }, 'Expected a finite number'],
+    [{ ...atlas, manifest: null }, 'Expected a JSON object'],
+    [
+      {
+        ...atlas,
+        manifest: { regions: null, animations: [{ name: 'idle', frames: [{ region: 1 }] }] },
+      },
+      'Expected an array',
+    ],
+    [{ ...atlas, manifest: { regions: [{ ...region, origin: [1] }] } }, 'Invalid region origin'],
+    [
+      { ...atlas, manifest: { regions: [{ ...region, origin: [1, 2, 'bad'] }] } },
+      'Expected a finite number',
+    ],
+    [
+      { ...atlas, manifest: { regions: [{ ...region, origin: [1], name: 1 }] } },
+      'Invalid region origin',
+    ],
+    [
+      {
+        ...atlas,
+        manifest: {
+          regions: [region],
+          animations: [{ name: 'idle', frames: [{ region: 'missing' }] }],
+        },
+      },
+      'Expected a finite number',
+    ],
+  ];
+  for (const [value, message] of atlasCases) {
+    assert.throws(() => decodeProject({ ...catalog, id: 1, atlases: { art: value } }), { message });
+  }
+  assert.throws(
+    () => decodeProject({ ...catalog, stamps: [{ id: 1, slots: 'bad', scene: null }] }),
+    { message: 'Expected a JSON object' },
+  );
+});

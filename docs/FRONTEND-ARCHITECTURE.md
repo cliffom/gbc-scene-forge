@@ -122,12 +122,15 @@ Run `make lint test build check-dist`, `make test-browser`, and optional-SDK
 internal cleanup retains 0.13.1; publication requires a separately chosen,
 unpublished version and release authorization.
 
-## Schema validation pilot
+## Response schemas
 
-The world-report snapshot uses pinned Valibot schemas in `world/world.mts`, with
-inferred marker/scene/snapshot types and the existing decoder callback boundary.
-Other contracts retain the shared JSON primitives. See the
-[bounded pilot evaluation](evaluations/valibot-pilot.md) for compatibility glue,
-actual bundle measurements, dependency/license handling and the recommendation
-against a wholesale decoder migration. Browser dependencies are bundled during
-build; the installed Python editor still requires no Node or CDN requests.
+World-report snapshots, project catalogs and saved scenes use pinned Valibot
+schemas with inferred output types and the existing decoder callback boundaries.
+`shared/schema.mts` owns JSON object/array/dictionary checks, primitive messages,
+first-error parsing and a bridge to existing domain decoders. Specialized domain
+rules remain explicit; migrate other response contracts progressively rather than
+duplicating their validation during conversion. See the
+[adoption evaluation](evaluations/valibot-pilot.md) for compatibility requirements,
+measured cumulative/marginal bundle cost and dependency/license handling.
+Browser dependencies are bundled during build; the installed Python editor still
+requires no Node or CDN requests.
