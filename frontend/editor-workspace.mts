@@ -287,7 +287,9 @@ export function createWorkspaceController({
         );
         return;
       }
-      await refresh();
+      if (!(await refresh()) || lifetime.disposed) {
+        return;
+      }
       status.textContent = 'Project created. Choose a scene or create your own.';
       if (startingBlockout) {
         editorLayout.showLibrary('blockout');

@@ -224,7 +224,9 @@ export function createCompositionsController({
           slots: value.slots,
           project_revision: workspaceState.revision,
         });
-        await ports.refresh();
+        if (!(await ports.refresh()) || lifetime.disposed) {
+          return;
+        }
         ports.draw();
         editorLayout.showLibrary('stamps');
         status.textContent = 'Reusable stamp saved in the project.';
@@ -257,7 +259,9 @@ export function createCompositionsController({
           project_revision: workspaceState.revision,
         });
         brushes.stampBrush = null;
-        await ports.refresh();
+        if (!(await ports.refresh()) || lifetime.disposed) {
+          return;
+        }
         ports.draw();
       }),
   );

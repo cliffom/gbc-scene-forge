@@ -205,7 +205,9 @@ export function createRecoveryController({
           );
         }
         await clearDraft();
-        await ports.refresh();
+        if (!(await ports.refresh()) || lifetime.disposed) {
+          return;
+        }
         ports.open(restored);
         sceneSession.baseline = JSON.stringify({
           width: saved.width,

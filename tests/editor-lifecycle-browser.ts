@@ -83,7 +83,9 @@ try {
   assert.deepEqual(await evaluate('window.__requests'), []);
   // A replaced editor owns exactly one set of handlers, overlays and pollers.
   for (let attempt = 0; attempt < 2; attempt++) {
-    await evaluate('window.__mounted=window.__module.mountProjectEditor()');
+    await evaluate(
+      "document.getElementById('status').textContent='Loading replacement';window.__mounted=window.__module.mountProjectEditor()",
+    );
     await chrome.wait(
       "document.getElementById('status').textContent === 'Choose a scene, or import an atlas and create one.'",
     );
@@ -115,8 +117,7 @@ try {
   };window.__stale=window.__module.mountProjectEditor()`);
   await chrome.wait('window.__held');
   await evaluate(`window.__stale.dispose();window.fetch=window.__fetch;
-    document.getElementById('status').textContent='Loading replacement';
-    window.__mounted=window.__module.mountProjectEditor()`);
+    document.getElementById('status').textContent='Loading replacement';window.__mounted=window.__module.mountProjectEditor()`);
   await chrome.wait(
     "document.getElementById('status').textContent === 'Choose a scene, or import an atlas and create one.'",
   );
@@ -128,6 +129,65 @@ try {
   );
   assert.equal(await evaluate("document.querySelectorAll('.scene-surface').length"), 1);
   assert.equal(await evaluate("document.querySelectorAll('#diagnostics-dialog').length"), 1);
+  // A modal's visible data must never outlive the controller that owns it.
+  await evaluate("document.getElementById('show-world').click()");
+  await chrome.wait("document.getElementById('world-dialog').open");
+  await evaluate('window.__mounted.dispose()');
+  assert.equal(await evaluate('document.querySelectorAll("dialog[open]").length'), 0);
+  await evaluate(
+    "document.getElementById('status').textContent='Loading replacement';window.__mounted=window.__module.mountProjectEditor()",
+  );
+  await chrome.wait(
+    "document.getElementById('status').textContent === 'Choose a scene, or import an atlas and create one.'",
+  );
+  await evaluate("document.getElementById('project-command-panel').showPopover()");
+  await evaluate('window.__mounted.dispose()');
+  assert.equal(await evaluate('document.querySelectorAll(":popover-open").length'), 0);
+
+  // Hold artwork decoding after the scene response has already arrived. This is
+  // independent of request cancellation: refresh must reject the old adoption.
+  await evaluate(
+    "document.getElementById('status').textContent='Loading replacement';window.__mounted=window.__module.mountProjectEditor()",
+  );
+  await chrome.wait(
+    "document.getElementById('status').textContent === 'Choose a scene, or import an atlas and create one.'",
+  );
+  await evaluate(`window.__decode=HTMLImageElement.prototype.decode;
+    window.__decoding=false;
+    HTMLImageElement.prototype.decode=async function(){
+      await window.__decode.call(this);
+      if(!window.__decoding){
+        window.__decoding=true;
+        await new Promise(resolve=>{window.__releaseDecode=resolve});
+      }
+    };
+    document.getElementById('scenes').value=${JSON.stringify(scene)};
+    document.getElementById('scenes').dispatchEvent(new Event('change'));`);
+  await chrome.wait('window.__decoding');
+  await evaluate(`window.__mounted.dispose();
+    HTMLImageElement.prototype.decode=window.__decode;
+    document.getElementById('status').textContent='Loading replacement';window.__mounted=window.__module.mountProjectEditor()`);
+  await chrome.wait(
+    "document.getElementById('status').textContent === 'Choose a scene, or import an atlas and create one.'",
+  );
+  await evaluate(`const scenes=document.getElementById('scenes');
+    window.__replacementScene=[...scenes.options].find(option=>option.value && option.value!==${JSON.stringify(scene)}).value;
+    scenes.value=window.__replacementScene;
+    scenes.dispatchEvent(new Event('change'));`);
+  await chrome.wait("document.getElementById('status').textContent === 'Scene opened.'");
+  const displayed = await evaluate(`({name:document.getElementById('scene-name').textContent,
+    canvas:document.getElementById('scene').toDataURL()})`);
+  await evaluate('window.__releaseDecode()');
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  assert.equal(
+    await evaluate("document.getElementById('scenes').value"),
+    await evaluate('window.__replacementScene'),
+  );
+  assert.deepEqual(
+    await evaluate(`({name:document.getElementById('scene-name').textContent,
+    canvas:document.getElementById('scene').toDataURL()})`),
+    displayed,
+  );
   await evaluate('window.__mounted.dispose()');
   assert.deepEqual(chrome.errors, []);
   console.log(

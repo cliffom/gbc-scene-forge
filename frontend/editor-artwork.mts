@@ -330,7 +330,9 @@ export function createArtworkController({
         project_revision: workspaceState.revision,
       });
       await ports.clearDraft();
-      await ports.refresh();
+      if (!(await ports.refresh()) || lifetime.disposed) {
+        return;
+      }
       if (sceneSession.loaded) {
         ports.open(await api(`scene/${sceneSession.loaded.id}`, decodeLoaded));
       }
@@ -489,7 +491,9 @@ export function createArtworkController({
       }
       element('delete-atlas-dialog', HTMLDialogElement).close();
       deleteAtlasCandidate = null;
-      await ports.refresh();
+      if (!(await ports.refresh()) || lifetime.disposed) {
+        return;
+      }
       if (sceneSession.loaded && sceneSession.editor) {
         select('scenes').value = sceneSession.loaded.id;
         ports.draw();

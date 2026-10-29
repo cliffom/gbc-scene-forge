@@ -666,7 +666,9 @@ export function createPanelsController({
             project_revision: workspaceState.revision,
           });
           await ports.clearDraft();
-          await ports.refresh();
+          if (!(await ports.refresh()) || lifetime.disposed) {
+            return;
+          }
           ports.open(result);
           editorLayout.showLibrary('blockout');
           blockoutView.closeCreate();

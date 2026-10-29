@@ -83,6 +83,9 @@ export function createSceneActionsController({
   } | null = null;
 
   function open(data: Loaded, chooseInitialBrush = true) {
+    if (lifetime.disposed) {
+      return;
+    }
     brushes.stampBrush = null;
     brushes.definitionBrush = null;
     sceneSession.committed = data;
@@ -153,7 +156,9 @@ export function createSceneActionsController({
         project_revision: workspaceState.revision,
       });
       await ports.clearDraft();
-      await ports.refresh();
+      if (!(await ports.refresh()) || lifetime.disposed) {
+        return;
+      }
       open(data);
       element('create-scene-dialog', HTMLDialogElement).close();
       status.textContent = 'Scene created. Choose a region and paint.';
@@ -163,10 +168,15 @@ export function createSceneActionsController({
   async function openSavedScene(id: string) {
     const data = await api(`scene/${id}`, decodeLoaded);
     await ports.clearDraft();
-    await ports.refresh();
+    if (!(await ports.refresh()) || lifetime.disposed) {
+      return;
+    }
     open(data);
     status.textContent = 'Scene opened.';
     await ports.showRecovery(id);
+    if (lifetime.disposed) {
+      return;
+    }
     ports.focusWorldEndpoint();
     ports.focusDiagnostic();
   }
@@ -206,6 +216,9 @@ export function createSceneActionsController({
         await saveScene();
       }
       await openSavedScene(pendingScene);
+      if (lifetime.disposed) {
+        return;
+      }
       element('switch-scene-dialog', HTMLDialogElement).close();
     });
   }
@@ -417,7 +430,9 @@ export function createSceneActionsController({
         }
       }
       element('scene-manage-dialog', HTMLDialogElement).close();
-      await ports.refresh();
+      if (!(await ports.refresh()) || lifetime.disposed) {
+        return;
+      }
       select('scenes').value = current.id;
       ports.draw();
       status.textContent =
@@ -626,7 +641,9 @@ export function createSceneActionsController({
       }
       element('delete-scene-dialog', HTMLDialogElement).close();
       deleteCandidate = null;
-      await ports.refresh();
+      if (!(await ports.refresh()) || lifetime.disposed) {
+        return;
+      }
       if (sceneSession.loaded) {
         select('scenes').value = sceneSession.loaded.id;
         ports.draw();

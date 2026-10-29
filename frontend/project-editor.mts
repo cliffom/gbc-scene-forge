@@ -39,6 +39,21 @@ export function mountProjectEditor() {
     versionLabel.textContent = __FORGE_BUILD_LABEL__;
   }
   const lifetime = new EditorLifetime();
+  // Static modal UI belongs to this mount, just like its handlers and state.
+  const dialogs = [...document.querySelectorAll('dialog')];
+  const popovers = [...document.querySelectorAll<HTMLElement>('[popover]')];
+  lifetime.cleanup(() => {
+    for (const dialog of dialogs) {
+      if (dialog.open) {
+        dialog.close();
+      }
+    }
+    for (const popover of popovers) {
+      if (popover.matches(':popover-open')) {
+        popover.hidePopover();
+      }
+    }
+  });
   const workspaceState = new WorkspaceState();
   const sceneSession = new SceneSession();
   const sceneSelection = new SceneSelection();
@@ -652,7 +667,9 @@ export function mountProjectEditor() {
   });
   // Import boolean decoding here too: reject malformed preview defaults before first render.
   void run(async () => {
-    await workspaceController.refresh();
+    if (!(await workspaceController.refresh()) || lifetime.disposed) {
+      return;
+    }
     if (workspaceState.project) {
       const data = await api('project', record);
       const preview = record(record(data.project).preview);
