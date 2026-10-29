@@ -1,7 +1,7 @@
 /** Movement and geometry used only by transient previews. Coordinates are native pixels. */
-import type { SpritePreviewSettings } from './preview-settings.mts';
 import type { SceneLayer } from './layers.mts';
 import type { SceneObject } from './objects.mts';
+import type { SpritePreviewSettings } from './preview-settings.mts';
 import type { CollisionShape, TileMetadata } from './tile-metadata.mts';
 
 export interface PreviewPoint {

@@ -1,6 +1,6 @@
 /** Persisted preferences deliberately exclude progress, paths and live positions. */
-import { boolean, number, record, string } from './decode.mts';
 import type { PreviewAction, PreviewDirection } from './animation-preview.mts';
+import { boolean, number, record, string } from './decode.mts';
 export interface SpritePreviewSettings {
   playback_speed: number;
   show_origin: boolean;

@@ -7,8 +7,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Readable, Writable } from 'node:stream';
 import { setTimeout as delay } from 'node:timers/promises';
-import { number, record, scene, string } from '../frontend/decode.mts';
-import { errorDetails } from '../frontend/api.mts';
+import { number, record, scene, string } from '../frontend/legacy/decode.mts';
+import { errorDetails } from '../frontend/legacy/api.mts';
 
 interface Pending {
   resolve: (value: Record<string, unknown>) => void;

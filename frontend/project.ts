@@ -1,60 +1,53 @@
+import { ProjectApi } from './project-api.mts';
+import type { Loaded, Project, Region } from './project-contracts.mts';
+import { decodeLoaded, decodeProject } from './project-contracts.mts';
 /** Standalone project controller for atlas, layer and object authoring. */
-import { createBlockoutView } from './blockout-view.mts';
+import { createAnimationPreview } from './animation-preview.mts';
+import type { AtlasFolder } from './atlas-import.mts';
+import { chooseFolder, readBundle } from './atlas-import.mts';
 import { createBlockoutLabels, labelCandidates } from './blockout-labels.mts';
+import { createBlockoutView } from './blockout-view.mts';
 import {
   blockoutAppearance,
   blockoutDefinitions,
   blockoutLayer,
   definitionRole,
   dragRectangle,
-  resizeRectangle,
   drawBlockout,
+  resizeRectangle,
 } from './blockout.mts';
-import { createEditorLayout } from './editor-layout.mts';
-import { createFirstSceneGuide } from './first-scene-guide.mts';
-import { createDiagnosticsView } from './diagnostics-view.mts';
-import type { DiagnosticLocation } from './diagnostics-view.mts';
-import { createWorldView } from './world-view.mts';
-import { decodeWorld, decodeWorldSnapshot } from './world.mts';
-import type { World, Endpoint } from './world.mts';
-import { createDefinitionLibrary } from './definition-library.mts';
-import {
-  describeFinding,
-  decodeDefinitions,
-  definitionInstance,
-  resolveDefinition,
-} from './object-definitions.mts';
-import type { ObjectDefinition } from './object-definitions.mts';
-import { resizeScene } from './scene-size.mts';
-import { capture, eraseCaptured, paste, transform } from './compositions.mts';
 import type { Composition, CompositionSelection } from './compositions.mts';
-import { tileParts, tileContext, transformMetadata } from './tile-transform.mts';
-import { DraftWriter } from './drafts.mts';
-import { HttpError } from './errors.mts';
-import { decodePreviewSettings, prunePreviewSettings } from './preview-settings.mts';
-import { sceneOverlaps } from './movement-preview.mts';
-import type { PreviewRect } from './movement-preview.mts';
-import { createAnimationPreview } from './animation-preview.mts';
-import type { SpriteAnimation } from './animation-preview.mts';
-import { downloadArchive } from './export.mts';
-import { createTileInspector } from './tile-inspector.mts';
-import type { TileChoice } from './tile-inspector.mts';
-import { decodeMetadataSets, drawCollision, terrainColor } from './tile-metadata.mts';
-import type { MetadataSets, TileMetadata } from './tile-metadata.mts';
-import { createObjectInspector } from './object-inspector.mts';
-import { LayerEditor } from './layers.mts';
-import { layerDragging } from './layer-drag.mts';
-import { editorFocus } from './editor-focus.mts';
-import type { LayerScene, SceneLayer } from './layers.mts';
-import { decodeObject, encodeObject, objectBounds } from './objects.mts';
-import type { SceneObject } from './objects.mts';
-import { chooseFolder, readBundle } from './atlas-import.mts';
-import type { AtlasFolder } from './atlas-import.mts';
+import { capture, eraseCaptured, paste, transform } from './compositions.mts';
 import { array, boolean, number, record, string } from './decode.mts';
-import type { Decoder } from './decode.mts';
+import { createDefinitionLibrary } from './definition-library.mts';
+import type { DiagnosticLocation } from './diagnostics-view.mts';
+import { createDiagnosticsView } from './diagnostics-view.mts';
+import { DraftWriter } from './drafts.mts';
+import { editorFocus } from './editor-focus.mts';
+import { createEditorLayout } from './editor-layout.mts';
+import { downloadArchive } from './export.mts';
+import { createFirstSceneGuide } from './first-scene-guide.mts';
+import { layerDragging } from './layer-drag.mts';
+import type { LayerScene } from './layers.mts';
+import { LayerEditor } from './layers.mts';
+import type { PreviewRect } from './movement-preview.mts';
+import { sceneOverlaps } from './movement-preview.mts';
+import { definitionInstance, describeFinding, resolveDefinition } from './object-definitions.mts';
+import { createObjectInspector } from './object-inspector.mts';
+import type { SceneObject } from './objects.mts';
+import { encodeObject, objectBounds } from './objects.mts';
+import { createPalettePanel } from './palette-budget.mts';
+import { decodePreviewSettings, prunePreviewSettings } from './preview-settings.mts';
+import { resizeScene } from './scene-size.mts';
+import type { TileChoice } from './tile-inspector.mts';
+import { createTileInspector } from './tile-inspector.mts';
+import type { TileMetadata } from './tile-metadata.mts';
+import { drawCollision, terrainColor } from './tile-metadata.mts';
+import { tileContext, tileParts, transformMetadata } from './tile-transform.mts';
 import type { Selection } from './types.ts';
-import { createPalettePanel, decodePaletteProfile } from './palette-budget.mts';
-import type { PaletteProfile } from './palette-budget.mts';
+import { createWorldView } from './world-view.mts';
+import type { Endpoint } from './world.mts';
+import { decodeWorld, decodeWorldSnapshot } from './world.mts';
 
 declare const __FORGE_BUILD_LABEL__: string;
 const versionLabel = document.getElementById('app-version');
@@ -62,43 +55,6 @@ if (versionLabel) {
   versionLabel.textContent = __FORGE_BUILD_LABEL__;
 }
 
-interface Region {
-  name: string;
-  kind: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  origin: [number, number];
-}
-interface Atlas {
-  png: string;
-  regions: Region[];
-  mappings: Record<string, Record<string, number>>;
-  animations: SpriteAnimation[];
-  metadata: MetadataSets;
-}
-interface Project {
-  id: string;
-  name: string;
-  paletteProfile: PaletteProfile | null;
-  definitions: ObjectDefinition[];
-  world: World;
-  stamps: { id: string; name: string; composition: Composition }[];
-  scenes: { id: string; name: string }[];
-  atlases: Record<string, Atlas>;
-}
-interface Loaded {
-  id: string;
-  name: string;
-  revision: string;
-  width: number;
-  height: number;
-  grid: number;
-  layers: SceneLayer[];
-  nextLayerId: number;
-  nextObjectId: number;
-}
 function element<T extends HTMLElement>(id: string, type: new () => T): T {
   const result = document.getElementById(id);
   if (!(result instanceof type)) {
@@ -126,7 +82,9 @@ let hasProjectChoices = false;
 let navigating = false;
 let pendingProject = '';
 let pendingScene = '';
-let token = '';
+const transport = new ProjectApi(projectBase);
+const api = transport.json.bind(transport);
+const request = transport.request.bind(transport);
 let previewSettingsLoaded = false;
 let atlasFolder: AtlasFolder | null = null;
 let revision = '';
@@ -819,193 +777,6 @@ select('object-list').onchange = () => {
   }
   draw();
 };
-async function request(
-  route: string,
-  data?: unknown,
-  timeout = 30000,
-  base = projectBase,
-): Promise<Response> {
-  const response = await fetch(`${base}/api/${route}`, {
-    method: data === undefined ? 'GET' : 'POST',
-    headers:
-      data === undefined ? {} : { 'Content-Type': 'application/json', 'X-Scene-Token': token },
-    body: data === undefined ? undefined : JSON.stringify(data),
-    signal: AbortSignal.timeout(timeout),
-  });
-  if (!response.ok && !(route === 'palette-preflight' && response.status === 422)) {
-    const body: unknown = await response.json();
-    throw new HttpError(string(record(body).error), response.status);
-  }
-  return response;
-}
-async function api<T>(route: string, decode: Decoder<T>, data?: unknown): Promise<T> {
-  return decode(await (await request(route, data)).json());
-}
-function decodeLoaded(value: unknown): Loaded {
-  const data = record(value);
-  const scene = record(data.scene);
-  const result = {
-    id: string(data.id),
-    name: string(data.name),
-    revision: string(data.revision),
-    width: number(scene.width),
-    height: number(scene.height),
-    grid: number(scene.grid),
-    layers:
-      scene.layers === undefined
-        ? [
-            {
-              id: 1,
-              name: 'Ground',
-              type: 'tilelayer' as const,
-              visible: true,
-              cells: array(scene.cells, (row) => array(row, string)).map((row) =>
-                row.map((cell) => cell || 'empty'),
-              ),
-            },
-            {
-              id: 2,
-              name: 'Sprites',
-              type: 'objectgroup' as const,
-              visible: true,
-              objects: array(scene.objects ?? [], decodeObject),
-            },
-          ]
-        : array(scene.layers, (value): SceneLayer => {
-            const layer = record(value);
-            const common = {
-              id: number(layer.id),
-              name: string(layer.name),
-              visible: boolean(layer.visible),
-            };
-            if (layer.type === 'tilelayer') {
-              return {
-                ...common,
-                type: 'tilelayer',
-                cells: array(layer.cells, (row) => array(row, string)).map((row) =>
-                  row.map((cell) => cell || 'empty'),
-                ),
-              };
-            }
-            if (layer.type !== 'objectgroup') {
-              throw Error('Unsupported layer type');
-            }
-            return {
-              ...common,
-              type: 'objectgroup',
-              objects: array(layer.objects, decodeObject),
-            };
-          }),
-    nextLayerId: number(scene.next_layer_id ?? 3),
-    nextObjectId: number(scene.next_object_id ?? 1),
-  };
-  if (
-    !Number.isInteger(result.width) ||
-    !Number.isInteger(result.height) ||
-    result.width < 1 ||
-    result.width > 256 ||
-    result.height < 1 ||
-    result.height > 256 ||
-    ![8, 16, 32].includes(result.grid) ||
-    !result.layers.length ||
-    result.layers.some(
-      (layer) =>
-        layer.type === 'tilelayer' &&
-        (layer.cells.length !== result.height ||
-          layer.cells.some((row) => row.length !== result.width)),
-    )
-  ) {
-    throw Error('Invalid scene response');
-  }
-  return result;
-}
-function decodeProject(value: unknown): Project {
-  const data = record(value);
-  const atlases: Record<string, Atlas> = {};
-  for (const [id, item] of Object.entries(record(data.atlases))) {
-    const entry = record(item);
-    const mappings: Record<string, Record<string, number>> = {};
-    for (const [grid, map] of Object.entries(record(entry.tiles))) {
-      mappings[grid] = Object.fromEntries(
-        Object.entries(record(map)).map(([k, v]) => [k, number(v)]),
-      );
-    }
-    atlases[id] = {
-      png: string(entry.png),
-      metadata: decodeMetadataSets(entry.metadata),
-      mappings,
-      animations: array(record(entry.manifest).animations ?? [], (value) => {
-        const animation = record(value);
-        return {
-          name: string(animation.name),
-          frames: array(animation.frames, (value) => {
-            const frame = record(value);
-            const region = array(record(entry.manifest).regions, record).find(
-              (region) => region.name === frame.region,
-            );
-            return {
-              region: string(frame.region),
-              duration: number(frame.duration_ms ?? region?.duration_ms),
-            };
-          }),
-        };
-      }),
-      regions: array(record(entry.manifest).regions, (value) => {
-        const r = record(value);
-        const origin = array(r.origin ?? [0, 0], number);
-        if (origin.length !== 2) {
-          throw Error('Invalid region origin');
-        }
-        return {
-          name: string(r.name),
-          kind: string(r.kind),
-          x: number(r.x),
-          y: number(r.y),
-          width: number(r.width),
-          height: number(r.height),
-          origin: [origin[0], origin[1]],
-        };
-      }),
-    };
-  }
-  return {
-    id: string(data.id),
-    name: string(data.name),
-    paletteProfile: decodePaletteProfile(data.gbc_palette_profile),
-    definitions: decodeDefinitions(data.object_definitions),
-    world: decodeWorld(data.world),
-    stamps: array(data.stamps ?? [], (value) => {
-      const stamp = record(value);
-      const loaded = decodeLoaded({
-        id: stamp.id,
-        name: stamp.name,
-        revision: '',
-        scene: stamp.scene,
-      });
-      return {
-        id: string(stamp.id),
-        name: string(stamp.name),
-        composition: {
-          project: string(data.id),
-          slots: array(stamp.slots, number),
-          scene: {
-            width: loaded.width,
-            height: loaded.height,
-            grid: loaded.grid,
-            layers: loaded.layers,
-            next_layer_id: loaded.nextLayerId,
-            next_object_id: loaded.nextObjectId,
-          },
-        },
-      };
-    }),
-    atlases,
-    scenes: array(data.scenes, (value) => {
-      const scene = record(value);
-      return { id: string(scene.id), name: string(scene.name) };
-    }),
-  };
-}
 function snapshot() {
   return editor
     ? JSON.stringify({
@@ -1626,7 +1397,7 @@ async function refresh(
   if (canApply && !(await canApply())) {
     return false;
   }
-  token = string(data.token);
+  transport.token = string(data.token);
   choosingProject = Array.isArray(data.projects);
   const folderPath = string(choosingProject ? data.project_root : data.project_path);
   const folderLabel = choosingProject ? 'Projects folder' : 'Project folder';

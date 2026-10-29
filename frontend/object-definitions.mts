@@ -1,7 +1,7 @@
 /** Project-owned definitions; scene properties contain explicit overrides only. */
 import { array, boolean, number, record, string } from './decode.mts';
-import { decodeProperty } from './objects.mts';
 import type { NewObject, ObjectProperty, SceneObject } from './objects.mts';
+import { decodeProperty } from './objects.mts';
 export interface DefinitionField {
   name: string;
   type: ObjectProperty['type'];

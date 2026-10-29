@@ -1,6 +1,6 @@
 /** Blockout geometry is ordinary typed object data, shared with Tiled and scene history. */
-import { resolveDefinition } from './object-definitions.mts';
 import type { ObjectDefinition } from './object-definitions.mts';
+import { resolveDefinition } from './object-definitions.mts';
 import type { SceneObject } from './objects.mts';
 
 export function cameraAxis(value: unknown) {

@@ -1,6 +1,6 @@
 // Optional browser acceptance suite. Start serve_fixture.py with a disposable workspace.
 import assert from 'node:assert/strict';
-import { sceneData, string } from '../frontend/decode.mts';
+import { sceneData, string } from '../frontend/legacy/decode.mts';
 import { Chrome, waitForServer } from './chrome.ts';
 
 const url = process.argv[2] || 'http://127.0.0.1:8765/';

@@ -1,5 +1,5 @@
 import type { TileMetadata } from '../frontend/tile-metadata.mts';
-import type { ApplyJob, Scene } from '../frontend/types.ts';
+import type { ApplyJob, Scene } from '../frontend/legacy/types.ts';
 import assert from 'node:assert/strict';
 import {
   decodeMetadata,
@@ -10,7 +10,7 @@ import {
 import { decodeObject, encodeObject, objectBounds, propertyValue } from '../frontend/objects.mts';
 import { LayerEditor } from '../frontend/layers.mts';
 import { Editor, canvasPoint } from '../frontend/model.mts';
-import { duration, progressView } from '../frontend/progress.mts';
+import { duration, progressView } from '../frontend/legacy/progress.mts';
 
 const scene: Scene = {
   version: 1,

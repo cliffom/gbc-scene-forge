@@ -1,9 +1,9 @@
 /** Object editing is committed as one undoable change; Cancel leaves the scene intact. */
-import { describeFinding, resolveDefinition } from './object-definitions.mts';
-import type { ObjectDefinition } from './object-definitions.mts';
-import { decodeProperty, propertyValue } from './objects.mts';
-import type { ObjectProperty, SceneObject } from './objects.mts';
 import type { LayerEditor } from './layers.mts';
+import type { ObjectDefinition } from './object-definitions.mts';
+import { describeFinding, resolveDefinition } from './object-definitions.mts';
+import type { ObjectProperty, SceneObject } from './objects.mts';
+import { decodeProperty, propertyValue } from './objects.mts';
 
 function element<T extends HTMLElement>(id: string, type: new () => T): T {
   const found = document.getElementById(id);

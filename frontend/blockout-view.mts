@@ -1,6 +1,6 @@
 /** Blockout controls and revision-matched, read-only SVG review. */
+import { blockoutDefinitions, cameraAxis, definitionRole } from './blockout.mts';
 import { number, record, string } from './decode.mts';
-import { blockoutDefinitions, definitionRole, cameraAxis } from './blockout.mts';
 import type { ObjectDefinition } from './object-definitions.mts';
 import type { SceneObject } from './objects.mts';
 function element<T extends HTMLElement>(id: string, type: new () => T): T {

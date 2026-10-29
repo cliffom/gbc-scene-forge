@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import * as decode from '../frontend/decode.mts';
-import { ApiClient, HttpError, ProtocolError, errorDetails } from '../frontend/api.mts';
+import * as decode from '../frontend/legacy/decode.mts';
+import { ApiClient, HttpError, ProtocolError, errorDetails } from '../frontend/legacy/api.mts';
 
 const scene = {
   version: 1,

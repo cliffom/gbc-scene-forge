@@ -1,6 +1,6 @@
 /** Spatial world editing stays separate from the open scene's undo history. */
+import type { Connection, Endpoint, World, WorldSnapshot } from './world.mts';
 import { worldFindings } from './world.mts';
-import type { World, WorldSnapshot, Endpoint, Connection } from './world.mts';
 const get = (id: string) => {
   const node = document.getElementById(id);
   if (!node) {

@@ -1,6 +1,6 @@
 /** Shared tileset edits have their own draft history and an explicit project save. */
-import { emptyMetadata, validateMetadata, drawCollision, terrainColor } from './tile-metadata.mts';
 import type { CollisionShape, TileMetadata } from './tile-metadata.mts';
+import { drawCollision, emptyMetadata, terrainColor, validateMetadata } from './tile-metadata.mts';
 export interface TileChoice {
   atlas: string;
   group: string;

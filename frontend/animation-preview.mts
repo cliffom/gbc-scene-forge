@@ -1,6 +1,6 @@
-import type { SpritePreviewSettings } from './preview-settings.mts';
-import { createMovementPreview } from './movement-preview.mts';
 import type { PreviewWorld } from './movement-preview.mts';
+import { createMovementPreview } from './movement-preview.mts';
+import type { SpritePreviewSettings } from './preview-settings.mts';
 
 /** Transient playback only: this module never receives an editor or scene writer. */
 export interface SpriteRegion {

@@ -1,9 +1,9 @@
-import { $, context } from './dom.mts';
-import { guarded, loadImage } from './ui.mts';
-import * as decode from './decode.mts';
 import type { ApiClient } from './api.mts';
 import type { Assets } from './assets.mts';
+import * as decode from './decode.mts';
+import { $, context } from './dom.mts';
 import type { EditorSession } from './session.mts';
+import { guarded, loadImage } from './ui.mts';
 export function createRenderer(
   state: EditorSession,
   assets: Assets,

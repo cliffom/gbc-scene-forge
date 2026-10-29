@@ -1,7 +1,7 @@
 /** Definition library editing commits project metadata independently of scene history. */
-import { objectKind, fieldType } from './object-definitions.mts';
-import { propertyValue } from './objects.mts';
 import type { DefinitionField, ObjectDefinition } from './object-definitions.mts';
+import { fieldType, objectKind } from './object-definitions.mts';
+import { propertyValue } from './objects.mts';
 const get = (id: string) => {
   const node = document.getElementById(id);
   if (!node) {
