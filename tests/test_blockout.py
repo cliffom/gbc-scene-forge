@@ -24,6 +24,38 @@ from gbc_scene_forge.workspaces import ProjectRoot
 
 
 class BlockoutTests(unittest.TestCase):
+    def test_vector_labels_are_bounded_nonoverlapping_and_escape_full_captions(self):
+        candidates = [
+            (4, 10, 10, 100, 80, f"Dense <caption> & marker {i}", "#abcdef") for i in range(1000)
+        ]
+        candidates.append((1, 10, 10, 100, 80, "Camera priority", "#abcdef"))
+        svg = (
+            "<svg>"
+            + "".join(blockout.svg_labels(candidates, dict(x=0, y=0, width=160, height=136)))
+            + "</svg>"
+        )
+        root = ElementTree.fromstring(svg)
+        labels = root.findall("g")
+        self.assertEqual(labels[0].find("title").text, "Camera priority")
+        self.assertGreater(len(labels), 1)
+        self.assertLess(len(labels), 160)
+        rects = []
+        for label in labels:
+            rect = label.find("rect")
+            x, y, w, h = (float(rect.attrib[k]) for k in ("x", "y", "width", "height"))
+            self.assertTrue(0 <= x <= 160 - w and 0 <= y <= 136 - h)
+            self.assertTrue(
+                all(
+                    x + w + 4 <= ox or ox + ow + 4 <= x or y + h + 4 <= oy or oy + oh + 4 <= y
+                    for ox, oy, ow, oh in rects
+                )
+            )
+            rects.append((x, y, w, h))
+        self.assertIn("Dense <caption> & marker", " ".join(root.itertext()))
+        self.assertEqual(
+            blockout.svg_labels(candidates, dict(x=500, y=500, width=160, height=136)), []
+        )
+
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
@@ -155,11 +187,11 @@ class BlockoutTests(unittest.TestCase):
             ElementTree.fromstring(report["camera_svg"]),
         )
         self.assertEqual(camera.attrib["viewBox"], "0 136 160 136")
-        text = " ".join(e.text or "" for e in overview.findall("s:text", ns))
-        self.assertIn("Red pool", text)
+        text = " ".join(e.text or "" for e in overview.findall(".//s:text", ns))
+        self.assertIn("Red pool", " ".join(overview.itertext()))
         self.assertIn("ENTRY", text)
         self.assertIn("EXIT", text)
-        self.assertIn("full stage length remains undecided", text)
+        self.assertIn("full stage length remains undecided", " ".join(overview.itertext()))
         self.assertIn("X scroll", text)
         self.assertEqual(
             {

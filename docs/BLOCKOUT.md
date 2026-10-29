@@ -41,9 +41,13 @@ checkpoints, boss entrances/arenas, exits, named sections and design notes.
 Colors supplement labels, symbols and patterns. One-way platforms have a strong
 upper surface, unsafe regions have distinct patterns, climbs have ladder marks
 and labeled ENTRY/EXIT positions, and markers have symbols and names. Select an object and choose **Edit selected object** in the inspector to change
-its name, class and typed fields. Design-note text is
-retained in full; its first line is included in the planning label (up to 100
-characters). Activity bounds can name their intended `actor`; reward types and
+its name, class and typed fields. Design-note text is retained in full and shown
+in the Selection inspector. Canvas captions stay at display resolution and use
+names rather than expanding notes across the plan. Selected objects receive
+first placement; crowded captions are shortened or suppressed. See
+[Reading labels in a dense plan](user/blockout-tutorial.md#reading-labels-in-a-dense-plan)
+for the placement hierarchy and complete text access. Activity bounds can name
+their intended `actor`; reward types and
 notes are project data, with no runtime behavior inferred from those names.
 
 Climb entry/exit intent uses an edge (`top`, `bottom`, `left`, `right`) and an
@@ -99,7 +103,8 @@ Reviews validate project and saved-scene revisions before and after rendering;
 responses also identify the exact authored snapshot, including unsaved edits.
 SVG text is escaped and previews contain no external artwork dependencies.
 Reviews support up to 4096 visible objects, at most 16 pattern marks per object,
-and a 2MiB SVG body per view. Larger reviews report a limit error and leave the
+up to 160 nonoverlapping vector captions per view, and a 2MiB SVG body per view.
+Full names and notes remain in SVG object titles when captions are omitted. Larger reviews report a limit error and leave the
 project unchanged; hide layers to inspect a subset.
 
 ## Persistence and limits

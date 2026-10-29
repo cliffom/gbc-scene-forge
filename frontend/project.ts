@@ -1,5 +1,6 @@
 /** Standalone project controller for atlas, layer and object authoring. */
 import { createBlockoutView } from './blockout-view.mts';
+import { createBlockoutLabels, labelCandidates } from './blockout-labels.mts';
 import {
   blockoutAppearance,
   blockoutDefinitions,
@@ -111,6 +112,7 @@ const select = (id: string) => element(id, HTMLSelectElement);
 const form = (id: string) => element(id, HTMLFormElement);
 const editorLayout = createEditorLayout();
 const canvas = element('scene', HTMLCanvasElement);
+const blockoutLabels = createBlockoutLabels(canvas, element('viewport', HTMLElement));
 const ctx = canvas.getContext('2d');
 if (!ctx) {
   throw Error('Canvas rendering is unavailable');
@@ -1314,6 +1316,11 @@ function inspect() {
       : 'Open a scene to inspect its dimensions and placed sprites.';
   const inspectedObjects = editor?.active.type === 'objectgroup' ? editor.active.objects : [];
   const item = inspectedObjects.find((r) => r.id === selectedObject);
+  const planning = item && blockoutAppearance(item, project?.definitions ?? []);
+  const note = planning?.properties.design_note;
+  const noteElement = element('selection-note', HTMLElement);
+  noteElement.textContent = typeof note === 'string' ? note : '';
+  noteElement.hidden = !noteElement.textContent;
   const inspector = document.querySelector('.inspector');
   const hasSelection = Boolean(item || selection || selectedObjects.size);
   if (inspector instanceof HTMLElement) {
@@ -2026,7 +2033,7 @@ function draw(refreshUI = true) {
             r.width,
             r.height,
           );
-        } else if (drawBlockout(context, item, project?.definitions ?? [], zoom)) {
+        } else if (drawBlockout(context, item, project?.definitions ?? [])) {
           // Planning geometry uses the definition's portable typed appearance fields.
         } else {
           const r = bounds(item);
@@ -2151,6 +2158,16 @@ function draw(refreshUI = true) {
     }
   }
   const tool = document.querySelector<HTMLInputElement>('input[name="tool"]:checked')?.value;
+  blockoutLabels.update(
+    labelCandidates(
+      editor.layers.flatMap((layer) =>
+        layer.visible && layer.type === 'objectgroup' ? layer.objects : [],
+      ),
+      project?.definitions ?? [],
+      new Set([...selectedObjects, ...(selectedObject ? [selectedObject] : [])]),
+      zoom,
+    ),
+  );
   if (hover && tool !== 'pan' && !spacePan && !pan) {
     const width = tool === 'paint' && brush ? brush[0].length : 1;
     const height = tool === 'paint' && brush ? brush.length : 1;
