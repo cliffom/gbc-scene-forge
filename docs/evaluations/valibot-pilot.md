@@ -150,5 +150,6 @@ JS
 Validation gates are `make lint test build check-dist`, world/standalone browser
 acceptance and existing disposal/refresh checks. Build tests verify Valibot is
 bundled and source-mapped; installed-wheel checks verify notices and assets.
-This behavior-preserving migration keeps package/runtime version 0.16.0 under the
-internal-refactor policy; a future release must choose an unpublished version.
+This behavior-preserving migration is included in the explicitly requested
+0.16.1 maintenance release. The measurements above retain a fixed 0.16.0 label
+for comparison with the original implementation and initial pilot.
