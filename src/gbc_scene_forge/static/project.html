@@ -78,7 +78,7 @@
           <p class="command-heading">Project</p>
           <button id="show-world" disabled>World view &amp; connections…</button>
           <button id="show-diagnostics" disabled>Diagnostics…</button>
-          <button id="show-palettes" disabled>GBC palettes…</button>
+          <button id="show-palettes" disabled>GBC budgets…</button>
           <p class="command-heading">External changes</p>
           <label class="refresh-choice"><input id="auto-refresh" type="checkbox" checked> Automatically refresh</label>
           <button id="check-external">Check for external changes</button>
@@ -273,7 +273,7 @@
     <div class="dialog-actions"><button id="recovery-later" type="button">Later</button><button id="recovery-download" type="button">Download draft</button><button id="recovery-discard" type="button">Discard draft…</button><button id="recovery-restore" class="primary" type="button">Restore draft</button></div>
   </dialog>
   <dialog id="palette-dialog" aria-labelledby="palette-heading">
-    <h2 id="palette-heading">GBC palette budget</h2>
+    <h2 id="palette-heading">GBC budgets</h2>
     <p class="hint">Checks the current canvas against 8 background/window slots and 8 sprite slots. Includes hidden layers and all frames of animations linked to placed artwork.</p>
     <label><input id="palette-enabled" type="checkbox"> Enable GBC palette checks for this project</label>
     <p class="hint">Reserve slots for UI/window content, effects and dynamic actors. Leave blank if unknown; enter zero only when no additional slots are needed. Unknown reservations cannot pass preflight.</p>
@@ -281,6 +281,17 @@
       <label class="field">Background slots reserved<input id="palette-bg-reserved" type="number" min="0" max="8" step="1" placeholder="Unknown"></label>
       <label class="field">Sprite slots reserved<input id="palette-obj-reserved" type="number" min="0" max="8" step="1" placeholder="Unknown"></label>
     </div>
+    <details id="hardware-settings">
+      <summary>Optional tile and sprite estimates</summary>
+      <label><input id="hardware-enabled" type="checkbox"> Enable static GBC layout v1 estimates</label>
+      <p class="hint">Static layout: BG bank 0, OBJ bank 1; 256 8×8 tiles each. All layers and animation frames resident; no pixel deduplication or camera culling. Blank reservations mean unknown.</p>
+      <div class="property-grid">
+        <label class="field">BG tiles reserved<input id="hardware-bg_tiles-reserved" type="number" min="0" max="256" step="1" placeholder="Unknown"></label>
+        <label class="field">OBJ tiles reserved<input id="hardware-obj_tiles-reserved" type="number" min="0" max="256" step="1" placeholder="Unknown"></label>
+        <label class="field">OAM entries reserved<input id="hardware-oam-reserved" type="number" min="0" max="40" step="1" placeholder="Unknown"></label>
+        <label class="field">Hardware sprite size<select id="hardware-sprite-height"><option value="16">8 × 16 pixels</option><option value="8">8 × 8 pixels</option></select></label>
+      </div>
+    </details>
     <button id="palette-save-profile" type="button">Save profile</button>
     <p class="form-error error" role="alert"></p>
     <p id="palette-summary" role="status" aria-live="polite">GBC palette checks are off.</p>

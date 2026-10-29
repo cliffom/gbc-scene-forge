@@ -65,7 +65,7 @@ try {
   });
   await chrome.call('Page.navigate', { url });
   await chrome.wait(
-    "document.getElementById('status')?.textContent === 'Choose a scene, or import an atlas and create one.'",
+    "document.getElementById('status')?.textContent === 'Choose a scene, or import an atlas and create one.' && document.getElementById('scenes')?.disabled === false",
   );
   await chrome.evaluate(
     `document.getElementById('scenes').value=${JSON.stringify(scene)}; document.getElementById('scenes').dispatchEvent(new Event('change'));`,

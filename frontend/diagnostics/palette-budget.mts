@@ -3,7 +3,14 @@ import { EditorLifetime } from '../editor/editor-lifetime.mts';
 import { array, number, record, string } from '../shared/decode.mts';
 
 export interface PaletteProfile {
-  version: 1;
+  version: 1 | 2;
+  hardware?: {
+    id: 'gbc-static-split-v1';
+    sprite_height: 8 | 16;
+    bg_tiles_reserved: number | null;
+    obj_tiles_reserved: number | null;
+    oam_reserved: number | null;
+  };
   bg_reserved: number | null;
   obj_reserved: number | null;
 }
@@ -12,24 +19,41 @@ export function decodePaletteProfile(value: unknown): PaletteProfile | null {
     return null;
   }
   const data = record(value);
-  const reserved = (value: unknown) => {
+  const reserved = (value: unknown, limit = 8) => {
     if (value === null) {
       return null;
     }
     const result = number(value);
-    if (!Number.isInteger(result) || result < 0 || result > 8) {
-      throw Error('Reserve 0..8 palette slots, or leave unknown.');
+    if (!Number.isInteger(result) || result < 0 || result > limit) {
+      throw Error(`Reserve 0..${limit} slots, or leave unknown.`);
     }
     return result;
   };
-  if (data.version !== 1) {
+  if (data.version !== 1 && data.version !== 2) {
     throw Error('Unsupported GBC palette profile.');
   }
-  return {
-    version: 1,
+  const hardware = data.version === 2 ? record(data.hardware) : null;
+  if (
+    hardware &&
+    (hardware.id !== 'gbc-static-split-v1' || ![8, 16].includes(number(hardware.sprite_height)))
+  ) {
+    throw Error('Unsupported hardware layout or sprite height.');
+  }
+  const result: PaletteProfile = {
+    version: data.version,
     bg_reserved: reserved(data.bg_reserved),
     obj_reserved: reserved(data.obj_reserved),
   };
+  if (hardware) {
+    result.hardware = {
+      id: 'gbc-static-split-v1',
+      sprite_height: hardware.sprite_height === 8 ? 8 : 16,
+      bg_tiles_reserved: reserved(hardware.bg_tiles_reserved, 256),
+      obj_tiles_reserved: reserved(hardware.obj_tiles_reserved, 256),
+      oam_reserved: reserved(hardware.oam_reserved, 40),
+    };
+  }
+  return result;
 }
 
 export function createPalettePanel(
@@ -51,6 +75,11 @@ export function createPalettePanel(
   const enabled = element('palette-enabled', HTMLInputElement);
   const bg = element('palette-bg-reserved', HTMLInputElement);
   const obj = element('palette-obj-reserved', HTMLInputElement);
+  const hardwareEnabled = element('hardware-enabled', HTMLInputElement);
+  const spriteHeight = element('hardware-sprite-height', HTMLSelectElement);
+  const hardwareFields = ['bg_tiles', 'obj_tiles', 'oam'].map((key) =>
+    element(`hardware-${key}-reserved`, HTMLInputElement),
+  );
   const save = element('palette-save-profile', HTMLButtonElement);
   const preflight = element('palette-preflight', HTMLButtonElement);
   const summary = element('palette-summary', HTMLElement);
@@ -69,7 +98,21 @@ export function createPalettePanel(
   function draft(): PaletteProfile | null {
     return enabled.checked
       ? decodePaletteProfile({
-          version: 1,
+          version: hardwareEnabled.checked ? 2 : 1,
+          ...(hardwareEnabled.checked
+            ? {
+                hardware: {
+                  id: 'gbc-static-split-v1',
+                  sprite_height: Number(spriteHeight.value),
+                  bg_tiles_reserved:
+                    hardwareFields[0].value === '' ? null : Number(hardwareFields[0].value),
+                  obj_tiles_reserved:
+                    hardwareFields[1].value === '' ? null : Number(hardwareFields[1].value),
+                  oam_reserved:
+                    hardwareFields[2].value === '' ? null : Number(hardwareFields[2].value),
+                },
+              }
+            : {}),
           bg_reserved: bg.value === '' ? null : Number(bg.value),
           obj_reserved: obj.value === '' ? null : Number(obj.value),
         })
@@ -82,25 +125,69 @@ export function createPalettePanel(
     summary.textContent = message;
     summary.dataset.state = 'pending';
     findings.replaceChildren();
-    indicator.textContent = profile ? 'GBC palettes · pending' : 'GBC palettes…';
+    indicator.textContent = profile ? 'GBC budgets · pending' : 'GBC budgets…';
     indicator.dataset.state = 'pending';
   }
   function render(value: unknown, explicit: boolean) {
     const report = record(value);
     const state = string(report.status);
     indicator.dataset.state = state;
-    indicator.textContent = `GBC palettes · ${state === 'pass' ? 'fit' : state === 'fail' ? 'over budget' : 'unverified'}`;
+    indicator.textContent = `GBC budgets · ${state === 'pass' ? 'fit' : state === 'fail' ? 'over budget' : 'unverified'}`;
     summary.dataset.state = state;
-    summary.textContent = explicit
-      ? state === 'pass'
-        ? 'GBC palette preflight passed.'
-        : `GBC palette preflight ${state === 'fail' ? 'failed' : 'unverified'}.`
-      : state === 'pass'
-        ? 'Scene palettes fit the declared budget.'
-        : state === 'fail'
-          ? 'Scene exceeds the palette budget.'
-          : 'Palette budget is unverified.';
+    summary.textContent =
+      explicit && report.hardware !== undefined
+        ? `GBC budget preflight ${state === 'fail' ? 'failed' : 'unverified'}.`
+        : explicit
+          ? state === 'pass'
+            ? 'GBC palette preflight passed.'
+            : `GBC palette preflight ${state === 'fail' ? 'failed' : 'unverified'}.`
+          : state === 'pass'
+            ? 'Scene palettes fit the declared budget.'
+            : state === 'fail'
+              ? 'Scene exceeds the palette budget.'
+              : report.hardware !== undefined
+                ? 'Hardware estimates available; runtime compatibility is unverified.'
+                : 'Palette budget is unverified.';
     findings.replaceChildren();
+    if (report.hardware !== undefined) {
+      const hardware = record(report.hardware);
+      const title = document.createElement('h3');
+      title.textContent = 'Static hardware estimates · runtime unverified';
+      findings.append(title);
+      for (const [key, value] of Object.entries(record(hardware.metrics))) {
+        const metric = record(value);
+        const details = document.createElement('details');
+        const heading = document.createElement('summary');
+        heading.textContent = `${key === 'bg_tiles' ? 'BG 8×8 source tiles' : key === 'obj_tiles' ? 'OBJ 8×8 source tiles' : 'OAM entries'}: ${number(metric.required)} estimated / ${metric.available === null ? 'unknown' : number(metric.available)} available · ${string(metric.status)}`;
+        details.append(heading);
+        details.addEventListener(
+          'toggle',
+          () => {
+            if (!details.open || details.dataset.populated) {
+              return;
+            }
+            details.dataset.populated = 'true';
+            for (const source of array(metric.contributors, record)) {
+              const button = document.createElement('button');
+              button.type = 'button';
+              button.className = 'palette-contributor small';
+              button.textContent = `${string(source.layer_name)} · ${string(source.asset)} · ${source.object_id === null ? `cell ${number(source.x)}, ${number(source.y)}` : `object ${number(source.object_id)}`}`;
+              lifetime.assign(button, 'onclick', () => options.navigate(source));
+              details.append(button);
+            }
+          },
+          { signal: lifetime.signal },
+        );
+        findings.append(details);
+      }
+      for (const source of array(hardware.unverified_contributors, record)) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = `${string(source.asset)}: ${string(source.reason)}`;
+        lifetime.assign(button, 'onclick', () => options.navigate(source));
+        findings.append(button);
+      }
+    }
     for (const [pool, value] of Object.entries(record(report.pools))) {
       const data = record(value);
       const heading = document.createElement('p');
@@ -169,12 +256,10 @@ export function createPalettePanel(
     const serial = ++generation;
     const expected = context.key;
     if (explicit || renderedKey !== expected) {
-      summary.textContent = explicit
-        ? 'Running GBC palette preflight…'
-        : 'Checking current canvas…';
+      summary.textContent = explicit ? 'Running GBC budget preflight…' : 'Checking current canvas…';
       summary.dataset.state = 'pending';
       findings.replaceChildren();
-      indicator.textContent = 'GBC palettes · checking';
+      indicator.textContent = 'GBC budgets · checking';
       indicator.dataset.state = 'pending';
     }
     activeRequests++;
@@ -194,7 +279,7 @@ export function createPalettePanel(
           `Palette check unavailable: ${error instanceof Error ? error.message : String(error)}`,
         );
         summary.dataset.state = 'unverified';
-        indicator.textContent = 'GBC palettes · unverified';
+        indicator.textContent = 'GBC budgets · unverified';
         indicator.dataset.state = 'unverified';
       }
     } finally {
@@ -210,11 +295,26 @@ export function createPalettePanel(
       enabled.checked = value !== null;
       bg.value = value?.bg_reserved === null || value === null ? '' : String(value.bg_reserved);
       obj.value = value?.obj_reserved === null || value === null ? '' : String(value.obj_reserved);
+      hardwareEnabled.checked = value?.version === 2;
+      spriteHeight.value = String(value?.hardware?.sprite_height ?? 16);
+      hardwareFields.forEach((field, i) => {
+        const reservation =
+          value?.hardware?.[
+            (['bg_tiles_reserved', 'obj_tiles_reserved', 'oam_reserved'] as const)[i]
+          ];
+        field.value = reservation === null || reservation === undefined ? '' : String(reservation);
+      });
       draftChanged = false;
     }
     enabled.disabled = save.disabled = blocked;
+    hardwareEnabled.disabled = blocked || !enabled.checked;
+    for (const field of [spriteHeight, ...hardwareFields]) {
+      field.disabled = blocked || !enabled.checked || !hardwareEnabled.checked;
+    }
     bg.disabled = obj.disabled = blocked || !enabled.checked;
     const context = value ? options.context() : null;
+    preflight.textContent =
+      value?.version === 2 ? 'Run GBC budget preflight' : 'Run GBC palette preflight';
     preflight.disabled = blocked || !value || draftChanged || !context;
     const next = JSON.stringify([context?.key, nextProfileKey, blocked, draftChanged]);
     if (next !== key) {
@@ -237,7 +337,7 @@ export function createPalettePanel(
       }
     }
   }
-  for (const field of [enabled, bg, obj]) {
+  for (const field of [enabled, bg, obj, hardwareEnabled, spriteHeight, ...hardwareFields]) {
     lifetime.assign(field, 'oninput', () => {
       draftChanged = true;
       sync(profile, busy);

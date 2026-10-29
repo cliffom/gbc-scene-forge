@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { decodeLoaded, decodeProject } from '../frontend/project/project-contracts.mts';
+import { decodePaletteProfile } from '../frontend/diagnostics/palette-budget.mts';
 import { ProjectApi } from '../frontend/project/project-api.mts';
 import { HttpError } from '../frontend/shared/errors.mts';
 import { record, string } from '../frontend/shared/decode.mts';
@@ -85,4 +86,31 @@ await test('project API uses relative routes and mutation tokens and validates a
   await assert.rejects(client.json('catalog', decodeProject), SyntaxError);
   request.mock.mockImplementation(() => Promise.reject(new TypeError('Connection refused')));
   await assert.rejects(client.json('catalog', decodeProject), /Connection refused/);
+});
+
+await test('optional GBC profiles decode palette-only and versioned hardware settings', () => {
+  const palettes = { version: 1, bg_reserved: 0, obj_reserved: null };
+  assert.deepEqual(decodePaletteProfile(palettes), palettes);
+  const target = {
+    ...palettes,
+    version: 2,
+    hardware: {
+      id: 'gbc-static-split-v1',
+      sprite_height: 16,
+      bg_tiles_reserved: 256,
+      obj_tiles_reserved: null,
+      oam_reserved: 40,
+    },
+  };
+  assert.deepEqual(decodePaletteProfile(target), target);
+  for (const hardware of [
+    null,
+    { ...target.hardware, sprite_height: 12 },
+    { ...target.hardware, id: 'unknown' },
+    { ...target.hardware, oam_reserved: 41 },
+    { ...target.hardware, bg_tiles_reserved: 0.5 },
+  ]) {
+    assert.throws(() => decodePaletteProfile({ ...target, hardware }));
+  }
+  assert.throws(() => decodePaletteProfile({ ...palettes, version: 3 }));
 });

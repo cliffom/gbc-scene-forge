@@ -1,7 +1,7 @@
 """Read-only static-scene palette requirements using gbc-atlas manifest v1."""
 
-from collections import deque
-
+from gbc_scene_forge.analysis import target_budget
+from gbc_scene_forge.analysis.artwork_usage import frame_closure
 from gbc_scene_forge.core.validation import integer, require
 from gbc_scene_forge.formats.tiled import scene_layers
 
@@ -20,10 +20,15 @@ def check_profile(value):
         return
     require(
         isinstance(value, dict)
-        and set(value) == {"version", "bg_reserved", "obj_reserved"}
+        and set(value)
+        == (
+            {"version", "bg_reserved", "obj_reserved"}
+            if value.get("version") == 1
+            else {"version", "bg_reserved", "obj_reserved", "hardware"}
+        )
         and type(value["version"]) is int
-        and value["version"] == 1,
-        "Use GBC palette profile version 1",
+        and value["version"] in (1, 2),
+        "Use GBC profile version 1 (palettes) or 2 (hardware estimates)",
     )
     require(
         all(
@@ -33,28 +38,8 @@ def check_profile(value):
         "Reserve 0..8 palette slots per pool, or leave unknown",
     )
 
-
-def frame_closure(manifest, start):
-    """Include every linked sequence, independent of preview choices/playhead."""
-    found = {start: None}
-    pending = deque([start])
-    sequences = {}
-    for sequence in sorted(manifest.get("animations", []), key=lambda value: value["name"]):
-        frames = list(dict.fromkeys(frame["region"] for frame in sequence["frames"]))
-        for frame in frames:
-            sequences.setdefault(frame, []).append((sequence["name"], frames))
-    visited = set()
-    while pending:
-        region = pending.popleft()
-        for name, frames in sequences.get(region, []):
-            if name in visited:
-                continue
-            visited.add(name)
-            for frame in frames:
-                if frame not in found:
-                    found[frame] = name
-                    pending.append(frame)
-    return found
+    if value["version"] == 2:
+        target_budget.check_profile(value["hardware"])
 
 
 def report(scene, project, profile, scene_id):
@@ -204,4 +189,10 @@ def report(scene, project, profile, scene_id):
         if missing or any(profile[key] is None for key in ("bg_reserved", "obj_reserved"))
         else "pass"
     )
+    if profile["version"] == 2:
+        hardware = target_budget.report(scene, project, profile["hardware"], scene_id)
+        result["hardware"] = hardware
+        result["warnings"].extend(hardware["warnings"])
+        if result["status"] != "fail":
+            result["status"] = "unverified"
     return result
