@@ -2393,7 +2393,11 @@ for (const type of ['pointerup', 'pointercancel', 'lostpointercapture'] as const
   viewport.addEventListener(
     type,
     (event) => {
-      if (!pan || event.pointerId !== pan.pointer) {
+      if (
+        !pan ||
+        event.pointerId !== pan.pointer ||
+        (type === 'lostpointercapture' && event.target !== viewport)
+      ) {
         return;
       }
       event.stopPropagation();

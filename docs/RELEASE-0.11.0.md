@@ -16,6 +16,7 @@ workflow and a [step-by-step user tutorial](user/blockout-tutorial.md).
   full-route and player-camera SVG snapshots, including unsaved edits, and
   download them. Reviews validate revisions, identify the authored snapshot,
   escape text and bound rendering work.
+- Keep panning active when a delayed capture-loss event arrives from the canvas.
 - Keep geometry, definitions, properties and stable identities through normal
   save/reopen/recovery and portable Tiled export. No project migration or new
   runtime dependencies are required.
