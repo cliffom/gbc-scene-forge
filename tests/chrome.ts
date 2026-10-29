@@ -62,6 +62,13 @@ export class Chrome {
       }
       this.pending.clear();
     });
+    // macOS Chrome helpers can inherit the stderr pipe after the browser exits.
+    // Release our pipe handles so those helpers cannot stall fixture teardown.
+    browser.once('exit', () => {
+      input.destroy();
+      output.destroy();
+      browser.stderr?.destroy();
+    });
     browser.once('close', () => {
       this.stopped = true;
       for (const job of this.pending.values()) {
