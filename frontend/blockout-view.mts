@@ -34,6 +34,11 @@ export function createBlockoutView(
   const createDialog = element('create-blockout-dialog', HTMLDialogElement);
   const reviewDialog = element('blockout-review-dialog', HTMLDialogElement);
   let urls: string[] = [];
+  function revokePreviews() {
+    urls.forEach((url) => URL.revokeObjectURL(url));
+    urls = [];
+  }
+  lifetime.cleanup(revokePreviews);
   let signature = '';
   let cameraDefaults = '';
   let pendingCreate = false;
@@ -129,14 +134,7 @@ export function createBlockoutView(
     review(select('blockout-cameras').value),
   );
   lifetime.assign(button('blockout-review-close'), 'onclick', () => reviewDialog.close());
-  reviewDialog.addEventListener(
-    'close',
-    () => {
-      urls.forEach((url) => URL.revokeObjectURL(url));
-      urls = [];
-    },
-    { signal: lifetime.signal },
-  );
+  reviewDialog.addEventListener('close', revokePreviews, { signal: lifetime.signal });
   function sync() {
     const state = context();
     const definitions = blockoutDefinitions(state.definitions);
@@ -217,11 +215,11 @@ export function createBlockoutView(
       createDialog.close();
     },
     present(value: unknown) {
-      const data = record(value);
-      for (const url of urls) {
-        URL.revokeObjectURL(url);
+      if (lifetime.disposed) {
+        return;
       }
-      urls = [];
+      const data = record(value);
+      revokePreviews();
       for (const [key, target, download] of [
         ['overview_svg', 'blockout-overview-image', 'blockout-overview-download'],
         ['camera_svg', 'blockout-camera-image', 'blockout-camera-download'],

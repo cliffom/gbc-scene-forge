@@ -241,6 +241,50 @@ try {
     await evaluate("document.getElementById('definition-close').click()");
     assert.equal(await evaluate("document.getElementById('definitions-dialog').open"), false);
   }
+  // Draft cleanup cancellation must stop both project-switch continuations.
+  chrome.acceptBeforeUnload = true;
+  for (const action of ['switch-save', 'switch-discard']) {
+    await evaluate(`document.getElementById('scenes').value=${JSON.stringify(scene)};
+      document.getElementById('scenes').dispatchEvent(new Event('change'));`);
+    await chrome.wait("document.getElementById('status').textContent === 'Scene opened.'");
+    await evaluate(`document.getElementById('layer-name').value=${JSON.stringify(action)};
+      document.getElementById('layer-name').dispatchEvent(new Event('change'));`);
+    await chrome.wait(
+      "document.getElementById('draft-status').textContent === 'Draft checkpoint saved'",
+    );
+    await evaluate(`(()=>{const projects=document.getElementById('switch-project');
+      projects.add(new Option('Cancelled destination','/cancelled-project'));
+      projects.value='/cancelled-project';projects.dispatchEvent(new Event('change'));
+      window.__cleanupHeld=false;window.fetch=async(...args)=>{
+      const response=await window.__fetch(...args);
+      if(String(args[0]).endsWith('/api/delete-draft')) {
+        window.__cleanupHeld=true;
+        await new Promise(resolve=>{window.__releaseCleanup=resolve});
+      }
+      return response;
+    };document.getElementById(${JSON.stringify(action)}).click();})()`);
+    await chrome.wait('window.__cleanupHeld');
+    const path = await evaluate('location.href');
+    await evaluate(`window.__mounted.dispose();window.fetch=window.__fetch;
+      document.getElementById('status').textContent='Loading replacement';
+      window.__mounted=window.__module.mountProjectEditor()`);
+    await chrome.wait(
+      "document.getElementById('status').textContent === 'Choose a scene, or import an atlas and create one.'",
+    );
+    await evaluate(
+      "document.getElementById('draft-status').textContent='Replacement draft status';window.__releaseCleanup()",
+    );
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    assert.equal(await evaluate('location.href'), path);
+    assert.equal(
+      await evaluate("document.getElementById('draft-status').textContent"),
+      'Replacement draft status',
+    );
+    assert.equal(
+      await evaluate("document.getElementById('status').textContent"),
+      'Choose a scene, or import an atlas and create one.',
+    );
+  }
   await evaluate('window.__mounted.dispose()');
   assert.deepEqual(chrome.errors, []);
   console.log(

@@ -299,6 +299,9 @@ export function createSceneActionsController({
   lifetime.assign(button('save'), 'onclick', () => void ports.run(saveScene));
 
   function navigateProject() {
+    if (lifetime.disposed) {
+      return;
+    }
     workspaceState.navigating = true;
     location.assign(
       workspaceState.pendingProject === '/' ? '/' : `${workspaceState.pendingProject}/`,

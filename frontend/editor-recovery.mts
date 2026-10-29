@@ -88,16 +88,22 @@ export function createRecoveryController({
   }
 
   async function clearDraft() {
+    lifetime.signal.throwIfAborted();
     const writer = draftWriter;
     draftWriter = null;
     try {
       await writer?.clear();
+      lifetime.signal.throwIfAborted();
       if (recoveredDraft) {
         await api('delete-draft', record, recoveredDraft);
       }
+      lifetime.signal.throwIfAborted();
       recoveredDraft = null;
       element('draft-status', HTMLElement).textContent = '';
     } catch (error) {
+      if (lifetime.disposed) {
+        throw error;
+      }
       element('draft-status', HTMLElement).textContent =
         `Draft cleanup failed; the checkpoint was retained. ${String(error)}`;
     }
