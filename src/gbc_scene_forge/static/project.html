@@ -405,7 +405,9 @@
   </dialog>
   <dialog id="import-atlas-dialog" aria-labelledby="import-heading">
     <form id="import-form">
-      <h2 id="import-heading">Import atlas</h2>
+      <h2 id="import-heading">Import artwork or map</h2>
+      <label class="field">Source type<select id="import-kind"><option value="atlas">gbc-atlas bundle</option><option value="png">PNG tilesheet</option><option value="tiled">Tiled JSON map</option></select></label>
+      <div id="atlas-import-fields">
       <p>Choose the folder containing your atlas manifest and PNG. Its artwork is copied into this project.</p>
       <div class="file-picker-field"><button id="browse-atlas" type="button" autofocus>Browse folder…</button><span id="atlas-folder-name" class="hint">No folder selected</span></div>
       <input id="atlas-folder-files" type="file" webkitdirectory multiple hidden>
@@ -414,8 +416,29 @@
       <details class="manual-atlas"><summary>Enter a manifest path instead</summary><label class="field">Manifest path<input id="atlas-path" placeholder="/path/to/art.atlas.json"></label></details>
       <label class="replace-atlas"><input id="reimport" type="checkbox"> Update an atlas already in this project</label>
       <p class="hint">Matches the atlas ID and preserves placements. Removed or resized regions stop the update.</p>
+      </div>
+      <div id="generic-import-fields" hidden>
+        <p>Preview and validate before copying files. Source files stay unchanged.</p>
+        <label class="field">Asset ID / prefix<input id="generic-id" placeholder="terrain" maxlength="50"></label>
+        <div id="png-import-fields" hidden>
+          <label class="field">PNG tilesheet<input id="sheet-file" type="file" accept="image/png,.png"></label>
+          <div class="dimensions"><label class="field">Grid<select id="sheet-grid"><option value="8">8 px</option><option value="16">16 px</option><option value="32">32 px</option></select></label><label class="field">Margin (px)<input id="sheet-margin" type="number" min="0" max="2048" value="0"></label><label class="field">Spacing (px)<input id="sheet-spacing" type="number" min="0" max="2048" value="0"></label></div>
+          <label><input id="sheet-reimport" type="checkbox"> Update this existing PNG asset ID</label>
+          <p class="hint">Up to 255 tiles. Reimport preserves IDs and placements; slicing settings and existing tile coordinates must stay compatible.</p>
+        </div>
+        <div id="tiled-import-fields" hidden>
+          <p class="hint">Finite orthogonal JSON maps, square 8/16/32 px PNG tilesheets and tile layers. Other content is rejected. Select a folder containing the map and dependencies; parent paths are unsupported.</p>
+          <label class="field">Source folder<input id="tiled-files" type="file" webkitdirectory multiple></label>
+          <label class="field">Map<select id="tiled-map"></select></label>
+          <label class="field">New scene name<input id="tiled-title" maxlength="100" placeholder="Imported scene"></label>
+        </div>
+        <button id="generic-preflight" type="button">Preview and check</button>
+        <canvas id="sheet-preview" hidden aria-label="PNG tile slicing preview"></canvas>
+        <p id="generic-report" role="status"></p>
+        <button id="generic-apply" type="button" class="primary" disabled>Import checked content</button>
+      </div>
       <p class="form-error error" role="alert"></p>
-      <div class="dialog-actions"><button type="button" data-close="import-atlas-dialog">Cancel</button><button class="primary">Import atlas</button></div>
+      <div class="dialog-actions"><button type="button" data-close="import-atlas-dialog">Cancel</button><button id="atlas-apply" class="primary">Import atlas</button></div>
     </form>
   </dialog>
   <dialog id="switch-project-dialog" aria-labelledby="switch-heading">

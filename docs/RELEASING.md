@@ -97,7 +97,7 @@ publishing page. Use the official [trusted publisher setup guide](https://docs.p
 The workflow follows the [Python Packaging User Guide](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/)
 and uses short-lived OIDC credentials; no PyPI API token is stored in the repository.
 
-After reviewing and committing a release, create and push an annotated `v0.13.1`
+After reviewing and committing a release, create and push an annotated `v0.14.0`
 tag (or the matching next version). Run **Publish package** manually against that
 tag, selecting `testpypi` first when its trusted publisher is configured. TestPyPI
 is currently unconfigured; its 0.1.4 upload failed with `invalid-publisher`. Until
@@ -106,6 +106,14 @@ Chrome fixture suite, then run the workflow for `pypi`. Verify a fresh PyPI inst
 with `tests/package_smoke.py` after publication. The workflow rebuilds and
 checks the distributions, checks the tag against the package version, then uploads
 only those verified artifacts. Pushing a tag alone does not publish.
+
+## Release 0.14.0
+
+Version 0.14.0 adds generic PNG tilesheet and bounded external Tiled JSON intake.
+See [release notes](RELEASE-0.14.0.md) and the [import tutorial](user/import-artwork.md).
+Run `make lint test build check-dist`, the full browser suite (including generic
+imports), and the optional MCP checks before publication. The feature retains
+manifest version 1 and introduces no required Python runtime dependency.
 
 ## Release 0.13.1
 
