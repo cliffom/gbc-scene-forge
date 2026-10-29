@@ -427,6 +427,7 @@ const palettePanel = createPalettePanel({
 let spacePan = false;
 let pan: { pointer: number; x: number; y: number; left: number; top: number } | null = null;
 const images = new Map<string, HTMLImageElement>();
+const artworkBrushes = new Map<string, () => void>();
 const regions = new Map<string, { image: HTMLImageElement; x: number; y: number }>();
 const sprites = new Map<string, { image: HTMLImageElement; region: Region }>();
 const animationPreview = createAnimationPreview(() => draw(false));
@@ -1745,7 +1746,7 @@ async function refresh(
   if (!atlasList.children.length) {
     atlasList.textContent = 'No atlases imported yet.';
   }
-  palette();
+  palette(!supplied);
   return true;
 }
 function filterPalette() {
@@ -1775,11 +1776,58 @@ function filterPalette() {
         ? 'Open or create a scene to start using these assets.'
         : 'Choose a tile to paint or a sprite to place. Dimmed tiles need a smaller grid.';
 }
-function palette() {
+function captureBrush() {
+  return {
+    artwork:
+      brush || spriteBrush
+        ? element('palette', HTMLElement).querySelector<HTMLButtonElement>('[aria-pressed="true"]')
+            ?.dataset.asset
+        : undefined,
+    object: objectBrush,
+    definition: definitionBrush,
+    stamp: stampBrush ? select('stamps').value : null,
+    paintLabel: element('paint-label', HTMLElement).textContent,
+    label: element('selected-brush', HTMLElement).textContent,
+  };
+}
+function restoreBrush(choice: ReturnType<typeof captureBrush>) {
+  brush = null;
+  spriteBrush = null;
+  objectBrush = null;
+  definitionBrush = null;
+  stampBrush = null;
+  element('paint-label', HTMLElement).textContent = 'Paint';
+  element('selected-brush', HTMLElement).textContent = 'Select a brush';
+  const definition = project?.definitions.find((d) => d.id === choice.definition);
+  const stamp = project?.stamps.find((s) => s.id === choice.stamp);
+  // Losing an active preset/stamp must not fall through to a background brush.
+  if ((choice.definition && !definition) || (choice.stamp && !stamp)) {
+    return;
+  }
+  if (choice.artwork) {
+    // Bind fresh palette cells/images without changing tool, layer, selection,
+    // library tab, or issuing another draw. Missing artwork stays unselected.
+    artworkBrushes.get(choice.artwork)?.();
+  }
+  objectBrush = choice.object;
+  definitionBrush = definition?.id ?? null;
+  stampBrush = stamp?.composition ?? null;
+  if (definition || objectBrush || stampBrush) {
+    element('paint-label', HTMLElement).textContent =
+      definition && choice.paintLabel !== 'Place instance'
+        ? definition.kind === 'rectangle'
+          ? 'Draw region'
+          : 'Place marker'
+        : choice.paintLabel;
+    element('selected-brush', HTMLElement).textContent = definition?.name ?? choice.label;
+  }
+}
+function palette(chooseInitial = true) {
   const paletteElement = element('palette', HTMLElement);
   paletteElement.replaceChildren();
   regions.clear();
   sprites.clear();
+  artworkBrushes.clear();
   brush = null;
   spriteBrush = null;
   definitionBrush = null;
@@ -1862,6 +1910,22 @@ function palette() {
       type.className = 'type';
       type.textContent = `${id} · ${region.kind}`;
       item.append(thumb, label, type);
+      const selectBrush = () => {
+        stampBrush = null;
+        definitionBrush = null;
+        objectBrush = null;
+        brush = sprite ? null : cells;
+        spriteBrush = sprite ? asset : null;
+        paletteElement
+          .querySelectorAll('button')
+          .forEach((b) => b.setAttribute('aria-pressed', 'false'));
+        item.setAttribute('aria-pressed', 'true');
+        element('paint-label', HTMLElement).textContent = sprite ? 'Place sprite' : 'Paint';
+        element('selected-brush', HTMLElement).textContent = `${id} / ${region.name}`;
+      };
+      if (!item.disabled) {
+        artworkBrushes.set(asset, selectBrush);
+      }
       const chooseAsset = (reveal = true) => {
         if (reveal) {
           editorLayout.showLibrary('artwork');
@@ -1878,20 +1942,11 @@ function palette() {
             selectedObjects.clear();
           }
         }
-        definitionBrush = null;
-        objectBrush = null;
-        brush = sprite ? null : cells;
-        spriteBrush = sprite ? asset : null;
-        paletteElement
-          .querySelectorAll('button')
-          .forEach((b) => b.setAttribute('aria-pressed', 'false'));
-        item.setAttribute('aria-pressed', 'true');
+        selectBrush();
         const paint = document.querySelector<HTMLInputElement>('input[value="paint"]');
         if (paint) {
           paint.checked = true;
         }
-        element('paint-label', HTMLElement).textContent = sprite ? 'Place sprite' : 'Paint';
-        element('selected-brush', HTMLElement).textContent = `${id} / ${region.name}`;
         syncPanCursor();
         status.textContent = sprite
           ? `Click the canvas to place ${region.name}. Select to drag it; Delete removes it.`
@@ -1905,7 +1960,9 @@ function palette() {
       }
     }
   }
-  initialBrush?.();
+  if (chooseInitial) {
+    initialBrush?.();
+  }
   if (!paletteElement.children.length) {
     const empty = document.createElement('div');
     empty.className = 'library-empty';
@@ -1919,7 +1976,7 @@ function palette() {
   }
   filterPalette();
 }
-function open(data: Loaded) {
+function open(data: Loaded, chooseInitialBrush = true) {
   stampBrush = null;
   definitionBrush = null;
   committed = data;
@@ -1970,7 +2027,7 @@ function open(data: Loaded) {
   select('scenes').value = data.id;
   element('scene-name', HTMLElement).textContent =
     `${data.name} · ${data.width} × ${data.height} · ${data.grid}px`;
-  palette();
+  palette(chooseInitialBrush);
   draw();
 }
 function previewBlocked(rect: PreviewRect, selectedId: string): boolean {
@@ -3899,6 +3956,8 @@ async function checkExternalChanges(manual = false) {
     const viewport = element('viewport', HTMLElement);
     const view = {
       layer: editor?.active.id,
+      tool: document.querySelector<HTMLInputElement>('input[name="tool"]:checked')?.value,
+      brush: captureBrush(),
       selectedObject,
       selectedObjects: new Set(selectedObjects),
       selection: selection ? { ...selection } : null,
@@ -3925,7 +3984,14 @@ async function checkExternalChanges(manual = false) {
       return;
     }
     if (next) {
-      open(next);
+      open(next, false);
+      restoreBrush(view.brush);
+      const tool = Array.from(
+        document.querySelectorAll<HTMLInputElement>('input[name="tool"]'),
+      ).find((control) => control.value === view.tool);
+      if (tool) {
+        tool.checked = true;
+      }
       if (view.layer !== undefined && editor?.layers.some((layer) => layer.id === view.layer)) {
         editor.activate(view.layer);
       }

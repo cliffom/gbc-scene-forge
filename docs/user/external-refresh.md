@@ -14,8 +14,10 @@ must point at the same saved project folder.
 
 Refresh includes scene geometry and properties, camera settings, artwork and
 project inventories: scenes, definitions, stamps, world connections and saved
-preview preferences. Valid selections and the active layer survive, along with
-zoom and viewport position. Shrinking a scene may clamp scrolling or remove an
+preview preferences. Valid selections, the active layer, tool and brushes survive,
+along with zoom and viewport position. Artwork brushes bind to the refreshed assets, and
+preset/stamp brushes use their current project definitions. Removed or incompatible
+brushes clear instead of selecting different artwork. Shrinking a scene may clamp scrolling or remove an
 out-of-bounds selection. An external deletion closes the removed scene and asks
 you to choose another; recovery drafts remain available.
 

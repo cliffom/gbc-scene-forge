@@ -296,6 +296,106 @@ try {
   await evaluate("document.getElementById('project-command-panel').showPopover()");
   await chrome.screenshot('external-refresh');
   await evaluate("document.getElementById('project-command-panel').hidePopover()");
+  console.log('Refresh: preserve tools and the chosen artwork brush');
+  await chrome.click('document.querySelector(\'#palette [data-asset="terrain/stone"]\')');
+  const mode = () =>
+    evaluate(`({
+    tool:document.querySelector('input[name="tool"]:checked')?.value,
+    asset:document.querySelector('#palette [aria-pressed="true"]')?.dataset.asset ?? null,
+    label:document.getElementById('selected-brush').textContent,
+    layer:document.querySelector('#layers input:checked')?.value,
+    preset:document.querySelector('#blockout-presets [aria-pressed="true"]')?.dataset.definition ?? null,
+    point:document.getElementById('place-point').getAttribute('aria-pressed'),
+    stamp:document.getElementById('place-stamp').getAttribute('aria-pressed'),
+  })`);
+  for (const [index, tool] of ['select', 'erase', 'fill', 'pan'].entries()) {
+    await chrome.click(`document.querySelector('input[name="tool"][value="${tool}"]')`);
+    const before = await mode();
+    await moveCamera(73 + index);
+    await tick();
+    await wait("document.getElementById('status').textContent.includes('External changes loaded')");
+    assert.deepEqual(await mode(), before);
+  }
+  await set('zoom', '1');
+  await evaluate(
+    "document.getElementById('viewport').scrollTo(0,0);document.activeElement?.blur()",
+  );
+  await chrome.click('document.querySelector(\'input[name="tool"][value="select"]\')');
+  await chrome.pointer(8, 8);
+  await chrome.pointer(8, 8, 'mouseReleased');
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
+  // The retained brush must still paint stone when the author explicitly selects Paint.
+  await chrome.click('document.querySelector(\'input[name="tool"][value="paint"]\')');
+  await chrome.pointer(8, 8);
+  await chrome.pointer(8, 8, 'mouseReleased');
+  await wait("document.getElementById('dirty').textContent==='UNSAVED'");
+  await click('save');
+  await wait("document.getElementById('status').textContent==='Scene saved.'");
+  const painted = array(record((await saved()).scene).layers, record).find(
+    (l) => l.type === 'tilelayer',
+  );
+  assert.equal(array(array(painted?.cells, (row) => row)[1], string)[1], 'terrain/stone/0/0');
+  // Delete an unused atlas while its brush is active. Never select a substitute.
+  await promisify(execFile)('.venv/bin/python', [
+    '-c',
+    "import sys;from pathlib import Path;sys.path.insert(0,'tests');from atlas_fixture import bundle;from gbc_scene_forge.projects import Project;p,_=bundle(Path(sys.argv[2]),'spare');w=Project(sys.argv[1]);w.import_atlas(p,w.catalog()['revision'])",
+    root,
+    join(folder, 'spare-art'),
+  ]);
+  await tick();
+  await wait('document.querySelector(\'#palette [data-asset="spare/earth"]\')!==null');
+  await chrome.click('document.querySelector(\'#palette [data-asset="spare/earth"]\')');
+  await evaluate("document.getElementById('status').textContent=''");
+  await post('delete-atlas', {
+    id: 'spare',
+    project_revision: (await catalog()).revision,
+    scene: { id, revision: (await saved()).revision },
+  });
+  await tick();
+  await wait("document.getElementById('status').textContent.includes('External changes loaded')");
+  assert.equal(
+    await evaluate('document.querySelector(\'#palette [aria-pressed="true"]\')===null'),
+    true,
+  );
+  assert.equal(
+    await evaluate("document.getElementById('selected-brush').textContent"),
+    'Select a brush',
+  );
+  await chrome.pointer(16, 8);
+  await chrome.pointer(16, 8, 'mouseReleased');
+  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
+  // Generic object placement and shared presets retain their mode without selecting artwork.
+  for (const [index, choose] of [
+    "document.getElementById('place-point')",
+    "document.querySelector('#blockout-presets button[data-definition]')",
+  ].entries()) {
+    await chrome.click(choose);
+    const before = await mode();
+    await moveCamera(77 + index);
+    await tick();
+    await wait("document.getElementById('status').textContent.includes('External changes loaded')");
+    assert.deepEqual(await mode(), before);
+  }
+  const stampScene = record((await saved()).scene);
+  await agent('save_stamp', {
+    name: 'Refresh stamp',
+    scene: stampScene,
+    slots: array(stampScene.layers, () => 0),
+    project_revision: (await catalog()).revision,
+  });
+  await tick();
+  await wait("document.getElementById('stamps').textContent.includes('Refresh stamp')");
+  await evaluate(
+    "const stamps=document.getElementById('stamps');stamps.value=stamps.options[1].value;stamps.dispatchEvent(new Event('change',{bubbles:true}))",
+  );
+  await click('place-stamp');
+  const stampMode = await mode();
+  await moveCamera(79);
+  await tick();
+  await wait("document.getElementById('status').textContent.includes('External changes loaded')");
+  assert.deepEqual(await mode(), stampMode);
+  await click('place-stamp');
+  await inspectCamera(79);
   console.log('Refresh: automatic and manual adoption during sprite animation');
   const { stdout: spriteOutput } = await promisify(execFile)('.venv/bin/python', [
     '-c',
@@ -307,6 +407,8 @@ try {
   const spriteId = spriteOutput.trim();
   await tick();
   await wait(`document.querySelector('#object-list option[value="${spriteId}"]')!==null`);
+  await chrome.click('document.querySelector(\'#palette [data-asset="actors/idle"]\')');
+  await inspectCamera(79);
   for (const manual of [false, true]) {
     if (manual) {
       await evaluate("document.getElementById('project-command-panel').showPopover()");
@@ -346,6 +448,8 @@ try {
     }
     await wait("document.getElementById('status').textContent.includes('External changes loaded')");
     assert.ok(Number(await evaluate('window.__animatedSnapshots')) >= 1);
+    assert.equal(record(await mode()).asset, 'actors/idle');
+    assert.equal(record(await mode()).tool, 'select');
     await evaluate('window.fetch=window.__realFetch');
     assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
     await inspectCamera(x);
