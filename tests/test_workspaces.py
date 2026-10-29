@@ -120,6 +120,36 @@ class ProjectRootTests(unittest.TestCase):
             self.workspace.create("Unrelated")
         self.assertEqual((unrelated / "keep.txt").read_text(), "Keep me")
 
+    def test_sample_creation_is_named_isolated_and_never_overwrites(self):
+        from gbc_scene_forge.sample import template_path
+
+        source = template_path()
+        before = {p.relative_to(source): p.read_bytes() for p in source.rglob("*") if p.is_file()}
+        self.workspace.create("My first scene", starter="sample")
+        self.workspace.create("Another sample", starter="sample")
+        project = Project(self.root / "my-first-scene")
+        other = Project(self.root / "another-sample")
+        document = project.catalog()["project"]
+        self.assertEqual(document["name"], "My first scene")
+        self.assertNotEqual(document["id"], other.catalog()["project"]["id"])
+        self.assertEqual(len(document["scenes"]), 2)
+        scene = project.load_scene(document["scenes"][0]["id"])
+        scene["scene"]["layers"][0]["cells"][0][0] = "sample/path/0/0"
+        project.save_scene(
+            scene["id"], scene["scene"], scene["revision"], project.catalog()["revision"]
+        )
+        self.assertNotEqual(project.load_scene(scene["id"]), other.load_scene(scene["id"]))
+        with self.assertRaisesRegex(ValueError, "already exists"):
+            self.workspace.create("My first scene", starter="sample")
+        for starter in ("unknown", None, True, {}):
+            with self.subTest(starter=starter), self.assertRaises(ValueError):
+                self.workspace.create("Invalid", starter=starter)
+        self.assertFalse((self.root / "invalid").exists())
+        self.assertEqual(
+            {p.relative_to(source): p.read_bytes() for p in source.rglob("*") if p.is_file()},
+            before,
+        )
+
     def test_a_project_is_not_silently_treated_as_a_root(self):
         self.workspace.create("Existing")
         with self.assertRaisesRegex(ValueError, "--project"):
@@ -139,7 +169,18 @@ class ProjectRootTests(unittest.TestCase):
                 patch("gbc_scene_forge.__main__.serve") as serve,
             ):
                 main()
-                serve.assert_called_once_with(root, 8765, single_project=single)
+                serve.assert_called_once_with(root, 8765, single_project=single, open_browser=True)
+        with (
+            patch("sys.argv", ["forge", "--no-browser", "--port", "0"]),
+            patch("gbc_scene_forge.__main__.serve") as serve,
+        ):
+            main()
+            serve.assert_called_once_with(
+                Path(".forge_project"), 0, single_project=False, open_browser=False
+            )
+        for port in ("-1", "65536"):
+            with patch("sys.argv", ["forge", "--port", port]), self.assertRaises(SystemExit):
+                main()
         with patch("sys.argv", ["forge", "worlds", "--project", "old"]):
             with self.assertRaises(SystemExit):
                 main()
@@ -207,6 +248,13 @@ class ProjectRootHttpTests(unittest.TestCase):
                     self.assertEqual(error.exception.code, 403)
                 for title in ("Hello World", "Another World"):
                     request("/api/create-project", {"name": title})
+                request("/api/create-project", {"name": "Starter", "starter": "sample"})
+                starter = request("/projects/starter/api/project")["project"]
+                self.assertEqual(starter["name"], "Starter")
+                self.assertEqual(len(starter["scenes"]), 2)
+                with self.assertRaises(HTTPError) as error:
+                    request("/api/create-project", {"name": "Invalid", "starter": "bad"})
+                self.assertEqual(error.exception.code, 400)
                 first = "/projects/hello-world/api/"
                 second = "/projects/another-world/api/"
                 a = request(first + "project")
@@ -230,7 +278,7 @@ class ProjectRootHttpTests(unittest.TestCase):
                 self.assertEqual(request(first + "scene/" + scene["id"])["name"], "Village")
                 with self.assertRaises(HTTPError):
                     request(second + "scene/" + scene["id"])
-                self.assertEqual(len(request("/api/project")["projects"]), 2)
+                self.assertEqual(len(request("/api/project")["projects"]), 3)
                 self.assertEqual(request("/api/project")["project_root"], str(root))
                 self.assertEqual(
                     request(first + "project")["project_path"], str(root / "hello-world")

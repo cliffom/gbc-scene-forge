@@ -11,6 +11,13 @@ gbc-scene-forge --project-root /path/to/projects --port 8777
 make run PROJECT_ROOT=/path/to/projects PORT=8777
 ```
 
+The launcher opens the default browser after binding successfully. Use
+`--no-browser` to print the local URL without opening it, or `--port 0` to choose a
+free port. If automatic opening is unavailable, open the printed URL manually.
+An occupied port reports an alternative command; permission errors suggest a
+writable project root and launch directory. Python 3.10+ and a current desktop
+browser are required; installed editing needs no Node, Poetry or Tiled.
+
 Open the printed local URL. Use the **Project** dropdown beside the scene selector
 to change projects, or choose **Choose or create project…** to return to the
 selector. Unsaved scene edits offer **Save and switch**, **Discard and switch**,
@@ -49,6 +56,47 @@ The folder button beside the GitHub link shows the current directory name.
 Open it to see the full, selectable path and **Copy path**. It is labeled
 **Projects folder** in the chooser and **Project folder** inside a project.
 Long names are truncated in the header; full paths wrap inside the popover.
+
+## First scene guide
+
+Choose **Sample artwork and scenes** in project creation for a named, user-owned
+copy with two scenes and bundled MIT-licensed artwork. No external tools, source
+atlas folder or network access are needed after installing Forge. Empty projects
+remain available. Each sample copy has a fresh project UUID; existing directories
+are never overwritten, and the packaged template is never edited. Projects can be
+moved and reopened using the normal project workflow.
+
+Enable **Continue first-scene guide** before creating the project, or choose
+**First scene guide** in the header at any time. Its seven steps cover creation,
+import (optional when using the sample), scene creation, painting/undo, save/reopen,
+sprite preview and export. **Try this step** closes the guide and opens or focuses
+the relevant control. Close or Escape returns to editing; **Next** moves through
+instructions without making edits or asserting completion. **Restart** returns
+to the first step. Guide position is stored locally per browser origin/project
+URL, outside portable project data. If browser storage is disabled, instructions
+still work but position will not survive reload.
+
+The measurable first-use acceptance is: create a named sample copy, paint a new
+scene, save it, reload and reopen it with the same cells, play a sprite preview,
+and download a whole-project Tiled ZIP. `make test-first-use-browser` automates
+this path with an independent temporary project. `make check-dist` also starts
+the installed CLI in an unrelated directory, creates a sample through its guarded
+HTTP API and verifies the bundled guide/editor assets. To run the browser path
+against that fresh wheel installation:
+
+```sh
+FORGE_TEST_PYTHON="$PWD/build/package-smoke/bin/python" make test-first-use-browser
+```
+
+CI runs package smoke checks on Python 3.10–3.14/Linux and Chrome acceptance on
+Linux; local Chrome acceptance also runs on macOS. Current Chrome, Edge, Firefox
+and Safari support the browser features used by the editor; non-Chrome browsers
+and Windows are not part of the automated browser matrix. A desktop installer is
+not included. A browser remains necessary even when Python runs headlessly.
+
+![Create a user-owned sample project](screenshots/first-use/project.png)
+
+![Optional first-scene guide](screenshots/first-use/guide.png)
 
 ## Import and edit
 

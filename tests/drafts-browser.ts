@@ -18,7 +18,7 @@ let url = '';
 async function start() {
   const child = spawn(
     '.venv/bin/python',
-    ['-m', 'gbc_scene_forge', '--project', root, '--port', '0'],
+    ['-m', 'gbc_scene_forge', '--no-browser', '--project', root, '--port', '0'],
     { stdio: ['ignore', 'pipe', 'pipe'] },
   );
   server = child;

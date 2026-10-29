@@ -265,3 +265,8 @@
 #diagnostics-dialog label:has(input[type=checkbox]) { flex-direction: row; align-items: center; }
 #diagnostics-dialog .diagnostics-footer { position: sticky; bottom: -1px; padding: .7rem 0; background: var(--panel, #242720); }
 #diagnostics-dialog select[multiple] { background-image: none; }
+
+#first-scene-guide {width:560px;line-height:1.65}
+#first-scene-guide h3 {margin-top:16px;font-size:18px;color:var(--accent)}
+#first-scene-guide .dialog-actions {flex-wrap:wrap}
+#first-scene-guide #guide-text {margin:12px 0}

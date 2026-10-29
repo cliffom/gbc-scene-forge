@@ -1,20 +1,22 @@
 """Loopback transport for a project root or a directly opened project."""
 
+import errno
 import json
 import logging
 import secrets
 import traceback
+import webbrowser
 from http.server import ThreadingHTTPServer
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from threading import Lock
+from threading import Lock, Thread
 from urllib.parse import parse_qs, unquote, urlparse
 
 from .atlas import require
 from .console import ServerConsole
 from .documents import Conflict
 from .drafts import Drafts
-from .projects import Project
+from .projects import Project, name
 from .server import STATIC, LocalHandler
 from .workspaces import ProjectRoot
 
@@ -132,7 +134,14 @@ def make_handler(root, token):
                 route = urlparse(self.path).path
                 if route == "/api/create-project":
                     require(project is None, "A project is already open")
-                    project = Project.create(root, data.get("name"))
+                    starter = data.get("starter", "empty")
+                    require(starter in ("empty", "sample"), "Choose an empty or sample project")
+                    if starter == "sample":
+                        from .sample import prepare
+
+                        project = prepare(root, title=name(data.get("name")))
+                    else:
+                        project = Project.create(root, data.get("name"))
                     self.reply(project.catalog())
                     return
                 require(project is not None, "Create a project first")
@@ -391,7 +400,9 @@ def make_root_handler(root, token):
                     require(0 < length <= 8192, "Project request must be within 8 KiB")
                     data = json.loads(self.rfile.read(length))
                     require(isinstance(data, dict), "Expected a JSON object")
-                    directory = workspace.create(data.get("name"))
+                    directory = workspace.create(
+                        data.get("name"), starter=data.get("starter", "empty")
+                    )
                     self.reply({"directory": directory})
                 elif method == "do_GET" and route in TOUCH_ICONS:
                     self.reply((STATIC / "branding/apple-touch-icon.png").read_bytes(), "image/png")
@@ -430,11 +441,29 @@ def make_root_handler(root, token):
     return Handler
 
 
-def serve(root, port=8765, *, single_project=False):
+def open_editor(url):
+    """Browser launch failure must not stop an otherwise usable local server."""
+    try:
+        opened = webbrowser.open(url)
+    except (webbrowser.Error, OSError):
+        opened = False
+    if not opened:
+        print(f"Browser could not be opened. Open {url} manually in your browser.", flush=True)
+
+
+def serve(root, port=8765, *, single_project=False, open_browser=False):
     token = secrets.token_urlsafe(32)
-    with StandaloneServer(
-        ("127.0.0.1", port), (make_handler if single_project else make_root_handler)(root, token)
-    ) as server:
+    handler = (make_handler if single_project else make_root_handler)(root, token)
+    try:
+        server = StandaloneServer(("127.0.0.1", port), handler)
+    except OSError as error:
+        if error.errno == errno.EADDRINUSE:
+            raise ValueError(
+                f"Port {port} is already in use. Stop the other server or choose --port 8777 "
+                "(or --port 0 for an available port)."
+            ) from error
+        raise
+    with server:
         log_path = Path.cwd() / ".forge-logs" / f"server-{server.server_port}.log"
         log_path.parent.mkdir(parents=True, exist_ok=True)
         log = RotatingFileHandler(log_path, maxBytes=1024 * 1024, backupCount=3, encoding="utf-8")
@@ -444,6 +473,12 @@ def serve(root, port=8765, *, single_project=False):
         server.console = ServerConsole(logger=logger, log_path=log_path)
         try:
             server.console.start(server.server_port, project_root=Path(root).absolute())
+            if open_browser:
+                Thread(
+                    target=open_editor,
+                    args=(f"http://127.0.0.1:{server.server_port}/",),
+                    daemon=True,
+                ).start()
             server.serve_forever()
         except KeyboardInterrupt:
             pass

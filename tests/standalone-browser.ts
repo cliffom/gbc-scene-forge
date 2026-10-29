@@ -27,6 +27,7 @@ async function start(root: string, fixture = true, single = true, demo = false) 
       : [
           '-m',
           'gbc_scene_forge',
+          '--no-browser',
           ...(single ? ['--project'] : ['--project-root']),
           root,
           '--port',

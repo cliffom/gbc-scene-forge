@@ -15,11 +15,13 @@ Your projects stay on your computer.
 Install the release with Python 3.10 or newer:
 
 ```sh
-python -m pip install gbc-scene-forge==0.8.0
+python -m pip install gbc-scene-forge==0.9.0
 gbc-scene-forge
 ```
 
-Open **http://127.0.0.1:8765/** in your browser. The terminal prints the address;
+Forge opens your default browser at **http://127.0.0.1:8765/**. The terminal prints the address;
+if no browser opens, open that URL manually. Use `--no-browser` to suppress automatic opening,
+or `--port 0` to select an available port. Keep the terminal running while editing;
 you can stop the server with **Ctrl+C**. The installed editor needs no Node or
 additional Python runtime dependencies.
 
@@ -52,15 +54,28 @@ make run
 
 ### Create your first project
 
-1. On the project selector, enter **Hello World** and choose **Create project**.
-   If projects already exist, choose **Create a new project** first.
-2. Choose **Import atlas**, then **Browse folder…**. Select your atlas folder,
-   choose a `*.atlas.json` manifest if needed, and confirm the import. Forge copies
-   the artwork into the project, so you can move the original import folder later.
-3. Choose **Create scene**. Give it a name, dimensions in cells, and an 8, 16 or
-   32 pixel grid.
-4. Pick a tile in the asset library and paint. Choose **Save scene** or press
-   **Ctrl/⌘ S** to save your work.
+1. Enter **Hello World** on the project selector. Choose **Sample artwork and
+   scenes** to start without preparing artwork. If projects already exist, choose
+   **Create a new project** first.
+2. Optionally enable **Continue first-scene guide**, then choose **Create project**.
+   The sample becomes your own editable project; its bundled original stays unchanged.
+3. Choose **Create scene**, name it **First scene**, and keep the default dimensions.
+4. Choose a tile from the asset library and paint. Choose **Save scene** or press
+   **Ctrl/⌘ S**, reload, and select **First scene** to confirm your tiles survived.
+5. Place a sprite on the canvas to try its animation preview, then choose **Export… → Whole
+   project → Download ZIP** for portable Tiled files and artwork.
+
+**First scene guide** in the header opens optional instructions covering project
+creation, artwork import, painting, save/reopen, preview, and export. Close it to
+edit, then reopen to continue. It remembers your position in this browser and can
+be restarted. Empty projects support your own gbc-atlas imports through **Import
+atlas → Browse folder…**; plain PNG tilesheet import is planned separately.
+
+You only need Python 3.10+ and a current desktop browser (Chrome, Edge, Firefox or
+Safari). Node, Poetry, Tiled and gbc-atlas are not needed to edit the bundled
+sample. Installation needs access to the package index or a previously downloaded
+wheel; editing, the guide and sample work offline. Automated browser acceptance
+runs in Chrome on macOS and Linux; the package CI checks Python 3.10–3.14 on Linux.
 
 Choose a scene from the scene dropdown to open it. If the current scene has
 unsaved edits, choose whether to save, discard, or keep editing before switching.
@@ -113,9 +128,9 @@ make run PROJECT_ROOT="$HOME/Scene Forge Projects"
 
 Use the same location on later launches to see those projects again. Unsupported
 or damaged manifests are reported in the selector so you can identify the folder
-that needs attention. Version 0.8.0 continues to use manifest format version 1.
+that needs attention. Version 0.9.0 continues to use manifest format version 1.
 
-### Bring an existing project into 0.8.0
+### Bring an existing project into 0.9.0
 
 Existing 0.2.0 projects keep their artwork, scene IDs and manifest format. To add
 one to the selector, stop Forge and move the whole project folder into your
@@ -162,6 +177,11 @@ See [the editor guide](docs/STANDALONE.md) for controls, atlas reimport, preview
 settings, supported Tiled features and recovery behavior.
 
 ## Try the sample
+
+In the installed editor, choose **Sample artwork and scenes** when creating a
+project. Each copy receives its own project identity and a name you choose. It is
+never reset automatically. Source-checkout demo commands below remain useful for
+repeatable development previews.
 
 From a development checkout after setup:
 
@@ -259,7 +279,7 @@ unused assets, and movement findings under explicitly selected assumptions.
 Clipboard editing, duplication, transforms and reusable project stamps are described
 in the [composition guide](docs/STANDALONE.md#clipboard-and-reusable-stamps).
 
-See [the 0.8.0 release notes](docs/RELEASE-0.8.0.md) and
+See [the 0.9.0 release notes](docs/RELEASE-0.9.0.md) and
 [building and releasing](docs/RELEASING.md) for release validation and publication.
 
 ## License
