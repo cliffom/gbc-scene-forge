@@ -164,3 +164,4 @@ test-mcp:
 
 test-mcp-browser: frontend
 	FORGE_MCP_PYTHON="$(or $(FORGE_MCP_PYTHON),.venv/bin/python)" $(NODE) tests/mcp-browser.ts $(if $(CHROME),"$(CHROME)")
+	FORGE_MCP_PYTHON="$(or $(FORGE_MCP_PYTHON),.venv/bin/python)" $(NODE) tests/refresh-browser.ts $(if $(CHROME),"$(CHROME)")

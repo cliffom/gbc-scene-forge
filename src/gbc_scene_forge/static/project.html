@@ -79,6 +79,9 @@
           <button id="show-world" disabled>World view &amp; connections…</button>
           <button id="show-diagnostics" disabled>Diagnostics…</button>
           <button id="show-palettes" disabled>GBC palettes…</button>
+          <p class="command-heading">External changes</p>
+          <label class="refresh-choice"><input id="auto-refresh" type="checkbox" checked> Automatically refresh</label>
+          <button id="check-external">Check for external changes</button>
         </div>
         <button id="show-export" disabled>Export…</button>
         <button id="save" disabled title="Save scene (⌘/Ctrl S)">Save scene</button>
@@ -255,7 +258,7 @@
       </aside>
     </main>
   </div>
-  <footer class="status-bar"><span id="status" role="status" aria-live="polite">Opening local workspace…</span><span class="build-identity"><span id="app-version" aria-label="App version"></span></span></footer>
+  <footer class="status-bar"><span id="status" role="status" aria-live="polite">Opening local workspace…</span><span id="sync-status" role="status" hidden></span><span class="build-identity"><span id="app-version" aria-label="App version"></span></span></footer>
   <dialog id="recovery-dialog" aria-labelledby="recovery-heading">
     <h2 id="recovery-heading">Recover unsaved work</h2>
     <p>Drafts may belong to another open tab. Restoring opens unsaved edits; the saved scene stays unchanged until you save.</p>

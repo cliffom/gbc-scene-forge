@@ -2532,6 +2532,11 @@ for y in range(height):
   );
   await chooseScene(passingPaletteScene);
   await wait("document.getElementById('show-palettes').dataset.state === 'pass'");
+  // Exercise stale-report guards with automatic snapshot adoption disabled.
+  // With refresh enabled, this harmless manifest rewrite is adopted and the
+  // palette report legitimately returns to passing instead of staying stale.
+  await click('project-commands');
+  await click('auto-refresh');
   const paletteManifestPath = join(paletteRoot, 'forge.project.json');
   const paletteManifestBytes = await readFile(paletteManifestPath, 'utf8');
   await writeFile(paletteManifestPath, paletteManifestBytes + '\n');

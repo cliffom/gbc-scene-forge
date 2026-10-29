@@ -597,6 +597,7 @@ class Project:
             "id": scene_id,
             "name": current["name"],
             "revision": digest(encoded),
+            "project_revision": digest(json_text(document).encode()),
             "scene": tiled.decode(json.loads(encoded), document),
         }
 

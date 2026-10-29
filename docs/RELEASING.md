@@ -96,7 +96,7 @@ publishing page. Use the official [trusted publisher setup guide](https://docs.p
 The workflow follows the [Python Packaging User Guide](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/)
 and uses short-lived OIDC credentials; no PyPI API token is stored in the repository.
 
-After reviewing and committing a release, create and push an annotated `v0.13.0`
+After reviewing and committing a release, create and push an annotated `v0.13.1`
 tag (or the matching next version). Run **Publish package** manually against that
 tag, selecting `testpypi` first when its trusted publisher is configured. TestPyPI
 is currently unconfigured; its 0.1.4 upload failed with `invalid-publisher`. Until
@@ -105,6 +105,15 @@ Chrome fixture suite, then run the workflow for `pypi`. Verify a fresh PyPI inst
 with `tests/package_smoke.py` after publication. The workflow rebuilds and
 checks the distributions, checks the tag against the package version, then uploads
 only those verified artifacts. Pushing a tag alone does not publish.
+
+## Release 0.13.1
+
+Version 0.13.1 adds saved-file browser refresh for MCP and other external writers.
+See [release notes](RELEASE-0.13.1.md) and the [user guide](user/external-refresh.md).
+Run `make test-mcp test-mcp-browser` with the optional SDK environment as well as
+`make lint test build check-dist` and the full browser suite. The MCP browser target
+includes real-writer refresh and dirty-edit protection checks. No schema migration
+or required runtime dependency is introduced.
 
 ## Release 0.13.0
 

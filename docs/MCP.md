@@ -11,7 +11,7 @@ transactions as browser authoring. There is no connector or game compiler.
 Install the release with Python 3.10 or newer:
 
 ```sh
-python -m pip install --upgrade 'gbc-scene-forge[mcp]==0.13.0'
+python -m pip install --upgrade 'gbc-scene-forge[mcp]==0.13.1'
 gbc-scene-forge-mcp --project-root /absolute/path/to/projects
 ```
 
@@ -161,10 +161,17 @@ checkpoint files or Undo stack. A browser with unsaved edits will get a conflict
 when trying to save over an MCP-modified scene. Keep the tab open to inspect it;
 automatic checkpoints also remain recoverable after losing the tab. After reload,
 use recovery to download the stale draft; restore is blocked until its base matches.
-Do not discard the draft until its changes have been reconciled. A clean browser
-needs to reload/reopen the scene to see agent changes. Browser Undo covers only
-that tab's edits, not an unrelated agent transaction. Coordinate saved edits or use
-separate scenes while a human is editing.
+Do not discard the draft until its changes have been reconciled.
+
+A clean, visible browser automatically checks saved revisions every two seconds
+and loads external changes. Checks pause while there are unsaved edits, open forms,
+active gestures, or a hidden tab; focus/reconnect and finishing a save or revert
+trigger another check when safe. Adoption preserves valid selection, active layer,
+zoom and viewport, and clears the previous Undo/Redo history. Browser Undo never
+undoes another author's transaction. Project tools contains an automatic-refresh
+toggle and a manual check; no permanent refresh button is added. See
+[external refresh](user/external-refresh.md) for conflicts, recovery and limitations.
+Coordinate saved edits or use separate scenes while a human is editing.
 
 Tool failures have `isError:true`. Native errors also include
 `structuredContent.error` with `code:conflict` or `invalid_request` and a message.
