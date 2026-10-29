@@ -96,7 +96,7 @@ publishing page. Use the official [trusted publisher setup guide](https://docs.p
 The workflow follows the [Python Packaging User Guide](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/)
 and uses short-lived OIDC credentials; no PyPI API token is stored in the repository.
 
-After reviewing and committing a release, create and push an annotated `v0.7.0`
+After reviewing and committing a release, create and push an annotated `v0.8.0`
 tag (or the matching next version). Run **Publish package** manually against that
 tag, selecting `testpypi` first when its trusted publisher is configured. TestPyPI
 is currently unconfigured; its 0.1.4 upload failed with `invalid-publisher`. Until
@@ -106,14 +106,13 @@ with `tests/package_smoke.py` after publication. The workflow rebuilds and
 checks the distributions, checks the tag against the package version, then uploads
 only those verified artifacts. Pushing a tag alone does not publish.
 
-## Release 0.7.0
+## Release 0.8.0
 
-Version 0.7.0 adds a persistent world view and explicit one-way/two-way scene
-connections. Stable scene/object identities preserve links through renames;
-endpoint findings, navigation and deletion confirmations support repair without
-losing authoring intent. World metadata persists in portable projects and
-exports. See [release notes](RELEASE-0.7.0.md) and the
-[world view guide](STANDALONE.md#world-view-and-scene-connections).
+Version 0.8.0 adds read-only project diagnostics with navigable findings for
+schema errors, world endpoints, unused artwork, and explicitly configured grid
+movement checks. Reports include current unsaved scene edits, reject stale
+navigation, and bound collision work. See [release notes](RELEASE-0.8.0.md) and
+the [diagnostics guide](STANDALONE.md#project-diagnostics).
 
 Before tagging, run:
 
