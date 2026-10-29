@@ -1974,6 +1974,21 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
     true,
     'The Space-pan fixture must have vertical scroll room',
   );
+  await evaluate(`(() => {
+    window.__panEvents=[];
+    for (const type of ['pointerdown','pointermove','pointerup','pointercancel',
+      'gotpointercapture','lostpointercapture','blur','keyup','visibilitychange']) {
+      window.addEventListener(type,event=>{
+        const viewport=document.getElementById('viewport');
+        window.__panEvents.push({type,target:event.target?.id, y:event.clientY,
+          buttons:event.buttons,trusted:event.isTrusted,
+          capture:event.pointerId===undefined?null:viewport.hasPointerCapture(event.pointerId),
+          panning:viewport.dataset.panning,top:viewport.scrollTop,
+          height:viewport.clientHeight,scrollHeight:viewport.scrollHeight});
+        if(window.__panEvents.length>40)window.__panEvents.shift();
+      },true);
+    }
+  })()`);
   await evaluate(`document.getElementById('viewport').addEventListener('pointerdown',
     event => {window.__activePanPointer = event.pointerId}, {capture:true, once:true})`);
   await browser.call('Input.dispatchMouseEvent', {
@@ -2004,7 +2019,14 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   });
   // Chrome may acknowledge the mouse move before delivering its pointer event.
   // Keep the drag active until the viewport has processed it.
-  await wait("document.getElementById('viewport').scrollTop > 0");
+  try {
+    await wait("document.getElementById('viewport').scrollTop > 0");
+  } catch (error) {
+    throw Error(
+      `${String(error)}; pan events: ${JSON.stringify(await evaluate('window.__panEvents'))}`,
+      { cause: error },
+    );
+  }
   // Releasing Space mid-drag must not turn the remaining gesture into painting.
   await spaceKey('keyUp');
   assert.equal(

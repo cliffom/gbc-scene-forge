@@ -36,7 +36,7 @@ assets without Node. Direct Python builds from a checkout must follow
 `make check-dist` is a separate installed-wheel smoke test. It recreates
 `build/package-smoke`, installs the wheel with `pip --no-index --no-deps`, and runs
 `tests/package_smoke.py` with Python's `-I` isolation flag. The small suite checks
-imports, version consistency, absent runtime dependencies, bundled browser assets,
+imports, version consistency, absence of required runtime dependencies (MCP is optional), bundled browser assets,
 standalone sample loading, and project create/reopen/export. It is
 intentionally excluded from source-test discovery.
 The wheel bundles the portable project from `assets/demo/project/`; the source
@@ -96,7 +96,7 @@ publishing page. Use the official [trusted publisher setup guide](https://docs.p
 The workflow follows the [Python Packaging User Guide](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/)
 and uses short-lived OIDC credentials; no PyPI API token is stored in the repository.
 
-After reviewing and committing a release, create and push an annotated `v0.11.0`
+After reviewing and committing a release, create and push an annotated `v0.12.0`
 tag (or the matching next version). Run **Publish package** manually against that
 tag, selecting `testpypi` first when its trusted publisher is configured. TestPyPI
 is currently unconfigured; its 0.1.4 upload failed with `invalid-publisher`. Until
@@ -106,19 +106,19 @@ with `tests/package_smoke.py` after publication. The workflow rebuilds and
 checks the distributions, checks the tag against the package version, then uploads
 only those verified artifacts. Pushing a tag alone does not publish.
 
-## Release 0.11.0
+## Release 0.12.0
 
-Version 0.11.0 adds artwork-free blockout planning, editable geometry and marker
-presets, configurable camera framing, and revision-guarded SVG review. It includes
-a hands-on [user tutorial](user/blockout-tutorial.md) and shared authoring/review
-services for the future MCP integration. See [release notes](RELEASE-0.11.0.md)
-and the [blockout reference](BLOCKOUT.md).
+Version 0.12.0 adds the optional local MCP server, revision-guarded native authoring,
+blockout previews, diagnostics and portable exports. See [release notes](RELEASE-0.12.0.md)
+and [MCP setup and reference](MCP.md). Existing projects retain manifest version 1;
+the plain browser installation retains no required runtime dependencies.
 
-Run `make test-blockout-browser` for the complete create/draw/resize/undo/camera/
-review/save/reopen/export workflow, including later artwork and the independent
-opening-forest example. Run the full browser suite before publication. After
-`make check-dist`, the first-use browser workflow can use the installed wheel:
-`FORGE_TEST_PYTHON="$PWD/build/package-smoke/bin/python" make test-first-use-browser`.
+Run `make test-mcp test-mcp-browser` with `FORGE_MCP_PYTHON` pointing at an environment
+with the optional extra installed. This exercises the real SDK client and browser
+workflow, including concurrent saved edits and recoverable browser drafts. Run the
+full browser suite before publication, and verify both a plain fresh install and
+an install with `[mcp]` after publishing. The first-use browser workflow can use
+the installed wheel: `FORGE_TEST_PYTHON="$PWD/build/package-smoke/bin/python" make test-first-use-browser`.
 
 Before tagging, run:
 

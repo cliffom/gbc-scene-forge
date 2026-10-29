@@ -160,6 +160,6 @@ and handle revision conflicts using the existing recovery behavior.
 
 Review responses include `scene_id`, `project_revision`, `scene_revision` and
 `snapshot_revision`, SVGs and camera/screen metadata. The snapshot hash covers the
-canonical supplied scene data so unsaved candidates are distinguishable. This
-PR supplies services and an independent proof-of-concept fixture for #51; MCP
-transport, authorization/session policy and protocol tools remain in that issue.
+canonical supplied scene data so unsaved candidates are distinguishable. The
+[local MCP server](MCP.md) exposes these services through revision-guarded tools
+and includes a reproducible real-client forest example.
