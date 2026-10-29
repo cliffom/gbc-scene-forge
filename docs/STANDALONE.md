@@ -98,12 +98,39 @@ not included. A browser remains necessary even when Python runs headlessly.
 
 ![Optional first-scene guide](screenshots/first-use/guide.png)
 
+## Editor layout
+
+The document bar keeps the project and scene selectors beside **Save scene** and
+**Export…**. **Scene actions** contains create, rename, duplicate, resize/crop,
+revert and delete. **Project tools** contains World view, Diagnostics and optional
+GBC palette checks. A warning beside Project tools remains visible when a scene
+exceeds its configured palette budget. Open a command group with Enter or Space;
+Tab moves between its buttons and Escape dismisses it.
+
+The left library separates **Artwork**, **Objects** and **Stamps**. Arrow keys move
+between tabs; Home/End choose the first/last tab. Artwork contains import, search,
+filters and tile metadata. Objects contains markers and reusable definitions.
+Stamps provides a full-width selector, placement and deletion; long names are
+ellipsized with the complete name available on hover. Saving a stamp opens this
+panel. Click the canvas repeatedly to place it; Escape leaves stamp placement.
+
+Above the canvas, drawing tools and Undo/Redo stay visible. The second row groups
+clipboard actions, **Transform**, **Save stamp…**, Deselect and **Across layers**.
+Transform contains horizontal/vertical flips and rotation. The inspector keeps
+scene, layer and selection properties together; selected objects rise to the top.
+Secondary commands use native popovers rather than shrinking labels into icons.
+The desktop layout is checked from 760px wide, including short windows; the
+canvas scrolls independently of the library and inspector.
+
+See [layout guidelines](UI-DESIGN.md) for the grouping and sizing rules used by the
+editor, including the reserved space for dropdown arrows.
+
 ## Import and edit
 
 1. Choose **Import atlas**, then **Browse folder…** to select an atlas folder.
    Choose a manifest if the folder contains several, then confirm with **Import
    atlas**. Its declared PNG is included automatically.
-2. Choose **Create scene**, then enter a scene name, width and height (1–256 cells)
+2. Choose **Scene actions → Create scene…**, then enter a scene name, width and height (1–256 cells)
    and an 8, 16 or 32 pixel grid in the dialog.
 3. Choose **Create scene**, select a tile region to paint or a sprite to place.
 4. Use Erase, one-cell Fill, or Select. Drag a selection, then use arrow keys to
@@ -431,7 +458,7 @@ geometry and arbitrary tile properties are not imported from external tilesets.
 
 ## GBC palette budgets
 
-Choose **GBC palettes…** to enable optional scene palette checks and reserve
+Choose **Project tools → GBC palettes…** to enable optional scene palette checks and reserve
 background/window and sprite slots for runtime content. Counts include the
 current unsaved canvas, hidden layers and linked animation frames. Expand a
 palette to navigate to its contributors, or run an explicit palette preflight.
@@ -692,8 +719,8 @@ transforms are unsupported: a selection containing any sprite is rejected in ful
 Sprite copy, cut, paste, duplicate and reusable placement retain native size and origin.
 
 **Save stamp…** names a snapshot of the selection in `forge.project.json`. Choose it
-in Stamp, click **Place repeatedly**, then click cells on the canvas. Every placement
-is separately undoable. Escape or choosing a tool/asset ends repeated placement.
+in the **Stamps** library tab, click **Place stamp**, then click cells on the canvas. Every placement
+is separately undoable. **Stop placing**, Escape or choosing a tool/asset ends repeated placement.
 Stamp names may repeat; each stamp has its own stable identity. Saving or deleting a
 stamp commits the project library immediately with revision conflict checks; scene
 Undo/Redo affects placements. Deleting a library entry leaves placed content intact.
@@ -801,7 +828,7 @@ links require a Forge version that supports this feature.
 
 ![World layout with a two-way scene connection](screenshots/world-view/world.png)
 
-Choose **World view…** in the document bar to arrange the project's scenes and
+Choose **Project tools → World view & connections…** to arrange the project's scenes and
 connect their exit/trigger and entrance objects. Drag a scene card, or select it
 and enter whole X/Y coordinates, then choose **Set position**. Keyboard users can
 Tab to a scene card and select it with Enter or Space. Coordinates describe the
@@ -903,7 +930,7 @@ conflict-checked durable project transaction. Reports are read-only.
 
 ## Project diagnostics
 
-Open **Diagnostics…** to inspect the whole project without changing scenes, assets,
+Open **Project tools → Diagnostics…** to inspect the whole project without changing scenes, assets,
 world links, or undo history. The report combines saved scenes with the current
 scene's unsaved edits. It checks required fields, types, bounds, choices, missing
 or incompatible definitions, unknown overrides, both connection endpoints,

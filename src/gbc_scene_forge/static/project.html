@@ -55,35 +55,67 @@
   </dialog>
   <div id="workspace" class="workspace" hidden>
     <nav class="document-bar" aria-label="Document controls">
-      <label>Project <select id="switch-project" aria-label="Current project" disabled></select></label>
-      <label>Scene <select id="scenes" aria-label="Saved scenes"><option value="">Choose a scene…</option></select></label>
-      <span id="scene-save-state" role="status" aria-live="polite"></span>
-      <button id="show-world" disabled>World view…</button>
-      <button id="show-diagnostics" disabled>Diagnostics…</button>
-      <button id="show-create">Create scene</button>
-      <button id="show-rename" disabled>Rename scene</button>
-      <button id="show-duplicate-scene" disabled>Duplicate scene</button>
-      <button id="show-resize" disabled>Resize / crop</button>
-      <button id="show-delete" disabled>Delete scene</button>
-      <span class="spacer"></span>
-      <button id="show-export" disabled>Export…</button>
-      <button id="show-palettes" disabled>GBC palettes…</button>
-      <button id="save" disabled title="Save scene (⌘/Ctrl S)">Save scene</button>
+      <div class="document-context" role="group" aria-label="Current document">
+        <label>Project <select id="switch-project" aria-label="Current project" disabled></select></label>
+        <label>Scene <select id="scenes" aria-label="Saved scenes"><option value="">Choose a scene…</option></select></label>
+        <span id="scene-save-state" role="status" aria-live="polite"></span>
+      </div>
+      <div class="document-actions" role="group" aria-label="Document actions">
+        <button id="scene-commands" popovertarget="scene-command-panel" class="command-trigger" disabled>Scene actions</button>
+        <div id="scene-command-panel" class="command-panel" popover aria-label="Scene actions">
+          <p class="command-heading">Scene</p>
+          <button id="show-create">Create scene…</button>
+          <button id="show-rename" disabled>Rename scene…</button>
+          <button id="show-duplicate-scene" disabled>Duplicate scene…</button>
+          <button id="show-resize" disabled>Resize / crop…</button>
+          <div class="command-divider"></div>
+          <button id="revert" disabled>Revert unsaved changes…</button>
+          <button id="show-delete" class="destructive-command" disabled>Delete scene…</button>
+        </div>
+        <button id="project-commands" popovertarget="project-command-panel" class="command-trigger" disabled>Project tools<span class="command-alert" aria-hidden="true">!</span></button>
+        <div id="project-command-panel" class="command-panel" popover aria-label="Project tools">
+          <p class="command-heading">Project</p>
+          <button id="show-world" disabled>World view &amp; connections…</button>
+          <button id="show-diagnostics" disabled>Diagnostics…</button>
+          <button id="show-palettes" disabled>GBC palettes…</button>
+        </div>
+        <button id="show-export" disabled>Export…</button>
+        <button id="save" disabled title="Save scene (⌘/Ctrl S)">Save scene</button>
+      </div>
     </nav>
     <main>
-      <aside class="library">
-        <div class="panel-heading"><h2>Asset library</h2><span id="asset-count" class="muted">0</span></div>
-        <button id="library-import" class="small">Import atlas</button>
-        <input id="search" type="search" placeholder="Search tiles and sprites…" aria-label="Search assets">
-        <div class="filters">
-          <select id="atlas-filter" aria-label="Filter atlas"><option value="">All atlases</option></select>
-          <select id="kind-filter" aria-label="Filter asset kind"><option value="">All kinds</option><option value="tile">Tiles</option><option value="sprite">Sprites</option></select>
+      <aside class="library" aria-label="Authoring library">
+        <div class="panel-heading"><h2>Library</h2></div>
+        <div class="library-tabs" role="tablist" aria-label="Library categories">
+          <button id="artwork-tab" role="tab" aria-selected="true" aria-controls="artwork-panel" tabindex="0">Artwork</button>
+          <button id="objects-tab" role="tab" aria-selected="false" aria-controls="objects-panel" tabindex="-1">Objects</button>
+          <button id="stamps-tab" role="tab" aria-selected="false" aria-controls="stamps-panel" tabindex="-1">Stamps</button>
         </div>
-        <button id="edit-tile" class="small" disabled>Tile terrain &amp; collision…</button>
-        <div class="object-tools"><h3>Objects</h3><div class="layer-actions"><button id="place-point" class="small" disabled>Spawn point</button><button id="place-rectangle" class="small" disabled>Trigger area</button></div><p class="hint">Place markers or areas on the active object layer. Edit their class and properties for your project.</p></div>
-        <div class="definition-tools"><button id="manage-definitions" class="small" disabled>Object definitions…</button><label class="field">Definition<select id="object-definition-brush"><option value="">Choose definition…</option></select></label><button id="place-definition" class="small" disabled>Place instance</button></div>
-        <p id="library-hint" class="hint">Choose a tile to paint or a sprite to place. Imported artwork keeps its native size.</p>
-        <div id="palette" class="assets" tabindex="-1" aria-label="Available assets"></div>
+        <section id="artwork-panel" class="library-panel" role="tabpanel" aria-labelledby="artwork-tab">
+          <div class="panel-heading"><h3>Tiles &amp; sprites</h3><span id="asset-count" class="muted">0</span></div>
+          <button id="library-import">Import atlas…</button>
+          <input id="search" type="search" placeholder="Search artwork…" aria-label="Search assets">
+          <div class="filters">
+            <select id="atlas-filter" aria-label="Filter atlas"><option value="">All atlases</option></select>
+            <select id="kind-filter" aria-label="Filter asset kind"><option value="">All kinds</option><option value="tile">Tiles</option><option value="sprite">Sprites</option></select>
+          </div>
+          <button id="edit-tile" disabled>Terrain &amp; collision…</button>
+          <p id="library-hint" class="hint">Choose a tile to paint or a sprite to place. Imported artwork keeps its native size.</p>
+          <div id="palette" class="assets" tabindex="-1" aria-label="Available assets"></div>
+        </section>
+        <section id="objects-panel" class="library-panel" role="tabpanel" aria-labelledby="objects-tab" hidden>
+          <h3>Markers &amp; areas</h3>
+          <div class="object-tools"><div class="layer-actions"><button id="place-point" disabled>Spawn point</button><button id="place-rectangle" disabled>Trigger area</button></div><p class="hint">Place a marker or area, then edit its class and properties in the inspector.</p></div>
+          <div class="definition-tools"><h3>Reusable definitions</h3><button id="manage-definitions" disabled>Manage definitions…</button><label class="field">Definition<select id="object-definition-brush"><option value="">Choose definition…</option></select></label><button id="place-definition" disabled>Place instance</button><p class="hint">Definitions share typed fields and defaults between objects.</p></div>
+        </section>
+        <section id="stamps-panel" class="library-panel" role="tabpanel" aria-labelledby="stamps-tab" hidden>
+          <h3>Reusable stamps</h3>
+          <p class="hint">Select tiles or objects, then use <strong>Save stamp…</strong> above the canvas to keep a reusable arrangement.</p>
+          <label class="field">Stamp<select id="stamps"><option value="">Choose stamp…</option></select></label>
+          <p id="stamp-description" class="hint">Choose a stamp to place it more than once. Press Escape to return to editing.</p>
+          <button id="place-stamp" disabled aria-describedby="stamp-description" aria-pressed="false">Place stamp</button>
+          <button id="delete-stamp" class="destructive-command" disabled>Delete stamp</button>
+        </section>
       </aside>
       <section class="workbench" aria-label="Scene canvas">
         <div class="canvas-toolbar">
@@ -94,19 +126,24 @@
             <label class="tool" title="Erase (E)"><input type="radio" name="tool" value="erase" disabled><span aria-hidden="true">⌫</span><span>Erase</span></label>
             <label class="tool" title="Pan (H), or hold Space and drag"><input type="radio" name="tool" value="pan" disabled><span aria-hidden="true">✥</span><span>Pan</span></label>
           </div>
-          <button id="deselect" title="Deselect (Escape)" disabled>Deselect</button>
           <div class="tool-group"><button id="undo" title="Undo (⌘/Ctrl Z)" aria-label="Undo" disabled>↶</button><button id="redo" title="Redo (⌘/Ctrl Shift Z)" aria-label="Redo" disabled>↷</button></div>
-          <button id="revert" disabled>Revert changes</button>
           <span class="spacer"></span><div class="zoom-controls"><label>Zoom <select id="zoom"><option value="fit" id="fit-zoom-option">Fit</option><option value="1">1×</option><option value="2">2×</option><option value="3" selected>3×</option><option value="4">4×</option><option value="6">6×</option><option value="8">8×</option></select></label><button id="fit-scene" disabled title="Center and fit the entire scene in the workspace">Fit scene</button></div>
         </div>
-        <div class="composition-tools" role="group" aria-label="Clipboard and stamps">
-          <label><input type="checkbox" id="select-all-layers"> Select across visible layers</label>
-          <button id="copy-selection" disabled>Copy</button><button id="cut-selection" disabled>Cut</button>
-          <button id="paste-selection" disabled>Paste</button><button id="duplicate-selection" disabled>Duplicate</button>
-          <button id="flip-horizontal" disabled>Flip H</button><button id="flip-vertical" disabled>Flip V</button><button id="rotate-selection" disabled>Rotate 90°</button>
-          <button id="save-stamp" disabled>Save stamp…</button>
-          <label>Stamp <select id="stamps"><option value="">Choose stamp…</option></select></label>
-          <button id="place-stamp" disabled>Place repeatedly</button><button id="delete-stamp" disabled>Delete stamp</button>
+        <div class="composition-tools" role="group" aria-label="Selection and clipboard">
+          <div class="command-group" role="group" aria-label="Clipboard and selection">
+            <button id="copy-selection" disabled title="Copy (⌘/Ctrl C)">Copy</button><button id="cut-selection" disabled title="Cut (⌘/Ctrl X)">Cut</button>
+            <button id="paste-selection" disabled title="Paste (⌘/Ctrl V)">Paste</button><button id="duplicate-selection" disabled title="Duplicate (⌘/Ctrl D)">Duplicate</button>
+            <button id="deselect" title="Deselect (Escape)" disabled>Deselect</button>
+          </div>
+          <div class="command-group" role="group" aria-label="Selection actions">
+            <button id="transform-commands" class="command-trigger" popovertarget="transform-command-panel" disabled>Transform</button>
+            <div id="transform-command-panel" class="command-panel" popover aria-label="Transform selection">
+              <p class="command-heading">Transform selection</p>
+              <button id="flip-horizontal" disabled>Flip horizontally</button><button id="flip-vertical" disabled>Flip vertically</button><button id="rotate-selection" disabled>Rotate 90°</button>
+            </div>
+            <button id="save-stamp" disabled>Save stamp…</button>
+          </div>
+          <label class="selection-scope" title="Include tiles and objects across all visible layers when selecting"><input type="checkbox" id="select-all-layers"> Across layers</label>
         </div>
         <div id="layer-context" class="layer-context" hidden><span id="layer-context-text"></span><button id="context-show-layer" class="small" hidden>Show layer</button></div>
         <div id="viewport" class="viewport" tabindex="0" aria-label="Scene workspace">
@@ -120,7 +157,7 @@
         <section id="scene-panel" class="inspector-panel" aria-label="Scene properties">
           <div class="panel-heading"><h2>Scene properties</h2><span id="dirty" class="tag">NO SCENE</span></div>
           <label class="field">Scene name<input id="inspector-name" readonly placeholder="No scene open"></label>
-          <div class="property-grid"><label class="field">Dimensions<input id="inspector-size" readonly placeholder="—"></label><label class="field">Grid<input id="inspector-grid" readonly placeholder="—"></label></div>
+          <div class="property-grid scene-dimensions"><label class="field">Dimensions<input id="inspector-size" readonly placeholder="—"></label><label class="field">Grid<input id="inspector-grid" readonly placeholder="—"></label></div>
           <p id="scene-summary" class="hint">Open a scene to inspect its dimensions and placed sprites.</p>
         </section>
         <section id="layers-panel" class="inspector-panel" aria-labelledby="layers-heading">

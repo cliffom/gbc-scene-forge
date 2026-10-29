@@ -12,7 +12,7 @@ const steps = [
   },
   {
     title: 'Create a scene',
-    text: 'Choose Create scene. Name it “First scene”, keep 20 × 18 cells and an 8 px grid, then create it. Sample scenes stay available in the Scene dropdown. You can also open one of those to explore.',
+    text: 'Choose Scene actions → Create scene. Name it “First scene”, keep 20 × 18 cells and an 8 px grid, then create it. Sample scenes stay available in the Scene dropdown. You can also open one of those to explore.',
     target: 'show-create',
   },
   {
@@ -46,7 +46,10 @@ function element<T extends HTMLElement>(id: string, type: new () => T): T {
 }
 const button = (id: string) => element(id, HTMLButtonElement);
 
-export function createFirstSceneGuide(canAct: () => boolean) {
+export function createFirstSceneGuide(
+  canAct: () => boolean,
+  reveal?: (target: HTMLElement) => void,
+) {
   const dialog = element('first-scene-guide', HTMLDialogElement);
   const title = element('guide-title', HTMLElement);
   const text = element('guide-text', HTMLElement);
@@ -72,9 +75,10 @@ export function createFirstSceneGuide(canAct: () => boolean) {
     previous.disabled = index === 0;
     next.disabled = index === steps.length - 1;
     const target = document.getElementById(step.target);
+    const hidden = target?.closest('[hidden]');
     action.disabled =
       !target ||
-      target.closest('[hidden]') !== null ||
+      Boolean(hidden && !(reveal && hidden.matches('[role=tabpanel]'))) ||
       (target instanceof HTMLButtonElement && target.disabled);
     action.textContent = index === 0 ? 'Go to project creation' : 'Try this step';
     try {
@@ -110,6 +114,9 @@ export function createFirstSceneGuide(canAct: () => boolean) {
     }
     const target = document.getElementById(steps[index].target);
     dialog.close();
+    if (target) {
+      reveal?.(target);
+    }
     if (index === 0) {
       element('continue-guide', HTMLInputElement).checked = true;
     }
