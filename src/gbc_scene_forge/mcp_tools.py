@@ -322,7 +322,7 @@ class Adapter:
                 result = project.save_scene(loaded["id"], candidate, loaded["revision"], revision)
             return {
                 **result,
-                "project_revision": revision,
+                "project_revision": result.get("project_revision", revision),
                 "dry_run": dry_run,
                 "allocated_object_ids": allocated,
                 "changes": summary,

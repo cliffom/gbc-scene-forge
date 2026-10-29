@@ -18,6 +18,7 @@ from .documents import Conflict
 from .drafts import Drafts
 from .projects import Project, name
 from .server import STATIC, LocalHandler
+from .updates import Updates
 from .workspaces import ProjectRoot
 
 TOUCH_ICONS = ("/apple-touch-icon.png", "/apple-touch-icon-precomposed.png")
@@ -60,6 +61,7 @@ def make_handler(root, token):
     if not (root / "forge.project.json").exists():
         Project.prepare_creation(root)
     project = Project(root, recover=False) if (root / "forge.project.json").exists() else None
+    updates = Updates(project) if project else None
     request_lock = Lock()
 
     class Handler(StandaloneHandler):
@@ -83,6 +85,14 @@ def make_handler(root, token):
                             project_path=str(root),
                         )
                     )
+                elif route in ("/api/revisions", "/api/snapshot") and updates:
+                    scene_id = parse_qs(urlparse(self.path).query).get("scene", [None])[0]
+                    if route == "/api/revisions":
+                        self.reply(updates.revisions(scene_id))
+                    else:
+                        self.reply(
+                            dict(updates.snapshot(scene_id), token=token, project_path=str(root))
+                        )
                 elif route.startswith("/api/scene/") and project:
                     self.reply(project.load_scene(route.removeprefix("/api/scene/")))
                 elif route.startswith("/assets/") and project:
@@ -117,7 +127,7 @@ def make_handler(root, token):
                 Handler._post(self)
 
         def _post(self):
-            nonlocal project
+            nonlocal project, updates
             if not self.trusted_host() or not secrets.compare_digest(
                 self.headers.get("X-Scene-Token", ""), token
             ):
@@ -145,6 +155,7 @@ def make_handler(root, token):
                         project = prepare(root, title=name(data.get("name")))
                     else:
                         project = Project.create(root, data.get("name"), starter=starter)
+                    updates = Updates(project)
                     self.reply(project.catalog())
                     return
                 require(project is not None, "Create a project first")

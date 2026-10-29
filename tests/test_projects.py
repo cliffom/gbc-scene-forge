@@ -127,6 +127,7 @@ class ProjectTests(unittest.TestCase):
         saved = self.project.save_scene(
             first["id"], first["scene"], first["revision"], self.revision()
         )
+        self.assertEqual(saved.pop("project_revision"), self.revision())
         self.assertEqual(self.project.load_scene(second["id"])["scene"]["cells"][1][2], "")
         target = self.folder / "moved"
         shutil.move(str(self.project.root), target)
@@ -209,17 +210,24 @@ class ProjectTests(unittest.TestCase):
         scene["scene"]["cells"][0][0] = "terrain/earth/0/0"
         target = self.project.root / f"scenes/{scene['id']}.tmj"
         commit = self.project._commit
+        expected_project_revision = self.revision()
 
         def external_edit_after_commit(*args):
             commit(*args)
             document = json.loads(target.read_bytes())
             document["layers"][0]["data"][0] = 2
             target.write_text(json.dumps(document))
+            manifest = self.project.root / MANIFEST
+            value = json.loads(manifest.read_bytes())
+            value["name"] = "Renamed externally"
+            manifest.write_text(json.dumps(value))
 
         with patch.object(self.project, "_commit", side_effect=external_edit_after_commit):
             result = self.project.save_scene(
                 scene["id"], scene["scene"], scene["revision"], self.revision()
             )
+        self.assertEqual(result["project_revision"], expected_project_revision)
+        self.assertNotEqual(result["project_revision"], self.revision())
         self.assertEqual(result["scene"]["cells"][0][0], "terrain/earth/0/0")
         self.assertEqual(
             self.project.load_scene(scene["id"])["scene"]["cells"][0][0], "terrain/stone/0/0"
@@ -358,6 +366,7 @@ class ProjectTests(unittest.TestCase):
                     (obj["x"], obj["y"], obj["width"], obj["height"]), (16, 34, 16, 32)
                 )
                 self.assertEqual(document["nextobjectid"], 8)
+                self.assertEqual(saved.pop("project_revision"), self.revision())
                 self.assertEqual(Project(self.project.root).load_scene(scene["id"]), saved)
         self.project.import_atlas(path, self.revision(), reimport=True)
         self.assertEqual(
@@ -392,6 +401,7 @@ class ProjectTests(unittest.TestCase):
         scene["scene"]["objects"] = [{"id": 1, "asset": "actors/idle", "x": 8, "y": 10}]
         scene["scene"]["next_object_id"] = 2
         saved = reopened.save_scene(scene["id"], scene["scene"], scene["revision"], self.revision())
+        self.assertEqual(saved["project_revision"], self.revision())
         self.assertEqual(saved["scene"]["objects"], scene["scene"]["objects"])
         self.assertTrue((self.project.root / "assets/actors/sprites.tsj").is_file())
 

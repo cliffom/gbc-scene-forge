@@ -366,3 +366,6 @@
 .blockout-label {position:absolute;box-sizing:border-box;height:24px;padding:3px 7px;border:1px solid #606c63;border-left:3px solid var(--label-color);border-radius:4px;background:#17201af5;color:#f4f6ef;font:500 13px/16px system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 1px 3px #0008}
 .blockout-label[data-priority="0"] {border-color:#f2d67b;background:#303322;color:#fff6c9}
 #selection-note {white-space:pre-wrap;overflow-wrap:anywhere;margin-top:8px}
+
+.refresh-choice {display:flex;align-items:center;gap:8px;padding:8px 10px;font-size:12px;cursor:pointer}
+#sync-status {color:var(--muted);overflow-wrap:anywhere}

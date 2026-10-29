@@ -1403,6 +1403,7 @@ function inspect() {
   }
 }
 async function run(work: () => Promise<void> | void) {
+  const wasDirty = dirty();
   if (busy) {
     return;
   }
@@ -1426,6 +1427,9 @@ async function run(work: () => Promise<void> | void) {
   } finally {
     busy = false;
     update();
+    if (wasDirty && !dirty()) {
+      void checkExternalChanges();
+    }
   }
 }
 function blockoutCameras() {
@@ -1595,8 +1599,32 @@ button('back-to-projects').onclick = () => {
   showProjectStart(false);
   button('show-new-project').focus();
 };
-async function refresh() {
-  const data = await api('project', record);
+async function refresh(
+  supplied?: Record<string, unknown>,
+  canApply?: () => Promise<boolean>,
+): Promise<boolean> {
+  const data = supplied ?? (await api('project', record));
+  // Stage every asynchronous dependency before touching the displayed snapshot.
+  const nextImages = new Map<string, HTMLImageElement>();
+  const decoded = data.project === null ? null : decodeProject(data.project);
+  for (const [id, atlas] of Object.entries(decoded?.atlases ?? {})) {
+    const existing = supplied && data.revision === revision ? images.get(id) : undefined;
+    if (existing) {
+      nextImages.set(id, existing);
+      continue;
+    }
+    const image = new Image();
+    image.src = `${projectBase}/${atlas.png}?revision=${encodeURIComponent(string(data.revision))}`;
+    await image.decode();
+    nextImages.set(id, image);
+  }
+  const projectChoices =
+    projectBase && !supplied
+      ? record(await (await request('project', undefined, 30000, '')).json())
+      : null;
+  if (canApply && !(await canApply())) {
+    return false;
+  }
   token = string(data.token);
   choosingProject = Array.isArray(data.projects);
   const folderPath = string(choosingProject ? data.project_root : data.project_path);
@@ -1631,14 +1659,14 @@ async function refresh() {
     }
     hasProjectChoices = list.children.length > 0 || unavailable.children.length > 0;
   }
-  if (!previewSettingsLoaded && data.project !== null) {
+  if ((!previewSettingsLoaded || supplied) && data.project !== null) {
     const saved = record(record(data.project).preview).sprite;
     if (saved !== undefined) {
       animationPreview.restore(decodePreviewSettings(saved));
     }
     previewSettingsLoaded = true;
   }
-  project = data.project === null ? null : decodeProject(data.project);
+  project = decoded;
   const previousStamp = select('stamps').value;
   select('stamps').replaceChildren(
     new Option('Choose stamp…', ''),
@@ -1646,11 +1674,12 @@ async function refresh() {
   );
   select('stamps').value = project?.stamps.some((s) => s.id === previousStamp) ? previousStamp : '';
   const projects = select('switch-project');
-  projects.replaceChildren(new Option(project?.name || 'Current project', projectBase));
-  if (projectBase) {
-    const catalog = record(await (await request('project', undefined, 30000, '')).json());
+  if (!supplied || !projectBase) {
+    projects.replaceChildren(new Option(project?.name || 'Current project', projectBase));
+  }
+  if (projectChoices) {
     projects.replaceChildren(
-      ...array(catalog.projects, record).map(
+      ...array(projectChoices.projects, record).map(
         (item) =>
           new Option(string(item.name), `/projects/${encodeURIComponent(string(item.directory))}`),
       ),
@@ -1677,10 +1706,7 @@ async function refresh() {
   );
   select('scenes').value = project?.scenes.some((item) => item.id === previous) ? previous : '';
   images.clear();
-  for (const [id, atlas] of Object.entries(project?.atlases || {})) {
-    const image = new Image();
-    image.src = `${projectBase}/${atlas.png}?revision=${encodeURIComponent(revision)}`;
-    await image.decode();
+  for (const [id, image] of nextImages) {
     images.set(id, image);
   }
   const filter = select('atlas-filter');
@@ -1720,6 +1746,7 @@ async function refresh() {
     atlasList.textContent = 'No atlases imported yet.';
   }
   palette();
+  return true;
 }
 function filterPalette() {
   const query = input('search').value.trim().toLowerCase();
@@ -2885,13 +2912,14 @@ async function saveScene() {
   ) {
     throw Error('Scene save cancelled. Restore the endpoints or update their world connections.');
   }
-  const data = await api('save-scene', decodeLoaded, {
+  const result = await api('save-scene', record, {
     id: loaded.id,
     scene: sceneSnapshot(),
     revision: loaded.revision,
     project_revision: revision,
     confirm_broken_links: broken.length > 0,
   });
+  const data = decodeLoaded(result);
   await clearDraft();
   loaded = data;
   stampBrush = null;
@@ -2899,8 +2927,8 @@ async function saveScene() {
   committed = data;
   baseline = snapshot();
   newDraftWriter();
-  const catalog = await api('project', record);
-  revision = string(catalog.revision);
+  // A later writer's manifest must not be acknowledged without adopting it.
+  revision = string(result.project_revision);
   status.textContent = 'Scene saved.';
 }
 button('save').onclick = () => void run(saveScene);
@@ -3784,6 +3812,220 @@ window.addEventListener('beforeunload', (event) => {
     event.returnValue = '';
   }
 });
+// Saved-file synchronization never adopts a snapshot over local work. Network
+// requests can run while the user starts editing, so recheck both state and an
+// interaction generation after every asynchronous dependency.
+let liveRequest = false;
+let liveEpoch = 0;
+const livePointers = new Set<number>();
+const livePreference = `forge:auto-refresh:${location.pathname}`;
+try {
+  input('auto-refresh').checked = localStorage.getItem(livePreference) !== 'false';
+} catch {
+  // Private browsing/storage restrictions do not disable synchronization.
+}
+function liveReady() {
+  return Boolean(
+    project &&
+    !busy &&
+    !navigating &&
+    !dirty() &&
+    !anchor &&
+    !pan &&
+    !spacePan &&
+    !objectDrag &&
+    !blockoutDraw &&
+    !objectResize &&
+    !livePointers.size &&
+    !animationPreview.movement.active &&
+    document.visibilityState === 'visible' &&
+    !document.querySelector('dialog[open], [popover]:popover-open') &&
+    !document.activeElement?.matches('input, select, textarea, [contenteditable="true"]') &&
+    element('layers', HTMLElement).dataset.dragging !== 'true',
+  );
+}
+function syncMessage(message = '') {
+  const notice = element('sync-status', HTMLElement);
+  notice.textContent = message;
+  notice.hidden = !message;
+}
+async function checkExternalChanges(manual = false) {
+  if (liveRequest || (!manual && !input('auto-refresh').checked)) {
+    return;
+  }
+  if (!liveReady()) {
+    if (manual) {
+      syncMessage(
+        'Refresh paused. Finish the current interaction and save or revert local edits first.',
+      );
+    }
+    return;
+  }
+  liveRequest = true;
+  const before = { epoch: liveEpoch, loaded, revision, editor };
+  const current = () =>
+    liveReady() &&
+    liveEpoch === before.epoch &&
+    loaded === before.loaded &&
+    editor === before.editor &&
+    revision === before.revision &&
+    (manual || input('auto-refresh').checked);
+  const query = loaded ? `?scene=${encodeURIComponent(loaded.id)}` : '';
+  try {
+    const probe = await api(`revisions${query}`, record);
+    if (!current()) {
+      return;
+    }
+    if (probe.revision === revision && probe.scene_revision === (loaded?.revision ?? null)) {
+      syncMessage();
+      if (manual) {
+        status.textContent = 'No external changes.';
+      }
+      return;
+    }
+    const data = await api(`snapshot${query}`, record);
+    const next = data.scene === null ? null : decodeLoaded(data.scene);
+    if (!current()) {
+      return;
+    }
+    const viewport = element('viewport', HTMLElement);
+    const view = {
+      layer: editor?.active.id,
+      selectedObject,
+      selectedObjects: new Set(selectedObjects),
+      selection: selection ? { ...selection } : null,
+      left: viewport.scrollLeft,
+      top: viewport.scrollTop,
+    };
+    const applied = await refresh(data, async () => {
+      if (!current()) {
+        return false;
+      }
+      const latest = await api(`revisions${query}`, record);
+      return (
+        current() &&
+        latest.revision === data.revision &&
+        latest.scene_revision === (next?.revision ?? null)
+      );
+    });
+    if (!applied) {
+      if (dirty()) {
+        syncMessage(
+          'External changes detected. Local edits were kept; save or revert them before refreshing.',
+        );
+      }
+      return;
+    }
+    if (next) {
+      open(next);
+      if (view.layer !== undefined && editor?.layers.some((layer) => layer.id === view.layer)) {
+        editor.activate(view.layer);
+      }
+      const ids = new Set(
+        editor?.layers.flatMap((layer) =>
+          layer.type === 'objectgroup' ? layer.objects.map((item) => item.id) : [],
+        ),
+      );
+      selectedObject =
+        view.selectedObject && ids.has(view.selectedObject) ? view.selectedObject : null;
+      selectedObjects = new Set([...view.selectedObjects].filter((id) => ids.has(id)));
+      selection =
+        view.selection &&
+        view.selection.x + view.selection.w <= next.width &&
+        view.selection.y + view.selection.h <= next.height
+          ? view.selection
+          : null;
+      draw();
+      viewport.scrollTo(view.left, view.top);
+    } else if (before.loaded) {
+      loaded = committed = null;
+      editor = null;
+      baseline = '';
+      selection = null;
+      selectedObject = null;
+      selectedObjects.clear();
+      animationPreview.reset();
+      canvas.hidden = true;
+      element('canvas-surround', HTMLElement).hidden = true;
+      element('empty-scene', HTMLElement).hidden = false;
+      element('scene-name', HTMLElement).textContent = 'Scene removed. Choose another scene.';
+      select('scenes').value = '';
+      update();
+    } else {
+      update();
+    }
+    syncMessage();
+    status.textContent =
+      before.loaded && !next
+        ? 'The open scene was removed externally. Choose another scene; saved recovery drafts remain available.'
+        : 'External changes loaded. Undo/Redo history was cleared.';
+  } catch (error) {
+    // No automatic modal and no mutation of local drafts on connection/parse errors.
+    syncMessage(
+      `External refresh unavailable; keeping the current view. ${error instanceof Error ? error.message : String(error)}`,
+    );
+  } finally {
+    liveRequest = false;
+  }
+}
+input('auto-refresh').onchange = () => {
+  try {
+    localStorage.setItem(livePreference, String(input('auto-refresh').checked));
+  } catch {
+    /* Keep the choice for this tab even when persistence is unavailable. */
+  }
+  element('project-command-panel', HTMLElement).hidePopover();
+  button('project-commands').focus();
+  syncMessage();
+  void checkExternalChanges();
+};
+button('check-external').onclick = () => {
+  element('project-command-panel', HTMLElement).hidePopover();
+  button('project-commands').focus();
+  void checkExternalChanges(true);
+};
+for (const event of ['input', 'change', 'keydown', 'wheel', 'focusin']) {
+  document.addEventListener(
+    event,
+    () => {
+      liveEpoch++;
+    },
+    { capture: true, passive: true },
+  );
+}
+document.addEventListener(
+  'pointerdown',
+  (event) => {
+    liveEpoch++;
+    livePointers.add(event.pointerId);
+  },
+  true,
+);
+for (const event of ['pointerup', 'pointercancel'] as const) {
+  document.addEventListener(
+    event,
+    (event) => {
+      liveEpoch++;
+      livePointers.delete(event.pointerId);
+    },
+    true,
+  );
+}
+window.addEventListener('blur', () => {
+  liveEpoch++;
+  livePointers.clear();
+});
+window.addEventListener('focus', () => void checkExternalChanges());
+window.addEventListener('online', () => void checkExternalChanges());
+document.addEventListener('visibilitychange', () => {
+  liveEpoch++;
+  if (document.visibilityState === 'visible') {
+    void checkExternalChanges();
+  }
+});
+document.addEventListener('focusout', () => setTimeout(() => void checkExternalChanges(), 0));
+setInterval(() => void checkExternalChanges(), 2000);
+
 // Import boolean decoding here too: reject malformed preview defaults before first render.
 void run(async () => {
   await refresh();
