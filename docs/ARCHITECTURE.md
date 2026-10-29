@@ -30,6 +30,27 @@ The sample copier belongs to project lifecycle; its CLI belongs to adapters.
 Existing native JSON payloads are intentionally retained at format boundaries. Typed saved-read records describe identity and revision contracts;
 this change does not replace the wire format with a parallel class hierarchy.
 
+## HTTP dispatch ownership
+
+`adapters/http/routes.py` lists fixed project endpoints in `PROJECT_ROUTES`, keyed
+by HTTP method and path. Each entry names a focused `ProjectAPI` handler that maps
+payload fields to the owning domain service. The API retains the initialized
+project and refresh-probe state after project creation. Add fixed endpoints to the
+registry and keep payload defaults and response status decisions in their handlers.
+
+`adapters/http/server.py` owns HTTP framing, host/token checks, request limits,
+error translation and request serialization. Its small `WORKSPACE_ROUTES`
+registry handles workspace catalog/creation; scoped project dispatch preserves
+workspace path validation and per-project initialization/locks. Parameterized
+scene and artwork paths remain explicit in the transport, rather than introducing
+a routing framework.
+
+`adapters/http/static.py` owns the shared exact-path bundled-file allowlist and
+MIME types. Both modes use it, including touch-icon aliases. Arbitrary request
+paths never become bundled filesystem paths. The helper preserves the existing
+charset headers in direct/scoped-project versus workspace-root responses. None of
+this infrastructure requires a Python runtime dependency or Node at runtime.
+
 ## Transaction contract
 
 `ProjectStore.read_session()` owns one filesystem lock and yields a read session

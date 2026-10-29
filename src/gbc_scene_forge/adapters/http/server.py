@@ -13,18 +13,37 @@ from threading import Lock, Thread
 from urllib.parse import parse_qs, unquote, urlparse
 
 from gbc_scene_forge.adapters.console import ServerConsole
-from gbc_scene_forge.adapters.http.common import STATIC, LocalHandler
+from gbc_scene_forge.adapters.http.common import LocalHandler
 from gbc_scene_forge.core.errors import Conflict
 from gbc_scene_forge.core.validation import require
 from gbc_scene_forge.project.application import Project
 from gbc_scene_forge.project.workspaces import ProjectRoot
 
-from .routes import ProjectAPI
+from .routes import PROJECT_ROUTES, ProjectAPI
+from .static import static_response
 
-TOUCH_ICONS = ("/apple-touch-icon.png", "/apple-touch-icon-precomposed.png")
+WORKSPACE_ROUTES = {
+    ("GET", "/api/project"): "_catalog",
+    ("POST", "/api/create-project"): "_create_project",
+}
 
 
 class StandaloneHandler(LocalHandler):
+    def respond(self, response):
+        self.reply(
+            response.body,
+            response.content_type,
+            status=response.status,
+            filename=response.filename,
+        )
+
+    def serve_static(self, route, *, charset):
+        response = static_response(route, charset=charset)
+        if response is None:
+            return False
+        self.respond(response)
+        return True
+
     def log_request(self, code="-", size="-"):
         console = getattr(self.server, "console", None)
         if console is None:
@@ -72,50 +91,21 @@ def make_handler(root, token):
                 Handler._get(self)
 
         def _get(self):
-            project, updates = api.project, api.updates
+            project = api.project
             if not self.trusted_host():
                 self.reply({"error": "Local host required"}, status=403)
                 return
             route = unquote(urlparse(self.path).path)
             try:
-                if route == "/api/project":
-                    self.reply(
-                        dict(
-                            project.catalog() if project else {"project": None},
-                            token=token,
-                            project_path=str(root),
-                        )
-                    )
-                elif route in ("/api/revisions", "/api/snapshot") and updates:
-                    scene_id = parse_qs(urlparse(self.path).query).get("scene", [None])[0]
-                    if route == "/api/revisions":
-                        self.reply(updates.revisions(scene_id))
-                    else:
-                        self.reply(
-                            dict(updates.snapshot(scene_id), token=token, project_path=str(root))
-                        )
+                if ("GET", route) in PROJECT_ROUTES:
+                    self.respond(api.get(route, parse_qs(urlparse(self.path).query), token))
                 elif route.startswith("/api/scene/") and project:
                     self.reply(project.scenes.load(route.removeprefix("/api/scene/")))
                 elif route.startswith("/assets/") and project:
                     revision = parse_qs(urlparse(self.path).query).get("revision", [None])[0]
                     self.reply(project.artwork.asset(route[1:], revision), "image/png")
-                elif route in TOUCH_ICONS:
-                    self.reply((STATIC / "branding/apple-touch-icon.png").read_bytes(), "image/png")
-                elif route in (
-                    "/branding/logo-64.png",
-                    "/branding/favicon-32.png",
-                    "/branding/favicon-16.png",
-                ):
-                    self.reply((STATIC / route[1:]).read_bytes(), "image/png")
-                elif route in ("/", "/project.js", "/project.js.map", "/project.css", "/style.css"):
-                    file = "project.html" if route == "/" else route[1:]
-                    mime = {
-                        "html": "text/html",
-                        "js": "text/javascript",
-                        "map": "application/json",
-                        "css": "text/css",
-                    }[file.rsplit(".", 1)[1]]
-                    self.reply((STATIC / file).read_bytes(), mime + "; charset=utf-8")
+                elif self.serve_static(route, charset=True):
+                    pass
                 else:
                     self.reply({"error": "Not found"}, status=404)
             except Conflict as error:
@@ -143,9 +133,7 @@ def make_handler(root, token):
                 require(isinstance(data, dict), "Expected a JSON object")
                 route = urlparse(self.path).path
                 result = api.post(route, data)
-                self.reply(
-                    result.body, result.content_type, status=result.status, filename=result.filename
-                )
+                self.respond(result)
             except Conflict as error:
                 self.reply({"error": str(error)}, status=409)
             except (ValueError, OSError, KeyError, TypeError) as error:
@@ -197,48 +185,31 @@ def make_root_handler(root, token):
                             getattr(handler, method)(self)
                     finally:
                         self.path = original
-                elif route == "/api/project" and method == "do_GET":
-                    self.reply(dict(workspace.catalog(), token=token))
-                elif route == "/api/create-project" and method == "do_POST":
-                    require(
-                        self.headers.get("Content-Type") == "application/json",
-                        "Use application/json",
-                    )
-                    length = int(self.headers.get("Content-Length", "0"))
-                    require(0 < length <= 8192, "Project request must be within 8 KiB")
-                    data = json.loads(self.rfile.read(length))
-                    require(isinstance(data, dict), "Expected a JSON object")
-                    directory = workspace.create(
-                        data.get("name"), starter=data.get("starter", "empty")
-                    )
-                    self.reply({"directory": directory})
-                elif method == "do_GET" and route in TOUCH_ICONS:
-                    self.reply((STATIC / "branding/apple-touch-icon.png").read_bytes(), "image/png")
-                elif method == "do_GET" and route in (
-                    "/",
-                    "/project.js",
-                    "/project.js.map",
-                    "/project.css",
-                    "/style.css",
-                    "/branding/logo-64.png",
-                    "/branding/favicon-32.png",
-                    "/branding/favicon-16.png",
-                ):
-                    file = "project.html" if route == "/" else route[1:]
-                    mime = {
-                        "html": "text/html",
-                        "js": "text/javascript",
-                        "map": "application/json",
-                        "css": "text/css",
-                        "png": "image/png",
-                    }[file.rsplit(".", 1)[1]]
-                    self.reply((STATIC / file).read_bytes(), mime)
+                elif handler_name := WORKSPACE_ROUTES.get((method.removeprefix("do_"), route)):
+                    getattr(Handler, handler_name)(self)
+                elif method == "do_GET" and self.serve_static(route, charset=False):
+                    pass
                 else:
                     self.reply({"error": "Not found"}, status=404)
             except Conflict as error:
                 self.reply({"error": str(error)}, status=409)
             except (ValueError, OSError, KeyError, TypeError) as error:
                 self.reply({"error": str(error)}, status=400)
+
+        def _catalog(self):
+            self.reply(dict(workspace.catalog(), token=token))
+
+        def _create_project(self):
+            require(
+                self.headers.get("Content-Type") == "application/json",
+                "Use application/json",
+            )
+            length = int(self.headers.get("Content-Length", "0"))
+            require(0 < length <= 8192, "Project request must be within 8 KiB")
+            data = json.loads(self.rfile.read(length))
+            require(isinstance(data, dict), "Expected a JSON object")
+            directory = workspace.create(data.get("name"), starter=data.get("starter", "empty"))
+            self.reply({"directory": directory})
 
         def do_GET(self):
             self.dispatch("do_GET")
