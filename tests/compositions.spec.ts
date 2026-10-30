@@ -1,19 +1,18 @@
+import { expect } from '@playwright/test';
 /** Real keyboard/pointer clipboard editing, library persistence and atomic bounds checks. */
 import assert from 'node:assert/strict';
-import { execFile, spawn } from 'node:child_process';
-import type { ChildProcess } from 'node:child_process';
-import { once } from 'node:events';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { execFile } from 'node:child_process';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { Chrome } from './chrome.ts';
 import { record, string } from '../frontend/shared/decode.mts';
-const folder = await mkdtemp(join(tmpdir(), 'forge-compositions-'));
-const root = join(folder, 'world');
-let server: ChildProcess | undefined;
-let browser: Chrome | undefined;
-try {
+import { clickControl, scenePoint, setControl, test, waitForUI } from './browser-fixtures.ts';
+test('compositions: Real keyboard/pointer clipboard editing, library persistence and atomic bounds checks.', async ({
+  page,
+  workspace,
+}, testInfo) => {
+  const { folder } = workspace;
+  const root = join(folder, 'world');
   const { stdout } = await promisify(execFile)('.venv/bin/python', [
     '-c',
     `
@@ -48,74 +47,49 @@ print(json.dumps(ids))
   const ids: unknown = JSON.parse(stdout);
   assert(Array.isArray(ids) && ids.every((id) => typeof id === 'string'));
   const [first, second, missing] = ids.map(string);
-  const child = spawn(
-    '.venv/bin/python',
-    ['-m', 'gbc_scene_forge', '--no-browser', '--project', root, '--port', '0'],
-    { stdio: ['ignore', 'pipe', 'pipe'] },
-  );
-  server = child;
-  const url = await new Promise<string>((resolve, reject) => {
-    let logs = '';
-    const timer = setTimeout(() => reject(Error(`Startup timeout: ${logs}`)), 10000);
-    child.once('error', reject);
-    child.stdout.on('data', (data: Buffer) => {
-      logs += data.toString();
-      const match = /Editor\s+(http:\/\/127\.0\.0\.1:\d+\/)/.exec(logs);
-      if (match) {
-        clearTimeout(timer);
-        resolve(match[1]);
-      }
-    });
-    child.stderr.on('data', (data: Buffer) => {
-      logs += data.toString();
-    });
-  });
-  browser = await Chrome.launch(process.argv[2]);
-  const chrome = browser;
-  chrome.acceptBeforeUnload = true;
-  const evaluate = chrome.evaluate.bind(chrome),
-    wait = chrome.wait.bind(chrome);
-  const click = (id: string) => chrome.click(`document.getElementById(${JSON.stringify(id)})`);
+  const url = await workspace.start(root, false, true);
+  const evaluate = (expression: string) => page.evaluate(expression),
+    wait = (expression: string) => waitForUI(page, expression);
+  const click = (id: string) => clickControl(page, id);
   const key = async (key: string, modifiers = 0) => {
-    await chrome.call('Input.dispatchKeyEvent', { type: 'keyDown', key, modifiers });
-    await chrome.call('Input.dispatchKeyEvent', { type: 'keyUp', key, modifiers });
+    await page.keyboard.press(
+      (modifiers & 2 ? 'Control+' : '') +
+        (modifiers & 1 ? 'Alt+' : '') +
+        (modifiers & 8 ? 'Shift+' : '') +
+        key,
+    );
   };
   const choose = async (id: string) => {
     await wait(
       "document.getElementById('scenes')?.disabled === false && !document.getElementById('show-create').disabled",
     );
-    await evaluate(
-      `(() => { const s = document.getElementById('scenes'); s.value = ${JSON.stringify(id)}; s.dispatchEvent(new Event('change')); })()`,
-    );
+    await page.locator('#scenes').selectOption(id);
     await wait(
       `document.getElementById('scene-name').textContent.startsWith(${JSON.stringify(id === first ? 'Room ·' : id === second ? 'Other room ·' : 'Missing layers ·')}) && !document.getElementById('show-create').disabled`,
     );
   };
   const saved = async (id: string): Promise<unknown> =>
     JSON.parse(await readFile(join(root, 'scenes', `${id}.tmj`), 'utf8'));
-  const target = string(
-    (await chrome.call('Target.createTarget', { url: 'about:blank' }, null)).targetId,
-  );
-  chrome.session = string(
-    (await chrome.call('Target.attachToTarget', { targetId: target, flatten: true }, null))
-      .sessionId,
-  );
-  await chrome.call('Runtime.enable');
-  await chrome.call('Page.enable');
-  await chrome.call('Emulation.setDeviceMetricsOverride', {
-    width: 1440,
-    height: 1000,
-    deviceScaleFactor: 1,
-    mobile: false,
-  });
-  await chrome.call('Page.navigate', { url });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto(url);
   await wait("document.getElementById('project-name')?.textContent === 'Reusable rooms'");
   await choose(first);
   await click('select-all-layers');
-  await chrome.click('document.querySelector(\'input[value="select"]\')');
-  await chrome.pointer(1, 1);
-  await chrome.pointer(15, 7, 'mouseMoved');
-  await chrome.pointer(15, 7, 'mouseReleased');
+  await page.locator('input[value="select"]').first().click();
+  await (async () => {
+    const point = await scenePoint(page, 1, 1);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.down();
+  })();
+  await (async () => {
+    const point = await scenePoint(page, 15, 7);
+    await page.mouse.move(point.x, point.y);
+  })();
+  await (async () => {
+    const point = await scenePoint(page, 15, 7);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.up();
+  })();
   await key('c', 2);
   await key('x', 2);
   await wait("document.getElementById('status').textContent === 'Selection cut.'");
@@ -124,9 +98,20 @@ print(json.dumps(ids))
   await key('z', 2 | 8); // redo
   await key('z', 2); // restore original again
   // Re-select; clockwise transform must preserve IDs and properties through save.
-  await chrome.pointer(1, 1);
-  await chrome.pointer(15, 7, 'mouseMoved');
-  await chrome.pointer(15, 7, 'mouseReleased');
+  await (async () => {
+    const point = await scenePoint(page, 1, 1);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.down();
+  })();
+  await (async () => {
+    const point = await scenePoint(page, 15, 7);
+    await page.mouse.move(point.x, point.y);
+  })();
+  await (async () => {
+    const point = await scenePoint(page, 15, 7);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.up();
+  })();
   await click('rotate-selection');
   await click('save');
   await wait("document.getElementById('scene-save-state').textContent === 'Saved'");
@@ -150,10 +135,21 @@ print(json.dumps(ids))
     ),
     [165, 165, 165, 255],
   );
-  await chrome.click('document.querySelector(\'input[value="select"]\')');
-  await chrome.pointer(1, 1);
-  await chrome.pointer(7, 15, 'mouseMoved');
-  await chrome.pointer(7, 15, 'mouseReleased');
+  await page.locator('input[value="select"]').first().click();
+  await (async () => {
+    const point = await scenePoint(page, 1, 1);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.down();
+  })();
+  await (async () => {
+    const point = await scenePoint(page, 7, 15);
+    await page.mouse.move(point.x, point.y);
+  })();
+  await (async () => {
+    const point = await scenePoint(page, 7, 15);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.up();
+  })();
   // Save an authored mixed composition to the library, then place it twice.
   await evaluate("window.prompt = () => 'Doorway'");
   await click('save-stamp');
@@ -166,10 +162,26 @@ print(json.dumps(ids))
     "document.getElementById('stamps').selectedIndex = 1; document.getElementById('stamps').dispatchEvent(new Event('change'))",
   );
   await click('place-stamp');
-  await chrome.pointer(32, 16);
-  await chrome.pointer(32, 16, 'mouseReleased');
-  await chrome.pointer(48, 24);
-  await chrome.pointer(48, 24, 'mouseReleased');
+  await (async () => {
+    const point = await scenePoint(page, 32, 16);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.down();
+  })();
+  await (async () => {
+    const point = await scenePoint(page, 32, 16);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.up();
+  })();
+  await (async () => {
+    const point = await scenePoint(page, 48, 24);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.down();
+  })();
+  await (async () => {
+    const point = await scenePoint(page, 48, 24);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.up();
+  })();
   await key('Escape');
   await click('save');
   await wait("document.getElementById('scene-save-state').textContent === 'Saved'");
@@ -182,10 +194,10 @@ print(json.dumps(ids))
     placedObjects.map((o) => record(o).id),
     [1, 2, 3, 4, 5, 6],
   );
-  await chrome.screenshot('standalone-compositions');
+  await page.screenshot({ path: testInfo.outputPath('standalone-compositions' + '.png') });
   // Clipboard is independent of the stamp and survives a compatible scene switch.
   await choose(second);
-  await evaluate("document.getElementById('scene').focus()");
+  await page.locator('#scene').focus();
   await key('v', 2);
   await wait("document.getElementById('status').textContent.startsWith('Composition placed.')");
   await click('save');
@@ -200,43 +212,88 @@ print(json.dumps(ids))
   assert.deepEqual(copiedPoint.properties, [{ name: 'door', type: 'string', value: 'north' }]);
   // Failed cross-scene layer mapping must not dirty or partially paint the scene.
   await choose(missing);
-  await evaluate("document.getElementById('scene').focus()");
+  await page.locator('#scene').focus();
   await key('v', 2);
   await wait("document.getElementById('status').textContent.includes('matching layer: Markers')");
-  assert.equal(await evaluate("document.getElementById('scene-save-state').textContent"), 'Saved');
-  assert.equal(await evaluate("document.getElementById('undo').disabled"), true);
+  await expect(page.locator('#scene-save-state')).toHaveText('Saved');
+  await expect(page.locator('#undo')).toBeDisabled();
   await choose(first);
   // Edge transforms and stamp placements reject the entire change.
-  await chrome.click('document.querySelector(\'input[value="select"]\')');
-  await chrome.pointer(89, 65);
-  await chrome.pointer(95, 79, 'mouseMoved');
-  await chrome.pointer(95, 79, 'mouseReleased');
+  await page.locator('input[value="select"]').first().click();
+  await (async () => {
+    const point = await scenePoint(page, 89, 65);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.down();
+  })();
+  await (async () => {
+    const point = await scenePoint(page, 95, 79);
+    await page.mouse.move(point.x, point.y);
+  })();
+  await (async () => {
+    const point = await scenePoint(page, 95, 79);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.up();
+  })();
   await click('rotate-selection');
   await wait(
     "document.getElementById('status').textContent.includes('entire composition must fit')",
   );
-  assert.equal(await evaluate("document.getElementById('scene-save-state').textContent"), 'Saved');
+  await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   await click('place-stamp');
-  await chrome.pointer(95, 79);
-  await chrome.pointer(95, 79, 'mouseReleased');
+  await (async () => {
+    const point = await scenePoint(page, 95, 79);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.down();
+  })();
+  await (async () => {
+    const point = await scenePoint(page, 95, 79);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.up();
+  })();
   await wait(
     "document.getElementById('status').textContent.includes('entire composition must fit')",
   );
   await key('Escape');
-  assert.equal(await evaluate("document.getElementById('undo').disabled"), true);
+  await expect(page.locator('#undo')).toBeDisabled();
   // Clipboard shortcuts in text inputs never mutate authored content.
   await evaluate(
     "document.getElementById('layer-name').focus(); document.getElementById('layer-name').select()",
   );
   await key('x', 2);
-  assert.equal(await evaluate("document.getElementById('undo').disabled"), true);
+  await expect(page.locator('#undo')).toBeDisabled();
   // Multi-object selection with Shift-click duplicates both objects in one history entry.
-  await chrome.click('document.querySelector(\'input[value="select"]\')');
-  await chrome.click('document.querySelector(\'[data-layer-id="2"] .layer-choice\')');
-  await chrome.pointer(7, 1);
-  await chrome.pointer(7, 1, 'mouseReleased');
-  await chrome.pointer(5, 9, 'mousePressed', 8);
-  await chrome.pointer(5, 9, 'mouseReleased', 8);
+  await page.locator('input[value="select"]').first().click();
+  await page.locator('[data-layer-id="2"] .layer-choice').first().click();
+  await (async () => {
+    const point = await scenePoint(page, 7, 1);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.down();
+  })();
+  await (async () => {
+    const point = await scenePoint(page, 7, 1);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.up();
+  })();
+  await (async () => {
+    const point = await scenePoint(page, 5, 9);
+    await page.keyboard.down('Shift');
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.down();
+    await page.keyboard.up('Alt');
+    await page.keyboard.up('Shift');
+    await page.keyboard.up('Control');
+    await page.keyboard.up('Meta');
+  })();
+  await (async () => {
+    const point = await scenePoint(page, 5, 9);
+    await page.keyboard.down('Shift');
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.up();
+    await page.keyboard.up('Alt');
+    await page.keyboard.up('Shift');
+    await page.keyboard.up('Control');
+    await page.keyboard.up('Meta');
+  })();
   await key('d', 2);
   await wait("document.getElementById('status').textContent.startsWith('Composition placed.')");
   await key('z', 2);
@@ -249,18 +306,14 @@ print(json.dumps(ids))
   assert(Array.isArray(multiObjects));
   assert.equal(multiObjects.length, 8);
   // Reload retains the project library and transformed/duplicated placements.
-  await chrome.call('Page.reload');
+  await page.reload();
   await wait("document.getElementById('scene-name')?.textContent === 'No scene open'");
   await wait("document.getElementById('stamps')?.options.length === 2");
   await choose(first);
   assert.equal(await evaluate("document.querySelectorAll('#object-list option').length"), 0); // tile layer active
   // Scene management keeps current edits and history independent of project transactions.
-  const setValue = async (id: string, value: string) =>
-    evaluate(
-      `(() => { const field = document.getElementById(${JSON.stringify(id)}); field.value = ${JSON.stringify(value)}; field.dispatchEvent(new Event('input')); })()`,
-    );
-  const cancelDialog = async (id: string) =>
-    chrome.click(`document.querySelector('#${id} [data-close]')`);
+  const setValue = async (id: string, value: string) => setControl(page, id, value);
+  const cancelDialog = async (id: string) => page.locator(`#${id} [data-close]`).first().click();
   await click('show-rename');
   await setValue('scene-manage-name', 'Canceled rename');
   await cancelDialog('scene-manage-dialog');
@@ -272,7 +325,7 @@ print(json.dumps(ids))
   await setValue('resize-width', '14');
   await setValue('resize-height', '12');
   await cancelDialog('resize-scene-dialog');
-  assert.equal(await evaluate("document.getElementById('scene-save-state').textContent"), 'Saved');
+  await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   await click('show-resize');
   await setValue('resize-width', '14');
   await setValue('resize-height', '12');
@@ -282,18 +335,15 @@ print(json.dumps(ids))
   await setValue('scene-manage-name', 'Courtyard');
   await click('scene-manage-confirm');
   await wait("document.getElementById('scene-name').textContent.startsWith('Courtyard ·')");
-  assert.equal(
-    await evaluate("document.getElementById('scene-save-state').textContent"),
-    'Unsaved changes',
-  );
-  assert.equal(await evaluate("document.getElementById('undo').disabled"), false);
+  await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
+  await expect(page.locator('#undo')).toBeEnabled();
   assert.equal(record(await saved(first)).width, 12); // rename did not save canvas
   const duplicate = async (name: string, canvas: boolean) => {
     await click('show-duplicate-scene');
     await setValue('scene-manage-name', name);
     if (canvas) {
       await click('duplicate-canvas');
-      await chrome.screenshot('scene-duplicate-dialog');
+      await page.screenshot({ path: testInfo.outputPath('scene-duplicate-dialog' + '.png') });
     }
     await click('scene-manage-confirm');
     await wait(
@@ -311,14 +361,11 @@ print(json.dumps(ids))
   const canvasCopy = await duplicate('Expanded courtyard', true);
   assert.equal(record(await saved(savedCopy)).width, 12);
   assert.equal(record(await saved(canvasCopy)).width, 14);
-  assert.equal(await evaluate("document.getElementById('scenes').value"), first);
-  assert.equal(
-    await evaluate("document.getElementById('scene-save-state').textContent"),
-    'Unsaved changes',
-  );
+  await expect(page.locator('#scenes')).toHaveValue(first);
+  await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
   await click('undo');
   await wait("document.getElementById('scene-name').textContent.includes('12 × 10')");
-  assert.equal(await evaluate("document.getElementById('scene-save-state').textContent"), 'Saved');
+  await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   await click('redo');
   await wait("document.getElementById('scene-name').textContent.includes('14 × 12')");
   // Wait for the current canvas and project revision, not an earlier success label.
@@ -332,7 +379,7 @@ print(json.dumps(ids))
     }
     return false;
   })()`);
-  await chrome.call('Page.reload');
+  await page.reload();
   await wait(
     "document.getElementById('recovery-dialog')?.open && !document.getElementById('show-create').disabled",
   );
@@ -345,12 +392,12 @@ print(json.dumps(ids))
   await click('save');
   await wait("document.getElementById('scene-save-state').textContent === 'Saved'");
   assert.equal(record(await saved(first)).width, 14);
-  await chrome.screenshot('scene-management');
+  await page.screenshot({ path: testInfo.outputPath('scene-management' + '.png') });
   // Cropping requires confirmation, then remains one undoable edit.
   await click('show-resize');
   await setValue('resize-width', '1');
   await setValue('resize-height', '1');
-  await chrome.screenshot('scene-resize-preview');
+  await page.screenshot({ path: testInfo.outputPath('scene-resize-preview' + '.png') });
   await click('resize-confirm');
   await wait(
     "document.querySelector('#resize-scene-dialog .form-error').textContent.includes('Confirm')",
@@ -389,31 +436,9 @@ print(json.dumps(ids))
   );
   await cancelDialog('scene-manage-dialog');
   // Compact layout retains all controls without horizontal page overflow.
-  await chrome.call('Emulation.setDeviceMetricsOverride', {
-    width: 980,
-    height: 760,
-    deviceScaleFactor: 1,
-    mobile: false,
-  });
+  await page.setViewportSize({ width: 980, height: 760 });
   await wait('document.documentElement.scrollWidth <= innerWidth');
-  await chrome.screenshot('scene-management-compact');
-  assert.deepEqual(chrome.errors, []);
+  await page.screenshot({ path: testInfo.outputPath('scene-management-compact' + '.png') });
+
   console.log('Composition and scene management browser acceptance passed');
-} catch (error) {
-  if (browser) {
-    console.error(
-      await browser.evaluate(
-        "({status:document.getElementById('status')?.textContent, error:document.querySelector('dialog[open] .form-error')?.textContent})",
-      ),
-    );
-  }
-  throw error;
-} finally {
-  await browser?.close();
-  if (server && server.exitCode === null) {
-    const exited = once(server, 'exit');
-    server.kill('SIGINT');
-    await exited;
-  }
-  await rm(folder, { recursive: true, force: true });
-}
+});

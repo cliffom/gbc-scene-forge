@@ -1,6 +1,6 @@
 [project]
 name = "gbc-scene-forge"
-version = "0.16.2"
+version = "0.16.3"
 description = "Standalone local scene editor for imported artwork and portable Tiled projects"
 readme = "README.md"
 license = "MIT"

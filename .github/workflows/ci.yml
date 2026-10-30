@@ -26,7 +26,7 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
       - name: Browser acceptance checks
-        run: make test-browser CHROME=/usr/bin/google-chrome
+        run: make test-browser
       - name: Installed-wheel first-use acceptance
         run: FORGE_TEST_PYTHON="$PWD/build/package-smoke/bin/python" npx playwright test --config tests/playwright.config.ts first-use.spec.ts
       - name: Optional MCP installed-wheel and browser checks
@@ -35,7 +35,7 @@ jobs:
           for forge_wheel in dist/*.whl; do
             build/mcp-ci/bin/python -m pip install "${forge_wheel}[mcp]"
           done
-          FORGE_MCP_PYTHON="$PWD/build/mcp-ci/bin/python" make test-mcp test-mcp-browser CHROME=/usr/bin/google-chrome
+          FORGE_MCP_PYTHON="$PWD/build/mcp-ci/bin/python" make test-mcp test-mcp-browser
       - uses: actions/upload-artifact@v7.0.2
         if: ${{ !cancelled() }}
         with:

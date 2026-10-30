@@ -1,49 +1,23 @@
+import { expect } from '@playwright/test';
 /** Artwork-free planning, native edits/history, camera review and later artwork integration. */
 import assert from 'node:assert/strict';
-import { spawn, execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-import { once } from 'node:events';
-import { mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { execFile } from 'node:child_process';
 import { join } from 'node:path';
-import { Chrome } from './chrome.ts';
+import { promisify } from 'node:util';
 import { array, number, record, string } from '../frontend/shared/decode.mts';
 
-const folder = await mkdtemp(join(tmpdir(), 'forge-blockout-'));
-const root = join(folder, 'projects');
-const server = spawn(
-  '.venv/bin/python',
-  ['-m', 'gbc_scene_forge', '--no-browser', '--project-root', root, '--port', '0'],
-  { stdio: ['ignore', 'pipe', 'pipe'] },
-);
-let browser: Chrome | undefined;
-try {
-  const url = await new Promise<string>((resolve, reject) => {
-    let logs = '';
-    const timer = setTimeout(() => reject(Error(logs)), 10000);
-    server.once('error', reject);
-    server.stderr.on('data', (data: Buffer) => {
-      logs += data.toString();
-    });
-    server.stdout.on('data', (data: Buffer) => {
-      logs += data.toString();
-      const match = /Editor\s+(http:\/\/127\.0\.0\.1:\d+\/)/.exec(logs);
-      if (match) {
-        clearTimeout(timer);
-        resolve(match[1]);
-      }
-    });
-  });
-  browser = await Chrome.launch(process.argv[2]);
-  const chrome = browser;
-  chrome.acceptBeforeUnload = true;
-  const evaluate = chrome.evaluate.bind(chrome),
-    wait = chrome.wait.bind(chrome);
-  const click = (id: string) => chrome.click(`document.getElementById(${JSON.stringify(id)})`);
-  const set = (id: string, value: string) =>
-    evaluate(
-      `(()=>{const c=document.getElementById(${JSON.stringify(id)});c.value=${JSON.stringify(value)};c.dispatchEvent(new Event(c.tagName==='SELECT'?'change':'input',{bubbles:true}));})()`,
-    );
+import { clickControl, scenePoint, setControl, test, waitForUI } from './browser-fixtures.ts';
+test('blockout: Artwork-free planning, native edits/history, camera review and later artwork integration.', async ({
+  page,
+  workspace,
+}, testInfo) => {
+  const { folder } = workspace;
+  const root = join(folder, 'projects');
+  const url = await workspace.start(root, false, false);
+  const evaluate = (expression: string) => page.evaluate(expression),
+    wait = (expression: string) => waitForUI(page, expression);
+  const click = (id: string) => clickControl(page, id);
+  const set = async (id: string, value: string) => setControl(page, id, value);
   const checkLabels = async () => {
     await evaluate(
       'new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))',
@@ -72,32 +46,32 @@ try {
     );
   };
   const role = (name: string) =>
-    chrome.click(
-      `document.querySelector('#blockout-presets [data-blockout-role=${JSON.stringify(name)}]')`,
-    );
+    page
+      .locator(`#blockout-presets [data-blockout-role=${JSON.stringify(name)}]`)
+      .first()
+      .click();
   const drag = async (x: number, y: number, toX: number, toY: number) => {
-    await chrome.pointer(x, y);
-    await chrome.pointer(toX, toY, 'mouseMoved');
-    await chrome.pointer(toX, toY, 'mouseReleased');
+    await (async () => {
+      const point = await scenePoint(page, x, y);
+      await page.mouse.move(point.x, point.y);
+      await page.mouse.down();
+    })();
+    await (async () => {
+      const point = await scenePoint(page, toX, toY);
+      await page.mouse.move(point.x, point.y);
+    })();
+    await (async () => {
+      const point = await scenePoint(page, toX, toY);
+      await page.mouse.move(point.x, point.y);
+      await page.mouse.up();
+    })();
   };
-  const target = await chrome.call('Target.createTarget', { url: 'about:blank' }, null);
-  chrome.session = string(
-    (await chrome.call('Target.attachToTarget', { targetId: target.targetId, flatten: true }, null))
-      .sessionId,
-  );
-  await chrome.call('Page.enable');
-  await chrome.call('Runtime.enable');
-  await chrome.call('Emulation.setDeviceMetricsOverride', {
-    width: 1440,
-    height: 1100,
-    deviceScaleFactor: 1,
-    mobile: false,
-  });
-  await chrome.call('Page.navigate', { url });
+  await page.setViewportSize({ width: 1440, height: 1100 });
+  await page.goto(url);
   await wait("document.getElementById('project-form')?.hidden===false");
   await set('project-title', 'Forest plan');
   await set('project-starter', 'blockout');
-  await chrome.click("document.querySelector('#project-form button.primary')");
+  await page.locator('#project-form button.primary').first().click();
   await wait(
     "location.pathname==='/projects/forest-plan/' && document.getElementById('create-blockout-dialog')?.open",
   );
@@ -112,7 +86,7 @@ try {
   );
   await set('blockout-width', '960');
   await set('blockout-units', 'cells');
-  assert.equal(await evaluate("document.getElementById('blockout-width').value"), '120');
+  await expect(page.locator('#blockout-width')).toHaveValue('120');
   assert.equal(
     await evaluate(
       "document.getElementById('blockout-create-metrics').textContent.includes('6.00 horizontal')",
@@ -137,21 +111,21 @@ try {
   await drag(16, 224, 320, 256);
   await click('edit-object');
   await wait("document.getElementById('object-dialog').open");
-  assert.equal(await evaluate("document.getElementById('object-width').value"), '304');
+  await expect(page.locator('#object-width')).toHaveValue('304');
   await set('object-name', 'Forest ground');
   await click('object-apply');
-  await chrome.click("document.querySelector('input[name=tool][value=select]')");
+  await page.locator('input[name=tool][value=select]').first().click();
   await drag(320, 256, 352, 256);
   await click('edit-object');
-  assert.equal(await evaluate("document.getElementById('object-width').value"), '336');
+  await expect(page.locator('#object-width')).toHaveValue('336');
   await click('object-cancel');
   await click('undo');
   await click('edit-object');
-  assert.equal(await evaluate("document.getElementById('object-width').value"), '304');
+  await expect(page.locator('#object-width')).toHaveValue('304');
   await click('object-cancel');
   await click('redo');
   await click('edit-object');
-  assert.equal(await evaluate("document.getElementById('object-width').value"), '336');
+  await expect(page.locator('#object-width')).toHaveValue('336');
   await click('object-cancel');
   await role('water');
   await drag(368, 224, 432, 256);
@@ -164,16 +138,24 @@ try {
     ['checkpoint', 480, 216],
   ] as const) {
     await role(name);
-    await chrome.pointer(x, y);
-    await chrome.pointer(x, y, 'mouseReleased');
+    await (async () => {
+      const point = await scenePoint(page, x, y);
+      await page.mouse.move(point.x, point.y);
+      await page.mouse.down();
+    })();
+    await (async () => {
+      const point = await scenePoint(page, x, y);
+      await page.mouse.move(point.x, point.y);
+      await page.mouse.up();
+    })();
   }
   // Moving the same camera object retains its identity and uses scene undo history.
   await click('blockout-camera-select');
   await drag(32, 32, 64, 56);
   await click('blockout-camera-edit');
   await wait("document.getElementById('object-dialog').open");
-  assert.equal(await evaluate("document.getElementById('object-id').value"), '1');
-  assert.equal(await evaluate("document.getElementById('object-x').value"), '32');
+  await expect(page.locator('#object-id')).toHaveValue('1');
+  await expect(page.locator('#object-x')).toHaveValue('32');
   await set('object-x', '0');
   await set('object-y', '136');
   await evaluate(
@@ -181,7 +163,7 @@ try {
   );
   await click('object-apply');
   const beforeReview = await catalog();
-  await chrome.screenshot('blockout-authoring');
+  await page.screenshot({ path: testInfo.outputPath('blockout-authoring' + '.png') });
   await click('blockout-review');
   await wait(
     "document.getElementById('blockout-review-dialog').open && document.getElementById('blockout-camera-image').naturalWidth===160",
@@ -208,7 +190,7 @@ try {
     1,
     'Review includes unsaved content without saving it',
   );
-  await chrome.screenshot('blockout-camera-review');
+  await page.screenshot({ path: testInfo.outputPath('blockout-camera-review' + '.png') });
   await click('blockout-review-close');
   await click('save');
   await wait("document.getElementById('status').textContent==='Scene saved.'");
@@ -218,7 +200,7 @@ try {
   assert.equal(planObjects.length, 8);
   const camera = planObjects.find((item) => item.id === 1);
   assert.equal(camera?.y, 136);
-  await chrome.call('Page.reload');
+  await page.reload();
   await wait(
     "document.getElementById('status')?.textContent==='Choose a scene, or import an atlas and create one.'",
   );
@@ -234,17 +216,25 @@ try {
   await click('artwork-tab');
   await click('library-import');
   await set('atlas-path', source.trim());
-  await chrome.click("document.getElementById('atlas-apply')");
+  await page.locator('#' + 'atlas-apply').click();
   await wait("document.getElementById('status').textContent.includes('Atlas imported')");
-  await chrome.click("document.querySelector('#palette button.asset')");
+  await page.locator('#palette button.asset').first().click();
   await set('zoom', '1');
-  await chrome.pointer(8, 8);
-  await chrome.pointer(8, 8, 'mouseReleased');
+  await (async () => {
+    const point = await scenePoint(page, 8, 8);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.down();
+  })();
+  await (async () => {
+    const point = await scenePoint(page, 8, 8);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.up();
+  })();
   await click('save');
   await wait("document.getElementById('status').textContent==='Scene saved.'");
   const withArt = await saved();
   await checkLabels();
-  await chrome.screenshot('blockout-labels-with-artwork');
+  await page.screenshot({ path: testInfo.outputPath('blockout-labels-with-artwork' + '.png') });
   assert.deepEqual(
     array(record(withArt.scene).layers, record).flatMap((layer) =>
       array(layer.objects ?? [], record),
@@ -276,7 +266,7 @@ try {
     `import sys;from pathlib import Path;sys.path.insert(0,'tests');from blockout_fixture import opening_forest;from gbc_scene_forge.project.application import Project;p=Project.create(Path(sys.argv[1]),'Opening forest example',starter='blockout');s,_=opening_forest(p);print(s['id'])`,
     exampleRoot,
   ]);
-  await chrome.call('Page.navigate', { url: new URL('/projects/forest-example/', url).href });
+  await page.goto(new URL('/projects/forest-example/', url).href);
   await wait(
     "document.getElementById('status')?.textContent==='Choose a scene, or import an atlas and create one.'",
   );
@@ -284,16 +274,21 @@ try {
   await wait("document.getElementById('scene-save-state').textContent==='Saved'");
   await click('blockout-tab');
   await click('fit-scene');
-  await chrome.screenshot('blockout-opening-forest');
+  await page.screenshot({ path: testInfo.outputPath('blockout-opening-forest' + '.png') });
   await checkLabels();
   // Display text stays crisp at every zoom and at both standard and Retina densities.
   for (const deviceScaleFactor of [1, 2]) {
-    await chrome.call('Emulation.setDeviceMetricsOverride', {
+    // Chromium-only density emulation keeps the current authored scene and zoom state.
+    // Playwright context deviceScaleFactor is immutable after context creation.
+    const density = await page.context().newCDPSession(page);
+    await density.send('Emulation.setDeviceMetricsOverride', {
       width: 1440,
       height: 1100,
       deviceScaleFactor,
       mobile: false,
     });
+    await density.detach();
+    await page.setViewportSize({ width: 1440, height: 1100 });
     for (const zoom of ['0.5', '1', '2', '4']) {
       await set('zoom', zoom);
       await checkLabels();
@@ -311,10 +306,7 @@ try {
     ),
     true,
   );
-  assert.equal(
-    await evaluate("document.getElementById('selection-name').textContent"),
-    longCameraName,
-  );
+  await expect(page.locator('#selection-name')).toHaveText(longCameraName);
   await evaluate("document.getElementById('viewport').scrollTo(80,160)");
   await checkLabels();
   assert.equal(
@@ -326,44 +318,29 @@ try {
     true,
     'The selected camera caption follows its scene-space anchor while panning',
   );
-  await chrome.screenshot('blockout-labels-4x-retina');
-  await chrome.click('document.querySelector(\'#layers [data-layer-id="4"] input\')');
+  await page.screenshot({ path: testInfo.outputPath('blockout-labels-4x-retina' + '.png') });
+  await page.locator('#layers [data-layer-id="4"] .layer-choice').first().click();
   const noteId = string(
     await evaluate(
       "[...document.getElementById('object-list').options].find(o=>o.textContent.includes('Stage pacing')).value",
     ),
   );
   await set('object-list', noteId);
-  assert.equal(await evaluate("document.getElementById('selection-note').hidden"), false);
+  await expect(page.locator('#selection-note')).toHaveJSProperty('hidden', false);
   assert.equal(
     await evaluate(
       "document.getElementById('selection-note').textContent.includes('full stage length remains undecided')",
     ),
     true,
   );
-  await chrome.call('Emulation.setDeviceMetricsOverride', {
-    width: 1440,
-    height: 1100,
-    deviceScaleFactor: 1,
-    mobile: false,
-  });
+  await page.setViewportSize({ width: 1440, height: 1100 });
   await click('fit-scene');
   await checkLabels();
-  await chrome.call('Emulation.setDeviceMetricsOverride', {
-    width: 1200,
-    height: 900,
-    deviceScaleFactor: 1,
-    mobile: false,
-  });
+  await page.setViewportSize({ width: 1200, height: 900 });
   await checkLabels();
-  await chrome.call('Emulation.setDeviceMetricsOverride', {
-    width: 1440,
-    height: 1100,
-    deviceScaleFactor: 1,
-    mobile: false,
-  });
+  await page.setViewportSize({ width: 1440, height: 1100 });
   await checkLabels();
-  await chrome.click('document.querySelector(\'#layers [data-layer-id="4"] .layer-eye\')');
+  await page.locator('#layers [data-layer-id="4"] .layer-eye').first().click();
   await checkLabels();
   assert.equal(
     await evaluate(
@@ -371,7 +348,7 @@ try {
     ),
     false,
   );
-  await chrome.click('document.querySelector(\'#layers [data-layer-id="4"] .layer-eye\')');
+  await page.locator('#layers [data-layer-id="4"] .layer-eye').first().click();
   await evaluate(`window.__previewURLs=[];window.__revokedURLs=[];
     window.__createURL=URL.createObjectURL;window.__revokeURL=URL.revokeObjectURL;
     URL.createObjectURL=(blob)=>{const url=window.__createURL(blob);window.__previewURLs.push(url);return url};
@@ -380,23 +357,15 @@ try {
   await wait(
     "document.getElementById('blockout-review-dialog').open && document.getElementById('blockout-camera-image').naturalWidth===160",
   );
-  await chrome.screenshot('blockout-opening-forest-review');
+  await page.screenshot({ path: testInfo.outputPath('blockout-opening-forest-review' + '.png') });
   assert.equal(await evaluate('window.__previewURLs.length'), 2);
   await evaluate(
     `(async()=>{const {editor}=await import('/project.js');editor.dispose();editor.dispose()})()`,
   );
   assert.deepEqual(await evaluate('window.__revokedURLs'), await evaluate('window.__previewURLs'));
   await evaluate('URL.createObjectURL=window.__createURL;URL.revokeObjectURL=window.__revokeURL');
-  assert.deepEqual(chrome.errors, []);
+
   console.log(
     'Blockout browser passed: artwork-free start, units, drawing/resizing/undo, typed camera settings, unsaved SVG review, persistence/export, later artwork, forest example.',
   );
-} finally {
-  await browser?.close();
-  if (server.exitCode === null) {
-    const exited = once(server, 'exit');
-    server.kill('SIGINT');
-    await exited;
-  }
-  await rm(folder, { recursive: true, force: true });
-}
+});

@@ -1,0 +1,40 @@
+{
+  "type": "tileset",
+  "version": "1.10",
+  "name": "actors sprites",
+  "tilewidth": 16,
+  "tileheight": 32,
+  "tilecount": 2,
+  "columns": 0,
+  "margin": 0,
+  "spacing": 0,
+  "objectalignment": "bottomleft",
+  "tiles": [
+    {
+      "id": 0,
+      "image": "sprites/0.png",
+      "imagewidth": 16,
+      "imageheight": 32,
+      "properties": [
+        {
+          "name": "forge:asset",
+          "type": "string",
+          "value": "actors/idle"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "image": "sprites/1.png",
+      "imagewidth": 16,
+      "imageheight": 32,
+      "properties": [
+        {
+          "name": "forge:asset",
+          "type": "string",
+          "value": "actors/step"
+        }
+      ]
+    }
+  ]
+}

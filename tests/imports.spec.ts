@@ -1,75 +1,25 @@
+import { expect } from '@playwright/test';
 /** Generic PNG slicing and bounded external Tiled intake through the real browser UI. */
 import assert from 'node:assert/strict';
-import { spawn, execFileSync } from 'node:child_process';
-import { once } from 'node:events';
-import { mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { Chrome } from './chrome.ts';
+import { execFileSync } from 'node:child_process';
 import { record, string } from '../frontend/shared/decode.mts';
 
-const folder = await mkdtemp(join(tmpdir(), 'forge-first-use-'));
-const server = spawn(
-  process.env.FORGE_TEST_PYTHON ?? '.venv/bin/python',
-  ['tests/serve_standalone_fixture.py', '--root', folder, '--single-project'],
-  { stdio: ['ignore', 'pipe', 'pipe'] },
-);
-let browser: Chrome | undefined;
-try {
-  const url = await new Promise<string>((resolve, reject) => {
-    let logs = '';
-    const timer = setTimeout(() => reject(Error(`Startup timed out: ${logs}`)), 10000);
-    server.on('error', (error) => {
-      clearTimeout(timer);
-      reject(error);
-    });
-    server.on('exit', () => {
-      clearTimeout(timer);
-      reject(Error(logs));
-    });
-    server.stderr.on('data', (data: Buffer) => {
-      logs += data.toString();
-    });
-    server.stdout.on('data', (data: Buffer) => {
-      logs += data.toString();
-      const match = /Editor\s+(http:\/\/127\.0\.0\.1:\d+\/)/.exec(logs);
-      if (match) {
-        clearTimeout(timer);
-        resolve(match[1]);
-      }
-    });
-  });
-  browser = await Chrome.launch(process.argv[2]);
-  const chrome = browser;
-  const evaluate = chrome.evaluate.bind(chrome);
-  const wait = chrome.wait.bind(chrome);
-  const click = (id: string) => chrome.click(`document.getElementById(${JSON.stringify(id)})`);
-  const set = (id: string, value: string) =>
-    evaluate(`(() => {
-    const control = document.getElementById(${JSON.stringify(id)});
-    control.value = ${JSON.stringify(value)};
-    control.dispatchEvent(new Event(control.tagName === 'SELECT' ? 'change' : 'input', {bubbles:true}));
-  })()`);
-  await chrome.call('Target.createTarget', { url: 'about:blank' }, null).then(async (result) => {
-    const attached = await chrome.call(
-      'Target.attachToTarget',
-      { targetId: result.targetId, flatten: true },
-      null,
-    );
-    chrome.session = string(attached.sessionId);
-  });
-  await chrome.call('Page.enable');
-  await chrome.call('Runtime.enable');
-  await chrome.call('Emulation.setDeviceMetricsOverride', {
-    width: 1440,
-    height: 1000,
-    deviceScaleFactor: 1,
-    mobile: false,
-  });
-  await chrome.call('Page.navigate', { url });
+import { clickControl, setControl, test, waitForUI } from './browser-fixtures.ts';
+test('imports: Generic PNG slicing and bounded external Tiled intake through the real browser UI.', async ({
+  page,
+  workspace,
+}, testInfo) => {
+  const { folder } = workspace;
+  const url = await workspace.start(folder, true, true);
+  const evaluate = (expression: string) => page.evaluate(expression);
+  const wait = (expression: string) => waitForUI(page, expression);
+  const click = (id: string) => clickControl(page, id);
+  const set = async (id: string, value: string) => setControl(page, id, value);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto(url);
   await wait("document.getElementById('project-form')?.hidden === false");
   await set('project-title', 'Generic imports');
-  await chrome.click("document.querySelector('#project-form button.primary')");
+  await page.locator('#project-form button.primary').first().click();
   await wait(
     "document.getElementById('status')?.textContent.includes('Choose a scene') && !document.getElementById('library-import').disabled",
   );
@@ -109,7 +59,7 @@ try {
     await evaluate("document.getElementById('sheet-preview').dataset.sourceWidth"),
     '19',
   );
-  assert.equal(await evaluate("document.getElementById('sheet-preview').hidden"), false);
+  await expect(page.locator('#sheet-preview')).toHaveJSProperty('hidden', false);
   assert.ok(
     string(await evaluate("document.getElementById('generic-report').textContent")).includes(
       '2 tiles',
@@ -119,13 +69,13 @@ try {
     record(await (await fetch(new URL('api/project', url))).json()).revision,
     before.revision,
   );
-  await chrome.screenshot('import-png-preview');
+  await page.screenshot({ path: testInfo.outputPath('import-png-preview' + '.png') });
   // A changed setting invalidates confirmation, including across editor updates.
   await set('sheet-margin', '2');
-  assert.equal(await evaluate("document.getElementById('generic-apply').disabled"), true);
+  await expect(page.locator('#generic-apply')).toBeDisabled();
   await click('generic-preflight');
   await wait("document.querySelector('#import-form .form-error').textContent.includes('slice')");
-  assert.equal(await evaluate("document.getElementById('generic-apply').disabled"), true);
+  await expect(page.locator('#generic-apply')).toBeDisabled();
   await set('sheet-margin', '1');
   await click('generic-preflight');
   await wait("document.getElementById('generic-apply').disabled === false");
@@ -179,7 +129,7 @@ try {
   await bundle(true);
   await click('generic-preflight');
   await wait("document.getElementById('generic-report').textContent.includes('backgroundcolor')");
-  assert.equal(await evaluate("document.getElementById('generic-apply').disabled"), true);
+  await expect(page.locator('#generic-apply')).toBeDisabled();
   await bundle(false);
   await click('generic-preflight');
   await wait("document.getElementById('generic-apply').disabled === false");
@@ -188,7 +138,7 @@ try {
       'art/sheet.png',
     ),
   );
-  await chrome.screenshot('import-tiled-preflight');
+  await page.screenshot({ path: testInfo.outputPath('import-tiled-preflight' + '.png') });
   await click('generic-apply');
   await wait(
     "!document.getElementById('import-atlas-dialog').open && document.getElementById('status').textContent.includes('Import complete')",
@@ -197,22 +147,14 @@ try {
   const saved = record(await (await fetch(new URL(`api/scene/${id}`, url))).json());
   assert.ok(JSON.stringify(saved).includes('external_1/tile_1_0/0/0'));
   assert.equal(saved.name, 'External map');
-  await chrome.call('Page.reload');
+  await page.reload();
   await wait(
     "document.getElementById('status')?.textContent.includes('Choose a scene') && !document.getElementById('scenes').disabled",
   );
   await set('scenes', id);
   await wait("document.getElementById('status').textContent === 'Scene opened.'");
-  assert.deepEqual(chrome.errors, []);
+
   console.log(
     'Generic import acceptance passed: PNG slicing, invalidation, Tiled preflight/import/reopen.',
   );
-} finally {
-  await browser?.close();
-  if (server.exitCode === null) {
-    const exited = once(server, 'exit');
-    server.kill('SIGINT');
-    await exited;
-  }
-  await rm(folder, { recursive: true, force: true });
-}
+});

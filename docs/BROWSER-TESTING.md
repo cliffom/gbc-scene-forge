@@ -1,10 +1,10 @@
 # Browser acceptance
 
-Forge is adopting Playwright Test incrementally. Lifecycle and first-use acceptance
-use Playwright; the remaining suites retain `tests/chrome.ts` until migration.
-There is one permanent implementation of each suite. Browser tooling is an npm
-**development dependency**; installed wheels, `uvx` and the MCP server need neither
-Node nor Playwright.
+All supported browser acceptance uses Playwright Test. `tests/browser-fixtures.ts`
+owns test-scoped temporary projects and loopback Python servers; Playwright owns
+browser contexts and profiles. There is no custom CDP transport or permanent
+parallel implementation of a suite. Installed wheels, `uvx` and the MCP server
+need neither Node nor Playwright.
 
 ## Running and debugging
 
@@ -12,130 +12,100 @@ After `make setup`, install Chromium once:
 
 ```sh
 npx playwright install chromium
-make test-playwright-browser
+make test-browser
+make test-standalone-browser
+make test-drafts-browser
 make test-editor-lifecycle-browser
-make test-first-use-browser
 npm run test:playwright -- --ui
 npm run test:playwright -- --grep 'editor disposal'
 ```
 
-Make targets rebuild the frontend; npm runner commands use the existing bundle.
-`make test-browser` runs all acceptance suites, including both migrated suites
-once. Use `CHROME=/path/to/chrome` with Make (or as an environment variable with
-npm) to select a local executable. Without it, Playwright uses its versioned
-Chromium; older CDP suites use the macOS Chrome application path. On Linux,
-install browser system libraries with `npx playwright install --with-deps chromium`.
-CI retains system Chrome for existing suites and also exercises Playwright's
-Chromium through the installed-wheel first-use check.
+`make test-browser` and `make test-playwright-browser` each execute every regular
+scenario once in one runner invocation. Existing suite-specific Make targets and
+`npm run test:standalone` / `npm run test:drafts` select the corresponding specs.
+Make targets rebuild assets; npm runner commands use the existing bundle. Use
+`CHROME=/path/to/chrome` to select an executable. Otherwise every suite uses the
+same versioned Playwright Chromium. Linux installation can use
+`npx playwright install --with-deps chromium`.
 
-Playwright uses one worker and zero retries locally and in CI. Each test receives
-an isolated browser context and temporary project directory with its own loopback
-server on an ephemeral port. Fixtures terminate the server on success, assertion
-failure or startup failure, escalating to SIGKILL after five seconds, and remove
-the workspace. Playwright owns browser profiles and contexts. As with any test
-runner, a hard process/host kill cannot execute fixture teardown.
+The runner uses one worker and zero retries. Each test receives an isolated
+browser context and temporary project directory. Fixtures start servers on
+an ephemeral port, retain their output, terminate them on success, assertion
+failure or startup failure, and remove workspaces. Servers ignoring SIGINT receive
+SIGKILL after five seconds. Tests can restart servers or open multiple pages
+inside their own fixture; they never share mutable workspaces across scenarios.
+A hard host/process kill cannot execute teardown.
 
-`build/reports/playwright/` contains an HTML report, server/browser logs and first-use
-screenshots; failures retain a screenshot, DOM error context and trace. CI uploads
-`build/reports/` even when a test fails. Inspect locally:
+Standalone acceptance separates launcher/switching, artwork/placement, sprite
+preview, layer/object editing with export/restart, demo conformance, and palette
+budgets. Preview and layer checks seed independent portable projects from
+`tests/fixtures/editor/`; a real browser placement establishes undo history.
+Draft acceptance separates deliberate multi-tab/restart/move recovery, checkpoint
+retry/preview behavior, and stale-revision download/discard. Each has its own
+purpose-specific project setup. See [the coverage inventory](BROWSER-COVERAGE.md).
+
+## Failure evidence
+
+Each invocation writes a unique directory under `build/reports/playwright/`, named
+with its timestamp and process ID. Workers inherit that name. HTML reports,
+server/browser logs and scenario screenshots survive subsequent suite,
+installed-wheel and MCP invocations. Failures retain a screenshot, DOM error
+context and trace without requiring a retry. CI uploads all of `build/reports/`
+even after failure. An explicit `FORGE_BROWSER_RUN` selects a report name; use a
+fresh value if previous evidence must be retained.
 
 ```sh
-npx playwright show-report build/reports/playwright/html
-npx playwright show-trace build/reports/playwright/results/TEST-DIRECTORY/trace.zip
+npx playwright show-report build/reports/playwright/RUN/html
+npx playwright show-trace build/reports/playwright/RUN/results/TEST/trace.zip
 ```
 
-A new invocation replaces the prior report; copy it before rerunning when needed.
-Trace and screenshot collection do not require a retry. Uncaught page errors fail
-the test, while console output is attached for diagnosis. Lifecycle steps name the
-ownership invariant being tested, so reports identify the failing race check.
+Console messages and uncaught errors are collected for every page, including
+recovery and secondary tabs. Uncaught page errors fail acceptance. Expected HTTP
+400/409 responses remain in the console evidence while their UI/error and saved
+file behavior are asserted by the relevant scenario. Ordinary interactions use
+locators, native keyboard/mouse input and Playwright web assertions. Complex
+canvas pixel, layout, authored-data and fault-injection assertions still use
+browser evaluation and Node assertions where appropriate.
 
-## Application readiness and race checks
+## Readiness and race checks
 
-`editorReady(page)` requires both the completed startup status and an enabled
-scene selector, including after disposal/remount. Playwright actionability alone
-does not prove that project refresh has completed. Use locators and web assertions
-for user interactions and known UI states; do not add arbitrary startup sleeps.
+`editorReady(page)` requires both completed startup status and an enabled scene
+selector, including after disposal/remount. Additional scenario predicates assert
+specific adoption, cancellation, capture and disposal states. Actionability alone
+does not prove that a project refresh has completed.
 
-The lifecycle migration deliberately retains the original in-page fault injection
-and assertions for delayed project responses, pending artwork decode, interrupted
-definition save/delete and cancelled draft cleanup. Named `test.step` blocks
-preserve their sequence and shared ownership scenario. Browser evaluation is still
-needed to replace fetch/decode and mount/dispose controllers; it is not a new CDP
-abstraction. Existing expression predicates are polled with `expect.poll` and
-`page.evaluate`: string-based `waitForFunction` uses eval under this CSP and fails.
-Do not enable `unsafe-eval` or bypass CSP to make tests pass. The 2.3-second
-observations prove that disposed pollers stay stopped; short post-release
-observations retain the original late-completion checks rather than startup waits.
+`waitForUI` polls through `expect.poll` and `page.evaluate`. String-based
+`waitForFunction` uses eval under Forge's CSP and fails; do not enable
+`unsafe-eval` or bypass CSP. Delayed fetch/artwork decode, held responses,
+interrupted saves, capture transfer and cancelled cleanup remain explicit fault
+injection. Timed observations prove disposed/dirty/hidden pollers remain stopped;
+they are not arbitrary startup sleeps. Real SDK writers remain real processes,
+not mocked success responses.
 
-First-use now uses locator clicks/fills/selects, mouse painting and a real
-Playwright download stream. It verifies the served version through the same Python
-interpreter that starts the server. To check a built wheel without rebuilding:
+The only Playwright CDP sessions emulate Chromium display density: blockout checks
+change DPR while retaining the authored scene; chooser checks emulate desktop
+zoom by changing CSS viewport dimensions and DPR together. Playwright context DPR
+is immutable. Ordinary input, navigation, file selection, screenshots and target
+ownership use Playwright APIs.
+
+## Installed-product and optional MCP checks
 
 ```sh
 FORGE_BUILD_MODE=production make build check-dist
-FORGE_TEST_PYTHON="$PWD/build/package-smoke/bin/python" npm run test:playwright -- first-use.spec.ts
+FORGE_BUILD_MODE=production FORGE_TEST_PYTHON="$PWD/build/package-smoke/bin/python" npm run test:playwright -- first-use.spec.ts
+FORGE_MCP_PYTHON=/path/to/installed-mcp-venv/bin/python make test-mcp test-mcp-browser
 ```
 
-`FORGE_TEST_PYTHON` also applies to sample setup and server startup in the shared
-fixtures. Optional installed MCP coverage remains independent:
+`FORGE_TEST_PYTHON` selects the application interpreter, including fixture setup.
+`FORGE_MCP_PYTHON` selects the real installed SDK client/server used by optional
+MCP writers. MCP and external refresh are excluded from ordinary runs;
+`make test-mcp-browser` enables both in one invocation with `FORGE_MCP_ONLY=1`.
+They retain concurrent saves, revision conflicts, recovery, view/tool/brush modes,
+form/dirty/hidden protection, held response/decode races and animated adoption.
 
-```sh
-FORGE_MCP_PYTHON=/path/to/mcp-venv/bin/python make test-mcp test-mcp-browser
-```
-
-## Decision and migration scope (#73)
-
-**Adopt Playwright for new acceptance coverage and migrate existing suites in
-bounded changes.** Built-in process/context ownership, locator actionability,
-runner steps, traces and screenshots are preferable to growing the custom CDP
-transport. This is test infrastructure only: retain package version 0.16.2 and
-prepare no dedicated product release.
-
-The setup inventory and ownership after this pilot:
-
-| Concern | Previously | Pilot ownership / remaining work |
-| --- | --- | --- |
-| Temp project, Python server, startup URL and teardown | Repeated in each suite | `browser-fixtures.ts` owns migrated test resources; other suites still repeat setup |
-| Browser profile, sessions, protocol transport, pointer and screenshots | `chrome.ts` plus per-suite target setup | Playwright owns migrated browser resources; a small canvas coordinate helper remains |
-| Startup readiness | Repeated expressions, including the #72 enabled-control fix | Shared `editorReady`; race injection remains in lifecycle |
-| Failure evidence | Console assertions and occasional explicit screenshots | Automatic trace/screenshot, named lifecycle steps, attached logs and CI report artifact |
-| Installed-product execution | First-use selected Python via environment variable | Same capability via shared fixture, now exercised in CI |
-| MCP writer and concurrent refresh | Dedicated CDP suites and optional SDK Python | Preserved unchanged pending a separate migration |
-
-The two old suite files (484 lines total) are removed rather than retained in
-parallel. Their replacement specs preserve behavior while eliminating per-suite
-server/target/profile setup. The shared fixture is application glue, not another
-browser protocol wrapper. At the pilot checkpoint, the two specs total 362 lines
-and the fixture/config total 167 lines: 529 versus 484 previously. This initial
-45-line increase buys shared cleanup and diagnostics; the first two migrations
-do not yet reduce the overall test infrastructure line count. The approximately 250-line CDP transport **is not yet
-removed** because ten ordinary suites and two optional MCP suites still depend on
-it. No installed application code is changed.
-
-A local macOS production-bundle comparison (single run, not a performance claim):
-old lifecycle 12.64s and old first-use 1.58s; migrated lifecycle 11.3s and first-use
-2.0s, with the combined Playwright run reporting 13.6s including runner overhead.
-Both old suites used local Chrome; the pilot used managed Chromium, so timings
-are not controlled browser benchmarks. The gain is diagnostics and ownership,
-not an asserted speedup. Playwright adds its pinned npm runner/core dependencies
-and a one-time browser download (plus Linux system dependencies). CI installs the
-browser explicitly; normal Python installation does not download it.
-
-Next migration scopes:
-
-1. **Layout:** port layout/keyboard coverage to locator assertions and shared
-   fixtures; add #80's hover/focus regression when that issue is implemented.
-2. **Domain suites:** migrate terrain, imports, blockout, compositions, definitions,
-   world and diagnostics independently, retaining their acceptance assertions and
-   screenshots. Parameterize fixtures only when a real second consumer needs it.
-3. **Large editing/recovery suites:** split standalone and drafts into isolated
-   scenarios with explicit readiness and purpose-specific seeded projects.
-4. **MCP and external refresh:** preserve real installed SDK writers, revision
-   conflicts, held responses and dirty-editor protection while migrating.
-5. **Retirement:** delete `chrome.ts` and leftover server setup only when no callers
-   remain. Do not add a long-lived compatibility adapter or duplicate old suites.
-
-Reference: [fixtures](https://playwright.dev/docs/test-fixtures),
-[actionability](https://playwright.dev/docs/actionability),
-[CI setup](https://playwright.dev/docs/ci), and
-[trace viewer](https://playwright.dev/docs/trace-viewer).
+CI reuses the single Chromium installation for regular, installed-wheel and MCP
+checks. It builds the production minified bundle and validates installed-wheel
+first use. The Python compatibility matrix remains 3.13 and 3.14 and consumes the
+same wheel without Node or browser installation. Playwright remains npm development
+infrastructure, with a one-time Chromium download and Linux system libraries.
+No second browser installation or duplicate acceptance run is required.
