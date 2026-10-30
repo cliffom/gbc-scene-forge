@@ -13,7 +13,7 @@ The runner configuration is `tests/playwright/playwright.config.ts`. It discover
 
 | Folder | Suites | Scenarios |
 | --- | --- | ---: |
-| `editor/` | standalone editor workflow (including cross-domain persistence/export), layout and chooser, editor lifecycle, review mode | 11 |
+| `editor/` | standalone editor workflow (including cross-domain persistence/export), layout and chooser, editor lifecycle, review mode, canvas repaint profiling | 13 |
 | `project/` | first use and draft recovery | 4 |
 | `artwork/` | PNG/Tiled imports and terrain brushes | 2 |
 | `objects/` | compositions and definitions | 2 |
@@ -36,7 +36,7 @@ FORGE_MCP_ONLY=1 npm run test:playwright -- --list
 npm run test:playwright -- editor/review.spec.ts --list
 ```
 
-Regular discovery includes 22 scenarios in 13 files; optional discovery includes
+Regular discovery includes 24 scenarios in 14 files; optional discovery includes
 only the two MCP/refresh scenarios. Basename selectors such as `first-use.spec.ts`
 and all existing Make/npm entry points remain supported. Reports resolve from the
 configuration to the repository's `build/reports/playwright/`, matching CI uploads.
@@ -149,3 +149,11 @@ first use. The Python compatibility matrix remains 3.13 and 3.14 and consumes th
 same wheel without Node or browser installation. Playwright remains npm development
 infrastructure, with a one-time Chromium download and Linux system libraries.
 No second browser installation or duplicate acceptance run is required.
+
+## Rendering measurements
+
+`editor/rendering.spec.ts` adds small/large native multi-layer workloads for hover,
+painting and sprite animation, plus deterministic canvas sizing and history
+regressions. It attaches raw `rendering-profile.json` samples to the report.
+Timings are observational; CI asserts resource/state behavior without speed
+thresholds. See [the baseline, results and scheduling decision](evaluations/canvas-repainting.md).

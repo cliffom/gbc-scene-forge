@@ -98,16 +98,43 @@ export function createRenderingController({
     element('scene-name', HTMLElement).textContent =
       `${sceneSession.loaded.name} · ${sceneSession.loaded.width} × ${sceneSession.loaded.height} · ${sceneSession.loaded.grid}px`;
     const size = sceneSession.loaded.grid;
-    canvas.width = sceneSession.loaded.width * size;
-    canvas.height = sceneSession.loaded.height * size;
+    const width = sceneSession.loaded.width * size;
+    const height = sceneSession.loaded.height * size;
+    // Assigning even the same backing dimensions clears pixels and context state.
+    if (canvas.width !== width) {
+      canvas.width = width;
+    }
+    if (canvas.height !== height) {
+      canvas.height = height;
+    }
     brushes.planningScene = ports.syncBlockoutZoom();
     const zoom = ports.sceneZoom();
-    canvas.style.width = `${canvas.width * zoom}px`;
-    canvas.style.height = `${canvas.height * zoom}px`;
+    const displayWidth = `${width * zoom}px`;
+    const displayHeight = `${height * zoom}px`;
+    if (canvas.style.width !== displayWidth) {
+      canvas.style.width = displayWidth;
+    }
+    if (canvas.style.height !== displayHeight) {
+      canvas.style.height = displayHeight;
+    }
     if (refreshUI) {
       ports.update();
     }
     context.imageSmoothingEnabled = false;
+    // Repaints must not inherit styles or paths left by the previous frame.
+    context.save();
+    context.beginPath();
+    try {
+      repaint(size, zoom);
+    } finally {
+      context.restore();
+    }
+  }
+
+  function repaint(size: number, zoom: number) {
+    if (!sceneSession.editor) {
+      return;
+    }
     context.fillStyle = '#242820';
     context.fillRect(0, 0, canvas.width, canvas.height);
     for (const layer of sceneSession.editor.layers) {
@@ -308,8 +335,8 @@ export function createRenderingController({
       const width = tool === 'paint' && brushes.brush ? brushes.brush[0].length : 1;
       const height = tool === 'paint' && brushes.brush ? brushes.brush.length : 1;
       const valid =
-        gestures.hover.x + width <= sceneSession.loaded.width &&
-        gestures.hover.y + height <= sceneSession.loaded.height;
+        gestures.hover.x + width <= sceneSession.editor.scene.width &&
+        gestures.hover.y + height <= sceneSession.editor.scene.height;
       context.strokeStyle = valid ? '#f2d67b' : '#ed886f';
       context.lineWidth = 0.5;
       context.strokeRect(
