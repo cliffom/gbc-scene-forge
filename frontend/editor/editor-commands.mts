@@ -190,6 +190,17 @@ export function createCommandsController({
   document.addEventListener(
     'keydown',
     (event) => {
+      if (activity.reviewing) {
+        // Keep native focus/zoom controls and viewport scrolling; block authoring shortcuts.
+        if (
+          ['Delete', 'Backspace'].includes(event.key) ||
+          ((event.ctrlKey || event.metaKey) &&
+            ['c', 'x', 'v', 'd', 's', 'z', 'y'].includes(event.key.toLowerCase()))
+        ) {
+          event.preventDefault();
+        }
+        return;
+      }
       if (
         sceneSession.editor &&
         !activity.busy &&

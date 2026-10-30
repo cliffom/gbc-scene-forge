@@ -79,7 +79,7 @@ export function createViewportController({
       parseFloat(padding.paddingBottom) -
       2;
     const scale = Math.max(
-      brushes.planningScene ? 1 / 64 : 1,
+      brushes.planningScene || activity.reviewing ? 1 / 64 : 1,
       Math.min(
         8,
         width / (sceneSession.loaded.width * sceneSession.loaded.grid),

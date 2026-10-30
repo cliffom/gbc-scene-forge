@@ -15,7 +15,7 @@ Your projects stay on your computer.
 Install the release with Python 3.10 or newer:
 
 ```sh
-python -m pip install gbc-scene-forge==0.16.3
+python -m pip install gbc-scene-forge==0.17.0
 gbc-scene-forge
 ```
 
@@ -144,9 +144,9 @@ make run PROJECT_ROOT="$HOME/Scene Forge Projects"
 
 Use the same location on later launches to see those projects again. Unsupported
 or damaged manifests are reported in the selector so you can identify the folder
-that needs attention. Version 0.16.3 continues to use manifest format version 1.
+that needs attention. Version 0.17.0 continues to use manifest format version 1.
 
-### Bring an existing project into 0.16.3
+### Bring an existing project into 0.17.0
 
 Existing 0.2.0 projects keep their artwork, scene IDs and manifest format. To add
 one to the selector, stop Forge and move the whole project folder into your
@@ -298,6 +298,10 @@ and follow or repair connections with navigable findings.
 [Project diagnostics](docs/STANDALONE.md#project-diagnostics) reports content errors,
 unused assets, and movement findings under explicitly selected assumptions.
 
+Choose **Review scene** in the canvas toolbar for a larger view with the authoring
+panels hidden. Drag to pan, use zoom or Fit scene, and choose **Return to editing**
+when finished. See the [review mode guide](docs/user/review-mode.md).
+
 Clipboard editing, duplication, transforms and reusable project stamps are described
 in the [composition guide](docs/STANDALONE.md#clipboard-and-reusable-stamps).
 
@@ -310,7 +314,7 @@ Paint connected roads, walls and shorelines with [terrain brushes](docs/user/ter
 Optional [GBC target budgets](docs/user/gbc-budgets.md) report static source-tile
 and OAM estimates alongside palette requirements, with explicit runtime limitations.
 
-See [the 0.16.3 release notes](docs/RELEASE-0.16.3.md) and
+See [the 0.17.0 release notes](docs/RELEASE-0.17.0.md) and
 [building and releasing](docs/RELEASING.md) for release validation and publication.
 
 ## License

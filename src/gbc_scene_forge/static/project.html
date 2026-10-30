@@ -142,14 +142,16 @@
       </aside>
       <section class="workbench" aria-label="Scene canvas">
         <div class="canvas-toolbar">
-          <div class="tool-group" role="group" aria-label="Editing tools">
+          <button id="review-mode" aria-pressed="false" disabled>Review scene</button>
+          <span class="review-mode-label">Review · Pan</span>
+          <div class="tool-group authoring-tools" role="group" aria-label="Editing tools">
             <label class="tool" title="Select and move (S)"><input type="radio" name="tool" value="select" disabled><span aria-hidden="true">⌖</span><span>Select</span></label>
             <label class="tool" title="Paint or place (P)"><input type="radio" name="tool" value="paint" checked disabled><svg class="tool-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m14 6 4-4a2.8 2.8 0 0 1 4 4l-9 9-4-4 5-5Z"/><path d="M9 11c-3-1-5 1-5 4 0 2-1 4-2 5 5 1 10-1 10-5"/></svg><span id="paint-label">Paint</span></label>
             <label class="tool" title="Fill (F)"><input type="radio" name="tool" value="fill" disabled><svg class="tool-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 2 5 5M19 11l-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2a2 2 0 0 0 2.8 0L19 11ZM2 12h16"/><path d="M20 15s-2 2.5-2 4a2 2 0 0 0 4 0c0-1.5-2-4-2-4Z"/></svg><span>Fill</span></label>
             <label class="tool" title="Erase (E)"><input type="radio" name="tool" value="erase" disabled><span aria-hidden="true">⌫</span><span>Erase</span></label>
             <label class="tool" title="Pan (H), or hold Space and drag"><input type="radio" name="tool" value="pan" disabled><span aria-hidden="true">✥</span><span>Pan</span></label>
           </div>
-          <div class="tool-group"><button id="undo" title="Undo (⌘/Ctrl Z)" aria-label="Undo" disabled>↶</button><button id="redo" title="Redo (⌘/Ctrl Shift Z)" aria-label="Redo" disabled>↷</button></div>
+          <div class="tool-group authoring-tools"><button id="undo" title="Undo (⌘/Ctrl Z)" aria-label="Undo" disabled>↶</button><button id="redo" title="Redo (⌘/Ctrl Shift Z)" aria-label="Redo" disabled>↷</button></div>
           <span class="spacer"></span><div class="zoom-controls"><label>Zoom <select id="zoom"><option value="fit" id="fit-zoom-option">Fit</option><option value="1">1×</option><option value="2">2×</option><option value="3" selected>3×</option><option value="4">4×</option><option value="6">6×</option><option value="8">8×</option></select></label><button id="fit-scene" disabled title="Center and fit the entire scene in the workspace">Fit scene</button></div>
         </div>
         <div class="composition-tools" role="group" aria-label="Selection and clipboard">
@@ -174,7 +176,7 @@
           <div id="canvas-surround" class="canvas-surround" hidden><canvas id="scene" hidden tabindex="0" aria-label="Editable scene on a tile grid"></canvas></div>
         </div>
         <div class="canvas-footer"><span id="coordinates" title="Cell column and row, followed by pixel X and Y. All coordinates start at zero.">Cell —, — · Pixel —, —</span><span id="scene-name">No scene open</span><span id="selected-brush">Select a brush</span></div>
-        <div class="review-bar"><span class="eyebrow">VIEW</span><label><input id="grid" type="checkbox" checked> Grid</label><label title="Snap sprite origins to grid intersections. Hold Alt to bypass; arrow keys nudge one pixel."><input id="snap" type="checkbox" checked> Snap to grid</label><label><input id="terrain-overlay" type="checkbox"> Terrain</label><label><input id="collision-overlay" type="checkbox"> Collision</label><span class="hint">Space: pan · Wheel: zoom · Alt: free placement · Arrow keys: 1 px</span></div>
+        <div class="review-bar"><span class="eyebrow">VIEW</span><label><input id="grid" type="checkbox" checked> Grid</label><label class="snap-control" title="Snap sprite origins to grid intersections. Hold Alt to bypass; arrow keys nudge one pixel."><input id="snap" type="checkbox" checked> Snap to grid</label><label><input id="terrain-overlay" type="checkbox"> Terrain</label><label><input id="collision-overlay" type="checkbox"> Collision</label><span class="hint">Space: pan · Wheel: zoom · Alt: free placement · Arrow keys: 1 px</span></div>
       </section>
       <aside class="inspector">
         <section id="scene-panel" class="inspector-panel" aria-label="Scene properties">

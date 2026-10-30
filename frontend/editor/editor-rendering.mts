@@ -6,6 +6,7 @@ import { blockoutAppearance, drawBlockout } from '../blockout/blockout.mts';
 import { element, input } from './editor-dom.mts';
 import type {
   BrushState,
+  EditorActivity,
   GestureState,
   SceneSelection,
   SceneSession,
@@ -30,6 +31,7 @@ export interface Ports {
 }
 export function createRenderingController({
   sceneSession,
+  activity,
   sceneSelection,
   canvas,
   brushes,
@@ -41,6 +43,7 @@ export function createRenderingController({
   ports,
 }: {
   lifetime: EditorLifetime;
+  activity: Pick<EditorActivity, 'reviewing'>;
   sceneSession: Pick<SceneSession, 'editor' | 'loaded'>;
   sceneSelection: Pick<SceneSelection, 'selectedObject' | 'selectedObjects' | 'selection'>;
   canvas: HTMLCanvasElement;
@@ -234,7 +237,7 @@ export function createRenderingController({
       }
       context.stroke();
     }
-    if (sceneSelection.selection) {
+    if (!activity.reviewing && sceneSelection.selection) {
       context.fillStyle = '#d4b76755';
       context.fillRect(
         sceneSelection.selection.x * size,
@@ -246,7 +249,7 @@ export function createRenderingController({
     for (const layer of sceneSession.editor.layers) {
       if (layer.visible && layer.type === 'objectgroup') {
         for (const item of layer.objects) {
-          if (sceneSelection.selectedObjects.has(item.id)) {
+          if (!activity.reviewing && sceneSelection.selectedObjects.has(item.id)) {
             const r = bounds(item);
             context.strokeStyle = '#f2d67b';
             context.lineWidth = 1;
@@ -258,7 +261,7 @@ export function createRenderingController({
     const selected = sceneSession.editor.objects.find(
       (r) => r.id === sceneSelection.selectedObject,
     );
-    if (selected) {
+    if (selected && !activity.reviewing) {
       const r = bounds(selected);
       context.strokeStyle = '#f2d67b';
       context.lineWidth = 0.75;
@@ -295,7 +298,13 @@ export function createRenderingController({
         zoom,
       ),
     );
-    if (gestures.hover && tool !== 'pan' && !gestures.spacePan && !gestures.pan) {
+    if (
+      !activity.reviewing &&
+      gestures.hover &&
+      tool !== 'pan' &&
+      !gestures.spacePan &&
+      !gestures.pan
+    ) {
       const width = tool === 'paint' && brushes.brush ? brushes.brush[0].length : 1;
       const height = tool === 'paint' && brushes.brush ? brushes.brush.length : 1;
       const valid =

@@ -42,7 +42,9 @@ budgets. Preview and layer checks seed independent portable projects from
 `tests/fixtures/editor/`; a real browser placement establishes undo history.
 Draft acceptance separates deliberate multi-tab/restart/move recovery, checkpoint
 retry/preview behavior, and stale-revision download/discard. Each has its own
-purpose-specific project setup. See [the coverage inventory](BROWSER-COVERAGE.md).
+purpose-specific project setup. Review-mode acceptance covers viewport expansion,
+pan/zoom/Fit, blocked authoring input, retained selection/history and camera position,
+narrow layouts, installed-wheel use, disposal/remount and external deletion. See [the coverage inventory](BROWSER-COVERAGE.md).
 
 ## Failure evidence
 
