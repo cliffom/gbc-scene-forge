@@ -25,7 +25,7 @@ allow discovery to recurse on supported Python versions. Imports use
 retain their existing `legacy` namespace. There is no root `tests` package or
 checkout-source path injection; compatibility CI uses the installed wheel.
 
-Optional `make test-mcp` uses the same discovery root with `-p test_mcp.py` and
+Optional `make test-mcp` uses the same discovery root with `-p 'test_mcp*.py'` and
 requires the SDK in `FORGE_MCP_PYTHON`. Plain runs retain adapter checks and skip
 the SDK-only test when the extra is absent. `packaging/package_smoke.py` is
 explicitly run with `python -I` after wheel installation, outside unit discovery.

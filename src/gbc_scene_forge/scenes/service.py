@@ -9,9 +9,9 @@ from gbc_scene_forge.core.records import NativeDocument
 from gbc_scene_forge.core.serialization import json_text
 from gbc_scene_forge.core.validation import integer, require
 from gbc_scene_forge.formats import tiled
-from gbc_scene_forge.planning import world
+from gbc_scene_forge.planning import blockout, world
 from gbc_scene_forge.project.store import ProjectStore
-from gbc_scene_forge.scenes import authoring
+from gbc_scene_forge.scenes import authoring, rendering
 from gbc_scene_forge.storage.files import digest, read_optional
 from gbc_scene_forge.storage.paths import safe_path
 
@@ -206,3 +206,61 @@ class SceneService:
             "allocated_object_ids": allocated,
             "changes": summary,
         }
+
+    def review_artwork(self, scene_id, revision, scene_revision, *, camera_id=None, overview=None):
+        """Render only exact saved artwork, under one verified read session."""
+        self.store.current(revision)
+        with self.store.read_session(revision, verify_assets=True) as session:
+            loaded = session.scene(scene_id)
+            if loaded["revision"] != scene_revision:
+                raise Conflict("Scene changed on disk. Reopen before reviewing artwork.")
+            scene, document = loaded["scene"], session.document
+            camera = blockout.select_camera(scene, document, camera_id)
+            camera_view = rendering.viewport({k: camera[k] for k in ("x", "y", "width", "height")})
+            width, height = scene["width"] * scene["grid"], scene["height"] * scene["grid"]
+            overview = rendering.viewport(
+                overview
+                if overview is not None
+                else dict(
+                    x=0,
+                    y=0,
+                    width=min(width, rendering.MAX_DIMENSION),
+                    height=min(height, rendering.MAX_DIMENSION),
+                )
+            )
+            require(
+                overview["x"] < width and overview["y"] < height,
+                "Overview origin must be inside the scene",
+            )
+
+            def read_image(path):
+                data = safe_path(self.store.root, path).read_bytes()
+                if digest(data) != document["files"][path]:
+                    raise Conflict("Project artwork changed while reviewing.")
+                return data
+
+            result = dict(
+                scene_id=scene_id,
+                project_revision=revision,
+                scene_revision=scene_revision,
+                snapshot_revision=authoring.snapshot(scene),
+                includes_artwork=True,
+                includes_planning_overlays=False,
+                units="pixels",
+                scale=1,
+                width=width,
+                height=height,
+                camera=camera,
+                overview=overview,
+                overview_complete=(
+                    overview["x"] == overview["y"] == 0
+                    and overview["width"] >= width
+                    and overview["height"] >= height
+                ),
+                camera_png=rendering.render(scene, document, read_image, camera_view),
+                overview_png=rendering.render(scene, document, read_image, overview),
+            )
+            self.store.current(revision)
+            if session.scene(scene_id)["revision"] != scene_revision:
+                raise Conflict("Scene changed while reviewing artwork.")
+            return result

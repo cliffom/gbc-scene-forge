@@ -152,10 +152,18 @@ class ArtworkService:
         }
 
     def import_bundle(
-        self, bundle: NativeDocument, revision: str, *, reimport: bool = False
+        self,
+        bundle: NativeDocument,
+        revision: str,
+        *,
+        reimport: bool = False,
+        dry_run: bool = False,
     ) -> NativeDocument:
         """Validate an uploaded atlas bundle before preparing its guarded import."""
-        return self._import_bundle(atlas.load_uploaded_bundle(bundle), revision, reimport=reimport)
+        require(type(reimport) is bool and type(dry_run) is bool, "Invalid import options")
+        return self._import_bundle(
+            atlas.load_uploaded_bundle(bundle), revision, reimport=reimport, dry_run=dry_run
+        )
 
     def import_tilesheet(self, value, revision, *, reimport=False, dry_run=False):
         require(type(reimport) is bool and type(dry_run) is bool, "Invalid import options")
@@ -203,14 +211,6 @@ class ArtworkService:
             report["metadata_changed"] = previous["manifest"] != manifest
         else:
             report["added"] = [r["name"] for r in manifest["regions"]]
-        if dry_run:
-            return {
-                **report,
-                "regions": manifest["regions"],
-                "width": width,
-                "height": len(pixels) // (width * 4),
-                "dry_run": True,
-            }
         # Decode maps with the old tileset ranges before adding local IDs/atlases.
         scenes = [self.store.load_scene(item["id"], document) for item in document["scenes"]]
         entry, changes = atlas.build_assets(manifest, image, width, pixels, previous)
@@ -220,7 +220,30 @@ class ArtworkService:
             path = f"scenes/{loaded['id']}.tmj"
             changes[path] = json_text(tiled.encode(loaded["scene"], document)).encode()
             expected[path] = loaded["revision"]
+        # Preflight exercises the same serialization and persistence limits as commit.
+        prepared = copy.deepcopy(document)
+        self.store.prepare_commit(prepared, dict(changes))
+        result = {
+            **report,
+            "regions": manifest["regions"],
+            "width": width,
+            "height": len(pixels) // (width * 4),
+            "dry_run": dry_run,
+            "project_revision": revision if dry_run else digest(json_text(prepared).encode()),
+            "scene_revisions": {
+                loaded["id"]: loaded["revision"]
+                if dry_run
+                else digest(changes[f"scenes/{loaded['id']}.tmj"])
+                for loaded in scenes
+            },
+        }
+        if dry_run:
+            with self.store.read_session(revision, verify_assets=True) as session:
+                for loaded in scenes:
+                    if session.scene(loaded["id"])["revision"] != loaded["revision"]:
+                        raise Conflict("Scene changed while preparing atlas import.")
+            return result
         self.store.commit(
             document, revision, changes, expected, "Reimport atlas" if previous else "Import atlas"
         )
-        return report
+        return result

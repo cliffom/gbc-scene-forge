@@ -10,7 +10,7 @@ from collections import OrderedDict
 from gbc_scene_forge.core.validation import require
 from gbc_scene_forge.project.application import Project
 from gbc_scene_forge.project.workspaces import ProjectRoot
-from gbc_scene_forge.scenes import authoring
+from gbc_scene_forge.scenes import authoring, rendering
 from gbc_scene_forge.storage.files import digest
 
 from .schemas import DEFERRED, TOOLS
@@ -68,6 +68,10 @@ class Adapter:
                 "max_operations": 128,
                 "max_input_bytes": authoring.MAX_INPUT,
                 "max_artifact_bytes": MAX_ARTIFACT,
+                "max_view_dimension": rendering.MAX_DIMENSION,
+                "max_view_pixels": rendering.MAX_PIXELS,
+                "max_source_pixels_per_view": rendering.MAX_SOURCE_PIXELS,
+                "max_composited_pixels_per_view": rendering.MAX_WORK,
                 "artifact_cache_bytes": MAX_CACHE,
                 "history": "Saved writes only. Browser drafts and Undo remain independent.",
             }
@@ -118,6 +122,26 @@ class Adapter:
                     svg.encode(), "image/svg+xml", f"{view}.svg"
                 )
             return {**result, "units": "pixels"}
+        if name == "import_atlas":
+            return project.artwork.import_bundle(
+                a["bundle"],
+                revision,
+                reimport=a.get("reimport", False),
+                dry_run=a.get("dry_run", False),
+            )
+        if name == "review_artwork":
+            result = project.scenes.review_artwork(
+                a["scene_id"],
+                revision,
+                a["scene_revision"],
+                camera_id=a.get("camera_id"),
+                overview=a.get("overview"),
+            )
+            for view in ("overview", "camera"):
+                result[f"{view}_resource"] = self.artifact(
+                    result.pop(f"{view}_png"), "image/png", f"{view}.png"
+                )
+            return result
         if name == "diagnostics":
             return project.reports.diagnostics(revision, a.get("options"))
         if name == "palette_report":

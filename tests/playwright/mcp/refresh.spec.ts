@@ -234,13 +234,22 @@ test('refresh: Saved-file refresh with a real stdio MCP writer and protected bro
   await wait(
     "document.getElementById('object-definition-brush').textContent.includes('Updated blockout definition')",
   );
-  // Artwork import uses a separate native writer (not a new browser import).
-  await promisify(execFile)('.venv/bin/python', [
+  // The real MCP upload shares the browser importer and refresh inventory.
+  const { stdout: atlasUpload } = await promisify(execFile)('.venv/bin/python', [
     '-c',
-    "import sys;from pathlib import Path;sys.path.insert(0,'tests');from support.atlas_fixture import bundle;from gbc_scene_forge.project.application import Project;p,_=bundle(Path(sys.argv[2]));w=Project(sys.argv[1]);w.artwork.import_atlas(p,w.catalog()['revision'])",
-    root,
+    "import base64,json,sys;from pathlib import Path;sys.path.insert(0,'tests');from support.atlas_fixture import bundle;p,_=bundle(Path(sys.argv[1]));print(json.dumps(dict(name=p.name,manifest=p.read_text(),png=base64.b64encode((p.parent/'atlas.png').read_bytes()).decode())))",
     join(folder, 'external-art'),
   ]);
+  const upload = record(JSON.parse(atlasUpload));
+  await agent('import_atlas', {
+    project_revision: (await catalog()).revision,
+    bundle: upload,
+    dry_run: true,
+  });
+  await agent('import_atlas', {
+    project_revision: (await catalog()).revision,
+    bundle: upload,
+  });
   await tick();
   await wait('document.querySelector(\'#palette [data-asset="terrain/earth"]\')!==null');
   await inspectCamera(72);
@@ -303,6 +312,20 @@ test('refresh: Saved-file refresh with a real stdio MCP writer and protected bro
     (l) => l.type === 'tilelayer',
   );
   assert.equal(array(array(painted?.cells, (row) => row)[1], string)[1], 'terrain/stone/0/0');
+  const beforeReimport = await saved();
+  await agent('import_atlas', {
+    project_revision: (await catalog()).revision,
+    bundle: upload,
+    reimport: true,
+  });
+  await tick();
+  assert.deepEqual((await saved()).scene, beforeReimport.scene);
+  const artwork = await agent('review_artwork', {
+    project_revision: (await catalog()).revision,
+    scene_id: id,
+    scene_revision: (await saved()).revision,
+  });
+  assert.equal(record(artwork.camera_resource).mimeType, 'image/png');
   // Delete an unused atlas while its brush is active. Never select a substitute.
   await promisify(execFile)('.venv/bin/python', [
     '-c',
