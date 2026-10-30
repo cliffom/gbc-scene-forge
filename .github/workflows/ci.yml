@@ -28,7 +28,7 @@ jobs:
       - name: Browser acceptance checks
         run: make test-browser
       - name: Installed-wheel first-use acceptance
-        run: FORGE_TEST_PYTHON="$PWD/build/package-smoke/bin/python" npx playwright test --config tests/playwright.config.ts first-use.spec.ts
+        run: FORGE_TEST_PYTHON="$PWD/build/package-smoke/bin/python" npx playwright test --config tests/playwright/playwright.config.ts first-use.spec.ts
       - name: Optional MCP installed-wheel and browser checks
         run: |
           python -m venv build/mcp-ci

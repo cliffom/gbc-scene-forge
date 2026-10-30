@@ -3,9 +3,15 @@ import { expect } from '@playwright/test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
-import { array, record, string } from '../frontend/shared/decode.mts';
+import { array, record, string } from '../../../frontend/shared/decode.mts';
 
-import { clickControl, setControl, scenePoint, test, waitForUI } from './browser-fixtures.ts';
+import {
+  clickControl,
+  setControl,
+  scenePoint,
+  test,
+  waitForUI,
+} from '../support/browser-fixtures.ts';
 test('terrain: Four-neighbor terrain configuration and painting against a real native project.', async ({
   page,
   workspace,

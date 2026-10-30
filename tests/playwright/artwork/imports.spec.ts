@@ -2,9 +2,9 @@ import { expect } from '@playwright/test';
 /** Generic PNG slicing and bounded external Tiled intake through the real browser UI. */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { record, string } from '../frontend/shared/decode.mts';
+import { record, string } from '../../../frontend/shared/decode.mts';
 
-import { clickControl, setControl, test, waitForUI } from './browser-fixtures.ts';
+import { clickControl, setControl, test, waitForUI } from '../support/browser-fixtures.ts';
 test('imports: Generic PNG slicing and bounded external Tiled intake through the real browser UI.', async ({
   page,
   workspace,

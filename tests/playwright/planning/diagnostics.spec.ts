@@ -5,8 +5,8 @@ import { execFile } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { string } from '../frontend/shared/decode.mts';
-import { clickControl, test, waitForUI } from './browser-fixtures.ts';
+import { string } from '../../../frontend/shared/decode.mts';
+import { clickControl, test, waitForUI } from '../support/browser-fixtures.ts';
 test('diagnostics: Read-only findings, unsaved navigation, assumptions and stale-result handling.', async ({
   page,
   workspace,

@@ -5,9 +5,15 @@ import { execFile } from 'node:child_process';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { array, number, record, string } from '../frontend/shared/decode.mts';
+import { array, number, record, string } from '../../../frontend/shared/decode.mts';
 
-import { clickControl, scenePoint, setControl, test, waitForUI } from './browser-fixtures.ts';
+import {
+  clickControl,
+  scenePoint,
+  setControl,
+  test,
+  waitForUI,
+} from '../support/browser-fixtures.ts';
 test('blockout: Artwork-free planning, native edits/history, camera review and later artwork integration.', async ({
   page,
   workspace,

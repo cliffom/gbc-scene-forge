@@ -5,8 +5,8 @@ import { execFile } from 'node:child_process';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { record, string } from '../frontend/shared/decode.mts';
-import { clickControl, scenePoint, test, waitForUI } from './browser-fixtures.ts';
+import { record, string } from '../../../frontend/shared/decode.mts';
+import { clickControl, scenePoint, test, waitForUI } from '../support/browser-fixtures.ts';
 test('definitions: Real keyboard/pointer object definitions, inheritance and instance validation.', async ({
   page,
   workspace,

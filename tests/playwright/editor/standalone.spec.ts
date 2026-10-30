@@ -5,8 +5,14 @@ import { execFile } from 'node:child_process';
 import { cp, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { array, number, record, string } from '../frontend/shared/decode.mts';
-import { clickControl, scenePoint, setControl, test, waitForUI } from './browser-fixtures.ts';
+import { array, number, record, string } from '../../../frontend/shared/decode.mts';
+import {
+  clickControl,
+  scenePoint,
+  setControl,
+  test,
+  waitForUI,
+} from '../support/browser-fixtures.ts';
 
 test('project launcher, switching, save conflicts and restart', async ({
   page,
@@ -1012,9 +1018,15 @@ test('sprite playback, directional mapping and transient movement', async ({
     );
   };
 
-  await cp('tests/fixtures/editor/project', join(folder, 'world'), { recursive: true });
-  await cp('tests/fixtures/editor/input', join(folder, 'input'), { recursive: true });
-  await cp('tests/fixtures/editor/sprites', join(folder, 'sprites'), { recursive: true });
+  await cp('tests/playwright/support/fixtures/editor/project', join(folder, 'world'), {
+    recursive: true,
+  });
+  await cp('tests/playwright/support/fixtures/editor/input', join(folder, 'input'), {
+    recursive: true,
+  });
+  await cp('tests/playwright/support/fixtures/editor/sprites', join(folder, 'sprites'), {
+    recursive: true,
+  });
   await promisify(execFile)(workspace.python, [
     '-c',
     `
@@ -1024,7 +1036,7 @@ p = Project(sys.argv[1])
 if sys.argv[2] == 'layers':
     manifest = p.root / 'forge.project.json'
     data = json.loads(manifest.read_text())
-    data['preview']['sprite'] = json.loads(open('tests/fixtures/editor/layer-preview.json').read())
+    data['preview']['sprite'] = json.loads(open('tests/playwright/support/fixtures/editor/layer-preview.json').read())
     manifest.write_text(json.dumps(data))
 loaded = p.scenes.load(p.catalog()['project']['scenes'][1]['id'])
 s = loaded['scene']
@@ -1403,9 +1415,15 @@ print(json.dumps(result))
     ]);
     return record(JSON.parse(stdout));
   }
-  await cp('tests/fixtures/editor/project', join(folder, 'world'), { recursive: true });
-  await cp('tests/fixtures/editor/input', join(folder, 'input'), { recursive: true });
-  await cp('tests/fixtures/editor/sprites', join(folder, 'sprites'), { recursive: true });
+  await cp('tests/playwright/support/fixtures/editor/project', join(folder, 'world'), {
+    recursive: true,
+  });
+  await cp('tests/playwright/support/fixtures/editor/input', join(folder, 'input'), {
+    recursive: true,
+  });
+  await cp('tests/playwright/support/fixtures/editor/sprites', join(folder, 'sprites'), {
+    recursive: true,
+  });
   await promisify(execFile)(workspace.python, [
     '-c',
     `
@@ -1415,7 +1433,7 @@ p = Project(sys.argv[1])
 if sys.argv[2] == 'layers':
     manifest = p.root / 'forge.project.json'
     data = json.loads(manifest.read_text())
-    data['preview']['sprite'] = json.loads(open('tests/fixtures/editor/layer-preview.json').read())
+    data['preview']['sprite'] = json.loads(open('tests/playwright/support/fixtures/editor/layer-preview.json').read())
     manifest.write_text(json.dumps(data))
 loaded = p.scenes.load(p.catalog()['project']['scenes'][1]['id'])
 s = loaded['scene']

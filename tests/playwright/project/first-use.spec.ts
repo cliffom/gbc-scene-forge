@@ -4,8 +4,8 @@ import { expect } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { record } from '../frontend/shared/decode.mts';
-import { test, editorReady, paint } from './browser-fixtures.ts';
+import { record } from '../../../frontend/shared/decode.mts';
+import { test, editorReady, paint } from '../support/browser-fixtures.ts';
 
 test('first scene: sample, guide, paint, save/reopen, preview and export', async ({
   page,

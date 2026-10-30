@@ -24,6 +24,39 @@ retain the pilot's coverage.
 | `mcp-browser.ts` | 12 | Real installed stdio SDK forest creation, overview/camera review, native browser edit/save, later imported artwork, concurrent MCP save, stale browser save, independent recovered draft content/download. |
 | `refresh-browser.ts` | 32 | Real MCP saves/revision probes, view preservation, forms/dirty/hidden-tab protection, opt-out/manual checks, edits during held snapshots/artwork decode, reconnect/rapid writes, brush/tool/object/preset/stamp retention, animation/manual adoption, scene creation and external deletion. |
 
+## Domain organization (#86)
+
+At baseline `e91b136` (merged #85), discovery listed 22 regular scenarios in 13
+files and two optional scenarios in two files. Moving them into the
+[domain layout](BROWSER-TESTING.md#suite-ownership) preserves every scenario title
+and basename exactly once in its original regular/optional selection. The two
+review-mode scenarios added in #85 remain included in regular runs.
+
+The TSV inventories retain the #82 migration's original source text and line
+provenance: only destination paths are updated for #86. Destination line numbers
+are historical migration references, not a regenerated assertion inventory;
+formatting and later scenario additions can shift current lines. Retired-suite
+names and original line columns still refer to `a96eec2`. The validation evidence
+below also remains the historical #82 record.
+
+Local #86 validation passed with the production 0.17.1 bundle:
+
+- Before/after discovery: identical scenario basenames and titles, no duplicates;
+  22 regular scenarios in 13 files and two optional scenarios in two files.
+- All 15 moved specs match their originals after path substitutions and formatting;
+  all 649 assertion and 358 readiness inventory entries retain their source data.
+- `make lint test`: 248 Python tests (one optional SDK test skipped), plus all
+  TypeScript suites. `poetry check --lock` also passed.
+- `FORGE_BUILD_MODE=production make build check-dist test-browser`: verified
+  distributions, six installed-wheel smoke checks and 22 browser scenarios.
+- Installed-wheel `test-first-use-browser`: one scenario; the already-built
+  production bundle was reused with `make -o frontend`.
+- Fresh 0.17.1 `[mcp]` wheel environment: `test-mcp test-mcp-browser` passed
+  12 protocol tests and two optional browser scenarios, reusing the same bundle.
+- `npm run test:standalone -- --list` and `npm run test:drafts -- --list` select
+  only their original six and three scenarios. HTML reports were confirmed under
+  the repository's `build/reports/playwright/`, covered by the CI artifact upload.
+
 ## Consolidations and deliberate changes
 
 No authored behavior assertion was dropped. Per-suite browser error-array checks
@@ -66,7 +99,7 @@ checks effective DPR, and the Retina PNG must contain 2880 × 2200 pixels while
 retaining DPR 2. Popover bounds are checked after the native toggle handler
 publishes its expanded state, rather than racing the earlier native open state.
 
-## Validation evidence
+## Historical #82 validation evidence
 
 Local production-bundle validation passed:
 

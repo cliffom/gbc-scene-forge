@@ -5,7 +5,7 @@ import { execFile } from 'node:child_process';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 
-import { clickControl, test, waitForUI } from './browser-fixtures.ts';
+import { clickControl, test, waitForUI } from '../support/browser-fixtures.ts';
 test('layout: Layout and keyboard acceptance for the editor command hierarchy.', async ({
   page,
   workspace,

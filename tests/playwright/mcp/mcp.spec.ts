@@ -4,9 +4,15 @@ import { execFile, spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { array, record, string } from '../frontend/shared/decode.mts';
+import { array, record, string } from '../../../frontend/shared/decode.mts';
 
-import { clickControl, scenePoint, setControl, test, waitForUI } from './browser-fixtures.ts';
+import {
+  clickControl,
+  scenePoint,
+  setControl,
+  test,
+  waitForUI,
+} from '../support/browser-fixtures.ts';
 test('mcp: Real stdio-authored plan, browser edits, stale saves and independent draft recovery.', async ({
   page,
   workspace,

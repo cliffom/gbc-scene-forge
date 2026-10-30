@@ -5,9 +5,15 @@ import { execFile, spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { array, record, string } from '../frontend/shared/decode.mts';
+import { array, record, string } from '../../../frontend/shared/decode.mts';
 
-import { clickControl, scenePoint, setControl, test, waitForUI } from './browser-fixtures.ts';
+import {
+  clickControl,
+  scenePoint,
+  setControl,
+  test,
+  waitForUI,
+} from '../support/browser-fixtures.ts';
 test('refresh: Saved-file refresh with a real stdio MCP writer and protected browser edits.', async ({
   page,
   workspace,

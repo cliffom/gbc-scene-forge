@@ -5,8 +5,14 @@ import { execFile } from 'node:child_process';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { record, string } from '../frontend/shared/decode.mts';
-import { clickControl, scenePoint, setControl, test, waitForUI } from './browser-fixtures.ts';
+import { record, string } from '../../../frontend/shared/decode.mts';
+import {
+  clickControl,
+  scenePoint,
+  setControl,
+  test,
+  waitForUI,
+} from '../support/browser-fixtures.ts';
 test('compositions: Real keyboard/pointer clipboard editing, library persistence and atomic bounds checks.', async ({
   page,
   workspace,

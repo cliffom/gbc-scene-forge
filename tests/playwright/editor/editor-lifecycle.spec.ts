@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { expect } from '@playwright/test';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { test, editorReady } from './browser-fixtures.ts';
+import { test, editorReady } from '../support/browser-fixtures.ts';
 
 test.use({ projectMode: 'sample' });
 test('editor disposal, remount and delayed operations preserve ownership', async ({
