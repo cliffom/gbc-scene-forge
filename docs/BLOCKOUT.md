@@ -128,7 +128,7 @@ compiler require separate work.
 
 ## Opening-forest acceptance example
 
-`tests/blockout_fixture.py` describes the independent 960px opening-forest proposal:
+`tests/support/blockout_fixture.py` describes the independent 960px opening-forest proposal:
 ground, a red pool, short vines and landings, patrol activity, an optional bat
 approach, visible/hidden rewards, a midpoint checkpoint, and a grounded dragon
 arena/approach. A 160×136px camera excludes the intended HUD area. The note states

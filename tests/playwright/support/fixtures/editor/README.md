@@ -1,6 +1,6 @@
 # Standalone editor seeds
 
-Synthetic terrain and sprite artwork comes from `tests/atlas_fixture.py`. The actor
+Synthetic terrain and sprite artwork comes from `tests/support/atlas_fixture.py`. The actor
 manifest includes the directional sequences authored by the import acceptance
 scenario. `project/` is a portable two-scene project: Village contains saved mixed
 artwork; River contains one saved sprite. No drafts or transaction history is

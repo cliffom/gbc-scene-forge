@@ -36,7 +36,7 @@ test('independent tabs, crash, restart, move, restore and revert', async ({
 import json, sys
 from pathlib import Path
 sys.path.insert(0, 'tests')
-from atlas_fixture import bundle, sprite_bundle
+from support.atlas_fixture import bundle, sprite_bundle
 from gbc_scene_forge.project.application import Project
 root = Path(sys.argv[1])
 p = Project.create(root, 'Draft recovery example')
@@ -162,7 +162,7 @@ test('checkpoint deletion, lost acknowledgements, retry, reload/save and transie
 import json, sys
 from pathlib import Path
 sys.path.insert(0, 'tests')
-from atlas_fixture import bundle, sprite_bundle
+from support.atlas_fixture import bundle, sprite_bundle
 from gbc_scene_forge.project.application import Project
 root = Path(sys.argv[1])
 p = Project.create(root, 'Draft recovery example')
@@ -359,7 +359,7 @@ test('stale revision, download and confirmed discard', async ({
 import json, sys
 from pathlib import Path
 sys.path.insert(0, 'tests')
-from atlas_fixture import bundle, sprite_bundle
+from support.atlas_fixture import bundle, sprite_bundle
 from gbc_scene_forge.project.application import Project
 root = Path(sys.argv[1])
 p = Project.create(root, 'Draft recovery example')

@@ -27,7 +27,7 @@ test('imports: Generic PNG slicing and bounded external Tiled intake through the
     '.venv/bin/python',
     [
       '-c',
-      "import sys,base64;sys.path.insert(0,'tests');from atlas_fixture import image;print(base64.b64encode(image(19,10,(12,45,67))).decode())",
+      "import sys,base64;sys.path.insert(0,'tests');from support.atlas_fixture import image;print(base64.b64encode(image(19,10,(12,45,67))).decode())",
     ],
     { encoding: 'utf8' },
   ).trim();

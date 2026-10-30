@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-`src/gbc_scene_forge/` is organized by domain: `project/`, `scenes/`, `scene_objects/`, `artwork/`, `planning/`, `analysis/`, `formats/`, `storage/`, `core/`, and `adapters/`. See `docs/ARCHITECTURE.md` for ownership, dependency direction and guarded-read/transaction contracts. `project.application.Project` composes domain services; add operations to their owning services rather than expanding that facade. Unsupported connector/document/Apply code is isolated in `legacy/` and must not be imported by supported standalone entry points. Browser HTML, CSS, and generated JavaScript live in `src/gbc_scene_forge/static/`; editable TypeScript lives in `frontend/`. See `docs/FRONTEND-ARCHITECTURE.md` for state, controller and lifetime ownership. The supported entry is `frontend/project.ts`; modules are grouped by domain (`editor/`, `project/`, `scene/`, `artwork/`, `objects/`, `compositions/`, `blockout/`, `world/`, `preview/`, `diagnostics/`, and a small `shared/`). The historical connector frontend and its bundle have been removed. `tests/` contains domain Python tests, TypeScript checks, domain-organized Playwright acceptance under `tests/playwright/`, Tiled interoperability, and installed-wheel smoke tests; historical connector fixtures/tests live under `tests/legacy/`. `docs/RELEASING.md` documents releases.
+`src/gbc_scene_forge/` is organized by domain: `project/`, `scenes/`, `scene_objects/`, `artwork/`, `planning/`, `analysis/`, `formats/`, `storage/`, `core/`, and `adapters/`. See `docs/ARCHITECTURE.md` for ownership, dependency direction and guarded-read/transaction contracts. `project.application.Project` composes domain services; add operations to their owning services rather than expanding that facade. Unsupported connector/document/Apply code is isolated in `legacy/` and must not be imported by supported standalone entry points. Browser HTML, CSS, and generated JavaScript live in `src/gbc_scene_forge/static/`; editable TypeScript lives in `frontend/`. See `docs/FRONTEND-ARCHITECTURE.md` for state, controller and lifetime ownership. The supported entry is `frontend/project.ts`; modules are grouped by domain (`editor/`, `project/`, `scene/`, `artwork/`, `objects/`, `compositions/`, `blockout/`, `world/`, `preview/`, `diagnostics/`, and a small `shared/`). The historical connector frontend and its bundle have been removed. `tests/backend/` contains Python domain tests, `tests/frontend/` non-browser TypeScript checks, and `tests/playwright/` browser acceptance. Shared Python helpers/scripts live in `tests/support/`, shared artwork in `tests/fixtures/`, and installed-wheel smoke tests in `tests/packaging/`; see `tests/README.md` for discovery and ownership. Historical connector fixtures/tests live under `tests/legacy/`. `docs/RELEASING.md` documents releases.
 
 ## Build, Test, and Development Commands
 
@@ -18,8 +18,8 @@ Install Python 3.13, Poetry 2.4–2.x, Node 24 (24.12+), npm, and Make on `PATH`
 - `make test`: run Python `unittest` discovery and TypeScript model/API/build checks.
 - `make test-frontend-<suite>`: run one TypeScript suite, such as `drafts` or `model`; `npm test` delegates to `make test-frontend`.
 - `make build`: bundle the frontend, build source/wheel distributions, and check metadata.
-- `make check-dist`: install the built wheel in a fresh environment and run `tests/package_smoke.py`.
-- `.venv/bin/python tests/serve_standalone_fixture.py --root /tmp/forge-fixture --port 8777`: launch a disposable standalone project fixture.
+- `make check-dist`: install the built wheel in a fresh environment and run `tests/packaging/package_smoke.py`.
+- `.venv/bin/python tests/support/serve_standalone_fixture.py --root /tmp/forge-fixture --port 8777`: launch a disposable standalone project fixture.
 - `make test-browser [CHROME=/path]`: rebuild and run all Chrome acceptance suites in disposable workspaces.
 - `make test-standalone-browser` / `make test-drafts-browser`: run editor or unsaved draft recovery Chrome acceptance independently.
 - `make check`: run lint, Python/TypeScript tests and standalone Chrome acceptance.
@@ -31,7 +31,7 @@ Use four-space Python indentation, `snake_case` functions/modules, and `PascalCa
 
 ## Testing Guidelines
 
-Name Python test files `test_*.py` and methods `test_*`; use standard-library `unittest`. Add regression coverage for changed standalone behavior using `tests/atlas_fixture.py` and `tests/serve_standalone_fixture.py`, keeping tests independent of host games. Cover relevant Tiled serialization, persistence, revision conflicts, editor undo/redo, and recovery behavior. Connector v1 compatibility and connector Chrome acceptance are not requirements for new work. No numeric coverage threshold is configured. Run `make lint test` before submitting; run `make build` for packaging changes and Chrome acceptance checks for browser interactions.
+Name Python test files `test_*.py` and methods `test_*`; use standard-library `unittest`. Add regression coverage for changed standalone behavior using `tests/support/atlas_fixture.py` and `tests/support/serve_standalone_fixture.py`, keeping tests independent of host games. Cover relevant Tiled serialization, persistence, revision conflicts, editor undo/redo, and recovery behavior. Connector v1 compatibility and connector Chrome acceptance are not requirements for new work. No numeric coverage threshold is configured. Run `make lint test` before submitting; run `make build` for packaging changes and Chrome acceptance checks for browser interactions.
 
 ## Commit & Pull Request Guidelines
 

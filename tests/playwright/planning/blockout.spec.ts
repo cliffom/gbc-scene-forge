@@ -217,7 +217,7 @@ test('blockout: Artwork-free planning, native edits/history, camera review and l
   // Existing artwork intake and painting preserve every plan object and its typed fields.
   const { stdout: source } = await promisify(execFile)('.venv/bin/python', [
     '-c',
-    `import sys;from pathlib import Path;sys.path.insert(0,'tests');from atlas_fixture import bundle;p,_=bundle(Path(sys.argv[1]));print(p)`,
+    `import sys;from pathlib import Path;sys.path.insert(0,'tests');from support.atlas_fixture import bundle;p,_=bundle(Path(sys.argv[1]));print(p)`,
     join(folder, 'art'),
   ]);
   await click('artwork-tab');
@@ -270,7 +270,7 @@ test('blockout: Artwork-free planning, native edits/history, camera review and l
   const exampleRoot = join(root, 'forest-example');
   const { stdout: example } = await promisify(execFile)('.venv/bin/python', [
     '-c',
-    `import sys;from pathlib import Path;sys.path.insert(0,'tests');from blockout_fixture import opening_forest;from gbc_scene_forge.project.application import Project;p=Project.create(Path(sys.argv[1]),'Opening forest example',starter='blockout');s,_=opening_forest(p);print(s['id'])`,
+    `import sys;from pathlib import Path;sys.path.insert(0,'tests');from support.blockout_fixture import opening_forest;from gbc_scene_forge.project.application import Project;p=Project.create(Path(sys.argv[1]),'Opening forest example',starter='blockout');s,_=opening_forest(p);print(s['id'])`,
     exampleRoot,
   ]);
   await page.goto(new URL('/projects/forest-example/', url).href);

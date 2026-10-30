@@ -22,9 +22,10 @@ The runner configuration is `tests/playwright/playwright.config.ts`. It discover
 | `support/` | shared browser/server fixtures and `fixtures/editor/` seed projects | — |
 
 The standalone workflow remains together to preserve its existing public suite
-selector. Python fixtures/protocol helpers, shared palette fixtures and non-browser
-TypeScript checks retain their existing locations under `tests/`. Run commands from
-the repository root; server helpers and shared seeds use root-relative paths.
+selector. Python fixtures/protocol helpers live in `tests/support/`, shared palette fixtures
+in `tests/fixtures/`, and non-browser TypeScript checks in `tests/frontend/`.
+See [test organization](../tests/README.md). Run commands from the repository
+root; server helpers and shared seeds use root-relative paths.
 TypeScript, ESLint and Prettier include `tests/**/*.ts`, covering both scopes.
 
 To inspect regular and optional discovery without executing scenarios:

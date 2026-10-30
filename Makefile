@@ -12,7 +12,8 @@ DEMO_ROOT ?= .demo
 CHROME ?=
 TILED ?= tiled
 RASTERIZER ?= tmxrasterizer
-FRONTEND_TESTS := terrain editor-state blockout model world object-definitions scene-size compositions drafts animation-preview movement-preview contracts timeouts atlas-import frontend-build
+FRONTEND_TEST_FILES := $(sort $(wildcard tests/frontend/*/*.ts))
+FRONTEND_TESTS := $(basename $(notdir $(FRONTEND_TEST_FILES)))
 FRONTEND_TEST_TARGETS := $(addprefix test-frontend-,$(FRONTEND_TESTS))
 .DEFAULT_GOAL := help
 
@@ -92,7 +93,7 @@ test-python:
 test-frontend: $(FRONTEND_TEST_TARGETS)
 
 $(FRONTEND_TEST_TARGETS): test-frontend-%:
-	$(NODE) tests/$*.ts
+	$(NODE) $(filter %/$*.ts,$(FRONTEND_TEST_FILES))
 
 test-browser: test-playwright-browser
 
@@ -124,7 +125,7 @@ test-drafts-browser: frontend
 	CHROME="$(CHROME)" $(NPM) exec -- playwright test --config tests/playwright/playwright.config.ts drafts.spec.ts
 
 test-tiled:
-	$(POETRY) run python tests/tiled_interop.py --tiled "$(TILED)" --rasterizer "$(RASTERIZER)"
+	$(POETRY) run python tests/support/tiled_interop.py --tiled "$(TILED)" --rasterizer "$(RASTERIZER)"
 
 typecheck-python:
 	$(POETRY) run mypy
@@ -151,7 +152,7 @@ build: frontend
 check-dist:
 	$(PYTHON) -m venv --clear build/package-smoke
 	build/package-smoke/bin/python -m pip install --no-index --no-deps "$(DIST_WHEEL)"
-	build/package-smoke/bin/python -I tests/package_smoke.py
+	build/package-smoke/bin/python -I tests/packaging/package_smoke.py
 
 clean:
 	rm -rf build dist node_modules

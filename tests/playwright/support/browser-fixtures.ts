@@ -54,7 +54,7 @@ export const test = base.extend<{
         ? ['-m', 'gbc_scene_forge.adapters.sample', '--root', root, '--reset', '--port', '0']
         : fixture
           ? [
-              'tests/serve_standalone_fixture.py',
+              'tests/support/serve_standalone_fixture.py',
               '--root',
               root,
               ...(single ? ['--single-project'] : []),

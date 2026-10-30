@@ -36,7 +36,7 @@ assets without Node. Direct Python builds from a checkout must follow
 `npm ci` and `npm run build`; use `make build` to rebuild assets automatically.
 `make check-dist` is a separate installed-wheel smoke test. It recreates
 `build/package-smoke`, installs the wheel with `pip --no-index --no-deps`, and runs
-`tests/package_smoke.py` with Python's `-I` isolation flag. The small suite checks
+`tests/packaging/package_smoke.py` with Python's `-I` isolation flag. The small suite checks
 imports, version consistency, absence of required runtime dependencies (MCP is optional), bundled browser assets,
 standalone sample loading, and project create/reopen/export. It is
 intentionally excluded from source-test discovery.
@@ -111,13 +111,16 @@ tag, selecting `testpypi` first when its trusted publisher is configured. TestPy
 is currently unconfigured; its 0.1.4 upload failed with `invalid-publisher`. Until
 that publisher is set up, validate the built wheel with `make check-dist` and the
 Chrome fixture suite, then run the workflow for `pypi`. Verify a fresh PyPI install
-with `tests/package_smoke.py` after publication. The workflow rebuilds and
+with `tests/packaging/package_smoke.py` after publication. The workflow rebuilds and
 checks the distributions, checks the tag against the package version, then uploads
 only those verified artifacts. Pushing a tag alone does not publish.
 
 ## Release 0.17.1
 
-Version 0.17.1 organizes Playwright acceptance by domain under `tests/playwright/`.
+Version 0.17.1 organizes Playwright, Python and non-browser TypeScript tests
+by domain under `tests/playwright/`, `tests/backend/` and `tests/frontend/`.
+Shared scripts and installed-wheel checks live in `tests/support/` and
+`tests/packaging/`; see [test organization](../tests/README.md).
 See [release notes](RELEASE-0.17.1.md) and [browser testing](BROWSER-TESTING.md).
 This explicitly requested patch release preserves application behavior, portable
 formats and runtime dependencies. Validate with `make lint test`, production

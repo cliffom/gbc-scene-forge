@@ -2675,7 +2675,7 @@ test('palette and hardware budgets, stale reports and profile saves', async ({
   await stop();
   const paletteRoot = join(folder, 'palette-examples');
   await promisify(execFile)('.venv/bin/python', [
-    'tests/prepare_palette_fixture.py',
+    'tests/support/prepare_palette_fixture.py',
     '--root',
     paletteRoot,
   ]);

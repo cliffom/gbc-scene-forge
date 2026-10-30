@@ -73,7 +73,7 @@ test('mcp: Real stdio-authored plan, browser edits, stale saves and independent 
   const planObjects = objects((await saved()).scene);
   const { stdout: source } = await promisify(execFile)('.venv/bin/python', [
     '-c',
-    "import sys;from pathlib import Path;sys.path.insert(0,'tests');from atlas_fixture import bundle;p,_=bundle(Path(sys.argv[1]));print(p)",
+    "import sys;from pathlib import Path;sys.path.insert(0,'tests');from support.atlas_fixture import bundle;p,_=bundle(Path(sys.argv[1]));print(p)",
     join(folder, 'art'),
   ]);
   await click('artwork-tab');
@@ -112,7 +112,7 @@ test('mcp: Real stdio-authored plan, browser edits, stale saves and independent 
   const beforeProject = await catalog();
   const patrol = objects(beforeAgent.scene).find((item) => item.name === 'Forest patrol');
   // A separate MCP session saves while the browser has an unsaved camera edit.
-  const child = spawn(python, ['tests/mcp_call.py', root, 'edit_scene'], {
+  const child = spawn(python, ['tests/support/mcp_call.py', root, 'edit_scene'], {
     stdio: ['pipe', 'pipe', 'pipe'],
   });
   let logs = '';
