@@ -41,6 +41,12 @@ Normal keyboard, pointer and form actions use native Playwright APIs. Deliberate
 fetch/decode/capture/visibility fault injection remains in page evaluation, under
 the unchanged CSP.
 
+The moved-project stale-revision subcases explicitly opt out of automatic refresh
+and establish an unsaved canvas before modifying its saved file. Otherwise a
+correct clean automatic adoption can win the race before conflict injection,
+particularly on slower CI machines. Real automatic adoption/protection remains
+covered by the optional refresh suite.
+
 Splitting standalone acceptance required explicit seeds: preview and layer
 scenarios copy the synthetic portable project, clear River through the backend,
 then place/save its sprite through native browser input to establish undo history.

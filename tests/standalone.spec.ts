@@ -2434,6 +2434,11 @@ p.scenes.save(loaded['id'], s, loaded['revision'], p.catalog()['revision'])
     string(await evaluate("document.getElementById('preview-frame').textContent")),
     /Frame 1 \/ 2/,
   );
+  // These cases deliberately exercise stale revisions. Clean automatic adoption
+  // is covered by refresh.spec.ts and must not race the injected disk edits.
+  await click('auto-refresh');
+  await expect(page.locator('#auto-refresh')).not.toBeChecked();
+  await page.keyboard.press('Escape');
   const previewManifest = join(movedRoot, 'forge.project.json');
   const beforePreviewConflict = await readFile(previewManifest, 'utf8');
   await writeFile(previewManifest, beforePreviewConflict + '\n');
@@ -2450,8 +2455,7 @@ p.scenes.save(loaded['id'], s, loaded['revision'], p.catalog()['revision'])
   await page.locator('[data-asset="terrain/earth"]').first().click();
   const mapPath = join(movedRoot, 'scenes', `${first}.tmj`);
   const before = await readFile(mapPath, 'utf8');
-  // An external map edit causes a visible 409 and preserves the unsaved browser canvas.
-  await writeFile(mapPath, before + '\n');
+  // Establish the unsaved canvas before invalidating its saved-file revision.
   await (async () => {
     const point = await scenePoint(page, 20, 12);
     await page.mouse.move(point.x, point.y);
@@ -2462,6 +2466,8 @@ p.scenes.save(loaded['id'], s, loaded['revision'], p.catalog()['revision'])
     await page.mouse.move(point.x, point.y);
     await page.mouse.up();
   })();
+  await expect(page.locator('#dirty')).toHaveText('UNSAVED');
+  await writeFile(mapPath, before + '\n');
   await captureDownloads();
   await click('show-export');
   await click('export-confirm');
