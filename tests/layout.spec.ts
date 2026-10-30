@@ -91,6 +91,8 @@ print(p.catalog()['project']['scenes'][0]['id'])
       page,
       "document.getElementById('scene-command-panel').matches(':popover-open')",
     );
+    // The native open state precedes the toggle handler that positions the panel.
+    await expect(page.locator('#scene-commands')).toHaveAttribute('aria-expanded', 'true');
     assert.equal(
       await evaluate(`(() => {
       const r=document.getElementById('scene-command-panel').getBoundingClientRect();
@@ -100,6 +102,7 @@ print(p.catalog()['project']['scenes'][0]['id'])
       `Command popover stays in ${width}×${height}`,
     );
     await key('Escape');
+    await expect(page.locator('#scene-commands')).toHaveAttribute('aria-expanded', 'false');
     await click('artwork-tab');
   }
   await page.setViewportSize({ width: 1440, height: 900 });

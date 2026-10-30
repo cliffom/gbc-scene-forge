@@ -60,8 +60,11 @@ Screenshot names are retained under each scenario's output directory. The former
 diagnostics copy into tracked `docs/screenshots/` is replaced by a report artifact;
 tests no longer overwrite maintained documentation images. Chooser before/after
 evidence temporarily restores the shipped outline offset through CSSOM, then
-removes that rule without weakening CSP. Density/zoom emulation is the only
-browser-specific CDP use, documented at each call site.
+removes that rule without weakening CSP. Density/zoom emulation and the Retina capture that must preserve that emulation
+are the only browser-specific CDP uses, documented at each call site. Every zoom
+checks effective DPR, and the Retina PNG must contain 2880 × 2200 pixels while
+retaining DPR 2. Popover bounds are checked after the native toggle handler
+publishes its expanded state, rather than racing the earlier native open state.
 
 ## Validation evidence
 

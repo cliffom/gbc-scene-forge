@@ -85,7 +85,10 @@ not mocked success responses.
 The only Playwright CDP sessions emulate Chromium display density: blockout checks
 change DPR while retaining the authored scene; chooser checks emulate desktop
 zoom by changing CSS viewport dimensions and DPR together. Playwright context DPR
-is immutable. Ordinary input, navigation, file selection, screenshots and target
+is immutable. Blockout asserts the effective DPR at every zoom. Its Retina
+screenshot uses that same CDP session because Playwright screenshot capture resets
+the override to the original context density; PNG dimensions and retained DPR are
+asserted. Other screenshots, input, navigation, file selection and target
 ownership use Playwright APIs.
 
 ## Installed-product and optional MCP checks

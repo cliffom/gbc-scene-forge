@@ -2,6 +2,7 @@ import { expect } from '@playwright/test';
 /** Artwork-free planning, native edits/history, camera review and later artwork integration. */
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
+import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { array, number, record, string } from '../frontend/shared/decode.mts';
@@ -324,7 +325,13 @@ test('blockout: Artwork-free planning, native edits/history, camera review and l
       'The selected camera caption follows its scene-space anchor while panning',
     );
     await expect.poll(() => page.evaluate(() => window.devicePixelRatio)).toBe(2);
-    await page.screenshot({ path: testInfo.outputPath('blockout-labels-4x-retina' + '.png') });
+    // Playwright's screenshot uses the context's original DPR and resets this override.
+    // Capture through the density session to retain the emulated Retina rendering.
+    const capture = await density.send('Page.captureScreenshot', { format: 'png' });
+    const retina = Buffer.from(capture.data, 'base64');
+    expect([retina.readUInt32BE(16), retina.readUInt32BE(20)]).toEqual([2880, 2200]);
+    await writeFile(testInfo.outputPath('blockout-labels-4x-retina.png'), retina);
+    await expect.poll(() => page.evaluate(() => window.devicePixelRatio)).toBe(2);
     await page.locator('#layers [data-layer-id="4"] .layer-choice').first().click();
     noteId = string(
       await evaluate(
