@@ -54,7 +54,7 @@ Unknown fields are dropped at each structured level. The parser returns new
 structures without mutating the response. Cross-scene endpoint diagnostics remain
 in the existing domain code.
 
-The compatibility corpus in `tests/contracts.ts` exercises normalized output,
+The compatibility corpus in `tests/frontend/project/contracts.ts` exercises normalized output,
 missing fields, nested malformed data, non-finite numbers, special revision keys,
 first-error behavior, scene defaults, atlas mappings/animation fallbacks and stamp
 composition. The same assertions were also run against the original decoders

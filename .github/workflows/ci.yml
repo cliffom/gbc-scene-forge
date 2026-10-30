@@ -28,7 +28,7 @@ jobs:
       - name: Browser acceptance checks
         run: make test-browser
       - name: Installed-wheel first-use acceptance
-        run: FORGE_TEST_PYTHON="$PWD/build/package-smoke/bin/python" npx playwright test --config tests/playwright.config.ts first-use.spec.ts
+        run: FORGE_TEST_PYTHON="$PWD/build/package-smoke/bin/python" npx playwright test --config tests/playwright/playwright.config.ts first-use.spec.ts
       - name: Optional MCP installed-wheel and browser checks
         run: |
           python -m venv build/mcp-ci
@@ -68,7 +68,7 @@ jobs:
       - name: Python tests
         run: python -m unittest discover -s tests -p 'test_*.py'
       - name: Installed-wheel smoke test
-        run: python -I tests/package_smoke.py
+        run: python -I tests/packaging/package_smoke.py
       - name: Optional MCP protocol compatibility
         run: |
           python -m pip install 'mcp>=1.30,<2'

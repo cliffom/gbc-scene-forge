@@ -11,5 +11,5 @@
     "types": ["node"],
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["frontend/**/*.ts", "frontend/**/*.mts", "tests/*.ts"]
+  "include": ["frontend/**/*.ts", "frontend/**/*.mts", "tests/**/*.ts"]
 }

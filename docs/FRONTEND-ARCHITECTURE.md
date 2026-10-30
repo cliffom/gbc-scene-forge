@@ -103,17 +103,17 @@ helper coverage now uses supported native contracts.
 
 ## Validation and maintenance
 
-- `tests/terrain.ts` and `tests/terrain.spec.ts`: four-neighbor transition rules,
+- `tests/frontend/artwork/terrain.ts` and `tests/playwright/artwork/terrain.spec.ts`: four-neighbor transition rules,
   collision-preserving neighbor changes, authored rule configuration and native save/reopen.
-- `tests/editor-state.ts`: import safety without a DOM, serialization/undo/dirty
+- `tests/frontend/editor/editor-state.ts`: import safety without a DOM, serialization/undo/dirty
   ownership, stable refresh fencing, resource cancellation and transport contracts.
-- `tests/editor-lifecycle.spec.ts`: real disposal/remount, overlay cleanup,
+- `tests/playwright/editor/editor-lifecycle.spec.ts`: real disposal/remount, overlay cleanup,
   stopped polling and exactly one scene-opening handler after replacement.
-- `tests/refresh.spec.ts`: real MCP concurrent saves, local-edit/form protection,
+- `tests/playwright/mcp/refresh.spec.ts`: real MCP concurrent saves, local-edit/form protection,
   paused/hidden refresh, interaction and decode races, tools/brushes and animation.
 - Existing model suites cover layers, compositions, previews, definitions, world,
   drafts and resize. Existing Chrome suites exercise the complete editor workflows.
-- `tests/frontend-build.ts`: real strict build, maps/identity, atomic failed builds,
+- `tests/frontend/infrastructure/frontend-build.ts`: real strict build, maps/identity, atomic failed builds,
   transitive imports, stale bundle removal and native-only source maps.
 - Installed-wheel checks exercise bundled assets and launcher; the first-use Chrome
   suite can run against the installed package with `FORGE_TEST_PYTHON`.

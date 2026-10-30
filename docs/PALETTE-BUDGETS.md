@@ -124,7 +124,7 @@ From a development checkout, create a new disposable project containing the two
 boundary scenes, then open it:
 
 ```sh
-.venv/bin/python tests/prepare_palette_fixture.py --root /tmp/forge-palette-example
+.venv/bin/python tests/support/prepare_palette_fixture.py --root /tmp/forge-palette-example
 make run PROJECT=/tmp/forge-palette-example PORT=8777
 ```
 
@@ -158,7 +158,7 @@ for pack in mixed bank reordered; do
         "/tmp/forge-palette-artwork/$pack/$pack.atlas.json"
     gbc-atlas validate "/tmp/forge-palette-artwork/$pack/$pack.atlas.json"
 done
-.venv/bin/python tests/prepare_palette_fixture.py \
+.venv/bin/python tests/support/prepare_palette_fixture.py \
     --artwork-root /tmp/forge-palette-artwork --root /tmp/forge-palette-roundtrip
 make run PROJECT=/tmp/forge-palette-roundtrip PORT=8777
 ```

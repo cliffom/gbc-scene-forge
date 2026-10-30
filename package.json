@@ -8,14 +8,14 @@
   "scripts": {
     "build": "npm run typecheck && node frontend/build.ts",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint frontend tests/*.ts --max-warnings=0",
-    "format": "prettier --write frontend tests/*.ts *.json eslint.config.mjs .prettierrc.json",
-    "format:check": "prettier --check frontend tests/*.ts *.json eslint.config.mjs .prettierrc.json",
+    "lint": "eslint frontend \"tests/**/*.ts\" --max-warnings=0",
+    "format": "prettier --write frontend \"tests/**/*.ts\" *.json eslint.config.mjs .prettierrc.json",
+    "format:check": "prettier --check frontend \"tests/**/*.ts\" *.json eslint.config.mjs .prettierrc.json",
     "test": "make test-frontend",
     "test:browser": "make test-browser",
-    "test:standalone": "playwright test --config tests/playwright.config.ts standalone.spec.ts",
-    "test:drafts": "playwright test --config tests/playwright.config.ts drafts.spec.ts",
-    "test:playwright": "playwright test --config tests/playwright.config.ts"
+    "test:standalone": "playwright test --config tests/playwright/playwright.config.ts standalone.spec.ts",
+    "test:drafts": "playwright test --config tests/playwright/playwright.config.ts drafts.spec.ts",
+    "test:playwright": "playwright test --config tests/playwright/playwright.config.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

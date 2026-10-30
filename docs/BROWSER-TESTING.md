@@ -1,10 +1,45 @@
 # Browser acceptance
 
-All supported browser acceptance uses Playwright Test. `tests/browser-fixtures.ts`
+All supported browser acceptance uses Playwright Test. `tests/playwright/support/browser-fixtures.ts`
 owns test-scoped temporary projects and loopback Python servers; Playwright owns
 browser contexts and profiles. There is no custom CDP transport or permanent
 parallel implementation of a suite. Installed wheels, `uvx` and the MCP server
 need neither Node nor Playwright.
+
+## Suite ownership
+
+The runner configuration is `tests/playwright/playwright.config.ts`. It discovers
+`**/*.spec.ts` recursively within `tests/playwright/`:
+
+| Folder | Suites | Scenarios |
+| --- | --- | ---: |
+| `editor/` | standalone editor workflow (including cross-domain persistence/export), layout and chooser, editor lifecycle, review mode | 11 |
+| `project/` | first use and draft recovery | 4 |
+| `artwork/` | PNG/Tiled imports and terrain brushes | 2 |
+| `objects/` | compositions and definitions | 2 |
+| `planning/` | blockout, world and diagnostics | 3 |
+| `mcp/` | optional real SDK authoring and external refresh | 2 |
+| `support/` | shared browser/server fixtures and `fixtures/editor/` seed projects | — |
+
+The standalone workflow remains together to preserve its existing public suite
+selector. Python fixtures/protocol helpers live in `tests/support/`, shared palette fixtures
+in `tests/fixtures/`, and non-browser TypeScript checks in `tests/frontend/`.
+See [test organization](../tests/README.md). Run commands from the repository
+root; server helpers and shared seeds use root-relative paths.
+TypeScript, ESLint and Prettier include `tests/**/*.ts`, covering both scopes.
+
+To inspect regular and optional discovery without executing scenarios:
+
+```sh
+npm run test:playwright -- --list
+FORGE_MCP_ONLY=1 npm run test:playwright -- --list
+npm run test:playwright -- editor/review.spec.ts --list
+```
+
+Regular discovery includes 22 scenarios in 13 files; optional discovery includes
+only the two MCP/refresh scenarios. Basename selectors such as `first-use.spec.ts`
+and all existing Make/npm entry points remain supported. Reports resolve from the
+configuration to the repository's `build/reports/playwright/`, matching CI uploads.
 
 ## Running and debugging
 
@@ -39,7 +74,7 @@ A hard host/process kill cannot execute teardown.
 Standalone acceptance separates launcher/switching, artwork/placement, sprite
 preview, layer/object editing with export/restart, demo conformance, and palette
 budgets. Preview and layer checks seed independent portable projects from
-`tests/fixtures/editor/`; a real browser placement establishes undo history.
+`tests/playwright/support/fixtures/editor/`; a real browser placement establishes undo history.
 Draft acceptance separates deliberate multi-tab/restart/move recovery, checkpoint
 retry/preview behavior, and stale-revision download/discard. Each has its own
 purpose-specific project setup. Review-mode acceptance covers viewport expansion,

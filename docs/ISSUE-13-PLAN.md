@@ -72,7 +72,7 @@ standalone Chrome acceptance checks. Connector compatibility is not a requiremen
   rollback and reconnect behavior.
 - Official Tiled 1.12.2 loaded/exported the generated map, Forge reopened its
   output, and `tmxrasterizer` produced the expected tile and transparent pixels.
-  The repeatable check is `tests/tiled_interop.py`.
+  The repeatable check is `tests/support/tiled_interop.py`.
   This includes native-size sprite objects and atlas-origin conversion.
 - Read-only validation of the owner's Dover atlas in a disposable project showed
   all 13 sprite regions and verified placement, save/reopen and exact native PNG

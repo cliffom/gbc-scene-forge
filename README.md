@@ -15,7 +15,7 @@ Your projects stay on your computer.
 Install the release with Python 3.10 or newer:
 
 ```sh
-python -m pip install gbc-scene-forge==0.17.0
+python -m pip install gbc-scene-forge==0.17.1
 gbc-scene-forge
 ```
 
@@ -144,9 +144,9 @@ make run PROJECT_ROOT="$HOME/Scene Forge Projects"
 
 Use the same location on later launches to see those projects again. Unsupported
 or damaged manifests are reported in the selector so you can identify the folder
-that needs attention. Version 0.17.0 continues to use manifest format version 1.
+that needs attention. Version 0.17.1 continues to use manifest format version 1.
 
-### Bring an existing project into 0.17.0
+### Bring an existing project into 0.17.1
 
 Existing 0.2.0 projects keep their artwork, scene IDs and manifest format. To add
 one to the selector, stop Forge and move the whole project folder into your
@@ -269,12 +269,12 @@ removed by that command. Default project and sample directories are Git-ignored.
 Override tool paths with `PYTHON`, `POETRY`, or `NPM` when needed.
 
 Install the test browser once with `npx playwright install chromium` after setup.
-`make test-playwright-browser` runs the migrated lifecycle and first-use suites;
-`npm run test:playwright -- --ui` opens their interactive runner. They use
-Playwright Chromium by default. Remaining CDP suites default to the macOS Chrome
-application path; pass `CHROME=/path/to/chrome` to override the browser for either
-runner on other systems. See [browser testing](docs/BROWSER-TESTING.md) for
-readiness, traces, installed-wheel checks and the migration plan. Optional official Tiled interoperability checks run with
+`make test-playwright-browser` runs all regular suites under `tests/playwright/`;
+`npm run test:playwright -- --ui` opens their interactive runner. All suites use
+Playwright Chromium by default; pass `CHROME=/path/to/chrome` to override it.
+See [browser testing](docs/BROWSER-TESTING.md) for the domain layout, single-suite
+selection, readiness, traces, installed-wheel checks and optional MCP runs.
+Optional official Tiled interoperability checks run with
 `make test-tiled TILED=/path/to/Tiled RASTERIZER=/path/to/tmxrasterizer`.
 
 Edit TypeScript in `frontend/` and Python in `src/gbc_scene_forge/`.
@@ -314,7 +314,7 @@ Paint connected roads, walls and shorelines with [terrain brushes](docs/user/ter
 Optional [GBC target budgets](docs/user/gbc-budgets.md) report static source-tile
 and OAM estimates alongside palette requirements, with explicit runtime limitations.
 
-See [the 0.17.0 release notes](docs/RELEASE-0.17.0.md) and
+See [the 0.17.1 release notes](docs/RELEASE-0.17.1.md) and
 [building and releasing](docs/RELEASING.md) for release validation and publication.
 
 ## License
