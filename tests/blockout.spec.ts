@@ -277,62 +277,72 @@ test('blockout: Artwork-free planning, native edits/history, camera review and l
   await page.screenshot({ path: testInfo.outputPath('blockout-opening-forest' + '.png') });
   await checkLabels();
   // Display text stays crisp at every zoom and at both standard and Retina densities.
-  for (const deviceScaleFactor of [1, 2]) {
-    // Chromium-only density emulation keeps the current authored scene and zoom state.
-    // Playwright context deviceScaleFactor is immutable after context creation.
-    const density = await page.context().newCDPSession(page);
-    await density.send('Emulation.setDeviceMetricsOverride', {
-      width: 1440,
-      height: 1100,
-      deviceScaleFactor,
-      mobile: false,
-    });
-    await density.detach();
-    await page.setViewportSize({ width: 1440, height: 1100 });
-    for (const zoom of ['0.5', '1', '2', '4']) {
-      await set('zoom', zoom);
-      await checkLabels();
+  // Chromium-only density emulation keeps the current authored scene and zoom state.
+  // Playwright context deviceScaleFactor is immutable after context creation.
+  const density = await page.context().newCDPSession(page);
+  let noteId: string;
+  try {
+    for (const deviceScaleFactor of [1, 2]) {
+      await density.send('Emulation.setDeviceMetricsOverride', {
+        width: 1440,
+        height: 1100,
+        deviceScaleFactor,
+        mobile: false,
+      });
+      for (const zoom of ['0.5', '1', '2', '4']) {
+        await test.step(`Labels at DPR ${deviceScaleFactor}, zoom ${zoom}`, async () => {
+          await set('zoom', zoom);
+          await expect
+            .poll(() => page.evaluate(() => window.devicePixelRatio))
+            .toBe(deviceScaleFactor);
+          await checkLabels();
+        });
+      }
     }
-  }
-  await click('blockout-camera-select');
-  await click('blockout-camera-edit');
-  const longCameraName = 'Gameplay camera 160 × 136 with a deliberately long framing description';
-  await set('object-name', longCameraName);
-  await click('object-apply');
-  await checkLabels();
-  assert.equal(
-    await evaluate(
-      `document.querySelector('.blockout-label[data-priority="0"]')?.textContent.endsWith('…')`,
-    ),
-    true,
-  );
-  await expect(page.locator('#selection-name')).toHaveText(longCameraName);
-  await evaluate("document.getElementById('viewport').scrollTo(80,160)");
-  await checkLabels();
-  assert.equal(
-    await evaluate(`(()=>{
+    await click('blockout-camera-select');
+    await click('blockout-camera-edit');
+    const longCameraName = 'Gameplay camera 160 × 136 with a deliberately long framing description';
+    await set('object-name', longCameraName);
+    await click('object-apply');
+    await checkLabels();
+    assert.equal(
+      await evaluate(
+        `document.querySelector('.blockout-label[data-priority="0"]')?.textContent.endsWith('…')`,
+      ),
+      true,
+    );
+    await expect(page.locator('#selection-name')).toHaveText(longCameraName);
+    await evaluate("document.getElementById('viewport').scrollTo(80,160)");
+    await checkLabels();
+    assert.equal(
+      await evaluate(`(()=>{
     const canvas=document.getElementById('scene').getBoundingClientRect();
     const label=document.querySelector('.blockout-label[data-object-id="1"]').getBoundingClientRect();
     return Math.abs(label.top-(canvas.top+136*4))<=64;
   })()`),
-    true,
-    'The selected camera caption follows its scene-space anchor while panning',
-  );
-  await page.screenshot({ path: testInfo.outputPath('blockout-labels-4x-retina' + '.png') });
-  await page.locator('#layers [data-layer-id="4"] .layer-choice').first().click();
-  const noteId = string(
-    await evaluate(
-      "[...document.getElementById('object-list').options].find(o=>o.textContent.includes('Stage pacing')).value",
-    ),
-  );
-  await set('object-list', noteId);
-  await expect(page.locator('#selection-note')).toHaveJSProperty('hidden', false);
-  assert.equal(
-    await evaluate(
-      "document.getElementById('selection-note').textContent.includes('full stage length remains undecided')",
-    ),
-    true,
-  );
+      true,
+      'The selected camera caption follows its scene-space anchor while panning',
+    );
+    await expect.poll(() => page.evaluate(() => window.devicePixelRatio)).toBe(2);
+    await page.screenshot({ path: testInfo.outputPath('blockout-labels-4x-retina' + '.png') });
+    await page.locator('#layers [data-layer-id="4"] .layer-choice').first().click();
+    noteId = string(
+      await evaluate(
+        "[...document.getElementById('object-list').options].find(o=>o.textContent.includes('Stage pacing')).value",
+      ),
+    );
+    await set('object-list', noteId);
+    await expect(page.locator('#selection-note')).toHaveJSProperty('hidden', false);
+    assert.equal(
+      await evaluate(
+        "document.getElementById('selection-note').textContent.includes('full stage length remains undecided')",
+      ),
+      true,
+    );
+  } finally {
+    // Detaching resets the metrics override, so retain the session through every assertion.
+    await density.detach();
+  }
   await page.setViewportSize({ width: 1440, height: 1100 });
   await click('fit-scene');
   await checkLabels();

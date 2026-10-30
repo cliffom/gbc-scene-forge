@@ -5,7 +5,7 @@ blockout-browser.ts	110	blockout.spec.ts:84	"document.querySelector('#blockout-s
 blockout-browser.ts	123	blockout.spec.ts:97	"document.getElementById('status').textContent.startsWith('Blockout created')"
 blockout-browser.ts	139	blockout.spec.ts:113, blockout.spec.ts:156	"document.getElementById('object-dialog').open"
 blockout-browser.ts	174	blockout.spec.ts:113, blockout.spec.ts:156	"document.getElementById('object-dialog').open"
-blockout-browser.ts	186	blockout.spec.ts:168, blockout.spec.ts:357	"document.getElementById('blockout-review-dialog').open && document.getElementById('blockout-camera-image').naturalWidth===160"
+blockout-browser.ts	186	blockout.spec.ts:168, blockout.spec.ts:367	"document.getElementById('blockout-review-dialog').open && document.getElementById('blockout-camera-image').naturalWidth===160"
 blockout-browser.ts	214	blockout.spec.ts:196, blockout.spec.ts:234	"document.getElementById('status').textContent==='Scene saved.'"
 blockout-browser.ts	222	blockout.spec.ts:204, blockout.spec.ts:270	"document.getElementById('status')?.textContent==='Choose a scene, or import an atlas and create one.'"
 blockout-browser.ts	226	blockout.spec.ts:208, blockout.spec.ts:274	"document.getElementById('scene-save-state').textContent==='Saved'"
@@ -14,7 +14,7 @@ blockout-browser.ts	244	blockout.spec.ts:196, blockout.spec.ts:234	"document.get
 blockout-browser.ts	260	blockout.spec.ts:250	"window.__archive?.type==='application/zip'"
 blockout-browser.ts	280	blockout.spec.ts:204, blockout.spec.ts:270	"document.getElementById('status')?.textContent==='Choose a scene, or import an atlas and create one.'"
 blockout-browser.ts	284	blockout.spec.ts:208, blockout.spec.ts:274	"document.getElementById('scene-save-state').textContent==='Saved'"
-blockout-browser.ts	380	blockout.spec.ts:168, blockout.spec.ts:357	"document.getElementById('blockout-review-dialog').open && document.getElementById('blockout-camera-image').naturalWidth===160"
+blockout-browser.ts	380	blockout.spec.ts:168, blockout.spec.ts:367	"document.getElementById('blockout-review-dialog').open && document.getElementById('blockout-camera-image').naturalWidth===160"
 compositions-browser.ts	84	compositions.spec.ts:63	"document.getElementById('scenes')?.disabled === false && !document.getElementById('show-create').disabled"
 compositions-browser.ts	90	compositions.spec.ts:67	`document.getElementById('scene-name').textContent.startsWith(${JSON.stringify(id === first ? 'Room ·' : id === second ? 'Other room ·' : 'Missing layers ·')}) && !document.getElementById('show-create').disabled`
 compositions-browser.ts	112	compositions.spec.ts:75	"document.getElementById('project-name')?.textContent === 'Reusable rooms'"
