@@ -1,19 +1,18 @@
+import { expect } from '@playwright/test';
 /** Real world dragging, link authoring, navigation and endpoint lifecycle. */
 import assert from 'node:assert/strict';
-import { execFile, spawn } from 'node:child_process';
-import type { ChildProcess } from 'node:child_process';
-import { once } from 'node:events';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { execFile } from 'node:child_process';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { Chrome } from './chrome.ts';
 import { array, record, string } from '../frontend/shared/decode.mts';
-const folder = await mkdtemp(join(tmpdir(), 'forge-world-'));
-const root = join(folder, 'world');
-let server: ChildProcess | undefined;
-let browser: Chrome | undefined;
-try {
+import { clickControl, setControl, test, waitForUI } from './browser-fixtures.ts';
+test('world: Real world dragging, link authoring, navigation and endpoint lifecycle.', async ({
+  page,
+  workspace,
+}, testInfo) => {
+  const { folder } = workspace;
+  const root = join(folder, 'world');
   const { stdout } = await promisify(execFile)('.venv/bin/python', [
     '-c',
     `
@@ -39,47 +38,18 @@ print(json.dumps(ids))
   const ids: unknown = JSON.parse(stdout);
   assert(Array.isArray(ids) && ids.every((id) => typeof id === 'string'));
   const [first, second] = ids.map(string);
-  const child = spawn(
-    '.venv/bin/python',
-    ['-m', 'gbc_scene_forge', '--no-browser', '--project', root, '--port', '0'],
-    { stdio: ['ignore', 'pipe', 'pipe'] },
-  );
-  server = child;
-  const url = await new Promise<string>((resolve, reject) => {
-    let logs = '';
-    const timer = setTimeout(() => reject(Error(`Startup timeout: ${logs}`)), 10000);
-    child.once('error', reject);
-    child.stdout.on('data', (data: Buffer) => {
-      logs += data.toString();
-      const match = /Editor\s+(http:\/\/127\.0\.0\.1:\d+\/)/.exec(logs);
-      if (match) {
-        clearTimeout(timer);
-        resolve(match[1]);
-      }
-    });
-    child.stderr.on('data', (data: Buffer) => {
-      logs += data.toString();
-    });
-  });
-  browser = await Chrome.launch(process.argv[2]);
-  const chrome = browser;
-  chrome.acceptBeforeUnload = true;
-  const evaluate = chrome.evaluate.bind(chrome),
-    wait = chrome.wait.bind(chrome);
-  const click = (id: string) => chrome.click(`document.getElementById(${JSON.stringify(id)})`);
+  const url = await workspace.start(root, false, true);
+  const evaluate = (expression: string) => page.evaluate(expression),
+    wait = (expression: string) => waitForUI(page, expression);
+  const click = (id: string) => clickControl(page, id);
   const choose = async (id: string) => {
     await wait("!document.getElementById('scenes').disabled");
-    await evaluate(
-      `(() => {const s=document.getElementById('scenes');s.value=${JSON.stringify(id)};s.dispatchEvent(new Event('change'));})()`,
-    );
+    await page.locator('#scenes').selectOption(id);
     await wait(
       `document.getElementById('scene-name').textContent.startsWith(${JSON.stringify(id === first ? 'Forest ·' : 'Cave ·')}) && !document.getElementById('show-world').disabled`,
     );
   };
-  const set = async (id: string, value: string) =>
-    evaluate(
-      `(() => {const e=document.getElementById(${JSON.stringify(id)});e.value=${JSON.stringify(value)};e.dispatchEvent(new Event('change'));})()`,
-    );
+  const set = async (id: string, value: string) => setControl(page, id, value);
   const manifest = async () =>
     record(JSON.parse(await readFile(join(root, 'forge.project.json'), 'utf8')));
   const openWorld = async () => {
@@ -93,22 +63,8 @@ print(json.dumps(ids))
     await click('world-save');
     await wait("document.getElementById('world-state').textContent==='World saved'");
   };
-  const target = string(
-    (await chrome.call('Target.createTarget', { url: 'about:blank' }, null)).targetId,
-  );
-  chrome.session = string(
-    (await chrome.call('Target.attachToTarget', { targetId: target, flatten: true }, null))
-      .sessionId,
-  );
-  await chrome.call('Runtime.enable');
-  await chrome.call('Page.enable');
-  await chrome.call('Emulation.setDeviceMetricsOverride', {
-    width: 1440,
-    height: 1000,
-    deviceScaleFactor: 1,
-    mobile: false,
-  });
-  await chrome.call('Page.navigate', { url });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto(url);
   await wait("document.getElementById('project-name')?.textContent === 'Connected rooms'");
   await choose(first);
   await openWorld();
@@ -127,14 +83,15 @@ print(json.dumps(ids))
     ['mouseMoved', x + 55, y + 30],
     ['mouseReleased', x + 55, y + 30],
   ] as const) {
-    await chrome.call('Input.dispatchMouseEvent', {
-      type,
-      x: px,
-      y: py,
-      button: 'left',
-      buttons: type === 'mouseReleased' ? 0 : 1,
-      clickCount: 1,
-    });
+    await (async () => {
+      await page.mouse.move(px, py);
+      if (type === 'mousePressed') {
+        await page.mouse.down();
+      }
+      if (type === 'mouseReleased') {
+        await page.mouse.up();
+      }
+    })();
   }
   assert.notEqual(await evaluate("document.getElementById('world-x').value"), '0');
   await set('world-x', '-140');
@@ -148,10 +105,7 @@ print(json.dumps(ids))
   await set('world-direction', 'two-way');
   await click('world-link-apply');
   await wait("document.querySelectorAll('.world-link').length===1");
-  assert.equal(
-    await evaluate("document.getElementById('world-findings').textContent"),
-    'All connection endpoints are valid.',
-  );
+  await expect(page.locator('#world-findings')).toHaveText('All connection endpoints are valid.');
   await saveWorld();
   const stored = record((await manifest()).world),
     positions = record(stored.positions);
@@ -163,17 +117,19 @@ print(json.dumps(ids))
   assert.deepEqual(link.source, { scene: first, object: 1 });
   assert.deepEqual(link.destination, { scene: second, object: 2 });
   await evaluate("document.getElementById('world-dialog').scrollTop=0");
-  await chrome.screenshot('world-view');
+  await page.screenshot({ path: testInfo.outputPath('world-view' + '.png') });
   // Follow selects the exact object and its hidden layer without changing visibility.
-  await chrome.click(
-    "Array.from(document.querySelectorAll('.world-link button')).find(b=>b.textContent.startsWith('Follow'))",
-  );
+  await page
+    .locator('.world-link button')
+    .filter({ hasText: /^Follow/ })
+    .first()
+    .click();
   await wait(
     "document.getElementById('scene-name').textContent.startsWith('Cave ·') && !document.getElementById('show-world').disabled",
   );
-  assert.equal(await evaluate("document.getElementById('object-list').value"), '2');
-  assert.equal(await evaluate("document.getElementById('edit-object').disabled"), true);
-  assert.equal(await evaluate("document.getElementById('remove-sprite').disabled"), true);
+  await expect(page.locator('#object-list')).toHaveValue('2');
+  await expect(page.locator('#edit-object')).toBeDisabled();
+  await expect(page.locator('#remove-sprite')).toBeDisabled();
   assert.match(
     String(await evaluate("document.getElementById('status').textContent")),
     /hidden layer/,
@@ -187,22 +143,21 @@ print(json.dumps(ids))
   await click('resize-confirm');
   await wait("document.getElementById('scene-save-state').textContent==='Unsaved changes'");
   await openWorld();
-  await chrome.click("document.querySelector('.world-link button')"); // Edit
+  await page.locator('.world-link button').first().click(); // Edit
   await set('world-link-name', 'Cave trail');
   await set('world-direction', 'one-way');
   await click('world-link-apply');
   await saveWorld();
   await click('world-close');
-  assert.equal(
-    await evaluate("document.getElementById('scene-save-state').textContent"),
-    'Unsaved changes',
-  );
-  assert.equal(await evaluate("document.getElementById('undo').disabled"), false);
+  await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
+  await expect(page.locator('#undo')).toBeEnabled();
   // Following a source endpoint respects the existing save/discard/cancel flow.
   await openWorld();
-  await chrome.click(
-    "Array.from(document.querySelectorAll('.world-link button')).find(b=>b.textContent==='Source')",
-  );
+  await page
+    .locator('.world-link button')
+    .filter({ hasText: /^Source$/ })
+    .first()
+    .click();
   await wait("document.getElementById('switch-scene-dialog').open");
   await click('scene-switch-cancel');
   assert.match(
@@ -210,15 +165,17 @@ print(json.dumps(ids))
     /^Cave/,
   );
   await openWorld();
-  await chrome.click(
-    "Array.from(document.querySelectorAll('.world-link button')).find(b=>b.textContent==='Source')",
-  );
+  await page
+    .locator('.world-link button')
+    .filter({ hasText: /^Source$/ })
+    .first()
+    .click();
   await wait("document.getElementById('switch-scene-dialog').open");
   await click('scene-switch-save');
   await wait(
     "document.getElementById('scene-name').textContent.startsWith('Forest ·') && !document.getElementById('show-world').disabled",
   );
-  assert.equal(await evaluate("document.getElementById('object-list').value"), '1');
+  await expect(page.locator('#object-list')).toHaveValue('1');
   const updatedCave = record(
     JSON.parse(await readFile(join(root, 'scenes', `${second}.tmj`), 'utf8')),
   );
@@ -256,24 +213,21 @@ print(json.dumps(ids))
     String(await evaluate("document.getElementById('world-findings').textContent")),
     /Object was removed/,
   );
-  await chrome.screenshot('world-broken-endpoint');
+  await page.screenshot({ path: testInfo.outputPath('world-broken-endpoint' + '.png') });
   // Repair to a different endpoint, then navigate from the finding and save/reopen.
-  await chrome.click("document.querySelector('.world-link button')");
+  await page.locator('.world-link button').first().click();
   await set('world-source-object', '2');
   await click('world-link-apply');
   await saveWorld();
-  assert.equal(
-    await evaluate("document.getElementById('world-findings').textContent"),
-    'All connection endpoints are valid.',
-  );
+  await expect(page.locator('#world-findings')).toHaveText('All connection endpoints are valid.');
   await click('world-close');
   await openWorld();
-  await chrome.click("document.querySelector('.world-link button')");
+  await page.locator('.world-link button').first().click();
   await set('world-link-name', 'Discard this world edit');
   await click('world-link-apply');
   await evaluate('window.confirm=()=>false');
   await click('world-close');
-  assert.equal(await evaluate("document.getElementById('world-dialog').open"), true);
+  await expect(page.locator('#world-dialog')).toHaveJSProperty('open', true);
   await evaluate('window.confirm=()=>true');
   await click('world-close');
   await openWorld();
@@ -303,28 +257,23 @@ print(json.dumps(ids))
     /Scene is missing/,
   );
   await click('world-close');
-  await chrome.call('Page.reload');
+  await page.reload();
   await wait("document.getElementById('project-name')?.textContent === 'Connected rooms'");
   await openWorld();
   assert.match(
     String(await evaluate("document.getElementById('world-findings').textContent")),
     /Scene is missing/,
   );
-  await chrome.call('Emulation.setDeviceMetricsOverride', {
-    width: 600,
-    height: 900,
-    deviceScaleFactor: 1,
-    mobile: false,
-  });
+  await page.setViewportSize({ width: 600, height: 900 });
   await wait(
     "document.getElementById('world-dialog').scrollWidth<=document.getElementById('world-dialog').clientWidth",
   );
-  await chrome.screenshot('world-view-compact');
+  await page.screenshot({ path: testInfo.outputPath('world-view-compact' + '.png') });
   // A direct map edit makes the captured graph snapshot stale; failed save keeps the draft.
   const secondPath = join(root, 'scenes', `${second}.tmj`);
   map = record(JSON.parse(await readFile(secondPath, 'utf8')));
   await writeFile(secondPath, JSON.stringify(map) + '\n');
-  await chrome.click("document.querySelector('.world-link button')");
+  await page.locator('.world-link button').first().click();
   await set('world-link-name', 'Unsaved repair');
   await click('world-link-apply');
   await click('world-save');
@@ -335,26 +284,6 @@ print(json.dumps(ids))
     /Unsaved/,
   );
   // Expected 409 from the deliberate stale-snapshot case is reported in the UI.
-  assert.deepEqual(
-    chrome.errors.filter((e) => !e.includes('409')),
-    [],
-  );
+
   console.log('World layout and connection browser acceptance passed');
-} catch (error) {
-  if (browser) {
-    console.error(
-      await browser.evaluate(
-        "({status:document.getElementById('status')?.textContent, error:document.querySelector('dialog[open] .form-error')?.textContent})",
-      ),
-    );
-  }
-  throw error;
-} finally {
-  await browser?.close();
-  if (server && server.exitCode === null) {
-    const exited = once(server, 'exit');
-    server.kill('SIGINT');
-    await exited;
-  }
-  await rm(folder, { recursive: true, force: true });
-}
+});

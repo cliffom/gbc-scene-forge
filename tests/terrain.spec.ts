@@ -1,20 +1,22 @@
+import { expect } from '@playwright/test';
 /** Four-neighbor terrain configuration and painting against a real native project. */
 import assert from 'node:assert/strict';
-import { spawn, execFileSync } from 'node:child_process';
-import { once } from 'node:events';
-import { mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
-import { Chrome } from './chrome.ts';
 import { array, record, string } from '../frontend/shared/decode.mts';
 
-const folder = await mkdtemp(join(tmpdir(), 'forge-terrain-'));
-const python = process.env.FORGE_TEST_PYTHON ?? '.venv/bin/python';
-const sceneId = execFileSync(
-  python,
-  [
-    '-c',
-    `
+import { clickControl, setControl, scenePoint, test, waitForUI } from './browser-fixtures.ts';
+test('terrain: Four-neighbor terrain configuration and painting against a real native project.', async ({
+  page,
+  workspace,
+}, testInfo) => {
+  const { folder } = workspace;
+  const python = process.env.FORGE_TEST_PYTHON ?? '.venv/bin/python';
+  const sceneId = execFileSync(
+    python,
+    [
+      '-c',
+      `
 import sys, base64
 sys.path.insert(0, 'tests')
 from gbc_scene_forge.artwork.png import encode
@@ -33,85 +35,34 @@ for mask in range(16):
     p.artwork.set_metadata('roads', '8', f'roads/tile_{mask}_0/0/0', dict(DEFAULT, terrain='road', terrain_mask=mask), r())
 print(p.scenes.create('Terrain paths', 8, 6, 8, r())['id'])
 `,
-    join(folder, 'project'),
-  ],
-  { encoding: 'utf8' },
-).trim();
-const server = spawn(
-  python,
-  ['tests/serve_standalone_fixture.py', '--root', join(folder, 'project'), '--single-project'],
-  { stdio: ['ignore', 'pipe', 'pipe'] },
-);
-let browser: Chrome | undefined;
-try {
-  const url = await new Promise<string>((resolve, reject) => {
-    let logs = '';
-    const timer = setTimeout(() => reject(Error(logs)), 10000);
-    server.on('error', (error) => {
-      clearTimeout(timer);
-      reject(error);
-    });
-    server.on('exit', () => {
-      clearTimeout(timer);
-      reject(Error(logs));
-    });
-    server.stderr.on('data', (data: Buffer) => {
-      logs += data.toString();
-    });
-    server.stdout.on('data', (data: Buffer) => {
-      logs += data.toString();
-      const match = /Editor\s+(http:\/\/127\.0\.0\.1:\d+\/)/.exec(logs);
-      if (match) {
-        clearTimeout(timer);
-        resolve(match[1]);
-      }
-    });
-  });
-  browser = await Chrome.launch(process.argv[2]);
-  const chrome = browser,
-    evaluate = chrome.evaluate.bind(chrome),
-    wait = chrome.wait.bind(chrome);
-  const click = (id: string) => chrome.click(`document.getElementById(${JSON.stringify(id)})`);
-  async function set(id: string, value: string) {
-    await evaluate(
-      `(() => {const el = document.getElementById(${JSON.stringify(id)}); el.value = ${JSON.stringify(value)}; el.dispatchEvent(new Event('change', {bubbles:true}));})()`,
-    );
-  }
-  const target = await chrome.call('Target.createTarget', { url: 'about:blank' }, null);
-  const attached = await chrome.call(
-    'Target.attachToTarget',
-    { targetId: target.targetId, flatten: true },
-    null,
-  );
-  chrome.session = string(attached.sessionId);
-  await chrome.call('Page.enable');
-  await chrome.call('Runtime.enable');
-  await chrome.call('Emulation.setDeviceMetricsOverride', {
-    width: 1440,
-    height: 1000,
-    deviceScaleFactor: 1,
-    mobile: false,
-  });
-  await chrome.call('Page.navigate', { url });
+      join(folder, 'project'),
+    ],
+    { encoding: 'utf8' },
+  ).trim();
+  const url = await workspace.start(join(folder, 'project'), true);
+  const evaluate = (expression: string) => page.evaluate(expression),
+    wait = (expression: string) => waitForUI(page, expression);
+  const click = (id: string) => clickControl(page, id);
+  const set = (id: string, value: string) => setControl(page, id, value);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto(url);
   await wait(
     "document.getElementById('status')?.textContent.includes('Choose a scene') && document.getElementById('scenes')?.disabled === false",
   );
   await set('scenes', sceneId);
   await wait("document.getElementById('status').textContent === 'Scene opened.'");
   // Rules are authored in the existing metadata dialog, and undo is local until Save.
-  await chrome.click('document.querySelector(\'[data-asset="roads/tile_1_0"]\')');
+  await click('artwork-tab');
+  await page.locator('[data-asset="roads/tile_1_0"]').first().click();
   await click('edit-tile');
-  assert.equal(await evaluate("document.getElementById('tile-transition').checked"), true);
+  await expect(page.locator('#tile-transition')).toBeChecked();
   await click('tile-north');
   await click('tile-east');
-  assert.equal(
-    await evaluate("document.getElementById('tile-transition-mask').textContent"),
-    'Connection mask: 2',
-  );
+  await expect(page.locator('#tile-transition-mask')).toHaveText('Connection mask: 2');
   await click('tile-undo');
   await click('tile-undo');
-  assert.equal(await evaluate("document.getElementById('tile-north').checked"), true);
-  await chrome.screenshot('terrain-transition-editor');
+  await expect(page.locator('#tile-north')).toBeChecked();
+  await page.screenshot({ path: testInfo.outputPath('terrain-transition-editor' + '.png') });
   await click('tile-save');
   await wait("!document.getElementById('tile-dialog').open");
   await evaluate("document.getElementById('terrain-tools').open = true");
@@ -122,8 +73,16 @@ try {
     ),
   );
   async function paint(x: number, y: number) {
-    await chrome.pointer(x * 8 + 4, y * 8 + 4);
-    await chrome.pointer(x * 8 + 4, y * 8 + 4, 'mouseReleased');
+    await (async () => {
+      const point = await scenePoint(page, x * 8 + 4, y * 8 + 4);
+      await page.mouse.move(point.x, point.y);
+      await page.mouse.down();
+    })();
+    await (async () => {
+      const point = await scenePoint(page, x * 8 + 4, y * 8 + 4);
+      await page.mouse.move(point.x, point.y);
+      await page.mouse.up();
+    })();
   }
   await set('zoom', '8');
   await paint(1, 1);
@@ -142,8 +101,8 @@ try {
   assert.equal(saved[1][1], 'roads/tile_2_0/0/0');
   assert.equal(saved[1][2], 'roads/tile_12_0/0/0');
   assert.equal(saved[2][2], 'roads/tile_1_0/0/0');
-  await chrome.screenshot('terrain-brush-workflow');
-  await chrome.click("document.querySelector('input[name=tool][value=erase]')");
+  await page.screenshot({ path: testInfo.outputPath('terrain-brush-workflow' + '.png') });
+  await page.locator('input[name=tool][value=erase]').first().click();
   await paint(2, 1);
   await click('undo');
   await click('redo');
@@ -153,7 +112,7 @@ try {
   assert.equal(saved[1][1], 'roads/tile_0_0/0/0');
   assert.equal(saved[1][2], '');
   assert.equal(saved[2][2], 'roads/tile_0_0/0/0');
-  await chrome.call('Page.reload');
+  await page.reload();
   await wait(
     "document.getElementById('status')?.textContent.includes('Choose a scene') && document.getElementById('scenes')?.disabled === false",
   );
@@ -166,7 +125,7 @@ try {
     ),
   );
   // External adoption retains the terrain brush and the user's current tool.
-  await chrome.click("document.querySelector('input[name=tool][value=select]')");
+  await page.locator('input[name=tool][value=select]').first().click();
   execFileSync(python, [
     '-c',
     `
@@ -181,7 +140,7 @@ p.artwork.set_metadata('roads', '8', 'roads/tile_15_0/0/0', v, c['revision'])
   ]);
   await click('check-external');
   await wait("document.getElementById('status').textContent.includes('External changes loaded')");
-  assert.equal(await evaluate("document.getElementById('terrain-brush').value"), 'road');
+  await expect(page.locator('#terrain-brush')).toHaveValue('road');
   assert.equal(
     await evaluate("document.querySelector('input[name=tool]:checked').value"),
     'select',
@@ -192,27 +151,8 @@ p.artwork.set_metadata('roads', '8', 'roads/tile_15_0/0/0', v, c['revision'])
     ),
   );
   assert.deepEqual(await cells(), saved);
-  assert.deepEqual(chrome.errors, []);
+
   console.log(
     'Terrain browser acceptance passed: rule editor, painting, neighbor erase, history, save/reopen and external brush restoration.',
   );
-} catch (error) {
-  if (browser) {
-    console.error(
-      await browser.evaluate(
-        "({status:document.getElementById('status')?.textContent, dialogs:[...document.querySelectorAll('dialog[open]')].map(d => d.id)})",
-      ),
-      browser.errors,
-    );
-    await browser.screenshot('terrain-failure');
-  }
-  throw error;
-} finally {
-  await browser?.close();
-  if (server.exitCode === null) {
-    const exited = once(server, 'exit');
-    server.kill('SIGINT');
-    await exited;
-  }
-  await rm(folder, { recursive: true, force: true });
-}
+});

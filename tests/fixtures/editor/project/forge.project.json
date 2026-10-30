@@ -1,0 +1,243 @@
+{
+  "version": 1,
+  "id": "631a1b9c-955c-46f1-ac67-dc803dad450d",
+  "name": "Acceptance world",
+  "scenes": [
+    {
+      "id": "a6244aab-ae24-4c1f-a590-c13c0b44cf64",
+      "name": "Village",
+      "path": "scenes/a6244aab-ae24-4c1f-a590-c13c0b44cf64.tmj"
+    },
+    {
+      "id": "0a738e2c-d18c-4421-977f-cde1e1a25d9c",
+      "name": "River",
+      "path": "scenes/0a738e2c-d18c-4421-977f-cde1e1a25d9c.tmj"
+    }
+  ],
+  "atlases": {
+    "terrain": {
+      "manifest": {
+        "version": 1,
+        "id": "terrain",
+        "png": "atlas.png",
+        "palettes": [
+          [
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              10,
+              10,
+              10
+            ],
+            [
+              20,
+              20,
+              20
+            ],
+            [
+              31,
+              31,
+              31
+            ]
+          ]
+        ],
+        "cell_palettes": [
+          0,
+          0
+        ],
+        "regions": [
+          {
+            "name": "earth",
+            "kind": "tile",
+            "x": 0,
+            "y": 0,
+            "width": 8,
+            "height": 8
+          },
+          {
+            "name": "stone",
+            "kind": "tile",
+            "x": 8,
+            "y": 0,
+            "width": 8,
+            "height": 8
+          }
+        ],
+        "animations": [
+          {
+            "name": "cycle",
+            "frames": [
+              {
+                "region": "earth",
+                "duration_ms": 100
+              },
+              {
+                "region": "stone",
+                "duration_ms": 200
+              }
+            ]
+          }
+        ],
+        "source": "optional.aseprite",
+        "placement": "Fixture metadata"
+      },
+      "tiles": {
+        "8": {
+          "terrain/earth/0/0": 0,
+          "terrain/stone/0/0": 1
+        },
+        "16": {},
+        "32": {},
+        "sprites": {}
+      },
+      "png": "assets/terrain/atlas.png"
+    },
+    "actors": {
+      "manifest": {
+        "version": 1,
+        "id": "actors",
+        "png": "atlas.png",
+        "palettes": [
+          [
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              10,
+              10,
+              10
+            ],
+            [
+              20,
+              20,
+              20
+            ],
+            [
+              31,
+              31,
+              31
+            ]
+          ]
+        ],
+        "cell_palettes": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "regions": [
+          {
+            "name": "idle",
+            "kind": "sprite",
+            "x": 0,
+            "y": 0,
+            "width": 16,
+            "height": 32,
+            "origin": [
+              8,
+              23
+            ],
+            "duration_ms": 120
+          },
+          {
+            "name": "step",
+            "kind": "sprite",
+            "x": 16,
+            "y": 0,
+            "width": 16,
+            "height": 32,
+            "origin": [
+              8,
+              23
+            ],
+            "duration_ms": 120
+          }
+        ],
+        "animations": [
+          {
+            "name": "idle",
+            "frames": [
+              {
+                "region": "idle"
+              },
+              {
+                "region": "idle",
+                "duration_ms": 240
+              }
+            ]
+          },
+          {
+            "name": "stride_west",
+            "frames": [
+              {
+                "region": "idle",
+                "duration_ms": 80
+              }
+            ]
+          },
+          {
+            "name": "turn",
+            "frames": [
+              {
+                "region": "step"
+              },
+              {
+                "region": "idle"
+              }
+            ]
+          }
+        ],
+        "source": "optional.aseprite",
+        "placement": "Fixture metadata"
+      },
+      "tiles": {
+        "8": {},
+        "16": {},
+        "32": {},
+        "sprites": {
+          "actors/idle": 0,
+          "actors/step": 1
+        }
+      },
+      "png": "assets/actors/atlas.png"
+    }
+  },
+  "files": {
+    "assets/terrain/atlas.png": "29ed7fec4eb3d6136216d8c70e75fb835e0507ebc0efdd9b7b41837f4a971338",
+    "assets/terrain/grid-8/0.png": "17f43b975a40d97983f28db4594404c2a3d499b43d4ff19f2659f1dcb965b517",
+    "assets/terrain/grid-8/1.png": "17f43b975a40d97983f28db4594404c2a3d499b43d4ff19f2659f1dcb965b517",
+    "assets/terrain/grid-8.tsj": "44cbad377a5acc825fc4c63ef53cf7a07d2347b9e6208b12d05d37f8d9a66013",
+    "assets/terrain/grid-16.tsj": "0a47fdd9b9e7f9f4ae988bc2ec7962dd1285e1985ba42e240202b7488791e212",
+    "assets/terrain/grid-32.tsj": "033bac8b7a6bb6047a098787c3212bc818c5e7bdd3a3808ae07606f3e8161341",
+    "assets/terrain/terrain.atlas.json": "9ff1fe1f0e4fe56628ad972c9f0f8edecb6432dd5bf3ed7fc2bba6f422dc3af8",
+    "assets/actors/atlas.png": "b82111b396afa8b77e3d3e30e0d0a1722ec7017a0560821107b8b7fd30dd3c4e",
+    "assets/actors/grid-8.tsj": "4d4ba441c015beba9f51fb372f84930b8fa850e11f3d7682a03806661ad3509c",
+    "assets/actors/grid-16.tsj": "cf3cb7023c7edfd83261f9865594907eb0af7457d9c4bd05a8241b2d3fca9866",
+    "assets/actors/grid-32.tsj": "79bdfbdc04a016fdf2d64c6a4376cdab0fcefaa4a1d30d7470bccc23cf4c3d9e",
+    "assets/actors/actors.atlas.json": "bf947f35f0eb75c8c3c1505cc7f5d9933a998569a9881fb16d2db1a1d48ea955",
+    "assets/actors/sprites/0.png": "a172fb30cf7fd2f3fa5a224c515080024bb176bb45a460821e13d811fcb20886",
+    "assets/actors/sprites/1.png": "b7c9e181976b16604987b52209986d6c2fecee4437c08871931953b99d8f043d",
+    "assets/actors/sprites.tsj": "73ff441ce72bb0abd6ef6b6b5b910a9f2c1a8c1cbf2372d7de02965a54e0fd9a"
+  },
+  "preview": {
+    "zoom": 3,
+    "grid": true
+  }
+}

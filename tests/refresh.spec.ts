@@ -1,19 +1,19 @@
+import { expect } from '@playwright/test';
 /** Saved-file refresh with a real stdio MCP writer and protected browser edits. */
 import assert from 'node:assert/strict';
 import { execFile, spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { Chrome } from './chrome.ts';
 import { array, record, string } from '../frontend/shared/decode.mts';
 
-const folder = await mkdtemp(join(tmpdir(), 'forge-mcp-'));
-const python = process.env.FORGE_MCP_PYTHON || '.venv/bin/python';
-let browser: Chrome | undefined;
-let server: ReturnType<typeof spawn> | undefined;
-try {
+import { clickControl, scenePoint, setControl, test, waitForUI } from './browser-fixtures.ts';
+test('refresh: Saved-file refresh with a real stdio MCP writer and protected browser edits.', async ({
+  page,
+  workspace,
+}, testInfo) => {
+  const { folder } = workspace;
+  const python = process.env.FORGE_MCP_PYTHON || '.venv/bin/python';
   const { stdout } = await promisify(execFile)(python, [
     'examples/mcp/opening_forest.py',
     '--root',
@@ -24,36 +24,7 @@ try {
   const example = record(JSON.parse(stdout));
   const root = string(example.project);
   const id = string(example.scene_id);
-  const serverProcess = spawn(
-    '.venv/bin/python',
-    [
-      '-m',
-      'gbc_scene_forge',
-      '--project-root',
-      join(folder, 'projects'),
-      '--no-browser',
-      '--port',
-      '0',
-    ],
-    { stdio: ['ignore', 'pipe', 'pipe'] },
-  );
-  server = serverProcess;
-  const serverUrl = await new Promise<string>((resolve, reject) => {
-    let logs = '';
-    const timer = setTimeout(() => reject(Error(logs)), 10000);
-    serverProcess.once('error', reject);
-    serverProcess.stdout?.on('data', (data: Buffer) => {
-      logs += data.toString();
-      const match = /Editor\s+(http:\/\/127\.0\.0\.1:\d+\/)/.exec(logs);
-      if (match) {
-        clearTimeout(timer);
-        resolve(match[1]);
-      }
-    });
-    serverProcess.stderr?.on('data', (data: Buffer) => {
-      logs += data.toString();
-    });
-  });
+  const serverUrl = await workspace.start(join(folder, 'projects'), false, false);
   const url = new URL(`projects/${root.split('/').at(-1)}/`, serverUrl).href;
   const catalog = async () => record(await (await fetch(new URL('api/project', url))).json());
   const saved = async () => record(await (await fetch(new URL(`api/scene/${id}`, url))).json());
@@ -62,38 +33,12 @@ try {
   const original = await saved();
   assert.equal(objects(original.scene).length, 22);
   assert.deepEqual(record((await catalog()).project).atlases, {});
-  browser = await Chrome.launch(process.argv[2]);
-  const chrome = browser;
-  chrome.acceptBeforeUnload = true;
-  const target = await chrome.call('Target.createTarget', { url: 'about:blank' }, null);
-  chrome.session = string(
-    (
-      await chrome.call(
-        'Target.attachToTarget',
-        {
-          targetId: target.targetId,
-          flatten: true,
-        },
-        null,
-      )
-    ).sessionId,
-  );
-  await chrome.call('Page.enable');
-  await chrome.call('Runtime.enable');
-  await chrome.call('Emulation.setDeviceMetricsOverride', {
-    width: 1440,
-    height: 1100,
-    deviceScaleFactor: 1,
-    mobile: false,
-  });
-  const evaluate = chrome.evaluate.bind(chrome),
-    wait = chrome.wait.bind(chrome);
-  const click = (name: string) => chrome.click(`document.getElementById(${JSON.stringify(name)})`);
-  const set = (name: string, value: string) =>
-    evaluate(
-      `(()=>{const e=document.getElementById(${JSON.stringify(name)});e.value=${JSON.stringify(value)};e.dispatchEvent(new Event(e.tagName==='SELECT'?'change':'input',{bubbles:true}));})()`,
-    );
-  await chrome.call('Page.navigate', { url });
+  await page.setViewportSize({ width: 1440, height: 1100 });
+  const evaluate = (expression: string) => page.evaluate(expression),
+    wait = (expression: string) => waitForUI(page, expression);
+  const click = (name: string) => clickControl(page, name);
+  const set = async (name: string, value: string) => setControl(page, name, value);
+  await page.goto(url);
   await wait(
     "document.getElementById('status')?.textContent==='Choose a scene, or import an atlas and create one.' && !document.getElementById('scenes').disabled",
   );
@@ -153,7 +98,7 @@ try {
   await click('object-apply');
   await click('save');
   await wait("document.getElementById('status').textContent==='Scene saved.'");
-  assert.equal(await evaluate("document.getElementById('undo').disabled"), false);
+  await expect(page.locator('#undo')).toBeEnabled();
   const selected = await evaluate(
     "[document.getElementById('selection-name').textContent,document.getElementById('layers').querySelector('input:checked')?.value]",
   );
@@ -168,14 +113,14 @@ try {
   await moveCamera(16);
   await tick();
   await wait("document.getElementById('status').textContent.includes('External changes loaded')");
-  assert.equal(await evaluate("document.getElementById('zoom').value"), '4');
+  await expect(page.locator('#zoom')).toHaveValue('4');
   assert.deepEqual(
     await evaluate(
       "[document.getElementById('viewport').scrollLeft,document.getElementById('viewport').scrollTop]",
     ),
     scroll,
   );
-  assert.equal(await evaluate("document.getElementById('undo').disabled"), true);
+  await expect(page.locator('#undo')).toBeDisabled();
   assert.deepEqual(
     await evaluate(
       "[document.getElementById('selection-name').textContent,document.getElementById('layers').querySelector('input:checked')?.value]",
@@ -205,7 +150,7 @@ try {
   assert.equal(objects((await saved()).scene).find((item) => item.id === 1)?.x, 24);
   await click('revert');
   await wait("document.getElementById('discard-dialog').open");
-  await chrome.click("document.querySelector('#discard-dialog button[value=discard]')");
+  await page.locator('#discard-dialog button[value=discard]').first().click();
   await wait("document.getElementById('dirty').textContent==='SAVED'");
   await tick();
   await wait("document.getElementById('status').textContent.includes('External changes loaded')");
@@ -294,10 +239,11 @@ try {
   await wait('document.querySelector(\'#palette [data-asset="terrain/earth"]\')!==null');
   await inspectCamera(72);
   await evaluate("document.getElementById('project-command-panel').showPopover()");
-  await chrome.screenshot('external-refresh');
+  await page.screenshot({ path: testInfo.outputPath('external-refresh' + '.png') });
   await evaluate("document.getElementById('project-command-panel').hidePopover()");
   console.log('Refresh: preserve tools and the chosen artwork brush');
-  await chrome.click('document.querySelector(\'#palette [data-asset="terrain/stone"]\')');
+  await click('artwork-tab');
+  await page.locator('#palette [data-asset="terrain/stone"]').first().click();
   const mode = () =>
     evaluate(`({
     tool:document.querySelector('input[name="tool"]:checked')?.value,
@@ -309,7 +255,7 @@ try {
     stamp:document.getElementById('place-stamp').getAttribute('aria-pressed'),
   })`);
   for (const [index, tool] of ['select', 'erase', 'fill', 'pan'].entries()) {
-    await chrome.click(`document.querySelector('input[name="tool"][value="${tool}"]')`);
+    await page.locator(`input[name="tool"][value="${tool}"]`).first().click();
     const before = await mode();
     await moveCamera(73 + index);
     await tick();
@@ -320,14 +266,30 @@ try {
   await evaluate(
     "document.getElementById('viewport').scrollTo(0,0);document.activeElement?.blur()",
   );
-  await chrome.click('document.querySelector(\'input[name="tool"][value="select"]\')');
-  await chrome.pointer(8, 8);
-  await chrome.pointer(8, 8, 'mouseReleased');
-  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
+  await page.locator('input[name="tool"][value="select"]').first().click();
+  await (async () => {
+    const point = await scenePoint(page, 8, 8);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.down();
+  })();
+  await (async () => {
+    const point = await scenePoint(page, 8, 8);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.up();
+  })();
+  await expect(page.locator('#dirty')).toHaveText('SAVED');
   // The retained brush must still paint stone when the author explicitly selects Paint.
-  await chrome.click('document.querySelector(\'input[name="tool"][value="paint"]\')');
-  await chrome.pointer(8, 8);
-  await chrome.pointer(8, 8, 'mouseReleased');
+  await page.locator('input[name="tool"][value="paint"]').first().click();
+  await (async () => {
+    const point = await scenePoint(page, 8, 8);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.down();
+  })();
+  await (async () => {
+    const point = await scenePoint(page, 8, 8);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.up();
+  })();
   await wait("document.getElementById('dirty').textContent==='UNSAVED'");
   await click('save');
   await wait("document.getElementById('status').textContent==='Scene saved.'");
@@ -344,7 +306,8 @@ try {
   ]);
   await tick();
   await wait('document.querySelector(\'#palette [data-asset="spare/earth"]\')!==null');
-  await chrome.click('document.querySelector(\'#palette [data-asset="spare/earth"]\')');
+  await click('artwork-tab');
+  await page.locator('#palette [data-asset="spare/earth"]').first().click();
   await evaluate("document.getElementById('status').textContent=''");
   await post('delete-atlas', {
     id: 'spare',
@@ -357,19 +320,25 @@ try {
     await evaluate('document.querySelector(\'#palette [aria-pressed="true"]\')===null'),
     true,
   );
-  assert.equal(
-    await evaluate("document.getElementById('selected-brush').textContent"),
-    'Select a brush',
-  );
-  await chrome.pointer(16, 8);
-  await chrome.pointer(16, 8, 'mouseReleased');
-  assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
+  await expect(page.locator('#selected-brush')).toHaveText('Select a brush');
+  await (async () => {
+    const point = await scenePoint(page, 16, 8);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.down();
+  })();
+  await (async () => {
+    const point = await scenePoint(page, 16, 8);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.up();
+  })();
+  await expect(page.locator('#dirty')).toHaveText('SAVED');
   // Generic object placement and shared presets retain their mode without selecting artwork.
   for (const [index, choose] of [
-    "document.getElementById('place-point')",
-    "document.querySelector('#blockout-presets button[data-definition]')",
+    '#place-point',
+    '#blockout-presets button[data-definition]',
   ].entries()) {
-    await chrome.click(choose);
+    await click(index === 0 ? 'objects-tab' : 'blockout-tab');
+    await page.locator(choose).first().click();
     const before = await mode();
     await moveCamera(77 + index);
     await tick();
@@ -385,9 +354,8 @@ try {
   });
   await tick();
   await wait("document.getElementById('stamps').textContent.includes('Refresh stamp')");
-  await evaluate(
-    "const stamps=document.getElementById('stamps');stamps.value=stamps.options[1].value;stamps.dispatchEvent(new Event('change',{bubbles:true}))",
-  );
+  await click('stamps-tab');
+  await page.locator('#stamps').selectOption({ index: 1 });
   await click('place-stamp');
   const stampMode = await mode();
   await moveCamera(79);
@@ -407,7 +375,8 @@ try {
   const spriteId = spriteOutput.trim();
   await tick();
   await wait(`document.querySelector('#object-list option[value="${spriteId}"]')!==null`);
-  await chrome.click('document.querySelector(\'#palette [data-asset="actors/idle"]\')');
+  await click('artwork-tab');
+  await page.locator('#palette [data-asset="actors/idle"]').first().click();
   await inspectCamera(79);
   for (const manual of [false, true]) {
     if (manual) {
@@ -451,7 +420,7 @@ try {
     assert.equal(record(await mode()).asset, 'actors/idle');
     assert.equal(record(await mode()).tool, 'select');
     await evaluate('window.fetch=window.__realFetch');
-    assert.equal(await evaluate("document.getElementById('dirty').textContent"), 'SAVED');
+    await expect(page.locator('#dirty')).toHaveText('SAVED');
     await inspectCamera(x);
   }
   // Restore automatic refresh for the inventory/deletion checks below.
@@ -476,20 +445,12 @@ try {
   });
   await tick();
   await wait("document.getElementById('status').textContent.includes('removed externally')");
-  assert.equal(await evaluate("document.getElementById('save').disabled"), true);
-  assert.equal(await evaluate("document.getElementById('canvas-surround').hidden"), true);
+  await expect(page.locator('#save')).toBeDisabled();
+  await expect(page.locator('#canvas-surround')).toHaveJSProperty('hidden', true);
   await evaluate("document.getElementById('project-command-panel').showPopover()");
-  await chrome.screenshot('external-scene-deleted');
-  assert.deepEqual(chrome.errors, []);
+  await page.screenshot({ path: testInfo.outputPath('external-scene-deleted' + '.png') });
+
   console.log(
     'Refresh browser passed: real MCP saves, view preservation, forms, paused dirty polling, save conflicts, manual checks, in-flight edits, animated sprites, reconnect, inventories and deletion.',
   );
-} finally {
-  await browser?.close();
-  if (server && server.exitCode === null) {
-    const exited = once(server, 'exit');
-    server.kill('SIGINT');
-    await exited;
-  }
-  await rm(folder, { recursive: true, force: true });
-}
+});

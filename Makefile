@@ -36,7 +36,7 @@ help:
 	@echo '  make test-frontend           Run TypeScript model/API/build tests'
 	@echo '  make test-frontend-<suite>   Run one suite (model, drafts, contracts, etc.)'
 	@echo '  make test-browser            Run all browser acceptance suites (CHROME=/path)'
-	@echo '  make test-playwright-browser Run migrated Playwright suites'
+	@echo '  make test-playwright-browser Run all regular Playwright suites'
 	@echo '  make test-blockout-browser   Run artwork-free blockout acceptance'
 	@echo '  make test-mcp                Run optional MCP SDK/service checks'
 	@echo '  make test-mcp-browser        Run agent/browser draft-conflict acceptance'
@@ -94,34 +94,34 @@ test-frontend: $(FRONTEND_TEST_TARGETS)
 $(FRONTEND_TEST_TARGETS): test-frontend-%:
 	$(NODE) tests/$*.ts
 
-test-browser: test-terrain-browser test-imports-browser test-playwright-browser test-blockout-browser test-layout-browser test-standalone-browser test-drafts-browser test-compositions-browser test-definitions-browser test-world-browser test-diagnostics-browser
+test-browser: test-playwright-browser
 
 test-blockout-browser: frontend
-	$(NODE) tests/blockout-browser.ts $(if $(CHROME),"$(CHROME)")
+	CHROME="$(CHROME)" $(NPM) exec -- playwright test --config tests/playwright.config.ts blockout.spec.ts
 
 test-layout-browser: frontend
-	$(NODE) tests/layout-browser.ts $(if $(CHROME),"$(CHROME)")
+	CHROME="$(CHROME)" $(NPM) exec -- playwright test --config tests/playwright.config.ts layout.spec.ts
 
 test-first-use-browser: frontend
 	CHROME="$(CHROME)" $(NPM) exec -- playwright test --config tests/playwright.config.ts first-use.spec.ts
 
 test-standalone-browser: frontend
-	$(NPM) run test:standalone -- $(if $(CHROME),"$(CHROME)")
+	CHROME="$(CHROME)" $(NPM) exec -- playwright test --config tests/playwright.config.ts standalone.spec.ts
 
 test-compositions-browser: frontend
-	$(NODE) tests/compositions-browser.ts $(if $(CHROME),"$(CHROME)")
+	CHROME="$(CHROME)" $(NPM) exec -- playwright test --config tests/playwright.config.ts compositions.spec.ts
 
 test-diagnostics-browser: frontend
-	$(NODE) tests/diagnostics-browser.ts $(if $(CHROME),"$(CHROME)")
+	CHROME="$(CHROME)" $(NPM) exec -- playwright test --config tests/playwright.config.ts diagnostics.spec.ts
 
 test-world-browser: frontend
-	$(NODE) tests/world-browser.ts $(if $(CHROME),"$(CHROME)")
+	CHROME="$(CHROME)" $(NPM) exec -- playwright test --config tests/playwright.config.ts world.spec.ts
 
 test-definitions-browser: frontend
-	$(NODE) tests/definitions-browser.ts $(if $(CHROME),"$(CHROME)")
+	CHROME="$(CHROME)" $(NPM) exec -- playwright test --config tests/playwright.config.ts definitions.spec.ts
 
 test-drafts-browser: frontend
-	$(NPM) run test:drafts -- $(if $(CHROME),"$(CHROME)")
+	CHROME="$(CHROME)" $(NPM) exec -- playwright test --config tests/playwright.config.ts drafts.spec.ts
 
 test-tiled:
 	$(POETRY) run python tests/tiled_interop.py --tiled "$(TILED)" --rasterizer "$(RASTERIZER)"
@@ -169,8 +169,7 @@ test-mcp:
 	"$(or $(FORGE_MCP_PYTHON),.venv/bin/python)" -m unittest discover -s tests -p test_mcp.py
 
 test-mcp-browser: frontend
-	FORGE_MCP_PYTHON="$(or $(FORGE_MCP_PYTHON),.venv/bin/python)" $(NODE) tests/mcp-browser.ts $(if $(CHROME),"$(CHROME)")
-	FORGE_MCP_PYTHON="$(or $(FORGE_MCP_PYTHON),.venv/bin/python)" $(NODE) tests/refresh-browser.ts $(if $(CHROME),"$(CHROME)")
+	FORGE_MCP_ONLY=1 FORGE_MCP_PYTHON="$(or $(FORGE_MCP_PYTHON),.venv/bin/python)" CHROME="$(CHROME)" $(NPM) exec -- playwright test --config tests/playwright.config.ts mcp.spec.ts refresh.spec.ts
 
 .PHONY: test-editor-lifecycle-browser
 test-editor-lifecycle-browser: frontend
@@ -178,11 +177,11 @@ test-editor-lifecycle-browser: frontend
 
 .PHONY: test-imports-browser
 test-imports-browser: frontend
-	$(NODE) tests/imports-browser.ts $(if $(CHROME),"$(CHROME)")
+	CHROME="$(CHROME)" $(NPM) exec -- playwright test --config tests/playwright.config.ts imports.spec.ts
 
 .PHONY: test-terrain-browser
 test-terrain-browser: frontend
-	$(NODE) tests/terrain-browser.ts $(if $(CHROME),"$(CHROME)")
+	CHROME="$(CHROME)" $(NPM) exec -- playwright test --config tests/playwright.config.ts terrain.spec.ts
 
 .PHONY: test-playwright-browser
 test-playwright-browser: frontend

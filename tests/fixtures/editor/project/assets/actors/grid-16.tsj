@@ -1,0 +1,12 @@
+{
+  "type": "tileset",
+  "version": "1.10",
+  "name": "actors",
+  "tilewidth": 16,
+  "tileheight": 16,
+  "tilecount": 0,
+  "columns": 0,
+  "margin": 0,
+  "spacing": 0,
+  "tiles": []
+}

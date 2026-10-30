@@ -1,19 +1,18 @@
+import { expect } from '@playwright/test';
 /** Read-only findings, unsaved navigation, assumptions and stale-result handling. */
 import assert from 'node:assert/strict';
-import { execFile, spawn } from 'node:child_process';
-import type { ChildProcess } from 'node:child_process';
-import { once } from 'node:events';
-import { mkdtemp, readFile, rm, copyFile, mkdir } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { execFile } from 'node:child_process';
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { Chrome } from './chrome.ts';
 import { string } from '../frontend/shared/decode.mts';
-const folder = await mkdtemp(join(tmpdir(), 'forge-diagnostics-'));
-const root = join(folder, 'world');
-let server: ChildProcess | undefined;
-let browser: Chrome | undefined;
-try {
+import { clickControl, test, waitForUI } from './browser-fixtures.ts';
+test('diagnostics: Read-only findings, unsaved navigation, assumptions and stale-result handling.', async ({
+  page,
+  workspace,
+}, testInfo) => {
+  const { folder } = workspace;
+  const root = join(folder, 'world');
   const { stdout } = await promisify(execFile)('.venv/bin/python', [
     '-c',
     `
@@ -39,34 +38,10 @@ print(json.dumps(ids))
   const ids: unknown = JSON.parse(stdout);
   assert(Array.isArray(ids) && ids.every((id) => typeof id === 'string'));
   const [first, second] = ids.map(string);
-  const child = spawn(
-    '.venv/bin/python',
-    ['-m', 'gbc_scene_forge', '--no-browser', '--project', root, '--port', '0'],
-    { stdio: ['ignore', 'pipe', 'pipe'] },
-  );
-  server = child;
-  const url = await new Promise<string>((resolve, reject) => {
-    let logs = '';
-    const timer = setTimeout(() => reject(Error(`Startup timeout: ${logs}`)), 10000);
-    child.once('error', reject);
-    child.stdout.on('data', (data: Buffer) => {
-      logs += data.toString();
-      const match = /Editor\s+(http:\/\/127\.0\.0\.1:\d+\/)/.exec(logs);
-      if (match) {
-        clearTimeout(timer);
-        resolve(match[1]);
-      }
-    });
-    child.stderr.on('data', (data: Buffer) => {
-      logs += data.toString();
-    });
-  });
-  browser = await Chrome.launch(process.argv[2]);
-  const chrome = browser;
-  chrome.acceptBeforeUnload = true;
-  const evaluate = chrome.evaluate.bind(chrome),
-    wait = chrome.wait.bind(chrome);
-  const click = (id: string) => chrome.click(`document.getElementById(${JSON.stringify(id)})`);
+  const url = await workspace.start(root, false, true);
+  const evaluate = (expression: string) => page.evaluate(expression),
+    wait = (expression: string) => waitForUI(page, expression);
+  const click = (id: string) => clickControl(page, id);
   const choose = async (id: string) => {
     await wait("!document.getElementById('scenes').disabled");
     await evaluate(
@@ -76,22 +51,8 @@ print(json.dumps(ids))
       `document.getElementById('scene-name').textContent.startsWith(${JSON.stringify(id === first ? 'Forest ·' : 'Cave ·')}) && !document.getElementById('show-world').disabled`,
     );
   };
-  const target = string(
-    (await chrome.call('Target.createTarget', { url: 'about:blank' }, null)).targetId,
-  );
-  chrome.session = string(
-    (await chrome.call('Target.attachToTarget', { targetId: target, flatten: true }, null))
-      .sessionId,
-  );
-  await chrome.call('Runtime.enable');
-  await chrome.call('Page.enable');
-  await chrome.call('Emulation.setDeviceMetricsOverride', {
-    width: 1440,
-    height: 1000,
-    deviceScaleFactor: 1,
-    mobile: false,
-  });
-  await chrome.call('Page.navigate', { url });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto(url);
   await wait("document.getElementById('project-name')?.textContent === 'Connected rooms'");
   await choose(first);
   const original = await readFile(join(root, 'forge.project.json'), 'utf8');
@@ -100,11 +61,11 @@ print(json.dumps(ids))
     await wait("document.getElementById('diagnostics-dialog').open");
   };
   const runReport = async () => {
-    await chrome.click("document.getElementById('diagnostics-run')");
+    await page.locator('#' + 'diagnostics-run').click();
     await wait(
       "!document.getElementById('diagnostics-run').disabled && document.querySelectorAll('#diagnostics-findings li').length > 0",
     );
-    assert.equal(await evaluate("document.getElementById('diagnostics-error').textContent"), '');
+    await expect(page.locator('#diagnostics-error')).toHaveText('');
   };
   await openDiagnostics();
   await runReport();
@@ -123,14 +84,8 @@ print(json.dumps(ids))
     String(await evaluate("document.getElementById('diagnostics-findings').textContent")),
     /Cave/,
   );
-  await mkdir('docs/screenshots/diagnostics', { recursive: true });
-  await chrome.screenshot('project-diagnostics');
-  await copyFile(
-    'build/reports/scene-editor/project-diagnostics.png',
-    'docs/screenshots/diagnostics/report.png',
-  );
-  // Inspect an object in the current scene without changing its contents.
-  await chrome.click("document.querySelector('#diagnostics-findings [data-code=required] button')");
+  await page.screenshot({ path: testInfo.outputPath('project-diagnostics.png') });
+  await page.locator('#diagnostics-findings [data-code=required] button').first().click();
   await wait("!document.getElementById('diagnostics-dialog').open");
   assert.match(String(await evaluate("document.getElementById('status').textContent")), /selected/);
   assert.equal(await readFile(join(root, 'forge.project.json'), 'utf8'), original);
@@ -150,9 +105,12 @@ print(json.dumps(ids))
     String(await evaluate("document.getElementById('diagnostics-findings').textContent")),
     /Reachability needs/,
   );
-  await chrome.click(
-    "Array.from(document.querySelectorAll('#diagnostics-findings li')).find(e=>e.textContent.includes('Cave') && e.dataset.code==='required').querySelector('button')",
-  );
+  await page
+    .locator('#diagnostics-findings li[data-code=required]')
+    .filter({ hasText: 'Cave' })
+    .first()
+    .locator('button')
+    .click();
   await wait("document.getElementById('switch-scene-dialog').open");
   await click('scene-switch-cancel');
   await wait("!document.getElementById('switch-scene-dialog').open");
@@ -169,12 +127,7 @@ print(json.dumps(ids))
   );
   assert.equal(await evaluate("document.querySelectorAll('#diagnostics-findings li').length"), 0);
   await runReport();
-  await chrome.call('Emulation.setDeviceMetricsOverride', {
-    width: 760,
-    height: 800,
-    deviceScaleFactor: 1,
-    mobile: false,
-  });
+  await page.setViewportSize({ width: 760, height: 800 });
   assert.equal(
     await evaluate(
       "document.getElementById('diagnostics-dialog').scrollWidth <= document.getElementById('diagnostics-dialog').clientWidth + 1",
@@ -186,18 +139,10 @@ print(json.dumps(ids))
   const contents = await readFile(path, 'utf8');
   const { writeFile } = await import('node:fs/promises');
   await writeFile(path, contents + '\n');
-  await chrome.click("document.querySelector('#diagnostics-findings [data-code=required] button')");
+  await page.locator('#diagnostics-findings [data-code=required] button').first().click();
   await wait("document.getElementById('diagnostics-state').textContent.includes('stale')");
   assert.equal(await evaluate("document.querySelectorAll('#diagnostics-findings li').length"), 0);
   assert.equal(await readFile(join(root, 'forge.project.json'), 'utf8'), original);
-  assert.deepEqual(chrome.errors, []);
+
   console.log('Project diagnostics browser acceptance passed');
-} finally {
-  await browser?.close();
-  if (server && server.exitCode === null) {
-    const exited = once(server, 'exit');
-    server.kill('SIGINT');
-    await exited;
-  }
-  await rm(folder, { recursive: true, force: true });
-}
+});

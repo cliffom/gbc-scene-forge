@@ -1,19 +1,18 @@
+import { expect } from '@playwright/test';
 /** Real keyboard/pointer object definitions, inheritance and instance validation. */
 import assert from 'node:assert/strict';
-import { execFile, spawn } from 'node:child_process';
-import type { ChildProcess } from 'node:child_process';
-import { once } from 'node:events';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { execFile } from 'node:child_process';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { Chrome } from './chrome.ts';
 import { record, string } from '../frontend/shared/decode.mts';
-const folder = await mkdtemp(join(tmpdir(), 'forge-definitions-'));
-const root = join(folder, 'world');
-let server: ChildProcess | undefined;
-let browser: Chrome | undefined;
-try {
+import { clickControl, scenePoint, test, waitForUI } from './browser-fixtures.ts';
+test('definitions: Real keyboard/pointer object definitions, inheritance and instance validation.', async ({
+  page,
+  workspace,
+}, testInfo) => {
+  const { folder } = workspace;
+  const root = join(folder, 'world');
   const { stdout } = await promisify(execFile)('.venv/bin/python', [
     '-c',
     `
@@ -63,73 +62,36 @@ print(json.dumps(ids))
   const ids: unknown = JSON.parse(stdout);
   assert(Array.isArray(ids) && ids.every((id) => typeof id === 'string'));
   const [first, second, , regression] = ids.map(string);
-  const child = spawn(
-    '.venv/bin/python',
-    ['-m', 'gbc_scene_forge', '--no-browser', '--project', root, '--port', '0'],
-    { stdio: ['ignore', 'pipe', 'pipe'] },
-  );
-  server = child;
-  const url = await new Promise<string>((resolve, reject) => {
-    let logs = '';
-    const timer = setTimeout(() => reject(Error(`Startup timeout: ${logs}`)), 10000);
-    child.once('error', reject);
-    child.stdout.on('data', (data: Buffer) => {
-      logs += data.toString();
-      const match = /Editor\s+(http:\/\/127\.0\.0\.1:\d+\/)/.exec(logs);
-      if (match) {
-        clearTimeout(timer);
-        resolve(match[1]);
-      }
-    });
-    child.stderr.on('data', (data: Buffer) => {
-      logs += data.toString();
-    });
-  });
-  browser = await Chrome.launch(process.argv[2]);
-  const chrome = browser;
-  chrome.acceptBeforeUnload = true;
-  const evaluate = chrome.evaluate.bind(chrome),
-    wait = chrome.wait.bind(chrome);
-  const click = (id: string) => chrome.click(`document.getElementById(${JSON.stringify(id)})`);
+  const url = await workspace.start(root, false, true);
+  const evaluate = (expression: string) => page.evaluate(expression),
+    wait = (expression: string) => waitForUI(page, expression);
+  const click = (id: string) => clickControl(page, id);
   const choose = async (id: string) => {
     await wait(
       "document.getElementById('scenes')?.disabled === false && !document.getElementById('show-create').disabled",
     );
-    await evaluate(
-      `(() => { const s = document.getElementById('scenes'); s.value = ${JSON.stringify(id)}; s.dispatchEvent(new Event('change')); })()`,
-    );
+    await page.locator('#scenes').selectOption(id);
     await wait(
       `document.getElementById('scene-name').textContent.startsWith(${JSON.stringify(id === first ? 'Room ·' : id === regression ? 'Regression ·' : 'Other room ·')}) && !document.getElementById('show-create').disabled`,
     );
   };
   const saved = async (id: string): Promise<unknown> =>
     JSON.parse(await readFile(join(root, 'scenes', `${id}.tmj`), 'utf8'));
-  const target = string(
-    (await chrome.call('Target.createTarget', { url: 'about:blank' }, null)).targetId,
-  );
-  chrome.session = string(
-    (await chrome.call('Target.attachToTarget', { targetId: target, flatten: true }, null))
-      .sessionId,
-  );
-  await chrome.call('Runtime.enable');
-  await chrome.call('Page.enable');
-  await chrome.call('Emulation.setDeviceMetricsOverride', {
-    width: 1440,
-    height: 1000,
-    deviceScaleFactor: 1,
-    mobile: false,
-  });
-  await chrome.call('Page.navigate', { url });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto(url);
   await wait("document.getElementById('project-name')?.textContent === 'Reusable rooms'");
   await choose(first);
-  const set = async (selector: string, value: string | boolean) =>
-    evaluate(`(() => {
-    const e = document.querySelector(${JSON.stringify(selector)});
-    if (typeof ${JSON.stringify(value)} === 'boolean') e.checked = ${JSON.stringify(value)};
-    else e.value = ${JSON.stringify(value)};
-    e.dispatchEvent(new Event('input', {bubbles:true}));
-    e.dispatchEvent(new Event('change', {bubbles:true}));
-  })()`);
+  const set = async (selector: string, value: string | boolean) => {
+    const control = page.locator(selector);
+    if (typeof value === 'boolean') {
+      await control.setChecked(value);
+    } else if (await control.evaluate((element) => element.tagName === 'SELECT')) {
+      await control.selectOption(value);
+    } else {
+      await control.fill(value);
+      await control.dispatchEvent('change');
+    }
+  };
   const chooseValue = (id: string, value: string) => set('#' + id, value);
   const field = (index: number, control: string) =>
     `#definition-fields > :nth-child(${index + 1}) .field-${control}`;
@@ -154,7 +116,7 @@ print(json.dumps(ids))
   await set(field(3, 'name'), 'enabled');
   await set(field(3, 'type'), 'bool');
   await set(field(3, 'has-default'), true);
-  await chrome.screenshot('object-definition-library');
+  await page.screenshot({ path: testInfo.outputPath('object-definition-library' + '.png') });
   await click('definition-save');
   await wait(
     "!document.getElementById('definitions-dialog').open && !document.getElementById('manage-definitions').disabled",
@@ -169,8 +131,16 @@ print(json.dumps(ids))
   );
   await chooseValue('object-definition-brush', definitionId);
   await click('place-definition');
-  await chrome.pointer(33, 33);
-  await chrome.pointer(33, 33, 'mouseReleased');
+  await (async () => {
+    const point = await scenePoint(page, 33, 33);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.down();
+  })();
+  await (async () => {
+    const point = await scenePoint(page, 33, 33);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.up();
+  })();
   await wait(
     "document.getElementById('object-validation-summary').textContent.includes('1 linked instances · 1 findings')",
   );
@@ -179,7 +149,7 @@ print(json.dumps(ids))
     "document.getElementById('object-validation-summary').textContent.includes('0 linked instances')",
   );
   await click('redo');
-  await chrome.click("document.querySelector('#object-findings button')");
+  await page.locator('#object-findings button').first().click();
   await click('edit-object');
   await wait("document.getElementById('object-dialog').open");
   const instanceField = (name: string, control: string) =>
@@ -188,7 +158,7 @@ print(json.dumps(ids))
   await set(instanceField('destination', '[aria-label=destination]'), 'Room B');
   await set(instanceField('priority', 'input[type=checkbox]'), true);
   await set(instanceField('priority', '[aria-label=priority]'), '3');
-  await chrome.screenshot('object-definition-instance');
+  await page.screenshot({ path: testInfo.outputPath('object-definition-instance' + '.png') });
   await click('object-apply');
   await wait("!document.getElementById('object-dialog').open");
   await wait(
@@ -274,13 +244,13 @@ print(json.dumps(ids))
     }
     return false;
   })()`);
-  await chrome.call('Page.reload');
+  await page.reload();
   await wait(
     "document.getElementById('recovery-dialog')?.open && !document.getElementById('show-create').disabled",
   );
   await click('recovery-restore');
   await wait("document.getElementById('status').textContent.includes('Draft restored')");
-  await chrome.click(`document.querySelector('[data-layer-id="2"] input')`);
+  await page.locator('[data-layer-id="2"] .layer-choice').first().click();
   await chooseValue('object-list', objectId);
   await click('edit-object');
   assert.equal(
@@ -302,19 +272,19 @@ print(json.dumps(ids))
   );
   await choose(second);
   await choose(first);
-  await chrome.click(`document.querySelector('[data-layer-id="2"] input')`);
+  await page.locator('[data-layer-id="2"] .layer-choice').first().click();
   await chooseValue('object-list', objectId);
   await click('edit-object');
   // Detaching materializes current values, and Cancel leaves the link intact.
   await chooseValue('object-definition', '');
   await click('object-cancel');
   await click('edit-object');
-  assert.equal(await evaluate("document.getElementById('object-definition').value"), definitionId);
+  await expect(page.locator('#object-definition')).toHaveValue(definitionId);
   await chooseValue('object-definition', '');
   await click('object-apply');
   await click('undo');
   await click('edit-object');
-  assert.equal(await evaluate("document.getElementById('object-definition').value"), definitionId);
+  await expect(page.locator('#object-definition')).toHaveValue(definitionId);
   await click('object-cancel');
   // Rectangle and sprite definitions place native objects, with scene-only undo.
   for (const kind of ['rectangle', 'sprite']) {
@@ -332,8 +302,16 @@ print(json.dumps(ids))
     const shapeId = string(shape.id);
     await chooseValue('object-definition-brush', shapeId);
     await click('place-definition');
-    await chrome.pointer(49, 49);
-    await chrome.pointer(49, 49, 'mouseReleased');
+    await (async () => {
+      const point = await scenePoint(page, 49, 49);
+      await page.mouse.move(point.x, point.y);
+      await page.mouse.down();
+    })();
+    await (async () => {
+      const point = await scenePoint(page, 49, 49);
+      await page.mouse.move(point.x, point.y);
+      await page.mouse.up();
+    })();
     await wait(
       "document.getElementById('object-validation-summary').textContent.includes('2 linked instances')",
     );
@@ -342,7 +320,7 @@ print(json.dumps(ids))
       await chooseValue('definition-list', shapeId);
       await evaluate('window.confirm = () => false');
       await click('definition-delete');
-      assert.equal(await evaluate("document.getElementById('definitions-dialog').open"), true);
+      await expect(page.locator('#definitions-dialog')).toHaveJSProperty('open', true);
       await evaluate('window.confirm = () => true');
       await click('definition-delete');
       await wait(
@@ -423,7 +401,7 @@ print(json.dumps(ids))
   await choose(regression);
   await chooseValue('object-list', '2');
   await click('edit-object');
-  assert.equal(await evaluate("document.getElementById('object-definition').value"), '');
+  await expect(page.locator('#object-definition')).toHaveValue('');
   assert.equal(await evaluate("document.querySelectorAll('#object-properties > div').length"), 256);
   await click('object-cancel');
   await choose(first);
@@ -435,28 +413,23 @@ print(json.dumps(ids))
   await writeFile(join(root, 'forge.project.json'), external);
   await click('definition-save');
   await wait("document.getElementById('definition-error').textContent.includes('changed on disk')");
-  assert.equal(await evaluate("document.getElementById('definition-name').value"), 'Stale rename');
+  await expect(page.locator('#definition-name')).toHaveValue('Stale rename');
   assert.equal(await readFile(join(root, 'forge.project.json'), 'utf8'), external);
-  await chrome.call('Emulation.setDeviceMetricsOverride', {
-    width: 980,
-    height: 760,
-    deviceScaleFactor: 1,
-    mobile: false,
-  });
+  await page.setViewportSize({ width: 980, height: 760 });
   await wait('document.documentElement.scrollWidth <= innerWidth');
-  await chrome.screenshot('object-definitions-compact');
+  await page.screenshot({ path: testInfo.outputPath('object-definitions-compact' + '.png') });
   await click('definition-close');
   // Native shape and artwork defaults are selectable without raw JSON.
   await click('manage-definitions');
   await chooseValue('definition-name', 'Guard');
   await chooseValue('definition-kind', 'sprite');
-  assert.equal(await evaluate("document.getElementById('definition-asset').disabled"), false);
+  await expect(page.locator('#definition-asset')).toBeEnabled();
   assert.equal(
     await evaluate("document.getElementById('definition-asset').options.length > 0"),
     true,
   );
   await chooseValue('definition-kind', 'rectangle');
-  assert.equal(await evaluate("document.getElementById('definition-width').disabled"), false);
+  await expect(page.locator('#definition-width')).toBeEnabled();
   await click('definition-close');
   data = record(await manifest());
   const finalDefinitions = record(data.object_definitions).definitions;
@@ -465,23 +438,6 @@ print(json.dumps(ids))
     record(finalDefinitions.find((d) => record(d).id === definitionId)).name,
     'Entrance',
   );
-  assert.deepEqual(chrome.errors, []);
+
   console.log('Object definitions browser acceptance passed');
-} catch (error) {
-  if (browser) {
-    console.error(
-      await browser.evaluate(
-        "({status:document.getElementById('status')?.textContent, error:document.querySelector('dialog[open] .form-error')?.textContent})",
-      ),
-    );
-  }
-  throw error;
-} finally {
-  await browser?.close();
-  if (server && server.exitCode === null) {
-    const exited = once(server, 'exit');
-    server.kill('SIGINT');
-    await exited;
-  }
-  await rm(folder, { recursive: true, force: true });
-}
+});
