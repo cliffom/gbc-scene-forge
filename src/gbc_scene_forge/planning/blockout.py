@@ -535,20 +535,7 @@ def review(scene, project, camera_id=None):
         <= 4096,
         "SVG review supports at most 4096 visible objects; hide layers to review a subset",
     )
-    cameras = [
-        item
-        for layer in tiled.scene_layers(scene)
-        if layer["visible"]
-        for item in layer.get("objects", [])
-        if item.get("kind") == "rectangle"
-        and (appearance(item, project) or {}).get("role") == "camera"
-    ]
-    camera = (
-        next((c for c in cameras if c["id"] == camera_id), None)
-        if camera_id is not None
-        else next(iter(cameras), None)
-    )
-    require(camera is not None, "Show a camera frame layer or choose a valid camera object")
+    camera = select_camera(scene, project, camera_id)
     return dict(
         version=1,
         snapshot_revision=hashlib.sha256(
@@ -564,3 +551,25 @@ def review(scene, project, camera_id=None):
         camera_svg=render_svg(scene, project, camera),
         includes_artwork=False,
     )
+
+
+def select_camera(scene, project, camera_id=None):
+    """Resolve a visible typed camera using the shared planning rules."""
+    require(
+        camera_id is None or integer(camera_id, 1, 2147483646), "Choose a valid camera object ID"
+    )
+    cameras = [
+        item
+        for layer in tiled.scene_layers(scene)
+        if layer["visible"]
+        for item in layer.get("objects", [])
+        if item.get("kind") == "rectangle"
+        and (appearance(item, project) or {}).get("role") == "camera"
+    ]
+    camera = (
+        next((c for c in cameras if c["id"] == camera_id), None)
+        if camera_id is not None
+        else next(iter(cameras), None)
+    )
+    require(camera is not None, "Show a camera frame layer or choose a valid camera object")
+    return copy.deepcopy(camera)

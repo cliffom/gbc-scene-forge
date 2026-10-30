@@ -19,7 +19,8 @@ def create_server(adapter):
         "gbc-scene-forge",
         version=__version__,
         instructions="Local saved-project authoring. Inspect revisions before edits. Use dry_run and "
-        "review_blockout to review candidates. Browser drafts and Undo are independent; stale saves "
+        "review_blockout to review candidates; import_atlas uploads artwork and review_artwork "
+        "renders exact saved PNG views. Browser drafts and Undo are independent; stale saves "
         "conflict. Artifacts are immutable, session-scoped and may expire. No physics certification.",
     )
 

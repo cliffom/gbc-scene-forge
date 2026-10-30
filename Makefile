@@ -167,7 +167,7 @@ clean-demo:
 .PHONY: test-mcp test-mcp-browser
 test-mcp:
 	"$(or $(FORGE_MCP_PYTHON),.venv/bin/python)" -c "import mcp"
-	"$(or $(FORGE_MCP_PYTHON),.venv/bin/python)" -m unittest discover -s tests -p test_mcp.py
+	"$(or $(FORGE_MCP_PYTHON),.venv/bin/python)" -m unittest discover -s tests -p 'test_mcp*.py'
 
 test-mcp-browser: frontend
 	FORGE_MCP_ONLY=1 FORGE_MCP_PYTHON="$(or $(FORGE_MCP_PYTHON),.venv/bin/python)" CHROME="$(CHROME)" $(NPM) exec -- playwright test --config tests/playwright/playwright.config.ts mcp.spec.ts refresh.spec.ts

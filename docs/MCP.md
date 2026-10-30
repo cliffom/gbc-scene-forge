@@ -11,7 +11,7 @@ transactions as browser authoring. There is no connector or game compiler.
 Install the release with Python 3.10 or newer:
 
 ```sh
-python -m pip install --upgrade 'gbc-scene-forge[mcp]==0.16.2'
+python -m pip install --upgrade 'gbc-scene-forge[mcp]==0.18.0'
 gbc-scene-forge-mcp --project-root /absolute/path/to/projects
 ```
 
@@ -74,13 +74,14 @@ and [official Python SDK](https://github.com/modelcontextprotocol/python-sdk/tre
 | Discovery | `list_projects`, `get_project`, `get_scene`, `capabilities`. Canonical scenes, ordered layers/cells/objects, imported asset inventories, definitions, stamps, world data and revisions. | File browsing outside declared inventories; live subscriptions. |
 | Creation | `create_project` (empty or blockout), `create_scene` (cell dimensions), `create_blockout_scene` (pixel/cell settings and camera). | Sample-project creation through MCP. |
 | Scene editing | `edit_scene`: atomic place/update/duplicate/delete object batches, dry-run candidates and before/after summaries. `save_scene`: validated full canonical layers, tile cells, sprites and objects, including typed properties. | Semantic tile brushes, layer operations and stamp placement; use canonical `save_scene` or browser. Scene rename/duplicate/delete use browser. |
-| Project editing | `save_object_definition`, `save_world`, `save_stamp` reuse native validators and transaction services. | Artwork import/reimport, definition/stamp deletion, palette profile/metadata and animation preference editing use browser. No arbitrary import paths. |
-| Review | `review_blockout`: full overview and chosen camera frame SVG resources, exact saved/candidate revisions, pixel dimensions and camera intent. | Artwork-inclusive raster previews and runtime/physics simulation. |
+| Project editing | `save_object_definition`, `save_world`, `save_stamp` reuse native validators and transaction services. | Definition/stamp deletion, palette profile/metadata and animation preference editing use browser. No arbitrary import paths. |
+| Artwork | `import_atlas`: bounded uploaded manifest/PNG, preflight and compatible reimport with exact project/scene acknowledgments. | Arbitrary filesystem paths; artwork creation/approval. |
+| Review | `review_artwork`: saved PNG camera and bounded/paged overview. `review_blockout`: full overview and chosen camera frame SVG resources, exact saved/candidate revisions, pixel dimensions and camera intent. | Animated playback and runtime/physics simulation. |
 | Verification | `diagnostics` checks the saved project; `palette_report` checks a guarded saved scene with the existing opt-in profile. | Missing metadata stays unverified; no reachability or hardware-fit certification. |
 | Portability | `export_bundle` returns existing project/scene Tiled ZIP exports as immutable resources. | Arbitrary output paths; exports over 16 MiB use browser. |
 
-PNG/Tiled import (#25), autotiling (#23) and broader hardware profiles (#29) remain
-separate features. Browser selection, playback and Undo are browser interactions,
+Generic PNG/Tiled intake, terrain brush commands and profile editing remain
+browser operations. Browser selection, playback and Undo are browser interactions,
 not claimed MCP capabilities. The initial agent workflow is inspect/create/edit/
 review/diagnostics/export; the project tools extend that surface through existing
 service contracts without exposing a shell or unrestricted filesystem operations.
@@ -147,6 +148,61 @@ accepts a native definition; omit its ID to create one, retain ID to update.
 one 0..127 occurrence slot per layer in order (same type/name slots increase).
 Use `get_project` to inspect existing examples of these native schemas.
 
+## Import and review saved artwork
+
+1. Read `get_project` and retain its revision. Call `import_atlas` with `project`,
+   `project_revision`, `bundle` and `dry_run:true`. The bundle has exactly
+   `name` (a basename ending `.atlas.json`), `manifest` (the JSON file as text),
+   and `png` (base64 image bytes). This upload contract uses the same gbc-atlas
+   validation as the browser; it accepts no server filesystem path. The whole
+   JSON request must fit 4 MiB, including base64 expansion; manifests additionally
+   cap at 1 MiB and decoded PNGs at 4 MiB. Normal atlas dimensions, cell count,
+   RGB5 palette, transparency and region rules apply.
+2. Inspect `added`, `changed`, `removed`, image dimensions and `regions` in the
+   preflight report. Repeat the same payload with `dry_run:false` to commit.
+   Import is atomic and guards every rewritten saved scene and declared asset.
+   Reimport requires `reimport:true` and the same atlas ID, retains region
+   identities/dimensions/kinds and applicable Forge metadata, and reports
+   `artwork_changed` and `metadata_changed`. Invalid/stale imports change nothing.
+   Preflight validates full serialization/persistence limits but reserves no lock
+   for a future commit. An updated payload needs a new preflight.
+3. Reinspect inventory and scenes after import; acknowledgments also include the
+   exact committed `project_revision` and `scene_revisions`. Scene IDs, typed
+   blockout objects and their properties remain intact. Tile identities are
+   `atlas/region/x/y`; grid inventories are keyed by editor pixel grid. For a
+   **16px editor grid with 8px palette cells**, declare tile regions whose width
+   and height are divisible by 16. Each 16px tile includes four palette cells;
+   8px-only regions do not become 16px tiles. No scene-grid limit changes.
+4. Use `save_scene` with the returned canonical scene, preserving existing
+   geometry/IDs and adding ordered tile/object layers. Tile transform suffixes
+   `#1`..`#7` encode horizontal, vertical and diagonal combinations. Sprite
+   objects use `{id,asset,x,y}` and optional `origin`; omit `kind` for sprites.
+   Reopen with `get_scene` to inspect the serialized result.
+5. Call `review_artwork` with exact `project_revision`, `scene_revision` and
+   `scene_id`, plus optional visible typed `camera_id`. Read `camera_resource`
+   and `overview_resource` as PNG blobs. Each output is native scale (one pixel
+   per authored pixel), transparent, with ordered visible artwork layers,
+   canonical grid slicing, tile transforms and static sprite origins. Planning
+   geometry/labels, selections, background and playback are excluded; use
+   `review_blockout` alongside it for geometry and camera intent.
+6. Views cap at **1024 pixels per axis / 1,048,576 output pixels**, and
+   16,777,216 composited pixels and 4,194,304 decoded source pixels per view. An oversized camera fails explicitly.
+   The default overview starts at `(0,0)` and crops each axis to 1024.
+   `overview_complete` states whether it covers the whole scene. Pass
+   `overview:{x,y,width,height}` to review another native-scale rectangle; the
+   returned `overview` and full scene dimensions make coverage explicit. There
+   is no silent scaling. Outside artwork stays transparent.
+7. Run diagnostics/palette review and `export_bundle` at fresh revisions. The
+   portable ZIP retains tile images, sprites, layer ordering, semantic references
+   and typed geometry. Runtime compatibility remains a downstream concern.
+
+The regression proof in `tests/backend/adapters/test_mcp_artwork.py` follows this
+sequence with a generic 16px-grid fixture, 8px palette cells, transformed tiles,
+sprite placement, metadata-preserving reimport and portable export. Real SDK
+protocol checks exercise upload and PNG resource reads; browser MCP acceptance
+checks import/reimport inventory adoption and preserved saved placements alongside
+existing dirty-edit/recovery protection.
+
 ## Revisions, drafts and review artifacts
 
 All updates require the expected project revision; scene edits/reviews additionally
@@ -179,7 +235,7 @@ SDK schema failures are text errors with `isError:true`. Unknown tools/capabilit
 fail explicitly. Reinspect after a conflict; never retry with fabricated revisions.
 
 Previews/exports return MCP resource links. `resources/read` retrieves UTF-8 SVG
-text or base64 ZIP blobs. URIs are content-addressed `forge-artifact://snapshot/…`,
+text or base64 PNG/ZIP blobs. URIs are content-addressed `forge-artifact://snapshot/…`,
 immutable and accessible only in their server session. The cache holds up to
 24 MiB; old artifacts may expire. Save desired artifacts on the client before
 ending the session; regenerate expired ones. Arbitrary file/HTTP URIs are refused.

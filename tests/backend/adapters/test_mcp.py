@@ -427,6 +427,38 @@ class ProtocolTests(unittest.TestCase):
                     io.BytesIO(base64.b64decode(resource.contents[0].blob))
                 ) as archive:
                     self.assertIn(MANIFEST, archive.namelist())
+                source, _ = bundle(Path(folder) / "upload")
+                uploaded = dict(
+                    name=source.name,
+                    manifest=source.read_text(),
+                    png=base64.b64encode((source.parent / "atlas.png").read_bytes()).decode(),
+                )
+                preview = await call(
+                    "import_atlas",
+                    dict(
+                        project="protocol",
+                        project_revision=args["project_revision"],
+                        bundle=uploaded,
+                        dry_run=True,
+                    ),
+                )
+                self.assertTrue(preview["dry_run"])
+                imported = await call(
+                    "import_atlas",
+                    dict(
+                        project="protocol",
+                        project_revision=args["project_revision"],
+                        bundle=uploaded,
+                    ),
+                )
+                args.update(
+                    project_revision=imported["project_revision"],
+                    scene_revision=imported["scene_revisions"][loaded["id"]],
+                )
+                review = await call("review_artwork", args)
+                image = await client.read_resource(review["camera_resource"]["uri"])
+                self.assertEqual(image.contents[0].mimeType, "image/png")
+                self.assertTrue(base64.b64decode(image.contents[0].blob).startswith(b"\x89PNG"))
                 for name, bad in (
                     ("edit_scene", {**args, "operations": []}),
                     ("get_project", dict(project="../escape")),

@@ -136,6 +136,52 @@ TOOLS = [
         read=True,
     ),
     tool(
+        "import_atlas",
+        "Preflight (dry_run) or atomically import/reimport a bounded uploaded gbc-atlas bundle. "
+        "No filesystem paths. Reinspect scene revisions after importing.",
+        {
+            **GUARD,
+            "bundle": schema(
+                {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "pattern": r"^[^/\\:]+\.atlas\.json$",
+                    },
+                    "manifest": {"type": "string", "maxLength": 1048576},
+                    "png": {
+                        "type": "string",
+                        "maxLength": 5592408,
+                        "description": "Base64 PNG; total tool input remains bounded to 4 MiB.",
+                    },
+                }
+            ),
+            "reimport": {"type": "boolean"},
+            "dry_run": {"type": "boolean"},
+        },
+        ("reimport", "dry_run"),
+    ),
+    tool(
+        "review_artwork",
+        "Read-only saved artwork PNG camera and bounded overview at native pixel scale. "
+        "Transparent, ordered visible layers, static sprites; planning overlays use review_blockout. "
+        "Each view is at most 1024x1024; overview defaults to the top-left bounded region.",
+        {
+            **SCENE,
+            "camera_id": ID,
+            "overview": schema(
+                {
+                    "x": {"type": "integer", "minimum": 0, "maximum": 8192},
+                    "y": {"type": "integer", "minimum": 0, "maximum": 8192},
+                    "width": {"type": "integer", "minimum": 1, "maximum": 1024},
+                    "height": {"type": "integer", "minimum": 1, "maximum": 1024},
+                }
+            ),
+        },
+        ("camera_id", "overview"),
+        read=True,
+    ),
+    tool(
         "diagnostics",
         "Read-only project diagnostics at guarded saved revisions; no reachability certification.",
         {**GUARD, "options": NATIVE},
@@ -191,11 +237,10 @@ TOOLS = [
 ]
 
 DEFERRED = [
-    "Artwork import/reimport (use browser supported atlas paths; no agent-supplied filesystem paths)",
     "Scene rename/duplicate/delete and definition/stamp deletion (use browser)",
     "Semantic tile painting, stamp placement and layer management (use canonical save_scene)",
-    "Artwork-inclusive raster previews, browser selection/Undo, draft inspection/mutation",
+    "Animated artwork playback, browser selection/Undo, draft inspection/mutation",
     "Palette profile editing, tile metadata editing and sprite preview preference editing",
-    "PNG/Tiled import (#25), autotiling (#23), broader hardware profiles (#29)",
+    "Generic PNG/Tiled intake, terrain brush commands and profile editing (use browser)",
     "Remote/HTTP MCP, subscriptions, prompts, tasks and game runtime/physics integration",
 ]
