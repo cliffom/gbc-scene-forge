@@ -268,8 +268,13 @@ Stop the sample server before `make clean-demo`. Custom demo directories are nev
 removed by that command. Default project and sample directories are Git-ignored.
 Override tool paths with `PYTHON`, `POETRY`, or `NPM` when needed.
 
-Chrome defaults to its macOS application path; pass `CHROME=/path/to/chrome` on
-other systems. Optional official Tiled interoperability checks run with
+Install the test browser once with `npx playwright install chromium` after setup.
+`make test-playwright-browser` runs the migrated lifecycle and first-use suites;
+`npm run test:playwright -- --ui` opens their interactive runner. They use
+Playwright Chromium by default. Remaining CDP suites default to the macOS Chrome
+application path; pass `CHROME=/path/to/chrome` to override the browser for either
+runner on other systems. See [browser testing](docs/BROWSER-TESTING.md) for
+readiness, traces, installed-wheel checks and the migration plan. Optional official Tiled interoperability checks run with
 `make test-tiled TILED=/path/to/Tiled RASTERIZER=/path/to/tmxrasterizer`.
 
 Edit TypeScript in `frontend/` and Python in `src/gbc_scene_forge/`.

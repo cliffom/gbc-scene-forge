@@ -228,3 +228,8 @@ After moving frontend modules, rebuild the supported bundle and verify its sourc
 map and the absence of historical `app.js`, its map/metadata and `index.html` from
 the distributions. Run the full browser suite, including editor
 disposal/remount acceptance, and installed-wheel first-use acceptance.
+
+The Playwright acceptance pilot in #73 retains 0.16.2 without a dedicated release.
+See [browser testing](BROWSER-TESTING.md) for browser installation, failure artifacts,
+readiness contracts and installed-wheel first-use validation. Playwright is a
+development dependency and is not required by Python distributions.

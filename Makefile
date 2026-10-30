@@ -35,7 +35,8 @@ help:
 	@echo '  make test-python             Run Python tests'
 	@echo '  make test-frontend           Run TypeScript model/API/build tests'
 	@echo '  make test-frontend-<suite>   Run one suite (model, drafts, contracts, etc.)'
-	@echo '  make test-browser            Run all Chrome acceptance suites (CHROME=/path)'
+	@echo '  make test-browser            Run all browser acceptance suites (CHROME=/path)'
+	@echo '  make test-playwright-browser Run migrated Playwright suites'
 	@echo '  make test-blockout-browser   Run artwork-free blockout acceptance'
 	@echo '  make test-mcp                Run optional MCP SDK/service checks'
 	@echo '  make test-mcp-browser        Run agent/browser draft-conflict acceptance'
@@ -93,7 +94,7 @@ test-frontend: $(FRONTEND_TEST_TARGETS)
 $(FRONTEND_TEST_TARGETS): test-frontend-%:
 	$(NODE) tests/$*.ts
 
-test-browser: test-terrain-browser test-imports-browser test-editor-lifecycle-browser test-blockout-browser test-layout-browser test-first-use-browser test-standalone-browser test-drafts-browser test-compositions-browser test-definitions-browser test-world-browser test-diagnostics-browser
+test-browser: test-terrain-browser test-imports-browser test-playwright-browser test-blockout-browser test-layout-browser test-standalone-browser test-drafts-browser test-compositions-browser test-definitions-browser test-world-browser test-diagnostics-browser
 
 test-blockout-browser: frontend
 	$(NODE) tests/blockout-browser.ts $(if $(CHROME),"$(CHROME)")
@@ -102,7 +103,7 @@ test-layout-browser: frontend
 	$(NODE) tests/layout-browser.ts $(if $(CHROME),"$(CHROME)")
 
 test-first-use-browser: frontend
-	$(NODE) tests/first-use-browser.ts $(if $(CHROME),"$(CHROME)")
+	CHROME="$(CHROME)" $(NPM) exec -- playwright test --config tests/playwright.config.ts first-use.spec.ts
 
 test-standalone-browser: frontend
 	$(NPM) run test:standalone -- $(if $(CHROME),"$(CHROME)")
@@ -173,7 +174,7 @@ test-mcp-browser: frontend
 
 .PHONY: test-editor-lifecycle-browser
 test-editor-lifecycle-browser: frontend
-	$(NODE) tests/editor-lifecycle-browser.ts $(if $(CHROME),"$(CHROME)")
+	CHROME="$(CHROME)" $(NPM) exec -- playwright test --config tests/playwright.config.ts editor-lifecycle.spec.ts
 
 .PHONY: test-imports-browser
 test-imports-browser: frontend
@@ -182,3 +183,7 @@ test-imports-browser: frontend
 .PHONY: test-terrain-browser
 test-terrain-browser: frontend
 	$(NODE) tests/terrain-browser.ts $(if $(CHROME),"$(CHROME)")
+
+.PHONY: test-playwright-browser
+test-playwright-browser: frontend
+	CHROME="$(CHROME)" $(NPM) run test:playwright

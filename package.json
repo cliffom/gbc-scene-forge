@@ -14,10 +14,12 @@
     "test": "make test-frontend",
     "test:browser": "make test-browser",
     "test:standalone": "node tests/standalone-browser.ts",
-    "test:drafts": "node tests/drafts-browser.ts"
+    "test:drafts": "node tests/drafts-browser.ts",
+    "test:playwright": "playwright test --config tests/playwright.config.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@playwright/test": "1.64.1",
     "@types/node": "24.19.2",
     "esbuild": "0.28.2",
     "eslint": "10.13.0",
