@@ -1,6 +1,6 @@
 /** Fresh offline first-scene path through the installed-product UI. */
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { mkdtemp, rm, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -93,6 +93,14 @@ try {
     'Bring in artwork',
   );
   assert.equal(await evaluate('location.search'), '');
+  assert.equal(
+    await evaluate("document.getElementById('app-version').textContent"),
+    execFileSync(
+      process.env.FORGE_TEST_PYTHON ?? '.venv/bin/python',
+      ['-I', '-c', 'from gbc_scene_forge.build_info import build_version; print(build_version())'],
+      { encoding: 'utf8' },
+    ).trim(),
+  );
   await click('guide-next');
   await chrome.screenshot('first-use-guide');
   await click('guide-action');

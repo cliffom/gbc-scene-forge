@@ -33,6 +33,7 @@ await build({
   platform: 'browser',
   target: 'es2022',
   sourcemap: true,
+  minify: mode === 'production',
   outfile: 'src/gbc_scene_forge/static/project.js',
   define: { __FORGE_BUILD_LABEL__: JSON.stringify(label) },
 });

@@ -56,7 +56,11 @@ await test('esbuild bundles nested modules, emits source maps and preserves asse
     const production = build('production');
     assert.equal(production.status, 0, production.stdout + production.stderr);
     const releaseBundle = await readFile(join(staticDir, 'project.js'), 'utf8');
-    assert(releaseBundle.includes(`versionLabel.textContent = "${version}"`));
+    assert(releaseBundle.includes(JSON.stringify(version)));
+    assert(releaseBundle.length < bundle.length * 0.75, 'Production JavaScript must be minified');
+    assert(bundle.includes('// frontend/'), 'Development output must remain readable');
+    assert.match(releaseBundle, /sourceMappingURL=project\.js\.map/);
+    assert.doesNotMatch(releaseBundle, /from ["']valibot["']/);
     assert(!releaseBundle.includes(`${version}-a1b2c3d`));
     assert.equal(
       string(
@@ -88,7 +92,7 @@ await test('esbuild bundles nested modules, emits source maps and preserves asse
     const files = await readdir(staticDir);
     const before = await Promise.all(files.map((name) => readFile(join(staticDir, name), 'utf8')));
     await writeFile(helper, 'export const probe: string = 42;\n');
-    const failed = build();
+    const failed = build('production');
     assert.notEqual(failed.status, 0);
     assert.match(failed.stdout + failed.stderr, /TS2322/);
     assert.deepEqual(

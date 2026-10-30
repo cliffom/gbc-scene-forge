@@ -67,8 +67,15 @@ when building development assets without a Git checkout. Missing Git metadata
 or an invalid commit fails the development build rather than inventing an identity.
 
 Use `FORGE_BUILD_MODE=production make build` for release artifacts; their label
-shows only `VERSION`. The publication workflow sets this mode for all its build
-steps, including TestPyPI. Ordinary CI and local builds use development mode.
+shows only `VERSION` and its JavaScript is minified. Development bundles remain
+readable. Both modes retain source maps and the bundled third-party license notice.
+PyPI wheels and source archives contain the production bundle: `uvx --from
+'gbc-scene-forge==0.16.2' gbc-scene-forge --project-root /path/to/projects` serves
+those prebuilt minified assets without invoking Node or esbuild. Previously
+published versions (including 0.15.0) retain their original assets.
+Package CI and the publication workflow set production mode for their build
+and browser checks, including TestPyPI publication builds. Local builds default
+to development mode; build regression tests exercise both modes.
 Only `development` and `production` are accepted. These values are build-time
 inputs: changing environment variables or Git HEAD after building does not change
 the displayed identity. Wheels and source distributions preserve the prebuilt
@@ -97,7 +104,7 @@ publishing page. Use the official [trusted publisher setup guide](https://docs.p
 The workflow follows the [Python Packaging User Guide](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/)
 and uses short-lived OIDC credentials; no PyPI API token is stored in the repository.
 
-After reviewing and committing a release, create and push an annotated `v0.16.1`
+After reviewing and committing a release, create and push an annotated `v0.16.2`
 tag (or the matching next version). Run **Publish package** manually against that
 tag, selecting `testpypi` first when its trusted publisher is configured. TestPyPI
 is currently unconfigured; its 0.1.4 upload failed with `invalid-publisher`. Until
@@ -106,6 +113,14 @@ Chrome fixture suite, then run the workflow for `pypi`. Verify a fresh PyPI inst
 with `tests/package_smoke.py` after publication. The workflow rebuilds and
 checks the distributions, checks the tag against the package version, then uploads
 only those verified artifacts. Pushing a tag alone does not publish.
+
+## Release 0.16.2
+
+Version 0.16.2 minifies production JavaScript while preserving development
+readability, source maps, license notices and build identity. See
+[release notes](RELEASE-0.16.2.md). Validate with `make lint test`,
+`FORGE_BUILD_MODE=production make build check-dist test-browser`, and installed-wheel
+first-use acceptance. Existing projects and Python runtime dependencies are unchanged.
 
 ## Release 0.16.1
 

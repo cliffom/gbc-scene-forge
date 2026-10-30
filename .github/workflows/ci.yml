@@ -8,6 +8,8 @@ permissions:
 jobs:
   checks:
     runs-on: ubuntu-24.04
+    env:
+      FORGE_BUILD_MODE: production
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6

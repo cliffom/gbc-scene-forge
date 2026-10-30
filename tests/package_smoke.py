@@ -146,7 +146,10 @@ class InstalledPackageSmokeTests(unittest.TestCase):
                 with urlopen(base, timeout=5) as response:
                     self.assertIn(b"First scene guide", response.read())
                 with urlopen(base + "project.js", timeout=5) as response:
-                    self.assertIn(b"Save and reopen", response.read())
+                    self.assertEqual(
+                        response.read(),
+                        files("gbc_scene_forge").joinpath("static/project.js").read_bytes(),
+                    )
                 project = Project(Path(folder) / ".forge_project" / directory)
                 self.assertEqual(project.read()[0]["name"], "First world")
                 self.assertEqual(len(project.read()[0]["scenes"]), 2)
