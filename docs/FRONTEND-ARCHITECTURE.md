@@ -106,7 +106,7 @@ helper coverage now uses supported native contracts.
   collision-preserving neighbor changes, authored rule configuration and native save/reopen.
 - `tests/editor-state.ts`: import safety without a DOM, serialization/undo/dirty
   ownership, stable refresh fencing, resource cancellation and transport contracts.
-- `tests/editor-lifecycle-browser.ts`: real disposal/remount, overlay cleanup,
+- `tests/editor-lifecycle.spec.ts`: real disposal/remount, overlay cleanup,
   stopped polling and exactly one scene-opening handler after replacement.
 - `tests/refresh-browser.ts`: real MCP concurrent saves, local-edit/form protection,
   paused/hidden refresh, interaction and decode races, tools/brushes and animation.

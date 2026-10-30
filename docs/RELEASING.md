@@ -49,8 +49,9 @@ before accepting artifacts. No command above uploads packages.
 
 CI runs lint, frontend tests, package builds and Chrome acceptance checks once
 on Python 3.13 with Node 24. A separate compatibility matrix installs that same
-wheel and runs Python tests and installed-package smoke checks on Python 3.10,
-3.11, 3.12, 3.13 and 3.14, without installing Node or rebuilding the frontend.
+wheel and runs Python tests and installed-package smoke checks on Python 3.13
+and 3.14, without installing Node or rebuilding the frontend. The declared package
+minimum remains Python 3.10; older interpreters are no longer exercised in CI.
 The browser suite can also be run locally; see the README.
 
 ## UI build identity
@@ -228,3 +229,8 @@ After moving frontend modules, rebuild the supported bundle and verify its sourc
 map and the absence of historical `app.js`, its map/metadata and `index.html` from
 the distributions. Run the full browser suite, including editor
 disposal/remount acceptance, and installed-wheel first-use acceptance.
+
+The Playwright acceptance pilot in #73 retains 0.16.2 without a dedicated release.
+See [browser testing](BROWSER-TESTING.md) for browser installation, failure artifacts,
+readiness contracts and installed-wheel first-use validation. Playwright is a
+development dependency and is not required by Python distributions.

@@ -75,7 +75,7 @@ You only need Python 3.10+ and a current desktop browser (Chrome, Edge, Firefox 
 Safari). Node, Poetry, Tiled and gbc-atlas are not needed to edit the bundled
 sample. Installation needs access to the package index or a previously downloaded
 wheel; editing, the guide and sample work offline. Automated browser acceptance
-runs in Chrome on macOS and Linux; the package CI checks Python 3.10–3.14 on Linux.
+runs in Chrome on macOS and Linux; the package CI checks Python 3.13 and 3.14 on Linux.
 
 Choose a scene from the scene dropdown to open it. If the current scene has
 unsaved edits, choose whether to save, discard, or keep editing before switching.
@@ -268,8 +268,13 @@ Stop the sample server before `make clean-demo`. Custom demo directories are nev
 removed by that command. Default project and sample directories are Git-ignored.
 Override tool paths with `PYTHON`, `POETRY`, or `NPM` when needed.
 
-Chrome defaults to its macOS application path; pass `CHROME=/path/to/chrome` on
-other systems. Optional official Tiled interoperability checks run with
+Install the test browser once with `npx playwright install chromium` after setup.
+`make test-playwright-browser` runs the migrated lifecycle and first-use suites;
+`npm run test:playwright -- --ui` opens their interactive runner. They use
+Playwright Chromium by default. Remaining CDP suites default to the macOS Chrome
+application path; pass `CHROME=/path/to/chrome` to override the browser for either
+runner on other systems. See [browser testing](docs/BROWSER-TESTING.md) for
+readiness, traces, installed-wheel checks and the migration plan. Optional official Tiled interoperability checks run with
 `make test-tiled TILED=/path/to/Tiled RASTERIZER=/path/to/tmxrasterizer`.
 
 Edit TypeScript in `frontend/` and Python in `src/gbc_scene_forge/`.

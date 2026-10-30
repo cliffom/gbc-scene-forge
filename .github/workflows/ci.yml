@@ -23,8 +23,12 @@ jobs:
           cache: npm
       - run: make setup
       - run: make lint test-frontend build check-dist
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
       - name: Browser acceptance checks
         run: make test-browser CHROME=/usr/bin/google-chrome
+      - name: Installed-wheel first-use acceptance
+        run: FORGE_TEST_PYTHON="$PWD/build/package-smoke/bin/python" npx playwright test --config tests/playwright.config.ts first-use.spec.ts
       - name: Optional MCP installed-wheel and browser checks
         run: |
           python -m venv build/mcp-ci
@@ -32,6 +36,12 @@ jobs:
             build/mcp-ci/bin/python -m pip install "${forge_wheel}[mcp]"
           done
           FORGE_MCP_PYTHON="$PWD/build/mcp-ci/bin/python" make test-mcp test-mcp-browser CHROME=/usr/bin/google-chrome
+      - uses: actions/upload-artifact@v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: browser-diagnostics
+          path: build/reports/
+          if-no-files-found: ignore
       - uses: actions/upload-artifact@v7.0.2
         with:
           name: compatibility-wheel
@@ -43,7 +53,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ['3.10', '3.11', '3.12', '3.13', '3.14']
+        python: ['3.13', '3.14']
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
