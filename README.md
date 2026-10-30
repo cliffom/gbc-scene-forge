@@ -75,7 +75,7 @@ You only need Python 3.10+ and a current desktop browser (Chrome, Edge, Firefox 
 Safari). Node, Poetry, Tiled and gbc-atlas are not needed to edit the bundled
 sample. Installation needs access to the package index or a previously downloaded
 wheel; editing, the guide and sample work offline. Automated browser acceptance
-runs in Chrome on macOS and Linux; the package CI checks Python 3.10–3.14 on Linux.
+runs in Chrome on macOS and Linux; the package CI checks Python 3.13 and 3.14 on Linux.
 
 Choose a scene from the scene dropdown to open it. If the current scene has
 unsaved edits, choose whether to save, discard, or keep editing before switching.
