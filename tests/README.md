@@ -53,7 +53,7 @@ The organization baseline for #88 is commit `62cced6` (the Playwright move in
 PR #87). Before/after discovery preserves all 248 Python test IDs after removing
 the new `backend.<domain>` module prefixes, including legacy and optional cases,
 without duplicates. All 15 non-browser TypeScript suite basenames are preserved.
-Browser discovery remains 22 regular scenarios and two optional scenarios; see
+At that organization baseline, browser discovery retained 22 regular scenarios and two optional scenarios; see
 [browser testing](../docs/BROWSER-TESTING.md) and
 [historical coverage inventories](../docs/BROWSER-COVERAGE.md).
 
@@ -64,3 +64,9 @@ The installed-wheel Python discovery command also passed all 248 cases (one SDK
 skip in the plain environment). Representative `model`/`contracts` Make selectors
 passed independently; support script `--help` entry points passed. Full Tiled
 interoperability was not run locally because its external executables are absent.
+
+Canvas repaint coverage for #76 adds `playwright/editor/rendering.spec.ts` with
+small and large multi-layer workloads. Current discovery has 24 regular scenarios
+in 14 files; the two optional MCP/refresh scenarios remain separate. See the
+[rendering measurements](../docs/evaluations/canvas-repainting.md) for reproduction
+and the distinction between timing observations and deterministic assertions.
