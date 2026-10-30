@@ -380,3 +380,23 @@
 
 #palette-dialog>#hardware-settings[open] {max-height:35dvh;overflow:auto;flex-shrink:1;min-height:120px}
 #palette-dialog:has(#hardware-settings[open]) #palette-findings {max-height:18dvh}
+
+/* Review mode reuses viewing controls while removing authoring chrome from layout/focus. */
+.review-mode-label {display:none;color:var(--accent);font-size:12px;white-space:nowrap}
+.standalone.reviewing {min-width:360px}
+.standalone.reviewing main {grid-template-columns:minmax(0,1fr)}
+.reviewing .masthead,.reviewing .document-bar,.reviewing .library,.reviewing .inspector,
+.reviewing .authoring-tools,.reviewing .composition-tools,.reviewing #layer-context,
+.reviewing #coordinates,.reviewing #selected-brush,.reviewing .snap-control,
+.reviewing .review-bar .hint {display:none}
+.reviewing .review-mode-label {display:inline}
+.reviewing .canvas-toolbar {gap:8px}
+.reviewing .canvas-footer {justify-content:center}
+.reviewing #viewport {touch-action:none}
+.reviewing #review-mode {border-color:var(--accent);color:var(--accent)}
+@media(max-width:520px) {
+  .reviewing .review-mode-label {display:none}
+  .reviewing .canvas-toolbar .spacer {display:none}
+  .reviewing .canvas-toolbar {justify-content:space-between}
+  .reviewing .zoom-controls {flex-wrap:wrap}
+}

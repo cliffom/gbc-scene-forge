@@ -26,6 +26,7 @@ import { createAnimationPreview } from '../preview/animation-preview.mts';
 import { createBlockoutLabels } from '../blockout/blockout-labels.mts';
 import { blockoutDefinitions } from '../blockout/blockout.mts';
 import { boolean, number, record, string } from '../shared/decode.mts';
+import { createReviewController } from './editor-review.mts';
 import { createEditorLayout } from './editor-layout.mts';
 import { createFirstSceneGuide } from '../project/first-scene-guide.mts';
 import { prunePreviewSettings } from '../preview/preview-settings.mts';
@@ -98,6 +99,7 @@ export function mountProjectEditor() {
     if (lifetime.disposed) {
       return;
     }
+    reviewController.sync();
     artworkController.updateTerrain();
     panelsController.renderObjectValidation();
     editorLayout.enableBlockout(
@@ -163,6 +165,11 @@ export function mountProjectEditor() {
       saveState.textContent = saveText;
     }
     saveState.dataset.dirty = String(unsaved);
+    button('review-mode').disabled =
+      activity.busy ||
+      !sceneSession.editor ||
+      gestures.anchor !== null ||
+      !!sceneSession.editor.stroke;
     button('fit-scene').disabled = !sceneSession.editor;
     select('zoom').disabled = !sceneSession.editor;
     button('library-import').disabled = activity.busy || gestures.anchor !== null;
@@ -489,6 +496,7 @@ export function mountProjectEditor() {
   });
 
   const renderingController = createRenderingController({
+    activity,
     lifetime,
     sceneSession,
     sceneSelection,
@@ -557,6 +565,16 @@ export function mountProjectEditor() {
       },
       trackHover: (...args) => renderingController.trackHover(...args),
     },
+  });
+
+  const reviewController = createReviewController({
+    lifetime,
+    activity,
+    sceneSession,
+    gestures,
+    canvas,
+    draw: () => renderingController.draw(),
+    finishPan: () => gesturesController.finishPan(),
   });
 
   const sceneActionsController = createSceneActionsController({

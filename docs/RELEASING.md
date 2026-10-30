@@ -71,7 +71,7 @@ Use `FORGE_BUILD_MODE=production make build` for release artifacts; their label
 shows only `VERSION` and its JavaScript is minified. Development bundles remain
 readable. Both modes retain source maps and the bundled third-party license notice.
 PyPI wheels and source archives contain the production bundle: `uvx --from
-'gbc-scene-forge==0.16.3' gbc-scene-forge --project-root /path/to/projects` serves
+'gbc-scene-forge==0.17.0' gbc-scene-forge --project-root /path/to/projects` serves
 those prebuilt minified assets without invoking Node or esbuild. Previously
 published versions (including 0.15.0) retain their original assets.
 Package CI and the publication workflow set production mode for their build
@@ -105,7 +105,7 @@ publishing page. Use the official [trusted publisher setup guide](https://docs.p
 The workflow follows the [Python Packaging User Guide](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/)
 and uses short-lived OIDC credentials; no PyPI API token is stored in the repository.
 
-After reviewing and committing a release, create and push an annotated `v0.16.3`
+After reviewing and committing a release, create and push an annotated `v0.17.0`
 tag (or the matching next version). Run **Publish package** manually against that
 tag, selecting `testpypi` first when its trusted publisher is configured. TestPyPI
 is currently unconfigured; its 0.1.4 upload failed with `invalid-publisher`. Until
@@ -114,6 +114,15 @@ Chrome fixture suite, then run the workflow for `pypi`. Verify a fresh PyPI inst
 with `tests/package_smoke.py` after publication. The workflow rebuilds and
 checks the distributions, checks the tag against the package version, then uploads
 only those verified artifacts. Pushing a tag alone does not publish.
+
+## Release 0.17.0
+
+Version 0.17.0 adds a canvas-focused review mode with pan navigation and minimal
+viewing controls. See [release notes](RELEASE-0.17.0.md) and the
+[review mode guide](user/review-mode.md). Existing project and draft formats are
+unchanged; no runtime dependency is added. Validate with `make lint test`,
+`FORGE_BUILD_MODE=production make build check-dist test-browser`, and installed-wheel
+first-use acceptance before publication.
 
 ## Release 0.16.3
 

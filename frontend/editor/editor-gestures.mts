@@ -225,6 +225,7 @@ export function createGesturesController({
 
   function panEnabled() {
     return (
+      activity.reviewing ||
       gestures.spacePan ||
       document.querySelector<HTMLInputElement>('input[name="tool"]:checked')?.value === 'pan'
     );
@@ -407,7 +408,7 @@ export function createGesturesController({
   );
 
   lifetime.assign(canvas, 'onpointerdown', (event) => {
-    if (!sceneSession.editor || activity.busy || event.button !== 0) {
+    if (!sceneSession.editor || activity.busy || activity.reviewing || event.button !== 0) {
       return;
     }
     const selected = sceneSession.editor.objects.find(
@@ -573,6 +574,7 @@ export function createGesturesController({
   lifetime.assign(canvas, 'ondragover', (event) => {
     if (
       !activity.busy &&
+      !activity.reviewing &&
       sceneSession.editor &&
       event.dataTransfer?.types.includes('application/x-forge-asset')
     ) {
@@ -582,7 +584,7 @@ export function createGesturesController({
   });
 
   lifetime.assign(canvas, 'ondrop', (event) => {
-    if (animationPreview.movement.active) {
+    if (activity.reviewing || animationPreview.movement.active) {
       event.preventDefault();
       return;
     }

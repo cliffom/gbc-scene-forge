@@ -91,4 +91,5 @@ export class GestureState {
 
 export class EditorActivity {
   busy = false;
+  reviewing = false;
 }
