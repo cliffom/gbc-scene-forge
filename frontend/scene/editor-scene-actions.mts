@@ -1,3 +1,4 @@
+import { createSceneNavigation, sceneFromPath } from './scene-navigation.mts';
 import type { EditorLifetime } from '../editor/editor-lifetime.mts';
 import type { createAnimationPreview } from '../preview/animation-preview.mts';
 import { blockoutAppearance } from '../blockout/blockout.mts';
@@ -73,6 +74,41 @@ export function createSceneActionsController({
   animationPreview: ReturnType<typeof createAnimationPreview>;
   ports: Ports;
 }) {
+  const navigation = createSceneNavigation(lifetime, projectBase, async (path) => {
+    if (activity.busy || gestures.anchor || document.querySelector('dialog[open]')) {
+      return false;
+    }
+    let opened = false;
+    await ports.run(async () => {
+      const id = sceneFromPath(path, projectBase);
+      if (!(await ports.discard()) || lifetime.disposed) {
+        return;
+      }
+      if (id) {
+        try {
+          await openSavedScene(id);
+        } finally {
+          opened = sceneSession.loaded?.id === id;
+        }
+      } else {
+        await ports.clearDraft();
+        closeScene();
+        status.textContent = 'Choose a scene, or import an atlas and create one.';
+        opened = true;
+      }
+    });
+    return opened;
+  });
+
+  async function openInitialScene() {
+    const id = sceneFromPath(location.pathname, projectBase);
+    if (id) {
+      await openSavedScene(id);
+    } else {
+      await ports.showRecovery();
+    }
+  }
+
   let pendingScene = '';
 
   let deleteCandidate: {
@@ -138,6 +174,7 @@ export function createSceneActionsController({
     select('scenes').value = data.id;
     element('scene-name', HTMLElement).textContent =
       `${data.name} · ${data.width} × ${data.height} · ${data.grid}px`;
+    navigation.commit(data.id);
     ports.palette(chooseInitialBrush);
     ports.draw();
   }
@@ -166,7 +203,10 @@ export function createSceneActionsController({
   });
 
   async function openSavedScene(id: string) {
-    const data = await api(`scene/${id}`, decodeLoaded);
+    if (!workspaceState.project?.scenes.some((scene) => scene.id === id)) {
+      throw Error('Scene not found. Choose another scene from the scene list.');
+    }
+    const data = await api(`scene/${encodeURIComponent(id)}`, decodeLoaded);
     await ports.clearDraft();
     if (!(await ports.refresh()) || lifetime.disposed) {
       return;
@@ -622,25 +662,7 @@ export function createSceneActionsController({
       workspaceState.revision = string(result.revision);
       if (sceneSession.loaded?.id === candidate.id) {
         await ports.clearDraft();
-        sceneSession.loaded = null;
-        sceneSession.editor = null;
-        sceneSession.baseline = '';
-        sceneSelection.selection = null;
-        sceneSelection.selectedObject = null;
-        sceneSelection.selectedObjects.clear();
-        gestures.objectDrag = null;
-        gestures.anchor = null;
-        gestures.hover = null;
-        brushes.brush = null;
-        brushes.spriteBrush = null;
-        brushes.definitionBrush = null;
-        brushes.objectBrush = null;
-        canvas.hidden = true;
-        element('canvas-surround', HTMLElement).hidden = true;
-        element('empty-scene', HTMLElement).hidden = false;
-        element('scene-name', HTMLElement).textContent = 'No scene open';
-        element('coordinates', HTMLElement).textContent = 'Cell —, — · Pixel —, —';
-        element('selected-brush', HTMLElement).textContent = 'Select a brush';
+        closeScene();
       }
       element('delete-scene-dialog', HTMLDialogElement).close();
       deleteCandidate = null;
@@ -655,6 +677,36 @@ export function createSceneActionsController({
     });
   });
 
+  function closeScene() {
+    sceneSession.loaded = null;
+    sceneSession.editor = null;
+    sceneSession.baseline = '';
+    sceneSelection.selection = null;
+    sceneSelection.selectedObject = null;
+    sceneSelection.selectedObjects.clear();
+    gestures.objectDrag = null;
+    gestures.blockoutDraw = null;
+    gestures.objectResize = null;
+    gestures.anchor = null;
+    gestures.hover = null;
+    brushes.brush = null;
+    brushes.spriteBrush = null;
+    brushes.definitionBrush = null;
+    brushes.objectBrush = null;
+    brushes.stampBrush = null;
+    canvas.hidden = true;
+    element('canvas-surround', HTMLElement).hidden = true;
+    element('empty-scene', HTMLElement).hidden = false;
+    element('scene-name', HTMLElement).textContent = 'No scene open';
+    element('coordinates', HTMLElement).textContent = 'Cell —, — · Pixel —, —';
+    element('selected-brush', HTMLElement).textContent = 'Select a brush';
+    sceneSession.committed = null;
+    animationPreview.reset();
+    select('scenes').value = '';
+    navigation.commit(null);
+    ports.draw();
+  }
+
   function showCreate() {
     if (activity.busy) {
       return;
@@ -668,6 +720,8 @@ export function createSceneActionsController({
   lifetime.assign(button('empty-create'), 'onclick', showCreate);
   return {
     requestSceneOpen,
+    openInitialScene,
+    closeScene,
     open,
     get deleteCandidate() {
       return deleteCandidate;

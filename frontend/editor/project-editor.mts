@@ -648,8 +648,8 @@ export function mountProjectEditor() {
     api,
     status,
     sceneSelection,
-    canvas,
     ports: {
+      closeScene: () => sceneActionsController.closeScene(),
       captureBrush: (...args) => artworkController.captureBrush(...args),
       refresh: (...args) => workspaceController.refresh(...args),
       open: (...args) => sceneActionsController.open(...args),
@@ -702,13 +702,13 @@ export function mountProjectEditor() {
         ? 'Choose a project or create a new one.'
         : 'Name your project to get started.';
     if (workspaceState.project) {
-      await recoveryController.showRecovery();
+      await sceneActionsController.openInitialScene();
       if (new URLSearchParams(location.search).get('blockout') === '1') {
-        history.replaceState(null, '', location.pathname);
+        history.replaceState(history.state, '', location.pathname);
         editorLayout.showLibrary('blockout');
         panelsController.blockoutView.showCreate();
       } else if (new URLSearchParams(location.search).get('guide') === '1') {
-        history.replaceState(null, '', location.pathname);
+        history.replaceState(history.state, '', location.pathname);
         firstSceneGuide.continueInProject();
       }
     }

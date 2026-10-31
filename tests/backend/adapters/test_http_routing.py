@@ -102,6 +102,17 @@ class HttpRoutingTests(unittest.TestCase):
                         self.assertEqual(self.request(server, prefix + path)[0], 404)
                     self.assertEqual(self.request(server, prefix + "/project.js", {})[0], 404)
 
+    def test_scene_links_serve_editor_without_exposing_files(self):
+        for workspace in (False, True):
+            with self.server(workspace) as server:
+                prefix = "/projects/world" if workspace else ""
+                for slug in ("", "missing-scene", "invalid%25id", "a-scene/"):
+                    status, headers, body = self.request(server, prefix + "/scenes/" + slug)
+                    self.assertEqual(status, 200)
+                    self.assertEqual(body, STATIC.joinpath("project.html").read_bytes())
+                    self.assertIn("text/html", headers["Content-Type"])
+                self.assertEqual(self.request(server, prefix + "/scenes/id/file")[0], 404)
+
     def test_project_routes_revisions_conflicts_assets_and_downloads(self):
         for workspace in (False, True):
             with self.server(workspace) as server:

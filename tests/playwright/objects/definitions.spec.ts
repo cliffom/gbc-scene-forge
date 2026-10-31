@@ -234,8 +234,8 @@ print(json.dumps(ids))
   );
   // Wait for the checkpoint containing the reset override before reloading.
   await wait(`(async () => {
-    const c = await (await fetch('api/project')).json();
-    const post = async (route,payload) => (await fetch('api/' + route,{method:'POST',headers:{'Content-Type':'application/json','X-Scene-Token':c.token},body:JSON.stringify(payload)})).json();
+    const c = await (await fetch('/api/project')).json();
+    const post = async (route,payload) => (await fetch('/api/' + route,{method:'POST',headers:{'Content-Type':'application/json','X-Scene-Token':c.token},body:JSON.stringify(payload)})).json();
     const listing = await post('list-drafts',{});
     for (const entry of listing.drafts) {
       const d = await post('download-draft',entry);

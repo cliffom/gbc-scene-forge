@@ -208,9 +208,7 @@ test('blockout: Artwork-free planning, native edits/history, camera review and l
   const camera = planObjects.find((item) => item.id === 1);
   assert.equal(camera?.y, 136);
   await page.reload();
-  await wait(
-    "document.getElementById('status')?.textContent==='Choose a scene, or import an atlas and create one.'",
-  );
+  await wait("document.getElementById('status')?.textContent==='Scene opened.'");
   await set('scenes', id);
   await wait("document.getElementById('scene-save-state').textContent==='Saved'");
   assert.deepEqual(await saved(), plan);

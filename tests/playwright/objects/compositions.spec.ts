@@ -313,7 +313,7 @@ print(json.dumps(ids))
   assert.equal(multiObjects.length, 8);
   // Reload retains the project library and transformed/duplicated placements.
   await page.reload();
-  await wait("document.getElementById('scene-name')?.textContent === 'No scene open'");
+  await wait("document.getElementById('status')?.textContent === 'Scene opened.'");
   await wait("document.getElementById('stamps')?.options.length === 2");
   await choose(first);
   assert.equal(await evaluate("document.querySelectorAll('#object-list option').length"), 0); // tile layer active
@@ -376,8 +376,8 @@ print(json.dumps(ids))
   await wait("document.getElementById('scene-name').textContent.includes('14 × 12')");
   // Wait for the current canvas and project revision, not an earlier success label.
   await wait(`(async () => {
-    const catalog = await (await fetch('api/project')).json();
-    const post = async (route, payload) => (await fetch('api/' + route, {method:'POST', headers:{'Content-Type':'application/json','X-Scene-Token':catalog.token}, body:JSON.stringify(payload)})).json();
+    const catalog = await (await fetch('/api/project')).json();
+    const post = async (route, payload) => (await fetch('/api/' + route, {method:'POST', headers:{'Content-Type':'application/json','X-Scene-Token':catalog.token}, body:JSON.stringify(payload)})).json();
     const listing = await post('list-drafts', {});
     for (const entry of listing.drafts) {
       const draft = await post('download-draft', entry);

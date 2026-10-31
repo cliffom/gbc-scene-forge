@@ -167,7 +167,10 @@ test('project launcher, switching, save conflicts and restart', async ({
   await page.screenshot({ path: testInfo.outputPath('project-switch-save' + '.png') });
   await click('switch-cancel');
   await expect(page.locator('#switch-project')).toHaveValue('/projects/hello-world');
-  assert.equal(await evaluate('location.pathname'), '/projects/hello-world/');
+  assert.equal(
+    await evaluate('location.pathname'),
+    `/projects/hello-world/scenes/${string(await evaluate("document.getElementById('scenes').value"))}`,
+  );
   await expect(page.locator('#dirty')).toHaveText('UNSAVED');
   await chooseProject('/');
   await click('switch-save');
@@ -244,7 +247,10 @@ test('project launcher, switching, save conflicts and restart', async ({
   await wait(
     "document.querySelector('#switch-project-dialog .form-error')?.textContent.length > 0",
   );
-  assert.equal(await evaluate('location.pathname'), '/projects/hello-world/');
+  assert.equal(
+    await evaluate('location.pathname'),
+    `/projects/hello-world/scenes/${string(await evaluate("document.getElementById('scenes').value"))}`,
+  );
   await expect(page.locator('#dirty')).toHaveText('UNSAVED');
   await expect(page.locator('#layer-name')).toHaveValue('Keep this edit after a failed save');
   await click('switch-discard');
@@ -2833,7 +2839,7 @@ test('palette and hardware budgets, stale reports and profile saves', async ({
   await evaluate('window.__paletteReloadMarker = true');
   await page.reload();
   await wait(
-    "window.__paletteReloadMarker !== true && document.getElementById('project-name')?.textContent === 'GBC palette examples' && document.getElementById('status')?.textContent === 'Choose a scene, or import an atlas and create one.' && document.getElementById('scenes')?.disabled === false",
+    "window.__paletteReloadMarker !== true && document.getElementById('project-name')?.textContent === 'GBC palette examples' && document.getElementById('status')?.textContent === 'Scene opened.' && document.getElementById('scenes')?.disabled === false",
   );
   await chooseScene(passingPaletteScene);
   await wait("document.getElementById('show-palettes').dataset.state === 'pass'");

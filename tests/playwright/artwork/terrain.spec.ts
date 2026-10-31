@@ -120,7 +120,7 @@ print(p.scenes.create('Terrain paths', 8, 6, 8, r())['id'])
   assert.equal(saved[2][2], 'roads/tile_0_0/0/0');
   await page.reload();
   await wait(
-    "document.getElementById('status')?.textContent.includes('Choose a scene') && document.getElementById('scenes')?.disabled === false",
+    "document.getElementById('status')?.textContent === 'Scene opened.' && document.getElementById('scenes')?.disabled === false",
   );
   await set('scenes', sceneId);
   await wait("document.getElementById('status').textContent === 'Scene opened.'");
