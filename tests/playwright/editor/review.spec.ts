@@ -213,10 +213,11 @@ test('review mode exits safely after external scene deletion and editor disposal
   await page.evaluate(
     "(async () => { const module = await import('/project.js'); module.editor.dispose(); module.mountProjectEditor(); })()",
   );
-  await editorReady(page);
+  await expect(page.locator('#status')).toHaveText('Scene opened.');
+  await expect(page.locator('#scenes')).toBeEnabled();
+  await expect(page.locator('#scenes')).toHaveValue(scene);
   await expect(page.locator('body')).not.toHaveClass(/reviewing/);
   await expect(page.locator('#review-mode')).toHaveAttribute('aria-pressed', 'false');
-  await page.locator('#scenes').selectOption(scene);
   await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   await page.locator('#review-mode').click();
   await page.locator('#viewport').focus();
@@ -234,6 +235,7 @@ p.scenes.delete(sys.argv[2], p.store.load_scene(sys.argv[2])['revision'], p.cata
     scene,
   ]);
   await expect(page.locator('#status')).toContainText('removed externally');
+  await expect(page).toHaveURL(forge.url);
   await expect(page.locator('body')).not.toHaveClass(/reviewing/);
   await expect(page.locator('#review-mode')).toBeDisabled();
   await expect(page.locator('#scenes')).toBeVisible();
