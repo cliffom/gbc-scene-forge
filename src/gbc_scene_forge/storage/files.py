@@ -40,3 +40,12 @@ def atomic_write(path: Path, data: bytes | None) -> None:
         temporary.replace(path)
     finally:
         temporary.unlink(missing_ok=True)
+
+
+def file_signature(path: Path) -> tuple[int, int, int, int, int] | None:
+    """Cheap invalidation identity, including atomic replacements and same-size edits."""
+    try:
+        value = path.stat()
+    except FileNotFoundError:
+        return None
+    return (value.st_dev, value.st_ino, value.st_size, value.st_mtime_ns, value.st_ctime_ns)

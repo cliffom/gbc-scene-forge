@@ -148,9 +148,20 @@ test('refresh: Saved-file refresh with a real stdio MCP writer and protected bro
   await evaluate(
     `window.__probeCount=0;window.__realFetch=window.fetch;window.fetch=(...args)=>{if(String(args[0]).includes('/api/revisions'))window.__probeCount++;return window.__realFetch(...args)}`,
   );
+  await agent('create_scene', {
+    project_revision: (await catalog()).revision,
+    name: 'Discovered while dirty',
+    width: 20,
+    height: 18,
+    grid: 8,
+  });
   await tick();
+  await wait("document.getElementById('scenes').textContent.includes('Discovered while dirty')");
   await new Promise((resolve) => setTimeout(resolve, 2300));
   assert.equal(await evaluate('window.__probeCount'), 0);
+  await expect(page.locator('#scenes')).toHaveValue(id);
+  await expect(page.locator('#dirty')).toHaveText('UNSAVED');
+  await expect(page.locator('#undo')).toBeEnabled();
   await click('save');
   await wait("document.getElementById('status').textContent.includes('changed')");
   assert.equal(objects((await saved()).scene).find((item) => item.id === 1)?.x, 24);

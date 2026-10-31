@@ -56,7 +56,10 @@ export function createSceneActionsController({
 }: {
   lifetime: EditorLifetime;
   api: ProjectApi['json'];
-  workspaceState: Pick<WorkspaceState, 'navigating' | 'pendingProject' | 'project' | 'revision'>;
+  workspaceState: Pick<
+    WorkspaceState,
+    'navigating' | 'pendingProject' | 'project' | 'revision' | 'sceneChoices'
+  >;
   status: HTMLElement;
   sceneSession: Pick<
     SceneSession,
@@ -203,7 +206,7 @@ export function createSceneActionsController({
   });
 
   async function openSavedScene(id: string) {
-    if (!workspaceState.project?.scenes.some((scene) => scene.id === id)) {
+    if (!workspaceState.sceneChoices.some((scene) => scene.id === id)) {
       throw Error('Scene not found. Choose another scene from the scene list.');
     }
     const data = await api(`scene/${encodeURIComponent(id)}`, decodeLoaded);
@@ -238,7 +241,7 @@ export function createSceneActionsController({
       const dialog = element('switch-scene-dialog', HTMLDialogElement);
       dialog.querySelector('.form-error')?.replaceChildren();
       const target =
-        workspaceState.project?.scenes.find((scene) => scene.id === id)?.name || 'another scene';
+        workspaceState.sceneChoices.find((scene) => scene.id === id)?.name || 'another scene';
       element('switch-scene-description', HTMLElement).textContent =
         `This scene has unsaved changes. Save them before opening “${target}”.`;
       dialog.showModal();

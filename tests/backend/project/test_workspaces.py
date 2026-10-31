@@ -38,6 +38,23 @@ class ProjectRootTests(unittest.TestCase):
         self.assertEqual(moved, original)
         self.assertEqual(len(list(self.root.iterdir())), 2)
 
+    def test_idle_catalog_uses_signatures_and_revalidates_changed_manifests(self):
+        self.workspace.create("World")
+        expected = self.workspace.catalog()
+        with patch.object(Project, "read", side_effect=AssertionError("Idle read")):
+            for _ in range(20):
+                self.assertEqual(self.workspace.catalog(), expected)
+        manifest = self.root / "world" / MANIFEST
+        original = manifest.read_bytes()
+        manifest.write_text("invalid")
+        invalid = self.workspace.catalog()
+        self.assertEqual(invalid["projects"], [])
+        self.assertEqual(invalid["unavailable"][0]["directory"], "world")
+        with patch.object(Project, "read", side_effect=AssertionError("Idle invalid read")):
+            self.assertEqual(self.workspace.catalog(), invalid)
+        manifest.write_bytes(original)
+        self.assertEqual(self.workspace.catalog(), expected)
+
     def test_slug_validation_and_collisions_preserve_existing_contents(self):
         self.assertEqual(slug("  Hello, WORLD!  "), "hello-world")
         for title in ("", "...", "你好", "../outside", "a/b", "a\\b", None):

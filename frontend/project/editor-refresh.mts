@@ -16,6 +16,7 @@ import type { Loaded } from './project-contracts.mts';
 import { decodeLoaded } from './project-contracts.mts';
 
 export interface Ports {
+  refreshChoices: (eligible: () => boolean) => Promise<void>;
   captureBrush: () => {
     terrain: string;
     artwork: string | undefined;
@@ -101,7 +102,38 @@ export function createRefreshController({
     notice.hidden = !message;
   }
 
+  let checking = false;
   async function checkExternalChanges(manual = false) {
+    if (checking) {
+      return;
+    }
+    const eligible = () =>
+      !lifetime.disposed &&
+      !activity.busy &&
+      !workspaceState.navigating &&
+      document.visibilityState === 'visible' &&
+      (manual || input('auto-refresh').checked) &&
+      !fence.pointers.size &&
+      !gestures.anchor &&
+      !gestures.pan &&
+      !gestures.objectDrag &&
+      !gestures.objectResize &&
+      !gestures.blockoutDraw &&
+      !document.activeElement?.matches('select') &&
+      !document.querySelector('dialog[open], [popover]:popover-open');
+    if (!eligible()) {
+      return;
+    }
+    checking = true;
+    try {
+      await ports.refreshChoices(eligible);
+      await checkSavedChanges(manual);
+    } finally {
+      checking = false;
+    }
+  }
+
+  async function checkSavedChanges(manual = false) {
     if (fence.request || (!manual && !input('auto-refresh').checked)) {
       return;
     }

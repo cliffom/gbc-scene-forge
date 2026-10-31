@@ -1,6 +1,6 @@
 # See external saves in the browser
 
-Scene Forge 0.13.1 can keep an open browser editor up to date while an MCP agent,
+Scene Forge can keep an open browser editor up to date while an MCP agent,
 another Forge process, or another browser saves the same project. All participants
 must point at the same saved project folder.
 
@@ -37,15 +37,40 @@ Open **Project tools** to find:
 
 ![External refresh controls inside Project tools](../screenshots/external-refresh/project-tools.png)
 
+## Discover new projects and scenes
+
+New projects within the configured project root appear in the chooser and project
+dropdown without a page reload. Registered scenes appear in the scene dropdown,
+including with no scene open or with unsaved changes in the active scene. Merely
+copying an unregistered map file into a folder does not register or import it.
+Discovery updates navigation choices without adopting a new editor snapshot or
+acknowledging a saved revision. It preserves the canvas, undo history, selections,
+forms and recovery drafts. Choosing a newly discovered scene still uses the usual
+unsaved-change confirmation. Existing save conflicts remain enforced.
+
+Project manifests and changed registered maps use Forge's existing validators.
+Invalid or incomplete entries are reported in the status bar and withheld from
+new choices; the current selection is retained until explicit navigation or safe
+snapshot adoption. Repaired files become available on a later check. Project
+validation here checks the manifest, not every artwork byte; asset integrity and
+scene-open validation still apply when loading and saving.
+
+Inventory checks share the two-second refresh cycle, focus/reconnect triggers,
+auto-refresh preference and manual check. They can run during unsaved edits and
+text entry. Hidden tabs, dialogs/popovers, active pointers, focused dropdowns and
+navigation pause discovery. Returning focus or leaving the dropdown resumes it.
+An empty-root creation form retains unfinished input when projects arrive; use
+**Back to projects** to see those discoveries.
+
 ## While you are editing
 
-Periodic network checks pause while the scene has unsaved edits. They also pause
+Full snapshot checks pause while the scene has unsaved edits; inventory checks continue. They also pause
 while a dialog or popover is open, an input has focus, a gesture or layer drag is
 active, movement preview is running, or the tab is hidden. A refresh already being
 fetched is abandoned if you start an interaction before it can be applied.
 After saving or reverting, checks resume when the editor is ready.
 
-Since polling pauses during unsaved edits, an external change is not necessarily
+Since snapshot adoption pauses during unsaved edits, an external change is not necessarily
 announced immediately. If another author saved first, your save still fails with
 the existing revision conflict instead of overwriting their work. Keep the tab
 open and retain your changes:
@@ -62,12 +87,20 @@ revision checks and conflict-aware recovery continue to protect local work.
 
 ## Cost and boundaries
 
-An idle visible editor makes at most one periodic revision request every two
-seconds, with additional checks on focus, reconnect, and completion of local work.
-Requests do not overlap. The response contains only project and active-scene
-revision identifiers. The server caches hashes using file identity, size and
-nanosecond modification/change times; unchanged probes stat only the manifest and
-active scene, without reading artwork or decoding a scene. The cache is bounded.
+An eligible visible tab checks about every two seconds, with additional checks on
+focus, reconnect and completion of local work. One cycle runs at a time. In root
+mode it requests the project inventory; an open project also requests compact
+scene choices and, when safe, the existing revision probe. Direct-project mode
+omits the root inventory request. The cycle owns no worker or extra timer. See [local cost measurements](../evaluations/inventory-discovery.md).
+
+Unchanged project inventories scan immediate child directories and stat their
+manifests, reusing validated catalog entries. Unchanged scene inventories stat the
+manifest and registered maps, reusing validation results (including invalid maps).
+They do not decode scenes or read artwork. Metadata includes file identity, size
+and nanosecond modification/change times, so replacements and same-size edits
+invalidate caches. Removed entries are evicted. Work grows with inventory size;
+a changed manifest revalidates its registered scenes. The existing revision probe
+still stats only the manifest and active scene and reuses bounded hashes.
 
 A changed revision triggers a coherent snapshot and artwork fetch, followed by a
 revision recheck before adoption. Rapid saves are coalesced; a snapshot overtaken
@@ -81,6 +114,6 @@ reconnect. An invalid or missing scene file keeps the current view until the sav
 project can be loaded safely; deleting a scene through Forge closes it normally.
 
 This synchronizes saved files. It does not merge concurrent edits, share unsaved
-forms, or provide remote collaboration. Checks watch the manifest and active map;
+forms, or provide remote collaboration. Discovery watches registered maps and project manifests;
 manual artwork tampering outside Forge's import/reimport flow remains subject to
 the existing asset-integrity errors rather than becoming an automatic import.

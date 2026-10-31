@@ -52,6 +52,7 @@ PROJECT_ROUTES = {
     ("POST", "/api/import-atlas"): "_import_atlas",
     ("GET", "/api/project"): "_catalog",
     ("GET", "/api/revisions"): "_revisions",
+    ("GET", "/api/choices"): "_choices",
     ("GET", "/api/snapshot"): "_snapshot",
 }
 
@@ -88,6 +89,9 @@ class ProjectAPI:
                 project_path=str(self.root),
             )
         )
+
+    def _choices(self, query, token) -> Response:
+        return Response(self.updates.choices())
 
     def _revisions(self, query, token) -> Response:
         return Response(self.updates.revisions(query.get("scene", [None])[0]))

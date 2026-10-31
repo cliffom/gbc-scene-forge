@@ -12,6 +12,8 @@ export interface CanvasPoint {
 }
 
 export class WorkspaceState {
+  // Validated navigation choices may be newer than the adopted authoring catalog.
+  sceneChoices: { id: string; name: string }[] = [];
   choosingProject = false;
   hasProjectChoices = false;
   navigating = false;
