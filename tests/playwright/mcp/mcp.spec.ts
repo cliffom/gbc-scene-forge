@@ -98,7 +98,7 @@ test('mcp: Real stdio-authored plan, browser edits, stale saves and independent 
   assert.deepEqual(objects((await saved()).scene), planObjects);
   await page.reload();
   await wait(
-    "document.getElementById('status')?.textContent==='Choose a scene, or import an atlas and create one.' && !document.getElementById('scenes').disabled",
+    "document.getElementById('status')?.textContent==='Scene opened.' && !document.getElementById('scenes').disabled",
   );
   await set('scenes', id);
   await wait("document.getElementById('scene-save-state').textContent==='Saved'");

@@ -1,5 +1,7 @@
 """Explicit bundled-file allowlist shared by project and workspace HTTP handlers."""
 
+import re
+
 from .common import STATIC
 from .routes import Response
 
@@ -19,6 +21,8 @@ STATIC_FILES = {
 
 
 def static_response(route: str, *, charset: bool) -> Response | None:
+    if re.fullmatch(r"/scenes(?:/[^/]*)?/?", route):
+        route = "/"
     entry = STATIC_FILES.get(route)
     if entry is None:
         return None

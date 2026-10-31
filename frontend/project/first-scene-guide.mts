@@ -1,3 +1,4 @@
+import { projectPath } from '../scene/scene-navigation.mts';
 import { EditorLifetime } from '../editor/editor-lifetime.mts';
 /** Optional, offline instructions. Progress belongs to this browser and project URL. */
 const steps = [
@@ -59,7 +60,7 @@ export function createFirstSceneGuide(
   const previous = button('guide-previous');
   const next = button('guide-next');
   const action = button('guide-action');
-  const key = `forge-first-scene-guide:v1:${location.pathname}`;
+  const key = `forge-first-scene-guide:v1:${projectPath(location.pathname)}`;
   let index = 0;
   try {
     const saved = Number(localStorage.getItem(key));

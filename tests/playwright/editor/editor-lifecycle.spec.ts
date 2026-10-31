@@ -47,10 +47,11 @@ print(p.catalog()['project']['scenes'][0]['id'])
     assert.equal(await evaluate("document.querySelectorAll('#diagnostics-dialog').length"), 0);
     await new Promise((resolve) => setTimeout(resolve, 2300));
     assert.deepEqual(await evaluate('window.__requests'), []);
+    // The embedding host chooses the project URL for an empty replacement.
     // A replaced editor owns exactly one set of handlers, overlays and pollers.
     for (let attempt = 0; attempt < 2; attempt++) {
       await evaluate(
-        "document.getElementById('status').textContent='Loading replacement';window.__mounted=window.__module.mountProjectEditor()",
+        "document.getElementById('status').textContent='Loading replacement';history.replaceState(history.state,'','/');window.__mounted=window.__module.mountProjectEditor()",
       );
       await editorReady(page);
       assert.equal(await evaluate("document.querySelectorAll('.scene-surface').length"), 1);
@@ -83,7 +84,7 @@ print(p.catalog()['project']['scenes'][0]['id'])
   };window.__stale=window.__module.mountProjectEditor()`);
     await wait('window.__held');
     await evaluate(`window.__stale.dispose();window.fetch=window.__fetch;
-    document.getElementById('status').textContent='Loading replacement';window.__mounted=window.__module.mountProjectEditor()`);
+    document.getElementById('status').textContent='Loading replacement';history.replaceState(history.state,'','/');window.__mounted=window.__module.mountProjectEditor()`);
     await editorReady(page);
     await evaluate('window.__release()');
     await new Promise((resolve) => setTimeout(resolve, 50));
@@ -101,7 +102,7 @@ print(p.catalog()['project']['scenes'][0]['id'])
     await evaluate('window.__mounted.dispose()');
     assert.equal(await evaluate('document.querySelectorAll("dialog[open]").length'), 0);
     await evaluate(
-      "document.getElementById('status').textContent='Loading replacement';window.__mounted=window.__module.mountProjectEditor()",
+      "document.getElementById('status').textContent='Loading replacement';history.replaceState(history.state,'','/');window.__mounted=window.__module.mountProjectEditor()",
     );
     await editorReady(page);
     await evaluate("document.getElementById('project-command-panel').showPopover()");
@@ -112,7 +113,7 @@ print(p.catalog()['project']['scenes'][0]['id'])
     // Hold artwork decoding after the scene response has already arrived. This is
     // independent of request cancellation: refresh must reject the old adoption.
     await evaluate(
-      "document.getElementById('status').textContent='Loading replacement';window.__mounted=window.__module.mountProjectEditor()",
+      "document.getElementById('status').textContent='Loading replacement';history.replaceState(history.state,'','/');window.__mounted=window.__module.mountProjectEditor()",
     );
     await editorReady(page);
     await evaluate(`window.__decode=HTMLImageElement.prototype.decode;
@@ -129,7 +130,7 @@ print(p.catalog()['project']['scenes'][0]['id'])
     await wait('window.__decoding');
     await evaluate(`window.__mounted.dispose();
     HTMLImageElement.prototype.decode=window.__decode;
-    document.getElementById('status').textContent='Loading replacement';window.__mounted=window.__module.mountProjectEditor()`);
+    document.getElementById('status').textContent='Loading replacement';history.replaceState(history.state,'','/');window.__mounted=window.__module.mountProjectEditor()`);
     await editorReady(page);
     await evaluate(`const scenes=document.getElementById('scenes');
     window.__replacementScene=[...scenes.options].find(option=>option.value && option.value!==${JSON.stringify(scene)}).value;
@@ -187,7 +188,7 @@ print(p.catalog()['project']['scenes'][0]['id'])
       assert.deepEqual(await evaluate(controlStates), before);
       await evaluate(`window.fetch=window.__fetch;
       document.getElementById('status').textContent='Loading replacement';
-      window.__mounted=window.__module.mountProjectEditor()`);
+      history.replaceState(history.state,'','/');window.__mounted=window.__module.mountProjectEditor()`);
       await editorReady(page);
       await evaluate("document.getElementById('manage-definitions').click()");
       const replacementStates = await evaluate(controlStates);
@@ -233,10 +234,10 @@ print(p.catalog()['project']['scenes'][0]['id'])
       return response;
     };document.getElementById(${JSON.stringify(action)}).click();})()`);
       await wait('window.__cleanupHeld');
-      const path = await evaluate('location.href');
+      const path = forge.url;
       await evaluate(`window.__mounted.dispose();window.fetch=window.__fetch;
       document.getElementById('status').textContent='Loading replacement';
-      window.__mounted=window.__module.mountProjectEditor()`);
+      history.replaceState(history.state,'','/');window.__mounted=window.__module.mountProjectEditor()`);
       await editorReady(page);
       await evaluate(
         "document.getElementById('draft-status').textContent='Replacement draft status';window.__releaseCleanup()",

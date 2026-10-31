@@ -5,7 +5,7 @@ import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { record } from '../../../frontend/shared/decode.mts';
-import { test, editorReady, paint } from '../support/browser-fixtures.ts';
+import { test, paint } from '../support/browser-fixtures.ts';
 
 test('first scene: sample, guide, paint, save/reopen, preview and export', async ({
   page,
@@ -61,7 +61,9 @@ test('first scene: sample, guide, paint, save/reopen, preview and export', async
   assert.ok(JSON.stringify(saved).includes('sample/'));
   await page.reload();
   await expect(page.locator('#scenes option')).toHaveCount(4);
-  await editorReady(page);
+  await expect(page.locator('#status')).toHaveText('Scene opened.');
+  await expect(page.locator('#scenes')).toBeEnabled();
+  await expect(page.locator('#scenes')).toHaveValue(id);
   await page.locator('#scenes').selectOption(id);
   await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   assert.deepEqual(record(await (await fetch(new URL(`api/scene/${id}`, base))).json()), saved);

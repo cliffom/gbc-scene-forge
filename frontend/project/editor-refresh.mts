@@ -1,8 +1,9 @@
+import { projectPath } from '../scene/scene-navigation.mts';
 import { ExternalRefreshState } from './editor-refresh-state.mts';
 import type { EditorLifetime } from '../editor/editor-lifetime.mts';
 import type { createAnimationPreview } from '../preview/animation-preview.mts';
 import { record } from '../shared/decode.mts';
-import { button, element, input, select } from '../editor/editor-dom.mts';
+import { button, element, input } from '../editor/editor-dom.mts';
 import type {
   EditorActivity,
   GestureState,
@@ -29,6 +30,7 @@ export interface Ports {
     canApply?: () => Promise<boolean>,
   ) => Promise<boolean>;
   open: (data: Loaded, chooseInitialBrush?: boolean) => void;
+  closeScene: () => void;
   restoreBrush: (choice: ReturnType<Ports['captureBrush']>) => void;
   draw: (refreshUI?: boolean) => void;
   update: () => void;
@@ -43,7 +45,6 @@ export function createRefreshController({
   api,
   status,
   sceneSelection,
-  canvas,
   ports,
 }: {
   lifetime: EditorLifetime;
@@ -58,14 +59,13 @@ export function createRefreshController({
   api: ProjectApi['json'];
   status: HTMLElement;
   sceneSelection: Pick<SceneSelection, 'selectedObject' | 'selectedObjects' | 'selection'>;
-  canvas: HTMLCanvasElement;
   ports: Ports;
 }) {
   // Saved-file synchronization never adopts a snapshot over local work. Network
   // requests can run while the user starts editing, so recheck both state and an
   // interaction generation after every asynchronous dependency.
   const fence = new ExternalRefreshState();
-  const livePreference = `forge:auto-refresh:${location.pathname}`;
+  const livePreference = `forge:auto-refresh:${projectPath(location.pathname)}`;
 
   try {
     input('auto-refresh').checked = localStorage.getItem(livePreference) !== 'false';
@@ -204,18 +204,8 @@ export function createRefreshController({
         ports.draw();
         viewport.scrollTo(view.left, view.top);
       } else if (before.sceneId) {
-        sceneSession.loaded = sceneSession.committed = null;
-        sceneSession.editor = null;
-        sceneSession.baseline = '';
-        sceneSelection.selection = null;
-        sceneSelection.selectedObject = null;
-        sceneSelection.selectedObjects.clear();
-        animationPreview.reset();
-        canvas.hidden = true;
-        element('canvas-surround', HTMLElement).hidden = true;
-        element('empty-scene', HTMLElement).hidden = false;
+        ports.closeScene();
         element('scene-name', HTMLElement).textContent = 'Scene removed. Choose another scene.';
-        select('scenes').value = '';
         ports.update();
       } else {
         ports.update();

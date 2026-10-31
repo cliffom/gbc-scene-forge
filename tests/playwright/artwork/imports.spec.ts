@@ -149,7 +149,7 @@ test('imports: Generic PNG slicing and bounded external Tiled intake through the
   assert.equal(saved.name, 'External map');
   await page.reload();
   await wait(
-    "document.getElementById('status')?.textContent.includes('Choose a scene') && !document.getElementById('scenes').disabled",
+    "document.getElementById('status')?.textContent === 'Scene opened.' && !document.getElementById('scenes').disabled",
   );
   await set('scenes', id);
   await wait("document.getElementById('status').textContent === 'Scene opened.'");
