@@ -3,11 +3,13 @@
 import re
 import unicodedata
 from pathlib import Path
+from threading import Lock
 
 from gbc_scene_forge.core.identities import name
 from gbc_scene_forge.core.validation import require
 from gbc_scene_forge.project.application import Project
 from gbc_scene_forge.project.schema import MANIFEST
+from gbc_scene_forge.storage.files import file_signature
 from gbc_scene_forge.storage.paths import safe_path
 
 
@@ -25,6 +27,8 @@ def slug(title):
 class ProjectRoot:
     def __init__(self, root):
         self.root = Path(root).absolute()
+        self._catalog_cache = {}
+        self._catalog_lock = Lock()
         require(
             not (self.root / MANIFEST).exists(),
             "This directory is already a project. Use --project PATH to open it directly, "
@@ -43,17 +47,45 @@ class ProjectRoot:
         return safe_path(self.root, directory)
 
     def catalog(self):
+        with self._catalog_lock:
+            return self._catalog()
+
+    def _catalog(self):
         projects, unavailable = [], []
         for child in sorted(self.root.iterdir(), key=lambda p: p.name.casefold()):
             if child.is_symlink() or not child.is_dir() or not (child / MANIFEST).exists():
                 continue
             try:
-                project = Project(self.path(child.name), recover=False).read()[0]
-                projects.append(
-                    {"directory": child.name, "id": project["id"], "name": project["name"]}
-                )
+                signature = file_signature(safe_path(self.path(child.name), MANIFEST))
+                cached = self._catalog_cache.get(child.name)
+                if cached is None or cached[0] != signature:
+                    try:
+                        require(
+                            signature is not None and signature[2] <= 8 * 1024 * 1024,
+                            "Project manifest exceeds 8 MiB or is missing",
+                        )
+                        project = Project(self.path(child.name), recover=False).read()[0]
+                        require(
+                            signature == file_signature(safe_path(self.path(child.name), MANIFEST)),
+                            "Project changed during discovery. Retrying on the next check.",
+                        )
+                        item = {
+                            "directory": child.name,
+                            "id": project["id"],
+                            "name": project["name"],
+                        }
+                    except (ValueError, OSError, KeyError, TypeError) as error:
+                        item = {"directory": child.name, "error": str(error)}
+                    cached = (signature, item)
+                    self._catalog_cache[child.name] = cached
+                (unavailable if "error" in cached[1] else projects).append(dict(cached[1]))
             except (ValueError, OSError, KeyError, TypeError) as error:
                 unavailable.append({"directory": child.name, "error": str(error)})
+        self._catalog_cache = {
+            p["directory"]: self._catalog_cache[p["directory"]]
+            for p in projects + unavailable
+            if p["directory"] in self._catalog_cache
+        }
         return {
             "project": None,
             "projects": projects,

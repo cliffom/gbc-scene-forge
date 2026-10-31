@@ -39,6 +39,7 @@ export function createWorkspaceController({
   lifetime: EditorLifetime;
   workspaceState: Pick<
     WorkspaceState,
+    | 'sceneChoices'
     | 'choosingProject'
     | 'hasProjectChoices'
     | 'navigating'
@@ -56,6 +57,17 @@ export function createWorkspaceController({
   firstSceneGuide: ReturnType<typeof createFirstSceneGuide>;
   ports: Ports;
 }) {
+  let projectFormTouched = false;
+  for (const event of ['input', 'change']) {
+    form('project-form').addEventListener(
+      event,
+      () => {
+        projectFormTouched = true;
+      },
+      { signal: lifetime.signal },
+    );
+  }
+
   function showProjectStart(creating: boolean) {
     element('project-picker', HTMLElement).hidden = workspaceState.project !== null || creating;
     form('project-form').hidden = workspaceState.project !== null || !creating;
@@ -101,6 +113,7 @@ export function createWorkspaceController({
   });
 
   lifetime.assign(button('show-new-project'), 'onclick', () => {
+    projectFormTouched = true;
     showProjectStart(true);
     input('project-title').focus();
   });
@@ -110,6 +123,125 @@ export function createWorkspaceController({
     button('show-new-project').focus();
   });
 
+  // Choice inventories never adopt project state or acknowledge saved revisions.
+  // In particular they may update while the active editor is dirty.
+  async function refreshChoices(eligible: () => boolean) {
+    if (!eligible() || (!workspaceState.project && !workspaceState.choosingProject)) {
+      return;
+    }
+    const revision = workspaceState.revision;
+    const current = () => eligible() && !lifetime.disposed && revision === workspaceState.revision;
+    try {
+      const root =
+        workspaceState.choosingProject || Boolean(projectBase)
+          ? record(await (await request('project', undefined, 10000, '')).json())
+          : null;
+      const inventory = workspaceState.project ? await api('choices', record) : null;
+      // Decode every entry before mutating any visible choices.
+      const projects = root
+        ? array(root.projects, record).map((item) => ({
+            directory: string(item.directory),
+            name: string(item.name),
+          }))
+        : [];
+      const scenes = inventory
+        ? array(inventory.scenes, record).map((item) => ({
+            id: string(item.id),
+            name: string(item.name),
+          }))
+        : [];
+      const errors = [
+        ...(root
+          ? array(root.unavailable, record).map(
+              (item) => `${string(item.directory)}: ${string(item.error)}`,
+            )
+          : []),
+        ...(inventory
+          ? array(inventory.unavailable, record).map(
+              (item) => `Scene ${string(item.id)}: ${string(item.error)}`,
+            )
+          : []),
+      ];
+      if (!current()) {
+        return;
+      }
+      const replaceOptions = (control: HTMLSelectElement, choices: HTMLOptionElement[]) => {
+        const previous = control.value;
+        const signature = (items: HTMLOptionElement[]) =>
+          JSON.stringify(items.map((item) => [item.value, item.text, item.disabled]));
+        // Keep a currently loaded/selected item until explicit navigation, even if
+        // its saved file is temporarily incomplete or removed by an external writer.
+        const selected = Array.from(control.options).find((item) => item.value === previous);
+        if (selected && previous && !choices.some((item) => item.value === previous)) {
+          choices.push(new Option(selected.text, previous));
+        }
+        if (signature(Array.from(control.options)) !== signature(choices)) {
+          control.replaceChildren(...choices);
+          control.value = previous;
+        }
+      };
+      if (root && projectBase) {
+        replaceOptions(select('switch-project'), [
+          ...projects.map(
+            (item) => new Option(item.name, `/projects/${encodeURIComponent(item.directory)}`),
+          ),
+          new Option('Choose or create project…', '/'),
+        ]);
+      }
+      if (inventory) {
+        workspaceState.sceneChoices = scenes;
+        select('scenes').disabled = scenes.length === 0;
+        const placeholder = new Option('Choose a scene…', '');
+        placeholder.disabled = true;
+        replaceOptions(select('scenes'), [
+          placeholder,
+          ...scenes.map((item) => new Option(item.name, item.id)),
+        ]);
+      }
+      if (root && workspaceState.choosingProject) {
+        const list = element('project-list', HTMLElement);
+        const signature = JSON.stringify(projects);
+        if (list.dataset.inventory !== signature) {
+          const links = projects.map((item) => {
+            const link = document.createElement('a');
+            link.className = 'project-card';
+            link.href = `/projects/${encodeURIComponent(item.directory)}/`;
+            link.title = item.directory;
+            const title = document.createElement('strong');
+            title.textContent = item.name;
+            link.append(title);
+            return link;
+          });
+          list.replaceChildren(...links);
+          list.dataset.inventory = signature;
+        }
+        element('unavailable-projects', HTMLElement).textContent = errors.join(' · ');
+        workspaceState.hasProjectChoices = projects.length > 0 || errors.length > 0;
+        button('back-to-projects').hidden = !workspaceState.hasProjectChoices;
+        // An empty-root startup displays the creation form. Reveal discoveries
+        // without dismissing an explicit creation flow or unfinished input.
+        if (
+          workspaceState.hasProjectChoices &&
+          !projectFormTouched &&
+          !input('project-title').value &&
+          !form('project-form').contains(document.activeElement)
+        ) {
+          showProjectStart(false);
+        }
+      }
+      const notice = element('inventory-status', HTMLElement);
+      notice.textContent = errors.join(' · ');
+      notice.hidden = errors.length === 0;
+    } catch (error) {
+      if (!current()) {
+        return;
+      }
+      const notice = element('inventory-status', HTMLElement);
+      notice.textContent = `Project/scene discovery unavailable; keeping current choices. ${error instanceof Error ? error.message : String(error)}`;
+      notice.hidden = false;
+    }
+  }
+
   async function refresh(
     supplied?: Record<string, unknown>,
     canApply?: () => Promise<boolean>,
@@ -118,6 +250,12 @@ export function createWorkspaceController({
     // Stage every asynchronous dependency before touching the displayed snapshot.
     const nextImages = new Map<string, HTMLImageElement>();
     const decoded = data.project === null ? null : decodeProject(data.project);
+    const sceneChoices = decoded
+      ? array((await api('choices', record)).scenes, record).map((item) => ({
+          id: string(item.id),
+          name: string(item.name),
+        }))
+      : [];
     for (const [id, atlas] of Object.entries(decoded?.atlases ?? {})) {
       const existing =
         supplied && data.revision === workspaceState.revision ? ports.image(id) : undefined;
@@ -164,6 +302,12 @@ export function createWorkspaceController({
         link.append(title);
         list.append(link);
       }
+      list.dataset.inventory = JSON.stringify(
+        array(data.projects, record).map((item) => ({
+          directory: string(item.directory),
+          name: string(item.name),
+        })),
+      );
       const unavailable = element('unavailable-projects', HTMLElement);
       unavailable.replaceChildren();
       for (const value of array(data.unavailable, record)) {
@@ -182,6 +326,7 @@ export function createWorkspaceController({
       workspaceState.previewSettingsLoaded = true;
     }
     workspaceState.project = decoded;
+    workspaceState.sceneChoices = sceneChoices;
     const previousStamp = select('stamps').value;
     select('stamps').replaceChildren(
       new Option('Choose stamp…', ''),
@@ -225,7 +370,7 @@ export function createWorkspaceController({
     placeholder.disabled = true;
     select('scenes').replaceChildren(
       placeholder,
-      ...(workspaceState.project?.scenes.map((s) => new Option(s.name, s.id)) || []),
+      ...sceneChoices.map((scene) => new Option(string(scene.name), string(scene.id))),
     );
     select('scenes').value = workspaceState.project?.scenes.some((item) => item.id === previous)
       ? previous
@@ -299,5 +444,5 @@ export function createWorkspaceController({
       }
     });
   });
-  return { refresh };
+  return { refresh, refreshChoices };
 }

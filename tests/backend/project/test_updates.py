@@ -37,6 +37,52 @@ class UpdateTests(unittest.TestCase):
                     self.assertEqual(self.updates.revisions(self.scene["id"]), expected)
         self.assertEqual(len(self.updates.cache), 2)
 
+    def test_choice_validation_cache_and_repair(self):
+        expected = {"scenes": [{"id": self.scene["id"], "name": "Plan"}], "unavailable": []}
+        self.assertEqual(self.updates.choices(), expected)
+        with patch.object(self.project.store, "read", side_effect=AssertionError("Idle read")):
+            for _ in range(20):
+                self.assertEqual(self.updates.choices(), expected)
+        path = self.project.root / "scenes" / f"{self.scene['id']}.tmj"
+        original = path.read_bytes()
+        path.write_text("invalid json")
+        invalid = self.updates.choices()
+        self.assertEqual(invalid["scenes"], [])
+        self.assertEqual(invalid["unavailable"][0]["id"], self.scene["id"])
+        with patch.object(self.project.store, "read", side_effect=AssertionError("Idle read")):
+            self.assertEqual(self.updates.choices(), invalid)
+        path.write_bytes(original)
+        self.assertEqual(self.updates.choices(), expected)
+        path.unlink()
+        self.assertEqual(self.updates.choices()["scenes"], [])
+
+    def test_choice_discovery_from_another_writer_and_invalid_manifest(self):
+        self.updates.choices()
+        writer = Project(self.project.root)
+        scene = writer.planning.create_blockout("Second", {}, writer.catalog()["revision"])
+        self.assertEqual(
+            [s["id"] for s in self.updates.choices()["scenes"]], [self.scene["id"], scene["id"]]
+        )
+        (self.project.root / MANIFEST).write_text("invalid")
+        with self.assertRaises(ValueError):
+            self.updates.choices()
+
+    def test_noncooperating_manifest_write_during_validation_is_retried(self):
+        read = self.project.store.read
+        manifest = self.project.root / MANIFEST
+
+        def racing_read():
+            document, revision = read()
+            changed = json.loads(manifest.read_bytes())
+            changed["scenes"][0]["name"] = "Changed during read"
+            manifest.write_text(json.dumps(changed))
+            return document, revision
+
+        with patch.object(self.project.store, "read", side_effect=racing_read):
+            with self.assertRaisesRegex(ValueError, "changed during validation"):
+                self.updates.choices()
+        self.assertEqual(self.updates.choices()["scenes"][0]["name"], "Changed during read")
+
     def test_detects_same_size_edits_and_missing_scene(self):
         scene_id = self.scene["id"]
         before = self.updates.revisions(scene_id)
@@ -104,6 +150,16 @@ class UpdateTests(unittest.TestCase):
                 base = f"http://127.0.0.1:{server.server_port}" + (
                     "/projects/world" if root_mode else ""
                 )
+                with urlopen(f"{base}/api/choices", timeout=5) as response:
+                    choices = json.load(response)
+                self.assertEqual(choices["scenes"], [{"id": self.scene["id"], "name": "Plan"}])
+                self.assertEqual(choices["unavailable"], [])
+                self.assertNotIn("token", choices)
+                with self.assertRaises(HTTPError) as caught:
+                    urlopen(
+                        Request(f"{base}/api/choices", headers={"Host": "evil.example"}), timeout=5
+                    )
+                self.assertEqual(caught.exception.code, 403)
                 for route in ("revisions", "snapshot"):
                     url = f"{base}/api/{route}?scene={self.scene['id']}"
                     with urlopen(url, timeout=5) as response:

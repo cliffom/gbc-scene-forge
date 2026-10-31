@@ -11,7 +11,7 @@ start polling, or acquire canvas resources. No frontend framework is required.
 | Owner/module | Responsibility |
 | --- | --- |
 | `editor/project-editor.mts` | Composition, operation/busy gate, shared control availability, preview preferences and initial load. Callback forwarding connects controllers without importing each other. |
-| `editor/editor-state.mts` | `SceneSession` owns the current scene descriptor, committed baseline/revision and `LayerEditor`, dirty comparisons and native serialization. `WorkspaceState` owns the adopted project catalog/revision and navigation state. Selection, brushes/clipboard and gestures have separate owners. |
+| `editor/editor-state.mts` | `SceneSession` owns the current scene descriptor, committed baseline/revision and `LayerEditor`, dirty comparisons and native serialization. `WorkspaceState` owns the adopted project catalog/revision, separately validated scene choices and navigation state. Selection, brushes/clipboard and gestures have separate owners. |
 | `scene/layers.mts`, `scene/model.mts` | Authored scene, active layer, strokes and undo/redo. Controllers mutate through this existing model. Selection, camera scroll and preview positions are not authored history. |
 | `project/project-api.mts`, `project/project-contracts.mts`, `shared/decode.mts` | Standalone project-relative HTTP, mutation token, request cancellation, runtime JSON decoding and scene/catalog contracts. Decoder callbacks remain mandatory. JSON primitives live in `shared/`; project transport owns only standalone routes. |
 | `artwork/editor-artwork.mts` | Imported images, derived tile/sprite indexes, palette filters/choices, brush capture/restore and atlas import/reimport/deletion. New PNG/Tiled intake belongs here or in focused intake helpers, not the composition. |
@@ -63,10 +63,13 @@ draft writers stop; stopping a writer does not delete its saved checkpoint.
 Disposal is idempotent. The entry disposes on a non-persisted `pagehide`; a page in
 the browser's back/forward cache retains its mounted resources for restoration.
 
-Polling cadence remains two seconds for saved revisions and five seconds for
-checkpoint flushing and palette freshness. Refactoring adds no poller and no
-extra redraw. Scene replacement resets the existing preview/writer; it does not
-mount a second editor. An embedding host replacing the whole editor must call
+Polling cadence remains two seconds for saved revisions and navigation inventories
+and five seconds for checkpoint flushing and palette freshness. Inventory discovery
+shares the refresh cycle and adds no timer or redraw. It updates choices independently
+of snapshot adoption, without acknowledging project revisions. Hidden tabs, focused
+dropdowns and dialogs defer discovery; text input and dirty scenes do not. Unchanged
+server checks use metadata caches. Scene replacement resets the existing preview/writer;
+it does not mount a second editor. An embedding host replacing the whole editor must call
 `dispose()` before mounting the next instance.
 
 ## Directory layout

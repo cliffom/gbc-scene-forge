@@ -258,7 +258,7 @@ export function mountProjectEditor() {
         activity.busy || (control.id === 'generic-apply' && control.dataset.ready !== 'true');
     }
     select('scenes').disabled =
-      activity.busy || gestures.anchor !== null || !workspaceState.project?.scenes.length;
+      activity.busy || gestures.anchor !== null || !workspaceState.sceneChoices.length;
     for (const id of ['show-rename', 'show-duplicate-scene', 'show-resize']) {
       button(id).disabled = activity.busy || !sceneSession.editor || gestures.anchor !== null;
     }
@@ -649,6 +649,7 @@ export function mountProjectEditor() {
     status,
     sceneSelection,
     ports: {
+      refreshChoices: (...args) => workspaceController.refreshChoices(...args),
       closeScene: () => sceneActionsController.closeScene(),
       captureBrush: (...args) => artworkController.captureBrush(...args),
       refresh: (...args) => workspaceController.refresh(...args),
