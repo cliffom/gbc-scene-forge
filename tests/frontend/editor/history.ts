@@ -125,3 +125,17 @@ shapes.undo();
 assert.equal(JSON.stringify(shapes.scene), linked);
 shapes.redo();
 assert.equal(shapes.objects[0].definition, undefined);
+
+// Absent and undefined optional fields have identical persistent/dirty JSON semantics.
+const optional = new LayerEditor(initial, [], { erase_cell: 'empty' });
+optional.change((scene) => {
+  scene.active_layer_id = undefined;
+});
+assert.equal(optional.undoStack.length, 0);
+optional.add('objectgroup');
+optional.createObject({ kind: 'point', x: 1, y: 1, name: '', class: '', properties: [] });
+const optionalDepth = optional.undoStack.length;
+optional.change(() => {
+  optional.objects[0].definition = undefined;
+});
+assert.equal(optional.undoStack.length, optionalDepth);

@@ -15,7 +15,7 @@ function record(value: unknown): value is Record<string, unknown> {
 export function historyDiff(before: unknown, after: unknown): HistoryChange[] {
   const changes: HistoryChange[] = [];
   function visit(a: unknown, b: unknown, path: string[], ae = true, be = true) {
-    if (a === b && ae === be) {
+    if (a === b && (ae === be || a === undefined)) {
       return;
     }
     if (
@@ -80,7 +80,9 @@ export function historyDiff(before: unknown, after: unknown): HistoryChange[] {
         return;
       }
       // Dirty snapshots use JSON order. Replacing a shape-changing object preserves it.
-      if (JSON.stringify(Object.keys(a)) !== JSON.stringify(Object.keys(b))) {
+      const leftKeys = Object.keys(a).filter((key) => a[key] !== undefined);
+      const rightKeys = Object.keys(b).filter((key) => b[key] !== undefined);
+      if (JSON.stringify(leftKeys) !== JSON.stringify(rightKeys)) {
         changes.push({
           path: [...path],
           before: structuredClone(a),

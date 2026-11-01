@@ -179,15 +179,15 @@ edit timing is median per complete transaction, including its initial clone.
 
 | Scene / operation | Heap MiB before → after | Edit ms before → after | Undo ms before → after | Redo ms before → after |
 | --- | --- | --- | --- | --- |
-| Small / cell | 3.00 → 0.15 | 0.064 → 0.060 | 0.043 → 0.002 | 0.051 → 0.001 |
-| Small / stroke | 2.66 → 1.37 | 0.065 → 0.107 | 0.043 → 0.015 | 0.055 → 0.014 |
-| Small / property | 3.00 → 0.15 | 0.065 → 0.061 | 0.043 → 0.002 | 0.048 → 0.001 |
-| Large / cell | 454.32 → 0.15 | 9.307 → 7.197 | 6.640 → 0.002 | 6.813 → 0.001 |
-| Large / stroke | 452.55 → 4.01 | 9.403 → 6.979 | 6.598 → 0.068 | 6.775 → 0.065 |
-| Large / property | 454.33 → 0.15 | 9.370 → 7.029 | 6.761 → 0.002 | 6.856 → 0.001 |
-| Wide / cell | 158.81 → 0.15 | 3.204 → 2.476 | 2.272 → 0.002 | 2.356 → 0.001 |
-| Wide / stroke | 157.03 → 4.37 | 3.313 → 2.495 | 2.265 → 0.071 | 2.542 → 0.074 |
-| Wide / property | 158.81 → 0.15 | 3.453 → 2.449 | 2.318 → 0.002 | 2.381 → 0.001 |
+| Small / cell | 3.00 → 0.15 | 0.062 → 0.060 | 0.043 → 0.002 | 0.047 → 0.001 |
+| Small / stroke | 2.66 → 1.37 | 0.063 → 0.107 | 0.043 → 0.014 | 0.052 → 0.013 |
+| Small / property | 3.00 → 0.15 | 0.063 → 0.062 | 0.042 → 0.002 | 0.047 → 0.001 |
+| Large / cell | 454.32 → 0.15 | 9.168 → 6.893 | 6.627 → 0.002 | 6.886 → 0.001 |
+| Large / stroke | 452.55 → 4.01 | 8.966 → 7.118 | 6.438 → 0.067 | 6.772 → 0.065 |
+| Large / property | 454.33 → 0.15 | 9.620 → 7.197 | 6.866 → 0.002 | 7.076 → 0.001 |
+| Wide / cell | 158.81 → 0.15 | 3.190 → 2.485 | 2.237 → 0.002 | 2.349 → 0.001 |
+| Wide / stroke | 157.03 → 4.37 | 3.249 → 2.590 | 2.265 → 0.074 | 2.357 → 0.070 |
+| Wide / property | 158.81 → 0.15 | 3.212 → 2.532 | 2.292 → 0.002 | 2.325 → 0.001 |
 
 Bidirectional changed-path records substantially reduce repeated retained scene
 data while retaining the simple mutable authoring API. String rows use a size
@@ -195,7 +195,8 @@ heuristic to avoid allocating many individual cell paths; dense array subtrees
 coalesce when their replacement serializes smaller. Array-length changes and
 object key/order changes replace a subtree. Both before/after values are cloned,
 including when replayed, so no history payload shares mutable authored data.
-Objects whose keys change must preserve insertion order because the existing
+Absent and undefined optional fields remain equivalent no-ops. Objects whose keys
+change must preserve insertion order because the existing
 dirty baseline compares JSON; regression coverage checks exact serialization.
 
 One complete scene clone still exists during a transaction for cancellation and
