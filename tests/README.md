@@ -10,6 +10,7 @@ Run commands from the repository root. Test code is grouped by runner and domain
 | `backend/planning/` | blockout and world authoring |
 | `backend/analysis/` | diagnostics, palette and hardware budgets |
 | `backend/adapters/` | console, HTTP and optional MCP protocol integration |
+| `backend/tooling/` | documentation checker regression tests |
 | `backend/architecture/` | backend dependency and installed-entry-point boundaries |
 | `frontend/` | non-browser TypeScript suites grouped by editor, project, artwork, objects, planning, preview and infrastructure |
 | `playwright/` | browser acceptance by domain, with browser fixtures and editor seeds in `playwright/support/` |
@@ -57,13 +58,8 @@ At that organization baseline, browser discovery retained 22 regular scenarios a
 [browser testing](../docs/BROWSER-TESTING.md) and
 [historical coverage inventories](../docs/BROWSER-COVERAGE.md).
 
-Validation of the combined #86/#88 cleanup passed `make lint test`, production
-`make build check-dist test-browser`, installed-wheel first use, and optional
-MCP protocol/browser acceptance with a fresh 0.17.1 `[mcp]` wheel installation.
-The installed-wheel Python discovery command also passed all 248 cases (one SDK
-skip in the plain environment). Representative `model`/`contracts` Make selectors
-passed independently; support script `--help` entry points passed. Full Tiled
-interoperability was not run locally because its external executables are absent.
+Historical results and the unavailable Tiled-tool limitation are recorded in
+[suite organization validation](../docs/VALIDATION.md#suite-organization-86-88).
 
 Canvas repaint coverage for #76 adds `playwright/editor/rendering.spec.ts` with
 small and large multi-layer workloads. Current discovery has 24 regular scenarios

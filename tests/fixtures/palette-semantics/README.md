@@ -16,7 +16,7 @@ poetry run gbc-atlas validate examples/palette-semantics/reordered/reordered.atl
 poetry run python -m unittest discover -s tests -p test_palette_semantics.py -v
 ```
 
-The [format contract](../../src/gbc_atlas/skills/create-atlas/references/format.md#palette-interpretation-for-scene-consumers)
+The [format contract](https://github.com/cliffom/gbc-atlas/blob/v0.3.1/src/gbc_atlas/skills/create-atlas/references/format.md#palette-interpretation-for-scene-consumers)
 is normative. `expected.json` is a test oracle, **not an interchange format or a
 new manifest field**. Its symbolic identity labels are scoped to BG or OBJ.
 `identities` gives the ordered RGB5 comparison entries (four for BG, three for

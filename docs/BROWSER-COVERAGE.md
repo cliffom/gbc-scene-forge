@@ -39,23 +39,7 @@ formatting and later scenario additions can shift current lines. Retired-suite
 names and original line columns still refer to `a96eec2`. The validation evidence
 below also remains the historical #82 record.
 
-Local #86 validation passed with the production 0.17.1 bundle:
-
-- Before/after discovery: identical scenario basenames and titles, no duplicates;
-  22 regular scenarios in 13 files and two optional scenarios in two files.
-- All 15 moved specs match their originals after path substitutions and formatting;
-  all 649 assertion and 358 readiness inventory entries retain their source data.
-- `make lint test`: 248 Python tests (one optional SDK test skipped), plus all
-  TypeScript suites. `poetry check --lock` also passed.
-- `FORGE_BUILD_MODE=production make build check-dist test-browser`: verified
-  distributions, six installed-wheel smoke checks and 22 browser scenarios.
-- Installed-wheel `test-first-use-browser`: one scenario; the already-built
-  production bundle was reused with `make -o frontend`.
-- Fresh 0.17.1 `[mcp]` wheel environment: `test-mcp test-mcp-browser` passed
-  12 protocol tests and two optional browser scenarios, reusing the same bundle.
-- `npm run test:standalone -- --list` and `npm run test:drafts -- --list` select
-  only their original six and three scenarios. HTML reports were confirmed under
-  the repository's `build/reports/playwright/`, covered by the CI artifact upload.
+Observed checks are recorded in [suite organization validation](VALIDATION.md#suite-organization-86-88).
 
 ## Consolidations and deliberate changes
 
@@ -101,28 +85,7 @@ publishes its expanded state, rather than racing the earlier native open state.
 
 ## Historical #82 validation evidence
 
-Local production-bundle validation passed:
-
-- `make lint test`: 248 Python tests (one optional SDK test skipped in the plain
-  environment), plus the TypeScript model/API/build suites.
-- `FORGE_BUILD_MODE=production make build check-dist`: both distributions and six
-  fresh installed-wheel smoke checks.
-- `FORGE_BUILD_MODE=production make test-browser`: 20 scenarios in 1.9 minutes.
-- Installed-wheel first-use acceptance: one scenario passed.
-- Installed 0.16.3 `[mcp]` environment: 12 protocol tests and two optional browser
-  scenarios passed (38.7 seconds for the browser run).
-
-These are local macOS observations with one worker and zero retries, not a
-controlled before/after benchmark. CI reuses one Chromium install and runs the
-Python 3.13/3.14 compatibility matrix. See the implementation PR for CI results
-and the [before](screenshots/project-chooser/chooser-before.png) /
-[after](screenshots/project-chooser/chooser-after.png) review screenshots.
-Failure diagnostics were exercised with temporary deliberately failing specs:
-one threw after loading the chooser, and one attempted to serve a regular file
-as a project. Both failed as intended, retained traces/server/browser output (and
-a screenshot for the loaded page), removed temporary workspaces, and left the
-started server unreachable. These audit specs were removed after the exercise.
-Their evidence remains under `build/reports/playwright/fixture-failure-audit/`.
-A third audit started a process that ignored SIGINT and confirmed SIGKILL after
-the five-second grace period, process exit and workspace removal. The audits use
-the same fixtures as normal acceptance.
+See [Playwright migration validation](VALIDATION.md#playwright-migration-82) for
+local pass reports, environment, failure/cleanup audits and evidence limitations.
+The [before](screenshots/project-chooser/chooser-before.png) /
+[after](screenshots/project-chooser/chooser-after.png) review captures are retained.

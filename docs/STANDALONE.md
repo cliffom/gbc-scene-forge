@@ -88,7 +88,7 @@ against that fresh wheel installation:
 FORGE_TEST_PYTHON="$PWD/build/package-smoke/bin/python" make test-first-use-browser
 ```
 
-CI runs package smoke checks on Python 3.10–3.14/Linux and Chrome acceptance on
+CI runs package smoke checks on Python 3.13/3.14 Linux and Chrome acceptance on
 Linux; local Chrome acceptance also runs on macOS. Current Chrome, Edge, Firefox
 and Safari support the browser features used by the editor; non-Chrome browsers
 and Windows are not part of the automated browser matrix. A desktop installer is
@@ -633,7 +633,8 @@ Tiled round trips, revision conflicts, interrupted recovery and wheel contents.
 then exercises create/import/paint/save, layers, generic objects, typed properties,
 origin overrides, terrain/collision editing and overlays, reimport, restart, a
 directory move, scene/project ZIP downloads (including unsaved snapshots), and
-external-edit conflicts. Pass `CHROME=/path/to/chrome` on other platforms. Screenshots are written under `build/reports/scene-editor/`.
+external-edit conflicts. Pass `CHROME=/path/to/chrome` on other platforms. Reports and screenshots are written under `build/reports/playwright/`; see
+[browser testing](BROWSER-TESTING.md).
 
 With official Tiled binaries installed, also run:
 

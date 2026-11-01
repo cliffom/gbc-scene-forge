@@ -99,10 +99,6 @@ lifetime ownership remain with their existing owners.
 
 ## Validation
 
-Local validation passed `make lint test` (248 Python tests, one optional-SDK skip,
-and all 15 TypeScript suites), production `make build check-dist test-browser`
-(24 regular scenarios), installed-wheel first-use acceptance, and optional MCP
-protocol plus both MCP/refresh browser scenarios using a fresh 0.17.2 `[mcp]`
-wheel environment. The rendering scenarios also ran independently against the
-baseline and changed renderer. The lockfile check passed. Publication and tagging
-are separate from this validation.
+See [canvas sizing validation](../VALIDATION.md#canvas-sizing-and-repainting-76)
+for the historical suite outcomes and their limits. The measurements and
+reproduction method above remain the detailed benchmark record.
