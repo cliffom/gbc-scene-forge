@@ -214,6 +214,30 @@ class IntakeTests(unittest.TestCase):
         self.assertEqual(reopened.scenes.load(loaded["id"])["scene"], loaded["scene"])
         self.assertEqual(payload, external())
 
+    def test_wide_tiled_intake_uses_native_area_and_pixel_budgets(self):
+        for width, height, valid in (
+            (480, 9, True),
+            (9, 480, True),
+            (1025, 1, False),
+            (512, 129, False),
+        ):
+            with self.subTest(width=width, height=height):
+                payload = external()
+                source = json.loads(payload["files"]["map.tmj"])
+                source.update(width=width, height=height)
+                layer = source["layers"][0]
+                layer.update(width=width, height=height, data=[0] * (width * height))
+                layer["data"][-1] = 3
+                payload["id"] = f"wide_{width}_{height}"
+                payload["files"]["map.tmj"] = json.dumps(source)
+                report = self.project.imports.tiled(payload, self.revision())
+                self.assertEqual(report["compatible"], valid, report)
+                if valid:
+                    imported = self.import_map(payload)
+                    loaded = self.project.scenes.load(imported["imported"])["scene"]
+                    self.assertEqual((loaded["width"], loaded["height"]), (width, height))
+                    self.assertTrue(loaded["layers"][0]["cells"][-1][-1])
+
     def test_preflight_rejects_compact_map_exceeding_persisted_scene_limit(self):
         payload = external()
         source = json.loads(payload["files"]["map.tmj"])

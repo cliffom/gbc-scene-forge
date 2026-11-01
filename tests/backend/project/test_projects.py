@@ -909,7 +909,7 @@ class ProjectTests(unittest.TestCase):
                 self.assertEqual(path.read_bytes(), before)
 
     def test_bad_dimensions_references_and_project_versions(self):
-        for value in (True, 0, 257, "7"):
+        for value in (True, 0, 1025, "7"):
             with self.subTest(width=value), self.assertRaises(ValueError):
                 self.project.scenes.create("Invalid", value, 5, 8, self.revision())
         scene = self.scene()

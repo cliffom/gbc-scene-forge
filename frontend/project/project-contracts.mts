@@ -1,3 +1,4 @@
+import { validDimensions } from '../scene/dimensions.mts';
 /** Runtime-validated native catalog and saved-scene contracts. */
 import * as v from 'valibot';
 import { array, record } from '../shared/decode.mts';
@@ -91,13 +92,7 @@ const sceneSchema = v.pipe(
   })),
   v.check(
     (scene) =>
-      Number.isInteger(scene.width) &&
-      Number.isInteger(scene.height) &&
-      scene.width >= 1 &&
-      scene.width <= 256 &&
-      scene.height >= 1 &&
-      scene.height <= 256 &&
-      [8, 16, 32].includes(scene.grid) &&
+      validDimensions(scene.width, scene.height, scene.grid) &&
       scene.layers.length > 0 &&
       scene.layers.every(
         (layer) =>

@@ -12,9 +12,9 @@ For a guided first session, follow [Create your first level blockout](user/block
    dialog opens automatically. Existing projects can use **Scene actions → Create
    blockout scene…**; this adds presets if the project has no blockout definitions.
 2. Enter dimensions in pixels or cells and choose an 8, 16 or 32px grid. Pixel
-   dimensions must divide evenly by that grid. Each axis supports 1–256 cells:
-   up to 2048px at an 8px grid or 8192px at 32px. This is the same bounded native
-   scene model used by the rest of Forge.
+   dimensions must divide evenly by that grid. Scenes support at most 65,536 cells
+   and 8,192 pixels per axis. See [scene dimensions](user/scene-dimensions.md)
+   for limits shared by creation, resize, drafts and Tiled import.
 3. Configure the gameplay camera width/height and intended scrolling axes. The
    live summary shows pixels, cells, and horizontal/vertical screen measurements.
    The initial 960×272px scene and 160×136px camera are editable planning defaults,

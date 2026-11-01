@@ -102,7 +102,7 @@ export function createBlockoutView(
     const width = Number(input('blockout-width').value) * factor,
       height = Number(input('blockout-height').value) * factor;
     for (const id of ['blockout-width', 'blockout-height']) {
-      input(id).max = factor === 1 ? '8192' : '256';
+      input(id).max = factor === 1 ? '8192' : String(8192 / grid);
     }
     const cw = Number(input('blockout-camera-width').value),
       ch = Number(input('blockout-camera-height').value);

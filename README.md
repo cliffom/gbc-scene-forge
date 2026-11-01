@@ -15,7 +15,7 @@ Your projects stay on your computer.
 Install the release with Python 3.10 or newer:
 
 ```sh
-python -m pip install gbc-scene-forge==0.19.1
+python -m pip install gbc-scene-forge==0.20.0
 gbc-scene-forge
 ```
 
@@ -145,9 +145,9 @@ make run PROJECT_ROOT="$HOME/Scene Forge Projects"
 
 Use the same location on later launches to see those projects again. Unsupported
 or damaged manifests are reported in the selector so you can identify the folder
-that needs attention. Version 0.19.1 continues to use manifest format version 1.
+that needs attention. Version 0.20.0 continues to use manifest format version 1.
 
-### Bring an existing project into 0.19.1
+### Bring an existing project into 0.20.0
 
 Existing 0.2.0 projects keep their artwork, scene IDs and manifest format. To add
 one to the selector, stop Forge and move the whole project folder into your
@@ -315,9 +315,12 @@ Paint connected roads, walls and shorelines with [terrain brushes](docs/user/ter
 Optional [GBC target budgets](docs/user/gbc-budgets.md) report static source-tile
 and OAM estimates alongside palette requirements, with explicit runtime limitations.
 
+Author [wide and tall scenes](docs/user/scene-dimensions.md), including 480×9 cells
+at grid 16, within 65,536 cells and 8,192 pixels per axis.
+
 Copy the scene URL to reopen its saved state directly; see [scene links](docs/user/scene-links.md).
 
-See [the 0.19.1 release notes](docs/RELEASE-0.19.1.md) and
+See [the 0.20.0 release notes](docs/RELEASE-0.20.0.md) and
 [building and releasing](docs/RELEASING.md) for release validation and publication.
 
 ## License

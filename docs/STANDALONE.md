@@ -143,8 +143,9 @@ camera intent, limits, the opening-forest example and shared services for MCP #5
 1. Choose **Import atlas**, then **Browse folder…** to select an atlas folder.
    Choose a manifest if the folder contains several, then confirm with **Import
    atlas**. Its declared PNG is included automatically.
-2. Choose **Scene actions → Create scene…**, then enter a scene name, width and height (1–256 cells)
-   and an 8, 16 or 32 pixel grid in the dialog.
+2. Choose **Scene actions → Create scene…**, then enter a scene name, width and height in cells
+   and an 8, 16 or 32 pixel grid in the dialog. Scenes support at most 65,536 cells
+   and 8,192 pixels per axis; see [scene dimensions](user/scene-dimensions.md).
 3. Choose **Create scene**, select a tile region to paint or a sprite to place.
 4. Use Erase, one-cell Fill, or Select. Drag a selection, then use arrow keys to
    move it or Delete to erase it. Undo/Redo retain up to 100 completed edits.
@@ -667,7 +668,8 @@ scene-local; later connections must use the scene UUID together with the object 
 The duplicate does not copy local recovery checkpoints. Deleting a copy uses the
 normal confirmed scene deletion flow; scene Undo does not remove it.
 
-**Resize / crop** changes dimensions within 1–256 cells, keeping the grid size.
+**Resize / crop** changes dimensions within the same 65,536-cell and 8,192-pixel
+per-axis budgets as creation, keeping the grid size.
 Choose one of nine anchors to retain the corresponding edge or center. Center
 offsets round down to whole cells, including negative offsets for cropping.
 All layers move together, including hidden layers. New cells are empty.

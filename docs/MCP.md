@@ -100,7 +100,7 @@ cells are `""`; painted references come from the imported atlas inventory.
 2. `create_blockout_scene` requires `project`, `project_revision`, `name` and
    optional `options`. Options are `units` (`pixels`/`cells`), `width`, `height`,
    `grid` (8/16/32), `camera_width`, `camera_height` (pixels), `scroll_x`, `scroll_y`.
-   Defaults are 960×272px, grid 8, camera 160×136px. Axes support 1..256 cells;
+   Defaults are 960×272px, grid 8, camera 160×136px. Scenes support at most 65,536 cells and 8,192 pixels per axis;
    cameras must fit. Native preset definitions are initialized once.
 3. Discover a preset definition's UUID in `object_definitions.definitions` using
    its typed `blockout_role` default. `get_scene` returns

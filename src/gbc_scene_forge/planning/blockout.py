@@ -16,6 +16,7 @@ from gbc_scene_forge.core.validation import integer, require
 from gbc_scene_forge.formats import tiled
 from gbc_scene_forge.scene_objects import definitions as object_definitions
 from gbc_scene_forge.scene_objects.model import check_object
+from gbc_scene_forge.scenes.dimensions import check_dimensions
 
 ROLE = "blockout_role"
 COLOR = "blockout_color"
@@ -130,7 +131,7 @@ def options(value=None):
             width % grid == height % grid == 0, "Pixel dimensions must be divisible by the grid"
         )
         width, height = width // grid, height // grid
-    require(integer(width, 1, 256) and integer(height, 1, 256), "Use at most 256 cells per axis")
+    check_dimensions(width, height, grid)
     camera_width, camera_height = value.get("camera_width", 160), value.get("camera_height", 136)
     require(
         integer(camera_width, 1, width * grid) and integer(camera_height, 1, height * grid),

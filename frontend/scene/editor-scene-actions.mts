@@ -1,3 +1,4 @@
+import { MAX_SCENE_PIXELS, checkDimensions } from './dimensions.mts';
 import { createSceneNavigation, sceneFromPath } from './scene-navigation.mts';
 import type { EditorLifetime } from '../editor/editor-lifetime.mts';
 import type { createAnimationPreview } from '../preview/animation-preview.mts';
@@ -182,12 +183,25 @@ export function createSceneActionsController({
     ports.draw();
   }
 
+  const createDimensions = () => {
+    const max = String(MAX_SCENE_PIXELS / Number(select('cell-size').value));
+    input('width').max = max;
+    input('height').max = max;
+  };
+  lifetime.assign(select('cell-size'), 'onchange', createDimensions);
+  createDimensions();
+
   lifetime.assign(form('scene-form'), 'onsubmit', async (event) => {
     event.preventDefault();
     if (!(await ports.discard())) {
       return;
     }
     void ports.run(async () => {
+      checkDimensions(
+        Number(input('width').value),
+        Number(input('height').value),
+        Number(select('cell-size').value),
+      );
       const data = await api('create-scene', decodeLoaded, {
         name: input('scene-title').value,
         width: Number(input('width').value),
@@ -570,6 +584,9 @@ export function createSceneActionsController({
     if (!sceneSession.editor || activity.busy || gestures.anchor) {
       return;
     }
+    input('resize-width').max = input('resize-height').max = String(
+      MAX_SCENE_PIXELS / sceneSession.editor.scene.grid,
+    );
     input('resize-width').value = String(sceneSession.editor.scene.width);
     input('resize-height').value = String(sceneSession.editor.scene.height);
     select('resize-anchor').value = '0,0';
