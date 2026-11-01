@@ -431,6 +431,35 @@ Dates, revisions and environments missing from the originals remain unknown.
   device evaluation or non-Chromium check is claimed. No tagging/publication
   occurred; prior CI results apply only to their linked 0.22.0 revision.
 
+## MCP reusable stamp placement (#111)
+
+- **Scope:** Prepared 0.23.0 working tree on `feat/mcp-stamp-placement-0.23.0`,
+  based on `92f9d7e`, on 2026-11-01, macOS, Python 3.13.13, Node 24.22.1,
+  Playwright 1.64.1 Chromium and official MCP SDK 1.30.0.
+- **Method:** `make docs-check lint test`, production `make build check-dist
+  test-browser`, and first-use acceptance with `FORGE_TEST_PYTHON` pointing at
+  the fresh plain wheel environment. Installed the production wheel plus its
+  MCP extra in a fresh environment and ran `make test-mcp test-mcp-browser` with
+  `FORGE_MCP_PYTHON` selecting that interpreter, including real SDK stdio calls.
+  [Stamp tests](../tests/backend/adapters/test_mcp_stamps.py) exercise repeated
+  multi-slot tile/object/sprite placement, PNG/SVG candidate resources, canonical
+  saving/export, malformed input, ID exhaustion, scene/project conflicts and
+  deterministic concurrent-write injection at preparation and commit.
+- **Result:** Documentation/lint, all 319 Python tests, frontend suites,
+  production distribution metadata and six smoke checks for each plain/MCP wheel
+  environment passed. All 55 installed-MCP checks passed, including 11 stamp
+  checks and the SDK placement/review/reopen flow. Chromium passed 41 regular
+  scenarios, both installed-MCP scenarios and installed plain-wheel first use.
+  Dry runs and reviews preserved saved bytes; repeat placements allocated
+  disjoint IDs and stale writes were rejected. The
+  [browser refresh regression](../tests/playwright/mcp/refresh.spec.ts) placed a
+  saved stamp while a camera draft was dirty, preserved the draft and Undo, and
+  rejected its subsequent stale browser save at 1440×1100.
+- **Limits:** Local working-tree logs are not archived CI evidence. Two optional
+  scalability profiling scenarios were skipped. Official Tiled and rasterizer
+  tools were unavailable; non-Chromium/Windows and human usability checks were
+  not performed. Release preparation is separate from tagging/publication.
+
 ## Remaining checks
 
 This is the single maintained validation checklist. Issue state was checked on
@@ -449,7 +478,7 @@ check, retaining actual revision, environment, attribution, failures and limits.
 
 ### Platform, interoperability and publication gaps
 
-- [ ] Run the optional official Tiled/rasterizer interoperability checks for the current 0.22.1 baseline, including the 0.22.0 tile/layer changes, when those applications are available (#109, #110).
+- [ ] Run the optional official Tiled/rasterizer interoperability checks for the current 0.23.0 baseline, including stamp placement and the 0.22.0 tile/layer changes, when those applications are available (#109, #110, #111).
 
 - [ ] Record non-Chromium desktop-browser and Windows runtime results with exact versions and workflows; these are outside the automated browser matrix.
 - [ ] Configure the TestPyPI trusted publisher and verify an upload if that channel is needed; the historical 0.1.4 attempt failed with `invalid-publisher`. Local wheel checks and PyPI publication are separate evidence.

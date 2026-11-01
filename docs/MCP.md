@@ -73,10 +73,10 @@ and [official Python SDK](https://github.com/modelcontextprotocol/python-sdk/tre
 | --- | --- | --- |
 | Discovery | `list_projects`, `get_project`, `get_scene`, `capabilities`. Canonical scenes, ordered layers/cells/objects, imported asset inventories, definitions, stamps, world data and revisions. | File browsing outside declared inventories; live subscriptions. |
 | Creation | `create_project` (empty or blockout), `create_scene` (cell dimensions), `create_blockout_scene` (pixel/cell settings and camera). | Sample-project creation through MCP. |
-| Scene editing | `edit_scene`: atomic object, tile painting/erasing and layer creation/update/reorder/deletion batches, dry-run candidates and before/after summaries. `save_scene`: validated full canonical layers, tile cells, sprites and objects, including typed properties. | Semantic terrain brushes and stamp placement; use canonical `save_scene` or browser. Scene rename/duplicate/delete use browser. |
+| Scene editing | `edit_scene`: atomic object, tile painting/erasing and layer creation/update/reorder/deletion batches. `place_stamp`: saved composition placement with layer mapping, fresh IDs and dry-run candidates. `save_scene`: validated full canonical layers, tiles, sprites and objects. | Semantic terrain brushes; use canonical `save_scene` or browser. Scene rename/duplicate/delete use browser. |
 | Project editing | `save_object_definition`, `save_world`, `save_stamp` reuse native validators and transaction services. | Definition/stamp deletion, palette profile/metadata and animation preference editing use browser. No arbitrary import paths. |
 | Artwork | `import_atlas`: bounded uploaded manifest/PNG, preflight and compatible reimport with exact project/scene acknowledgments. | Arbitrary filesystem paths; artwork creation/approval. |
-| Review | `review_artwork`: saved PNG camera and bounded/paged overview. `review_blockout`: full overview and chosen camera frame SVG resources, exact saved/candidate revisions, pixel dimensions and camera intent. | Animated playback and runtime/physics simulation. |
+| Review | `review_artwork`: saved/candidate PNG camera and bounded/paged overview. `review_blockout`: full overview and chosen camera frame SVG resources, exact saved/candidate revisions, pixel dimensions and camera intent. | Animated playback and runtime/physics simulation. |
 | Verification | `diagnostics` checks the saved project; `palette_report` checks a guarded saved scene with the existing opt-in profile. | Missing metadata stays unverified; no reachability or hardware-fit certification. |
 | Portability | `export_bundle` returns existing project/scene Tiled ZIP exports as immutable resources. | Arbitrary output paths; exports over 16 MiB use browser. |
 
@@ -185,16 +185,76 @@ Out-of-bounds coordinates, unknown/wrong-grid tile references, non-tile target
 layers and malformed operations reject the complete batch. Hidden layers may be
 explicitly edited. Repeated coordinates are applied in order; the last valid write
 wins. Direct cell edits do not infer terrain connections or alter neighboring
-cells. Terrain brushes and stamp placement remain deferred.
+cells. Semantic terrain brushes remain deferred; use `place_stamp` for saved compositions.
 
 The summary reports net `tile_change_count`, up to 128 `tile_changes` with
 `layer_id`, cell `x`/`y` and before/after references, plus
 `tile_changes_truncated`. Added/deleted tile layers compare their cells against
 empty cells. `layer_changes` reports before/after name, type, visibility and index;
 `before_layer_order`/`after_layer_order` and `changed_layer_ids` also report moves.
-Review a dry-run candidate with `review_blockout` and optional `scene`, or save it
-with `save_scene` using the original revision guards. `review_artwork` renders
-saved scenes only.
+Review a dry-run candidate with `review_blockout` or `review_artwork` and optional
+`scene`, or save it with `save_scene` using the original revision guards.
+
+## Place reusable stamps
+
+Inspect `get_project` for a saved stamp's `id`, canonical `scene` and `slots`, and
+`get_scene` for the target scene and both revisions. Call `place_stamp` with:
+
+```json
+{
+  "project": "project",
+  "project_revision": "<saved project revision>",
+  "scene_id": "<target scene UUID>",
+  "scene_revision": "<saved scene revision>",
+  "stamp_id": "<saved stamp UUID>",
+  "x": 2,
+  "y": 3,
+  "dry_run": true
+}
+```
+
+`x` and `y` are zero-based whole **cell** indices for the stamp's top-left corner.
+Its grid must equal the target grid and its whole rectangular extent must fit;
+there is no clipping. Each source layer maps to the target layer with the same
+type and exact name at its zero-based occurrence slot, counting hidden layers
+in stored order. That target must exist and be visible. Create missing layers or
+show hidden targets with `edit_scene` first, then inspect fresh revisions.
+
+Placement overwrites every covered tile cell, including empty cells and native
+transform suffixes. It appends point, rectangle and sprite objects in source order,
+offsetting their pixel positions by `x*grid`/`y*grid`. Definitions, explicit typed
+properties, sprite assets and origins are retained. Objects receive fresh IDs
+from the target scene's allocation counter, independent of source IDs and every
+existing object's layer; IDs are never recycled. Unrelated scene content, layer
+identities/order and the saved stamp remain intact.
+
+`placement` reports the stamp identity/name, cell position/extent, total
+`tile_write_count`, `object_count` and `layer_mapping`. Each mapping identifies
+`source_layer_id`, `target_layer_id`, `slot`, and tile writes or source-to-allocated
+`object_ids`. `allocated_object_ids` and the normal net before/after `changes`
+summary accompany the canonical scene. Tile-write counts include empty and
+unchanged cells; net tile changes count only differences.
+
+Both revision guards apply to dry runs and commits. A dry run saves nothing and
+reserves no IDs or locks. Review its `scene` using `review_artwork` and/or
+`review_blockout` with the original guards; the review's `snapshot_revision`
+matches `changes.after_snapshot`. Save the reviewed candidate with `save_scene`,
+or repeat `place_stamp` without `dry_run` against the same saved base. Reinspect
+after each save before placing again. Conflicts require inspection, never a
+fabricated revision or automatic replay.
+
+The request remains bounded to 4 MiB; native stamp/scene limits apply: 128 layers,
+65,536 cells per layer, 8,192 pixels per axis and 4,096 objects per target layer.
+Unknown stamps/assets, wrong grids, missing/hidden targets, invalid geometry,
+exhausted IDs and stale revisions reject the entire operation. Review retains
+its existing camera, output, source-image and compositing limits. Browser drafts,
+selection, playback and Undo are independent; transform stamps in the browser
+before saving them when needed.
+
+[Stamp regression and SDK workflow](../tests/backend/adapters/test_mcp_stamps.py)
+covers repeated multi-slot placements, tile clearing/transforms, sprites, exact
+candidate PNG/SVG review, canonical saves, portable export, invalid inputs and
+concurrent writes. Run it through `make test-mcp` against an installed MCP wheel.
 
 ## Project library and world edits
 
@@ -236,7 +296,9 @@ Use `get_project` to inspect existing examples of these native schemas.
    objects use `{id,asset,x,y}` and optional `origin`; omit `kind` for sprites.
    Reopen with `get_scene` to inspect the serialized result.
 5. Call `review_artwork` with exact `project_revision`, `scene_revision` and
-   `scene_id`, plus optional visible typed `camera_id`. Read `camera_resource`
+   `scene_id`, plus optional visible typed `camera_id` and canonical candidate
+   `scene`. Candidates retain the original saved guards and are validated and
+   round-tripped before rendering; review never saves them. Read `camera_resource`
    and `overview_resource` as PNG blobs. Each output is native scale (one pixel
    per authored pixel), transparent, with ordered visible artwork layers,
    canonical grid slicing, tile transforms and static sprite origins. Planning

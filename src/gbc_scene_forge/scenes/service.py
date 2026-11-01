@@ -11,6 +11,7 @@ from gbc_scene_forge.core.validation import require
 from gbc_scene_forge.formats import tiled
 from gbc_scene_forge.planning import blockout, world
 from gbc_scene_forge.project.store import ProjectStore
+from gbc_scene_forge.scene_objects import compositions
 from gbc_scene_forge.scenes import authoring, rendering
 from gbc_scene_forge.scenes.dimensions import check_dimensions
 from gbc_scene_forge.storage.files import digest, read_optional
@@ -172,6 +173,30 @@ class SceneService:
         dry_run: bool = False,
     ) -> NativeDocument:
         """Prepare a canonical candidate and optionally save it through native guards."""
+
+        def prepare(saved, document):
+            candidate, allocated = (
+                authoring.edit(saved, document, operations)
+                if operations is not None
+                else (scene, [])
+            )
+            return candidate, allocated, {}
+
+        return self._edit(scene_id, project_revision, scene_revision, prepare, dry_run)
+
+    def place_stamp(
+        self, scene_id, project_revision, scene_revision, stamp_id, x, y, *, dry_run=False
+    ):
+        """Place a saved composition through the shared canonical scene-save contract."""
+        return self._edit(
+            scene_id,
+            project_revision,
+            scene_revision,
+            lambda saved, document: compositions.place(saved, document, stamp_id, x, y),
+            dry_run,
+        )
+
+    def _edit(self, scene_id, project_revision, scene_revision, prepare, dry_run):
         # Required mutation guards must be checked even for a dry run; None is
         # reserved for unguarded read sessions, not a wildcard expected revision.
         self.store.current(project_revision)
@@ -180,11 +205,7 @@ class SceneService:
             loaded = session.scene(scene_id)
         if loaded["revision"] != scene_revision:
             raise Conflict("Scene changed on disk. Inspect again before editing.")
-        candidate, allocated = (
-            authoring.edit(loaded["scene"], document, operations)
-            if operations is not None
-            else (scene, [])
-        )
+        candidate, allocated, details = prepare(loaded["scene"], document)
         tiled.check_scene(candidate, document)
         candidate = tiled.decode(tiled.encode(candidate, document), document)
         with self.store.read_session(project_revision, verify_assets=True) as session:
@@ -208,16 +229,24 @@ class SceneService:
                 if layer["id"] not in {v["id"] for v in tiled.scene_layers(loaded["scene"])}
             ],
             "changes": summary,
+            **details,
         }
 
-    def review_artwork(self, scene_id, revision, scene_revision, *, camera_id=None, overview=None):
-        """Render only exact saved artwork, under one verified read session."""
+    def review_artwork(
+        self, scene_id, revision, scene_revision, *, camera_id=None, overview=None, scene=None
+    ):
+        """Render a saved scene or canonical candidate under one verified read session."""
+        if scene is not None:
+            authoring.bounded(scene)
         self.store.current(revision)
         with self.store.read_session(revision, verify_assets=True) as session:
             loaded = session.scene(scene_id)
             if loaded["revision"] != scene_revision:
                 raise Conflict("Scene changed on disk. Reopen before reviewing artwork.")
-            scene, document = loaded["scene"], session.document
+            document = session.document
+            scene = loaded["scene"] if scene is None else scene
+            tiled.check_scene(scene, document)
+            scene = tiled.decode(tiled.encode(scene, document), document)
             camera = blockout.select_camera(scene, document, camera_id)
             camera_view = rendering.viewport({k: camera[k] for k in ("x", "y", "width", "height")})
             width, height = scene["width"] * scene["grid"], scene["height"] * scene["grid"]

@@ -113,6 +113,16 @@ class Adapter:
                 scene=a.get("scene"),
                 dry_run=a.get("dry_run", False),
             )
+        if name == "place_stamp":
+            return project.scenes.place_stamp(
+                a["scene_id"],
+                revision,
+                a["scene_revision"],
+                a["stamp_id"],
+                a["x"],
+                a["y"],
+                dry_run=a.get("dry_run", False),
+            )
         if name == "review_blockout":
             result = project.planning.review_blockout(
                 a["scene_id"], revision, a["scene_revision"], a.get("scene"), a.get("camera_id")
@@ -137,6 +147,7 @@ class Adapter:
                 a["scene_revision"],
                 camera_id=a.get("camera_id"),
                 overview=a.get("overview"),
+                scene=a.get("scene"),
             )
             for view in ("overview", "camera"):
                 result[f"{view}_resource"] = self.artifact(
