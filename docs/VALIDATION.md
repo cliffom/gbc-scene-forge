@@ -400,6 +400,37 @@ Dates, revisions and environments missing from the originals remain unknown.
   check was performed. The prepared version remains 0.22.0; no tagging or
   publication occurred.
 
+## MCP startup contention (#115)
+
+- **Scope:** Prepared 0.22.1 on `fix/mcp-startup-contention`, based on `ed2e44a`,
+  2026-11-01, local macOS 27.0.1 arm64, Python 3.13.13, Node 24.22.1,
+  Playwright 1.64.1 and MCP SDK 1.30.0. Fresh plain and optional-MCP wheels
+  were installed separately. The reported trigger occurred in prior 0.22.0 CI
+  at `ed2e44a`; its environment is bounded by the linked run.
+- **Method:** Reviewed the reported [failed startup attempt](https://github.com/cliffom/gbc-scene-forge/actions/runs/41315682506/attempts/1)
+  and [unchanged successful retry](https://github.com/cliffom/gbc-scene-forge/actions/runs/41315682506/attempts/2).
+  Ran deterministic held-lock tests, required docs/lint/Python/frontend checks,
+  production distribution builds and fresh installed-wheel smoke/SDK checks.
+  Installed-wheel Chromium acceptance included explicit startup contention with
+  a live browser, releasing only after its stderr diagnostic, and refresh/stale
+  saves. Inspected the recovery/download screenshot at 1440×1100.
+- **Result:** The historical failure occurred before tool submission; existing
+  post-initialization busy handling could not recover that startup. All 308 local
+  Python tests and frontend suites passed. All six focused startup tests and
+  44 installed-MCP checks passed, including immediate non-busy failure after
+  contention, bounded exhaustion, unchanged declared alias/pre-session journal,
+  exactly one saved transaction and explicit stale-revision rejection. Production
+  metadata and six smoke tests passed for each fresh wheel installation.
+  Installed-wheel browser acceptance passed 41 regular and both MCP/refresh
+  scenarios, including startup recovery, stale saves, independent drafts/Undo
+  and lost-acknowledgment recovery. Two opt-in profiling cases were skipped.
+- **Limits:** New results are local synthetic automation and screenshot inspection,
+  not archived CI evidence or human usability certification. Retry bounds cover
+  21 openings and two seconds of delays, plus opening time. Official Tiled and
+  rasterizer commands were absent from PATH; no interoperability rerun, physical
+  device evaluation or non-Chromium check is claimed. No tagging/publication
+  occurred; prior CI results apply only to their linked 0.22.0 revision.
+
 ## Remaining checks
 
 This is the single maintained validation checklist. Issue state was checked on
@@ -418,7 +449,7 @@ check, retaining actual revision, environment, attribution, failures and limits.
 
 ### Platform, interoperability and publication gaps
 
-- [ ] Run the optional official Tiled/rasterizer interoperability checks for prepared 0.22.0 when those applications are available (#109, #110).
+- [ ] Run the optional official Tiled/rasterizer interoperability checks for the current 0.22.1 baseline, including the 0.22.0 tile/layer changes, when those applications are available (#109, #110).
 
 - [ ] Record non-Chromium desktop-browser and Windows runtime results with exact versions and workflows; these are outside the automated browser matrix.
 - [ ] Configure the TestPyPI trusted publisher and verify an upload if that channel is needed; the historical 0.1.4 attempt failed with `invalid-publisher`. Local wheel checks and PyPI publication are separate evidence.

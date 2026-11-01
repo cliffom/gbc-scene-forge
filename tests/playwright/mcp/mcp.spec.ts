@@ -111,28 +111,61 @@ test('mcp: Real stdio-authored plan, browser edits, stale saves and independent 
   const beforeAgent = await saved();
   const beforeProject = await catalog();
   const patrol = objects(beforeAgent.scene).find((item) => item.name === 'Forest patrol');
-  // A separate MCP session saves while the browser has an unsaved camera edit.
-  const child = spawn(python, ['tests/support/mcp_call.py', root, 'edit_scene'], {
+  // Hold the real transaction lock before startup, then release on explicit contention.
+  const holder = spawn(python, ['tests/support/hold_project_lock.py', root], {
     stdio: ['pipe', 'pipe', 'pipe'],
   });
-  let logs = '';
-  child.stdout.on('data', (data: Buffer) => {
-    logs += data.toString();
+  const held = once(holder.stdout, 'data');
+  const holderExit = once(holder, 'exit');
+  let holderLogs = '';
+  holder.stderr.on('data', (data: Buffer) => {
+    holderLogs += data.toString();
   });
-  child.stderr.on('data', (data: Buffer) => {
-    logs += data.toString();
-  });
-  child.stdin.end(
-    JSON.stringify({
-      project: 'project',
-      project_revision: beforeProject.revision,
-      scene_id: id,
-      scene_revision: beforeAgent.revision,
-      operations: [{ op: 'update', object_id: patrol?.id, changes: { x: 128 } }],
-    }),
-  );
-  await once(child, 'exit');
-  assert.equal(child.exitCode, 0, logs);
+  try {
+    const readiness: unknown[] = await Promise.race([
+      held,
+      holderExit.then(() => {
+        throw Error(`Lock holder exited before acquiring the lock: ${holderLogs}`);
+      }),
+    ]);
+    const ready: unknown = readiness[0];
+    assert.equal(String(ready).trim(), 'locked');
+    // A separate MCP session saves while the browser has an unsaved camera edit.
+    const child = spawn(python, ['tests/support/mcp_call.py', root, 'edit_scene'], {
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    let logs = '';
+    let startupBusy = false;
+    child.stdout.on('data', (data: Buffer) => {
+      logs += data.toString();
+    });
+    child.stderr.on('data', (data: Buffer) => {
+      logs += data.toString();
+      if (!startupBusy && logs.includes('Project busy during MCP startup; retrying')) {
+        startupBusy = true;
+        holder.stdin.end('release\n');
+      }
+    });
+    child.stdin.end(
+      JSON.stringify({
+        project: 'project',
+        project_revision: beforeProject.revision,
+        scene_id: id,
+        scene_revision: beforeAgent.revision,
+        operations: [{ op: 'update', object_id: patrol?.id, changes: { x: 128 } }],
+      }),
+    );
+    await once(child, 'exit');
+    assert.equal(child.exitCode, 0, logs);
+    assert.equal(startupBusy, true, logs);
+    await holderExit;
+    assert.equal(holder.exitCode, 0);
+  } finally {
+    if (holder.exitCode === null) {
+      holder.kill('SIGKILL');
+    }
+    await holderExit;
+  }
   const agentSaved = await saved();
   assert.equal(objects(agentSaved.scene).find((item) => item.name === 'Forest patrol')?.x, 128);
   await click('save');

@@ -11,7 +11,7 @@ transactions as browser authoring. There is no connector or game compiler.
 Install the release with Python 3.10 or newer:
 
 ```sh
-python -m pip install --upgrade 'gbc-scene-forge[mcp]==0.22.0'
+python -m pip install --upgrade 'gbc-scene-forge[mcp]==0.22.1'
 gbc-scene-forge-mcp --project-root /absolute/path/to/projects
 ```
 
@@ -290,6 +290,26 @@ Tool failures have `isError:true`. Native errors also include
 `structuredContent.error` with `code:conflict` or `invalid_request` and a message.
 SDK schema failures are text errors with `isError:true`. Unknown tools/capabilities
 fail explicitly. Reinspect after a conflict; never retry with fabricated revisions.
+
+### Startup contention and retry boundaries
+
+With `--project`, the server opens and recovers the declared project before starting
+the MCP session. Explicit transaction-lock contention retries that opening at most
+21 times, with 100 ms between attempts (two seconds of retry delays, plus opening
+time). The first busy attempt writes a diagnostic to stderr; stdout remains MCP
+protocol data. Releasing the lock within this bound permits normal initialization
+with the same `project` alias. Exhaustion exits with a clear startup error: stop
+the competing operation and reconnect. No tool has been submitted at that point.
+Other opening errors, including missing/invalid projects and path validation
+failures, fail immediately. `--project-root` opening does not use this retry loop.
+Native transaction locks remain nonblocking, including after initialization.
+
+The server does not retry tool calls or initialization/transport failures. Test
+fixtures retry only the exact structured busy response described in
+[test organization](../tests/README.md), retaining every original argument and
+revision. Conflicts and other errors remain errors. After a transport failure or
+lost write acknowledgment, inspect saved state before deciding what to submit;
+never automatically replay an ambiguous mutation or rebase its revision fences.
 
 Previews/exports return MCP resource links. `resources/read` retrieves UTF-8 SVG
 text or base64 PNG/ZIP blobs. URIs are content-addressed `forge-artifact://snapshot/…`,

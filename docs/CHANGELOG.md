@@ -6,6 +6,10 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.22.1 — Bounded single-project MCP startup recovery
+
+[Release notes](RELEASE-0.22.1.md).
+
 ## 0.22.0 — MCP tile and layer authoring
 
 [Release notes](RELEASE-0.22.0.md).

@@ -56,6 +56,12 @@ project-busy handling from `support/project_busy.py`: at most 20 attempts with
 validation errors, revision conflicts and transport failures still fail. Revision
 arguments are preserved, and fixture setup is never replayed as an entire batch.
 This is test infrastructure; runtime locking and API behavior remain unchanged.
+Single-project server startup separately retries explicit lock contention before
+the session opens; see [MCP retry boundaries](../docs/MCP.md#startup-contention-and-retry-boundaries).
+`backend/adapters/test_mcp_startup.py` covers held-lock release, exhaustion,
+non-busy failures and real SDK initialization. `support/hold_project_lock.py`
+synchronizes SDK/browser tests on the real lock and an explicit stdin release;
+the browser case waits for the server's startup-busy diagnostic before releasing.
 
 The organization baseline for #88 is commit `62cced6` (the Playwright move in
 PR #87). Before/after discovery preserves all 248 Python test IDs after removing
