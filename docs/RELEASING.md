@@ -71,7 +71,7 @@ Use `FORGE_BUILD_MODE=production make build` for release artifacts; their label
 shows only `VERSION` and its JavaScript is minified. Development bundles remain
 readable. Both modes retain source maps and the bundled third-party license notice.
 PyPI wheels and source archives contain the production bundle: `uvx --from
-'gbc-scene-forge==0.22.0' gbc-scene-forge --project-root /path/to/projects` serves
+'gbc-scene-forge==0.22.1' gbc-scene-forge --project-root /path/to/projects` serves
 those prebuilt minified assets without invoking Node or esbuild. Previously
 published versions (including 0.15.0) retain their original assets.
 Package CI and the publication workflow set production mode for their build
@@ -105,7 +105,7 @@ publishing page. Use the official [trusted publisher setup guide](https://docs.p
 The workflow follows the [Python Packaging User Guide](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/)
 and uses short-lived OIDC credentials; no PyPI API token is stored in the repository.
 
-After reviewing and committing a release, create and push an annotated `v0.22.0`
+After reviewing and committing a release, create and push an annotated `v0.22.1`
 tag (or the matching next version). Run **Publish package** manually against that
 tag, selecting `testpypi` first when its trusted publisher is configured. TestPyPI
 is currently unconfigured; its 0.1.4 upload failed with `invalid-publisher`. Until

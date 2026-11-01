@@ -3,11 +3,36 @@
 import argparse
 import asyncio
 import json
+import sys
+import time
 from pathlib import Path
 
 from gbc_scene_forge import __version__
 from gbc_scene_forge.adapters.mcp.tools import TOOLS, Adapter
-from gbc_scene_forge.core.errors import Conflict
+from gbc_scene_forge.core.errors import Conflict, TransactionBusy
+
+STARTUP_ATTEMPTS = 21
+STARTUP_DELAY = 0.1
+STARTUP_BUSY_MESSAGE = "Project busy during MCP startup; retrying for up to 2 seconds."
+
+
+def open_adapter(path, *, single_project=False):
+    """Bound only pre-session project opening; never retry a submitted tool."""
+    for attempt in range(STARTUP_ATTEMPTS):
+        try:
+            return Adapter(path, single_project=single_project)
+        except TransactionBusy as error:
+            if not single_project:
+                raise
+            if attempt == STARTUP_ATTEMPTS - 1:
+                raise TransactionBusy(
+                    "MCP startup failed: project remained busy after 21 attempts "
+                    "over 2 seconds of retry delays. Close the competing operation "
+                    "and reconnect; no tool was submitted."
+                ) from error
+            if attempt == 0:
+                print(STARTUP_BUSY_MESSAGE, file=sys.stderr, flush=True)
+            time.sleep(STARTUP_DELAY)
 
 
 def create_server(adapter):
@@ -97,7 +122,7 @@ def main():
     except ImportError:
         parser.error("Install MCP support with: pip install 'gbc-scene-forge[mcp]'")
     try:
-        adapter = Adapter(
+        adapter = open_adapter(
             args.project or args.project_root, single_project=args.project is not None
         )
         asyncio.run(run(adapter))
