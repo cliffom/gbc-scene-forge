@@ -95,8 +95,9 @@ Measured with Node 24.22.1, esbuild 0.28.2, ESM/browser/ES2022, a fixed producti
 build label of `0.16.0`, source maps enabled, and gzip level 9. Each comparison
 uses the same current editor entry and build options, substituting the corresponding world and
 project-contract modules for each baseline. Source maps are emitted but excluded from the JS
-byte counts. The normal build is not minified; minification is an additional
-comparison, not a change to the shipped build configuration.
+byte counts. At the time of this evaluation the normal build was not minified; minification
+was an additional comparison. Since 0.16.2, production builds are minified; see
+[build identity](../RELEASING.md#ui-build-identity).
 
 | Editor JavaScript | Before Valibot | Initial world pilot | World + catalog + scenes |
 | --- | ---: | ---: | ---: |

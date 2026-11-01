@@ -115,196 +115,40 @@ with `tests/packaging/package_smoke.py` after publication. The workflow rebuilds
 checks the distributions, checks the tag against the package version, then uploads
 only those verified artifacts. Pushing a tag alone does not publish.
 
-## Release 0.20.0
+## Release verification
 
-Version 0.20.0 adds wide and tall scenes within 65,536 cells and 8,192 pixels
-per axis. See [release notes](RELEASE-0.20.0.md) and [scene dimensions](user/scene-dimensions.md).
-Project, Tiled and draft formats and required runtime dependencies are unchanged.
-Validate with `make lint test`, production `make build check-dist test-browser`,
-and installed-wheel first-use acceptance. Publication remains separate.
-
-## Release 0.19.1
-
-Version 0.19.1 fixes automatic project and scene discovery in the browser,
-including inventory updates while the editor has unsaved work. Changed manifests
-and registered maps are validated; unchanged inventory checks use metadata caches.
-See [release notes](RELEASE-0.19.1.md) and [external refresh](user/external-refresh.md).
-Project, Tiled and draft formats and required runtime dependencies are unchanged.
-Validate with `make lint test`, production `make build check-dist test-browser`,
-optional MCP refresh acceptance and installed-wheel first use. Publication is separate.
-
-## Release 0.19.0
-
-Version 0.19.0 adds direct scene URLs and guarded browser history navigation.
-See [release notes](RELEASE-0.19.0.md) and [scene links](user/scene-links.md).
-Project, Tiled and draft formats and required runtime dependencies are unchanged.
-Validate with `make lint test`, production `make build check-dist test-browser`,
-and installed-wheel first-use acceptance. Publication remains a separate step.
-
-## Release 0.18.0
-
-Version 0.18.0 adds bounded MCP atlas upload/preflight/reimport and exact saved
-artwork PNG camera/overview review. See [release notes](RELEASE-0.18.0.md) and
-[MCP reference](MCP.md). Existing project, draft and portable formats remain
-unchanged; no required runtime dependency is added. Validate with `make lint test`,
-production `make build check-dist test-browser`, `make test-mcp test-mcp-browser`,
-and installed-wheel first-use acceptance. Publication remains a separate step.
-
-## Release 0.17.2
-
-Version 0.17.2 avoids redundant scene canvas resets and display dimension writes.
-Repainting remains synchronous and preserves immediate authored feedback and
-existing frame/disposal ownership. See [release notes](RELEASE-0.17.2.md) and the
-[rendering measurements](evaluations/canvas-repainting.md). Project, Tiled and
-draft formats and runtime dependencies are unchanged. Validate with `make lint test`,
-production `make build check-dist test-browser`, and installed-wheel first use.
-
-## Release 0.17.1
-
-Version 0.17.1 organizes Playwright, Python and non-browser TypeScript tests
-by domain under `tests/playwright/`, `tests/backend/` and `tests/frontend/`.
-Shared scripts and installed-wheel checks live in `tests/support/` and
-`tests/packaging/`; see [test organization](../tests/README.md).
-See [release notes](RELEASE-0.17.1.md) and [browser testing](BROWSER-TESTING.md).
-This explicitly requested patch release preserves application behavior, portable
-formats and runtime dependencies. Validate with `make lint test`, production
-`make build check-dist test-browser`, installed-wheel first-use acceptance and
-optional MCP protocol/browser checks before publication.
-
-## Release 0.17.0
-
-Version 0.17.0 adds a canvas-focused review mode with pan navigation and minimal
-viewing controls. See [release notes](RELEASE-0.17.0.md) and the
-[review mode guide](user/review-mode.md). Existing project and draft formats are
-unchanged; no runtime dependency is added. Validate with `make lint test`,
-`FORGE_BUILD_MODE=production make build check-dist test-browser`, and installed-wheel
-first-use acceptance before publication.
-
-## Release 0.16.3
-
-Version 0.16.3 fixes clipped project chooser hover and keyboard focus outlines.
-The accompanying browser test migration completes Playwright adoption and removes
-the custom CDP harness. See [release notes](RELEASE-0.16.3.md) and
-[browser testing](BROWSER-TESTING.md). Run `make lint test`,
-`FORGE_BUILD_MODE=production make build check-dist test-browser`, installed-wheel
-first-use and optional installed MCP/protocol/refresh acceptance before release.
-
-## Release 0.16.2
-
-Version 0.16.2 minifies production JavaScript while preserving development
-readability, source maps, license notices and build identity. See
-[release notes](RELEASE-0.16.2.md). Validate with `make lint test`,
-`FORGE_BUILD_MODE=production make build check-dist test-browser`, and installed-wheel
-first-use acceptance. Existing projects and Python runtime dependencies are unchanged.
-
-## Release 0.16.1
-
-Version 0.16.1 publishes the HTTP routing cleanup and schema-derived frontend
-response contracts. See [release notes](RELEASE-0.16.1.md) and the
-[Valibot adoption evaluation](evaluations/valibot-pilot.md). Existing projects,
-portable formats and user workflows are unchanged. Valibot is bundled browser
-code; its MIT notice is included in the distributions. No Node or additional
-Python dependency is required by the installed editor. Run `make lint test build
-check-dist`, the full browser suite, optional MCP checks, and fresh plain/MCP
-installed-package verification before announcing publication.
-
-## Release 0.16.0
-
-Version 0.16.0 adds optional versioned GBC static tile/OAM estimates alongside
-existing palette budgets. See [release notes](RELEASE-0.16.0.md) and the
-[target-budget guide](user/gbc-budgets.md). Run `make lint test build check-dist`,
-the full browser suite and optional MCP checks. Existing palette-only profiles
-remain version 1; enabling hardware estimates writes profile version 2, which
-requires Forge 0.16.0 or later. The project manifest stays version 1 and portable
-Tiled maps do not acquire target-specific fields. No runtime dependency is added.
-
-## Release 0.15.0
-
-Version 0.15.0 adds four-neighbor terrain brushes and shared tile transition rules.
-See [release notes](RELEASE-0.15.0.md) and the [terrain tutorial](user/terrain-brushes.md).
-Run `make lint test build check-dist`, `make test-browser` (including terrain
-configuration and painting), and the optional MCP checks before publication.
-Existing projects need no migration. Transition masks are optional manifest-v1
-metadata and portable Tiled custom properties. There is no required runtime dependency.
-
-## Release 0.14.0
-
-Version 0.14.0 adds generic PNG tilesheet and bounded external Tiled JSON intake.
-See [release notes](RELEASE-0.14.0.md) and the [import tutorial](user/import-artwork.md).
-Run `make lint test build check-dist`, the full browser suite (including generic
-imports), and the optional MCP checks before publication. The feature retains
-manifest version 1 and introduces no required Python runtime dependency.
-
-## Release 0.13.1
-
-Version 0.13.1 adds saved-file browser refresh for MCP and other external writers.
-See [release notes](RELEASE-0.13.1.md) and the [user guide](user/external-refresh.md).
-Run `make test-mcp test-mcp-browser` with the optional SDK environment as well as
-`make lint test build check-dist` and the full browser suite. The MCP browser target
-includes real-writer refresh and dirty-edit protection checks. No schema migration
-or required runtime dependency is introduced.
-
-## Release 0.13.0
-
-Version 0.13.0 improves blockout annotation readability in the browser and SVG
-reviews. See [release notes](RELEASE-0.13.0.md) for the label hierarchy, screenshots,
-and review behavior. Existing projects and MCP schemas are unchanged.
-
-## Release 0.12.0
-
-Version 0.12.0 adds the optional local MCP server, revision-guarded native authoring,
-blockout previews, diagnostics and portable exports. See [release notes](RELEASE-0.12.0.md)
-and [MCP setup and reference](MCP.md). Existing projects retain manifest version 1;
-the plain browser installation retains no required runtime dependencies.
-
-Run `make test-mcp test-mcp-browser` with `FORGE_MCP_PYTHON` pointing at an environment
-with the optional extra installed. This exercises the real SDK client and browser
-workflow, including concurrent saved edits and recoverable browser drafts. Run the
-full browser suite before publication, and verify both a plain fresh install and
-an install with `[mcp]` after publishing. The first-use browser workflow can use
-the installed wheel: `FORGE_TEST_PYTHON="$PWD/build/package-smoke/bin/python" make test-first-use-browser`.
+Release behavior and compatibility notes belong in the [changelog](CHANGELOG.md)
+and its versioned release notes. Use the [validation record](VALIDATION.md) for
+observed results and outstanding checks, and the [roadmap](ROADMAP.md) for current
+priorities. Follow the [documentation policy](DOCUMENTATION.md) when updating them.
 
 Before tagging, run:
 
 ```sh
-make lint test build check-dist
-make test-browser
+make docs-check lint test
+FORGE_BUILD_MODE=production make build check-dist test-browser
+FORGE_BUILD_MODE=production FORGE_TEST_PYTHON="$PWD/build/package-smoke/bin/python" make test-first-use-browser
+FORGE_MCP_PYTHON=/path/to/installed-mcp-venv/bin/python make test-mcp test-mcp-browser
 make test-tiled TILED=/path/to/Tiled RASTERIZER=/path/to/tmxrasterizer
 ```
 
-`make check-dist` installs the current version's wheel explicitly. Keep only the
-intended version's artifacts in `dist/` before any manual publication. Review the release
-notes, commit the release changes, and use the publication workflow above.
-Keep the README installation example and release notes aligned with the tagged version.
-Verify a fresh install and the standalone launcher before announcing the release.
-Editable sibling checkouts remain an option for development.
+Record unavailable optional tools as limitations. Keep only the intended version's
+artifacts in `dist/` before manual publication. Review compatibility notes, keep
+the README installation example aligned with the tagged version, and verify fresh
+plain and optional-MCP installs before announcing publication. Tagging and upload
+remain separate from local validation.
 
 ## Internal refactors
 
-Domain packages and installed entry point targets are included automatically by
-the existing wheel/source build. After moving Python modules, update adapters,
-fixtures, examples and maintained documentation together. Verify the plain installed
-launcher and its bundled sample/assets, and install the optional SDK into a fresh
-wheel environment for MCP tests. Supported imports must not load `legacy` or the
-optional SDK during ordinary editor startup.
+Behavior-preserving internal cleanup and documentation-only changes do not require
+a dedicated version bump. Keep package/runtime versions synchronized; choose an
+unpublished version for the eventual release. Do not rebuild over a published version.
 
-Behavior-preserving internal cleanup does not require a dedicated version bump.
-Keep the package/runtime versions synchronized; the eventual release must choose
-an unpublished version before tagging. Do not publish a rebuilt package over an
-existing version. The domain reorganization in #58 retains version 0.13.1 pending
-a separately requested release; native schemas and user-facing entry points are
-unchanged.
-
-The frontend cleanup in #60 also retains 0.13.1 without a dedicated release.
-See [frontend architecture](FRONTEND-ARCHITECTURE.md) for entry points and ownership.
-The folder organization and historical frontend removal in #62 likewise retain
-0.13.1: supported entry points, data formats and UI behavior are unchanged.
-After moving frontend modules, rebuild the supported bundle and verify its source
-map and the absence of historical `app.js`, its map/metadata and `index.html` from
-the distributions. Run the full browser suite, including editor
-disposal/remount acceptance, and installed-wheel first-use acceptance.
-
-The Playwright acceptance pilot in #73 retains 0.16.2 without a dedicated release.
-See [browser testing](BROWSER-TESTING.md) for browser installation, failure artifacts,
-readiness contracts and installed-wheel first-use validation. Playwright is a
-development dependency and is not required by Python distributions.
+After moving modules, update adapters, fixtures, examples and maintained docs.
+Verify distributions, the installed launcher/sample, optional MCP and browser
+lifecycle/refresh behavior as applicable. Supported imports must not load `legacy`
+or the optional SDK during ordinary startup. Frontend moves must preserve source
+maps and keep historical `app.js`, its map/metadata and `index.html` out of the
+supported distributions. See [backend architecture](ARCHITECTURE.md),
+[frontend architecture](FRONTEND-ARCHITECTURE.md) and
+[browser testing](BROWSER-TESTING.md) for ownership and procedures.

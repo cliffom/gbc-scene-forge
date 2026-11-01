@@ -41,7 +41,7 @@ conformance.
 `make test-layout-browser` checks canvas/footer bounds at 1440×900, 1280×800,
 1024×768, 760×640 and 1440×600; arrow clearance; long stamp names; keyboard tabs;
 command dismissal, positioning and modal focus; and visible palette warnings.
-Screenshots are written to `build/reports/scene-editor/`. The broader browser
+Screenshots are written to `build/reports/playwright/`. The broader browser
 suite verifies that editing, stamps, recovery, definitions, world links and
 first-use instructions remain usable with this hierarchy.
 

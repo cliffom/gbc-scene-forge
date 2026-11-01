@@ -297,4 +297,4 @@ and checks simultaneous MCP saves against an unsaved browser draft, conflict
 protection and draft download. Existing blockout acceptance covers native artwork
 placement and export; service tests check that importing later artwork preserves
 the MCP-edited plan. CI also tests the optional protocol against installed wheels
-on Python 3.10–3.14 after verifying the plain offline installation.
+on Python 3.13/3.14 after verifying the plain offline installation.

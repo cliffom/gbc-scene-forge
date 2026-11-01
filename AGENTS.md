@@ -40,3 +40,18 @@ Existing commits use short, imperative subjects such as “Preserve original sce
 ## Architecture & Safety Boundaries
 
 Forge is a standalone scene authoring tool built around imported artwork and portable Tiled projects. Forge owns generic rendering, atlas import, project storage, and Tiled serialization. Connector v1 and game-specific Apply/build integrations are no longer a supported direction; new work does not need to preserve their APIs, document formats, or behavior. Do not add connector compatibility adapters or design constraints for them. Existing connector code may be refactored or removed when it obstructs the standalone model. Preserve loopback binding, mutation-token checks, declared workspace paths, and conflict-aware recovery. Never introduce game-specific branches into the editor.
+
+## Documentation records and enforcement
+
+Follow the [documentation policy](docs/DOCUMENTATION.md) and use the
+[documentation index](docs/README.md). Release notes and the changelog own release
+changes; validation owns scoped evidence and one Remaining checks list; the
+roadmap owns current priorities. Evidence entries require nonempty Scope, Method,
+Result and Limits fields in order. Preserve attribution, revision/environment
+boundaries, material failures, compatibility limits and evidence links when
+condensing; link original committed records. Keep conversational progress and
+repeated release history out of these records. Report documentation-only checks
+in the change/PR without a product-validation entry or version bump.
+
+Run `make docs-check` for every change; CI enforces its structural and local-link
+checks. Accuracy, evidence quality and concision remain review responsibilities.

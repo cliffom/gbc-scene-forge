@@ -17,7 +17,7 @@ FRONTEND_TESTS := $(basename $(notdir $(FRONTEND_TEST_FILES)))
 FRONTEND_TEST_TARGETS := $(addprefix test-frontend-,$(FRONTEND_TESTS))
 .DEFAULT_GOAL := help
 
-.PHONY: typecheck-python help setup check-deps deps frontend run demo check test test-python test-frontend test-browser test-blockout-browser test-layout-browser test-first-use-browser test-standalone-browser test-drafts-browser test-compositions-browser test-definitions-browser test-world-browser test-diagnostics-browser test-tiled lint typecheck format build check-dist clean clean-demo $(FRONTEND_TEST_TARGETS)
+.PHONY: docs-check typecheck-python help setup check-deps deps frontend run demo check test test-python test-frontend test-browser test-blockout-browser test-layout-browser test-first-use-browser test-standalone-browser test-drafts-browser test-compositions-browser test-definitions-browser test-world-browser test-diagnostics-browser test-tiled lint typecheck format build check-dist clean clean-demo $(FRONTEND_TEST_TARGETS)
 help:
 	@echo 'Getting started:'
 	@echo '  make setup PYTHON=python3.13  Install locked dependencies and build the UI'
@@ -50,6 +50,7 @@ help:
 	@echo '  make test-diagnostics-browser Run project diagnostics Chrome acceptance'
 	@echo '  make test-compositions-browser Run clipboard and stamp Chrome acceptance'
 	@echo '  make test-tiled              Check Tiled interoperability (TILED=/path RASTERIZER=/path)'
+	@echo '  make docs-check              Check documentation links and record structure'
 	@echo '  make lint / make format      Check or apply source formatting and lint rules'
 	@echo '  make typecheck               Run strict TypeScript checking'
 	@echo '  make typecheck-python        Check typed Python storage/service boundaries'
@@ -130,7 +131,11 @@ test-tiled:
 typecheck-python:
 	$(POETRY) run mypy
 
-lint:
+docs-check:
+	$(PYTHON) -m unittest discover -s tests -p 'test_check_docs.py'
+	$(PYTHON) tests/support/check_docs.py
+
+lint: docs-check
 	$(MAKE) typecheck-python
 	$(POETRY) run ruff check .
 	$(POETRY) run ruff format --check .

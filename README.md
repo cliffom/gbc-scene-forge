@@ -227,6 +227,9 @@ covered by this project's MIT license.
 
 ## Development
 
+See the [documentation index](docs/README.md) and
+[documentation policy](docs/DOCUMENTATION.md). Run `make docs-check` for every change.
+
 Install **Python 3.13**, **Poetry 2.4–2.x**, **Node 24 (24.12+)**, **npm**, and **Make**
 on your `PATH`. See the [Poetry installation guide](https://python-poetry.org/docs/#installation)
 if needed. Run commands from the repository root.

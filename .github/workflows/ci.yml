@@ -22,7 +22,7 @@ jobs:
           node-version-file: '.nvmrc'
           cache: npm
       - run: make setup
-      - run: make lint test-frontend build check-dist
+      - run: make docs-check lint test-frontend build check-dist
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
       - name: Browser acceptance checks
