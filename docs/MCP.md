@@ -150,7 +150,9 @@ run sequentially against a private candidate and save once. A batch contains
 the same coordinate), and at most 4 MiB of input. `dry_run:true` returns a canonical
 candidate without writing. Both project and scene revisions are required, including
 for dry runs. The same operations work on the original flat Ground/Sprites scenes;
-responses retain the normal canonical flat or layered representation.
+responses retain the normal canonical flat or layered representation. An explicitly
+created empty `Sprites` object layer stays layered so its ID and allocation
+counter survive saves and reopening.
 
 | Operation | Fields and behavior |
 | --- | --- |

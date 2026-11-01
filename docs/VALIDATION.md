@@ -374,6 +374,32 @@ Dates, revisions and environments missing from the originals remain unknown.
   terrain brushes, stamp placement, browser drafts and Undo are outside these
   MCP operations. Tagging and package publication were not performed.
 
+## Empty Sprites layer identity (PR #114 review)
+
+- **Scope:** Prepared 0.22.0 review fix based on `cfb1bbb`, 2026-11-01,
+  Darwin 27.0.0 arm64, Python 3.13.13, Node 24.22.1, MCP SDK 1.30.0 and
+  Playwright Chromium 156.0.8078.4. The user-provided review identified an empty
+  visible `Sprites` group disappearing from a Ground-only scene.
+- **Method:** Added a failing regression before changing the shared Tiled
+  decoder. Checked dry-run/save responses, reopened scene content, targeting ID 2
+  and allocating the following layer as ID 3. Ran `make docs-check lint test`,
+  source and fresh-wheel `make test-mcp`, production `make build check-dist`,
+  full regular browser acceptance and the corrected artwork/sprite scenario.
+- **Result:** The regression reproduced the disappearing layer before the fix;
+  all 11 tile/layer regressions then passed. Full Python discovery passed 302
+  tests and frontend suites passed; source and fresh-wheel MCP discovery passed
+  38 checks, including the new real stdio SDK reproduction. Distribution
+  metadata and all six fresh plain-wheel smoke tests passed. The initial
+  regular browser run passed 40 cases, skipped two opt-in profiles and failed
+  the artwork/sprite case because its assertion expected flat tile cells after
+  saving an empty Sprites layer. Updating that assertion to verify
+  both the tile cells and the retained empty group made the complete affected
+  scenario pass on its scoped rerun; other scenarios were not repeated.
+- **Limits:** Local automated evidence only; the earlier PR CI result applies
+  to `cfb1bbb`, not this fix. No human usability or official Tiled/rasterizer
+  check was performed. The prepared version remains 0.22.0; no tagging or
+  publication occurred.
+
 ## Remaining checks
 
 This is the single maintained validation checklist. Issue state was checked on

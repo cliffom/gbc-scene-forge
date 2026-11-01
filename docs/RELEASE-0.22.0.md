@@ -4,7 +4,9 @@ Agents can paint and erase tile cells and create, rename, reorder, hide or delet
 layers through `edit_scene`, without replacing a full scene document. Tile,
 layer and existing object operations can share one atomic revision-guarded batch.
 Dry runs return canonical candidates with tile and layer before/after summaries.
-Original flat scenes are supported as well as named-layer scenes.
+Original flat scenes are supported as well as named-layer scenes. Explicit empty
+`Sprites` object layers retain their identity and next-layer allocation counter
+through dry runs, saving and reopening.
 
 This compatible feature release addresses [#109](https://github.com/cliffom/gbc-scene-forge/issues/109)
 and [#110](https://github.com/cliffom/gbc-scene-forge/issues/110). The existing 18-tool

@@ -245,6 +245,43 @@ class TileLayerTests(unittest.TestCase):
         self.assertEqual(result["changes"]["tile_change_count"], 0)
         self.assertEqual(result["changes"]["changed_layer_ids"], [])
 
+    def test_empty_default_sprites_layer_survives_canonicalization_and_reopen(self):
+        self.loaded = self.adapter.call(
+            "create_scene",
+            dict(
+                project="tiles",
+                project_revision=self.args()["project_revision"],
+                name="Ground only",
+                width=4,
+                height=4,
+                grid=8,
+            ),
+        )
+        original = self.project.scenes.load(self.loaded["id"])
+        self.assertNotIn("layers", original["scene"])
+        operations = [dict(op="create_layer", type="objectgroup", name="Sprites", visible=True)]
+        preview = self.edit(operations, dry_run=True)
+        expected = dict(id=2, type="objectgroup", name="Sprites", visible=True, objects=[])
+        self.assertEqual(tiled.scene_layers(preview["scene"])[-1], expected)
+        self.assertEqual(preview["allocated_layer_ids"], [2])
+        self.assertEqual(preview["scene"]["next_layer_id"], 3)
+        self.assertEqual(self.project.scenes.load(self.loaded["id"]), original)
+        saved = self.edit(operations)
+        self.assertEqual(saved["scene"], preview["scene"])
+        self.assertEqual(saved["allocated_layer_ids"], [2])
+        reopened = Project(self.project.root).scenes.load(saved["id"])
+        self.assertEqual(reopened["scene"], saved["scene"])
+        followup = self.edit(
+            [
+                dict(op="update_layer", layer_id=2, changes=dict(visible=False)),
+                dict(op="update_layer", layer_id=2, changes=dict(visible=True)),
+                dict(op="create_layer", type="objectgroup", name="Props"),
+            ]
+        )
+        self.assertEqual(followup["allocated_layer_ids"], [3])
+        self.assertEqual(followup["scene"]["layers"][1], expected)
+        self.assertEqual(followup["scene"]["next_layer_id"], 4)
+
     def test_project_and_scene_conflicts_cover_dry_runs(self):
         old = self.args()
         operation = dict(op="update_layer", layer_id=self.tile_id, changes=dict(name="Changed"))

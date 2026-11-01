@@ -472,10 +472,9 @@ def decode(document, project):
         "next_object_id": scene["next_object_id"],
     }
     expected = scene_layers(legacy)
-    if len(decoded) == 2 and not legacy["objects"]:
-        expected.append(
-            {"id": 2, "name": "Sprites", "type": "objectgroup", "visible": True, "objects": []}
-        )
+    # An empty explicit Sprites layer cannot be represented by the flat API:
+    # scene_layers(legacy) omits it, and re-encoding would discard its identity
+    # and reset nextlayerid. Collapse only when the flat model is lossless.
     if expected == decoded and scene["next_layer_id"] == len(decoded) + 1:
         return legacy
     return scene

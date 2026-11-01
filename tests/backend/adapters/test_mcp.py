@@ -543,3 +543,53 @@ class ProtocolTests(unittest.TestCase):
                 )
                 self.assertTrue(result.isError)
                 self.assertEqual(result.structuredContent["error"]["code"], "conflict")
+                # The default empty Sprites layer must retain its identity on the wire and disk.
+                flat = await call(
+                    "create_scene",
+                    dict(
+                        project="protocol",
+                        project_revision=args["project_revision"],
+                        name="Ground only",
+                        width=4,
+                        height=4,
+                        grid=8,
+                    ),
+                )
+                flat_args = dict(
+                    project="protocol",
+                    project_revision=flat["project_revision"],
+                    scene_id=flat["id"],
+                    scene_revision=flat["revision"],
+                )
+                created = await call(
+                    "edit_scene",
+                    {
+                        **flat_args,
+                        "operations": [
+                            dict(
+                                op="create_layer", type="objectgroup", name="Sprites", visible=True
+                            ),
+                        ],
+                    },
+                )
+                self.assertEqual(created["allocated_layer_ids"], [2])
+                self.assertEqual(created["scene"]["layers"][1]["objects"], [])
+                self.assertEqual(created["scene"]["next_layer_id"], 3)
+                reopened = await call("get_scene", dict(project="protocol", scene_id=flat["id"]))
+                self.assertEqual(reopened["scene"], created["scene"])
+                flat_args.update(
+                    scene_revision=reopened["revision"],
+                    project_revision=reopened["project_revision"],
+                )
+                followup = await call(
+                    "edit_scene",
+                    {
+                        **flat_args,
+                        "operations": [
+                            dict(op="update_layer", layer_id=2, changes=dict(visible=False)),
+                            dict(op="create_layer", type="objectgroup", name="Props"),
+                        ],
+                    },
+                )
+                self.assertEqual(followup["allocated_layer_ids"], [3])
+                self.assertEqual(followup["scene"]["next_layer_id"], 4)

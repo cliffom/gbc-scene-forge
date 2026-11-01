@@ -557,10 +557,18 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   await click('redo');
   await click('save');
   await wait("document.getElementById('status')?.textContent === 'Scene saved.'");
+  const paintedLayers = array(record((await scene(first)).scene).layers, record);
   assert.equal(
-    array(record((await scene(first)).scene).cells, (row) => array(row, string))[1][1],
+    array(paintedLayers[0].cells, (row) => array(row, string))[1][1],
     'terrain/earth/0/0',
   );
+  assert.deepEqual(paintedLayers[1], {
+    id: 2,
+    name: 'Sprites',
+    type: 'objectgroup',
+    visible: true,
+    objects: [],
+  });
   // Fill, selection erase and undo exercise the shared editing model through browser events.
   await page.locator('input[value=fill]').first().click();
   await (async () => {
