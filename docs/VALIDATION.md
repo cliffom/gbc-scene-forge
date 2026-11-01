@@ -251,10 +251,11 @@ Dates, revisions and environments missing from the originals remain unknown.
 
 ## Scene scalability (#78, #92, #93)
 
-- **Scope:** Local working-tree implementation based on `40d3374`, prepared 0.21.1,
+- **Scope:** Local working-tree implementation based on `40d3374`, prepared 0.21.2,
   measured 2026-11-01 UTC on Apple M4 Max/macOS 27.0.1 arm64, Node 24.22.1,
   Python 3.13.13 and Playwright 1.64.1 bundled headless Chromium. Consumer provenance
   and exact workload boundaries are in the [evaluation](evaluations/scene-scalability.md).
+  Profiling preceded the version bump from 0.21.1; release package acceptance uses 0.21.2.
 - **Method:** Original/culled-direct/cached repaint matrix at fit/1×/4× and three
   pan positions for small/large dense/sparse mixed layers and a disposable actual
   archived Forest v4 copy. Separate 100-operation history processes measured heap,
@@ -274,6 +275,12 @@ Dates, revisions and environments missing from the originals remain unknown.
   mutation/reimport/deletion/eviction and disposal. Installed-wheel first use passed;
   a fresh optional-MCP wheel passed 18 protocol tests and both MCP/refresh scenarios,
   including animation, dirty/form protection, external adoption and disposal.
+  After the 0.21.2 version bump, lint/unit, production packaging, six plain-wheel
+  checks, rendering/first-use/review, installed-wheel first use, six fresh optional-MCP
+  wheel checks and 18 fresh optional-MCP protocol checks passed. The 0.21.2 MCP browser
+  case passed; its first refresh run hit `TransactionBusy` during direct Python
+  animation-fixture setup while browser polling held the project lock. An isolated
+  rerun with the fresh 0.21.2 optional-MCP environment passed the full refresh case.
   Large dense warm fit repaint reduced 18,433 scene-image draws to 37; zoomed Forest
   repaint reduced CPU cost substantially while its over-budget fit view retained direct
   drawing. History reduced repeated small-edit retention; small dense strokes regressed

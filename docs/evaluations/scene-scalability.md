@@ -4,7 +4,9 @@ Measured 2026-11-01 UTC on Apple M4 Max, macOS 27.0.1 arm64, Node
 24.22.1, Python 3.13.13 and Playwright 1.64.1 bundled headless Chromium.
 Rendering uses a 1440×1000 viewport and production/minified bundles. Before is
 `40d3374` (prepared 0.21.1); after is this working-tree implementation based on
-that revision. These are local CPU observations, not GPU, presentation latency,
+that revision. Profiling preceded the 0.21.2 version bump and used 0.21.1 build
+metadata (the instrumented bundles display “profile”). Subsequent release package
+acceptance uses 0.21.2. These are local CPU observations, not GPU, presentation latency,
 physical input, cross-platform performance or a promised frame rate.
 
 The [data](scalability-data.json) retains raw repaint-matrix samples and history
