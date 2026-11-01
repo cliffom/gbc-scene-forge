@@ -62,7 +62,7 @@ Historical results and the unavailable Tiled-tool limitation are recorded in
 [suite organization validation](../docs/VALIDATION.md#suite-organization-86-88).
 
 Canvas repaint coverage for #76 adds `playwright/editor/rendering.spec.ts` with
-small and large multi-layer workloads. Current discovery has 24 regular scenarios
-in 14 files; the two optional MCP/refresh scenarios remain separate. See the
+small and large multi-layer workloads. Current discovery has 38 regular scenarios
+in 18 files; the two optional MCP/refresh scenarios remain separate. See the
 [rendering measurements](../docs/evaluations/canvas-repainting.md) for reproduction
 and the distinction between timing observations and deterministic assertions.

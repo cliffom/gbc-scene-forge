@@ -6,7 +6,8 @@ name and status remain visible below the canvas.
 
 ![Scene review with the authoring panels hidden](../screenshots/review-mode/review.png)
 
-Drag to pan without holding Space. Pan is the only pointer tool in this mode.
+Drag with the left or middle mouse button to pan without holding Space. Release
+the button to stop. Pan is the only pointer tool in this mode.
 Use the mouse wheel or **Zoom** menu for detail, or **Fit scene** to fit the entire
 scene into the available space. Fit adjusts when the window changes size, including
 at narrow widths. **Grid**, **Terrain** and **Collision** remain available for

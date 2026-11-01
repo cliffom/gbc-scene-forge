@@ -233,7 +233,9 @@ export function createGesturesController({
 
   function syncPanCursor() {
     const viewport = element('viewport', HTMLElement);
-    viewport.dataset.pan = String(Boolean(sceneSession.editor && !activity.busy && panEnabled()));
+    viewport.dataset.pan = String(
+      Boolean(sceneSession.editor && !activity.busy && (panEnabled() || gestures.pan)),
+    );
     viewport.dataset.panning = String(gestures.pan !== null);
   }
 
@@ -250,7 +252,10 @@ export function createGesturesController({
   function releaseSpacePan() {
     const held = gestures.spacePan;
     gestures.spacePan = false;
-    finishPan();
+    // Middle-button capture is independent of the temporary Space shortcut.
+    if (gestures.pan?.button !== 1) {
+      finishPan();
+    }
     if (held) {
       ports.draw();
     }
@@ -282,9 +287,9 @@ export function createGesturesController({
       if (
         !sceneSession.editor ||
         activity.busy ||
-        !panEnabled() ||
-        event.button !== 0 ||
+        !(event.button === 1 || (event.button === 0 && panEnabled())) ||
         !event.isPrimary ||
+        gestures.pan ||
         gestures.anchor
       ) {
         return;
@@ -295,6 +300,7 @@ export function createGesturesController({
       lifetime.capture(viewport, event.pointerId);
       gestures.pan = {
         pointer: event.pointerId,
+        button: event.button,
         x: event.clientX,
         y: event.clientY,
         left: viewport.scrollLeft,
@@ -313,10 +319,26 @@ export function createGesturesController({
       }
       event.preventDefault();
       event.stopPropagation();
+      // Chorded mouse buttons can report the initiating button's release as a
+      // pointermove rather than pointerup while another button remains held.
+      if (!(event.buttons & (gestures.pan.button === 1 ? 4 : 1))) {
+        finishPan();
+        return;
+      }
       viewport.scrollLeft = gestures.pan.left - event.clientX + gestures.pan.x;
       viewport.scrollTop = gestures.pan.top - event.clientY + gestures.pan.y;
     },
     { capture: true, signal: lifetime.signal },
+  );
+
+  viewport.addEventListener(
+    'auxclick',
+    (event) => {
+      if (sceneSession.editor && event.button === 1) {
+        event.preventDefault();
+      }
+    },
+    { signal: lifetime.signal },
   );
 
   for (const type of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) {
@@ -362,6 +384,7 @@ export function createGesturesController({
       event.preventDefault();
       if (
         event.repeat ||
+        gestures.pan ||
         gestures.anchor ||
         sceneSession.editor.stroke ||
         document.querySelector('#layers[data-dragging=true]')
@@ -385,13 +408,18 @@ export function createGesturesController({
     { signal: lifetime.signal },
   );
 
-  window.addEventListener('blur', releaseSpacePan, { signal: lifetime.signal });
+  function cancelPan() {
+    releaseSpacePan();
+    finishPan();
+  }
+
+  window.addEventListener('blur', cancelPan, { signal: lifetime.signal });
 
   document.addEventListener(
     'visibilitychange',
     () => {
       if (document.hidden) {
-        releaseSpacePan();
+        cancelPan();
       }
     },
     { signal: lifetime.signal },
