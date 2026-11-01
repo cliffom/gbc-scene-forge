@@ -1,6 +1,6 @@
 # Roadmap
 
-Current baseline: Forge 0.21.0 authors standalone portable Tiled projects with
+Current baseline: prepared Forge 0.21.1 authors standalone portable Tiled projects with
 imported artwork or artwork-free blockouts, optional MCP, guarded browser refresh,
 scene links and bounded wide/tall scenes. See [usage](STANDALONE.md) and the
 [changelog](CHANGELOG.md) for supported behavior and compatibility.
@@ -9,19 +9,6 @@ Open issue and milestone state was checked on 2026-10-31. These are outcome-base
 priorities, without promised release versions or dates. Measurements may justify
 retaining an existing implementation. Validation gaps live in the
 [single remaining-check list](VALIDATION.md#remaining-checks).
-
-## Large-scene scalability
-
-Measure representative dense scenes and preserve composition, atomic history,
-persistence and recovery while reducing cost:
-
-- [#78](https://github.com/cliffom/gbc-scene-forge/issues/78): profile full-scene undo storage and document memory bounds.
-- [#92](https://github.com/cliffom/gbc-scene-forge/issues/92): assess static artwork caching with explicit invalidation.
-- [#93](https://github.com/cliffom/gbc-scene-forge/issues/93): cull offscreen rendering while retaining overlays and sprite extents.
-
-The [repainting](evaluations/canvas-repainting.md) and
-[wide-scene](evaluations/wide-scenes.md) measurements establish scoped baselines;
-the canvas sizing cleanup did not show a uniform timing gain.
 
 ## Frontend contracts and infrastructure
 

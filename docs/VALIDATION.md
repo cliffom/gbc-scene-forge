@@ -249,6 +249,49 @@ Dates, revisions and environments missing from the originals remain unknown.
   were unavailable and were not rerun; non-Chromium and physical-device behavior
   remain unverified. No data formats changed; tagging and publication remain separate.
 
+## Scene scalability (#78, #92, #93)
+
+- **Scope:** Local working-tree implementation based on `40d3374`, prepared 0.21.1,
+  measured 2026-11-01 UTC on Apple M4 Max/macOS 27.0.1 arm64, Node 24.22.1,
+  Python 3.13.13 and Playwright 1.64.1 bundled headless Chromium. Consumer provenance
+  and exact workload boundaries are in the [evaluation](evaluations/scene-scalability.md).
+- **Method:** Original/culled-direct/cached repaint matrix at fit/1×/4× and three
+  pan positions for small/large dense/sparse mixed layers and a disposable actual
+  archived Forest v4 copy. Separate 100-operation history processes measured heap,
+  edit/undo/redo costs. [Data](evaluations/scalability-data.json) retains matrix samples,
+  interaction summaries and history/resource results. Pixel comparisons use the frozen
+  original renderer and real Canvas2D contexts. Checks used `make docs-check lint test`,
+  production `make build check-dist test-browser`, final affected rendering/pan/lifecycle
+  acceptance, installed-wheel first use, a fresh optional-MCP wheel, and official
+  Tiled 1.12.2/tmxrasterizer interoperability. Visually inspected the synthetic
+  1440×1000 editing capture and sample review at 1440×900/760×640; the
+  [desktop review capture](screenshots/scalability/review-1440.png) is retained.
+- **Result:** 282 Python tests and all TypeScript suites passed; both distributions
+  and six installed-wheel checks passed. Regular Chrome acceptance passed 40 scenarios
+  with two optional profiling cases skipped; explicit synthetic/Forest profiling passed
+  both cases. Final affected acceptance passed ten cases, including fractional review
+  fit, viewport-edge/full-render equivalence, transformed transparent interleaving,
+  mutation/reimport/deletion/eviction and disposal. Installed-wheel first use passed;
+  a fresh optional-MCP wheel passed 18 protocol tests and both MCP/refresh scenarios,
+  including animation, dirty/form protection, external adoption and disposal.
+  Large dense warm fit repaint reduced 18,433 scene-image draws to 37; zoomed Forest
+  repaint reduced CPU cost substantially while its over-budget fit view retained direct
+  drawing. History reduced repeated small-edit retention; small dense strokes regressed
+  by about 0.04 ms in the observed sample. An initial full run failed two pan assertions
+  that assumed identical offscreen backing pixels and one definition workflow because
+  undo changed object key order. Canonical-camera comparisons and shape-preserving
+  history replacements corrected these; targeted checks and the full rerun passed.
+  Official Tiled verified complete moved scene/project exports and rasterized layers;
+  macOS emitted sandbox-extension messages, but the tool exited successfully.
+- **Limits:** Local CPU/heap measurements with intrusive automation do not establish
+  GPU/presentation performance, prolonged human editing comfort or cross-platform
+  behavior. The Forest sample is archived actual v4, not current v5. Objects still
+  traverse; the main full-scene canvas remains allocated. Retained tile bitmaps are
+  bounded to 16 MiB, with additional signature/browser memory. History remains bounded
+  by 100 operations rather than bytes; large structural changes can retain both old
+  and new subtrees, and each transaction still clones the scene. No persistent formats
+  changed. Tagging and publication remain separate; local reports are not CI evidence.
+
 ## Remaining checks
 
 This is the single maintained validation checklist. Issue state was checked on
@@ -259,7 +302,7 @@ check, retaining actual revision, environment, attribution, failures and limits.
 
 ### Scene scalability (#78, #92, #93)
 
-- [ ] Record undo memory bounds and representative before/after dense-scene results; verify atomic history, composition, offscreen sprite/overlay extents and cache invalidation across undo/redo, reimport, refresh and disposal (#78, #92, #93).
+- [ ] Have a human assess prolonged painting, panning and selection on the current consumer Forest project; automated archived-v4 measurements do not establish physical-device editing comfort (#93).
 
 ### Contracts and infrastructure (#75, #67)
 
@@ -267,6 +310,5 @@ check, retaining actual revision, environment, attribution, failures and limits.
 
 ### Platform, interoperability and publication gaps
 
-- [ ] Rerun official Tiled interoperability on a current revision with exact Tiled/rasterizer versions; the suite-organization run lacked the tools and #13's 1.12.2 result is historical.
 - [ ] Record non-Chromium desktop-browser and Windows runtime results with exact versions and workflows; these are outside the automated browser matrix.
 - [ ] Configure the TestPyPI trusted publisher and verify an upload if that channel is needed; the historical 0.1.4 attempt failed with `invalid-publisher`. Local wheel checks and PyPI publication are separate evidence.

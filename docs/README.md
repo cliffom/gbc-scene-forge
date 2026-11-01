@@ -38,6 +38,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Evaluations
 
+- [Rendering and history scalability (#78, #92, #93)](evaluations/scene-scalability.md)
 - [Canvas repainting measurements (#76)](evaluations/canvas-repainting.md)
 - [Inventory discovery cost](evaluations/inventory-discovery.md)
 - [Valibot response-contract adoption](evaluations/valibot-pilot.md)

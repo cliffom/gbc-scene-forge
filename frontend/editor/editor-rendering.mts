@@ -19,7 +19,7 @@ import { objectBounds } from '../objects/objects.mts';
 import type { Region } from '../project/project-contracts.mts';
 import type { TileMetadata } from '../artwork/tile-metadata.mts';
 import { drawCollision, terrainColor } from '../artwork/tile-metadata.mts';
-import { tileContext, tileParts } from '../artwork/tile-transform.mts';
+import { TileCache, visibleBounds } from './tile-cache.mts';
 
 /** One transient paint belongs to the current mounted scene, never a captured snapshot. */
 export function createHoverPaint(
@@ -95,6 +95,9 @@ export function createRenderingController({
   gestures: Pick<GestureState, 'hover' | 'pan' | 'spacePan'>;
   ports: Ports;
 }) {
+  const tileCache = new TileCache();
+  let cachedEditor = sceneSession.editor;
+  lifetime.cleanup(() => tileCache.clear());
   const hoverPaint = createHoverPaint(lifetime, sceneSession, () => draw(false));
 
   function previewBlocked(rect: PreviewRect, selectedId: string): boolean {
@@ -114,6 +117,10 @@ export function createRenderingController({
   function draw(refreshUI = true) {
     // Immediate authoring/selection and animation draws supersede queued hover work.
     hoverPaint.cancel();
+    if (cachedEditor !== sceneSession.editor) {
+      tileCache.clear();
+      cachedEditor = sceneSession.editor;
+    }
     if (lifetime.disposed || !sceneSession.editor || !sceneSession.loaded) {
       return;
     }
@@ -181,24 +188,30 @@ export function createRenderingController({
     }
     context.fillStyle = '#242820';
     context.fillRect(0, 0, canvas.width, canvas.height);
+    const view = visibleBounds(canvas, element('viewport', HTMLElement));
+    context.beginPath();
+    context.rect(
+      view.left,
+      view.top,
+      Math.max(0, view.right - view.left),
+      Math.max(0, view.bottom - view.top),
+    );
+    context.clip();
+    // Avoid LRU thrashing when a fit view cannot retain all visible layer chunks.
+    const chunkPixels = Math.max(1, Math.floor(256 / size)) * size;
+    const visibleChunks =
+      Math.max(0, Math.ceil(view.right / chunkPixels) - Math.floor(view.left / chunkPixels)) *
+      Math.max(0, Math.ceil(view.bottom / chunkPixels) - Math.floor(view.top / chunkPixels));
+    const tileLayers = sceneSession.editor.layers.filter(
+      (layer) => layer.visible && layer.type === 'tilelayer',
+    ).length;
+    const retain = visibleChunks * chunkPixels * chunkPixels * 4 * tileLayers <= tileCache.limit;
     for (const layer of sceneSession.editor.layers) {
       if (!layer.visible) {
         continue;
       }
       if (layer.type === 'tilelayer') {
-        layer.cells.forEach((row, y) =>
-          row.forEach((cell, x) => {
-            const [asset, flags] = tileParts(cell);
-            const region = ports.regions.get(asset);
-            if (region) {
-              context.save();
-              context.translate(x * size, y * size);
-              tileContext(context, flags, size);
-              context.drawImage(region.image, region.x, region.y, size, size, 0, 0, size, size);
-              context.restore();
-            }
-          }),
-        );
+        tileCache.draw(context, layer, size, view, ports.regions, retain);
       }
       if (layer.type === 'objectgroup') {
         for (const item of layer.objects) {
@@ -280,9 +293,20 @@ export function createRenderingController({
           continue;
         }
         if (layer.type === 'tilelayer') {
-          layer.cells.forEach((row, y) =>
-            row.forEach((cell, x) => overlay(String(size), cell, x * size, y * size, size, size)),
-          );
+          for (
+            let y = Math.max(0, Math.floor(view.top / size));
+            y < Math.min(layer.cells.length, Math.ceil(view.bottom / size));
+            y++
+          ) {
+            const row = layer.cells[y];
+            for (
+              let x = Math.max(0, Math.floor(view.left / size));
+              x < Math.min(row.length, Math.ceil(view.right / size));
+              x++
+            ) {
+              overlay(String(size), row[x], x * size, y * size, size, size);
+            }
+          }
         } else {
           for (const item of layer.objects) {
             if (item.kind !== 'sprite') {

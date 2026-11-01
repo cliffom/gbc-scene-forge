@@ -510,10 +510,7 @@ export function createArtworkController({
 
   function atlasInHistory(id: string) {
     return Boolean(
-      sceneSession.editor &&
-      [...sceneSession.editor.undoStack, ...sceneSession.editor.redoStack].some((scene) =>
-        usesAtlas(scene, id),
-      ),
+      sceneSession.editor && sceneSession.editor.historySome((scene) => usesAtlas(scene, id)),
     );
   }
 

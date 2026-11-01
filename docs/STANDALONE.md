@@ -1038,3 +1038,13 @@ pixel, asset/grid, field, start-object, or connection/endpoint locations. Status
 summarizes the selected scope as `fail`, `warning`, `unverified`, or `pass` in that
 order; a filtered report must always be interpreted with its options. All checks
 are read-only and use the same services as the browser.
+
+## Large-scene editing
+
+Zoomed-in views draw visible tile artwork and reuse unchanged chunks during hover,
+selection and sprite previews. Panning refreshes the newly exposed area. Tile
+cache bitmaps are bounded to 16 MiB per mounted editor; views larger than that
+budget use direct rendering. Fit views can expose the whole scene and may remain
+more expensive. Exports always include the complete scene. Undo still retains
+100 operations, with changed values/subtrees reducing repeated scene storage.
+See [measurements and limits](evaluations/scene-scalability.md).

@@ -32,7 +32,7 @@ the SDK-only test when the extra is absent. `packaging/package_smoke.py` is
 explicitly run with `python -I` after wheel installation, outside unit discovery.
 It imports only the installed application, never test helpers.
 
-`make test-frontend` discovers the 15 TypeScript suite files one domain level
+`make test-frontend` discovers the TypeScript suite files one domain level
 under `frontend/`; their basenames retain the public `make test-frontend-<suite>`
 selectors. For example, `make test-frontend-model test-frontend-contracts` runs
 only those suites. TypeScript, ESLint and Prettier cover `tests/**/*.ts`.
@@ -62,7 +62,10 @@ Historical results and the unavailable Tiled-tool limitation are recorded in
 [suite organization validation](../docs/VALIDATION.md#suite-organization-86-88).
 
 Canvas repaint coverage for #76 adds `playwright/editor/rendering.spec.ts` with
-small and large multi-layer workloads. Current discovery has 38 regular scenarios
-in 18 files; the two optional MCP/refresh scenarios remain separate. See the
+small and large multi-layer workloads. Regular discovery also includes viewport/reference pixel comparisons and tile-cache
+invalidation checks. Two observational scalability matrix cases require
+`FORGE_SCALABILITY_PROFILE=1`; the two optional MCP/refresh scenarios remain separate. See the
 [rendering measurements](../docs/evaluations/canvas-repainting.md) for reproduction
-and the distinction between timing observations and deterministic assertions.
+and the distinction between timing observations and deterministic assertions. See
+[scalability profiling](../docs/evaluations/scene-scalability.md) for the archived
+comparison fixtures, history profiler and optional Forest workload.
