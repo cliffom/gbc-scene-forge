@@ -459,6 +459,77 @@ class ProtocolTests(unittest.TestCase):
                 image = await client.read_resource(review["camera_resource"]["uri"])
                 self.assertEqual(image.contents[0].mimeType, "image/png")
                 self.assertTrue(base64.b64decode(image.contents[0].blob).startswith(b"\x89PNG"))
+                # Real SDK workflow: create, rename/hide, reorder, paint, erase and delete.
+                next_layer = loaded["scene"]["next_layer_id"]
+                operations = [
+                    dict(op="create_layer", name="SDK overlay", type="tilelayer"),
+                    dict(
+                        op="update_layer",
+                        layer_id=next_layer,
+                        changes=dict(name="SDK details", visible=False),
+                    ),
+                    dict(op="move_layer", layer_id=next_layer, index=0),
+                    dict(
+                        op="paint_tiles",
+                        layer_id=next_layer,
+                        cells=[dict(x=0, y=0, tile="terrain/earth/0/0")],
+                    ),
+                ]
+                candidate = await call(
+                    "edit_scene", {**args, "operations": operations, "dry_run": True}
+                )
+                unchanged = await call("get_scene", dict(project="protocol", scene_id=loaded["id"]))
+                self.assertEqual(unchanged["revision"], args["scene_revision"])
+                self.assertEqual(candidate["allocated_layer_ids"], [next_layer])
+                self.assertEqual(candidate["changes"]["tile_change_count"], 1)
+                candidate_review = await call(
+                    "review_blockout", {**args, "scene": candidate["scene"]}
+                )
+                self.assertEqual(
+                    candidate_review["snapshot_revision"], candidate["changes"]["after_snapshot"]
+                )
+                saved = await call("edit_scene", {**args, "operations": operations})
+                self.assertEqual(saved["scene"], candidate["scene"])
+                conflict = await client.call_tool("edit_scene", {**args, "operations": operations})
+                self.assertTrue(conflict.isError)
+                self.assertEqual(conflict.structuredContent["error"]["code"], "conflict")
+                args.update(
+                    scene_revision=saved["revision"], project_revision=saved["project_revision"]
+                )
+                saved = await call(
+                    "edit_scene",
+                    {
+                        **args,
+                        "operations": [
+                            dict(op="erase_tiles", layer_id=next_layer, cells=[dict(x=0, y=0)]),
+                            dict(
+                                op="update_layer", layer_id=next_layer, changes=dict(visible=True)
+                            ),
+                        ],
+                    },
+                )
+                self.assertEqual(saved["scene"]["layers"][0]["cells"][0][0], "")
+                args.update(
+                    scene_revision=saved["revision"], project_revision=saved["project_revision"]
+                )
+                invalid = await client.call_tool(
+                    "edit_scene",
+                    {
+                        **args,
+                        "operations": [
+                            dict(op="move_layer", layer_id=next_layer, index=True),
+                        ],
+                    },
+                )
+                self.assertTrue(invalid.isError)
+                saved = await call(
+                    "edit_scene",
+                    {**args, "operations": [dict(op="delete_layer", layer_id=next_layer)]},
+                )
+                self.assertNotIn(next_layer, [layer["id"] for layer in saved["scene"]["layers"]])
+                args.update(
+                    scene_revision=saved["revision"], project_revision=saved["project_revision"]
+                )
                 for name, bad in (
                     ("edit_scene", {**args, "operations": []}),
                     ("get_project", dict(project="../escape")),
@@ -472,3 +543,53 @@ class ProtocolTests(unittest.TestCase):
                 )
                 self.assertTrue(result.isError)
                 self.assertEqual(result.structuredContent["error"]["code"], "conflict")
+                # The default empty Sprites layer must retain its identity on the wire and disk.
+                flat = await call(
+                    "create_scene",
+                    dict(
+                        project="protocol",
+                        project_revision=args["project_revision"],
+                        name="Ground only",
+                        width=4,
+                        height=4,
+                        grid=8,
+                    ),
+                )
+                flat_args = dict(
+                    project="protocol",
+                    project_revision=flat["project_revision"],
+                    scene_id=flat["id"],
+                    scene_revision=flat["revision"],
+                )
+                created = await call(
+                    "edit_scene",
+                    {
+                        **flat_args,
+                        "operations": [
+                            dict(
+                                op="create_layer", type="objectgroup", name="Sprites", visible=True
+                            ),
+                        ],
+                    },
+                )
+                self.assertEqual(created["allocated_layer_ids"], [2])
+                self.assertEqual(created["scene"]["layers"][1]["objects"], [])
+                self.assertEqual(created["scene"]["next_layer_id"], 3)
+                reopened = await call("get_scene", dict(project="protocol", scene_id=flat["id"]))
+                self.assertEqual(reopened["scene"], created["scene"])
+                flat_args.update(
+                    scene_revision=reopened["revision"],
+                    project_revision=reopened["project_revision"],
+                )
+                followup = await call(
+                    "edit_scene",
+                    {
+                        **flat_args,
+                        "operations": [
+                            dict(op="update_layer", layer_id=2, changes=dict(visible=False)),
+                            dict(op="create_layer", type="objectgroup", name="Props"),
+                        ],
+                    },
+                )
+                self.assertEqual(followup["allocated_layer_ids"], [3])
+                self.assertEqual(followup["scene"]["next_layer_id"], 4)

@@ -75,6 +75,59 @@ EDIT = {
             ("changes",),
         ),
         schema({"op": {"const": "delete"}, "object_id": ID}),
+        schema(
+            {
+                "op": {"const": "create_layer"},
+                "name": TEXT,
+                "type": {"enum": ["tilelayer", "objectgroup"]},
+                "visible": {"type": "boolean"},
+                "index": {"type": "integer", "minimum": 0, "maximum": 127},
+            },
+            ("visible", "index"),
+        ),
+        schema(
+            {
+                "op": {"const": "update_layer"},
+                "layer_id": ID,
+                "changes": {
+                    **schema({"name": TEXT, "visible": {"type": "boolean"}}, ("name", "visible")),
+                    "minProperties": 1,
+                },
+            }
+        ),
+        schema(
+            {
+                "op": {"const": "move_layer"},
+                "layer_id": ID,
+                "index": {"type": "integer", "minimum": 0, "maximum": 127},
+            }
+        ),
+        schema({"op": {"const": "delete_layer"}, "layer_id": ID}),
+        *[
+            schema(
+                {
+                    "op": {"const": action},
+                    "layer_id": ID,
+                    "cells": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 4096,
+                        "items": schema(
+                            {
+                                "x": {"type": "integer", "minimum": 0, "maximum": 65535},
+                                "y": {"type": "integer", "minimum": 0, "maximum": 65535},
+                                **(
+                                    {"tile": {"type": "string", "maxLength": 256}}
+                                    if action == "paint_tiles"
+                                    else {}
+                                ),
+                            }
+                        ),
+                    },
+                }
+            )
+            for action in ("paint_tiles", "erase_tiles")
+        ],
     ]
 }
 
@@ -112,7 +165,9 @@ TOOLS = [
     ),
     tool(
         "edit_scene",
-        "Atomic 1..128 blockout placements/object edits. dry_run returns an unsaved candidate. "
+        "Atomic 1..128 object, tile and layer operations; at most 4096 cell writes per batch. "
+        "Tile x/y are cell indices; layer index is zero-based stored order (bottom to top). "
+        "dry_run returns an unsaved candidate. "
         "properties replaces all explicit overrides; omitted fields are retained. No browser Undo.",
         {
             **SCENE,
@@ -238,7 +293,7 @@ TOOLS = [
 
 DEFERRED = [
     "Scene rename/duplicate/delete and definition/stamp deletion (use browser)",
-    "Semantic tile painting, stamp placement and layer management (use canonical save_scene)",
+    "Semantic terrain brushes and stamp placement (use browser or canonical save_scene)",
     "Animated artwork playback, browser selection/Undo, draft inspection/mutation",
     "Palette profile editing, tile metadata editing and sprite preview preference editing",
     "Generic PNG/Tiled intake, terrain brush commands and profile editing (use browser)",

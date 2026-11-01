@@ -202,6 +202,11 @@ class SceneService:
             "project_revision": result.get("project_revision", project_revision),
             "dry_run": dry_run,
             "allocated_object_ids": allocated,
+            "allocated_layer_ids": [
+                layer["id"]
+                for layer in tiled.scene_layers(candidate)
+                if layer["id"] not in {v["id"] for v in tiled.scene_layers(loaded["scene"])}
+            ],
             "changes": summary,
         }
 

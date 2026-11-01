@@ -6,6 +6,10 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.22.0 — MCP tile and layer authoring
+
+[Release notes](RELEASE-0.22.0.md).
+
 ## 0.21.2 — Faster large-scene editing
 
 [Release notes](RELEASE-0.21.2.md).
