@@ -47,6 +47,11 @@ and restoring that bundled template without external artwork tools.
 CI and release workflows perform the same steps with standard venv/pip commands
 before accepting artifacts. No command above uploads packages.
 
+CI runs on pull requests. The main branch ruleset requires the GitHub Actions
+checks `checks`, `python-compatibility (3.13)` and `python-compatibility (3.14)`
+to pass on an up-to-date branch before merging. Main pushes do not start a second
+CI run; package publication remains a separate manual workflow.
+
 CI runs lint, frontend tests, package builds and Chrome acceptance checks once
 on Python 3.13 with Node 24. A separate compatibility matrix installs that same
 wheel and runs Python tests and installed-package smoke checks on Python 3.13
