@@ -20,6 +20,9 @@ export async function referenceRenderer() {
             contents: readFileSync(
               `tests/fixtures/rendering-baseline/${basename(args.path, '.mts')}.txt`,
               'utf8',
+            ).replace(
+              '    draw,',
+              '    drawOverview: (context, ...rect) => context.drawImage(canvas, ...rect),\n    draw,',
             ),
             loader: 'ts',
           }));

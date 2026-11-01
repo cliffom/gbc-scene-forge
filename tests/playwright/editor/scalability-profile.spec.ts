@@ -32,6 +32,10 @@ async function instrumented(reference: boolean, cache: boolean) {
                   : await readFile(args.path, 'utf8');
               if (reference) {
                 contents = contents.replace(
+                  '    draw,',
+                  '    drawOverview: (context, ...rect) => context.drawImage(canvas, ...rect),\n    draw,',
+                );
+                contents = contents.replace(
                   'row.forEach((cell, x) => {',
                   'row.forEach((cell, x) => { globalThis.forgeProfile.visited++;',
                 );

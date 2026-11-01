@@ -19,7 +19,7 @@ import { objectBounds } from '../objects/objects.mts';
 import type { Region } from '../project/project-contracts.mts';
 import type { TileMetadata } from '../artwork/tile-metadata.mts';
 import { drawCollision, terrainColor } from '../artwork/tile-metadata.mts';
-import { TileCache, visibleBounds } from './tile-cache.mts';
+import { TileCache, visibleBounds, type ViewBounds } from './tile-cache.mts';
 
 /** One transient paint belongs to the current mounted scene, never a captured snapshot. */
 export function createHoverPaint(
@@ -182,21 +182,45 @@ export function createRenderingController({
     }
   }
 
-  function repaint(size: number, zoom: number) {
+  /** Draw authored artwork independently of display clipping, zoom and transient previews. */
+  function drawOverview(
+    target: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ) {
+    if (lifetime.disposed || !sceneSession.editor) {
+      return;
+    }
+    const size = sceneSession.editor.scene.grid;
+    const sceneWidth = sceneSession.editor.scene.width * size;
+    const sceneHeight = sceneSession.editor.scene.height * size;
+    target.save();
+    try {
+      target.imageSmoothingEnabled = false;
+      target.translate(x, y);
+      target.scale(width / sceneWidth, height / sceneHeight);
+      target.beginPath();
+      target.rect(0, 0, sceneWidth, sceneHeight);
+      target.clip();
+      target.fillStyle = '#242820';
+      target.fillRect(0, 0, sceneWidth, sceneHeight);
+      paintArtwork(target, size, { left: 0, top: 0, right: sceneWidth, bottom: sceneHeight }, true);
+    } finally {
+      target.restore();
+    }
+  }
+
+  function paintArtwork(
+    context: CanvasRenderingContext2D,
+    size: number,
+    view: ViewBounds,
+    overview = false,
+  ) {
     if (!sceneSession.editor) {
       return;
     }
-    context.fillStyle = '#242820';
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    const view = visibleBounds(canvas, element('viewport', HTMLElement));
-    context.beginPath();
-    context.rect(
-      view.left,
-      view.top,
-      Math.max(0, view.right - view.left),
-      Math.max(0, view.bottom - view.top),
-    );
-    context.clip();
     // Avoid LRU thrashing when a fit view cannot retain all visible layer chunks.
     const chunkPixels = Math.max(1, Math.floor(256 / size)) * size;
     const visibleChunks =
@@ -205,7 +229,8 @@ export function createRenderingController({
     const tileLayers = sceneSession.editor.layers.filter(
       (layer) => layer.visible && layer.type === 'tilelayer',
     ).length;
-    const retain = visibleChunks * chunkPixels * chunkPixels * 4 * tileLayers <= tileCache.limit;
+    const retain =
+      !overview && visibleChunks * chunkPixels * chunkPixels * 4 * tileLayers <= tileCache.limit;
     for (const layer of sceneSession.editor.layers) {
       if (!layer.visible) {
         continue;
@@ -218,15 +243,16 @@ export function createRenderingController({
           const sprite = item.kind === 'sprite' && ports.sprites.get(item.asset);
           if (sprite) {
             const r =
-              item.id === sceneSelection.selectedObject
+              !overview && item.id === sceneSelection.selectedObject
                 ? animationPreview.frame(
                     item.id + ':' + (item.kind === 'sprite' ? item.asset : ''),
                   ) || sprite.region
                 : sprite.region;
-            const position =
-              animationPreview.movement.position(
-                item.id + ':' + (item.kind === 'sprite' ? item.asset : ''),
-              ) || item;
+            const position = overview
+              ? item
+              : animationPreview.movement.position(
+                  item.id + ':' + (item.kind === 'sprite' ? item.asset : ''),
+                ) || item;
             const pivot = item.kind === 'sprite' ? item.origin || r.origin : r.origin;
             context.drawImage(
               sprite.image,
@@ -264,6 +290,24 @@ export function createRenderingController({
         }
       }
     }
+  }
+
+  function repaint(size: number, zoom: number) {
+    if (!sceneSession.editor) {
+      return;
+    }
+    context.fillStyle = '#242820';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    const view = visibleBounds(canvas, element('viewport', HTMLElement));
+    context.beginPath();
+    context.rect(
+      view.left,
+      view.top,
+      Math.max(0, view.right - view.left),
+      Math.max(0, view.bottom - view.top),
+    );
+    context.clip();
+    paintArtwork(context, size, view);
     if (input('terrain-overlay').checked || input('collision-overlay').checked) {
       const overlay = (
         group: string,
@@ -472,6 +516,7 @@ export function createRenderingController({
   }
   return {
     draw,
+    drawOverview,
     requestHoverDraw: hoverPaint.request,
     previewBlocked,
     point,

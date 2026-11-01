@@ -299,6 +299,30 @@ Dates, revisions and environments missing from the originals remain unknown.
   and new subtrees, and each transaction still clones the scene. No persistent formats
   changed. Tagging and publication remain separate; local reports are not CI evidence.
 
+## Full-scene resize overview (PR #107 review)
+
+- **Scope:** 2026-11-01 UTC, 0.21.2 review fix based on `2fffac2`, macOS 27.0.1
+  arm64, Python 3.13.13, Node 24.22.1 and Playwright 1.64.1 bundled Chromium.
+- **Method:** [Resize-overview regression](../tests/playwright/editor/resize-overview.spec.ts)
+  against a temporary bundle of the pre-fix revision and the working-tree fix;
+  native project with red/blue artwork, 1×/2×/8× zoom, three scroll positions,
+  crop masks, unsaved fill/undo and display-canvas invariance. `make lint test`,
+  production `make build check-dist test-browser`, and `make docs-check`.
+  Visually inspected the [1440×1000 crop dialog](screenshots/scalability/resize-overview.png).
+- **Result:** The pre-fix bundle returned background `[36, 40, 32, 255]` where
+  offscreen blue artwork should appear. The fix renders the entire authored scene
+  directly into the preview, without another full-size canvas or transient feedback.
+  All viewport variants produced identical overview/crop pixels; unsaved edits and
+  undo remained current, and overview generation preserved the display canvas.
+  Lint, 282 Python tests, TypeScript suites, both distributions, six wheel checks,
+  and 41 regular browser cases passed; two optional profiling cases were skipped.
+  The initial fixture attempt modified a declared PNG directly and correctly failed
+  its asset-integrity guard; the regression fixture now uses normal atlas reimport.
+- **Limits:** Automated Chromium plus one desktop visual inspection; no new
+  cross-browser or physical-device claim. Whole-scene overview traversal occurs
+  on resize-dialog changes; ordinary viewport paints remain culled/cached. Local
+  reports are not archived CI evidence. The prepared version remains 0.21.2.
+
 ## Remaining checks
 
 This is the single maintained validation checklist. Issue state was checked on

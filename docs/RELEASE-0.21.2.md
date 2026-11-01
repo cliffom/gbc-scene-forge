@@ -5,7 +5,8 @@ across hover, selection and sprite-preview repaints. Transparent per-layer chunk
 preserve objects between tile layers. The editor bounds retained tile bitmaps to
 16 MiB, falls back to direct visible-cell drawing when a view exceeds that budget,
 and refreshes newly exposed content on pan, zoom and layout changes. Fit views
-that expose the complete scene may have little culling benefit.
+that expose the complete scene may have little culling benefit. Resize/crop
+previews retain the entire authored scene independently of editor zoom and scroll.
 
 Undo retains changed values or subtrees instead of 100 repeated full scenes.
 Atomic strokes, cancellation, no-op behavior, stable IDs, dirty-state equality,

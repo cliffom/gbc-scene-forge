@@ -37,6 +37,13 @@ export interface Ports {
   pendingDiagnostic: DiagnosticLocation | null;
   newDraftWriter: () => void;
   draw: (refreshUI?: boolean) => void;
+  drawOverview: (
+    context: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ) => void;
   sprites: ReadonlyMap<string, { image: HTMLImageElement; region: Region }>;
   palette: (chooseInitial?: boolean) => void;
 }
@@ -545,8 +552,8 @@ export function createSceneActionsController({
         y = 10 - minY * scale;
       context.clearRect(0, 0, preview.width, preview.height);
       context.imageSmoothingEnabled = false;
-      context.drawImage(
-        canvas,
+      ports.drawOverview(
+        context,
         x + result.dx * scale,
         y + result.dy * scale,
         old.width * scale,

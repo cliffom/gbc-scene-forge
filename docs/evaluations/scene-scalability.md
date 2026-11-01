@@ -30,7 +30,9 @@ no CI thresholds. `tests/fixtures/rendering-baseline/` freezes the renderer,
 viewport and model from `40d3374`, with their original relative imports resolved
 against current sources by the browser harness. These are comparison fixtures,
 not supported implementations or an additional application entry point. They
-also allow shallow CI checkouts to run without historical Git objects.
+also allow shallow CI checkouts to run without historical Git objects. The test
+bundler adapts the original renderer to the resize overview port by copying its
+complete display canvas, preserving its original preview behavior.
 
 The matrix compares the original renderer, visible-cell direct rendering with
 caching disabled in the test bundle, and the shipped bounded chunk renderer.
@@ -158,6 +160,10 @@ resize observation redraws at all zooms. Fit, wheel zoom, review/layout changes
 and authored changes retain their immediate controller draws. Canvas coordinates
 and hit testing still use the full native scene extent. Portable exports render
 from complete scene data on the server and do not read this display canvas.
+Resize/crop overviews likewise render full authored layers directly into their
+small preview canvas, without using display pixels or allocating another full-size
+canvas. They bypass the tile cache and transient feedback, keep authored sprite
+positions, and leave display pixels, camera, selection and cache entries intact.
 
 Pixel tests compare full/reference rendering at viewport edges, fractional review
 fit, multiple pan/zoom positions and 1440×1000/980×760 layouts. Independent real

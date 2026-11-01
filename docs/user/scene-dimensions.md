@@ -18,13 +18,17 @@ Choose **Scene actions → Create scene…**, enter those cell dimensions and se
 16px. Blockout creation also accepts 7,680×144 in pixel units. Cameras must fit
 inside the scene. **Resize / crop** uses the same limits and preserves the chosen
 anchor; undo/redo restores the complete edit, including objects on hidden layers.
+The resize overview shows the entire authored scene, including unsaved artwork,
+regardless of the editor's zoom or scroll position. Red shading identifies the
+area that will be discarded; green outlines the new scene. Selection, hover and
+transient sprite playback are excluded from that overview.
 Use zoom, pan and horizontal/vertical scrolling to reach the far edge.
 
 The cell budget applies to the footprint; existing layer, object, input-byte,
 export-byte and image-work budgets still apply independently. Many dense layers
-cost more to render and retain in undo history. The editor currently repaints the
-whole scene; large scenes can feel slower on modest hardware. See the
-[editing measurements](../evaluations/wide-scenes.md).
+cost more to render and retain in undo history. Zoomed-in views reuse visible tile
+chunks, while fit views and resize overviews can still traverse the whole scene.
+See the [editing measurements](../evaluations/scene-scalability.md).
 
 Native tiles, sprite anchors, gameplay objects and camera coordinates remain in
 scene cells/pixels without page offsets. Portable Tiled exports retain full scene
