@@ -1,3 +1,9 @@
+import {
+  historyDiff,
+  historyApply,
+  captureHistoryContext,
+  type HistoryChange,
+} from './history.mts';
 import type { Coordinate, EditorDescriptor, Selection, TileScene } from '../shared/types.ts';
 // Editing operations use native scene pixels and semantic cell identifiers.
 export const clone = <T,>(value: T): T => structuredClone(value);
@@ -19,9 +25,10 @@ export class Editor<T extends { width: number; height: number; cells?: string[][
   reasons: Map<string, string>;
   scene: T;
   locked: Set<string>;
-  undoStack: T[] = [];
-  redoStack: T[] = [];
+  undoStack: HistoryChange[][] = [];
+  redoStack: HistoryChange[][] = [];
   stroke: T | null = null;
+  protected historyContextKeys: string[] = [];
   constructor(scene: T, locked: Coordinate[], descriptor: EditorDescriptor) {
     if (!descriptor?.erase_cell) {
       throw Error('Scene descriptor needs an erase cell.');
@@ -49,12 +56,17 @@ export class Editor<T extends { width: number; height: number; cells?: string[][
     }
   }
   end() {
-    if (this.stroke !== null && JSON.stringify(this.stroke) !== JSON.stringify(this.scene)) {
-      this.undoStack.push(this.stroke);
-      if (this.undoStack.length > 100) {
-        this.undoStack.shift();
+    if (this.stroke !== null) {
+      const changes = historyDiff(this.stroke, this.scene);
+      if (changes.length) {
+        captureHistoryContext(changes, this.stroke, this.historyContextKeys, 'before');
+        captureHistoryContext(changes, this.scene, this.historyContextKeys, 'after');
+        this.undoStack.push(changes);
+        if (this.undoStack.length > 100) {
+          this.undoStack.shift();
+        }
+        this.redoStack = [];
       }
-      this.redoStack = [];
     }
     this.stroke = null;
   }
@@ -161,20 +173,37 @@ export class Editor<T extends { width: number; height: number; cells?: string[][
       Array.from({ length: h }, () => Array.from({ length: w }, () => this.floor)),
     );
   }
+  historySome(predicate: (scene: T) => boolean) {
+    for (const [stack, direction] of [
+      [this.undoStack, 'before'],
+      [this.redoStack, 'after'],
+    ] as const) {
+      let scene = clone(this.scene);
+      for (const changes of [...stack].reverse()) {
+        scene = historyApply(scene, changes, direction);
+        if (predicate(scene)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
   undo() {
     const previous = this.undoStack.pop();
     if (!previous) {
       return;
     }
-    this.redoStack.push(clone(this.scene));
-    this.scene = previous;
+    captureHistoryContext(previous, this.scene, this.historyContextKeys, 'after');
+    this.scene = historyApply(this.scene, previous, 'before');
+    this.redoStack.push(previous);
   }
   redo() {
     const next = this.redoStack.pop();
     if (!next) {
       return;
     }
-    this.undoStack.push(clone(this.scene));
-    this.scene = next;
+    captureHistoryContext(next, this.scene, this.historyContextKeys, 'before');
+    this.scene = historyApply(this.scene, next, 'after');
+    this.undoStack.push(next);
   }
 }

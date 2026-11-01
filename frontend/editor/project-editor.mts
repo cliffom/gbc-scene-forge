@@ -615,6 +615,7 @@ export function mountProjectEditor() {
 
       newDraftWriter: (...args) => recoveryController.newDraftWriter(...args),
       draw: (...args) => renderingController.draw(...args),
+      drawOverview: (...args) => renderingController.drawOverview(...args),
       get sprites() {
         return artworkController.sprites;
       },

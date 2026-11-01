@@ -103,6 +103,9 @@ export function createViewportController({
 
   lifetime.assign(button('fit-scene'), 'onclick', fitScene);
 
+  // Scroll is display-only; repaint newly exposed content from current geometry.
+  ports.viewport.addEventListener('scroll', () => ports.draw(false), { signal: lifetime.signal });
+
   let wheelDelta = 0;
 
   let lastWheel = 0;
@@ -174,9 +177,11 @@ export function createViewportController({
   lifetime
     .observe(
       new ResizeObserver(() => {
-        if (sceneSession.editor && select('zoom').value === 'fit') {
+        if (sceneSession.editor) {
           ports.draw(false);
-          element('viewport', HTMLElement).scrollTo(0, 0);
+          if (select('zoom').value === 'fit') {
+            element('viewport', HTMLElement).scrollTo(0, 0);
+          }
         }
       }),
     )

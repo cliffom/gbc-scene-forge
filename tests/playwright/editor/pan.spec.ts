@@ -44,14 +44,25 @@ async function startPan(page: Page) {
 }
 
 async function authoredState(page: Page) {
-  // Clear hover before comparing canvas pixels, independently of scroll position.
+  // Compare pixels at a canonical camera: offscreen backing pixels are intentionally cleared.
   await page.mouse.move(1, 1);
-  return page.evaluate(() => {
+  return page.evaluate(async () => {
+    const viewport = document.getElementById('viewport');
+    if (!viewport) {
+      throw Error('Expected viewport');
+    }
+    const position = [viewport.scrollLeft, viewport.scrollTop];
+    const settled = () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      );
+    viewport.scrollTo(0, 0);
+    await settled();
     const canvas = document.getElementById('scene');
     if (!(canvas instanceof HTMLCanvasElement)) {
       throw Error('Expected scene canvas');
     }
-    return {
+    const state = {
       image: canvas.toDataURL(),
       state: document.getElementById('scene-save-state')?.textContent,
       undo: document.querySelector<HTMLButtonElement>('#undo')?.disabled,
@@ -59,6 +70,9 @@ async function authoredState(page: Page) {
       tool: document.querySelector<HTMLInputElement>('input[name=tool]:checked')?.value,
       layer: document.querySelector<HTMLInputElement>('#layer-name')?.value,
     };
+    viewport.scrollTo(position[0], position[1]);
+    await settled();
+    return state;
   });
 }
 

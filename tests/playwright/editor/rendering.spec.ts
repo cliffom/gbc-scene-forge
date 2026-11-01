@@ -12,6 +12,8 @@ import {
   setControl,
 } from '../support/browser-fixtures.ts';
 
+import { referenceRenderer } from '../support/reference-renderer.ts';
+
 type Metrics = {
   draws: number;
   images: number;
@@ -58,7 +60,7 @@ p = Project(Path(sys.argv[1]))
 w, h = int(sys.argv[2]), int(sys.argv[3])
 loaded = p.scenes.create('Rendering profile', w, h, 8, p.catalog()['revision'])
 layers = [dict(id=i+1, name=f'Tiles {i}', type='tilelayer', visible=i!=3,
-    cells=[['terrain/earth/0/0' if i==0 or (x+y+i)%4==0 else ''
+    cells=[['terrain/earth/0/0' if (i==0 and not sys.argv[4]) or (x+y+i)% (16 if sys.argv[4] else 4)==0 else ''
         for x in range(w)] for y in range(h)]) for i in range(4)]
 layers.append(dict(id=5, name='Actors', type='objectgroup', visible=True, objects=[
     dict(id=1, asset='actors/idle', x=32, y=24, name='', **{'class': ''}, properties=[])]))
@@ -69,8 +71,15 @@ print(loaded['id'])
       root,
       String(width),
       String(height),
+      process.env.FORGE_PROFILE_SPARSE ?? '',
     ]);
     const url = await workspace.start(root);
+    if (process.env.FORGE_PROFILE_REFERENCE) {
+      const reference = await referenceRenderer();
+      await page.route('**/project.js', (route) =>
+        route.fulfill({ body: reference, contentType: 'text/javascript' }),
+      );
+    }
     await page.goto(url);
     await editorReady(page);
     await page.locator('#scenes').selectOption(stdout.trim());
@@ -378,7 +387,15 @@ print(loaded['id'])
         const paints =
           !process.env.FORGE_RENDER_BASELINE && workload.startsWith('hover') ? 6 : moveCount;
         expect(results[workload].draws).toBe(paints);
-        expect(results[workload].images).toBe(paints * (width * height * 1.5 + 1));
+        if (process.env.FORGE_PROFILE_SPARSE) {
+          expect(results[workload].images).toBeGreaterThan(0);
+        } else if (process.env.FORGE_PROFILE_REFERENCE) {
+          expect(results[workload].images).toBe(paints * (width * height * 1.5 + 1));
+        } else {
+          // Scene composition copies bounded transparent chunks rather than every tile.
+          expect(results[workload].images).toBeGreaterThan(0);
+          expect(results[workload].images).toBeLessThan(paints * (width * height * 1.5 + 1));
+        }
         if (!process.env.FORGE_RENDER_BASELINE && workload.startsWith('hover')) {
           expect(results[workload].uiUpdates).toBe(0);
         }

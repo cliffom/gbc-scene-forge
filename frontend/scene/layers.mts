@@ -19,6 +19,7 @@ export interface LayerScene {
   active_layer_id?: number;
 }
 export class LayerEditor extends Editor<LayerScene> {
+  protected override historyContextKeys = ['active_layer_id'];
   get layers(): SceneLayer[] {
     if (!this.scene.layers?.length) {
       throw Error('A scene needs at least one layer.');
