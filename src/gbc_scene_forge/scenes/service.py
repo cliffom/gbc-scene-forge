@@ -7,11 +7,12 @@ from gbc_scene_forge.core.errors import Conflict
 from gbc_scene_forge.core.identities import name
 from gbc_scene_forge.core.records import NativeDocument
 from gbc_scene_forge.core.serialization import json_text
-from gbc_scene_forge.core.validation import integer, require
+from gbc_scene_forge.core.validation import require
 from gbc_scene_forge.formats import tiled
 from gbc_scene_forge.planning import blockout, world
 from gbc_scene_forge.project.store import ProjectStore
 from gbc_scene_forge.scenes import authoring, rendering
+from gbc_scene_forge.scenes.dimensions import check_dimensions
 from gbc_scene_forge.storage.files import digest, read_optional
 from gbc_scene_forge.storage.paths import safe_path
 
@@ -28,10 +29,7 @@ class SceneService:
         """Create a saved blank scene against the expected project revision."""
         document = self.store.current(revision)
         title = name(title)
-        require(
-            integer(width, 1, 256) and integer(height, 1, 256),
-            "Scene dimensions must be within 1..256",
-        )
+        check_dimensions(width, height, grid)
         scene = {
             "width": width,
             "height": height,

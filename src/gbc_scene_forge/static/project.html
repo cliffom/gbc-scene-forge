@@ -406,7 +406,7 @@
       <div class="property-grid"><label class="field">Width (px)<input id="blockout-camera-width" type="number" value="160" min="1" max="8192" step="1" required></label><label class="field">Height (px)<input id="blockout-camera-height" type="number" value="136" min="1" max="8192" step="1" required></label></div>
       <div class="layer-actions"><label><input id="blockout-scroll-x" type="checkbox" checked> Scroll horizontally</label><label><input id="blockout-scroll-y" type="checkbox"> Scroll vertically</label></div>
       <p id="blockout-create-metrics" class="hint" aria-live="polite"></p>
-      <p class="hint">Pixels must divide evenly by the grid. Each axis supports up to 256 cells; the camera must fit inside the scene. These are configurable planning values, not a runtime camera controller.</p>
+      <p class="hint">Pixels must divide evenly by the grid. Scenes support at most 65,536 cells and 8,192 pixels per axis; the camera must fit inside the scene. These are configurable planning values, not a runtime camera controller.</p>
       <p class="form-error error" role="alert"></p>
       <div class="dialog-actions"><button id="blockout-create-cancel" type="button">Cancel</button><button id="blockout-create-confirm" class="primary">Create blockout</button></div>
     </form>
@@ -426,7 +426,8 @@
       <h2 id="create-heading">Create scene</h2>
       <p>Choose the canvas dimensions. Imported sprites keep their own native size.</p>
       <label class="field">Scene name<input id="scene-title" required maxlength="100" autocomplete="off" autofocus placeholder="Village square"></label>
-      <div class="dimensions"><label class="field">Width <input id="width" type="number" min="1" max="256" value="20" required></label><label class="field">Height <input id="height" type="number" min="1" max="256" value="18" required></label><label class="field">Grid <select id="cell-size"><option value="8">8 px</option><option value="16">16 px</option><option value="32">32 px</option></select></label></div>
+      <p class="hint">At most 65,536 cells and 8,192 pixels per axis (1,024 cells at grid 8; 512 at grid 16; 256 at grid 32).</p>
+      <div class="dimensions"><label class="field">Width <input id="width" type="number" min="1" max="1024" value="20" required></label><label class="field">Height <input id="height" type="number" min="1" max="1024" value="18" required></label><label class="field">Grid <select id="cell-size"><option value="8">8 px</option><option value="16">16 px</option><option value="32">32 px</option></select></label></div>
       <p class="hint">Width and height are in cells. Sprites can be placed at any pixel.</p>
       <p class="form-error error" role="alert"></p>
       <div class="dialog-actions"><button type="button" data-close="create-scene-dialog">Cancel</button><button class="primary">Create scene</button></div>
@@ -506,8 +507,9 @@
   <dialog id="resize-scene-dialog" aria-labelledby="resize-scene-heading">
     <form id="resize-scene-form">
       <h2 id="resize-scene-heading">Resize / crop scene</h2>
-      <div class="property-grid"><label class="field">Width (cells) <input id="resize-width" type="number" min="1" max="256" required></label>
-      <label class="field">Height (cells) <input id="resize-height" type="number" min="1" max="256" required></label></div>
+      <p class="hint">At most 65,536 cells and 8,192 pixels per axis.</p>
+      <div class="property-grid"><label class="field">Width (cells) <input id="resize-width" type="number" min="1" max="1024" required></label>
+      <label class="field">Height (cells) <input id="resize-height" type="number" min="1" max="1024" required></label></div>
       <label class="field">Keep anchored to <select id="resize-anchor">
         <option value="0,0">Top left</option><option value="1,0">Top center</option><option value="2,0">Top right</option>
         <option value="0,1">Middle left</option><option value="1,1">Center</option><option value="2,1">Middle right</option>

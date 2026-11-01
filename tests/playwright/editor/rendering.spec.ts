@@ -22,11 +22,15 @@ declare global {
 for (const [name, width, height] of [
   ['small', 16, 12],
   ['large', 128, 96],
+  ['wide', 480, 9],
+  ['tall', 9, 480],
+  ['budget', 1023, 64],
 ] as const) {
   test(`rendering dimensions, history and profiling: ${name}`, async ({
     page,
     workspace,
   }, info) => {
+    test.setTimeout(180000);
     const root = join(workspace.folder, 'world');
     await cp('tests/playwright/support/fixtures/editor/project', root, { recursive: true });
     const { stdout } = await promisify(execFile)(workspace.python, [
@@ -124,12 +128,14 @@ print(loaded['id'])
       page.evaluate(() => {
         window.renderingMetrics = { draws: 0, images: 0, resets: 0, styles: 0, times: [] };
       });
+    const movesPerBurst = name === 'budget' ? 5 : 20;
+    const moveCount = 6 * movesPerBurst;
     const results: Record<string, Metrics> = {};
     const snapshot = async (workload: string) => {
       results[workload] = await page.evaluate(() => window.renderingMetrics);
       if (workload !== 'animation') {
-        expect(results[workload].draws).toBe(120);
-        expect(results[workload].images).toBe(120 * (width * height * 1.5 + 1));
+        expect(results[workload].draws).toBe(moveCount);
+        expect(results[workload].images).toBe(moveCount * (width * height * 1.5 + 1));
       }
       if (!process.env.FORGE_RENDER_BASELINE) {
         expect(results[workload].resets).toBe(0);
@@ -137,8 +143,8 @@ print(loaded['id'])
       }
     };
     const moves = async () => {
-      // Six bursts of 20 different hover cells: exposes redundant requests in one frame.
-      await page.evaluate(async () => {
+      // Six bursts of different hover cells; use fewer samples at the cell budget.
+      await page.evaluate(async (movesPerBurst) => {
         const canvas = document.getElementById('scene');
         if (!(canvas instanceof HTMLCanvasElement)) {
           throw Error('Expected scene canvas');
@@ -146,11 +152,11 @@ print(loaded['id'])
         for (let burst = 0; burst < 6; burst++) {
           await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
           const rect = canvas.getBoundingClientRect();
-          for (let i = 0; i < 20; i++) {
+          for (let i = 0; i < movesPerBurst; i++) {
             const start = performance.now();
             canvas.dispatchEvent(
               new PointerEvent('pointermove', {
-                clientX: rect.left + (i % 12) * 8 + 2,
+                clientX: rect.left + (i % Math.min(12, canvas.width / 8)) * 8 + 2,
                 clientY: rect.top + (burst % 6) * 8 + 2,
                 pointerId: 1,
               }),
@@ -158,7 +164,7 @@ print(loaded['id'])
             window.renderingMetrics.times.push(performance.now() - start);
           }
         }
-      });
+      }, movesPerBurst);
     };
     await moves(); // Warm up renderer and browser JIT before collecting timings.
     for (let trial = 1; trial <= 3; trial++) {

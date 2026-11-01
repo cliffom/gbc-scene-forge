@@ -57,7 +57,7 @@ hardware compatibility. Ordinary editing/export remains available.
 
 ### Supported subset
 
-- Finite, orthogonal, right-down maps, 1–256 cells per axis, square 8/16/32 px grid.
+- Finite, orthogonal, right-down maps, at most 65,536 cells and 8,192 pixels per axis, square 8/16/32 px grid.
 - 1–128 full-size tile layers; names, IDs, order and visibility are retained.
 - JSON-array tile data, empty cells, horizontal/vertical/diagonal tile transforms.
 - 1–16 PNG sheet tilesets with matching grid, margins and spacing. Each sheet has

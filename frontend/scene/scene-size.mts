@@ -1,11 +1,10 @@
 /** Pure resize preflight shared by the preview and the undoable scene edit. */
+import { checkDimensions } from './dimensions.mts';
 import type { LayerEditor } from './layers.mts';
 import { clone } from './model.mts';
 
 export function resizeScene(editor: LayerEditor, width: number, height: number, anchor: string) {
-  if (![width, height].every((n) => Number.isInteger(n) && n >= 1 && n <= 256)) {
-    throw Error('Scene dimensions must be within 1..256.');
-  }
+  checkDimensions(width, height, editor.scene.grid);
   if (!/^[012],[012]$/.test(anchor)) {
     throw Error('Choose a resize anchor.');
   }

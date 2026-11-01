@@ -116,9 +116,41 @@ assert.equal(left.removed, 2); // sprite and point anchors shifted outside
 const odd = resizeScene(make(), 5, 4, '1,1');
 assert.equal(odd.dx, 0);
 assert.equal(odd.dy, 0);
-for (const n of [0, 257, 1.5, NaN]) {
+for (const n of [0, 1025, 1.5, NaN]) {
   assert.throws(() => resizeScene(make(), n, 2, '0,0'));
 }
 assert.throws(() => resizeScene(make(), 2, 2, 'bogus'));
 assert.deepEqual(resizeScene(make(), 4, 3, '1,1').scene, original);
+
+// Wide/tall scenes share allocation limits with saved scene/draft decoding.
+for (const [width, height] of [
+  [480, 9],
+  [9, 480],
+  [512, 128],
+  [256, 256],
+]) {
+  const source = make();
+  source.scene.grid = 16;
+  const grown = resizeScene(source, width, height, '2,0');
+  source.change(() => {
+    source.scene = grown.scene;
+  });
+  const objectLayer = source.scene.layers[1];
+  assert(objectLayer.type === 'objectgroup');
+  assert.equal(objectLayer.objects[2].x, 8 + (width - 4) * 16);
+  source.undo();
+  assert.equal(source.scene.width, 4);
+  source.redo();
+  assert.equal(source.scene.width, width);
+}
+for (const [width, height, grid, message] of [
+  [513, 9, 16, /8192 pixels/],
+  [9, 513, 16, /8192 pixels/],
+  [512, 129, 16, /65536 cells/],
+  [257, 1, 32, /8192 pixels/],
+] as const) {
+  const source = make();
+  source.scene.grid = grid;
+  assert.throws(() => resizeScene(source, width, height, '0,0'), message);
+}
 console.log('Scene resize model checks passed');

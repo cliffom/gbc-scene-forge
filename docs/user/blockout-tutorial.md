@@ -252,7 +252,7 @@ There is no need to redraw the plan as artwork arrives.
 | What you see | What to check |
 | --- | --- |
 | No Blockout project option or scene command | Install 0.11.0 or newer and restart Forge. Refreshing an older running server does not load the upgraded package. |
-| Pixel dimensions are rejected | Each pixel dimension must divide evenly by the selected grid. For example, 960×272 works with an 8px grid. Each axis is limited to 256 cells. |
+| Pixel dimensions are rejected | Each pixel dimension must divide evenly by the selected grid. For example, 960×272 works with an 8px grid. Scenes support at most 65,536 cells and 8,192 pixels per axis. |
 | Clicking creates another object | Switch from the placement tool to Select before picking an existing object. |
 | An object cannot be selected | Activate its object layer and make sure that layer is visible. Use the object list, or the camera's Select / move button for a camera frame. |
 | A typed field is disabled | Check Override shared value for that field. Uncheck it to inherit the shared default again. |

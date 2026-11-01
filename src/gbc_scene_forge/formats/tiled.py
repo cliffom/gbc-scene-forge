@@ -5,6 +5,7 @@ from pathlib import PurePosixPath
 from gbc_scene_forge.artwork.model import GRIDS, sprite_mapping
 from gbc_scene_forge.core.validation import integer, require
 from gbc_scene_forge.scene_objects.model import check_object, decode_object, encode_object
+from gbc_scene_forge.scenes.dimensions import check_dimensions
 
 EMPTY = ""
 
@@ -56,10 +57,7 @@ def _check_flat(scene, project):
         and not set(scene) - {"width", "height", "grid", "cells", "objects", "next_object_id"},
         "Unsupported scene fields",
     )
-    require(
-        integer(scene["width"], 1, 256) and integer(scene["height"], 1, 256),
-        "Scene dimensions must be within 1..256",
-    )
+    check_dimensions(scene["width"], scene["height"], scene["grid"])
     require(
         type(scene["grid"]) is int and scene["grid"] in GRIDS, "Choose an 8, 16 or 32 pixel grid"
     )
@@ -176,7 +174,7 @@ def _decode_flat(document, project):
         "Unsupported Tiled map format",
     )
     width, height, size = (document.get(k) for k in ("width", "height", "tilewidth"))
-    require(integer(width, 1, 256) and integer(height, 1, 256), "Invalid Tiled dimensions")
+    check_dimensions(width, height, size)
     require(
         type(size) is int and size in GRIDS and document.get("tileheight") == size,
         "Unsupported Tiled grid",
@@ -340,10 +338,7 @@ def check_scene(scene, project):
         - {"width", "height", "grid", "layers", "next_layer_id", "next_object_id"},
         "Unsupported layered scene fields",
     )
-    require(
-        integer(scene["width"], 1, 256) and integer(scene["height"], 1, 256),
-        "Scene dimensions must be within 1..256",
-    )
+    check_dimensions(scene["width"], scene["height"], scene["grid"])
     require(type(scene["grid"]) is int and scene["grid"] in GRIDS, "Unsupported grid")
     layers = scene["layers"]
     require(isinstance(layers, list) and 1 <= len(layers) <= 128, "Use 1..128 layers")
@@ -419,10 +414,7 @@ def encode(scene, project):
 
 def decode(document, project):
     require(isinstance(document, dict), "Expected a Tiled map")
-    require(
-        integer(document.get("width"), 1, 256) and integer(document.get("height"), 1, 256),
-        "Invalid Tiled dimensions",
-    )
+    check_dimensions(document.get("width"), document.get("height"), document.get("tilewidth"))
     layers = document.get("layers")
     require(isinstance(layers, list) and 1 <= len(layers) <= 128, "Use 1..128 layers")
     decoded = []

@@ -7,6 +7,7 @@ from gbc_scene_forge.artwork import atlas, tilesheet
 from gbc_scene_forge.core.identities import name
 from gbc_scene_forge.core.validation import identifier, integer, require
 from gbc_scene_forge.formats import tiled
+from gbc_scene_forge.scenes.dimensions import check_dimensions
 
 
 def relative(path):
@@ -93,7 +94,7 @@ def prepare(payload, document):
     )
     require(source.get("type", "map") == "map", "Expected a Tiled map")
     width, height, grid = (source.get(k) for k in ("width", "height", "tilewidth"))
-    require(integer(width, 1, 256) and integer(height, 1, 256), "Map dimensions must be 1..256")
+    check_dimensions(width, height, grid)
     require(
         type(grid) is int and grid in (8, 16, 32) and source.get("tileheight") == grid,
         "Only square 8, 16 or 32 px tiles are supported",

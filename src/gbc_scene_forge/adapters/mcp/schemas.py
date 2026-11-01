@@ -107,7 +107,7 @@ TOOLS = [
     ),
     tool(
         "create_scene",
-        "Create an empty scene; width/height are cells, grid is pixels.",
+        "Create an empty scene; width/height are cells, grid is pixels. At most 65536 cells and 8192 pixels per axis.",
         {**GUARD, "name": TEXT, "width": ID, "height": ID, "grid": {"enum": [8, 16, 32]}},
     ),
     tool(

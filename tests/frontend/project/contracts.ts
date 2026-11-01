@@ -424,3 +424,35 @@ await test('scene and catalog schemas retain structural errors and domain error 
     { message: 'Expected a JSON object' },
   );
 });
+
+await test('wide native scenes and recovered drafts use the same scene decoder', () => {
+  for (const [width, height, grid, valid] of [
+    [480, 9, 16, true],
+    [9, 480, 16, true],
+    [1024, 64, 8, true],
+    [256, 256, 32, true],
+    [513, 9, 16, false],
+    [512, 129, 16, false],
+  ] as const) {
+    const candidate = {
+      ...saved,
+      scene: {
+        ...scene,
+        width,
+        height,
+        grid,
+        layers: [
+          {
+            ...scene.layers[0],
+            cells: Array.from({ length: height }, () => Array<string>(width).fill('')),
+          },
+        ],
+      },
+    };
+    if (valid) {
+      assert.equal(decodeLoaded(candidate).width, width);
+    } else {
+      assert.throws(() => decodeLoaded(candidate), /Invalid scene response/);
+    }
+  }
+});
