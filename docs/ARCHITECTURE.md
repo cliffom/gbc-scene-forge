@@ -108,7 +108,7 @@ profile persistence/report transport and animation closure, and contribute findi
 to project diagnostics. Target profiles stay in the Forge manifest, never portable
 Tiled map/tileset properties. Estimates do not establish runtime compatibility.
 
-Saved artwork review belongs to `scenes/rendering.py` and
+Saved or candidate artwork review belongs to `scenes/rendering.py` and
 `SceneService.review_artwork`. It reuses canonical Tiled layers/transform flags,
 atlas grid slicing, sprite origins and shared planning camera selection. Views
 retain native scale and transparency without browser overlays/playback; the
@@ -119,3 +119,12 @@ source budgets bound work; source images load lazily. MCP only creates bounded
 session artifacts from those bytes. Atlas upload preflight and writes both use
 `ArtworkService.import_bundle` with the existing bundle validation, serialization
 and durable transaction guards. No adapter writes project inventory directly.
+
+Reusable composition placement rules live in `scene_objects/compositions.py`.
+`SceneService.place_stamp` uses them through the same canonical candidate,
+round-trip, verified-read and transaction path as `SceneService.edit`.
+MCP `place_stamp` only maps arguments to that service. Layer occurrence slots,
+visibility, tile replacement, pixel offsets and fresh IDs follow browser
+composition semantics; missing layers and scene-edge overflow reject placement.
+Candidate artwork review validates and round-trips the submitted scene while
+retaining original saved revision and declared-asset guards.

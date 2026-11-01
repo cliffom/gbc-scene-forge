@@ -177,6 +177,21 @@ TOOLS = [
         ("dry_run",),
     ),
     tool(
+        "place_stamp",
+        "Place a saved stamp at x/y cell indices with the same grid; the whole stamp must fit. "
+        "Maps type/name occurrence slots to existing visible layers, overwrites all covered cells "
+        "including empty cells, appends objects with fresh IDs. No automatic layers or clipping. "
+        "dry_run returns an unsaved candidate for review_artwork/review_blockout.",
+        {
+            **SCENE,
+            "stamp_id": TEXT,
+            "x": {"type": "integer", "minimum": 0, "maximum": 65535},
+            "y": {"type": "integer", "minimum": 0, "maximum": 65535},
+            "dry_run": {"type": "boolean"},
+        },
+        ("dry_run",),
+    ),
+    tool(
         "save_scene",
         "Save validated canonical scene content (layers, tiles, sprites, objects). "
         "Inspect/dry-run first; preserves normal broken-world-link guards.",
@@ -218,12 +233,14 @@ TOOLS = [
     ),
     tool(
         "review_artwork",
-        "Read-only saved artwork PNG camera and bounded overview at native pixel scale. "
+        "Read-only artwork PNG camera and bounded overview at native pixel scale. "
         "Transparent, ordered visible layers, static sprites; planning overlays use review_blockout. "
-        "Each view is at most 1024x1024; overview defaults to the top-left bounded region.",
+        "Each view is at most 1024x1024; overview defaults to the top-left bounded region. "
+        "Optional scene reviews an unsaved canonical candidate with the original saved guards.",
         {
             **SCENE,
             "camera_id": ID,
+            "scene": NATIVE,
             "overview": schema(
                 {
                     "x": {"type": "integer", "minimum": 0, "maximum": 8192},
@@ -233,7 +250,7 @@ TOOLS = [
                 }
             ),
         },
-        ("camera_id", "overview"),
+        ("camera_id", "overview", "scene"),
         read=True,
     ),
     tool(
@@ -293,7 +310,7 @@ TOOLS = [
 
 DEFERRED = [
     "Scene rename/duplicate/delete and definition/stamp deletion (use browser)",
-    "Semantic terrain brushes and stamp placement (use browser or canonical save_scene)",
+    "Semantic terrain brushes (use browser or canonical save_scene)",
     "Animated artwork playback, browser selection/Undo, draft inspection/mutation",
     "Palette profile editing, tile metadata editing and sprite preview preference editing",
     "Generic PNG/Tiled intake, terrain brush commands and profile editing (use browser)",

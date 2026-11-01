@@ -148,6 +148,52 @@ test('refresh: Saved-file refresh with a real stdio MCP writer and protected bro
   await evaluate(
     `window.__probeCount=0;window.__realFetch=window.fetch;window.fetch=(...args)=>{if(String(args[0]).includes('/api/revisions'))window.__probeCount++;return window.__realFetch(...args)}`,
   );
+  // Place a saved composition through the real SDK while the camera draft is dirty.
+  // The stamp's source ID collides with an existing object; placement must allocate anew.
+  const stampBase = record((await saved()).scene);
+  const sourceLayer = array(stampBase.layers, record).find((layer) =>
+    array(layer.objects ?? [], record).some((item) => item.kind === 'point'),
+  );
+  assert.ok(sourceLayer);
+  const sourceObject = array(sourceLayer.objects, record).find((item) => item.kind === 'point');
+  assert.ok(sourceObject);
+  const library = await agent('save_stamp', {
+    project_revision: (await catalog()).revision,
+    name: 'Agent marker',
+    slots: [0],
+    scene: {
+      width: 1,
+      height: 1,
+      grid: stampBase.grid,
+      next_layer_id: Number(sourceLayer.id) + 1,
+      next_object_id: Number(sourceObject.id) + 1,
+      layers: [{ ...sourceLayer, objects: [{ ...sourceObject, x: 0, y: 0 }] }],
+    },
+  });
+  const stampId = array(record(library.project).stamps, record).at(-1)?.id;
+  const placementArgs = {
+    project_revision: library.revision,
+    scene_revision: (await saved()).revision,
+    scene_id: id,
+    stamp_id: stampId,
+    x: 2,
+    y: 2,
+  };
+  const candidate = await agent('place_stamp', { ...placementArgs, dry_run: true });
+  const review = await agent('review_blockout', {
+    project_revision: placementArgs.project_revision,
+    scene_revision: placementArgs.scene_revision,
+    scene_id: id,
+    scene: candidate.scene,
+  });
+  assert.equal(review.snapshot_revision, record(candidate.changes).after_snapshot);
+  const placed = await agent('place_stamp', placementArgs);
+  assert.deepEqual(placed.scene, candidate.scene);
+  const allocatedId = array(placed.allocated_object_ids, (value) => value)[0];
+  assert.notEqual(allocatedId, sourceObject.id);
+  assert.equal(objects((await saved()).scene).find((item) => item.id === allocatedId)?.x, 16);
+  await expect(page.locator('#dirty')).toHaveText('UNSAVED');
+  await expect(page.locator('#undo')).toBeEnabled();
   await agent('create_scene', {
     project_revision: (await catalog()).revision,
     name: 'Discovered while dirty',
@@ -491,6 +537,6 @@ test('refresh: Saved-file refresh with a real stdio MCP writer and protected bro
   await page.screenshot({ path: testInfo.outputPath('external-scene-deleted' + '.png') });
 
   console.log(
-    'Refresh browser passed: real MCP saves, view preservation, forms, paused dirty polling, save conflicts, manual checks, in-flight edits, animated sprites, reconnect, inventories and deletion.',
+    'Refresh browser passed: real MCP saves and stamp placement, view preservation, forms, paused dirty polling, save conflicts, manual checks, in-flight edits, animated sprites, reconnect, inventories and deletion.',
   );
 });
