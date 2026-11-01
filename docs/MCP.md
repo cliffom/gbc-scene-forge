@@ -11,7 +11,7 @@ transactions as browser authoring. There is no connector or game compiler.
 Install the release with Python 3.10 or newer:
 
 ```sh
-python -m pip install --upgrade 'gbc-scene-forge[mcp]==0.18.0'
+python -m pip install --upgrade 'gbc-scene-forge[mcp]==0.22.0'
 gbc-scene-forge-mcp --project-root /absolute/path/to/projects
 ```
 
@@ -73,7 +73,7 @@ and [official Python SDK](https://github.com/modelcontextprotocol/python-sdk/tre
 | --- | --- | --- |
 | Discovery | `list_projects`, `get_project`, `get_scene`, `capabilities`. Canonical scenes, ordered layers/cells/objects, imported asset inventories, definitions, stamps, world data and revisions. | File browsing outside declared inventories; live subscriptions. |
 | Creation | `create_project` (empty or blockout), `create_scene` (cell dimensions), `create_blockout_scene` (pixel/cell settings and camera). | Sample-project creation through MCP. |
-| Scene editing | `edit_scene`: atomic place/update/duplicate/delete object batches, dry-run candidates and before/after summaries. `save_scene`: validated full canonical layers, tile cells, sprites and objects, including typed properties. | Semantic tile brushes, layer operations and stamp placement; use canonical `save_scene` or browser. Scene rename/duplicate/delete use browser. |
+| Scene editing | `edit_scene`: atomic object, tile painting/erasing and layer creation/update/reorder/deletion batches, dry-run candidates and before/after summaries. `save_scene`: validated full canonical layers, tile cells, sprites and objects, including typed properties. | Semantic terrain brushes and stamp placement; use canonical `save_scene` or browser. Scene rename/duplicate/delete use browser. |
 | Project editing | `save_object_definition`, `save_world`, `save_stamp` reuse native validators and transaction services. | Definition/stamp deletion, palette profile/metadata and animation preference editing use browser. No arbitrary import paths. |
 | Artwork | `import_atlas`: bounded uploaded manifest/PNG, preflight and compatible reimport with exact project/scene acknowledgments. | Arbitrary filesystem paths; artwork creation/approval. |
 | Review | `review_artwork`: saved PNG camera and bounded/paged overview. `review_blockout`: full overview and chosen camera frame SVG resources, exact saved/candidate revisions, pixel dimensions and camera intent. | Animated playback and runtime/physics simulation. |
@@ -138,8 +138,63 @@ cells are `""`; painted references come from the imported atlas inventory.
 7. Commit a reviewed candidate with `save_scene`, using its original guards and
    `scene`. Reinspect after writes. Object summaries contain before/after values,
    changed layer IDs and snapshot hashes; full-scene summaries cap detailed object
-   changes at 128 and explicitly report truncation. The returned canonical scene
+   and tile changes at 128 each and explicitly report truncation. Layer metadata
+   before/after and stored layer order are also included. The returned canonical scene
    is the serialized round-trip result.
+
+## Tile and layer batches
+
+`edit_scene` accepts the following operations alongside object edits. All operations
+run sequentially against a private candidate and save once. A batch contains
+1..128 operations, at most 4,096 cell writes total (including repeated writes to
+the same coordinate), and at most 4 MiB of input. `dry_run:true` returns a canonical
+candidate without writing. Both project and scene revisions are required, including
+for dry runs. The same operations work on the original flat Ground/Sprites scenes;
+responses retain the normal canonical flat or layered representation.
+
+| Operation | Fields and behavior |
+| --- | --- |
+| `paint_tiles` | `layer_id`, `cells:[{x,y,tile}]`. Coordinates are zero-based **cell** indices, not pixels. `tile` is an imported tile reference for the scene grid, with optional native `#1`..`#7` transform suffix; `""` clears a cell. |
+| `erase_tiles` | `layer_id`, `cells:[{x,y}]`. Clears the specified cells to `""`. |
+| `create_layer` | `name`, `type` (`tilelayer`/`objectgroup`), optional `visible` (default true) and `index` (default append). Allocates an empty native layer. |
+| `update_layer` | `layer_id`, nonempty `changes` containing `name` and/or `visible`. Identity and type cannot be changed. |
+| `move_layer` | `layer_id`, `index`. Index is the zero-based final position in stored order, bottom to top; the browser displays its layer list in reverse. |
+| `delete_layer` | `layer_id`. Removes the layer and its tiles/objects. At least one layer must remain; normal linked-object removal guards apply when saving. |
+
+Layer creation allows an insertion index from zero through the existing layer
+count; moving requires an index within the existing list. Native limits remain
+128 layers and IDs below 2,147,483,647. Existing layer/object IDs and allocation
+counters are retained; deletion does not recycle IDs. `allocated_layer_ids` lists
+new layers retained in the returned candidate, in its stored order. To target a
+layer created earlier in the same batch, use the inspected `next_layer_id` (or
+max existing layer ID plus one for a flat scene).
+
+For example, after inspecting the scene and its tile layer ID:
+
+```json
+[
+  {"op":"paint_tiles","layer_id":1,"cells":[{"x":2,"y":3,"tile":"terrain/earth/0/0"}]},
+  {"op":"update_layer","layer_id":1,"changes":{"name":"Forest floor"}},
+  {"op":"create_layer","name":"Decoration","type":"tilelayer"}
+]
+```
+
+Out-of-bounds coordinates, unknown/wrong-grid tile references, non-tile target
+layers and malformed operations reject the complete batch. Hidden layers may be
+explicitly edited. Repeated coordinates are applied in order; the last valid write
+wins. Direct cell edits do not infer terrain connections or alter neighboring
+cells. Terrain brushes and stamp placement remain deferred.
+
+The summary reports net `tile_change_count`, up to 128 `tile_changes` with
+`layer_id`, cell `x`/`y` and before/after references, plus
+`tile_changes_truncated`. Added/deleted tile layers compare their cells against
+empty cells. `layer_changes` reports before/after name, type, visibility and index;
+`before_layer_order`/`after_layer_order` and `changed_layer_ids` also report moves.
+Review a dry-run candidate with `review_blockout` and optional `scene`, or save it
+with `save_scene` using the original revision guards. `review_artwork` renders
+saved scenes only.
+
+## Project library and world edits
 
 `save_world` accepts the native `world` document and the complete
 `scene_revisions` map (available from diagnostics). `save_object_definition`

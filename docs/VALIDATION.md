@@ -346,10 +346,38 @@ Dates, revisions and environments missing from the originals remain unknown.
   revision was not tagged or published; the release candidate remains 0.21.2.
   Local passes are not independently archived CI evidence.
 
+## MCP tile and layer authoring (#109, #110)
+
+- **Scope:** Prepared 0.22.0 on local branch `feat/mcp-tile-layer-authoring`, based
+  on `e1cf30e`, 2026-11-01. Darwin 27.0.0 arm64, Python 3.13.13, Node 24.22.1,
+  MCP SDK 1.30.0 and Playwright Chromium 156.0.8078.4. Synthetic disposable
+  projects and freshly installed production wheels; no consumer project was edited.
+- **Method:** `make docs-check lint test`; targeted tile/layer regressions;
+  `poetry check --lock`; production `make build check-dist test-browser`;
+  installed-wheel first-use acceptance; fresh optional-MCP wheel installation
+  with `make test-mcp test-mcp-browser`. The real stdio SDK workflow creates,
+  renames/hides, reorders, paints, reviews a dry-run candidate, erases and deletes
+  a layer, including stale revision and malformed-schema rejection.
+- **Result:** Lint, docs and frontend suites passed; the full Python run passed
+  300 tests before one additional wrong-grid/no-op case was added. The final
+  targeted tile/layer suite passed all 10 cases and installed-MCP discovery
+  passed all 37 cases. Regression checks cover atomic rejection, cell budgets,
+  transformed references, flat scenes, final-layer protection, stable IDs,
+  layer limits, linked-object deletion, project/scene conflicts and bounded
+  summaries. Production source/wheel metadata and six plain-wheel smoke tests
+  passed. Regular browser acceptance passed 41 cases with two opt-in profiling
+  scenarios skipped; installed-wheel first use passed one case, and installed
+  MCP/browser draft-conflict and refresh acceptance passed both cases.
+- **Limits:** These are local automated observations, not archived CI evidence
+  or human usability assessment. External Tiled and its rasterizer were not
+  installed, so official-application interoperability was not rerun. Semantic
+  terrain brushes, stamp placement, browser drafts and Undo are outside these
+  MCP operations. Tagging and package publication were not performed.
+
 ## Remaining checks
 
 This is the single maintained validation checklist. Issue state was checked on
-2026-10-31; closing issues or publishing packages does not satisfy these checks.
+2026-11-01; closing issues or publishing packages does not satisfy these checks.
 Current automated procedures remain in [releasing](RELEASING.md) and
 [browser testing](BROWSER-TESTING.md). Add scoped evidence above when completing a
 check, retaining actual revision, environment, attribution, failures and limits.
@@ -363,6 +391,8 @@ check, retaining actual revision, environment, attribution, failures and limits.
 - [ ] Compare each remaining response-decoder migration against its original output/error/normalization corpus and record bundle cost and adopt/retain/defer decisions (#75, #67).
 
 ### Platform, interoperability and publication gaps
+
+- [ ] Run the optional official Tiled/rasterizer interoperability checks for prepared 0.22.0 when those applications are available (#109, #110).
 
 - [ ] Record non-Chromium desktop-browser and Windows runtime results with exact versions and workflows; these are outside the automated browser matrix.
 - [ ] Configure the TestPyPI trusted publisher and verify an upload if that channel is needed; the historical 0.1.4 attempt failed with `invalid-publisher`. Local wheel checks and PyPI publication are separate evidence.

@@ -459,6 +459,77 @@ class ProtocolTests(unittest.TestCase):
                 image = await client.read_resource(review["camera_resource"]["uri"])
                 self.assertEqual(image.contents[0].mimeType, "image/png")
                 self.assertTrue(base64.b64decode(image.contents[0].blob).startswith(b"\x89PNG"))
+                # Real SDK workflow: create, rename/hide, reorder, paint, erase and delete.
+                next_layer = loaded["scene"]["next_layer_id"]
+                operations = [
+                    dict(op="create_layer", name="SDK overlay", type="tilelayer"),
+                    dict(
+                        op="update_layer",
+                        layer_id=next_layer,
+                        changes=dict(name="SDK details", visible=False),
+                    ),
+                    dict(op="move_layer", layer_id=next_layer, index=0),
+                    dict(
+                        op="paint_tiles",
+                        layer_id=next_layer,
+                        cells=[dict(x=0, y=0, tile="terrain/earth/0/0")],
+                    ),
+                ]
+                candidate = await call(
+                    "edit_scene", {**args, "operations": operations, "dry_run": True}
+                )
+                unchanged = await call("get_scene", dict(project="protocol", scene_id=loaded["id"]))
+                self.assertEqual(unchanged["revision"], args["scene_revision"])
+                self.assertEqual(candidate["allocated_layer_ids"], [next_layer])
+                self.assertEqual(candidate["changes"]["tile_change_count"], 1)
+                candidate_review = await call(
+                    "review_blockout", {**args, "scene": candidate["scene"]}
+                )
+                self.assertEqual(
+                    candidate_review["snapshot_revision"], candidate["changes"]["after_snapshot"]
+                )
+                saved = await call("edit_scene", {**args, "operations": operations})
+                self.assertEqual(saved["scene"], candidate["scene"])
+                conflict = await client.call_tool("edit_scene", {**args, "operations": operations})
+                self.assertTrue(conflict.isError)
+                self.assertEqual(conflict.structuredContent["error"]["code"], "conflict")
+                args.update(
+                    scene_revision=saved["revision"], project_revision=saved["project_revision"]
+                )
+                saved = await call(
+                    "edit_scene",
+                    {
+                        **args,
+                        "operations": [
+                            dict(op="erase_tiles", layer_id=next_layer, cells=[dict(x=0, y=0)]),
+                            dict(
+                                op="update_layer", layer_id=next_layer, changes=dict(visible=True)
+                            ),
+                        ],
+                    },
+                )
+                self.assertEqual(saved["scene"]["layers"][0]["cells"][0][0], "")
+                args.update(
+                    scene_revision=saved["revision"], project_revision=saved["project_revision"]
+                )
+                invalid = await client.call_tool(
+                    "edit_scene",
+                    {
+                        **args,
+                        "operations": [
+                            dict(op="move_layer", layer_id=next_layer, index=True),
+                        ],
+                    },
+                )
+                self.assertTrue(invalid.isError)
+                saved = await call(
+                    "edit_scene",
+                    {**args, "operations": [dict(op="delete_layer", layer_id=next_layer)]},
+                )
+                self.assertNotIn(next_layer, [layer["id"] for layer in saved["scene"]["layers"]])
+                args.update(
+                    scene_revision=saved["revision"], project_revision=saved["project_revision"]
+                )
                 for name, bad in (
                     ("edit_scene", {**args, "operations": []}),
                     ("get_project", dict(project="../escape")),
