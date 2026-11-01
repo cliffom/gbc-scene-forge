@@ -229,10 +229,10 @@ print(loaded['id'])
         await frame();
         const clear = canvas.toDataURL();
         const rect = canvas.getBoundingClientRect();
-        const move = () =>
+        const move = (x = 26) =>
           canvas.dispatchEvent(
             new PointerEvent('pointermove', {
-              clientX: rect.left + 26,
+              clientX: rect.left + x,
               clientY: rect.top + 26,
               pointerId: 1,
             }),
@@ -252,7 +252,8 @@ print(loaded['id'])
         await frame();
         const cancel = { immediate, paints: window.renderingMetrics.draws - before };
         before = window.renderingMetrics.draws;
-        move();
+        // Cancel left hover at cell 3,3; change cells to queue a fresh frame.
+        move(34);
         const zoom = document.getElementById('zoom');
         if (!(zoom instanceof HTMLSelectElement)) {
           throw Error('Expected zoom');
