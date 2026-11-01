@@ -333,6 +333,10 @@ print(loaded['id'])
       });
       await profile('burst-hover', async () => {
         const immediate = await page.locator('#scene').evaluate((canvas) => {
+          // Independent refresh/checkpoint timers may run between profile setup tasks.
+          // Only synchronous hover-handler work belongs to this assertion.
+          const beforeDraws = window.renderingMetrics.draws;
+          const beforeSerializations = window.renderingMetrics.serializations;
           const rect = canvas.getBoundingClientRect();
           for (let i = 0; i < 20; i++) {
             canvas.dispatchEvent(
@@ -344,8 +348,8 @@ print(loaded['id'])
             );
           }
           return {
-            draws: window.renderingMetrics.draws,
-            serializations: window.renderingMetrics.serializations,
+            draws: window.renderingMetrics.draws - beforeDraws,
+            serializations: window.renderingMetrics.serializations - beforeSerializations,
             coordinates: document.getElementById('coordinates')?.textContent,
           };
         });

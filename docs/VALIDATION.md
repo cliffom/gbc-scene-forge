@@ -234,7 +234,14 @@ Dates, revisions and environments missing from the originals remain unknown.
   scene switching, draft retries/recovery and save conflicts. Installed-wheel first
   use passed; a fresh optional-MCP wheel install passed 18 protocol tests and both
   MCP/browser-refresh scenarios, including dirty/form/hidden protection, in-flight
-  edit races, animated adoption and disposal.
+  edit races, animated adoption and disposal. The later
+  [post-merge run at `40d3374`](https://github.com/cliffom/gbc-scene-forge/actions/runs/41276478554)
+  passed 37/38 browser scenarios: the large-profile immediate assertion observed
+  one independent background dirty check between profile reset and burst dispatch.
+  Release preparation changed that assertion to compare counters within the same
+  synchronous task, preserving aggregate profiling counts and the zero-hover-work
+  requirement. Isolated lint/unit checks and both small/large rendering profiles
+  passed after correction. Tagging/publication were held while correcting the test isolation.
 - **Limits:** Measurements are one local automated sample with intrusive profiling,
   not physical-device input, GPU/compositor timings or universal speedups.
   Queuing can add a frame of hover latency. Whole-scene canvas traversal remains
