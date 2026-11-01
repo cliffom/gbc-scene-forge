@@ -6,6 +6,10 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.21.1 — Lighter hover feedback and dirty checks
+
+[Release notes](RELEASE-0.21.1.md).
+
 ## 0.21.0 — Middle-button scene panning
 
 [Release notes](RELEASE-0.21.0.md).

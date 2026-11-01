@@ -160,6 +160,9 @@ scene. Hold the middle mouse button and drag over the scene workspace to pan tem
 with any editing tool selected. Release the button to stop; the selected tool stays
 unchanged. Space+drag also pans temporarily; release Space to return to the
 selected tool. The cursor changes to a hand while panning.
+Coordinates update immediately as the pointer moves. Hover outlines follow the
+latest cell on the next animation frame; moving or leaving the canvas does not
+create unsaved changes. Painting, selections and inspector changes remain immediate.
 The Space shortcut stays inactive in fields, buttons and dialogs. Mouse-operated tools,
 layer controls and editor dropdowns return focus to the canvas. Keyboard-operated
 controls keep focus for navigation. Enter finishes editing a layer name or search

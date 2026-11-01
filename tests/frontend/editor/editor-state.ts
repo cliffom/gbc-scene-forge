@@ -184,3 +184,49 @@ await test('stopping a replaced checkpoint writer preserves its saved draft', as
   assert.deepEqual(routes, ['checkpoint-draft']);
   assert.equal(writer.revision, 'checkpoint-a');
 });
+
+await test('dirty equality observes in-progress edits, no-ops, cancellation and saved baselines', () => {
+  const scene = session();
+  const editor = scene.editor;
+  assert.ok(editor);
+  editor.rename('Ground');
+  assert.equal(scene.dirty(), false);
+  editor.begin();
+  editor.stamp(0, 0, [['terrain/earth']]);
+  assert.equal(scene.dirty(), true); // Visible before pointerup/end.
+  editor.cancel();
+  assert.equal(scene.dirty(), false);
+  editor.visibility();
+  assert.equal(scene.dirty(), true);
+  editor.undo();
+  assert.equal(scene.dirty(), false);
+  editor.redo();
+  assert.equal(scene.dirty(), true);
+  scene.baseline = scene.snapshot(); // Exact save/recovery baseline ownership is unchanged.
+  assert.equal(scene.dirty(), false);
+  editor.undo();
+  assert.equal(scene.dirty(), true);
+  editor.redo();
+  assert.equal(scene.dirty(), false);
+  editor.add('objectgroup');
+  scene.baseline = scene.snapshot();
+  const id = editor.createObject({
+    kind: 'point',
+    x: 1,
+    y: 1,
+    name: '',
+    class: '',
+    properties: [],
+  });
+  assert.equal(scene.dirty(), true);
+  scene.baseline = scene.snapshot();
+  const object = editor.objects.find((item) => item.id === id);
+  assert.ok(object);
+  editor.replaceObject({
+    ...object,
+    properties: [{ name: 'label', type: 'string', value: 'changed' }],
+  });
+  assert.equal(scene.dirty(), true);
+  editor.undo();
+  assert.equal(scene.dirty(), false);
+});

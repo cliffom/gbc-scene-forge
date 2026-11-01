@@ -12,10 +12,24 @@ import {
   setControl,
 } from '../support/browser-fixtures.ts';
 
-type Metrics = { draws: number; images: number; resets: number; styles: number; times: number[] };
+type Metrics = {
+  draws: number;
+  images: number;
+  resets: number;
+  styles: number;
+  times: number[];
+  requests: number;
+  inputTimes: number[];
+  latencies: number[];
+  frames: number[];
+  serializations: number;
+  dirtyMs: number;
+  uiUpdates: number;
+};
 declare global {
   interface Window {
     renderingMetrics: Metrics;
+    renderingMonitor: number | undefined;
   }
 }
 
@@ -73,7 +87,70 @@ print(loaded['id'])
       if (!ctx) {
         throw Error('Expected drawing context');
       }
-      window.renderingMetrics = { draws: 0, images: 0, resets: 0, styles: 0, times: [] };
+      window.renderingMetrics = {
+        draws: 0,
+        images: 0,
+        resets: 0,
+        styles: 0,
+        times: [],
+        requests: 0,
+        inputTimes: [],
+        latencies: [],
+        frames: [],
+        serializations: 0,
+        dirtyMs: 0,
+        uiUpdates: 0,
+      };
+      const dirtyIndicator = document.getElementById('dirty');
+      if (!dirtyIndicator) {
+        throw Error('Expected dirty indicator');
+      }
+      new MutationObserver((records) => {
+        window.renderingMetrics.uiUpdates += records.length;
+      }).observe(dirtyIndicator, { childList: true });
+      let latestInput: number | undefined;
+      canvas.addEventListener(
+        'pointermove',
+        () => {
+          latestInput = performance.now();
+          window.renderingMetrics.requests++;
+          window.renderingMetrics.inputTimes.push(latestInput);
+        },
+        { capture: true },
+      );
+      const stringify = JSON.stringify;
+      JSON.stringify = new Proxy(stringify, {
+        apply(target, receiver, args) {
+          const value: unknown = args[0];
+          const authored =
+            typeof value === 'object' &&
+            value !== null &&
+            'layers' in value &&
+            Array.isArray(value.layers) &&
+            'nextLayer' in value;
+          const start = performance.now();
+          const result: unknown = Reflect.apply(target, receiver, args);
+          if (authored) {
+            window.renderingMetrics.serializations++;
+            window.renderingMetrics.dirtyMs += performance.now() - start;
+          }
+          return result;
+        },
+      });
+      let depth = 0;
+      const save = ctx.save.bind(ctx),
+        restore = ctx.restore.bind(ctx);
+      ctx.save = () => {
+        depth++;
+        save();
+      };
+      ctx.restore = () => {
+        restore();
+        if (--depth === 0 && latestInput !== undefined) {
+          window.renderingMetrics.latencies.push(performance.now() - latestInput);
+          latestInput = undefined;
+        }
+      };
       for (const key of ['width', 'height'] as const) {
         const descriptor = Object.getOwnPropertyDescriptor(HTMLCanvasElement.prototype, key);
         if (!descriptor?.get || !descriptor.set) {
@@ -126,17 +203,193 @@ print(loaded['id'])
     });
     const reset = () =>
       page.evaluate(() => {
-        window.renderingMetrics = { draws: 0, images: 0, resets: 0, styles: 0, times: [] };
+        performance.clearMeasures();
+        window.renderingMetrics = {
+          draws: 0,
+          images: 0,
+          resets: 0,
+          styles: 0,
+          times: [],
+          requests: 0,
+          inputTimes: [],
+          latencies: [],
+          frames: [],
+          serializations: 0,
+          dirtyMs: 0,
+          uiUpdates: 0,
+        };
       });
+    if (name === 'small' && !process.env.FORGE_RENDER_BASELINE) {
+      const transitions = await page.locator('#scene').evaluate(async (canvas) => {
+        if (!(canvas instanceof HTMLCanvasElement)) {
+          throw Error('Expected scene canvas');
+        }
+        const frame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+        canvas.dispatchEvent(new PointerEvent('pointerleave'));
+        await frame();
+        const clear = canvas.toDataURL();
+        const rect = canvas.getBoundingClientRect();
+        const move = (x = 26) =>
+          canvas.dispatchEvent(
+            new PointerEvent('pointermove', {
+              clientX: rect.left + x,
+              clientY: rect.top + 26,
+              pointerId: 1,
+            }),
+          );
+        let before = window.renderingMetrics.draws;
+        move();
+        canvas.dispatchEvent(new PointerEvent('pointerleave'));
+        await frame();
+        const leave = {
+          paints: window.renderingMetrics.draws - before,
+          clear: canvas.toDataURL() === clear,
+        };
+        before = window.renderingMetrics.draws;
+        move();
+        canvas.dispatchEvent(new PointerEvent('pointercancel'));
+        const immediate = window.renderingMetrics.draws - before;
+        await frame();
+        const cancel = { immediate, paints: window.renderingMetrics.draws - before };
+        before = window.renderingMetrics.draws;
+        // Cancel left hover at cell 3,3; change cells to queue a fresh frame.
+        move(34);
+        const zoom = document.getElementById('zoom');
+        if (!(zoom instanceof HTMLSelectElement)) {
+          throw Error('Expected zoom');
+        }
+        zoom.value = '2';
+        zoom.dispatchEvent(new Event('change'));
+        const zoomImmediate = window.renderingMetrics.draws - before;
+        await frame();
+        const zoomPaints = window.renderingMetrics.draws - before;
+        zoom.value = '1';
+        zoom.dispatchEvent(new Event('change'));
+        return { leave, cancel, zoomImmediate, zoomPaints };
+      });
+      expect(transitions).toEqual({
+        leave: { paints: 1, clear: true },
+        cancel: { immediate: 1, paints: 1 },
+        zoomImmediate: 1,
+        zoomPaints: 1,
+      });
+    }
+    // Native Playwright mouse input and deliberately synchronous bursts are separate samples.
+    const interactions: Record<
+      string,
+      Metrics & { measures: { name: string; duration: number }[] }
+    > = {};
+    const profile = async (label: string, work: () => Promise<void>) => {
+      await page.evaluate(() => {
+        performance.clearMeasures();
+        performance.clearMarks();
+        window.renderingMetrics = {
+          draws: 0,
+          images: 0,
+          resets: 0,
+          styles: 0,
+          times: [],
+          requests: 0,
+          inputTimes: [],
+          latencies: [],
+          frames: [],
+          serializations: 0,
+          dirtyMs: 0,
+          uiUpdates: 0,
+        };
+      });
+      await page.evaluate(() => {
+        const tick = (time: number) => {
+          window.renderingMetrics.frames.push(time);
+          window.renderingMonitor = requestAnimationFrame(tick);
+        };
+        window.renderingMonitor = requestAnimationFrame(tick);
+      });
+      await work();
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+          ),
+      );
+      interactions[label] = await page.evaluate(() => {
+        if (window.renderingMonitor !== undefined) {
+          cancelAnimationFrame(window.renderingMonitor);
+        }
+        return {
+          ...window.renderingMetrics,
+          measures: performance
+            .getEntriesByType('measure')
+            .map(({ name, duration }) => ({ name, duration })),
+        };
+      });
+    };
+    if (name === 'small' || name === 'large') {
+      const first = await scenePoint(page, 0, 0);
+      await profile('native-hover', async () => {
+        for (let i = 0; i < 24; i++) {
+          await page.mouse.move(first.x + (i % 12) * 8, first.y + Math.floor(i / 12) * 8);
+        }
+      });
+      await profile('burst-hover', async () => {
+        const immediate = await page.locator('#scene').evaluate((canvas) => {
+          const rect = canvas.getBoundingClientRect();
+          for (let i = 0; i < 20; i++) {
+            canvas.dispatchEvent(
+              new PointerEvent('pointermove', {
+                clientX: rect.left + (i % 12) * 8 + 2,
+                clientY: rect.top + 26,
+                pointerId: 1,
+              }),
+            );
+          }
+          return {
+            draws: window.renderingMetrics.draws,
+            serializations: window.renderingMetrics.serializations,
+            coordinates: document.getElementById('coordinates')?.textContent,
+          };
+        });
+        if (!process.env.FORGE_RENDER_BASELINE) {
+          expect(immediate.draws).toBe(0);
+          expect(immediate.serializations).toBe(0);
+          expect(immediate.coordinates).toContain('Cell 7, 3');
+        }
+      });
+      if (!process.env.FORGE_RENDER_BASELINE) {
+        expect(interactions['burst-hover'].draws).toBe(1);
+        expect(interactions['burst-hover'].uiUpdates).toBe(0);
+      }
+    }
+    if (name === 'small' && !process.env.FORGE_RENDER_BASELINE) {
+      const capture = info.outputPath('hover-feedback.png');
+      await page.screenshot({ path: capture });
+      await info.attach('hover-feedback.png', { path: capture, contentType: 'image/png' });
+    }
     const movesPerBurst = name === 'budget' ? 5 : 20;
     const moveCount = 6 * movesPerBurst;
     const results: Record<string, Metrics> = {};
     const snapshot = async (workload: string) => {
       results[workload] = await page.evaluate(() => window.renderingMetrics);
       if (workload !== 'animation') {
-        expect(results[workload].draws).toBe(moveCount);
-        expect(results[workload].images).toBe(moveCount * (width * height * 1.5 + 1));
+        const paints =
+          !process.env.FORGE_RENDER_BASELINE && workload.startsWith('hover') ? 6 : moveCount;
+        expect(results[workload].draws).toBe(paints);
+        expect(results[workload].images).toBe(paints * (width * height * 1.5 + 1));
+        if (!process.env.FORGE_RENDER_BASELINE && workload.startsWith('hover')) {
+          expect(results[workload].uiUpdates).toBe(0);
+        }
       }
+      if (!process.env.FORGE_RENDER_BASELINE && workload === 'painting') {
+        // One dirty serialization per UI refresh; allow independent refresh/checkpoint polling.
+        expect(results[workload].serializations).toBeGreaterThanOrEqual(moveCount);
+        expect(results[workload].serializations).toBeLessThan(moveCount * 2);
+      }
+      interactions[workload] = await page.evaluate(() => ({
+        ...window.renderingMetrics,
+        measures: performance
+          .getEntriesByType('measure')
+          .map(({ name, duration }) => ({ name, duration })),
+      }));
       if (!process.env.FORGE_RENDER_BASELINE) {
         expect(results[workload].resets).toBe(0);
         expect(results[workload].styles).toBe(0);
@@ -164,6 +417,7 @@ print(loaded['id'])
             window.renderingMetrics.times.push(performance.now() - start);
           }
         }
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
       }, movesPerBurst);
     };
     await moves(); // Warm up renderer and browser JIT before collecting timings.
@@ -178,6 +432,9 @@ print(loaded['id'])
     await clickControl(page, 'artwork-tab');
     await page.locator('[data-asset="terrain/stone"]').first().click();
     await page.locator('#scene').dispatchEvent('pointerleave');
+    await page.evaluate(
+      () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())),
+    );
     const original = await page.locator('#scene').evaluate((canvas) => {
       if (!(canvas instanceof HTMLCanvasElement)) {
         throw Error('Expected scene canvas');
@@ -268,6 +525,10 @@ print(loaded['id'])
     await expect(page.locator('#scene')).toHaveAttribute('width', '56');
     await page.locator('#scenes').selectOption(stdout.trim());
     await expect(page.locator('#scene')).toHaveAttribute('width', String((width + 1) * 8));
+    await info.attach('interaction-profile.json', {
+      body: JSON.stringify(interactions, null, 2),
+      contentType: 'application/json',
+    });
     await info.attach('rendering-profile.json', {
       body: JSON.stringify(results, null, 2),
       contentType: 'application/json',

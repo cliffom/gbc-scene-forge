@@ -62,7 +62,7 @@ export function createRecoveryController({
     );
   }
 
-  function checkpoint() {
+  function checkpoint(dirty?: boolean) {
     if (
       activity.busy ||
       gestures.anchor ||
@@ -74,7 +74,7 @@ export function createRecoveryController({
       return;
     }
     draftWriter.observe(
-      sceneSession.dirty()
+      (dirty ?? sceneSession.dirty())
         ? {
             project_id: workspaceState.project.id,
             scene_id: sceneSession.loaded.id,

@@ -15,7 +15,7 @@ Your projects stay on your computer.
 Install the release with Python 3.10 or newer:
 
 ```sh
-python -m pip install gbc-scene-forge==0.21.0
+python -m pip install gbc-scene-forge==0.21.1
 gbc-scene-forge
 ```
 
@@ -145,9 +145,9 @@ make run PROJECT_ROOT="$HOME/Scene Forge Projects"
 
 Use the same location on later launches to see those projects again. Unsupported
 or damaged manifests are reported in the selector so you can identify the folder
-that needs attention. Version 0.21.0 continues to use manifest format version 1.
+that needs attention. Version 0.21.1 continues to use manifest format version 1.
 
-### Bring an existing project into 0.21.0
+### Bring an existing project into 0.21.1
 
 Existing 0.2.0 projects keep their artwork, scene IDs and manifest format. To add
 one to the selector, stop Forge and move the whole project folder into your
@@ -323,7 +323,7 @@ at grid 16, within 65,536 cells and 8,192 pixels per axis.
 
 Copy the scene URL to reopen its saved state directly; see [scene links](docs/user/scene-links.md).
 
-See [the 0.21.0 release notes](docs/RELEASE-0.21.0.md) and
+See [the 0.21.1 release notes](docs/RELEASE-0.21.1.md) and
 [building and releasing](docs/RELEASING.md) for release validation and publication.
 
 ## License

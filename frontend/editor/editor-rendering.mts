@@ -21,6 +21,45 @@ import type { TileMetadata } from '../artwork/tile-metadata.mts';
 import { drawCollision, terrainColor } from '../artwork/tile-metadata.mts';
 import { tileContext, tileParts } from '../artwork/tile-transform.mts';
 
+/** One transient paint belongs to the current mounted scene, never a captured snapshot. */
+export function createHoverPaint(
+  lifetime: EditorLifetime,
+  sceneSession: Pick<SceneSession, 'editor' | 'loaded'>,
+  paint: () => void,
+) {
+  let pending: number | undefined;
+  function cancel() {
+    if (pending !== undefined) {
+      lifetime.cancelFrame(pending);
+      pending = undefined;
+    }
+  }
+  function request() {
+    if (
+      lifetime.disposed ||
+      pending !== undefined ||
+      !sceneSession.editor ||
+      !sceneSession.loaded
+    ) {
+      return;
+    }
+    const editor = sceneSession.editor;
+    const { id, revision } = sceneSession.loaded;
+    pending = lifetime.frame(() => {
+      pending = undefined;
+      if (
+        sceneSession.editor === editor &&
+        sceneSession.loaded?.id === id &&
+        sceneSession.loaded.revision === revision
+      ) {
+        paint();
+      }
+    });
+  }
+  lifetime.cleanup(cancel);
+  return { request, cancel };
+}
+
 export interface Ports {
   tileMetadata: (group: string, asset: string) => TileMetadata | undefined;
   syncBlockoutZoom: () => boolean;
@@ -30,6 +69,7 @@ export interface Ports {
   sprites: ReadonlyMap<string, { image: HTMLImageElement; region: Region }>;
 }
 export function createRenderingController({
+  lifetime,
   sceneSession,
   activity,
   sceneSelection,
@@ -55,6 +95,8 @@ export function createRenderingController({
   gestures: Pick<GestureState, 'hover' | 'pan' | 'spacePan'>;
   ports: Ports;
 }) {
+  const hoverPaint = createHoverPaint(lifetime, sceneSession, () => draw(false));
+
   function previewBlocked(rect: PreviewRect, selectedId: string): boolean {
     if (!sceneSession.editor || !sceneSession.loaded) {
       return false;
@@ -70,7 +112,9 @@ export function createRenderingController({
   }
 
   function draw(refreshUI = true) {
-    if (!sceneSession.editor || !sceneSession.loaded) {
+    // Immediate authoring/selection and animation draws supersede queued hover work.
+    hoverPaint.cancel();
+    if (lifetime.disposed || !sceneSession.editor || !sceneSession.loaded) {
       return;
     }
     if (
@@ -402,5 +446,13 @@ export function createRenderingController({
       y: coordinate(y, canvas.height - (item?.kind === 'rectangle' ? item.height - 1 : 0)),
     };
   }
-  return { draw, previewBlocked, point, spritePosition, hitObject, trackHover };
+  return {
+    draw,
+    requestHoverDraw: hoverPaint.request,
+    previewBlocked,
+    point,
+    spritePosition,
+    hitObject,
+    trackHover,
+  };
 }

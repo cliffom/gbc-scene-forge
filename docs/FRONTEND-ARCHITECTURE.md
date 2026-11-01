@@ -72,6 +72,32 @@ server checks use metadata caches. Scene replacement resets the existing preview
 it does not mount a second editor. An embedding host replacing the whole editor must call
 `dispose()` before mounting the next instance.
 
+## Hover feedback and dirty state
+
+Pointer coordinates update immediately. Cell changes and pointer leave request
+one transient canvas paint through `editor-rendering.mts:createHoverPaint`.
+The pending frame reads current hover, tool, brush and viewport state and uses
+`draw(false)`, avoiding control/inspector refresh and checkpoint work. Authoring,
+selection, cancellation and control changes keep synchronous `draw()`; animation
+keeps synchronous `draw(false)` inside its owned frame. Either immediate draw
+cancels a pending hover paint. If hover paints first, a later animation or authored
+draw in the same frame can still paint; immediate feedback takes priority.
+
+The mounted `EditorLifetime` owns/cancels the queued frame. A queued request also
+checks editor identity and loaded scene ID/revision before painting. Scene open,
+external adoption, recovery and close perform an immediate draw, superseding any
+queued work; identity checks reject replacements even before that draw. No scene
+snapshot or authored mutation is captured by the scheduler.
+
+Each synchronous composition `update()` evaluates content-based dirty equality
+once and passes the result to checkpoint observation and controls. This result
+expires when the call returns. Independent navigation, before-unload, refresh,
+visibility and periodic checkpoint checks still read current content. There is
+no persistent dirty cache, mutation generation or new invalidation contract;
+in-progress strokes, no-ops, undo back to saved content and adopted/recovered
+baselines retain their existing equality semantics. See the
+[interaction measurements](evaluations/canvas-repainting.md#interaction-efficiency-77-90-91).
+
 ## Directory layout
 
 `frontend/project.ts` is the browser entry; `frontend/build.ts` is the Node build

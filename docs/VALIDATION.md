@@ -207,6 +207,41 @@ Dates, revisions and environments missing from the originals remain unknown.
   and local logs are not archived evidence. Official Tiled tools were not rerun;
   project/Tiled/draft formats are unchanged. Release preparation is not publication.
 
+## Editor interaction efficiency (#77, #90, #91)
+
+- **Scope:** 2026-11-01 UTC; 0.21.1 implementation based on `5ddca60`, macOS
+  27.0.1 arm64, Apple M4 Max, Python 3.13.13, Node 24.22.1, Playwright 1.64.1
+  bundled headless Chromium, production acceptance bundle at 1440×1000. Isolated
+  profiles preceded the version bump and displayed 0.21.0 in both builds.
+- **Method:** Matching before/after native mouse and synthetic burst workloads,
+  temporary function timing and browser serialization/UI/paint counters in the
+  [rendering suite](../tests/playwright/editor/rendering.spec.ts). Detailed
+  [methods, counts, timings and failed harness attempts](evaluations/canvas-repainting.md#interaction-efficiency-77-90-91)
+  distinguish CPU paint completion from screen presentation. Deterministic
+  [scheduler tests](../tests/frontend/editor/hover-paint.ts) cover coalescing,
+  current state, cancellation, replacement identity/revision and disposal. The
+  [hover capture](screenshots/hover-feedback.png) was inspected at 1440×1000: latest
+  cell outline/coordinates, saved status, disabled Save and unchanged layer controls.
+- **Result:** Both small/large before and after scenarios passed; native hover
+  kept 24 paints with UI updates/dirty calls falling from 24/168 to zero.
+  Twenty-request bursts fell from 20 paints to one; 120 authored moves retained
+  120 immediate paints, with 614 dirty checks reduced to 122. Focused session and
+  scheduler tests passed. Browser checks confirmed leave pixels, synchronous
+  cancellation/control drawing, cancelled queued work and immediate coordinates.
+  `make docs-check lint test` passed, including all 16 TypeScript suites. Production
+  build/metadata and all six installed-wheel smoke checks passed. All 38 regular
+  browser scenarios passed, covering render/preview/history, lifecycle, review/pan,
+  scene switching, draft retries/recovery and save conflicts. Installed-wheel first
+  use passed; a fresh optional-MCP wheel install passed 18 protocol tests and both
+  MCP/browser-refresh scenarios, including dirty/form/hidden protection, in-flight
+  edit races, animated adoption and disposal.
+- **Limits:** Measurements are one local automated sample with intrusive profiling,
+  not physical-device input, GPU/compositor timings or universal speedups.
+  Queuing can add a frame of hover latency. Whole-scene canvas traversal remains
+  expensive. Ignored local reports are not archived evidence. Official Tiled tools
+  were unavailable and were not rerun; non-Chromium and physical-device behavior
+  remain unverified. No data formats changed; tagging and publication remain separate.
+
 ## Remaining checks
 
 This is the single maintained validation checklist. Issue state was checked on
@@ -215,9 +250,8 @@ Current automated procedures remain in [releasing](RELEASING.md) and
 [browser testing](BROWSER-TESTING.md). Add scoped evidence above when completing a
 check, retaining actual revision, environment, attribution, failures and limits.
 
-### Interaction and scalability (#77, #78, #90, #91, #92, #93)
+### Scene scalability (#78, #92, #93)
 
-- [ ] Measure representative real input and dirty-state serialization before changing hover/UI scheduling; distinguish transient feedback from synchronous authored changes (#77, #90, #91).
 - [ ] Record undo memory bounds and representative before/after dense-scene results; verify atomic history, composition, offscreen sprite/overlay extents and cache invalidation across undo/redo, reimport, refresh and disposal (#78, #92, #93).
 
 ### Contracts and infrastructure (#75, #67)

@@ -99,6 +99,8 @@ export function mountProjectEditor() {
     if (lifetime.disposed) {
       return;
     }
+    // Content equality is evaluated once for this synchronous control refresh.
+    const unsaved = sceneSession.dirty();
     reviewController.sync();
     artworkController.updateTerrain();
     panelsController.renderObjectValidation();
@@ -129,9 +131,8 @@ export function mountProjectEditor() {
       !select('object-definition-brush').value ||
       gestures.anchor !== null;
     select('object-definition-brush').disabled = activity.busy || !workspaceState.project;
-    recoveryController.checkpoint();
-    button('show-recovery').disabled =
-      activity.busy || gestures.anchor !== null || sceneSession.dirty();
+    recoveryController.checkpoint(unsaved);
+    button('show-recovery').disabled = activity.busy || gestures.anchor !== null || unsaved;
     panelsController.palettePanel.sync(
       workspaceState.project?.paletteProfile ?? null,
       activity.busy || gestures.anchor !== null,
@@ -151,12 +152,11 @@ export function mountProjectEditor() {
     }
     element('dirty', HTMLElement).textContent = !sceneSession.editor
       ? 'NO SCENE'
-      : sceneSession.dirty()
+      : unsaved
         ? 'UNSAVED'
         : 'SAVED';
-    element('dirty', HTMLElement).dataset.dirty = String(sceneSession.dirty());
+    element('dirty', HTMLElement).dataset.dirty = String(unsaved);
     button('save-preview-settings').disabled = activity.busy || !workspaceState.project;
-    const unsaved = Boolean(sceneSession.editor && sceneSession.dirty());
     button('save').disabled = activity.busy || !unsaved;
     button('save').classList.toggle('primary', unsaved);
     const saveState = element('scene-save-state', HTMLElement);
@@ -179,11 +179,10 @@ export function mountProjectEditor() {
       activity.busy || !workspaceState.project || gestures.anchor !== null;
     button('export-confirm').disabled = button('export-cancel').disabled = activity.busy;
     select('export-scope').disabled = activity.busy;
-    input('export-canvas').disabled =
-      activity.busy || !sceneSession.editor || !sceneSession.dirty();
+    input('export-canvas').disabled = activity.busy || !sceneSession.editor || !unsaved;
     button('undo').disabled = activity.busy || !sceneSession.editor?.undoStack.length;
     button('redo').disabled = activity.busy || !sceneSession.editor?.redoStack.length;
-    button('revert').disabled = activity.busy || !sceneSession.dirty();
+    button('revert').disabled = activity.busy || !unsaved;
     const hasComposition = Boolean(
       sceneSelection.selection ||
       sceneSelection.selectedObject ||
@@ -537,6 +536,7 @@ export function mountProjectEditor() {
       point: (...args) => renderingController.point(...args),
 
       draw: (...args) => renderingController.draw(...args),
+      requestHoverDraw: () => renderingController.requestHoverDraw(),
       spritePosition: (...args) => renderingController.spritePosition(...args),
       hitObject: (...args) => renderingController.hitObject(...args),
 
