@@ -29,6 +29,7 @@ export interface Ports {
     py: number;
   };
   draw: (refreshUI?: boolean) => void;
+  requestHoverDraw: () => void;
   spritePosition: (
     x: number,
     y: number,
@@ -562,14 +563,14 @@ export function createGesturesController({
     if (gestures.anchor) {
       paint(event);
     } else if (previous?.x !== gestures.hover?.x || previous?.y !== gestures.hover?.y) {
-      ports.draw();
+      ports.requestHoverDraw();
     }
   });
 
   lifetime.assign(canvas, 'onpointerleave', () => {
     gestures.hover = null;
     element('coordinates', HTMLElement).textContent = 'Cell —, — · Pixel —, —';
-    ports.draw();
+    ports.requestHoverDraw();
   });
 
   lifetime.assign(canvas, 'onpointerup', () => {

@@ -1,6 +1,6 @@
 # Roadmap
 
-Current baseline: Forge 0.20.0 authors standalone portable Tiled projects with
+Current baseline: Forge 0.21.0 authors standalone portable Tiled projects with
 imported artwork or artwork-free blockouts, optional MCP, guarded browser refresh,
 scene links and bounded wide/tall scenes. See [usage](STANDALONE.md) and the
 [changelog](CHANGELOG.md) for supported behavior and compatibility.
@@ -9,15 +9,6 @@ Open issue and milestone state was checked on 2026-10-31. These are outcome-base
 priorities, without promised release versions or dates. Measurements may justify
 retaining an existing implementation. Validation gaps live in the
 [single remaining-check list](VALIDATION.md#remaining-checks).
-
-## Editor interaction efficiency
-
-Reduce repeated serialization and unnecessary UI/hover work while preserving
-immediate authored feedback, undo/redo, recovery and external-refresh protection:
-
-- [#77](https://github.com/cliffom/gbc-scene-forge/issues/77): measure dirty-state serialization and reduce repeated work.
-- [#90](https://github.com/cliffom/gbc-scene-forge/issues/90): separate hover feedback from full UI updates.
-- [#91](https://github.com/cliffom/gbc-scene-forge/issues/91): assess coalescing redundant transient hover redraws.
 
 ## Large-scene scalability
 
