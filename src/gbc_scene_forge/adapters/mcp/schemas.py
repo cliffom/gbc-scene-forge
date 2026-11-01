@@ -164,6 +164,25 @@ TOOLS = [
         {**GUARD, "name": TEXT, "width": ID, "height": ID, "grid": {"enum": [8, 16, 32]}},
     ),
     tool(
+        "rename_scene",
+        "Rename a saved scene, preserving its UUID and content; returns renamed and exact catalog revision.",
+        {**SCENE, "name": TEXT},
+    ),
+    tool(
+        "duplicate_scene",
+        "Duplicate saved content with a fresh scene UUID, retaining native layer/object IDs. "
+        "Source and world connections are unchanged; returns duplicated, source_scene_id and scene_revision.",
+        {**SCENE, "name": TEXT},
+    ),
+    tool(
+        "delete_scene",
+        "Delete a saved scene and its world position. dry_run reports exact affected connections "
+        "without writing. Inspect first; confirm_broken_links:true acknowledges retaining those "
+        "connections as broken links at the supplied revisions. Defaults to rejecting linked deletion.",
+        {**SCENE, "dry_run": {"type": "boolean"}, "confirm_broken_links": {"type": "boolean"}},
+        ("dry_run", "confirm_broken_links"),
+    ),
+    tool(
         "edit_scene",
         "Atomic 1..128 object, tile and layer operations; at most 4096 cell writes per batch. "
         "Tile x/y are cell indices; layer index is zero-based stored order (bottom to top). "
@@ -284,6 +303,21 @@ TOOLS = [
         {**GUARD, "definition": NATIVE},
     ),
     tool(
+        "delete_object_definition",
+        "Delete a definition; dry_run reports saved scene/stamp object references without writing. "
+        "Instances keep definition IDs and explicit overrides; inherited defaults cease to resolve "
+        "and references report missing-definition. Referenced definitions may be deleted.",
+        {**GUARD, "definition_id": TEXT, "dry_run": {"type": "boolean"}},
+        ("dry_run",),
+    ),
+    tool(
+        "delete_stamp",
+        "Delete a saved stamp without changing any existing placements. "
+        "dry_run reports consequences without writing; returns deleted_stamp_id and updated catalog.",
+        {**GUARD, "stamp_id": TEXT, "dry_run": {"type": "boolean"}},
+        ("dry_run",),
+    ),
+    tool(
         "save_world",
         "Save native world layout/connections, guarding every scene revision.",
         {
@@ -309,7 +343,6 @@ TOOLS = [
 ]
 
 DEFERRED = [
-    "Scene rename/duplicate/delete and definition/stamp deletion (use browser)",
     "Semantic terrain brushes (use browser or canonical save_scene)",
     "Animated artwork playback, browser selection/Undo, draft inspection/mutation",
     "Palette profile editing, tile metadata editing and sprite preview preference editing",

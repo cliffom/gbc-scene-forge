@@ -11,7 +11,7 @@ transactions as browser authoring. There is no connector or game compiler.
 Install the release with Python 3.10 or newer:
 
 ```sh
-python -m pip install --upgrade 'gbc-scene-forge[mcp]==0.22.1'
+python -m pip install --upgrade 'gbc-scene-forge[mcp]==0.24.0'
 gbc-scene-forge-mcp --project-root /absolute/path/to/projects
 ```
 
@@ -73,8 +73,8 @@ and [official Python SDK](https://github.com/modelcontextprotocol/python-sdk/tre
 | --- | --- | --- |
 | Discovery | `list_projects`, `get_project`, `get_scene`, `capabilities`. Canonical scenes, ordered layers/cells/objects, imported asset inventories, definitions, stamps, world data and revisions. | File browsing outside declared inventories; live subscriptions. |
 | Creation | `create_project` (empty or blockout), `create_scene` (cell dimensions), `create_blockout_scene` (pixel/cell settings and camera). | Sample-project creation through MCP. |
-| Scene editing | `edit_scene`: atomic object, tile painting/erasing and layer creation/update/reorder/deletion batches. `place_stamp`: saved composition placement with layer mapping, fresh IDs and dry-run candidates. `save_scene`: validated full canonical layers, tiles, sprites and objects. | Semantic terrain brushes; use canonical `save_scene` or browser. Scene rename/duplicate/delete use browser. |
-| Project editing | `save_object_definition`, `save_world`, `save_stamp` reuse native validators and transaction services. | Definition/stamp deletion, palette profile/metadata and animation preference editing use browser. No arbitrary import paths. |
+| Scene editing | `edit_scene`: atomic object, tile painting/erasing and layer creation/update/reorder/deletion batches. `place_stamp`: saved composition placement with layer mapping, fresh IDs and dry-run candidates. `save_scene`: validated full canonical layers, tiles, sprites and objects. `rename_scene`, `duplicate_scene`, `delete_scene`: guarded saved lifecycle with deletion consequences. | Semantic terrain brushes; use canonical `save_scene` or browser.  |
+| Project editing | `save_object_definition`, `save_world`, `save_stamp`, `delete_object_definition`, `delete_stamp` reuse native validators and transaction services; deletion previews identify references and retained overrides. | Palette profile/metadata and animation preference editing use browser. No arbitrary import paths. |
 | Artwork | `import_atlas`: bounded uploaded manifest/PNG, preflight and compatible reimport with exact project/scene acknowledgments. | Arbitrary filesystem paths; artwork creation/approval. |
 | Review | `review_artwork`: saved/candidate PNG camera and bounded/paged overview. `review_blockout`: full overview and chosen camera frame SVG resources, exact saved/candidate revisions, pixel dimensions and camera intent. | Animated playback and runtime/physics simulation. |
 | Verification | `diagnostics` checks the saved project; `palette_report` checks a guarded saved scene with the existing opt-in profile. | Missing metadata stays unverified; no reachability or hardware-fit certification. |
@@ -264,6 +264,69 @@ accepts a native definition; omit its ID to create one, retain ID to update.
 `save_stamp` accepts `name`, a validated native `scene`, and a `slots` array with
 one 0..127 occurrence slot per layer in order (same type/name slots increase).
 Use `get_project` to inspect existing examples of these native schemas.
+
+## Organize and clean up saved content
+
+`rename_scene` and `duplicate_scene` require `project`, `project_revision`,
+`scene_id`, `scene_revision` and `name`. Rename changes the catalog name while
+preserving the scene UUID and saved bytes. Duplication copies saved native content
+with a new scene UUID, preserving layer/object identities, allocation counters,
+typed overrides, artwork and visibility. It leaves the source, world positions
+and connections unchanged; connections are not cloned. Responses include the
+updated `{project, revision}` catalog plus `renamed` or `duplicated`,
+`scene_revision`, and `source_scene_id` for duplication.
+
+Before deleting a scene, inspect its exact consequences:
+
+```json
+{
+  "project": "project",
+  "project_revision": "<saved project revision>",
+  "scene_id": "<scene UUID>",
+  "scene_revision": "<saved scene revision>",
+  "dry_run": true
+}
+```
+
+`delete_scene` returns `consequences.connections` with each complete native
+connection (UUID, name, direction and both scene/object endpoints), plus
+`world_position`. The preview writes nothing. Omit `dry_run` to delete at the
+same guards. Linked deletion is rejected unless `confirm_broken_links:true`
+explicitly acknowledges those inspected links. The saved scene and its world
+position are removed; connections remain in the world document and diagnostics
+report their missing-scene endpoints. Repair connections with `save_world` first
+when broken links are unwanted. Changing the world changes the project revision
+and invalidates the earlier acknowledgment. The commit returns `deleted`, the
+same consequences and updated catalog. Unrelated scenes remain intact.
+
+`delete_object_definition` takes `project`, `project_revision`, `definition_id`
+and optional `dry_run`. Its preview reports `consequences.scene_references`
+(scene UUID/name/revision, layer and object IDs) and `stamp_references` (stamp
+UUID/name, layer and object IDs), including hidden layers. Deleting a referenced
+definition is allowed, matching browser semantics. Saved instances and stamps
+retain their definition UUIDs and complete explicit overrides, including unknown
+fields and type mismatches; no objects are rewritten. Inherited defaults cease
+to resolve and diagnostics report `missing-definition`. Inspect those consequences
+before committing with the same project revision. Scene revisions discovered by
+the service are also guarded at commit so the reported references cannot silently
+change during preparation. Missing or invalid saved scenes prevent a complete
+reference report and reject definition deletion.
+
+`delete_stamp` takes `project`, `project_revision`, `stamp_id` and optional
+`dry_run`. Placements are native copies with no live stamp dependency, so deleting
+a stamp leaves every existing placement intact. Definition/stamp deletion returns
+`deleted_definition_id`/`deleted_stamp_id`, consequences and updated `{project,
+revision}`. The manifest revision guards both libraries; there is no separate
+library revision. Unknown identities, stale guards, undeclared project paths and
+malformed arguments reject the whole operation. Dry runs reserve no lock for a
+later commit. Conflicts require fresh inspection.
+
+Lifecycle acknowledgments describe the exact committed catalog and revisions;
+a later writer's state is never substituted. Browser drafts, selection, playback
+and Undo remain independent. Reconnect clients that cache tool schemas to discover
+the five new tools. The [lifecycle regression and installed-SDK workflow](../tests/backend/adapters/test_mcp_lifecycle.py)
+exercises rename/copy/delete, linked-scene acknowledgment, referenced definitions,
+retained overrides, actual stamp placements, strict schemas and concurrent writes.
 
 ## Import and review saved artwork
 

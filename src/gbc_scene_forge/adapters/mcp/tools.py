@@ -123,6 +123,19 @@ class Adapter:
                 a["y"],
                 dry_run=a.get("dry_run", False),
             )
+        if name in ("rename_scene", "duplicate_scene"):
+            operation = (
+                project.scenes.rename if name == "rename_scene" else project.scenes.duplicate
+            )
+            return operation(a["scene_id"], a["name"], a["scene_revision"], revision)
+        if name == "delete_scene":
+            return project.scenes.delete(
+                a["scene_id"],
+                a["scene_revision"],
+                revision,
+                dry_run=a.get("dry_run", False),
+                confirm_broken_links=a.get("confirm_broken_links", False),
+            )
         if name == "review_blockout":
             result = project.planning.review_blockout(
                 a["scene_id"], revision, a["scene_revision"], a.get("scene"), a.get("camera_id")
@@ -173,6 +186,14 @@ class Adapter:
             }
         if name == "save_object_definition":
             return project.objects.save_definition(a["definition"], revision)
+        if name == "delete_object_definition":
+            return project.objects.delete_definition(
+                a["definition_id"], revision, dry_run=a.get("dry_run", False)
+            )
+        if name == "delete_stamp":
+            return project.objects.delete_stamp(
+                a["stamp_id"], revision, dry_run=a.get("dry_run", False)
+            )
         if name == "save_world":
             return project.planning.save_world(a["world"], revision, a["scene_revisions"])
         if name == "save_stamp":
