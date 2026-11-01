@@ -48,8 +48,9 @@ Test ownership and commands are in [test organization](../tests/README.md).
 - [Standalone projects and saved scenes](ISSUE-13-PLAN.md)
 - [Legacy connector implementation](LEGACY-CONNECTOR.md)
 
-## Historical release notes
+## Release notes
 
+- [Scene Forge 0.21.0](RELEASE-0.21.0.md) — prepared; publication is separate.
 - [Scene Forge 0.20.0](RELEASE-0.20.0.md)
 - [Scene Forge 0.19.1](RELEASE-0.19.1.md)
 - [Scene Forge 0.19.0](RELEASE-0.19.0.md)

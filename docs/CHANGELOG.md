@@ -6,6 +6,10 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.21.0 — Middle-button scene panning
+
+[Release notes](RELEASE-0.21.0.md).
+
 ## 0.20.0 — Wide and tall scenes
 
 [Release notes](RELEASE-0.20.0.md).

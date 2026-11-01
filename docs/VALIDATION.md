@@ -182,6 +182,31 @@ Dates, revisions and environments missing from the originals remain unknown.
   Layers/history/byte/export budgets can bind earlier. Viewport culling remains #93; no uniform
   large-scene performance claim follows from accepting wide scenes.
 
+## Middle-button scene panning (#103)
+
+- **Scope:** 2026-11-01 UTC; production 0.21.0 working tree based on `7855135`;
+  macOS 27.0.1 arm64, Python 3.13.13, Node 24.22.1, Playwright 1.64.1 bundled
+  headless Chromium. New interaction captures were inspected at 1440×900.
+- **Method:** [Pan acceptance](../tests/playwright/editor/pan.spec.ts) uses native
+  middle-button mouse input over the sample scene, comparing canvas pixels,
+  selected tool, dirty status and undo/redo availability. Cancellation, blur and
+  hidden-tab events are deliberately injected; capture loss uses the native
+  release API. [Editing](screenshots/middle-pan/editing.png) and
+  [review](screenshots/middle-pan/review.png) captures are retained in the repository.
+- **Result:** Both scenarios passed: all five tools, clean/dirty content and redo
+  retention, editing/review pan, horizontal/vertical scrolling, outside release,
+  button chords, pointer cancellation/capture loss, Space-key independence,
+  blur/hidden tabs and disposal/remount. Native middle-button pointerdown and
+  auxiliary-click defaults were prevented. `make docs-check lint test` passed
+  20 checker regressions, 282 Python tests and all 15 TypeScript suites. All 38
+  regular browser scenarios passed. Production distributions and six installed-wheel smoke checks passed; installed-wheel
+  first use and fresh 0.21.0 optional MCP protocol/browser checks also passed.
+- **Limits:** Headless mouse automation and inspected captures do not establish
+  physical-device or non-Chromium/Windows behavior. Cancellation/visibility event
+  injection is distinct from a human OS interaction. Ignored Playwright reports
+  and local logs are not archived evidence. Official Tiled tools were not rerun;
+  project/Tiled/draft formats are unchanged. Release preparation is not publication.
+
 ## Remaining checks
 
 This is the single maintained validation checklist. Issue state was checked on

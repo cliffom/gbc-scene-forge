@@ -156,9 +156,11 @@ camera intent, limits, the opening-forest example and shared services for MCP #5
 Search the asset library or filter by atlas and kind. Drag an asset onto the
 canvas to place it directly. Use S, P, F, E and H to switch Select, Paint, Fill,
 Erase and Pan while editing the canvas. Pan drags the view without editing the
-scene. Hold Space and drag anywhere in the workspace to pan temporarily; release
-Space to return to the selected tool. The cursor changes to a hand while panning.
-This shortcut stays inactive in fields, buttons and dialogs. Mouse-operated tools,
+scene. Hold the middle mouse button and drag over the scene workspace to pan temporarily
+with any editing tool selected. Release the button to stop; the selected tool stays
+unchanged. Space+drag also pans temporarily; release Space to return to the
+selected tool. The cursor changes to a hand while panning.
+The Space shortcut stays inactive in fields, buttons and dialogs. Mouse-operated tools,
 layer controls and editor dropdowns return focus to the canvas. Keyboard-operated
 controls keep focus for navigation. Enter finishes editing a layer name or search
 and returns to the canvas; Escape leaves the field and cancels a pending layer rename. The inspector shows scene dimensions, selection details and project

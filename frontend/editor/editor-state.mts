@@ -88,7 +88,8 @@ export class GestureState {
   anchor: { x: number; y: number; px: number; py: number } | null = null;
   hover: CanvasPoint | null = null;
   spacePan = false;
-  pan: { pointer: number; x: number; y: number; left: number; top: number } | null = null;
+  pan: { pointer: number; button: number; x: number; y: number; left: number; top: number } | null =
+    null;
 }
 
 export class EditorActivity {
