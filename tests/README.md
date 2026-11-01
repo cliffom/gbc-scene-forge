@@ -50,6 +50,13 @@ Direct server/Tiled scripts import their sibling atlas helper. Browser subproces
 snippets insert only the test root to import `support` fixtures; installed-wheel
 smoke checks retain isolated mode and do not do this.
 
+Live-browser MCP writers and individual animation-fixture operations use bounded
+project-busy handling from `support/project_busy.py`: at most 20 attempts with
+50 ms between attempts. MCP retries require the exact structured busy response;
+validation errors, revision conflicts and transport failures still fail. Revision
+arguments are preserved, and fixture setup is never replayed as an entire batch.
+This is test infrastructure; runtime locking and API behavior remain unchanged.
+
 The organization baseline for #88 is commit `62cced6` (the Playwright move in
 PR #87). Before/after discovery preserves all 248 Python test IDs after removing
 the new `backend.<domain>` module prefixes, including legacy and optional cases,

@@ -323,6 +323,29 @@ Dates, revisions and environments missing from the originals remain unknown.
   on resize-dialog changes; ordinary viewport paints remain culled/cached. Local
   reports are not archived CI evidence. The prepared version remains 0.21.2.
 
+## MCP acceptance lock contention
+
+- **Scope:** 0.21.2 release verification on merged PR #107 revision `8233204`,
+  2026-11-01 UTC; Ubuntu Actions and local macOS 27.0.1 arm64, Python 3.13.13.
+- **Method:** Inspected the [failed post-merge run](https://github.com/cliffom/gbc-scene-forge/actions/runs/41280901613)
+  and guarded project/MCP call paths. Added nine deterministic fixture regressions
+  for bounded busy retries, unchanged revision arguments, conflict/error propagation,
+  lost acknowledgments and invalid bounds. Ran `make docs-check lint test`,
+  production `make build check-dist`, and optional-MCP protocol/browser acceptance.
+- **Result:** Ordinary browser and wheel checks passed in the failed run, but
+  optional refresh acceptance failed when its MCP writer received the explicit
+  nonblocking project-busy error during concurrent browser polling. The writer
+  previously treated that transient response as a terminal failure. Test-only
+  helpers now retry that exact response and single busy fixture operations within
+  a finite bound; other errors still fail, revisions are not refreshed, and
+  partially completed setup batches are not replayed. Local lint, 291 Python tests,
+  TypeScript suites, distributions, six wheel checks, 27 MCP/fixture protocol tests
+  and both MCP/browser scenarios passed after correction.
+- **Limits:** Runtime APIs, locking and persistence behavior are unchanged. Busy
+  exhaustion, stale revisions and transport failures remain failures. The failed
+  revision was not tagged or published; the release candidate remains 0.21.2.
+  Local passes are not independently archived CI evidence.
+
 ## Remaining checks
 
 This is the single maintained validation checklist. Issue state was checked on
