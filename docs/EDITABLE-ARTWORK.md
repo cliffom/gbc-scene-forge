@@ -2,10 +2,11 @@
 
 This is the implementation contract for [#129](https://github.com/cliffom/gbc-scene-forge/issues/129)
 and [milestone 14](https://github.com/cliffom/gbc-scene-forge/milestone/14).
-It specifies planned behavior; the current editor still creates artwork through
-import. Services, review, MCP, hand editing and placement variations are delivered
-by #130–#134; #135 owns integrated workflow evaluation. No product validation or
-new file-format support is claimed by this document.
+The shared native service and portable format are implemented by #130 in the
+prepared 0.27.0 milestone branch. The browser still creates artwork through import.
+Review, MCP, hand editing/drafts and placement variations remain planned behavior
+for #131–#134; #135 owns integrated workflow evaluation. This contract itself is
+not product-validation evidence; observed checks belong in [Validation](VALIDATION.md).
 
 ## Ownership and identities
 
@@ -69,8 +70,7 @@ Retain project manifest version 1 and introduce an optional atlas-entry field:
 Projects without this field retain their existing interpretation. Validate the
 exact field shape, one-to-one document/atlas relationship and declared paths.
 Older Forge releases reject this unknown field; native projects with editable
-artwork require a release that implements this contract. Do not write a format
-change in this design-only issue or silently downgrade editable documents.
+artwork require a release that implements this contract. The implementation retains this optional field; never silently downgrade editable documents.
 
 The descriptor has exactly these fields (nullable provenance is explicit):
 
@@ -213,7 +213,9 @@ grid/cell are null for sprites, cell is `[x,y]` for tiles, and source_format is
 null for legacy gbc-atlas entries without that field. Provenance is informational,
 has no live path and grants no update authority. Copying one named animation
 region captures only that static image. Reimport of the original cannot modify
-the copy; reimport targeting a native atlas ID is rejected.
+the copy; reimport targeting a native atlas ID is rejected. External atlas imports
+also reject the reserved `forge-rgba` source format before writing; native artwork
+enters through editable document services or Forge ZIP transfer.
 
 Out-of-band edits to any declared source/derived file are drift, not an accepted
 new revision. Preserve local work and copy changed files outside the managed
@@ -303,3 +305,53 @@ animation timelines, source-file synchronization, palette-index editing, asset
 merging, automatic conflict rebasing and Aseprite file import/export. Bounds may
 be tightened by a transport but never silently relaxed. Changes to these format,
 ownership or guard decisions require updating this contract with the implementation.
+
+## Implemented service API (#130)
+
+Use `project.artwork.documents` for native authoring. `create(atlas_id, name,
+kind, width, height, project_revision, origin=None, region="artwork")` returns a
+transparent unsaved candidate. `list(project_revision)` discovers explicit native
+targets, descriptors and artwork revisions. `open(target, project_revision,
+artwork_revision)` returns the saved pixels as an edit candidate. A target has
+exactly `document_id`, `atlas_id` and `region`.
+
+`duplicate(source, atlas_id, name, project_revision, region="artwork")` copies an
+imported or native cell/static sprite to a fresh native identity. Source has
+exactly `atlas_id`, `region`, `grid`, `cell`, `artwork_revision`; use null grid/cell
+for a sprite, or a supported grid and region-relative `[x,y]` for a tile. Obtain
+the source revision with `artwork.editable.artwork_revision(entry, project.files)`
+from a verified saved-read session. Source provenance does not follow external files.
+
+`edit(candidate, writes)` returns a new candidate; each write is
+`{"x": 0, "y": 0, "rgba": [12, 34, 56, 0]}`. `read(candidate, rectangle=None)`
+returns exact base64 row-major RGBA and identities/base/candidate revisions;
+rectangle has `x`, `y`, `width`, `height`. `save(candidate)` performs one durable
+transaction and returns exact project/artwork revisions, source PNG digest,
+submitted candidate revision and revisions of rewritten scenes. Imported artwork
+cannot be opened for pixel edits. Pixel saves cannot alter descriptor/metadata.
+
+The version-1 candidate has exactly `version`, `project_id`, `document_id`,
+`atlas_id`, `descriptor`, `rgba`, `project_revision`, `artwork_revision`,
+`operation`, `source`, `metadata`, and its computed `revision`. Operation is
+`create`, `duplicate` or `edit`; the target artwork base is null for both creation
+operations. Source is null except for duplication. Metadata carries the original
+saved metadata for edits or selected-source metadata under fresh keys for copies.
+The service validates these policies again at save; recomputing a candidate hash
+cannot bypass saved guards. Candidates are client-held JSON, without a server session.
+
+For example, from a current project:
+
+```python
+artwork = project.artwork.documents
+candidate = artwork.create("grass", "Grass", "tile", 16, 16, project.catalog()["revision"])
+candidate = artwork.edit(candidate, [{"x": 0, "y": 0, "rgba": [24, 160, 48, 255]}])
+exact = artwork.read(candidate, {"x": 0, "y": 0, "width": 1, "height": 1})
+saved = artwork.save(candidate)
+```
+
+This is a Python domain API, not a browser/MCP command. Preserve the original
+candidate on conflict and resolve its saved base explicitly. Durable artwork draft
+records, review receipts and placement replacement are not implemented by #130.
+Native artwork appears in the existing Library and can be placed/saved in scenes;
+there are no pixel drawing controls yet. Native project ZIP extraction retains
+editing, and Forge ZIP transfer validates/remaps native descriptors and identities.

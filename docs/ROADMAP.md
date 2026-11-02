@@ -1,6 +1,6 @@
 # Roadmap
 
-Current baseline: prepared Forge 0.26.0 authors standalone portable Tiled projects with
+Current baseline: prepared Forge 0.27.0 authors standalone portable Tiled projects with
 imported artwork or artwork-free blockouts, optional MCP, guarded browser refresh,
 scene links, bounded wide/tall scenes and transfer from Forge export ZIPs. See [usage](STANDALONE.md) and the
 [changelog](CHANGELOG.md) for supported behavior and compatibility.
@@ -9,6 +9,19 @@ Open issue and milestone state was checked on 2026-11-02. These are outcome-base
 priorities, without promised release versions or dates. Measurements may justify
 retaining an existing implementation. Validation gaps live in the
 [single remaining-check list](VALIDATION.md#remaining-checks).
+
+## Native pixel artwork (milestone 14)
+
+Integrate [milestone 14](https://github.com/cliffom/gbc-scene-forge/milestone/14)
+on `milestone/14` before a separate integration PR to main. The
+[editable artwork contract](EDITABLE-ARTWORK.md) defines identities, RGBA and guards.
+
+- [#130](https://github.com/cliffom/gbc-scene-forge/issues/130): shared creation, duplication, exact reads, candidates and portable guarded persistence.
+- [#131](https://github.com/cliffom/gbc-scene-forge/issues/131): candidate and scene-context review.
+- [#132](https://github.com/cliffom/gbc-scene-forge/issues/132): explicit MCP artwork operations.
+- [#133](https://github.com/cliffom/gbc-scene-forge/issues/133): hand editing, history and recoverable drafts.
+- [#134](https://github.com/cliffom/gbc-scene-forge/issues/134): shared consequences and selected-placement variations.
+- [#135](https://github.com/cliffom/gbc-scene-forge/issues/135): integrated mixed-writer workflow evaluation.
 
 ## Editor usability and UI cleanup
 
