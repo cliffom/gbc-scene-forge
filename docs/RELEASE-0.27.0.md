@@ -4,7 +4,11 @@ Prepared milestone 14 foundation: shared native artwork services create and
 duplicate static tile/sprite documents, read exact RGBA8 pixels, apply bounded
 batches and save immutable candidates against project and artwork revisions.
 This implements [#130](https://github.com/cliffom/gbc-scene-forge/issues/130).
-Browser drawing tools, MCP commands, candidate review and placement-specific
+Shared read-only candidate review ([#131](https://github.com/cliffom/gbc-scene-forge/issues/131))
+adds native/enlarged pixel comparisons, saved-reference scans and temporary
+scene previews. Review receipts bind exact candidate and saved dependencies;
+reviewed saves guard all scanned maps, including unchanged ones, at commit.
+Browser drawing tools, MCP commands and placement-specific
 variations are subsequent milestone work; this release preparation does not
 claim the complete user–agent authoring workflow.
 
