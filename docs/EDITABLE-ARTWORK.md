@@ -4,8 +4,9 @@ This is the implementation contract for [#129](https://github.com/cliffom/gbc-sc
 and [milestone 14](https://github.com/cliffom/gbc-scene-forge/milestone/14).
 The shared native service and portable format are implemented by #130, and
 candidate review by #131, in the prepared 0.27.0 milestone branch.
-The browser still creates artwork through import. MCP, hand editing/drafts and
-placement variations remain planned behavior for #132–#134; #135 owns integrated
+The browser still creates artwork through import. The [MCP artwork loop](MCP.md#native-artwork-authoring)
+implements #132. Hand editing/drafts and placement variations remain planned
+behavior for #133–#134; #135 owns integrated
 workflow evaluation. This contract itself is
 not product-validation evidence; observed checks belong in [Validation](VALIDATION.md).
 

@@ -23,8 +23,17 @@ class ArtworkDocuments:
         """Discover explicit native targets and exact saved artwork bases."""
         require(editable.revision(project_revision), "Expected the exact saved project revision")
         with self.store.read_session(project_revision, verify_assets=True) as session:
-            result = []
+            result, sources = [], []
             for atlas_id, entry in session.document["atlases"].items():
+                sources.append(
+                    {
+                        "atlas_id": atlas_id,
+                        "regions": copy.deepcopy(entry["manifest"]["regions"]),
+                        "artwork_revision": editable.artwork_revision(
+                            entry, session.document["files"]
+                        ),
+                    }
+                )
                 if "editable" not in entry:
                     continue
                 descriptor = self._descriptor(session.document, entry)
@@ -38,7 +47,7 @@ class ArtworkDocuments:
                     }
                 )
         self._revalidate(project_revision)
-        return {"project_revision": project_revision, "documents": result}
+        return {"project_revision": project_revision, "documents": result, "sources": sources}
 
     @staticmethod
     def _target(descriptor):

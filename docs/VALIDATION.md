@@ -15,6 +15,31 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Native artwork MCP authoring (#132)
+
+- **Scope:** Prepared 0.27.0 issue-132 working tree based on milestone integration
+  revision `a1e5ed418b2d6a54d4277581d7056669d549e94b`, on 2026-11-02; local macOS,
+  Python 3.13 and Chromium. Source checks and isolated wheel/SDK checks are separate runs.
+- **Method:** Synthetic [adapter and official-SDK regressions](../tests/backend/adapters/test_mcp_native_artwork.py)
+  exercise discovery, transparent creation, imported/native duplication, exact RGBA
+  reads, immutable edits, isolated/temporary-scene resource reads, revised-candidate
+  receipt rejection, reviewed commit, placement, export/reopen, shared references,
+  strict nested schemas, competing saves, held locks and a scene race at final commit.
+  Ran `make docs-check lint test`, production `make build check-dist`, then
+  `make test-mcp test-mcp-browser` with the wheel installed in an isolated MCP environment.
+- **Result:** Required checks passed: 395 Python tests and frontend suites; production
+  distributions/metadata and seven installed-wheel smoke tests passed. The installed
+  optional-MCP suite passed 74 tests, including eight native-artwork regressions and
+  the real stdio client loop. Both existing Chromium MCP/refresh scenarios passed,
+  covering saved-state adoption, stale browser saves and retained recovery drafts.
+  Native-artwork contention returns `busy`; conflicting candidates return `conflict`;
+  failed batches/reviewed commits retain the original pixels and leave no partial files.
+- **Limits:** Scripted fixtures/SDK calls establish transport and persistence behavior,
+  not agent art quality or human usability. No drawing UI changed or was assessed.
+  Mixed hand/agent editing, artwork drafts and selected-placement variations remain
+  integrated milestone work (#133–#135). No Windows, non-Chromium or official Tiled
+  interoperability check was performed for this change; no package was published.
+
 ## Captured-byte artwork review budget (#138)
 
 - **Scope:** Local macOS working tree based on
