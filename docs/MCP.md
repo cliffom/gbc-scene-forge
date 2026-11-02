@@ -626,8 +626,9 @@ For an intentional shared edit, discover/open the native target, inspect the
 review's affected references and commit against its exact base. All placements
 continue referring to that asset. For a variation, duplicate an explicit source
 cell/static sprite and commit the reviewed copy. Duplication replaces no existing
-placements; selected-placement replacement and browser drawing/drafts remain
-separate milestone work. Layered documents and animation playback are deferred.
+placements; selected-placement replacement remains separate milestone work.
+The [browser pixel editor](user/pixel-artwork.md) adds hand editing and owned drafts
+using the same candidates and guarded services. Layered documents and animation playback are deferred.
 The [native MCP regression/SDK workflow](../tests/backend/adapters/test_mcp_native_artwork.py)
 checks the full new-tile loop, strict nested schemas, exact transparency, resources,
 stale receipts, contention, atomic conflict and save/export/reopen. These scripted

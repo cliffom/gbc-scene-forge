@@ -249,3 +249,100 @@ class HttpRoutingTests(unittest.TestCase):
             self.assertEqual(status, 200)
             self.assertEqual(json.loads(body), {"directory": "another"})
             self.assertEqual(self.request(server, "/projects/another/api/project")[0], 200)
+
+    def test_native_artwork_http_loop_and_revision_guarded_recovery(self):
+        import base64
+        from uuid import uuid4
+
+        for workspace in (False, True):
+            with self.server(workspace) as server:
+                prefix = "/projects/world" if workspace else ""
+
+                def post(action, data):
+                    status, _, body = self.request(server, prefix + "/api/artwork-" + action, data)
+                    self.assertEqual(status, 200, body)
+                    return json.loads(body)
+
+                revision = self.project.catalog()["revision"]
+                candidate = post(
+                    "create",
+                    {
+                        "atlas_id": "new_" + str(workspace).lower(),
+                        "name": "New",
+                        "kind": "tile",
+                        "width": 8,
+                        "height": 8,
+                        "project_revision": revision,
+                    },
+                )
+                original = candidate
+                candidate = post(
+                    "edit",
+                    {"candidate": candidate, "writes": [{"x": 0, "y": 0, "rgba": [2, 4, 8, 0]}]},
+                )
+                draft = {
+                    "id": str(uuid4()),
+                    "owner": str(uuid4()),
+                    "project_id": candidate["project_id"],
+                    "original": original,
+                    "candidate": candidate,
+                    "name": "New",
+                    "revision": None,
+                }
+                ack = post("draft-write", draft)
+                self.assertEqual(
+                    post("draft-restore", {"id": draft["id"], **ack})["candidate"], candidate
+                )
+                review = post("review", {"candidate": candidate})
+                self.assertTrue(
+                    base64.b64decode(review["after"]["native_png"]).startswith(b"\x89PNG")
+                )
+                self.assertEqual(
+                    self.request(server, prefix + "/api/artwork-save", {"candidate": candidate})[0],
+                    400,
+                )
+                saved = post("save", {"candidate": candidate, "receipt": review["receipt"]})
+                self.assertEqual(saved["candidate_revision"], candidate["revision"])
+                # Saved bytes remain guarded; stale review cannot replay a write.
+                self.assertEqual(
+                    self.request(
+                        server,
+                        prefix + "/api/artwork-save",
+                        {"candidate": candidate, "receipt": review["receipt"]},
+                    )[0],
+                    409,
+                )
+                self.assertEqual(
+                    self.request(
+                        server, prefix + "/api/artwork-draft-restore", {"id": draft["id"], **ack}
+                    )[0],
+                    409,
+                )
+                self.assertEqual(
+                    post("draft-download", {"id": draft["id"], **ack})["candidate"], candidate
+                )
+                inventory = post("list", {"project_revision": saved["project_revision"]})
+                native = next(
+                    d
+                    for d in inventory["documents"]
+                    if d["target"]["atlas_id"] == candidate["atlas_id"]
+                )
+                opened = post(
+                    "open",
+                    {
+                        "target": native["target"],
+                        "artwork_revision": native["artwork_revision"],
+                        "project_revision": saved["project_revision"],
+                    },
+                )
+                self.assertEqual(opened["rgba"], candidate["rgba"])
+                self.assertEqual(
+                    self.request(
+                        server,
+                        prefix + "/api/artwork-create",
+                        {},
+                        headers={"X-Scene-Token": "wrong"},
+                    )[0],
+                    403,
+                )
+                post("draft-delete", {"id": draft["id"], "owner": draft["owner"], **ack})

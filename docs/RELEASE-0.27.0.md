@@ -12,8 +12,14 @@ MCP artwork commands ([#132](https://github.com/cliffom/gbc-scene-forge/issues/1
 expose discovery, blank creation, duplication, exact pixels, immutable batched
 edits, candidate PNG resources and receipt-required commits. New artwork can be
 reviewed in a temporary scene before saving and placed through existing scene tools.
-Browser drawing tools and placement-specific
-variations are subsequent milestone work; this release preparation does not
+The [browser pixel editor](user/pixel-artwork.md) ([#133](https://github.com/cliffom/gbc-scene-forge/issues/133))
+adds creation/copying, pencil/erase/fill, eyedropper, line/rectangle shapes,
+selection move/copy/paste/transforms, palettes/transparency, isolated/scene review
+and receipt-required saves. Its bounded undo/redo and owned project-local drafts
+remain independent of scene history. Recovery checks the original base and copies
+checkpoints; conflicts preserve pixels for explicit reconciliation. New artwork is
+reviewed through temporary placements and added to the Library without placing it.
+Placement-specific variations remain subsequent milestone work; this release preparation does not
 claim the complete user–agent authoring workflow.
 
 Native artwork uses one-region atlases and a declared editable descriptor.

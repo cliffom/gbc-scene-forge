@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from gbc_scene_forge.adapters.http.artwork import artwork_response
 from gbc_scene_forge.core.validation import require
 from gbc_scene_forge.project.application import Project
 from gbc_scene_forge.project.drafts import Drafts
@@ -58,6 +59,23 @@ PROJECT_ROUTES = {
 }
 
 
+for _action in (
+    "list",
+    "open",
+    "create",
+    "duplicate",
+    "edit",
+    "review",
+    "save",
+    "draft-list",
+    "draft-write",
+    "draft-restore",
+    "draft-download",
+    "draft-delete",
+):
+    PROJECT_ROUTES[("POST", f"/api/artwork-{_action}")] = f"_artwork_{_action}"
+
+
 class ProjectAPI:
     """Per-project routing state; HTTP framing and security stay in the handler."""
 
@@ -74,6 +92,8 @@ class ProjectAPI:
         handler = PROJECT_ROUTES.get(("POST", route))
         if handler is None:
             return Response({"error": "Not found"}, status=404)
+        if handler.startswith("_artwork_"):
+            return Response(artwork_response(self.project, handler.removeprefix("_artwork_"), data))
         return getattr(self, handler)(self.project, data)
 
     def get(self, route: str, query: dict[str, list[str]], token: str) -> Response:

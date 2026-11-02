@@ -15,6 +15,107 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Artwork checkpoint acknowledgment recovery (#141)
+
+- **Scope:** Prepared 0.27.0 working tree based on
+  `5835e0630c2ef34e5dfbac79d2e38f9b22d2a946`, on 2026-11-02; local macOS,
+  Python 3.13, Node 24 and Playwright Chromium with the source server and rebuilt bundle.
+- **Method:** Reproduced a committed checkpoint update with a lost response, followed
+  by Undo and reload without a warning. Added [model regressions](../tests/frontend/artwork/pixels.ts)
+  for unknown update outcomes, failed inspection, guarded correction, matching stored
+  pixels without write replay, and explicit cleanup after lost acknowledgments.
+  Added a [browser regression](../tests/playwright/artwork/pixels.spec.ts) that forwards
+  the write to disk and aborts its response, dismisses the reload warning after Undo,
+  then verifies corrected checkpoint bytes and reload. Ran `make docs-check lint test
+  PYTHON=.venv/bin/python`, rebuilt the frontend and ran all ten artwork browser scenarios.
+- **Result:** Unknown checkpoint outcomes retain unload protection even when current
+  pixels equal an older acknowledged checkpoint. Subsequent checkpointing and cleanup
+  inspect the owner and revision-guarded stored pixels before proceeding. Documentation,
+  lint/type checks, 403 Python tests, frontend suites and all ten browser scenarios passed.
+- **Limits:** Synthetic local fixtures and Chromium automation, including desktop
+  reload and existing compact-view coverage; no human usability, Windows or
+  non-Chromium assessment. Installed-wheel, packaging and full browser/MCP checks
+  were not repeated; earlier evidence below retains its original scope. No package
+  was published.
+
+## Artwork Undo unload protection (#141)
+
+- **Scope:** Prepared 0.27.0 working tree based on
+  `a409651c26b591be8745a608599da1eb0e0bea4b`, on 2026-11-02; local macOS,
+  Python 3.13, Node 24 and Playwright Chromium, using the source server and rebuilt bundle.
+- **Method:** Review reproduced a checkpointed stroke surviving Undo and immediate
+  reload without an unload warning. Added [model checks](../tests/frontend/artwork/pixels.ts)
+  for pristine sessions, queued writes, Undo to the saved base and failed acknowledgments.
+  Added a [browser regression](../tests/playwright/artwork/pixels.spec.ts) using a paused
+  clock to dismiss the reload warning, finish the checkpoint, then reload, recover and
+  download the exact saved pixels. Ran `make docs-check lint test PYTHON=.venv/bin/python`,
+  rebuilt the frontend and ran all nine artwork browser scenarios at 1440×1000
+  (including the existing compact-view scenario).
+- **Result:** Undo retains unload protection until its pixels reach the durable
+  checkpoint; pristine sessions remain clean. Once checkpointed, reload proceeds
+  without a prompt and recovered pixels match the saved base. Documentation,
+  lint/type checks, 403 Python tests, frontend suites and all nine browser scenarios
+  passed. The first new browser test failed because the shared fixture had already
+  accepted its dialog; the test now owns dialog handling so it can dismiss the warning.
+- **Limits:** Synthetic local fixtures and Chromium automation; no human usability,
+  non-Chromium or Windows assessment. Installed-wheel, full browser/MCP and packaging
+  checks were not repeated for this follow-up; their earlier evidence retains its
+  original revision scope below. No package was published.
+
+## Artwork scene guards and completed checkpoints (#141)
+
+- **Scope:** Prepared 0.27.0 follow-up working tree based on
+  `04678f3d61340d7957ba9f20739e1aff0c8ce7f4`, on 2026-11-02; macOS 27.0.1 arm64,
+  Python 3.13.13, Node 24.22.1 and Playwright Chromium 156.0.8078.4.
+- **Method:** Review reproduced two failures in disposable browser projects:
+  saving new artwork after isolated review advanced a stale local scene's revision,
+  allowing its next save to erase another writer's cell; a pending debounce captured
+  a later unfinished stroke and recovery retained it after cancellation. Added
+  [browser regressions](../tests/playwright/artwork/pixels.spec.ts) for matching/stale
+  scene bases and clock-controlled cancellation through recovery/save. Ran
+  `make docs-check lint test PYTHON=.venv/bin/python`, production `make build check-dist`,
+  and all eight artwork scenarios against source and the isolated installed wheel.
+- **Result:** Stale scene saves now return 409 and preserve the saved scene bytes,
+  local edits and undo history; matching scene bases remain saveable after adding
+  artwork. Completed checkpoint snapshots exclude the canceled gesture through
+  recovery and save. Documentation/lint/type checks, 403 Python tests, frontend
+  suites, distribution checks, seven wheel smoke tests and both eight-scenario
+  browser runs passed. An initial lint run rejected an untyped test JSON assignment;
+  decoding it before assignment resolved that failure.
+- **Limits:** Synthetic local fixtures and controlled clocks; no prolonged human
+  usability, art-quality, Windows, non-Chromium or official Tiled assessment.
+  The earlier broad browser/MCP evidence retains its original revision scope below;
+  those full suites were not rerun locally for this follow-up. No package was published.
+
+## Browser pixel artwork editing (#133)
+
+- **Scope:** Prepared 0.27.0 at `cb5d5b3dfd0f5d0de8cc4224c4474e918e296b50`,
+  on 2026-11-02; macOS 27.0.1 arm64, Python 3.13.13, Node 24.22.1 and
+  Playwright Chromium 156.0.8078.4. Installed plain-wheel and optional-MCP runs
+  used isolated environments built from that revision.
+- **Method:** Ran a sequential frozen production `make lint test build check-dist
+  test-browser PYTHON=.venv/bin/python`, then installed the wheel for `make test-mcp`,
+  both MCP/refresh browser scenarios and all five pixel-editor browser scenarios.
+  Model, HTTP and draft regressions cover exact RGBA, maximum-size batching,
+  selection/history, cancellation, checkpoint races, stale bases and lost write
+  acknowledgments. Browser fixtures exercise creation/copying, drawing/transforms,
+  transparency, reviews/saves, scene history isolation, recovery and competing writes.
+  Agent visual inspection checked the [1440×1000 desktop](images/pixel-editor-133-desktop.png)
+  and [800×900 compact](images/pixel-editor-133-compact.png) editor and review states.
+- **Result:** Documentation/lint/type checks, 403 Python tests, frontend suites,
+  production distributions/metadata and seven installed-wheel smoke tests passed.
+  Chromium passed 52 scenarios with two optional observational profiles skipped.
+  The installed optional-MCP suite passed 74 tests and both browser scenarios;
+  the installed plain wheel passed all five pixel-editor scenarios. An earlier
+  browser run failed two build-identity assertions because its bundle was rebuilt
+  concurrently as a development build; the frozen production rerun passed both
+  assertions and the complete suite. Screenshots retain scripted fixture state.
+- **Limits:** Local automation and agent screenshot inspection establish scoped
+  behavior, not prolonged human usability or actual agent art quality. Selected-placement
+  variations (#134) and integrated mixed-writer evaluation (#135) remain separate.
+  No Windows, non-Chromium or official Tiled checks were run for this change;
+  no package was published. Local ignored build logs are not archived CI evidence.
+
 ## Native artwork MCP authoring (#132)
 
 - **Scope:** Prepared 0.27.0 issue-132 working tree based on milestone integration

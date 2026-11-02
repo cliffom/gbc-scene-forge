@@ -4,9 +4,9 @@ This is the implementation contract for [#129](https://github.com/cliffom/gbc-sc
 and [milestone 14](https://github.com/cliffom/gbc-scene-forge/milestone/14).
 The shared native service and portable format are implemented by #130, and
 candidate review by #131, in the prepared 0.27.0 milestone branch.
-The browser still creates artwork through import. The [MCP artwork loop](MCP.md#native-artwork-authoring)
-implements #132. Hand editing/drafts and placement variations remain planned
-behavior for #133–#134; #135 owns integrated
+The [MCP artwork loop](MCP.md#native-artwork-authoring) implements #132; the
+[browser pixel editor](user/pixel-artwork.md) implements hand editing and owned
+recoverable drafts (#133). Placement variations remain planned for #134; #135 owns integrated
 workflow evaluation. This contract itself is
 not product-validation evidence; observed checks belong in [Validation](VALIDATION.md).
 
@@ -351,11 +351,10 @@ exact = artwork.read(candidate, {"x": 0, "y": 0, "width": 1, "height": 1})
 saved = artwork.save(candidate)
 ```
 
-This is a Python domain API, not a browser/MCP command. Preserve the original
-candidate on conflict and resolve its saved base explicitly. Durable artwork draft
-records and placement replacement are not implemented by #130.
-Native artwork appears in the existing Library and can be placed/saved in scenes;
-there are no pixel drawing controls yet. Native project ZIP extraction retains
+These Python domain operations are shared by browser/MCP adapters. Preserve the
+original candidate on conflict and resolve its saved base explicitly. Native artwork
+appears in the Library and can be placed/saved in scenes; focused pixel controls
+and checkpoints are described below. Native project ZIP extraction retains
 editing, and Forge ZIP transfer validates/remaps native descriptors and identities.
 
 ## Implemented candidate review API (#131)
@@ -409,5 +408,44 @@ The acknowledgment adds `review_revision` identifying the accepted receipt.
 Direct saves may omit review. Receipts describe content and dependencies, not
 human approval; they are client-held hashes, not signed credentials.
 
-These are shared Python services. HTTP/MCP review transport and interactive drawing
-remain subsequent milestone work. No browser preview UI is introduced by #131.
+These shared Python services supply both the MCP review resources and the browser
+comparison images without separate rendering semantics.
+
+## Browser editing and checkpoints (#133)
+
+The [pixel editor tutorial](user/pixel-artwork.md) describes the supported tools,
+preview controls, keyboard behavior and recovery choices. `frontend/artwork` owns
+candidate wire schemas, bounded pixel history, a serial checkpoint writer and the
+mounted dialog. Artwork saves reload the acknowledged catalog/images while
+retaining scene edits/history; adding artwork advances only exact rewritten-map
+acknowledgments whose reviewed scene revision matches the local base. A newer
+reviewed scene leaves the local save guard intact and requires reconciliation.
+Project catalog changes during decoding reject adoption.
+
+Project-relative, mutation-token-protected POST routes `artwork-list`,
+`artwork-create`, `artwork-duplicate`, `artwork-open`, `artwork-edit`,
+`artwork-review` and `artwork-save` call the shared services. Review JSON encodes
+PNG byte fields as base64; browser saves require the returned receipt. No new
+HTTP route reads ambient editor state. Pixel synchronization splits large local
+edits into batches of at most 8,000 unique writes, below the service byte limit.
+
+`artwork-draft-write` accepts `id`, `project_id`, `owner`, `original`, `candidate`,
+`name`, and the previous raw-byte `revision` (null on creation). The original
+candidate's identity, bases, descriptor and metadata cannot change. Updates require
+the same owner and exact draft revision; stale bases remain checkpointable.
+`artwork-draft-list` returns bounded record summaries and individual damaged-record
+errors. `artwork-draft-download` and `artwork-draft-restore` take ID/revision;
+restore additionally validates the original/current candidates against verified
+saved artwork, then the browser writes a fresh owned copy. Original checkpoints
+remain intact. `artwork-draft-delete` requires ID/revision/owner; deleting a listed
+record is an explicit user action. Owner UUIDs distinguish writers rather than
+provide authentication. Records follow the paths, sizes and quotas above and are
+not added to project inventory or exports.
+
+A completed gesture captures its pixels and schedules a checkpoint after 350 ms.
+Requests serialize per document; each snapshot excludes later unfinished or
+canceled gestures. Close awaits a current checkpoint; failures retain pixels and a JSON
+inspection download. Before-unload warns for uncheckpointed work. Disposal aborts
+transport/timers and never deletes acknowledged checkpoints. Recovered history
+starts locally from the recovered pixels. No automatic rebase, selected-placement
+replacement, layered editing or animation authoring is introduced.

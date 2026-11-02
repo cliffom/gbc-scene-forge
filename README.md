@@ -6,7 +6,8 @@
 ![GBC Scene Forge — Build a world. One tile at a time.](assets/branding/hero.png)
 
 Scene Forge is a local browser editor for building tile-based scenes from imported
-[gbc-atlas](https://github.com/cliffom/gbc-atlas) artwork. Organize your work into
+[gbc-atlas](https://github.com/cliffom/gbc-atlas) artwork or
+[native pixel tiles and static sprites](docs/user/pixel-artwork.md). Organize your work into
 projects, paint maps, place sprites and markers, and export portable Tiled files.
 Your projects stay on your computer.
 
