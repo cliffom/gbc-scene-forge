@@ -3,7 +3,7 @@
 import asyncio
 import time
 
-from gbc_scene_forge.core.errors import TransactionBusy
+from gbc_scene_forge.core.errors import Conflict, TransactionBusy
 
 BUSY_MESSAGE = "Another scene editor is applying changes. Try again when it finishes."
 BUSY_ERROR = {"error": {"code": "invalid_request", "message": BUSY_MESSAGE}}
@@ -27,7 +27,12 @@ def retry_busy(operation, *, attempts=20, delay=0.05):
     for attempt in range(attempts):
         try:
             return operation()
-        except TransactionBusy:
+        except (TransactionBusy, Conflict) as error:
+            # ProjectStore.commit preserves its public Conflict contract while
+            # chaining the lock failure. Only that explicit cause is retryable:
+            # no lock was acquired and the revision fences remain unchanged.
+            if isinstance(error, Conflict) and not isinstance(error.__cause__, TransactionBusy):
+                raise
             if attempt == attempts - 1:
                 raise
             time.sleep(delay)

@@ -37,10 +37,17 @@ Dates, revisions and environments missing from the originals remain unknown.
   parsing exposed absent-field rejection with `v.exactOptional` under shared
   projection; `v.optional` plus explicit omission resolves it and the corpus pins
   the corrected behavior. All final source/documentation checks passed, including
-  328 Python tests. Plain and MCP installed wheels each passed six smoke checks;
-  installed MCP passed 64 protocol/service checks. Production Chromium passed 45
+  330 Python tests. Plain and MCP installed wheels each passed six smoke checks;
+  installed MCP passed 66 protocol/service checks. Production Chromium passed 45
   regular scenarios, plain-wheel first use and both MCP/refresh scenarios, including
   definitions, terrain, budgets, preview, world, disposal and stale adoption.
+  [Initial Linux CI](https://github.com/cliffom/gbc-scene-forge/actions/runs/41370634062)
+  passed regular browsers and all 64 then-existing MCP checks but failed the refresh
+  fixture when `ProjectStore.commit` wrapped a busy lock in `Conflict`. The test-only
+  helper now retries that explicit `TransactionBusy` cause within its existing bound,
+  preserving revision arguments. Added regressions reject genuine conflicts,
+  unrelated causes and unknown outcomes; the affected installed-MCP refresh scenario
+  passed again locally. Production locking/error behavior is unchanged.
 - **Limits:** Synthetic compatibility probes cover JSON plus explicit undefined and
   non-finite numeric boundaries, not sparse arrays/getters/custom prototypes. No
   runtime speedup or source-size reduction is claimed. Two opt-in scalability
