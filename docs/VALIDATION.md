@@ -15,6 +15,35 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Editor toolbar and layout polish (#144)
+
+- **Scope:** Prepared 0.27.1 working tree based on
+  [`06ca6f8`](https://github.com/cliffom/gbc-scene-forge/commit/06ca6f8f1b9c2de2dea9dc303e3ce10d3f3bf6f1),
+  checked on 2026-11-02 with Darwin 27.0.0, Python 3.13.13, Node 24.22.1 and
+  Chromium 156.0.8078.4. [Task flows and archived comparisons](evaluations/editor-polish.md).
+- **Method:** Agent code/visual inspection, baseline comparison and synthetic
+  pointer/keyboard interaction in disposable projects. Ran `make lint test`,
+  production `make build check-dist test-browser`, then the first-use and polish
+  scenarios with `FORGE_TEST_PYTHON` pointing to the installed wheel. New bounds
+  checks cover five desktop sizes, every pane combination, focus clearance,
+  control alignment, long names, expanded help and representative 1.25 DPR
+  emulation; the first-use flow creates/draws/places/saves/reopens/exports without
+  the guide or MCP.
+- **Result:** Lint, documentation, Python/TypeScript tests, distribution metadata
+  and seven installed-wheel smoke tests passed. Full browser acceptance passed
+  63 scenarios; two opt-in scalability profiles were skipped. All four selected
+  installed-wheel browser scenarios passed. An intermediate narrow layout clipped
+  Across layers; bounded wrapping and pairwise-control assertions resolve it.
+  Initial new-test empty-project fixture assumptions failed and were corrected,
+  as recorded in the evaluation. Save/recovery, selection variations, imports,
+  sprite preview, layers, blockouts, stamps and export acceptance passed.
+- **Limits:** Local source and installed-wheel evidence, not a linked CI claim or
+  human usability certification. Chromium scaling emulation does not establish
+  actual OS/browser zoom behavior. Recovery was exercised at representative sizes,
+  not the full state/size cross product. Non-Chrome browsers, physical-device
+  comfort and independent novice success remain unmeasured; the original reported
+  screenshot environment was unspecified. No tag or publication was performed.
+
 ## Workshop placement conflict guards (PR #142 review)
 
 - **Scope:** Prepared 0.27.0 working tree based on
@@ -938,6 +967,10 @@ This is the single maintained validation checklist. Issue state was checked on
 Current automated procedures remain in [releasing](RELEASING.md) and
 [browser testing](BROWSER-TESTING.md). Add scoped evidence above when completing a
 check, retaining actual revision, environment, attribution, failures and limits.
+
+### Editor usability (#144)
+
+- [ ] Have independent users assess icon discovery, an unguided first-use flow and prolonged scene/pixel editing; check actual browser zoom and OS display scaling on physical devices. Automated task success and Chromium DPR emulation do not establish those outcomes.
 
 ### Native artwork (milestone 14)
 

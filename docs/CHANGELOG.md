@@ -6,6 +6,10 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.27.1 — Editor toolbar and layout polish
+
+[Release notes](RELEASE-0.27.1.md). Prepared UI polish for scene/pixel tools, bounded dialog layout and clearer empty artwork setup; publication is separate.
+
 ## 0.27.0 — Native pixel artwork, browser editing and MCP authoring
 
 [Release notes](RELEASE-0.27.0.md). Prepared milestone 14 artwork authoring and selected-placement variations; publication is separate.

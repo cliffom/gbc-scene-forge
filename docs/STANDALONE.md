@@ -115,11 +115,17 @@ Stamps provides a full-width selector, placement and deletion; long names are
 ellipsized with the complete name available on hover. Saving a stamp opens this
 panel. Click the canvas repeatedly to place it; Escape leaves stamp placement.
 
-Above the canvas, drawing tools and Undo/Redo stay visible. The second row groups
-clipboard actions, **Transform**, **Save stamp…**, Deselect and **Across layers**.
-Transform contains horizontal/vertical flips and rotation. The inspector keeps
-scene, layer and selection properties together; selected objects rise to the top.
-Secondary commands use native popovers rather than shrinking labels into icons.
+Above the canvas, a compact toolbar groups drawing tools, Undo/Redo, clipboard,
+selection transforms and reusable stamps. Hover an icon for its name and shortcut;
+native radio tools also support arrow-key navigation. Gold highlights the selected
+tool. **Across layers** stays with selection commands. **Transform** contains
+horizontal/vertical flips and rotation; the stamp icon is **Save stamp…**. View
+controls group Zoom, Review scene and the **Fit scene** icon at the end. Groups
+wrap within the canvas width when space is limited.
+
+The inspector keeps scene, layer and selection properties together; selected
+objects rise to the top. Management, destructive actions and unfamiliar commands
+retain text labels; secondary commands use native popovers.
 The desktop layout is checked from 760px wide, including short windows; the
 canvas scrolls independently of the library and inspector.
 

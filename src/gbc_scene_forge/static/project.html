@@ -12,6 +12,32 @@
   <script type="module" src="/project.js"></script>
 </head>
 <body class="standalone">
+  <svg class="icon-definitions" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
+      <symbol id="icon-select" viewBox="0 0 24 24"><path d="M4 3l7 17 2-7 7-2Z"/></symbol>
+      <symbol id="icon-pencil" viewBox="0 0 24 24"><path d="m4 16 12-12 4 4L8 20H4Z M13 7l4 4"/></symbol>
+      <symbol id="icon-fill" viewBox="0 0 24 24"><path d="m5 3 5 5 M12 4l8 8-8 8-9-9Z M4 12h15 M21 16s-3 3-3 5a2 2 0 0 0 4 0c0-2-1-5-1-5Z"/></symbol>
+      <symbol id="icon-erase" viewBox="0 0 24 24"><path d="m3 14 10-10 8 8-9 9H9Z M8 9l8 8 M12 21h9"/></symbol>
+      <symbol id="icon-pan" viewBox="0 0 24 24"><path d="M8 12V6a2 2 0 0 1 4 0v5-7a2 2 0 0 1 4 0v7-5a2 2 0 0 1 4 0v10c0 4-2 6-6 6h-1c-2 0-3-1-4-2l-5-6a2 2 0 0 1 3-3l1 1Z"/></symbol>
+      <symbol id="icon-undo" viewBox="0 0 24 24"><path d="M8 4 3 9l5 5 M3 9h11a6 6 0 0 1 0 12h-3"/></symbol>
+      <symbol id="icon-redo" viewBox="0 0 24 24"><path d="m16 4 5 5-5 5 M21 9H10a6 6 0 0 0 0 12h3"/></symbol>
+      <symbol id="icon-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V3H3v13h5"/></symbol>
+      <symbol id="icon-cut" viewBox="0 0 24 24"><circle cx="5" cy="6" r="3"/><circle cx="5" cy="18" r="3"/><path d="m8 8 13 13 M8 16 21 3"/></symbol>
+      <symbol id="icon-paste" viewBox="0 0 24 24"><path d="M8 5H4v16h16V5h-4"/><rect x="8" y="2" width="8" height="6" rx="1"/></symbol>
+      <symbol id="icon-duplicate" viewBox="0 0 24 24"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V3H3v13h5 M11 15h7 M15 11v7"/></symbol>
+      <symbol id="icon-deselect" viewBox="0 0 24 24"><path stroke-dasharray="3 3" d="M4 4h16v16H4Z"/><path d="m8 8 8 8 M16 8l-8 8"/></symbol>
+      <symbol id="icon-flip-h" viewBox="0 0 24 24"><path d="M9 5 3 19h6Z M15 5l6 14h-6Z M12 2v20"/></symbol>
+      <symbol id="icon-flip-v" viewBox="0 0 24 24"><path d="M5 9 19 3v6Z M5 15l14 6v-6Z M2 12h20"/></symbol>
+      <symbol id="icon-rotate" viewBox="0 0 24 24"><path d="M4 11a8 8 0 1 1 4 9 M4 4v7h7"/><path d="m9 13 4-4 4 4-4 4Z"/></symbol>
+      <symbol id="icon-transform" viewBox="0 0 24 24"><path d="m12 3 9 9-9 9-9-9Z M8 12h8 M12 8v8"/></symbol>
+      <symbol id="icon-stamp" viewBox="0 0 24 24"><path d="M4 17h16v4H4Z M7 17v-4h10v4 M9 13V6a3 3 0 0 1 6 0v7"/></symbol>
+      <symbol id="icon-fit" viewBox="0 0 24 24"><path d="M9 3H3v6 M15 3h6v6 M3 15v6h6 M21 15v6h-6"/><rect x="8" y="8" width="8" height="8"/></symbol>
+      <symbol id="icon-pick" viewBox="0 0 24 24"><path d="m14 4 6 6 M16 2l6 6-4 4-6-6Z M13 7 3 17v4h4l10-10"/></symbol>
+      <symbol id="icon-line" viewBox="0 0 24 24"><path d="M5 19 19 5"/><circle cx="4" cy="20" r="2"/><circle cx="20" cy="4" r="2"/></symbol>
+      <symbol id="icon-rectangle" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="1"/></symbol>
+      <symbol id="icon-move" viewBox="0 0 24 24"><path d="M12 2v20 M2 12h20 M8 6l4-4 4 4 M8 18l4 4 4-4 M6 8l-4 4 4 4 M18 8l4 4-4 4"/></symbol>
+      <symbol id="icon-transparent" viewBox="0 0 24 24"><path d="M3 3h18v18H3Z M3 3l18 18 M21 3 3 21"/></symbol>
+    </defs>
+  </svg>
   <header class="masthead">
     <div class="brand"><img class="mark" src="/branding/logo-64.png" width="64" height="64" alt=""><div><h1>GBC Scene Forge</h1><span id="project-name" class="eyebrow">LOCAL PROJECT</span></div></div>
     <button id="show-first-scene-guide" type="button">First scene guide</button>
@@ -147,33 +173,32 @@
       </aside>
       <section class="workbench" aria-label="Scene canvas">
         <div class="canvas-toolbar">
-          <button id="review-mode" aria-pressed="false" disabled>Review scene</button>
           <span class="review-mode-label">Review · Pan</span>
           <div class="tool-group authoring-tools" role="group" aria-label="Editing tools">
-            <label class="tool" title="Select and move (S)"><input type="radio" name="tool" value="select" disabled><span aria-hidden="true">⌖</span><span>Select</span></label>
-            <label class="tool" title="Paint or place (P)"><input type="radio" name="tool" value="paint" checked disabled><svg class="tool-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m14 6 4-4a2.8 2.8 0 0 1 4 4l-9 9-4-4 5-5Z"/><path d="M9 11c-3-1-5 1-5 4 0 2-1 4-2 5 5 1 10-1 10-5"/></svg><span id="paint-label">Paint</span></label>
-            <label class="tool" title="Fill (F)"><input type="radio" name="tool" value="fill" disabled><svg class="tool-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 2 5 5M19 11l-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2a2 2 0 0 0 2.8 0L19 11ZM2 12h16"/><path d="M20 15s-2 2.5-2 4a2 2 0 0 0 4 0c0-1.5-2-4-2-4Z"/></svg><span>Fill</span></label>
-            <label class="tool" title="Erase (E)"><input type="radio" name="tool" value="erase" disabled><span aria-hidden="true">⌫</span><span>Erase</span></label>
-            <label class="tool" title="Pan (H), or hold Space and drag"><input type="radio" name="tool" value="pan" disabled><span aria-hidden="true">✥</span><span>Pan</span></label>
+            <label class="tool" title="Select (S)"><input type="radio" name="tool" value="select" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-select"/></svg><span class="tool-label">Select</span></label>
+            <label class="tool" title="Paint (P)"><input type="radio" name="tool" value="paint" checked disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-pencil"/></svg><span id="paint-label" class="tool-label">Paint</span></label>
+            <label class="tool" title="Fill (F)"><input type="radio" name="tool" value="fill" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-fill"/></svg><span class="tool-label">Fill</span></label>
+            <label class="tool" title="Erase (E)"><input type="radio" name="tool" value="erase" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-erase"/></svg><span class="tool-label">Erase</span></label>
+            <label class="tool" title="Pan (H)"><input type="radio" name="tool" value="pan" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-pan"/></svg><span class="tool-label">Pan</span></label>
           </div>
-          <div class="tool-group authoring-tools"><button id="undo" title="Undo (⌘/Ctrl Z)" aria-label="Undo" disabled>↶</button><button id="redo" title="Redo (⌘/Ctrl Shift Z)" aria-label="Redo" disabled>↷</button></div>
-          <span class="spacer"></span><div class="zoom-controls"><label>Zoom <select id="zoom"><option value="fit" id="fit-zoom-option">Fit</option><option value="1">1×</option><option value="2">2×</option><option value="3" selected>3×</option><option value="4">4×</option><option value="6">6×</option><option value="8">8×</option></select></label><button id="fit-scene" disabled title="Center and fit the entire scene in the workspace">Fit scene</button></div>
-        </div>
-        <div class="composition-tools" role="group" aria-label="Selection and clipboard">
+          <div class="tool-group authoring-tools" role="group" aria-label="History"><button id="undo" class="icon-button" aria-label="Undo" title="Undo (⌘/Ctrl Z)" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-undo"/></svg></button><button id="redo" class="icon-button" aria-label="Redo" title="Redo (⌘/Ctrl Shift Z)" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-redo"/></svg></button></div>
+          <div class="composition-tools" role="group" aria-label="Selection and clipboard">
           <div class="command-group" role="group" aria-label="Clipboard and selection">
-            <button id="copy-selection" disabled title="Copy (⌘/Ctrl C)">Copy</button><button id="cut-selection" disabled title="Cut (⌘/Ctrl X)">Cut</button>
-            <button id="paste-selection" disabled title="Paste (⌘/Ctrl V)">Paste</button><button id="duplicate-selection" disabled title="Duplicate (⌘/Ctrl D)">Duplicate</button>
-            <button id="deselect" title="Deselect (Escape)" disabled>Deselect</button>
+            <button id="copy-selection" class="icon-button" aria-label="Copy" title="Copy (⌘/Ctrl C)" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-copy"/></svg></button><button id="cut-selection" class="icon-button" aria-label="Cut" title="Cut (⌘/Ctrl X)" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-cut"/></svg></button>
+            <button id="paste-selection" class="icon-button" aria-label="Paste" title="Paste (⌘/Ctrl V)" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-paste"/></svg></button><button id="duplicate-selection" class="icon-button" aria-label="Duplicate" title="Duplicate (⌘/Ctrl D)" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-duplicate"/></svg></button>
+            <button id="deselect" class="icon-button" aria-label="Deselect" title="Deselect (Escape)" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-deselect"/></svg></button>
           </div>
           <div class="command-group" role="group" aria-label="Selection actions">
-            <button id="transform-commands" class="command-trigger" popovertarget="transform-command-panel" disabled>Transform</button>
+            <button id="transform-commands" class="command-trigger icon-button" aria-label="Transform selection" title="Transform selection" popovertarget="transform-command-panel" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-transform"/></svg></button>
             <div id="transform-command-panel" class="command-panel" popover aria-label="Transform selection">
               <p class="command-heading">Transform selection</p>
               <button id="flip-horizontal" disabled>Flip horizontally</button><button id="flip-vertical" disabled>Flip vertically</button><button id="rotate-selection" disabled>Rotate 90°</button>
             </div>
-            <button id="save-stamp" disabled>Save stamp…</button>
+            <button id="save-stamp" class="icon-button" aria-label="Save stamp…" title="Save selection as reusable stamp" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-stamp"/></svg></button>
           </div>
           <label class="selection-scope" title="Include tiles and objects across all visible layers when selecting"><input type="checkbox" id="select-all-layers"> Across layers</label>
+        </div>
+          <span class="spacer"></span><div class="zoom-controls"><label>Zoom <select id="zoom"><option value="fit" id="fit-zoom-option">Fit</option><option value="1">1×</option><option value="2">2×</option><option value="3" selected>3×</option><option value="4">4×</option><option value="6">6×</option><option value="8">8×</option></select></label><button id="review-mode" aria-pressed="false" disabled>Review scene</button><button id="fit-scene" class="icon-button" aria-label="Fit scene" title="Center and fit the entire scene in the workspace" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-fit"/></svg></button></div>
         </div>
         <div id="layer-context" class="layer-context" hidden><span id="layer-context-text"></span><button id="context-show-layer" class="small" hidden>Show layer</button></div>
         <div id="viewport" class="viewport" tabindex="0" aria-label="Scene workspace">
@@ -322,6 +347,7 @@
   <dialog id="artwork-dialog" aria-labelledby="artwork-heading">
     <header class="art-heading"><h2 id="artwork-heading">Pixel artwork</h2><button id="art-close">Close</button></header>
     <p id="art-message" role="status" aria-live="polite"></p>
+    <div id="art-setup">
     <div id="art-recovery" hidden><h3>Recoverable artwork</h3><p>Recover a copy after checking its saved base. The original checkpoint remains available.</p><div id="art-drafts"></div></div>
     <div id="art-start">
       <div class="art-start-grid">
@@ -342,25 +368,29 @@
         </section>
       </div>
     </div>
+    </div>
     <div id="art-editor" hidden>
-      <p id="art-shared" class="hint"></p>
+      <p id="art-shared" class="hint"></p><details class="art-help"><summary>Drawing &amp; keyboard help</summary><p class="hint">Drag to draw or select. Move selections by dragging or arrow keys. Escape cancels a gesture. ⌘/Ctrl Z undoes, C/V copies/pastes. Colors support RGBA; alpha 0 is transparent.</p></details>
       <details id="art-selection-details" hidden><summary>Placements this variation will replace</summary><ul id="art-selection-list"></ul></details>
-      <div class="art-row art-tools"><label class="field">Tool<select id="art-tool"><option value="pencil">Pencil</option><option value="erase">Eraser</option><option value="fill">Flood fill</option><option value="pick">Eyedropper</option><option value="line">Line</option><option value="rectangle">Rectangle outline</option><option value="select">Select rectangle</option><option value="move">Move selection</option></select></label>
-        <label class="field">Color<input id="art-color" type="color" value="#729b4f"></label><label class="field">Alpha<input id="art-alpha" type="number" min="0" max="255" value="255"></label><button id="art-transparent">Transparent</button>
-        <label class="field">Zoom<select id="art-zoom"><option>1</option><option>2</option><option>4</option><option selected>16</option><option>32</option></select></label><label><input id="art-grid" type="checkbox" checked> Pixel grid</label>
-      </div>
-      <div id="art-swatches" class="art-swatches" aria-label="Artwork palette"></div>
-      <div class="art-row art-actions"><button id="art-undo">Undo</button><button id="art-redo">Redo</button><button id="art-copy">Copy</button><button id="art-paste">Paste</button><button id="art-deselect">Deselect</button><button id="art-horizontal">Flip horizontal</button><button id="art-vertical">Flip vertical</button><button id="art-rotate">Rotate 90°</button></div>
-      <p class="hint">Drag to draw or select. Move selections by dragging or arrow keys. Escape cancels a gesture. ⌘/Ctrl Z undoes, C/V copies/pastes. All colors remain available; target profiles do not restrict these pixels.</p>
+<div class="pixel-toolbar" aria-label="Pixel editing commands">
+<div class="tool-group" role="group" aria-label="Pixel tools"><label class="tool" title="Pencil"><input type="radio" name="art-tool" value="pencil" checked><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-pencil"/></svg><span class="tool-label">Pencil</span></label><label class="tool" title="Eraser"><input type="radio" name="art-tool" value="erase"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-erase"/></svg><span class="tool-label">Eraser</span></label><label class="tool" title="Flood fill"><input type="radio" name="art-tool" value="fill"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-fill"/></svg><span class="tool-label">Flood fill</span></label><label class="tool" title="Eyedropper"><input type="radio" name="art-tool" value="pick"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-pick"/></svg><span class="tool-label">Eyedropper</span></label><label class="tool" title="Line"><input type="radio" name="art-tool" value="line"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-line"/></svg><span class="tool-label">Line</span></label><label class="tool" title="Rectangle outline"><input type="radio" name="art-tool" value="rectangle"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-rectangle"/></svg><span class="tool-label">Rectangle outline</span></label><label class="tool" title="Select rectangle"><input type="radio" name="art-tool" value="select"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-select"/></svg><span class="tool-label">Select rectangle</span></label><label class="tool" title="Move selection"><input type="radio" name="art-tool" value="move"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-move"/></svg><span class="tool-label">Move selection</span></label></div>
+<div class="tool-group" role="group" aria-label="History"><button id="art-undo" class="icon-button" aria-label="Undo" title="Undo (⌘/Ctrl Z)"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-undo"/></svg></button><button id="art-redo" class="icon-button" aria-label="Redo" title="Redo (⌘/Ctrl Shift Z)"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-redo"/></svg></button></div>
+<div class="tool-group" role="group" aria-label="Clipboard and selection"><button id="art-copy" class="icon-button" aria-label="Copy" title="Copy (⌘/Ctrl C)"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-copy"/></svg></button><button id="art-paste" class="icon-button" aria-label="Paste" title="Paste (⌘/Ctrl V)"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-paste"/></svg></button><button id="art-deselect" class="icon-button" aria-label="Deselect" title="Deselect"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-deselect"/></svg></button></div>
+<div class="tool-group" role="group" aria-label="Transform artwork"><button id="art-horizontal" class="icon-button" aria-label="Flip horizontal" title="Flip horizontal"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-flip-h"/></svg></button><button id="art-vertical" class="icon-button" aria-label="Flip vertical" title="Flip vertical"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-flip-v"/></svg></button><button id="art-rotate" class="icon-button" aria-label="Rotate 90°" title="Rotate 90°"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-rotate"/></svg></button></div>
+</div>
+<div class="art-row art-tools"><div class="art-row color-controls" role="group" aria-label="Drawing color"><label class="field">Color<input id="art-color" type="color" value="#729b4f"></label><label class="field">Alpha<input id="art-alpha" type="number" min="0" max="255" value="255"></label><button id="art-transparent" class="icon-button" aria-label="Transparent" title="Use transparent color"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-transparent"/></svg></button></div><div class="art-row pixel-view-controls" role="group" aria-label="Pixel view"><label class="field">Zoom<select id="art-zoom"><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option><option value="16" selected>16×</option><option value="32">32×</option></select></label><label><input id="art-grid" type="checkbox" checked> Pixel grid</label></div></div>
+<div id="art-swatches" class="art-swatches" aria-label="Artwork palette"></div>
       <div class="art-workspace"><div class="art-canvas-scroll"><canvas id="art-canvas" tabindex="0" aria-label="Pixel artwork canvas"></canvas></div><aside class="art-review"><h3>Review before saving</h3>
         <label><input id="art-use-scene" type="checkbox" checked> Preview in the open scene</label>
-        <label class="field">Scene preview X<input id="art-view-x" type="number" min="0" value="0"></label><label class="field">Scene preview Y<input id="art-view-y" type="number" min="0" value="0"></label>
-          <p id="art-preview-help" class="hint">A 256 × 256 view of the open scene, including unsaved scene edits. New artwork is temporarily placed at this position for review only.</p>
         <button id="art-review">Review current pixels</button>
+        <details class="art-preview-settings"><summary>Scene preview position</summary>
+          <div class="property-grid"><label class="field">X (px)<input id="art-view-x" type="number" min="0" value="0"></label><label class="field">Y (px)<input id="art-view-y" type="number" min="0" value="0"></label></div>
+          <p id="art-preview-help" class="hint">A 256 × 256 view of the open scene, including unsaved scene edits. New artwork is temporarily placed at this position for review only.</p>
+        </details>
         <div id="art-comparison" hidden><p id="art-references"></p><figure><figcaption>Saved artwork</figcaption><img id="art-before" alt="Saved artwork before pixel edits"></figure><figure><figcaption>Candidate artwork</figcaption><img id="art-after" alt="Candidate artwork after pixel edits"></figure><figure><figcaption>Scene before</figcaption><img id="art-scene-before" alt="Scene with saved artwork"></figure><figure><figcaption>Scene after</figcaption><img id="art-scene-after" alt="Scene with candidate artwork"></figure></div>
       </aside></div>
       <p id="art-draft-status" role="status"></p>
-      <div class="dialog-actions"><button id="art-download">Download work</button><button id="art-discard">Discard this draft</button><button id="art-save" disabled>Save reviewed artwork</button></div>
+      <div class="dialog-actions"><button id="art-download">Download work</button><button id="art-discard" class="destructive-command">Discard this draft</button><button id="art-save" class="primary" disabled>Save reviewed artwork</button></div>
     </div>
   </dialog>
   <dialog id="tile-dialog" aria-labelledby="tile-heading">

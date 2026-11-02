@@ -40,6 +40,8 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Evaluations
 
+- [Editor toolbar and layout polish (#144)](evaluations/editor-polish.md)
+
 - [Mixed pixel artwork workflows (#134, #135)](evaluations/artwork-workflows.md)
 - [Everyday editor usability (#117)](evaluations/editor-usability.md)
 - [Rendering and history scalability (#78, #92, #93)](evaluations/scene-scalability.md)
@@ -55,6 +57,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Release notes
 
+- [Scene Forge 0.27.1](RELEASE-0.27.1.md) — prepared; publication is separate.
 - [Scene Forge 0.27.0](RELEASE-0.27.0.md) — prepared; publication is separate.
 - [Scene Forge 0.26.0](RELEASE-0.26.0.md)
 - [Scene Forge 0.25.1](RELEASE-0.25.1.md)

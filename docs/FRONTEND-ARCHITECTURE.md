@@ -22,7 +22,7 @@ start polling, or acquire canvas resources. No frontend framework is required.
 | `project/editor-recovery.mts`, `project/drafts.mts` | Checkpoint writer, recovery choices, restore/download/discard. Stopping the editor cancels scheduled work without deleting recoverable drafts. Recovery remains revision guarded. |
 | `project/editor-refresh.mts`, `project/editor-refresh-state.mts` | Refresh preference, visibility/focus/dirty/gesture eligibility, one in-flight probe, interaction generation, staged adoption and valid selection/layer/tool/brush restoration. The fence compares scene ID/revision, editor identity and project revision; animation redraws may replace a descriptor without invalidating the saved identity. |
 | `editor/editor-rendering.mts` | Canvas drawing, coordinate conversion, object hit bounds and preview collision queries. `draw(false)` updates transient display without authored checkpoints or rebuilding controls. Backing and CSS dimensions change only when needed; each synchronous repaint isolates drawing styles and starts a fresh path. Owns a 16 MiB LRU of transparent tile chunks with content/region invalidation and viewport clipping; scroll/resize redraw through the mounted lifetime. `drawOverview` renders full authored layers directly to the resize preview without display clipping or transient feedback. See [rendering/history contracts and measurements](evaluations/scene-scalability.md). |
-| `editor/editor-gestures.mts`, `editor/editor-viewport.mts`, `editor/editor-commands.mts` | Pointer authoring/cancellation and pan capture; zoom/fit/wheel and resize; keyboard/toolbar/export commands. The tool radio group and zoom selector are the single current tool/zoom values; do not add a second mutable copy. |
+| `editor/editor-gestures.mts`, `editor/editor-viewport.mts`, `editor/editor-commands.mts` | Pointer authoring/cancellation and pan capture; zoom/fit/wheel and resize; keyboard/toolbar/export commands. The scene/pixel tool radio groups and zoom selectors are the single current tool/zoom values; do not add a second mutable copy. |
 | `editor/editor-layers.mts`, `editor/editor-compositions.mts` | Layer/selection inspectors and layer actions; copy/cut/paste/transforms/stamp controls. |
 | `editor/editor-layout.mts` | Mounted Library/Inspector visibility, accessible pane toggles, Library categories, guided reveal and command popovers. Pane preferences are transient UI state; viewport transitions redraw without authored checkpoints. Disposal resets pane visibility. |
 | `editor/editor-review.mts` | Transient review mode in `EditorActivity.reviewing`, layout/focus and camera transition; gestures enforce Pan and commands block authoring shortcuts. The existing tool/brush/selection remain owned by their usual controllers. |
@@ -108,10 +108,9 @@ baselines retain their existing equality semantics. See the
 
 ## Directory layout
 
-Planned native pixel editing follows the [editable artwork contract](EDITABLE-ARTWORK.md).
-Its document history/recovery owners will live under `artwork/`, separate from
-scene history and connected through the existing composition/lifetime. This is
-future milestone 14 work, not an additional mounted editor today.
+Native pixel editing follows the [editable artwork contract](EDITABLE-ARTWORK.md).
+Its document history/recovery owners live under `artwork/`, separate from scene
+history and connected through the existing composition/lifetime.
 
 `frontend/project.ts` is the browser entry; `frontend/build.ts` is the Node build
 entry. All other modules live with their owning domain:

@@ -251,20 +251,20 @@ test('pixel drawing tools, exact transparency, reviewed save and scene history i
   await expect(page.locator('#art-shared')).toContainText('every placement');
   await page.locator('#art-color').fill('#cc6633');
   await draw(page, 0, 0, 7, 0);
-  await page.locator('#art-tool').selectOption('rectangle');
+  await page.locator('input[name=art-tool][value=rectangle]').check();
   await draw(page, 1, 1, 6, 6);
-  await page.locator('#art-tool').selectOption('fill');
+  await page.locator('input[name=art-tool][value=fill]').check();
   await draw(page, 2, 2);
-  await page.locator('#art-tool').selectOption('line');
+  await page.locator('input[name=art-tool][value=line]').check();
   await draw(page, 0, 7, 7, 0);
-  await page.locator('#art-tool').selectOption('pick');
+  await page.locator('input[name=art-tool][value=pick]').check();
   await draw(page, 0, 0);
   await expect(page.locator('#art-color')).toHaveValue('#cc6633');
-  await page.locator('#art-tool').selectOption('select');
+  await page.locator('input[name=art-tool][value=select]').check();
   await draw(page, 0, 0, 1, 1);
   await page.locator('#art-copy').click();
   await page.locator('#art-deselect').click();
-  await page.locator('#art-tool').selectOption('select');
+  await page.locator('input[name=art-tool][value=select]').check();
   await draw(page, 4, 4, 5, 5);
   await page.locator('#art-paste').click();
   await page.locator('#art-horizontal').click();
@@ -272,9 +272,9 @@ test('pixel drawing tools, exact transparency, reviewed save and scene history i
   await page.locator('#art-rotate').click();
   await page.locator('#art-canvas').focus();
   await page.keyboard.press('ArrowRight');
-  await page.locator('#art-tool').selectOption('erase');
+  await page.locator('input[name=art-tool][value=erase]').check();
   await draw(page, 7, 7);
-  await page.locator('#art-tool').selectOption('pencil');
+  await page.locator('input[name=art-tool][value=pencil]').check();
   await page.locator('#art-color').fill('#010203');
   await page.locator('#art-alpha').fill('0');
   await draw(page, 0, 0);
@@ -324,7 +324,7 @@ test('new artwork, duplicate imported pixels, compact UI and recoverable draft c
   await page.locator('#art-height').fill('8');
   await page.locator('#art-create').click();
   await expect(page.locator('#art-canvas')).toBeVisible();
-  await page.locator('#art-tool').selectOption('fill');
+  await page.locator('input[name=art-tool][value=fill]').check();
   await draw(page, 0, 0);
   await page.locator('#art-review').click();
   await expect(page.locator('#art-save')).toBeEnabled();
@@ -343,7 +343,7 @@ test('new artwork, duplicate imported pixels, compact UI and recoverable draft c
   await page.locator('#art-duplicate').click();
   await expect(page.locator('#art-canvas')).toBeVisible();
   await page.locator('#art-color').fill('#eeaa44');
-  await page.locator('#art-tool').selectOption('pencil');
+  await page.locator('input[name=art-tool][value=pencil]').check();
   await draw(page, 1, 1);
   await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
   // Interrupt the dialog after its checkpoint, without an explicit close/save.
@@ -415,7 +415,7 @@ test('placed sprite editing preserves origin and references; blank sprites previ
   await page.locator('#edit-placement-artwork').click();
   await expect(page.locator('#art-source option:checked')).toContainText('actor / artwork');
   await page.locator('#art-open').click();
-  await page.locator('#art-tool').selectOption('erase');
+  await page.locator('input[name=art-tool][value=erase]').check();
   await draw(page, 0, 0, 15, 0);
   // Pointer cancellation rolls back the next stroke in full.
   const a = await pixel(page, 0, 1),
@@ -444,7 +444,7 @@ test('placed sprite editing preserves origin and references; blank sprites previ
   await page.locator('#art-name').fill('New sprite');
   await page.locator('#art-kind').selectOption('sprite');
   await page.locator('#art-create').click();
-  await page.locator('#art-tool').selectOption('rectangle');
+  await page.locator('input[name=art-tool][value=rectangle]').check();
   await draw(page, 1, 1, 6, 6);
   await page.locator('#art-review').click();
   await expect(page.locator('#art-scene-after')).toBeVisible();
