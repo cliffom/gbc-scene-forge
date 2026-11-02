@@ -1,6 +1,6 @@
 # Roadmap
 
-Current baseline: prepared Forge 0.23.0 authors standalone portable Tiled projects with
+Current baseline: prepared Forge 0.24.0 authors standalone portable Tiled projects with
 imported artwork or artwork-free blockouts, optional MCP, guarded browser refresh,
 scene links and bounded wide/tall scenes. See [usage](STANDALONE.md) and the
 [changelog](CHANGELOG.md) for supported behavior and compatibility.
@@ -17,7 +17,3 @@ retaining an existing implementation. Validation gaps live in the
 
 See the [Valibot evaluation](evaluations/valibot-pilot.md). No transport, lifetime
 or compatibility rewrite is implied by schema adoption.
-
-## MCP authoring and project lifecycle
-
-- [#112](https://github.com/cliffom/gbc-scene-forge/issues/112) and [#113](https://github.com/cliffom/gbc-scene-forge/issues/113): expose scene lifecycle and library cleanup through native guarded services.

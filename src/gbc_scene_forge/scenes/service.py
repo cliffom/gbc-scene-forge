@@ -97,7 +97,12 @@ class SceneService:
         entry = next(item for item in document["scenes"] if item["id"] == scene_id)
         entry["name"] = name(title)
         self.store.commit(document, project_revision, {}, {entry["path"]: revision}, "Rename scene")
-        return self.store.catalog()
+        return {
+            "renamed": scene_id,
+            "scene_revision": revision,
+            "project": document,
+            "revision": digest(json_text(document).encode()),
+        }
 
     def duplicate(
         self,
@@ -126,7 +131,13 @@ class SceneService:
             {path: None, source: revision},
             "Duplicate scene",
         )
-        return {"duplicated": new_id, **self.store.catalog()}
+        return {
+            "duplicated": new_id,
+            "source_scene_id": scene_id,
+            "scene_revision": digest(encoded),
+            "project": document,
+            "revision": digest(json_text(document).encode()),
+        }
 
     def delete(
         self,
@@ -135,8 +146,11 @@ class SceneService:
         project_revision: str,
         *,
         confirm_broken_links: bool = False,
+        dry_run: bool = False,
     ) -> NativeDocument:
         """Remove a scene atomically, retaining broken world links only when confirmed."""
+        require(type(dry_run) is bool, "dry_run must be a boolean")
+        require(type(confirm_broken_links) is bool, "confirm_broken_links must be a boolean")
         document = self.store.current(project_revision)
         entry = next((item for item in document["scenes"] if item["id"] == scene_id), None)
         require(entry is not None, "Choose a project scene")
@@ -144,9 +158,25 @@ class SceneService:
         current = digest(read_optional(safe_path(self.store.root, path)))
         if not isinstance(revision, str) or current != revision:
             raise Conflict("Scene changed on disk. Reopen the delete dialog before trying again.")
+        consequences = {
+            "connections": world.references(document.get("world", world.empty()), scene_id),
+            "world_position": document.get("world", world.empty())["positions"].get(scene_id),
+            "behavior": "Removes the saved scene and its world position. "
+            "Acknowledged connections remain as broken links; other scenes are unchanged.",
+        }
+        if dry_run:
+            if digest(read_optional(safe_path(self.store.root, path))) != revision:
+                raise Conflict("Scene changed on disk. Reopen it before previewing deletion.")
+            self.store.current(project_revision)
+            return {
+                "scene_id": scene_id,
+                "scene_revision": revision,
+                "revision": project_revision,
+                "dry_run": True,
+                "consequences": consequences,
+            }
         require(
-            not world.references(document.get("world", world.empty()), scene_id)
-            or confirm_broken_links is True,
+            not consequences["connections"] or confirm_broken_links is True,
             "Deleting this scene breaks connections. Confirm before deleting.",
         )
         if "world" in document:
@@ -155,7 +185,12 @@ class SceneService:
         self.store.commit(
             document, project_revision, {path: None}, {path: revision}, "Delete scene"
         )
-        return {"deleted": scene_id, **self.store.catalog()}
+        return {
+            "deleted": scene_id,
+            "consequences": consequences,
+            "project": document,
+            "revision": digest(json_text(document).encode()),
+        }
 
     def load(self, scene_id: str) -> NativeDocument:
         """Load the saved scene with its coherent project revision."""

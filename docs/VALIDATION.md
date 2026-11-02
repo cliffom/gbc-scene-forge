@@ -460,6 +460,38 @@ Dates, revisions and environments missing from the originals remain unknown.
   tools were unavailable; non-Chromium/Windows and human usability checks were
   not performed. Release preparation is separate from tagging/publication.
 
+## MCP project lifecycle (#112, #113)
+
+- **Scope:** Prepared 0.24.0 working tree on `milestone-11-mcp-lifecycle`, based
+  on `a80dc57`, on 2026-11-01, local macOS, Python 3.13.13, Node 24.22.1,
+  Chromium 156.0.8078.4 and official MCP SDK 1.30.0. Plain and optional-MCP
+  production wheels were installed in separate environments.
+- **Method:** Required documentation/lint/Python/frontend checks, production
+  distribution builds and installed-wheel smoke checks; `make test-mcp` against
+  the installed optional-MCP wheel. The [lifecycle regressions](../tests/backend/adapters/test_mcp_lifecycle.py)
+  use byte comparisons, deterministic concurrent-write injection and a real SDK
+  stdio session for rename/copy/delete, concrete world-link acknowledgment,
+  referenced definitions, unknown/mismatched retained overrides, actual stamp
+  placements and strict schemas. Chromium ran regular acceptance, installed
+  plain-wheel first use and installed-MCP browser/refresh acceptance.
+- **Result:** Required checks, production metadata and six smoke checks in each
+  environment passed. The final installed-MCP suite passed 64 checks, including
+  nine lifecycle tests and the SDK workflow. Previews left saved files unchanged;
+  stale/invalid requests and preparation/commit races were rejected without
+  partial writes. Rename retained bytes/identity, duplication preserved native
+  content, acknowledged deletion retained concrete broken connections, and library
+  cleanup preserved unrelated entries and explicit instance overrides. All five
+  lifecycle acknowledgments retained their own committed catalog despite a later
+  writer. Chromium passed 41 regular scenarios, both MCP/refresh scenarios and
+  installed-wheel first use, including existing browser scene management,
+  definition deletion, world-link guards and independent draft recovery.
+- **Limits:** These are local synthetic automated results, not archived CI
+  evidence or human usability certification. Two opt-in scalability profiling
+  scenarios were skipped. Official Tiled/rasterizer commands were unavailable;
+  no interoperability rerun, Windows/non-Chromium check or physical-device
+  evaluation is claimed. Definition reference reporting requires readable valid
+  saved scenes. Tagging and package publication remain separate from preparation.
+
 ## Remaining checks
 
 This is the single maintained validation checklist. Issue state was checked on
@@ -478,7 +510,7 @@ check, retaining actual revision, environment, attribution, failures and limits.
 
 ### Platform, interoperability and publication gaps
 
-- [ ] Run the optional official Tiled/rasterizer interoperability checks for the current 0.23.0 baseline, including stamp placement and the 0.22.0 tile/layer changes, when those applications are available (#109, #110, #111).
+- [ ] Run the optional official Tiled/rasterizer interoperability checks for the current 0.24.0 baseline, including lifecycle cleanup, stamp placement and the 0.22.0 tile/layer changes, when those applications are available (#109, #110, #111, #112, #113).
 
 - [ ] Record non-Chromium desktop-browser and Windows runtime results with exact versions and workflows; these are outside the automated browser matrix.
 - [ ] Configure the TestPyPI trusted publisher and verify an upload if that channel is needed; the historical 0.1.4 attempt failed with `invalid-publisher`. Local wheel checks and PyPI publication are separate evidence.
