@@ -14,6 +14,7 @@ export class ArtworkSession {
   revision: string | null = null;
   checkpointPixels = '';
   private checkpointAttempted = false;
+  private pendingCheckpoints = 0;
   private queue: Promise<unknown> = Promise.resolve();
   private api: ProjectApi['json'];
   constructor(candidate: Candidate, api: ProjectApi['json'], original = candidate) {
@@ -26,7 +27,11 @@ export class ArtworkSession {
     return this.original.operation !== 'edit' || encoded(this.model.pixels) !== this.original.rgba;
   }
   get uncheckpointed() {
-    return this.changed && encoded(this.model.pixels) !== this.checkpointPixels;
+    return (
+      this.pendingCheckpoints > 0 ||
+      ((this.changed || this.checkpointAttempted) &&
+        encoded(this.model.pixels) !== this.checkpointPixels)
+    );
   }
   invalidate() {
     this.receipt = null;
@@ -68,6 +73,8 @@ export class ArtworkSession {
   }
   checkpoint(snapshot = this.model.pixels) {
     const pixels = snapshot.slice();
+    // Undo can return to the saved base while an older checkpoint is still queued.
+    this.pendingCheckpoints++;
     return this.serialize(async () => {
       const candidate = await this.synchronize(pixels);
       if (encoded(pixels) === this.checkpointPixels) {
@@ -85,6 +92,8 @@ export class ArtworkSession {
       });
       this.revision = string(ack.revision);
       this.checkpointPixels = encoded(pixels);
+    }).finally(() => {
+      this.pendingCheckpoints--;
     });
   }
   synchronizeCurrent() {

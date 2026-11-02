@@ -15,6 +15,30 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Artwork Undo unload protection (#141)
+
+- **Scope:** Prepared 0.27.0 working tree based on
+  `a409651c26b591be8745a608599da1eb0e0bea4b`, on 2026-11-02; local macOS,
+  Python 3.13, Node 24 and Playwright Chromium, using the source server and rebuilt bundle.
+- **Method:** Review reproduced a checkpointed stroke surviving Undo and immediate
+  reload without an unload warning. Added [model checks](../tests/frontend/artwork/pixels.ts)
+  for pristine sessions, queued writes, Undo to the saved base and failed acknowledgments.
+  Added a [browser regression](../tests/playwright/artwork/pixels.spec.ts) using a paused
+  clock to dismiss the reload warning, finish the checkpoint, then reload, recover and
+  download the exact saved pixels. Ran `make docs-check lint test PYTHON=.venv/bin/python`,
+  rebuilt the frontend and ran all nine artwork browser scenarios at 1440×1000
+  (including the existing compact-view scenario).
+- **Result:** Undo retains unload protection until its pixels reach the durable
+  checkpoint; pristine sessions remain clean. Once checkpointed, reload proceeds
+  without a prompt and recovered pixels match the saved base. Documentation,
+  lint/type checks, 403 Python tests, frontend suites and all nine browser scenarios
+  passed. The first new browser test failed because the shared fixture had already
+  accepted its dialog; the test now owns dialog handling so it can dismiss the warning.
+- **Limits:** Synthetic local fixtures and Chromium automation; no human usability,
+  non-Chromium or Windows assessment. Installed-wheel, full browser/MCP and packaging
+  checks were not repeated for this follow-up; their earlier evidence retains its
+  original revision scope below. No package was published.
+
 ## Artwork scene guards and completed checkpoints (#141)
 
 - **Scope:** Prepared 0.27.0 follow-up working tree based on

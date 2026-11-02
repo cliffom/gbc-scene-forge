@@ -117,8 +117,16 @@ const api: ProjectApi['json'] = async (route, decode, data) => {
   return decode({});
 };
 const session = new ArtworkSession(candidate, api);
+assert.equal(session.uncheckpointed, false);
 session.model.apply(() => session.model.put({ x: 0, y: 0 }, hidden));
+session.model.undo();
+assert.equal(session.uncheckpointed, false);
+session.model.redo();
 const first = session.checkpoint();
+session.model.undo();
+assert.equal(session.changed, false);
+assert.equal(session.uncheckpointed, true);
+session.model.redo();
 await new Promise((resolve) => setImmediate(resolve));
 session.model.apply(() => session.model.put({ x: 1, y: 0 }, red));
 const second = session.checkpoint();
@@ -134,6 +142,14 @@ assert.deepEqual(
 assert.deepEqual(new PixelModel(decodeCandidate(written[1].candidate)).color({ x: 1, y: 0 }), red);
 assert.equal(session.uncheckpointed, false);
 assert.deepEqual(session.original, candidate);
+// Undo to the saved base still diverges from an older durable checkpoint.
+session.model.undo();
+session.model.undo();
+assert.equal(session.changed, false);
+assert.equal(session.uncheckpointed, true);
+await session.checkpoint();
+assert.equal(session.uncheckpointed, false);
+assert.equal(decodeCandidate(written.at(-1)?.candidate).rgba, candidate.rgba);
 console.log('Pixel history, drawing, transforms, bounds, and serialized checkpoint races passed.');
 
 // A lost first checkpoint response is inspected before explicit cleanup, never replayed.
@@ -152,6 +168,7 @@ const ambiguousApi: ProjectApi['json'] = (route, decode) => {
 };
 const uncertain = new ArtworkSession(candidate, ambiguousApi);
 await assert.rejects(uncertain.checkpoint(), /lost acknowledgment/);
+assert.equal(uncertain.uncheckpointed, true);
 await uncertain.removeCheckpoint();
 assert.deepEqual(routes, ['artwork-draft-write', 'artwork-draft-list', 'artwork-draft-delete']);
 

@@ -69,7 +69,8 @@ Completed edits checkpoint after a short debounce into the project's
 capture completed edits; unfinished or canceled gestures are excluded. Close waits
 for the current checkpoint; a failed checkpoint keeps the dialog open and offers
 **Download work**. Leaving before a checkpoint finishes prompts the browser's
-unsaved-work warning. Disposing an editor preserves completed checkpoints.
+unsaved-work warning, including after Undo returns to the saved pixels while an
+older checkpoint still needs updating. Disposing an editor preserves completed checkpoints.
 
 Reopen the artwork dialog to see recoverable records. **Recover copy** checks the
 original saved base and opens unsaved pixels under a fresh draft identity; it
