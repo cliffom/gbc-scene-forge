@@ -15,6 +15,35 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Browser pixel artwork editing (#133)
+
+- **Scope:** Prepared 0.27.0 at `cb5d5b3dfd0f5d0de8cc4224c4474e918e296b50`,
+  on 2026-11-02; macOS 27.0.1 arm64, Python 3.13.13, Node 24.22.1 and
+  Playwright Chromium 156.0.8078.4. Installed plain-wheel and optional-MCP runs
+  used isolated environments built from that revision.
+- **Method:** Ran a sequential frozen production `make lint test build check-dist
+  test-browser PYTHON=.venv/bin/python`, then installed the wheel for `make test-mcp`,
+  both MCP/refresh browser scenarios and all five pixel-editor browser scenarios.
+  Model, HTTP and draft regressions cover exact RGBA, maximum-size batching,
+  selection/history, cancellation, checkpoint races, stale bases and lost write
+  acknowledgments. Browser fixtures exercise creation/copying, drawing/transforms,
+  transparency, reviews/saves, scene history isolation, recovery and competing writes.
+  Agent visual inspection checked the [1440×1000 desktop](images/pixel-editor-133-desktop.png)
+  and [800×900 compact](images/pixel-editor-133-compact.png) editor and review states.
+- **Result:** Documentation/lint/type checks, 403 Python tests, frontend suites,
+  production distributions/metadata and seven installed-wheel smoke tests passed.
+  Chromium passed 52 scenarios with two optional observational profiles skipped.
+  The installed optional-MCP suite passed 74 tests and both browser scenarios;
+  the installed plain wheel passed all five pixel-editor scenarios. An earlier
+  browser run failed two build-identity assertions because its bundle was rebuilt
+  concurrently as a development build; the frozen production rerun passed both
+  assertions and the complete suite. Screenshots retain scripted fixture state.
+- **Limits:** Local automation and agent screenshot inspection establish scoped
+  behavior, not prolonged human usability or actual agent art quality. Selected-placement
+  variations (#134) and integrated mixed-writer evaluation (#135) remain separate.
+  No Windows, non-Chromium or official Tiled checks were run for this change;
+  no package was published. Local ignored build logs are not archived CI evidence.
+
 ## Native artwork MCP authoring (#132)
 
 - **Scope:** Prepared 0.27.0 issue-132 working tree based on milestone integration
