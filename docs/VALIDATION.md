@@ -492,6 +492,39 @@ Dates, revisions and environments missing from the originals remain unknown.
   evaluation is claimed. Definition reference reporting requires readable valid
   saved scenes. Tagging and package publication remain separate from preparation.
 
+## Collapsible editor panes (#116)
+
+- **Scope:** Prepared 0.25.0 working tree on `issue-116-collapsible-panes`, based
+  on `50e022d`, on 2026-11-01, local macOS, Python 3.13.13, Node 24.22.1,
+  Chromium 156.0.8078.4 and MCP SDK 1.30.0. Plain and optional-MCP production
+  wheels were installed in separate environments.
+- **Method:** Required documentation/lint/Python/frontend checks, production
+  distributions, installed-wheel smoke checks and installed-MCP tests.
+  [Pane acceptance](../tests/playwright/editor/panes.spec.ts) exercises all four
+  combinations at 1440×900, 1024×768 and 760×640 with real pointer/keyboard input,
+  viewport measurements, draft comparisons, camera/pointer coordinates, Undo/Redo,
+  scene navigation and Review scene. Browser acceptance also checks remount,
+  endpoint navigation with Inspector hidden, installed-wheel first use and
+  installed-MCP/browser refresh. Screenshots are linked from
+  [layout guidelines](UI-DESIGN.md#collapsible-panes).
+- **Result:** Required checks passed 328 Python tests and all frontend suites.
+  Both distributions passed metadata checks; each installed wheel passed six
+  smoke checks and optional MCP passed all 64 tests. The full production browser
+  run passed 44 regular scenarios and exposed a lifecycle-test measurement race;
+  the corrected lifecycle rerun and all four final pane tests passed. Installed
+  first use and both MCP/refresh scenarios passed. Viewport width grew by the
+  measured pane widths; focus, hidden-control Tab order, guided reveal, world
+  navigation, dirty content, brushes, category, layer, selection and checkpoints
+  were preserved. One Undo reverted the sole authored change; pointer erasing
+  saved the expected cell. Agent inspection covered the committed expanded,
+  one-pane, both-pane and compact screenshots.
+- **Limits:** These are local synthetic automated results, not archived CI
+  evidence or human usability certification. The lifecycle test initially counted
+  a legitimate focus-triggered refresh during its dynamic import; the corrected
+  measurement starts immediately before disposal. Two opt-in scalability profiles
+  were skipped. Tiled/rasterizer tools were unavailable; non-Chromium/Windows and
+  physical-device checks were not run. Tagging/publication remain separate.
+
 ## Remaining checks
 
 This is the single maintained validation checklist. Issue state was checked on

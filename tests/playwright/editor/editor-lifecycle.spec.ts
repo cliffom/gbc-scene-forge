@@ -38,10 +38,15 @@ print(p.catalog()['project']['scenes'][0]['id'])
       `document.getElementById('scenes').value=${JSON.stringify(scene)}; document.getElementById('scenes').dispatchEvent(new Event('change'));`,
     );
     await wait("document.getElementById('scene-save-state').textContent === 'Saved'");
+    await page.locator('#toggle-library').click();
+    await page.locator('#toggle-inspector').click();
 
-    await evaluate(`(async()=>{window.__requests=[]; window.__fetch=window.fetch;
+    // Resolve the dynamic import before measuring disposal: its async gap can
+    // otherwise include legitimate focus-triggered refreshes from the pane clicks.
+    await evaluate(`(async()=>{window.__module=await import('/project.js');
+    window.__requests=[]; window.__fetch=window.fetch;
     window.fetch=(...args)=>{window.__requests.push(String(args[0]));return window.__fetch(...args)};
-    window.__module=await import('/project.js'); window.__module.editor.dispose();
+    window.__module.editor.dispose();
     document.activeElement?.blur();})()`);
     assert.equal(await evaluate("document.querySelectorAll('.scene-surface').length"), 0);
     assert.equal(await evaluate("document.querySelectorAll('#diagnostics-dialog').length"), 0);
@@ -54,6 +59,8 @@ print(p.catalog()['project']['scenes'][0]['id'])
         "document.getElementById('status').textContent='Loading replacement';history.replaceState(history.state,'','/');window.__mounted=window.__module.mountProjectEditor()",
       );
       await editorReady(page);
+      await expect(page.locator('#library-pane')).toBeVisible();
+      await expect(page.locator('#inspector-pane')).toBeVisible();
       assert.equal(await evaluate("document.querySelectorAll('.scene-surface').length"), 1);
       assert.equal(await evaluate("document.querySelectorAll('#diagnostics-dialog').length"), 1);
       await evaluate(`window.__requests=[];

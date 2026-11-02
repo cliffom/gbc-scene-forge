@@ -23,7 +23,11 @@
 .document-actions {margin-left:auto}
 .document-context label {flex:none}
 #scenes,#switch-project {min-width:120px;width:clamp(120px,13vw,200px);max-width:200px}
-.standalone main {grid-template-columns:260px minmax(280px,1fr) 270px}
+.standalone main {--library-width:260px;--inspector-width:270px;grid-template-columns:var(--library-width) minmax(280px,1fr) var(--inspector-width)}
+.standalone .library {grid-column:1;grid-row:1}
+.standalone .workbench {grid-column:2;grid-row:1}
+.standalone .inspector {grid-column:3;grid-row:1}
+.pane-controls {display:flex;gap:6px;flex:none}
 .standalone .masthead {padding:10px 16px;gap:16px;min-height:64px}
 .standalone .mark {width:40px;height:40px}
 .standalone h1 {font-size:18px}
@@ -137,12 +141,12 @@
 .standalone #viewport[data-pan=true] #scene {cursor:grab}
 .standalone #viewport[data-panning=true],.standalone #viewport[data-panning=true] #scene {cursor:grabbing}
 @media(max-width:1200px) {
-  .standalone main {grid-template-columns:232px minmax(280px,1fr) 248px}
+  .standalone main {--library-width:232px;--inspector-width:248px}
   .standalone .canvas-surround {padding:28px}
   #selected-brush {max-width:30%}
 }
 @media(max-width:980px) {
-  .standalone main {grid-template-columns:196px minmax(280px,1fr) 212px}
+  .standalone main {--library-width:196px;--inspector-width:212px}
   .standalone .masthead {gap:10px;padding:10px 12px}
   .standalone .connection {letter-spacing:.8px}
   .standalone .canvas-toolbar {padding:8px}
@@ -381,10 +385,14 @@
 #palette-dialog>#hardware-settings[open] {max-height:35dvh;overflow:auto;flex-shrink:1;min-height:120px}
 #palette-dialog:has(#hardware-settings[open]) #palette-findings {max-height:18dvh}
 
+.standalone main.library-collapsed {--library-width:0px}
+.standalone main.inspector-collapsed {--inspector-width:0px}
+
 /* Review mode reuses viewing controls while removing authoring chrome from layout/focus. */
 .review-mode-label {display:none;color:var(--accent);font-size:12px;white-space:nowrap}
 .standalone.reviewing {min-width:360px}
 .standalone.reviewing main {grid-template-columns:minmax(0,1fr)}
+.standalone.reviewing .workbench {grid-column:1}
 .reviewing .masthead,.reviewing .document-bar,.reviewing .library,.reviewing .inspector,
 .reviewing .authoring-tools,.reviewing .composition-tools,.reviewing #layer-context,
 .reviewing #coordinates,.reviewing #selected-brush,.reviewing .snap-control,

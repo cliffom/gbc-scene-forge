@@ -51,7 +51,8 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Release notes
 
-- [Scene Forge 0.24.0](RELEASE-0.24.0.md) — prepared; publication is separate.
+- [Scene Forge 0.25.0](RELEASE-0.25.0.md) — prepared; publication is separate.
+- [Scene Forge 0.24.0](RELEASE-0.24.0.md)
 - [Scene Forge 0.23.0](RELEASE-0.23.0.md)
 - [Scene Forge 0.22.1](RELEASE-0.22.1.md)
 - [Scene Forge 0.22.0](RELEASE-0.22.0.md)

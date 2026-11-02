@@ -152,6 +152,8 @@ print(json.dumps(ids))
   await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
   await expect(page.locator('#undo')).toBeEnabled();
   // Following a source endpoint respects the existing save/discard/cancel flow.
+  await click('toggle-inspector');
+  await expect(page.locator('#inspector-pane')).toBeHidden();
   await openWorld();
   await page
     .locator('.world-link button')
@@ -176,6 +178,7 @@ print(json.dumps(ids))
     "document.getElementById('scene-name').textContent.startsWith('Forest ·') && !document.getElementById('show-world').disabled",
   );
   await expect(page.locator('#object-list')).toHaveValue('1');
+  await expect(page.locator('#inspector-pane')).toBeVisible();
   const updatedCave = record(
     JSON.parse(await readFile(join(root, 'scenes', `${second}.tmj`), 'utf8')),
   );

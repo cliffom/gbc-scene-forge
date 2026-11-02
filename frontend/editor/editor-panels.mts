@@ -320,6 +320,7 @@ export function createPanelsController({
     } else if (location.layer && sceneSession.editor.layers.some((l) => l.id === location.layer)) {
       sceneSession.editor.activate(location.layer);
       ports.draw();
+      editorLayout.reveal(element('layers-panel', HTMLElement));
     }
     const x = location.x ?? item?.x,
       y = location.y ?? item?.y;
@@ -359,6 +360,7 @@ export function createPanelsController({
     sceneSelection.selectedObjects.clear();
     sceneSelection.selection = null;
     ports.draw();
+    editorLayout.reveal(element('selection-panel', HTMLElement));
     status.textContent = layer.visible
       ? 'Connection endpoint selected.'
       : 'Connection endpoint selected on a hidden layer. Show its layer to edit it.';

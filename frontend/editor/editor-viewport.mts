@@ -194,5 +194,28 @@ export function createViewportController({
   lifetime.assign(input('collision-overlay'), 'onchange', () => ports.draw());
 
   lifetime.assign(input('snap'), 'onchange', () => ports.draw());
-  return { sceneZoom, fitScene, syncBlockoutZoom };
+  function changeLayout(apply: () => void) {
+    // Keep the scene point under the viewport center through a pane transition.
+    // Clamping at the scroll edges is intentional when the scene fits already.
+    const before = canvas.getBoundingClientRect();
+    const view = ports.viewport.getBoundingClientRect();
+    const x = (view.left + ports.viewport.clientWidth / 2 - before.left) / before.width;
+    const y = (view.top + ports.viewport.clientHeight / 2 - before.top) / before.height;
+    apply();
+    if (!sceneSession.editor) {
+      return;
+    }
+    ports.draw(false);
+    if (select('zoom').value === 'fit') {
+      ports.viewport.scrollTo(0, 0);
+    } else if (before.width && before.height) {
+      const after = canvas.getBoundingClientRect();
+      const next = ports.viewport.getBoundingClientRect();
+      ports.viewport.scrollLeft +=
+        after.left + x * after.width - next.left - ports.viewport.clientWidth / 2;
+      ports.viewport.scrollTop +=
+        after.top + y * after.height - next.top - ports.viewport.clientHeight / 2;
+    }
+  }
+  return { sceneZoom, fitScene, syncBlockoutZoom, changeLayout };
 }

@@ -123,6 +123,23 @@ Secondary commands use native popovers rather than shrinking labels into icons.
 The desktop layout is checked from 760px wide, including short windows; the
 canvas scrolls independently of the library and inspector.
 
+**Hide Library** and **Hide Inspector**, beside the scene selector, collapse the
+panes independently. The Inspector toggle hides the entire right pane: scene,
+layers, selection, preview and recovery controls. **Show Library** and **Show
+Inspector** remain visible even when both panes are hidden. Use Tab to reach each
+button and Enter or Space to activate it; expanded state is exposed to assistive
+technology. Hidden pane controls leave the Tab order. Focus inside a pane moves
+to its toggle when that pane is hidden.
+
+The canvas uses the freed width while ordinary authoring remains enabled. Tools,
+brushes, Library category, active layer, selection and unsaved content stay intact;
+collapsing panes adds no Undo entries or draft checkpoints. The scene point at the
+viewport center is retained where scroll bounds allow; Fit scene recalculates for
+the new space. Scene changes and Review scene retain the pane choices. Reloading
+or replacing the editor expands both panes. These transient choices are never
+saved in project, scene or recovery data. First-scene guide actions, explicit
+Library commands and world/diagnostic navigation reveal their target pane.
+
 See [layout guidelines](UI-DESIGN.md) for the grouping and sizing rules used by the
 editor, including the reserved space for dropdown arrows.
 
