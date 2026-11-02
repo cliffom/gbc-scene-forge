@@ -101,6 +101,11 @@ baselines retain their existing equality semantics. See the
 
 ## Directory layout
 
+Planned native pixel editing follows the [editable artwork contract](EDITABLE-ARTWORK.md).
+Its document history/recovery owners will live under `artwork/`, separate from
+scene history and connected through the existing composition/lifetime. This is
+future milestone 14 work, not an additional mounted editor today.
+
 `frontend/project.ts` is the browser entry; `frontend/build.ts` is the Node build
 entry. All other modules live with their owning domain:
 
