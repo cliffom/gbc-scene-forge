@@ -103,6 +103,140 @@ async function openGrass(page: Page) {
   await expect(page.locator('#art-canvas')).toBeVisible();
   await expect(page.locator('#art-review')).toBeEnabled();
 }
+function savedLayers(data: Record<string, unknown>) {
+  const scene = record(data.scene);
+  return scene.layers
+    ? array(scene.layers, record)
+    : [{ cells: scene.cells }, { objects: scene.objects ?? [] }];
+}
+
+test('selected tile variation recovers, reviews exact replacements and preserves other placements', async ({
+  page,
+  workspace,
+}, info) => {
+  const { url, scene } = await setup(page, workspace);
+  const original = await opened(page, url);
+  await page.locator('input[name=tool][value=select]').check();
+  await paint(page, 12, 12);
+  await page.locator('#edit-placement-artwork').click();
+  await page.locator('#art-id').fill('autumn_grass');
+  await page.locator('#art-name').fill('Autumn grass');
+  await page.locator('#art-variation').click();
+  await expect(page.locator('#art-shared')).toContainText('1 selected placements');
+  await page.locator('#art-color').fill('#cc8833');
+  await draw(page, 1, 2);
+  await page.locator('#art-undo').click();
+  await page.locator('#art-redo').click();
+  await page.locator('#art-close').click();
+  await page.locator('#show-artwork').click();
+  await page.getByRole('button', { name: 'Recover copy', exact: true }).click();
+  await expect(page.locator('#art-shared')).toContainText('1 selected placements');
+  await page.locator('#art-review').click();
+  await expect(page.locator('#art-references')).toHaveText(
+    '1 selected replacements out of 2 saved source references. Only these selections change; other scenes, stamps and definitions retain the original.',
+  );
+  await expect(page.locator('#art-before')).toBeVisible();
+  await expect(page.locator('#art-scene-after')).toBeVisible();
+  await page.screenshot({ path: info.outputPath('variation-desktop.png') });
+  await page.setViewportSize({ width: 800, height: 900 });
+  await page.screenshot({ path: info.outputPath('variation-compact.png') });
+  await page.locator('#art-save').click();
+  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+  await expect(page.locator('#scene-save-state')).toHaveText('Saved');
+  const data = record(
+    await (await page.request.get(new URL(`api/scene/${scene}`, url).href)).json(),
+  );
+  const cells = array(savedLayers(data)[0].cells, (row) => array(row, string));
+  assert.equal(cells[0][0], 'grass/artwork/0/0');
+  assert.equal(cells[1][1], 'autumn_grass/artwork/0/0#1');
+  assert.equal((await opened(page, url)).rgba, original.rgba);
+  assert.deepEqual(
+    new PixelModel(await opened(page, url, 'autumn_grass')).color({ x: 1, y: 2 }),
+    [204, 136, 51, 255],
+  );
+  // A later normal scene save must retain the adopted replacement.
+  await page.locator('input[name=tool][value=paint]').check();
+  await page.locator('[data-asset="grass/artwork"]').first().click();
+  await paint(page, 20, 20);
+  await page.locator('#save').click();
+  await expect(page.locator('#scene-save-state')).toHaveText('Saved');
+  await page.reload();
+  await expect(page.locator('#status')).toHaveText('Scene opened.');
+  const final = record(
+    await (await page.request.get(new URL(`api/scene/${scene}`, url).href)).json(),
+  );
+  assert.equal(
+    array(savedLayers(final)[0].cells, (row) => array(row, string))[1][1],
+    'autumn_grass/artwork/0/0#1',
+  );
+});
+
+test('variation refuses dirty scene work and stale selected scene without losing pixels', async ({
+  page,
+  workspace,
+}) => {
+  const { url, root, scene } = await setup(page, workspace);
+  await page.locator('[data-asset="grass/artwork"]').first().click();
+  await paint(page, 20, 20);
+  await page.locator('input[name=tool][value=select]').check();
+  await paint(page, 4, 4);
+  await page.locator('#edit-placement-artwork').click();
+  await page.locator('#art-variation').click();
+  await expect(page.locator('#art-message')).toContainText('Save the scene before');
+  await page.locator('#art-close').click();
+  await page.locator('#save').click();
+  await expect(page.locator('#scene-save-state')).toHaveText('Saved');
+  await page.locator('#edit-placement-artwork').click();
+  await page.locator('#art-id').fill('stale_variation');
+  await page.locator('#art-variation').click();
+  await draw(page, 0, 0);
+  await page.locator('#art-review').click();
+  await expect(page.locator('#art-save')).toBeEnabled();
+  execFileSync(workspace.python, [
+    '-c',
+    "import sys;from pathlib import Path;p=Path(sys.argv[1])/'scenes'/sys.argv[2];p.write_bytes(p.read_bytes()+b'\\n')",
+    root,
+    `${scene}.tmj`,
+  ]);
+  await page.locator('#art-save').click();
+  await expect(page.locator('#art-message')).toContainText('Local pixels are retained');
+  await expect(page.locator('#art-canvas')).toBeVisible();
+  const catalog = record(await (await page.request.get(new URL('api/project', url).href)).json());
+  assert.equal(record(record(catalog.project).atlases).stale_variation, undefined);
+});
+
+test('selected sprite variation preserves its origin and keeps original artwork intact', async ({
+  page,
+  workspace,
+}) => {
+  const { url, scene } = await setup(page, workspace);
+  const original = await opened(page, url, 'actor');
+  const before = record(
+    await (await page.request.get(new URL(`api/scene/${scene}`, url).href)).json(),
+  );
+  await page.locator('input[name=tool][value=select]').check();
+  await page.locator('.layer-choice').filter({ hasText: 'Sprites' }).click();
+  await paint(page, 34, 30);
+  await page.locator('#edit-placement-artwork').click();
+  await page.locator('#art-id').fill('actor_warm');
+  await page.locator('#art-variation').click();
+  await page.locator('#art-color').fill('#f0b050');
+  await draw(page, 4, 4);
+  await page.locator('#art-review').click();
+  await page.locator('#art-save').click();
+  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+  const after = record(
+    await (await page.request.get(new URL(`api/scene/${scene}`, url).href)).json(),
+  );
+  const objects = (data: Record<string, unknown>) =>
+    savedLayers(data).flatMap((l) => array(l.objects ?? [], record));
+  assert.deepEqual(
+    objects(after),
+    objects(before).map((o) => ({ ...o, asset: 'actor_warm/artwork' })),
+  );
+  assert.deepEqual((await opened(page, url, 'actor_warm')).descriptor.origin, [4, 8]);
+  assert.equal((await opened(page, url, 'actor')).rgba, original.rgba);
+});
 
 test('pixel drawing tools, exact transparency, reviewed save and scene history isolation', async ({
   page,

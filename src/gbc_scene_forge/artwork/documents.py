@@ -4,7 +4,7 @@ import base64
 import copy
 from uuid import uuid4
 
-from gbc_scene_forge.artwork import atlas, editable, png
+from gbc_scene_forge.artwork import atlas, editable, placements, png
 from gbc_scene_forge.artwork.review import check_receipt
 from gbc_scene_forge.core.errors import Conflict
 from gbc_scene_forge.core.identities import name
@@ -257,7 +257,9 @@ class ArtworkDocuments:
         )
         return pixels, {group: {key: metadata}} if metadata is not None else {}
 
-    def duplicate(self, source, atlas_id, display_name, project_revision, *, region="artwork"):
+    def duplicate(
+        self, source, atlas_id, display_name, project_revision, *, region="artwork", placements=None
+    ):
         require(editable.revision(project_revision), "Expected the exact saved project revision")
         with self.store.read_session(project_revision, verify_assets=True) as session:
             kind, w, h, origin, pixels, group, metadata, entry = self._copy_source(
@@ -293,11 +295,33 @@ class ArtworkDocuments:
                 source=source,
                 metadata=metadata,
             )
+            if placements is not None:
+                body = {k: v for k, v in result.items() if k != "revision"}
+                body["placements"] = copy.deepcopy(placements)
+                result = editable.seal(body)
+                self.placement_scenes(result, session)
         self._revalidate(project_revision)
         return result
 
     edit = staticmethod(editable.edit_pixels)
     read = staticmethod(editable.read_pixels)
+
+    def placement_scenes(self, candidate, session):
+        """Bound selected-scene reads and validate exact bases before review/save/restore."""
+        if "placements" not in candidate:
+            return {}
+        from gbc_scene_forge.artwork.review import MAX_MAP_BYTES, MAX_SCENES
+
+        require(
+            len(session.document["scenes"]) <= MAX_SCENES,
+            "Artwork review supports at most 64 saved scenes",
+        )
+        return placements.replace(
+            candidate,
+            session.scenes(
+                max_bytes=MAX_MAP_BYTES, limit_message="Artwork variation exceeds 16 MiB saved maps"
+            ),
+        )
 
     def validate_base(self, candidate, document):
         """Validate candidate policy against a caller's already-held read session."""
@@ -332,12 +356,20 @@ class ArtworkDocuments:
             reviewed = {}
             if receipt is not None:
                 reviewed = check_receipt(candidate, receipt, session)
+            require(
+                "placements" not in candidate or receipt is not None,
+                "Review selected replacements before saving",
+            )
             # Adding an atlas changes Tiled ranges: decode all maps with the OLD catalog.
             scenes = (
-                [session.scene(item["id"]) for item in document["scenes"]]
+                session.scenes(
+                    max_bytes=16 * 1024 * 1024,
+                    limit_message="Artwork save exceeds 16 MiB saved maps",
+                )
                 if previous is None
                 else []
             )
+            replacements = placements.replace(candidate, scenes)
             image = png.encode(d["width"], d["height"], pixels)
             seed = previous if previous is not None else {"metadata": candidate["metadata"]}
             entry, changes = atlas.build_assets(
@@ -349,7 +381,9 @@ class ArtworkDocuments:
             expected, scene_revisions = dict(reviewed), {}
             for loaded in scenes:
                 path = f"scenes/{loaded['id']}.tmj"
-                encoded = record_bytes(tiled.encode(loaded["scene"], document))
+                encoded = record_bytes(
+                    tiled.encode(replacements.get(loaded["id"], loaded["scene"]), document)
+                )
                 # Guard every saved scene even when its encoding need not change.
                 if path in reviewed and loaded["revision"] != reviewed[path]:
                     raise Conflict("Reviewed scene changed. Retain the candidate and review again.")
@@ -371,6 +405,8 @@ class ArtworkDocuments:
                 "png_digest": digest(image),
                 "scene_revisions": scene_revisions,
             }
+            if replacements:
+                acknowledgment["replaced_scenes"] = list(replacements)
             if receipt is not None:
                 acknowledgment["review_revision"] = receipt["revision"]
         self.store.commit(document, revision, changes, expected, "Save editable artwork")

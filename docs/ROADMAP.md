@@ -12,12 +12,12 @@ retaining an existing implementation. Validation gaps live in the
 
 ## Native pixel artwork (milestone 14)
 
-Integrate [milestone 14](https://github.com/cliffom/gbc-scene-forge/milestone/14)
-on `milestone/14` before a separate integration PR to main. The
-[editable artwork contract](EDITABLE-ARTWORK.md) defines identities, RGBA and guards.
-
-- [#134](https://github.com/cliffom/gbc-scene-forge/issues/134): shared consequences and selected-placement variations.
-- [#135](https://github.com/cliffom/gbc-scene-forge/issues/135): integrated mixed-writer workflow evaluation.
+Review the combined [#134](https://github.com/cliffom/gbc-scene-forge/issues/134) /
+[#135](https://github.com/cliffom/gbc-scene-forge/issues/135) change against
+`milestone/14`, then prepare a separate integration PR to main for
+[milestone 14](https://github.com/cliffom/gbc-scene-forge/milestone/14). The
+[editable artwork contract](EDITABLE-ARTWORK.md) defines identities, RGBA and guards;
+the [workflow evaluation](evaluations/artwork-workflows.md) records bounded task outcomes.
 
 Preserve external import/reimport, portable scenes, metadata, optional target
 constraints and recoverable work across writers. Advanced animation and full

@@ -1,6 +1,6 @@
 # Scene Forge 0.27.0
 
-Prepared milestone 14 foundation: shared native artwork services create and
+Prepared milestone 14 artwork authoring: shared native artwork services create and
 duplicate static tile/sprite documents, read exact RGBA8 pixels, apply bounded
 batches and save immutable candidates against project and artwork revisions.
 This implements [#130](https://github.com/cliffom/gbc-scene-forge/issues/130).
@@ -19,12 +19,19 @@ and receipt-required saves. Its bounded undo/redo and owned project-local drafts
 remain independent of scene history. Recovery checks the original base and copies
 checkpoints; conflicts preserve pixels for explicit reconciliation. New artwork is
 reviewed through temporary placements and added to the Library without placing it.
-Placement-specific variations remain subsequent milestone work; this release preparation does not
-claim the complete user–agent authoring workflow.
+Selected-placement variations ([#134](https://github.com/cliffom/gbc-scene-forge/issues/134))
+copy artwork under fresh identities and atomically replace explicitly selected
+saved tile/sprite references after review. Browser selections require a saved
+scene; MCP can select across saved scenes. Other placements, source artwork,
+stamps and definitions retain their original semantics. Drafts retain the exact
+selection and reject stale restoration. The [workshop example](../examples/mcp/artwork_workshop.py)
+supports repeatable creation and explicit revisions through the optional SDK;
+the [workflow evaluation](evaluations/artwork-workflows.md) records #135 scope and limits.
 
 Native artwork uses one-region atlases and a declared editable descriptor.
 Pixel-only edits retain local tile IDs, metadata, sprite origins and scene files.
-Adding artwork atomically re-encodes affected Tiled maps. Exact save acknowledgments
+Adding artwork atomically re-encodes affected Tiled maps. Variation saves also
+apply selected reference replacements in that same transaction. Exact save acknowledgments
 identify the submitted candidate and committed bytes. Existing transaction recovery
 covers source PNGs, generated tilesets/images, descriptors and map writes.
 

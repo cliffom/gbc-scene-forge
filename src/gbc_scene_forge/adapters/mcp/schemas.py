@@ -384,6 +384,24 @@ SOURCE_PROPERTIES = {
 }
 SOURCE = schema(SOURCE_PROPERTIES)
 TARGET = schema({"document_id": UUID, "atlas_id": ASSET_ID, "region": ASSET_ID})
+PLACEMENT_BASE = {"scene_id": UUID, "scene_revision": REVISION, "layer_id": ID}
+PLACEMENTS = {
+    "type": "array",
+    "minItems": 1,
+    "maxItems": 256,
+    "items": {
+        "oneOf": [
+            schema(
+                {
+                    **PLACEMENT_BASE,
+                    "x": {"type": "integer", "minimum": 0, "maximum": 2047},
+                    "y": {"type": "integer", "minimum": 0, "maximum": 2047},
+                }
+            ),
+            schema({**PLACEMENT_BASE, "object_id": ID}),
+        ]
+    },
+}
 DESCRIPTOR = schema(
     {
         "version": {"const": 1},
@@ -424,7 +442,9 @@ CANDIDATE = schema(
         "source": {"anyOf": [SOURCE, NULL]},
         "metadata": {"type": "object", "maxProperties": 4},
         "revision": REVISION,
-    }
+        "placements": PLACEMENTS,
+    },
+    ("placements",),
 )
 RECTANGLE = schema(
     {
@@ -498,9 +518,16 @@ TOOLS.extend(
         ),
         tool(
             "duplicate_artwork",
-            "Prepare an unsaved copy with fresh identity. Explicit source grid/cell for tiles; null grid/cell for sprites. Retains metadata/origin; replaces no placements.",
-            {**GUARD, "source": SOURCE, "atlas_id": ASSET_ID, "name": TEXT, "region": ASSET_ID},
-            ("region",),
+            "Prepare an unsaved copy with fresh identity and retained metadata/origin. Explicit source grid/cell for tiles; null for sprites. Optional placements selects 1..256 saved scene/layer/cell or object locations for atomic replacement on reviewed commit. Omit for duplication alone.",
+            {
+                **GUARD,
+                "source": SOURCE,
+                "atlas_id": ASSET_ID,
+                "name": TEXT,
+                "region": ASSET_ID,
+                "placements": PLACEMENTS,
+            },
+            ("region", "placements"),
             read=True,
         ),
         tool(

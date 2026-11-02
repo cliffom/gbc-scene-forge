@@ -6,8 +6,8 @@ The shared native service and portable format are implemented by #130, and
 candidate review by #131, in the prepared 0.27.0 milestone branch.
 The [MCP artwork loop](MCP.md#native-artwork-authoring) implements #132; the
 [browser pixel editor](user/pixel-artwork.md) implements hand editing and owned
-recoverable drafts (#133). Placement variations remain planned for #134; #135 owns integrated
-workflow evaluation. This contract itself is
+recoverable drafts (#133). Selected-placement variations implement #134; the
+[integrated workflow evaluation](evaluations/artwork-workflows.md) covers #135. This contract itself is
 not product-validation evidence; observed checks belong in [Validation](VALIDATION.md).
 
 ## Ownership and identities
@@ -332,7 +332,7 @@ transaction and returns exact project/artwork revisions, source PNG digest,
 submitted candidate revision and revisions of rewritten scenes. Imported artwork
 cannot be opened for pixel edits. Pixel saves cannot alter descriptor/metadata.
 
-The version-1 candidate has exactly `version`, `project_id`, `document_id`,
+The version-1 candidate requires `version`, `project_id`, `document_id`,
 `atlas_id`, `descriptor`, `rgba`, `project_revision`, `artwork_revision`,
 `operation`, `source`, `metadata`, and its computed `revision`. Operation is
 `create`, `duplicate` or `edit`; the target artwork base is null for both creation
@@ -340,6 +340,7 @@ operations. Source is null except for duplication. Metadata carries the original
 saved metadata for edits or selected-source metadata under fresh keys for copies.
 The service validates these policies again at save; recomputing a candidate hash
 cannot bypass saved guards. Candidates are client-held JSON, without a server session.
+Only duplicate candidates may additionally carry `placements`, described below.
 
 For example, from a current project:
 
@@ -447,5 +448,45 @@ Requests serialize per document; each snapshot excludes later unfinished or
 canceled gestures. Close awaits a current checkpoint; failures retain pixels and a JSON
 inspection download. Before-unload warns for uncheckpointed work. Disposal aborts
 transport/timers and never deletes acknowledged checkpoints. Recovered history
-starts locally from the recovered pixels. No automatic rebase, selected-placement
-replacement, layered editing or animation authoring is introduced.
+starts locally from the recovered pixels. No automatic rebase, layered editing or
+animation authoring is introduced.
+
+## Selected-placement variations (#134)
+
+`documents.duplicate(source, atlas_id, name, project_revision, placements=[...])`
+creates a fresh duplicate candidate with a nonempty immutable list of 1..256
+saved locations. Omit `placements` for duplication alone. Each location has
+`scene_id`, `scene_revision`, `layer_id`, and either tile `x`, `y` or sprite
+`object_id`. Coordinates are zero-based scene cells, not pixels or atlas offsets.
+Every selected tile must match the source cell and grid; every sprite must match
+the source asset. Duplicate selections, mixed source assets, unknown fields,
+invalid IDs and stale scenes reject the whole operation. Version-1 variations
+replace a single source cell/sprite across one or more saved scenes. Other grid
+views of a larger tile require a separate matching-grid copy.
+
+The optional field participates in the candidate hash, survives pixel editing
+and owned checkpoints, and cannot change within a draft. Restoration checks
+selected scene revisions as well as artwork/project bases. A stale selection
+remains downloadable; it cannot be restored or silently retargeted.
+
+Review returns `replacements` with the exact selected locations and `references`
+for the original source cell/sprite. Its isolated before image shows source pixels.
+Scene context requires `scene:null`: before renders the saved scene; after renders
+only its selected reference replacements using the proposed pixels. No temporary
+extra placement is added. A variation can be reviewed in isolation, but every
+saved scene is still scanned/guarded. Existing reference/page/render limits apply.
+
+Variation saves require a matching receipt. They validate selections again, then
+commit new source/descriptor/derived artwork and selected map replacements through
+one durable transaction. All maps retain their original reviewed guards through
+Tiled range re-encoding. IDs, layers, transforms, origins, properties and unselected
+references retain their semantics; only selected asset identities change. Source
+artwork, stamps and definitions stay intact. The acknowledgment adds
+`replaced_scenes`, alongside exact rewritten `scene_revisions`.
+
+The browser captures explicit selections from a saved scene. It refuses dirty
+scene work and lists selected locations before drawing/review. After a successful
+variation save, the composition adopts the exact acknowledged map and starts fresh
+scene history; it never advances a replaced scene's revision before loading its
+matching content. Failed adoption retains the old conflict guard. Ordinary pixel
+edits retain independent scene history and unsaved content as before.
