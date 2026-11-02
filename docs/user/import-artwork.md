@@ -1,6 +1,6 @@
-# Import PNG artwork and existing Tiled maps
+# Import artwork, Tiled maps and Forge scenes
 
-Open **Library → Import atlas…**, then choose **PNG tilesheet** or **Tiled JSON
+Open **Library → Import…**, then choose **PNG tilesheet** or **Tiled JSON
 map** in Source type. The existing gbc-atlas bundle workflow remains available.
 These generic inputs need no gbc-atlas installation, manifest or GBC palette setup.
 
@@ -74,8 +74,8 @@ keys and unknown fields are rejected. Empty/default values documented by the
 importer may be accepted. Source editor version/name bookkeeping is normalized
 into Forge-owned files. No unsupported authored content is silently discarded.
 This is an external sheet-map importer; it is not a general Tiled project importer
-or an importer for Forge's exported image-collection tilesets. Open an exported
-Forge **project** directly to resume editing it instead.
+or the intake path for Forge's exported image-collection tilesets. Use
+**Forge export ZIP** below to transfer Forge scenes into an existing project.
 
 The source folder remains unchanged and is not needed afterward. Move the whole
 Forge project to keep dependencies portable. A project ZIP export can be extracted
@@ -86,8 +86,68 @@ session changes the project, preview again before importing.
 The supported JSON fields and tile IDs follow the official
 [Tiled JSON format reference](https://doc.mapeditor.org/en/stable/reference/json-map-format/).
 
+## Forge export ZIPs
+
+1. In the source project, choose **Export…** and download either **Whole project**
+   or **Open scene**. Canvas exports include the chosen canvas snapshot.
+2. In the destination project, open **Library → Import…**,
+   choose **Forge export ZIP**, select the ZIP, then click **Check selection**.
+   Intake accepts ZIP files directly; extracted folders use the separate project
+   reopening workflow.
+3. Review every source scene, its destination name, required artwork/definition IDs
+   and validation status. Uncheck scenes to skip them. Rename incoming scenes when
+   their names match existing scenes or each other (ignoring case and surrounding
+   whitespace). Scene UUID differences do not resolve a name conflict.
+4. Click **Check selection** again after any change. Review the final selected
+   names and copy decisions. Blocking errors disable **Import selected scenes**;
+   a changed input invalidates confirmation. No project content is written yet.
+5. Click **Import selected scenes** to confirm. If the open scene has unsaved edits,
+   cancel the discard prompt to retain them or explicitly discard to proceed.
+   Forge commits new scenes and dependencies together and opens the first copy.
+
+Each selected scene receives a new UUID. Required atlases and scene-referenced
+object definitions are copied once per selection with new identities, even if the
+destination already contains identical artwork. The preflight lists source and
+resulting IDs. Map-declared tilesets are dependencies even when unpainted. Atlas copies retain
+their full sheet, all supported grids, sprites,
+animation authoring metadata and terrain/collision metadata. Only selected scenes
+are created. Existing scenes, their files and definition libraries remain intact;
+new referenced definitions are appended. Layers, tile transforms, objects, sprite
+origins and typed property values are retained. The next check/import validates
+inputs again against the destination revision; reopen and check again after a
+concurrent project change.
+
+World positions and **all connections** are omitted, including connections between
+selected scenes and to unselected scenes. Project settings, preview preferences
+and unplaced stamps are not copied. Placed stamp content is ordinary scene data
+and is retained. Ordinary string properties are copied literally: Forge does not
+interpret them as scene links or rewrite user-defined strings.
+
+ZIP intake is bounded to **5 MiB compressed, 256 MiB expanded and 8,192 regular
+files**; maps/PNGs/tilesets are at most 4 MiB each and manifests at most 8 MiB.
+Absolute/traversing paths, symlinks, duplicate members, unsupported compression,
+unexpected members, checksum mismatches, missing dependencies and unsupported maps/tilesets are
+rejected before commit. No ZIP members are extracted to disk. Saved output must
+fit the existing 4 MiB scene and 8 MiB project-manifest limits. These checks cover
+archive integrity as a whole; selecting fewer scenes does not bypass a corrupt
+archive. Modified image-collection files must agree with their Forge authoring
+sheets and metadata; arbitrary external Tiled modifications remain unsupported.
+
+Whole-project ZIPs from earlier Forge versions can use their project manifest.
+For native projects predating sprite placement, undeclared sprite tilesets are
+rebuilt from the validated authoring sheet. Files declared in the asset inventory
+or referenced by a map must still be present.
+Scene-only ZIPs need the authoring metadata added in **0.26.0**; older scene-only
+ZIPs report an actionable re-export error. New scene exports include managed
+artwork sheets and a transfer manifest as well as their Tiled dependencies.
+Source ZIPs/files remain unchanged and are not needed after import.
+
 ## Preview examples
 
 ![PNG slicing preview](../screenshots/imports/png-preview.png)
 
 ![Tiled compatibility and dependency report](../screenshots/imports/tiled-preflight.png)
+
+![Forge scene selection, rename and dependency preflight](../screenshots/imports/forge-preflight.png)
+
+![Final copy decisions and confirmation at 760 × 640](../screenshots/imports/forge-compact.png)

@@ -9,10 +9,22 @@ from gbc_scene_forge.core.validation import require
 from gbc_scene_forge.formats import intake, tiled
 from gbc_scene_forge.storage.files import digest
 
+from .transfer import import_scenes
+
 
 class IntakeService:
     def __init__(self, store):
         self.store = store
+
+    def forge(self, encoded, revision, *, selection=None, dry_run=True, confirmation=None):
+        return import_scenes(
+            self.store,
+            encoded,
+            revision,
+            selection=selection,
+            dry_run=dry_run,
+            confirmation=confirmation,
+        )
 
     def tiled(self, payload, revision, *, dry_run=True, confirmation=None):
         require(type(dry_run) is bool, "dry_run must be boolean")

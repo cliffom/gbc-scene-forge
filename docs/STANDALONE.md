@@ -157,7 +157,8 @@ camera intent, limits, the opening-forest example and shared services for MCP #5
 
 ## Import and edit
 
-1. Choose **Import atlas**, then **Browse folder…** to select an atlas folder.
+1. Choose **Import… → gbc-atlas bundle**, then **Browse folder…** to select an
+   atlas folder.
    Choose a manifest if the folder contains several, then confirm with **Import
    atlas**. Its declared PNG is included automatically.
 2. Choose **Scene actions → Create scene…**, then enter a scene name, width and height in cells
@@ -197,7 +198,8 @@ The message below the tools names the active layer; a hidden layer offers
 **Show layer** there. View changes do not mark the scene as unsaved.
 
 **Unsaved changes** appears beside the scene selector, and **Save scene** gains
-an accent when edits need saving. The asset library contains **Import atlas**.
+an accent when edits need saving. The asset library contains **Import…** for
+artwork, Tiled maps and Forge export ZIPs.
 Selecting an object or tiles brings the Selection section to the top of the
 inspector; object edit and remove controls appear before animation settings.
 
@@ -507,9 +509,10 @@ counting policy, headless command and reproducible cross-atlas examples.
 Choose **Export…** to download a ZIP, then choose **Open scene** or **Whole
 project**. The source project and editor undo/redo history stay unchanged.
 
-- **Open scene** exports the open scene and the external `.tsj` tilesets and PNGs
-  referenced by its map. Other scenes, original atlas bundles, Forge history and
-  unrelated workspace files are excluded. A map can reference unused tilesets;
+- **Open scene** exports the open scene, its Tiled tilesets/PNGs, managed
+  authoring artwork for every grid and `forge-transfer.json`. Other scene maps,
+  original import folders, Forge history and unrelated workspace files are
+  excluded. A map can reference unused tilesets;
   those sets and all their tile images are kept to preserve the map's references.
 - **Whole project** exports every saved scene, all managed assets and
   `forge.project.json`. After extraction, open any `scenes/*.tmj` in Tiled, or
@@ -526,8 +529,11 @@ projects can be exported before creating any scenes.
 
 Extract the ZIP and keep `assets/` alongside `scenes/`. Move the entire extracted
 directory to preserve relative paths: map tilesets resolve relative to each map,
-and tile PNGs relative to each tileset. Single-scene exports are Tiled bundles;
-only whole-project exports include a Forge project manifest. No original import
+and tile PNGs relative to each tileset. Single-scene exports include a transfer
+manifest and managed authoring sheets;
+whole-project exports include the Forge project manifest. Both ZIP scopes can
+transfer selected scenes into an existing project using
+[Forge export ZIP intake](user/import-artwork.md#forge-export-zips). No original import
 folder, connector, running server or network access is needed to open exported
 maps in Tiled. Grid, terrain and collision view overlays are not baked into art;
 terrain/collision properties and geometry remain editable in the tilesets.

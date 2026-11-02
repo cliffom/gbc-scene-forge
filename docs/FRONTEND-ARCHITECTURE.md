@@ -107,7 +107,7 @@ entry. All other modules live with their owning domain:
 | Directory | Contents |
 | --- | --- |
 | `editor/` | Composition, editor session/interaction state, canvas/viewport, command wiring, layout, DOM and mounted lifetime. |
-| `project/` | Native transport/contracts, workspace adoption, recovery/checkpoints, external refresh and first-scene guide. |
+| `project/` | Native transport/contracts, workspace adoption, recovery/checkpoints, external refresh, first-scene guide and Forge scene-transfer preflight. |
 | `scene/` | Authoring model, layers/history, scene lifecycle, resizing and exports. |
 | `artwork/` | Imported images, atlas intake, tile metadata/transforms, terrain adjacency model and tile inspector. |
 | `objects/` | Objects/properties, reusable definitions, inspector and definition library. |

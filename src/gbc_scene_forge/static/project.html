@@ -102,7 +102,7 @@
         </div>
         <section id="artwork-panel" class="library-panel" role="tabpanel" aria-labelledby="artwork-tab">
           <div class="panel-heading"><h3>Tiles &amp; sprites</h3><span id="asset-count" class="muted">0</span></div>
-          <button id="library-import">Import atlas…</button>
+          <button id="library-import">Import…</button>
           <input id="search" type="search" placeholder="Search artwork…" aria-label="Search assets">
           <div class="filters">
             <select id="atlas-filter" aria-label="Filter atlas"><option value="">All atlases</option></select>
@@ -440,7 +440,7 @@
   <dialog id="import-atlas-dialog" aria-labelledby="import-heading">
     <form id="import-form">
       <h2 id="import-heading">Import artwork or map</h2>
-      <label class="field">Source type<select id="import-kind"><option value="atlas">gbc-atlas bundle</option><option value="png">PNG tilesheet</option><option value="tiled">Tiled JSON map</option></select></label>
+      <label class="field">Source type<select id="import-kind"><option value="atlas">gbc-atlas bundle</option><option value="png">PNG tilesheet</option><option value="tiled">Tiled JSON map</option><option value="forge">Forge export ZIP</option></select></label>
       <div id="atlas-import-fields">
       <p>Choose the folder containing your atlas manifest and PNG. Its artwork is copied into this project.</p>
       <div class="file-picker-field"><button id="browse-atlas" type="button" autofocus>Browse folder…</button><span id="atlas-folder-name" class="hint">No folder selected</span></div>
@@ -450,6 +450,14 @@
       <details class="manual-atlas"><summary>Enter a manifest path instead</summary><label class="field">Manifest path<input id="atlas-path" placeholder="/path/to/art.atlas.json"></label></details>
       <label class="replace-atlas"><input id="reimport" type="checkbox"> Update an atlas already in this project</label>
       <p class="hint">Matches the atlas ID and preserves placements. Removed or resized regions stop the update.</p>
+      </div>
+      <div id="forge-import-fields" hidden>
+        <p class="hint">Choose a Forge project or scene export ZIP. Select scenes, resolve names, then check the final selection. Artwork and definitions are copied with new identities. World connections and project settings are omitted.</p>
+        <label class="field">Forge export ZIP (up to 5 MiB compressed)<input id="forge-zip" type="file" accept=".zip,application/zip"></label>
+        <div id="forge-scenes"></div>
+        <button id="forge-check" type="button">Check selection</button>
+        <p id="forge-report" role="status"></p>
+        <button id="forge-apply" type="button" class="primary" disabled>Import selected scenes</button>
       </div>
       <div id="generic-import-fields" hidden>
         <p>Preview and validate before copying files. Source files stay unchanged.</p>

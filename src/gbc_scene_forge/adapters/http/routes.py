@@ -49,6 +49,7 @@ PROJECT_ROUTES = {
     ("POST", "/api/delete-atlas"): "_delete_atlas",
     ("POST", "/api/import-tilesheet"): "_import_tilesheet",
     ("POST", "/api/import-tiled"): "_import_tiled",
+    ("POST", "/api/import-forge"): "_import_forge",
     ("POST", "/api/import-atlas"): "_import_atlas",
     ("GET", "/api/project"): "_catalog",
     ("GET", "/api/revisions"): "_revisions",
@@ -326,6 +327,17 @@ class ProjectAPI:
                 data.get("project_revision"),
                 reimport=data.get("reimport", False),
                 dry_run=data.get("dry_run", True),
+            )
+        )
+
+    def _import_forge(self, project, data) -> Response:
+        return Response(
+            project.imports.forge(
+                data.get("zip"),
+                data.get("project_revision"),
+                selection=data.get("selection"),
+                dry_run=data.get("dry_run", True),
+                confirmation=data.get("confirmation"),
             )
         )
 
