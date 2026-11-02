@@ -156,13 +156,27 @@ unpublished version and release authorization.
 
 ## Response schemas
 
-World-report snapshots, project catalogs and saved scenes use pinned Valibot
-schemas with inferred output types and the existing decoder callback boundaries.
+World-report snapshots, project catalogs, saved scenes, objects/properties,
+definitions, tile/collision metadata and palette/hardware profiles use pinned
+Valibot schemas with inferred output types and the existing decoder callbacks.
+Domain schemas live beside their owning models; project contracts compose them
+directly. `NewObject` and independent scene, world and preview authoring models
+remain separate from wire inputs. Keep authoring policy in its existing validators:
+finite response numbers do not imply safe-integer authored values.
 `shared/schema.mts` owns JSON object/array/dictionary checks, primitive messages,
-first-error parsing and a bridge to existing domain decoders. Specialized domain
-rules remain explicit; migrate other response contracts progressively rather than
-duplicating their validation during conversion. See the
-[adoption evaluation](evaluations/valibot-pilot.md) for compatibility requirements,
-measured cumulative/marginal bundle cost and dependency/license handling.
+first-error parsing and justified decoder integration. The remaining bridges are
+authored world metadata, region-dependent animation manifests and stamp composition.
+Keep defaults, conditional dispatch, optional-field omission and cross-field rules
+explicit. Schema field/stage order is observable error behavior. Projection makes
+`v.exactOptional` reject absent fields; use `v.optional` and explicitly omit
+undefined fields from normalized output where the old decoder did so.
+
+For a contract change, update its owning schema and callers, add malformed/default
+and multi-error cases to the compatibility corpus, and compare the baseline before
+updating the pinned outcomes. Do not copy rules into a second validation path.
+The [adoption inventory](evaluations/valibot-pilot.md#bounded-domain-adoption-75)
+records retain decisions and specific revisit conditions for small inline replies,
+reports and preferences; there is no open-ended conversion requirement. It also
+owns reproducible compatibility/bundle methods and dependency/license handling.
 Browser dependencies are bundled during build; the installed Python editor still
 requires no Node or CDN requests.

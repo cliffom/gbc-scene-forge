@@ -1,11 +1,29 @@
 /** Native scene objects and the supported Tiled custom-property types. */
-import { array, number, record, string } from '../shared/decode.mts';
+import * as v from 'valibot';
+import { finite, jsonArray, jsonObject, parse, text } from '../shared/schema.mts';
 
-export type ObjectProperty = { name: string } & (
-  | { type: 'string'; value: string }
-  | { type: 'bool'; value: boolean }
-  | { type: 'int' | 'float'; value: number }
+// Dispatch after the name so malformed booleans retain their historical type error.
+export const propertySchema = v.pipe(
+  jsonObject({ name: text, type: v.unknown(), value: v.unknown() }),
+  v.transform(({ name, type, value }) => {
+    if (type === 'string') {
+      return { name, type: 'string' as const, value: parse(text, value) };
+    }
+    if (type === 'bool' && typeof value === 'boolean') {
+      return { name, type: 'bool' as const, value };
+    }
+    if (type === 'int' || type === 'float') {
+      return {
+        name,
+        type: type === 'int' ? ('int' as const) : ('float' as const),
+        value: parse(finite, value),
+      };
+    }
+    throw Error('Unsupported property type.');
+  }),
 );
+export type ObjectProperty = v.InferOutput<typeof propertySchema>;
+// Authoring input remains independent of the wire object (notably string IDs and kind).
 export type NewObject = {
   name: string;
   class: string;
@@ -18,7 +36,6 @@ export type NewObject = {
   | { kind: 'point' }
   | { kind: 'rectangle'; width: number; height: number }
 );
-export type SceneObject = NewObject & { id: string };
 export interface ObjectRegion {
   width: number;
   height: number;
@@ -46,18 +63,7 @@ export function propertyValue(type: string, raw: string | boolean): ObjectProper
   return value;
 }
 export function decodeProperty(value: unknown): ObjectProperty {
-  const prop = record(value),
-    name = string(prop.name);
-  if (prop.type === 'string') {
-    return { name, type: 'string', value: string(prop.value) };
-  }
-  if (prop.type === 'bool' && typeof prop.value === 'boolean') {
-    return { name, type: 'bool', value: prop.value };
-  }
-  if (prop.type === 'int' || prop.type === 'float') {
-    return { name, type: prop.type, value: number(prop.value) };
-  }
-  throw Error('Unsupported property type.');
+  return parse(propertySchema, value);
 }
 export function validateProperties(properties: ObjectProperty[], limit = 256) {
   if (properties.length > limit) {
@@ -80,36 +86,54 @@ export function validateProperties(properties: ObjectProperty[], limit = 256) {
     propertyValue(prop.type, prop.type === 'bool' ? prop.value : String(prop.value));
   }
 }
+const originSchema = v.pipe(
+  jsonArray(finite),
+  v.length(2, 'Invalid sprite origin.'),
+  v.transform((origin): [number, number] => [origin[0], origin[1]]),
+);
+export const objectSchema = v.pipe(
+  jsonObject({
+    id: v.pipe(finite, v.transform(String)),
+    x: finite,
+    y: finite,
+    name: v.nullish(text, ''),
+    class: v.nullish(text, ''),
+    properties: v.nullish(jsonArray(propertySchema), []),
+    definition: v.optional(text),
+    kind: v.unknown(),
+    width: v.unknown(),
+    height: v.unknown(),
+    origin: v.unknown(),
+    asset: v.unknown(),
+  }),
+  v.transform(({ kind, width, height, origin, asset, definition, ...fields }) => {
+    const common = { ...fields, ...(definition === undefined ? {} : { definition }) };
+    if (kind === 'point') {
+      return { ...common, kind: 'point' as const };
+    }
+    if (kind === 'rectangle') {
+      return {
+        ...common,
+        kind: 'rectangle' as const,
+        ...parse(jsonObject({ width: finite, height: finite }), { width, height }),
+      };
+    }
+    if (kind !== undefined) {
+      throw Error('Unsupported object kind.');
+    }
+    // Origin precedes asset validation, including checking all elements before length.
+    const parsedOrigin = origin === undefined ? undefined : parse(originSchema, origin);
+    return {
+      ...common,
+      kind: 'sprite' as const,
+      asset: parse(text, asset),
+      ...(parsedOrigin ? { origin: parsedOrigin } : {}),
+    };
+  }),
+);
+export type SceneObject = v.InferOutput<typeof objectSchema>;
 export function decodeObject(value: unknown): SceneObject {
-  const item = record(value);
-  const common = {
-    id: String(number(item.id)),
-    x: number(item.x),
-    y: number(item.y),
-    name: string(item.name ?? ''),
-    class: string(item.class ?? ''),
-    properties: array(item.properties ?? [], decodeProperty),
-    ...(item.definition === undefined ? {} : { definition: string(item.definition) }),
-  };
-  if (item.kind === 'point') {
-    return { ...common, kind: 'point' };
-  }
-  if (item.kind === 'rectangle') {
-    return { ...common, kind: 'rectangle', width: number(item.width), height: number(item.height) };
-  }
-  if (item.kind !== undefined) {
-    throw Error('Unsupported object kind.');
-  }
-  const origin = item.origin === undefined ? undefined : array(item.origin, number);
-  if (origin && origin.length !== 2) {
-    throw Error('Invalid sprite origin.');
-  }
-  return {
-    ...common,
-    kind: 'sprite',
-    asset: string(item.asset),
-    ...(origin ? { origin: [origin[0], origin[1]] } : {}),
-  };
+  return parse(objectSchema, value);
 }
 export function encodeObject(item: SceneObject) {
   return {

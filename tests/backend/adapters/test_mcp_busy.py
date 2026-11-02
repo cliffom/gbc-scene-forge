@@ -74,11 +74,41 @@ class FixtureBusyRetryTests(unittest.TestCase):
         self.assertEqual(operation.call_count, 3)
 
     def test_non_busy_failure_is_not_retried(self):
-        for error in (Conflict("changed"), ValueError("invalid"), OSError("unknown outcome")):
+        wrapped = Conflict("changed")
+        wrapped.__cause__ = ValueError("not a lock failure")
+        for error in (
+            Conflict("changed"),
+            Conflict(BUSY_ERROR["error"]["message"]),
+            wrapped,
+            ValueError("invalid"),
+            OSError("unknown outcome"),
+        ):
             operation = Mock(side_effect=error)
             with self.assertRaises(type(error)):
                 retry_busy(operation, delay=0)
             self.assertEqual(operation.call_count, 1)
+
+    def test_commit_busy_cause_is_retried_but_bounded(self):
+        error = Conflict("busy")
+        error.__cause__ = TransactionBusy("busy")
+        operation = Mock(side_effect=[error, "saved"])
+        self.assertEqual(retry_busy(operation, delay=0), "saved")
+        self.assertEqual(operation.call_count, 2)
+        operation = Mock(side_effect=error)
+        with self.assertRaises(Conflict) as raised:
+            retry_busy(operation, attempts=3, delay=0)
+        self.assertIs(raised.exception, error)
+        self.assertEqual(operation.call_count, 3)
+
+    def test_revision_conflict_after_commit_busy_is_not_rebased(self):
+        busy = Conflict("busy")
+        busy.__cause__ = TransactionBusy("busy")
+        stale = Conflict("Scene changed")
+        operation = Mock(side_effect=[busy, stale])
+        with self.assertRaises(Conflict) as raised:
+            retry_busy(operation, delay=0)
+        self.assertIs(raised.exception, stale)
+        self.assertEqual(operation.call_count, 2)
 
     def test_invalid_attempt_bound_is_rejected(self):
         operation = Mock()

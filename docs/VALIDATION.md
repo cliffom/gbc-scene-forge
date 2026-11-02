@@ -15,6 +15,47 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Domain response-contract foundation (#75)
+
+- **Scope:** Prepared 0.25.1 working tree, local macOS 27.0.1 on 2026-11-01;
+  original frontend `6f637da74e5378eaab6d1a1ae03c57585ff6da3b`, candidate `6842b05`
+  plus release/documentation edits. Python 3.13.13, Node 24.22.1, esbuild 0.28.2,
+  pinned Valibot 1.5.0, Chromium 156.0.8078.4 and MCP SDK 1.30.0. Release edits
+  do not change the measured frontend modules.
+- **Method:** Reproducible original/candidate corpus, normal project/Tiled Courtyard
+  smoke and fixed-label full-editor production measurements, detailed in the
+  [adoption evaluation](evaluations/valibot-pilot.md#bounded-domain-adoption-75).
+  `make docs-check lint test`, `FORGE_BUILD_MODE=production make build check-dist`,
+  the full regular Playwright suite, plain installed-wheel first use, optional-MCP
+  installed-wheel smoke/protocol checks and both MCP/refresh Playwright scenarios.
+- **Result:** 7,655 cases compared identical normalized outputs and first-error
+  messages, with unchanged inputs on acceptance/rejection. Courtyard catalog, tile
+  layers, sprite/point/rectangle objects and custom properties loaded successfully.
+  Full-editor cumulative cost is +1,285 minified bytes / +308 gzip bytes (0.42%);
+  five affected source modules grow by 34 lines / 1,208 bytes while replacing eight
+  independent output declarations and four decoder bridges. Initial candidate
+  parsing exposed absent-field rejection with `v.exactOptional` under shared
+  projection; `v.optional` plus explicit omission resolves it and the corpus pins
+  the corrected behavior. All final source/documentation checks passed, including
+  330 Python tests. Plain and MCP installed wheels each passed six smoke checks;
+  installed MCP passed 66 protocol/service checks. Production Chromium passed 45
+  regular scenarios, plain-wheel first use and both MCP/refresh scenarios, including
+  definitions, terrain, budgets, preview, world, disposal and stale adoption.
+  [Initial Linux CI](https://github.com/cliffom/gbc-scene-forge/actions/runs/41370634062)
+  passed regular browsers and all 64 then-existing MCP checks but failed the refresh
+  fixture when `ProjectStore.commit` wrapped a busy lock in `Conflict`. The test-only
+  helper now retries that explicit `TransactionBusy` cause within its existing bound,
+  preserving revision arguments. Added regressions reject genuine conflicts,
+  unrelated causes and unknown outcomes; the affected installed-MCP refresh scenario
+  passed again locally. Production locking/error behavior is unchanged.
+- **Limits:** Synthetic compatibility probes cover JSON plus explicit undefined and
+  non-finite numeric boundaries, not sparse arrays/getters/custom prototypes. No
+  runtime speedup or source-size reduction is claimed. Two opt-in scalability
+  profiling scenarios were skipped. Official Tiled/rasterizer tools were unavailable;
+  non-Chromium/Windows, Python versions other than 3.13 and human usability checks
+  were not run locally. Local ignored build output is not an archived CI artifact.
+  Publication is separate.
+
 ## Initial standalone projects (#13)
 
 - **Scope:** Working-tree implementation reported on 2026-10-27 before publication; initial
@@ -537,13 +578,9 @@ check, retaining actual revision, environment, attribution, failures and limits.
 
 - [ ] Have a human assess prolonged painting, panning and selection on the current consumer Forest project; automated archived-v4 measurements do not establish physical-device editing comfort (#93).
 
-### Contracts and infrastructure (#75, #67)
-
-- [ ] Compare each remaining response-decoder migration against its original output/error/normalization corpus and record bundle cost and adopt/retain/defer decisions (#75, #67).
-
 ### Platform, interoperability and publication gaps
 
-- [ ] Run the optional official Tiled/rasterizer interoperability checks for the current 0.24.0 baseline, including lifecycle cleanup, stamp placement and the 0.22.0 tile/layer changes, when those applications are available (#109, #110, #111, #112, #113).
+- [ ] Run the optional official Tiled/rasterizer interoperability checks for the current 0.25.1 baseline, including object/definition and tile metadata compatibility, when those applications are available (#75, #109, #110, #111, #112, #113).
 
 - [ ] Record non-Chromium desktop-browser and Windows runtime results with exact versions and workflows; these are outside the automated browser matrix.
 - [ ] Configure the TestPyPI trusted publisher and verify an upload if that channel is needed; the historical 0.1.4 attempt failed with `invalid-publisher`. Local wheel checks and PyPI publication are separate evidence.

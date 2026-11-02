@@ -1,25 +1,58 @@
 /** Project-owned definitions; scene properties contain explicit overrides only. */
-import { array, boolean, number, record, string } from '../shared/decode.mts';
+import * as v from 'valibot';
+import { bool, finite, jsonArray, jsonObject, parse, text } from '../shared/schema.mts';
 import type { NewObject, ObjectProperty, SceneObject } from './objects.mts';
 import { decodeProperty } from './objects.mts';
-export interface DefinitionField {
-  name: string;
-  type: ObjectProperty['type'];
-  required: boolean;
-  default?: ObjectProperty['value'];
-  min?: number;
-  max?: number;
-  choices?: string[];
-}
-export interface ObjectDefinition {
-  id: string;
-  name: string;
-  kind: SceneObject['kind'];
-  asset?: string;
-  width?: number;
-  height?: number;
-  fields: DefinitionField[];
-}
+
+const fieldSchema = v.pipe(
+  jsonObject({
+    type: v.pipe(text, v.picklist(['string', 'int', 'float', 'bool'], 'Invalid field type.')),
+    name: text,
+    required: bool,
+    default: v.unknown(),
+    min: v.unknown(),
+    max: v.unknown(),
+    choices: v.unknown(),
+  }),
+  v.transform(({ type, name, required, default: value, min, max, choices }) => ({
+    name,
+    type,
+    required,
+    ...(value === undefined ? {} : { default: decodeProperty({ name, type, value }).value }),
+    ...(min === undefined ? {} : { min: parse(finite, min) }),
+    ...(max === undefined ? {} : { max: parse(finite, max) }),
+    ...(choices === undefined ? {} : { choices: parse(jsonArray(text), choices) }),
+  })),
+);
+export type DefinitionField = v.InferOutput<typeof fieldSchema>;
+const definitionSchema = v.pipe(
+  jsonObject({
+    kind: v.pipe(text, v.picklist(['point', 'rectangle', 'sprite'], 'Invalid definition kind.')),
+    id: text,
+    name: text,
+    asset: v.optional(text),
+    width: v.unknown(),
+    height: v.unknown(),
+    fields: v.unknown(),
+  }),
+  v.transform(({ width, height, fields, asset, ...common }) => ({
+    ...common,
+    ...(asset === undefined ? {} : { asset }),
+    ...(width === undefined
+      ? {}
+      : parse(jsonObject({ width: finite, height: finite }), { width, height })),
+    fields: parse(jsonArray(fieldSchema), fields),
+  })),
+);
+export type ObjectDefinition = v.InferOutput<typeof definitionSchema>;
+const librarySchema = jsonObject({
+  version: v.literal(1, 'Unsupported object definition library version.'),
+  definitions: jsonArray(definitionSchema),
+});
+export const definitionsSchema = v.pipe(
+  v.unknown(),
+  v.transform((value) => (value === undefined ? [] : parse(librarySchema, value).definitions)),
+);
 export interface DefinitionFinding {
   field: string;
   code: string;
@@ -37,44 +70,7 @@ export function fieldType(value: unknown): DefinitionField['type'] {
   throw Error('Invalid field type.');
 }
 export function decodeDefinitions(value: unknown): ObjectDefinition[] {
-  if (value === undefined) {
-    return [];
-  }
-  const library = record(value);
-  if (library.version !== 1) {
-    throw Error('Unsupported object definition library version.');
-  }
-  return array(library.definitions, (value) => {
-    const d = record(value);
-    if (!['point', 'rectangle', 'sprite'].includes(string(d.kind))) {
-      throw Error('Invalid definition kind.');
-    }
-    return {
-      id: string(d.id),
-      name: string(d.name),
-      kind: objectKind(d.kind),
-      ...(d.asset === undefined ? {} : { asset: string(d.asset) }),
-      ...(d.width === undefined ? {} : { width: number(d.width), height: number(d.height) }),
-      fields: array(d.fields, (value) => {
-        const f = record(value);
-        const type = string(f.type);
-        if (!['string', 'int', 'float', 'bool'].includes(type)) {
-          throw Error('Invalid field type.');
-        }
-        return {
-          name: string(f.name),
-          type: fieldType(type),
-          required: boolean(f.required),
-          ...(f.default === undefined
-            ? {}
-            : { default: decodeProperty({ name: f.name, type, value: f.default }).value }),
-          ...(f.min === undefined ? {} : { min: number(f.min) }),
-          ...(f.max === undefined ? {} : { max: number(f.max) }),
-          ...(f.choices === undefined ? {} : { choices: array(f.choices, string) }),
-        };
-      }),
-    };
-  });
+  return parse(definitionsSchema, value);
 }
 export function resolveDefinition(item: SceneObject, definitions: ObjectDefinition[]) {
   const overrides = new Map(item.properties.map((p) => [p.name, structuredClone(p)]));

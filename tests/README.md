@@ -19,6 +19,14 @@ Run commands from the repository root. Test code is grouped by runner and domain
 | `packaging/` | explicit installed-wheel smoke checks |
 | `legacy/` | historical connector tests and their independent fixtures |
 
+`make test-frontend-domain-contracts` pins original normalized outputs and first
+errors for the domain response corpus, including input non-mutation. Set
+`FORGE_CONTRACT_BASELINE` to a Git revision for case-by-case original/candidate
+comparison before changing expectations. The [contract inventory and methods](../docs/evaluations/valibot-pilot.md#compatibility-corpus-and-reproducibility)
+also describe optional normal Courtyard loading and
+`node tests/support/measure_contracts.ts BASE_REF STEP_REF ... WORKTREE` for fixed-label
+production bundle/source measurements. Neither tool changes tracked demo assets.
+
 Python discovery remains `python -m unittest discover -s tests -p 'test_*.py'`
 (`make test-python`). Empty `__init__.py` markers in `backend/` and each domain
 allow discovery to recurse on supported Python versions. Imports use
@@ -53,7 +61,9 @@ smoke checks retain isolated mode and do not do this.
 Live-browser MCP writers and individual animation-fixture operations use bounded
 project-busy handling from `support/project_busy.py`: at most 20 attempts with
 50 ms between attempts. MCP retries require the exact structured busy response;
-validation errors, revision conflicts and transport failures still fail. Revision
+direct Python fixture operations retry `TransactionBusy` or a `Conflict` whose
+explicit cause is `TransactionBusy` (the commit adapter's wrapping contract).
+Validation errors, revision conflicts and transport failures still fail. Revision
 arguments are preserved, and fixture setup is never replayed as an entire batch.
 This is test infrastructure; runtime locking and API behavior remain unchanged.
 Single-project server startup separately retries explicit lock contention before

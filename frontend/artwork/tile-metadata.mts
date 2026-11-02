@@ -1,70 +1,77 @@
 /** Authored tile metadata uses native tile-local pixels, independent of atlas artwork. */
-import { array, boolean, number, record, string } from '../shared/decode.mts';
+import * as v from 'valibot';
+import {
+  bool,
+  finite,
+  jsonArray,
+  jsonDictionary,
+  jsonObject,
+  parse,
+  text,
+} from '../shared/schema.mts';
 
-export type CollisionShape = { id: number } & (
-  | { kind: 'rectangle' | 'ellipse'; x: number; y: number; width: number; height: number }
-  | { kind: 'polygon'; points: [number, number][] }
+const pointSchema = v.pipe(
+  jsonArray(finite),
+  v.length(2, 'Expected a collision point.'),
+  v.transform((point): [number, number] => [point[0], point[1]]),
 );
-export interface TileMetadata {
-  terrain: string;
-  terrain_mask?: number;
-  solid: boolean;
-  shapes: CollisionShape[];
-  next_shape_id: number;
-}
+const shapeSchema = v.pipe(
+  jsonObject({
+    id: finite,
+    kind: v.unknown(),
+    points: v.unknown(),
+    x: v.unknown(),
+    y: v.unknown(),
+    width: v.unknown(),
+    height: v.unknown(),
+  }),
+  v.transform(({ id, kind, points, x, y, width, height }) => {
+    if (kind === 'polygon') {
+      return { id, kind: 'polygon' as const, points: parse(jsonArray(pointSchema), points) };
+    }
+    if (kind !== 'rectangle' && kind !== 'ellipse') {
+      throw Error('Unsupported collision shape.');
+    }
+    return {
+      id,
+      kind: kind === 'rectangle' ? ('rectangle' as const) : ('ellipse' as const),
+      ...parse(jsonObject({ x: finite, y: finite, width: finite, height: finite }), {
+        x,
+        y,
+        width,
+        height,
+      }),
+    };
+  }),
+);
+export type CollisionShape = v.InferOutput<typeof shapeSchema>;
+export const metadataSchema = v.pipe(
+  jsonObject({
+    terrain: text,
+    terrain_mask: v.optional(finite),
+    solid: bool,
+    next_shape_id: finite,
+    shapes: jsonArray(shapeSchema),
+  }),
+  v.transform(({ terrain_mask, ...data }) => ({
+    ...data,
+    ...(terrain_mask === undefined ? {} : { terrain_mask }),
+  })),
+);
+export type TileMetadata = v.InferOutput<typeof metadataSchema>;
 export const emptyMetadata = (): TileMetadata => ({
   terrain: '',
   solid: false,
   shapes: [],
   next_shape_id: 1,
 });
-export type MetadataSets = Record<string, Record<string, TileMetadata>>;
+export const metadataSetsSchema = v.nullish(jsonDictionary(jsonDictionary(metadataSchema)), {});
+export type MetadataSets = v.InferOutput<typeof metadataSetsSchema>;
 export function decodeMetadata(value: unknown): TileMetadata {
-  const data = record(value);
-  return {
-    terrain: string(data.terrain),
-    ...(data.terrain_mask === undefined ? {} : { terrain_mask: number(data.terrain_mask) }),
-    solid: boolean(data.solid),
-    next_shape_id: number(data.next_shape_id),
-    shapes: array(data.shapes, (value): CollisionShape => {
-      const item = record(value),
-        id = number(item.id);
-      if (item.kind === 'polygon') {
-        return {
-          id,
-          kind: 'polygon',
-          points: array(item.points, (p): [number, number] => {
-            const point = array(p, number);
-            if (point.length !== 2) {
-              throw Error('Expected a collision point.');
-            }
-            return [point[0], point[1]];
-          }),
-        };
-      }
-      if (item.kind !== 'rectangle' && item.kind !== 'ellipse') {
-        throw Error('Unsupported collision shape.');
-      }
-      return {
-        id,
-        kind: item.kind,
-        x: number(item.x),
-        y: number(item.y),
-        width: number(item.width),
-        height: number(item.height),
-      };
-    }),
-  };
+  return parse(metadataSchema, value);
 }
 export function decodeMetadataSets(value: unknown): MetadataSets {
-  return Object.fromEntries(
-    Object.entries(record(value ?? {})).map(([group, entries]) => [
-      group,
-      Object.fromEntries(
-        Object.entries(record(entries)).map(([asset, item]) => [asset, decodeMetadata(item)]),
-      ),
-    ]),
-  );
+  return parse(metadataSetsSchema, value);
 }
 const integer = (value: number, low: number, high: number) =>
   Number.isInteger(value) && value >= low && value <= high;
