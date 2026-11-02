@@ -602,8 +602,11 @@ saved = await call("commit_artwork", project=project, candidate=candidate,
                    receipt=review["receipt"])
 assert saved["candidate_revision"] == candidate["revision"]
 assert saved["review_revision"] == review["receipt"]["revision"]
-# Adding artwork may re-encode saved maps. Reinspect both revisions before placing.
+# Adding artwork may re-encode saved maps. Only save over the expected scene base.
 current = await call("get_scene", project=project, scene_id=loaded["id"])
+expected_scene_revision = saved["scene_revisions"].get(loaded["id"], loaded["revision"])
+if current["revision"] != expected_scene_revision:
+    raise RuntimeError("Scene changed since review; inspect and review the placement again")
 placed = await call("save_scene", project=project, scene_id=current["id"],
                     project_revision=current["project_revision"],
                     scene_revision=current["revision"], scene=scene)
