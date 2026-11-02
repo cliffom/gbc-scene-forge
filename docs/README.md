@@ -16,6 +16,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 - [Python backend ownership](ARCHITECTURE.md)
 - [Frontend architecture](FRONTEND-ARCHITECTURE.md)
+- [Editable artwork implementation contract (#129)](EDITABLE-ARTWORK.md) — native artwork, browser/MCP contracts and selected-placement variations.
 - [Editor layout guidelines](UI-DESIGN.md)
 - [Documentation policy](DOCUMENTATION.md)
 - [Building and releasing](RELEASING.md)
@@ -35,9 +36,11 @@ Test ownership and commands are in [test organization](../tests/README.md).
 - [Scene dimensions](user/scene-dimensions.md)
 - [Open a scene from a link](user/scene-links.md)
 - [Terrain brushes](user/terrain-brushes.md)
+- [Create and edit pixel artwork](user/pixel-artwork.md)
 
 ## Evaluations
 
+- [Mixed pixel artwork workflows (#134, #135)](evaluations/artwork-workflows.md)
 - [Everyday editor usability (#117)](evaluations/editor-usability.md)
 - [Rendering and history scalability (#78, #92, #93)](evaluations/scene-scalability.md)
 - [Canvas repainting measurements (#76)](evaluations/canvas-repainting.md)
@@ -52,7 +55,8 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Release notes
 
-- [Scene Forge 0.26.0](RELEASE-0.26.0.md) — prepared; publication is separate.
+- [Scene Forge 0.27.0](RELEASE-0.27.0.md) — prepared; publication is separate.
+- [Scene Forge 0.26.0](RELEASE-0.26.0.md)
 - [Scene Forge 0.25.1](RELEASE-0.25.1.md)
 - [Scene Forge 0.25.0](RELEASE-0.25.0.md)
 - [Scene Forge 0.24.0](RELEASE-0.24.0.md)

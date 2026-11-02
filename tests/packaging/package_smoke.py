@@ -1,5 +1,6 @@
 """Run explicitly with an isolated interpreter after installing the built wheel."""
 
+import base64
 import io
 import json
 import queue
@@ -79,6 +80,49 @@ class InstalledPackageSmokeTests(unittest.TestCase):
         stream = io.StringIO()
         ServerConsole(stream).start(8765)
         self.assertIn(f"  {'Version':<14}{version}", stream.getvalue())
+
+    def test_editable_artwork_roundtrip(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            project = Project.create(root / "native", "Native")
+            documents = project.artwork.documents
+            candidate = documents.create(
+                "grass", "Grass", "tile", 8, 8, project.catalog()["revision"]
+            )
+            candidate = documents.edit(candidate, [{"x": 0, "y": 0, "rgba": [12, 34, 56, 0]}])
+            comparison = project.artwork.reviews.review(candidate)
+            acknowledgment = documents.save(candidate, receipt=comparison["receipt"])
+            self.assertEqual(acknowledgment["review_revision"], comparison["receipt"]["revision"])
+            project.scenes.create("Room", 2, 2, 8, project.catalog()["revision"])
+            raw, _ = project.export_bundle("project", project.catalog()["revision"])
+            with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+                for member in archive.namelist():
+                    path = root / "export" / member
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_bytes(archive.read(member))
+            reopened = Project(root / "export")
+            revision = reopened.catalog()["revision"]
+            documents = reopened.artwork.documents
+            saved = documents.list(revision)["documents"][0]
+            exact = documents.read(
+                documents.open(saved["target"], revision, saved["artwork_revision"]),
+                {"x": 0, "y": 0, "width": 1, "height": 1},
+            )
+            self.assertEqual(base64.b64decode(exact["rgba"]), bytes([12, 34, 56, 0]))
+            self.assertEqual(saved["artwork_revision"], acknowledgment["artwork_revision"])
+            scene = reopened.scenes.load(reopened.catalog()["project"]["scenes"][0]["id"])
+            scene["scene"]["cells"][0][0] = "grass/artwork/0/0"
+            reviewed = reopened.artwork.reviews.review(
+                documents.open(saved["target"], revision, saved["artwork_revision"]),
+                scene={
+                    "scene_id": scene["id"],
+                    "scene_revision": scene["revision"],
+                    "scene": scene["scene"],
+                    "viewport": {"x": 0, "y": 0, "width": 16, "height": 16},
+                },
+            )
+            self.assertEqual(reviewed["after"], comparison["after"])
+            self.assertTrue(reviewed["scene"]["after_png"].startswith(b"\x89PNG"))
 
     def test_sample_project_loads(self):
         with tempfile.TemporaryDirectory() as folder:

@@ -103,6 +103,7 @@
         <section id="artwork-panel" class="library-panel" role="tabpanel" aria-labelledby="artwork-tab">
           <div class="panel-heading"><h3>Tiles &amp; sprites</h3><span id="asset-count" class="muted">0</span></div>
           <button id="library-import">Import…</button>
+          <button id="show-artwork" disabled>Create / edit pixels…</button>
           <input id="search" type="search" placeholder="Search artwork…" aria-label="Search assets">
           <div class="filters">
             <select id="atlas-filter" aria-label="Filter atlas"><option value="">All atlases</option></select>
@@ -208,7 +209,8 @@
           <p id="selection-name" class="selection-name muted">Nothing selected</p>
           <p id="selection-detail" class="hint">Select an object on the canvas or in the list to edit it, or select tiles on a tile layer.</p>
           <p id="selection-note" class="hint" hidden></p>
-          <div class="selection-actions"><button id="edit-object" class="selection-remove" disabled>Edit selected object</button>
+          <div class="selection-actions"><button id="edit-placement-artwork" disabled>Edit artwork…</button>
+          <button id="edit-object" class="selection-remove" disabled>Edit selected object</button>
           <button id="remove-sprite" class="selection-remove" disabled>Remove selected object</button></div>
           <section id="animation-preview" aria-label="Sprite animation preview" hidden>
             <div class="property-grid">
@@ -316,6 +318,50 @@
       <p class="form-error error" role="alert"></p>
       <div class="dialog-actions"><button id="export-cancel" type="button">Cancel</button><button id="export-confirm" class="primary">Download ZIP</button></div>
     </form>
+  </dialog>
+  <dialog id="artwork-dialog" aria-labelledby="artwork-heading">
+    <header class="art-heading"><h2 id="artwork-heading">Pixel artwork</h2><button id="art-close">Close</button></header>
+    <p id="art-message" role="status" aria-live="polite"></p>
+    <div id="art-recovery" hidden><h3>Recoverable artwork</h3><p>Recover a copy after checking its saved base. The original checkpoint remains available.</p><div id="art-drafts"></div></div>
+    <div id="art-start">
+      <div class="art-start-grid">
+        <section><h3>Existing artwork</h3>
+          <label class="field">Artwork<select id="art-source"></select></label>
+          <div class="art-row"><label class="field">Tile column<input id="art-cell-x" type="number" min="0" value="0"></label><label class="field">Tile row<input id="art-cell-y" type="number" min="0" value="0"></label><label class="field">Tile size<select id="art-source-grid"><option>8</option><option>16</option><option>32</option></select></label></div>
+          <p class="hint">Native artwork can be edited in place. Imported artwork must be copied first. Tile coordinates start at zero within the region.</p>
+          <button id="art-open">Edit shared artwork</button><button id="art-duplicate">Duplicate as new artwork</button>
+          <button id="art-variation">Create variation for selected placements</button>
+          <p class="hint">For a variation, save the scene first and select matching tile cells or sprite objects. Review shows the exact replacements; other placements keep the original.</p>
+        </section>
+        <section><h3>New artwork</h3>
+          <label class="field">Name<input id="art-name" value="New artwork" maxlength="100"></label>
+          <label class="field">Asset ID (lowercase, underscores)<input id="art-id" placeholder="grass_variation" pattern="[a-z][a-z0-9_]{0,63}" maxlength="64"></label>
+          <div class="art-row"><label class="field">Kind<select id="art-kind"><option value="tile">Tile</option><option value="sprite">Static sprite</option></select></label><label class="field">Width<input id="art-width" type="number" min="8" max="256" step="8" value="16"></label><label class="field">Height<input id="art-height" type="number" min="8" max="256" step="8" value="16"></label></div>
+          <p class="hint">Tiles: 8, 16 or 32 square pixels. Sprites: multiples of eight, up to 256 × 256. New sprites use origin 0, 0.</p>
+          <button id="art-create">Create blank artwork</button>
+        </section>
+      </div>
+    </div>
+    <div id="art-editor" hidden>
+      <p id="art-shared" class="hint"></p>
+      <details id="art-selection-details" hidden><summary>Placements this variation will replace</summary><ul id="art-selection-list"></ul></details>
+      <div class="art-row art-tools"><label class="field">Tool<select id="art-tool"><option value="pencil">Pencil</option><option value="erase">Eraser</option><option value="fill">Flood fill</option><option value="pick">Eyedropper</option><option value="line">Line</option><option value="rectangle">Rectangle outline</option><option value="select">Select rectangle</option><option value="move">Move selection</option></select></label>
+        <label class="field">Color<input id="art-color" type="color" value="#729b4f"></label><label class="field">Alpha<input id="art-alpha" type="number" min="0" max="255" value="255"></label><button id="art-transparent">Transparent</button>
+        <label class="field">Zoom<select id="art-zoom"><option>1</option><option>2</option><option>4</option><option selected>16</option><option>32</option></select></label><label><input id="art-grid" type="checkbox" checked> Pixel grid</label>
+      </div>
+      <div id="art-swatches" class="art-swatches" aria-label="Artwork palette"></div>
+      <div class="art-row art-actions"><button id="art-undo">Undo</button><button id="art-redo">Redo</button><button id="art-copy">Copy</button><button id="art-paste">Paste</button><button id="art-deselect">Deselect</button><button id="art-horizontal">Flip horizontal</button><button id="art-vertical">Flip vertical</button><button id="art-rotate">Rotate 90°</button></div>
+      <p class="hint">Drag to draw or select. Move selections by dragging or arrow keys. Escape cancels a gesture. ⌘/Ctrl Z undoes, C/V copies/pastes. All colors remain available; target profiles do not restrict these pixels.</p>
+      <div class="art-workspace"><div class="art-canvas-scroll"><canvas id="art-canvas" tabindex="0" aria-label="Pixel artwork canvas"></canvas></div><aside class="art-review"><h3>Review before saving</h3>
+        <label><input id="art-use-scene" type="checkbox" checked> Preview in the open scene</label>
+        <label class="field">Scene preview X<input id="art-view-x" type="number" min="0" value="0"></label><label class="field">Scene preview Y<input id="art-view-y" type="number" min="0" value="0"></label>
+          <p id="art-preview-help" class="hint">A 256 × 256 view of the open scene, including unsaved scene edits. New artwork is temporarily placed at this position for review only.</p>
+        <button id="art-review">Review current pixels</button>
+        <div id="art-comparison" hidden><p id="art-references"></p><figure><figcaption>Saved artwork</figcaption><img id="art-before" alt="Saved artwork before pixel edits"></figure><figure><figcaption>Candidate artwork</figcaption><img id="art-after" alt="Candidate artwork after pixel edits"></figure><figure><figcaption>Scene before</figcaption><img id="art-scene-before" alt="Scene with saved artwork"></figure><figure><figcaption>Scene after</figcaption><img id="art-scene-after" alt="Scene with candidate artwork"></figure></div>
+      </aside></div>
+      <p id="art-draft-status" role="status"></p>
+      <div class="dialog-actions"><button id="art-download">Download work</button><button id="art-discard">Discard this draft</button><button id="art-save" disabled>Save reviewed artwork</button></div>
+    </div>
   </dialog>
   <dialog id="tile-dialog" aria-labelledby="tile-heading">
     <form id="tile-form">

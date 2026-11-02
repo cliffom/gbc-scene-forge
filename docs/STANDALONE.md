@@ -199,7 +199,11 @@ The message below the tools names the active layer; a hidden layer offers
 
 **Unsaved changes** appears beside the scene selector, and **Save scene** gains
 an accent when edits need saving. The asset library contains **Import…** for
-artwork, Tiled maps and Forge export ZIPs.
+artwork, Tiled maps and Forge export ZIPs. **Create / edit pixels…** opens the
+[native artwork editor](user/pixel-artwork.md) for blank tiles/static sprites,
+editable copies and shared pixel edits, with separate undo, drafts and guarded
+scene-context review. **Edit artwork…** in the Selection inspector opens the
+selected placement's source.
 Selecting an object or tiles brings the Selection section to the top of the
 inspector; object edit and remove controls appear before animation settings.
 
@@ -1071,3 +1075,14 @@ budget use direct rendering. Fit views can expose the whole scene and may remain
 more expensive. Exports always include the complete scene. Undo still retains
 100 operations, with changed values/subtrees reducing repeated scene storage.
 See [measurements and limits](evaluations/scene-scalability.md).
+
+## Native editable artwork
+
+Native editable artwork is available through the shared Python service API and
+[MCP authoring tools](MCP.md#native-artwork-authoring) in
+prepared 0.27.0; see [native documents and limits](EDITABLE-ARTWORK.md#implemented-service-api-130).
+Its generated tiles/sprites use the existing Library and scene save/export flow.
+Browser pixel tools are subsequent milestone 14 work. Imported
+artwork remains read-only to native edits; duplicate an explicit cell/static sprite.
+Projects containing native documents require Forge 0.27+; ordinary imported
+projects keep their existing format without migration.

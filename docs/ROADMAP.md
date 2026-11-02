@@ -1,14 +1,27 @@
 # Roadmap
 
-Current baseline: prepared Forge 0.26.0 authors standalone portable Tiled projects with
+Current baseline: prepared Forge 0.27.0 authors standalone portable Tiled projects with
 imported artwork or artwork-free blockouts, optional MCP, guarded browser refresh,
 scene links, bounded wide/tall scenes and transfer from Forge export ZIPs. See [usage](STANDALONE.md) and the
 [changelog](CHANGELOG.md) for supported behavior and compatibility.
 
-Open issue and milestone state was checked on 2026-11-01. These are outcome-based
+Open issue and milestone state was checked on 2026-11-02. These are outcome-based
 priorities, without promised release versions or dates. Measurements may justify
 retaining an existing implementation. Validation gaps live in the
 [single remaining-check list](VALIDATION.md#remaining-checks).
+
+## Native pixel artwork (milestone 14)
+
+Review the combined [#134](https://github.com/cliffom/gbc-scene-forge/issues/134) /
+[#135](https://github.com/cliffom/gbc-scene-forge/issues/135) change against
+`milestone/14`, then prepare a separate integration PR to main for
+[milestone 14](https://github.com/cliffom/gbc-scene-forge/milestone/14). The
+[editable artwork contract](EDITABLE-ARTWORK.md) defines identities, RGBA and guards;
+the [workflow evaluation](evaluations/artwork-workflows.md) records bounded task outcomes.
+
+Preserve external import/reimport, portable scenes, metadata, optional target
+constraints and recoverable work across writers. Advanced animation and full
+Aseprite parity remain outside this milestone.
 
 ## Editor usability and UI cleanup
 

@@ -1,7 +1,7 @@
 """Manifest schema validation, with no reads or transport dependencies."""
 
 from gbc_scene_forge.analysis import palette_budget
-from gbc_scene_forge.artwork import atlas
+from gbc_scene_forge.artwork import atlas, editable
 from gbc_scene_forge.artwork import metadata as tile_metadata
 from gbc_scene_forge.core.identities import identity, name
 from gbc_scene_forge.core.validation import identifier, integer, require
@@ -98,12 +98,13 @@ def validate(document, root):
         name(item["name"])
         require(item["path"] == f"scenes/{item['id']}.tmj", "Invalid scene path")
         safe_path(root, item["path"])
+    document_ids = set()
     for atlas_id, entry in document["atlases"].items():
         require(
             identifier(atlas_id)
             and isinstance(entry, dict)
             and {"manifest", "tiles", "png"} <= set(entry)
-            and not set(entry) - {"manifest", "tiles", "png", "metadata"}
+            and not set(entry) - {"manifest", "tiles", "png", "metadata", "editable"}
             and isinstance(entry["manifest"], dict)
             and entry["manifest"].get("id") == atlas_id
             and entry["png"] == f"assets/{atlas_id}/atlas.png",
@@ -126,6 +127,19 @@ def validate(document, root):
                 "Invalid tile identities",
             )
         tile_metadata.check_entry(entry)
+        require(
+            (entry["manifest"].get("source_format") == "forge-rgba") == ("editable" in entry),
+            "Native artwork requires an editable document pointer",
+        )
+        if "editable" in entry:
+            editable.check_entry(entry)
+            pointer = entry["editable"]
+            require(pointer["id"] not in document_ids, "Duplicate editable document identity")
+            document_ids.add(pointer["id"])
+            require(
+                editable.declared_paths(entry) <= set(document["files"]),
+                "Editable source and generated assets must be declared in project inventory",
+            )
     object_definitions.check_library(
         document.get("object_definitions", {"version": 1, "definitions": []}),
         tiled.sprite_regions(document),

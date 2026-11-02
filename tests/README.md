@@ -5,7 +5,7 @@ Run commands from the repository root. Test code is grouped by runner and domain
 | Location | Ownership |
 | --- | --- |
 | `backend/project/` | project/workspace lifecycle, drafts, samples, saved updates and exports |
-| `backend/artwork/` | PNG decoding, artwork intake and tile metadata |
+| `backend/artwork/` | PNG decoding, intake, native candidates/persistence, revision-bound artwork review, selected-placement variations and tile metadata |
 | `backend/objects/` | object editing, definitions and preview preferences |
 | `backend/planning/` | blockout and world authoring |
 | `backend/analysis/` | diagnostics, palette and hardware budgets |
@@ -40,6 +40,13 @@ the SDK-only test when the extra is absent. `packaging/package_smoke.py` is
 explicitly run with `python -I` after wheel installation, outside unit discovery.
 It imports only the installed application, never test helpers.
 
+`backend/adapters/test_mcp_native_artwork.py` covers client-held artwork candidates,
+strict schemas, exact RGBA/resource reads, reviewed commits, contention and a
+complete official-SDK new-tile and selected-variation review/commit/placement workflow. Run it against
+the installed optional-MCP wheel through `make test-mcp`.
+`backend/adapters/test_mcp_artwork_workshop.py` runs the example over the actual SDK,
+checking normal placement and conflicts with a competing saved scene or external map edit.
+
 `make test-frontend` discovers the TypeScript suite files one domain level
 under `frontend/`; their basenames retain the public `make test-frontend-<suite>`
 selectors. For example, `make test-frontend-model test-frontend-contracts` runs
@@ -60,7 +67,8 @@ smoke checks retain isolated mode and do not do this.
 
 Live-browser MCP writers and individual animation-fixture operations use bounded
 project-busy handling from `support/project_busy.py`: at most 20 attempts with
-50 ms between attempts. MCP retries require the exact structured busy response;
+50 ms between attempts. MCP retries require the exact structured busy message
+with `invalid_request` (direct lock contention) or `conflict` (commit wrapping);
 direct Python fixture operations retry `TransactionBusy` or a `Conflict` whose
 explicit cause is `TransactionBusy` (the commit adapter's wrapping contract).
 Validation errors, revision conflicts and transport failures still fail. Revision
@@ -87,7 +95,9 @@ Historical results and the unavailable Tiled-tool limitation are recorded in
 Canvas repaint coverage for #76 adds `playwright/editor/rendering.spec.ts` with
 small and large multi-layer workloads. Regular discovery also includes viewport/reference pixel comparisons and tile-cache
 invalidation checks. Two observational scalability matrix cases require
-`FORGE_SCALABILITY_PROFILE=1`; the two optional MCP/refresh scenarios remain separate. See the
+`FORGE_SCALABILITY_PROFILE=1`; the three optional MCP/refresh scenarios remain separate, including
+`playwright/mcp/artwork-mcp.spec.ts` for alternating SDK/browser artwork, selected
+sprite variation, stale recovery and portable export/reopen. See the
 [rendering measurements](../docs/evaluations/canvas-repainting.md) for reproduction
 and the distinction between timing observations and deterministic assertions. See
 [scalability profiling](../docs/evaluations/scene-scalability.md) for the archived

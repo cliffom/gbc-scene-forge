@@ -15,6 +15,298 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Workshop placement conflict guards (PR #142 review)
+
+- **Scope:** Prepared 0.27.0 working tree based on
+  [`adbc257`](https://github.com/cliffom/gbc-scene-forge/commit/adbc257e807cae8d2212ce47f565f753b574539f),
+  checked on 2026-11-02 with Darwin 27.0.0, Python 3.13.13 and Node 24.22.1.
+- **Method:** Ran the [workshop regression tests](../tests/backend/adapters/test_mcp_artwork_workshop.py)
+  over actual SDK stdio, injecting a competing Forge scene save or external map edit
+  after artwork commit and before placement. Also ran `make lint test`.
+- **Result:** Both race cases failed before the fix because the workshop accepted
+  fresh guards and overwrote the competing edit. After the fix, both report conflicts
+  and preserve the winner's exact scene/revision; normal creation/placement passes.
+  Lint, documentation checks, all 413 Python tests and frontend suites passed.
+- **Limits:** Synthetic local SDK races and source-checkout checks; no new browser,
+  installed-wheel, human or external-platform validation was performed for this fix.
+
+## Selected artwork variations and mixed authoring (#134, #135)
+
+- **Scope:** Prepared 0.27.0 implementation contents committed as
+  [`94bef74`](https://github.com/cliffom/gbc-scene-forge/commit/94bef74563d0151d0582db58fab793f09b841df9),
+  checked on 2026-11-02; macOS 27.0.1 arm64, Python 3.13.13, Node 24.22.1,
+  Playwright 1.64.1 and Chromium 156.0.8078.4. Production distributions were built
+  from the frozen source tree; plain and optional-MCP wheels used separate venvs.
+  The earlier source walkthrough retains its working-tree provenance in the
+  [task evaluation](evaluations/artwork-workflows.md).
+- **Method:** Ran `make docs-check lint test`, production `make build check-dist
+  test-browser`, isolated optional-MCP wheel smoke checks and `make test-mcp`.
+  Ran pixel/first-use acceptance with `FORGE_TEST_PYTHON` pointing to the plain
+  installed wheel, then all three optional MCP/browser scenarios with both
+  `FORGE_TEST_PYTHON` and `FORGE_MCP_PYTHON` pointing to the installed MCP wheel.
+  Final focused variation checks also exercise adding/removing optional selections
+  within an immutable draft. Domain/SDK coverage verifies transforms, metadata,
+  origins, stamps/definitions, selected/unselected scenes, receipt/scene races,
+  rollback and ZIP reopen. The evaluation separately records actual agent image
+  inspection and agent-driven browser Pencil/Undo/Redo followed by SDK revisions,
+  plus executable [mixed SDK/browser acceptance](../tests/playwright/mcp/artwork-mcp.spec.ts).
+  Agent screenshot inspection covered the production variation dialog at
+  [1440×1000](evaluations/assets/artwork-workflows/variation-desktop.png) and
+  [800×900](evaluations/assets/artwork-workflows/variation-compact.png).
+- **Result:** Documentation/lint/type checks, 411 Python tests, frontend suites
+  (including 7,655 contract cases) and eight final focused variation tests passed.
+  Both distributions passed strict metadata checks; plain and optional-MCP wheels
+  each passed seven smoke checks, and the installed optional-MCP suite passed 74
+  tests. Full Chromium acceptance passed 60 scenarios without retries; two opt-in
+  observational profiles were skipped. The installed plain wheel passed all 13
+  pixel scenarios and first use; the installed optional-MCP wheel passed all three
+  browser scenarios, including mixed artwork authoring and conflict recovery.
+  An initial missing required map-read budget
+  message broke native saves and was fixed; two initial browser assertions assumed
+  explicit layers after successful saves and were corrected for supported compact
+  scenes. The [evaluation](evaluations/artwork-workflows.md) retains these failures,
+  task outcomes, exact writes, observations and images.
+- **Limits:** Small synthetic tasks, local automation and bounded agent visual
+  assessment; no human participant, prolonged drawing/novice study or broad art
+  quality claim. Not every workflow was repeated at both viewports. External
+  PNG/gbc-atlas/Aseprite intake remains separate from native editing; no full layered
+  round-trip or target conversion is claimed. No Windows, non-Chromium, screen-reader,
+  physical-device or official Tiled/rasterizer assessment was performed. Ignored local
+  reports/transcripts are not archived CI evidence. No package was published.
+
+## Artwork checkpoint acknowledgment recovery (#141)
+
+- **Scope:** Prepared 0.27.0 working tree based on
+  `5835e0630c2ef34e5dfbac79d2e38f9b22d2a946`, on 2026-11-02; local macOS,
+  Python 3.13, Node 24 and Playwright Chromium with the source server and rebuilt bundle.
+- **Method:** Reproduced a committed checkpoint update with a lost response, followed
+  by Undo and reload without a warning. Added [model regressions](../tests/frontend/artwork/pixels.ts)
+  for unknown update outcomes, failed inspection, guarded correction, matching stored
+  pixels without write replay, and explicit cleanup after lost acknowledgments.
+  Added a [browser regression](../tests/playwright/artwork/pixels.spec.ts) that forwards
+  the write to disk and aborts its response, dismisses the reload warning after Undo,
+  then verifies corrected checkpoint bytes and reload. Ran `make docs-check lint test
+  PYTHON=.venv/bin/python`, rebuilt the frontend and ran all ten artwork browser scenarios.
+- **Result:** Unknown checkpoint outcomes retain unload protection even when current
+  pixels equal an older acknowledged checkpoint. Subsequent checkpointing and cleanup
+  inspect the owner and revision-guarded stored pixels before proceeding. Documentation,
+  lint/type checks, 403 Python tests, frontend suites and all ten browser scenarios passed.
+- **Limits:** Synthetic local fixtures and Chromium automation, including desktop
+  reload and existing compact-view coverage; no human usability, Windows or
+  non-Chromium assessment. Installed-wheel, packaging and full browser/MCP checks
+  were not repeated; earlier evidence below retains its original scope. No package
+  was published.
+
+## Artwork Undo unload protection (#141)
+
+- **Scope:** Prepared 0.27.0 working tree based on
+  `a409651c26b591be8745a608599da1eb0e0bea4b`, on 2026-11-02; local macOS,
+  Python 3.13, Node 24 and Playwright Chromium, using the source server and rebuilt bundle.
+- **Method:** Review reproduced a checkpointed stroke surviving Undo and immediate
+  reload without an unload warning. Added [model checks](../tests/frontend/artwork/pixels.ts)
+  for pristine sessions, queued writes, Undo to the saved base and failed acknowledgments.
+  Added a [browser regression](../tests/playwright/artwork/pixels.spec.ts) using a paused
+  clock to dismiss the reload warning, finish the checkpoint, then reload, recover and
+  download the exact saved pixels. Ran `make docs-check lint test PYTHON=.venv/bin/python`,
+  rebuilt the frontend and ran all nine artwork browser scenarios at 1440×1000
+  (including the existing compact-view scenario).
+- **Result:** Undo retains unload protection until its pixels reach the durable
+  checkpoint; pristine sessions remain clean. Once checkpointed, reload proceeds
+  without a prompt and recovered pixels match the saved base. Documentation,
+  lint/type checks, 403 Python tests, frontend suites and all nine browser scenarios
+  passed. The first new browser test failed because the shared fixture had already
+  accepted its dialog; the test now owns dialog handling so it can dismiss the warning.
+- **Limits:** Synthetic local fixtures and Chromium automation; no human usability,
+  non-Chromium or Windows assessment. Installed-wheel, full browser/MCP and packaging
+  checks were not repeated for this follow-up; their earlier evidence retains its
+  original revision scope below. No package was published.
+
+## Artwork scene guards and completed checkpoints (#141)
+
+- **Scope:** Prepared 0.27.0 follow-up working tree based on
+  `04678f3d61340d7957ba9f20739e1aff0c8ce7f4`, on 2026-11-02; macOS 27.0.1 arm64,
+  Python 3.13.13, Node 24.22.1 and Playwright Chromium 156.0.8078.4.
+- **Method:** Review reproduced two failures in disposable browser projects:
+  saving new artwork after isolated review advanced a stale local scene's revision,
+  allowing its next save to erase another writer's cell; a pending debounce captured
+  a later unfinished stroke and recovery retained it after cancellation. Added
+  [browser regressions](../tests/playwright/artwork/pixels.spec.ts) for matching/stale
+  scene bases and clock-controlled cancellation through recovery/save. Ran
+  `make docs-check lint test PYTHON=.venv/bin/python`, production `make build check-dist`,
+  and all eight artwork scenarios against source and the isolated installed wheel.
+- **Result:** Stale scene saves now return 409 and preserve the saved scene bytes,
+  local edits and undo history; matching scene bases remain saveable after adding
+  artwork. Completed checkpoint snapshots exclude the canceled gesture through
+  recovery and save. Documentation/lint/type checks, 403 Python tests, frontend
+  suites, distribution checks, seven wheel smoke tests and both eight-scenario
+  browser runs passed. An initial lint run rejected an untyped test JSON assignment;
+  decoding it before assignment resolved that failure.
+- **Limits:** Synthetic local fixtures and controlled clocks; no prolonged human
+  usability, art-quality, Windows, non-Chromium or official Tiled assessment.
+  The earlier broad browser/MCP evidence retains its original revision scope below;
+  those full suites were not rerun locally for this follow-up. No package was published.
+
+## Browser pixel artwork editing (#133)
+
+- **Scope:** Prepared 0.27.0 at `cb5d5b3dfd0f5d0de8cc4224c4474e918e296b50`,
+  on 2026-11-02; macOS 27.0.1 arm64, Python 3.13.13, Node 24.22.1 and
+  Playwright Chromium 156.0.8078.4. Installed plain-wheel and optional-MCP runs
+  used isolated environments built from that revision.
+- **Method:** Ran a sequential frozen production `make lint test build check-dist
+  test-browser PYTHON=.venv/bin/python`, then installed the wheel for `make test-mcp`,
+  both MCP/refresh browser scenarios and all five pixel-editor browser scenarios.
+  Model, HTTP and draft regressions cover exact RGBA, maximum-size batching,
+  selection/history, cancellation, checkpoint races, stale bases and lost write
+  acknowledgments. Browser fixtures exercise creation/copying, drawing/transforms,
+  transparency, reviews/saves, scene history isolation, recovery and competing writes.
+  Agent visual inspection checked the [1440×1000 desktop](images/pixel-editor-133-desktop.png)
+  and [800×900 compact](images/pixel-editor-133-compact.png) editor and review states.
+- **Result:** Documentation/lint/type checks, 403 Python tests, frontend suites,
+  production distributions/metadata and seven installed-wheel smoke tests passed.
+  Chromium passed 52 scenarios with two optional observational profiles skipped.
+  The installed optional-MCP suite passed 74 tests and both browser scenarios;
+  the installed plain wheel passed all five pixel-editor scenarios. An earlier
+  browser run failed two build-identity assertions because its bundle was rebuilt
+  concurrently as a development build; the frozen production rerun passed both
+  assertions and the complete suite. Screenshots retain scripted fixture state.
+- **Limits:** Local automation and agent screenshot inspection establish scoped
+  behavior, not prolonged human usability or actual agent art quality. Selected-placement
+  variations (#134) and integrated mixed-writer evaluation (#135) remain separate.
+  No Windows, non-Chromium or official Tiled checks were run for this change;
+  no package was published. Local ignored build logs are not archived CI evidence.
+
+## Native artwork MCP authoring (#132)
+
+- **Scope:** Prepared 0.27.0 issue-132 working tree based on milestone integration
+  revision `a1e5ed418b2d6a54d4277581d7056669d549e94b`, on 2026-11-02; local macOS,
+  Python 3.13 and Chromium. Source checks and isolated wheel/SDK checks are separate runs.
+- **Method:** Synthetic [adapter and official-SDK regressions](../tests/backend/adapters/test_mcp_native_artwork.py)
+  exercise discovery, transparent creation, imported/native duplication, exact RGBA
+  reads, immutable edits, isolated/temporary-scene resource reads, revised-candidate
+  receipt rejection, reviewed commit, placement, export/reopen, shared references,
+  strict nested schemas, competing saves, held locks and a scene race at final commit.
+  Ran `make docs-check lint test`, production `make build check-dist`, then
+  `make test-mcp test-mcp-browser` with the wheel installed in an isolated MCP environment.
+- **Result:** Required checks passed: 395 Python tests and frontend suites; production
+  distributions/metadata and seven installed-wheel smoke tests passed. The installed
+  optional-MCP suite passed 74 tests, including eight native-artwork regressions and
+  the real stdio client loop. Both existing Chromium MCP/refresh scenarios passed,
+  covering saved-state adoption, stale browser saves and retained recovery drafts.
+  Native-artwork contention returns `busy`; conflicting candidates return `conflict`;
+  failed batches/reviewed commits retain the original pixels and leave no partial files.
+- **Limits:** Scripted fixtures/SDK calls establish transport and persistence behavior,
+  not agent art quality or human usability. No drawing UI changed or was assessed.
+  Mixed hand/agent editing, artwork drafts and selected-placement variations remain
+  integrated milestone work (#133–#135). No Windows, non-Chromium or official Tiled
+  interoperability check was performed for this change; no package was published.
+
+## Captured-byte artwork review budget (#138)
+
+- **Scope:** Local macOS working tree based on
+  `c4a8b6b47c051d69f65c7d3d0dafd3e17f1218da`, on 2026-11-02.
+- **Method:** Synthetic regressions grow five saved maps to 3,600,000 bytes each
+  immediately before loading, and exercise exact-budget and one-byte-over-budget
+  scans. Assert rejection before decoding the over-budget map, unchanged candidates
+  and no project writes beyond the simulated external edits. Ran `make lint test`
+  and `make docs-check` after updating this record.
+- **Result:** All 18 artwork-review tests passed. The 18,000,000-byte growth case
+  rejects against the production 16 MiB limit; an exact-budget scan returns a receipt.
+  Lint, type/documentation checks, all 387 Python tests and frontend suites passed.
+- **Limits:** Local service fixtures simulate external edits; no live editor,
+  browser acceptance or installed-wheel checks were run for this correction.
+
+## Native candidate artwork review (#131)
+
+- **Scope:** Local macOS, Python 3.13.13 and Node 24.22.1, working tree based on
+  `35ee452963f9b1a179d5cd2a57d13ca29ce73102`, on 2026-11-02; prepared 0.27.0.
+- **Method:** Added 16 synthetic domain regressions covering exact isolated RGBA,
+  nearest-neighbor enlargement, all tile transforms, sprite origin overrides,
+  layer visibility/order, alpha compositing, temporary new-art scene candidates,
+  shared scene/stamp/definition references, pagination, resource bounds, stale
+  candidates, source drift and final unchanged-scene transaction guards. A
+  further race regression reproduced re-encoding replacing an original review
+  guard with a later map read; retaining and checking the original guard fixed it. Ran
+  `make lint test PYTHON=.venv/bin/python`, production `make build check-dist`,
+  and focused lint for the subsequently extended installed-wheel smoke regression.
+- **Result:** All 16 review regressions and the full Python/TypeScript suites
+  passed. Documentation, lint/type checks, production wheel/source build and
+  strict metadata checks passed. All seven installed-wheel smoke tests passed,
+  including reviewed save, export/reopen and temporary scene review. No inventory
+  changes occurred in read-only comparison tests; stale dependencies rejected saves.
+- **Limits:** Synthetic local evidence, without a linked CI run or human/art-quality
+  review. The first sprite fixture used an out-of-scene position and failed
+  validation; the corrected in-bounds fixture passed. No browser/HTTP/MCP surface
+  changes or browser acceptance run for this issue. Drawing, MCP review transport,
+  placement variations and integrated user/agent evaluation remain later work.
+
+## MCP commit-lock contention in acceptance fixtures (#137)
+
+- **Scope:** Local macOS/Python 3.13.13, MCP SDK 1.30.0 and bundled Chromium,
+  working tree based on `584c837a8e8a6abeddce3781b7593ddc11abc700`, on 2026-11-02.
+- **Method:** Inspected [failed Linux CI](https://github.com/cliffom/gbc-scene-forge/actions/runs/41488600838/job/125425350965):
+  refresh acceptance stopped on the exact busy message wrapped as MCP `conflict`.
+  Extended fixture retry regressions for both busy error codes, bounded exhaustion,
+  unchanged revision arguments and a real revision conflict after contention.
+  Ran production lint/build/installed-wheel smoke checks, then installed that wheel
+  into an MCP environment and ran `make test-mcp test-mcp-browser`.
+- **Result:** Three regression assertions failed before the helper fix; all 11
+  fixture-retry tests passed afterward. Production lint/build and seven wheel smoke
+  tests passed; the installed wheel passed 66 MCP tests and both browser scenarios.
+  The helper retries only the two exact busy responses within its existing bound.
+- **Limits:** Local reproduction and validation; this does not establish a passing
+  Linux CI rerun. Runtime locking, MCP errors and automatic write-retry policy are
+  unchanged. Other browser/platform evidence retains its original scope below.
+
+## Reserved native format import rejection (#137)
+
+- **Scope:** Local macOS/Python 3.13.13 working tree based on
+  `584c837a8e8a6abeddce3781b7593ddc11abc700`, on 2026-11-02.
+- **Method:** Reproduced an external gbc-atlas import declaring `forge-rgba` that
+  returned success but left the project unreadable. Added fixture regressions for
+  local import, upload and preflight, each with new-import and reimport variants;
+  compare project bytes and reopen after every rejection. Ran
+  `make docs-check lint test PYTHON=.venv/bin/python`.
+- **Result:** The shared import service rejects the reserved format before writing;
+  all six cases preserve project bytes and reopen successfully. Lint and all 369
+  Python tests passed, including 22 native artwork tests; frontend model/API/build
+  checks and 7,655 domain contract cases passed.
+- **Limits:** Synthetic service fixtures; the rejection paths were not exercised
+  through browser controls or external Tiled. Packaged MCP checks are scoped above.
+
+## Native editable artwork services (#130)
+
+- **Scope:** Prepared 0.27.0 issue-130 working tree based on
+  `26c9cefa13f7c29b3e7f7d24d76a204e871a55f9` (`milestone/14`), local macOS
+  27.0.1, Python 3.13.13, Node 24.22.1, Playwright 1.64.1 with bundled Chromium,
+  optional MCP SDK 1.30.0, on 2026-11-02. The screenshot is the production UI.
+- **Method:** `make docs-check lint test`, followed by final `make lint test-python`
+  after stricter native inventory/batch validation. Domain fixtures cover blank
+  tiles/sprites, imported/native duplication, exact hidden RGB/partial alpha,
+  malformed/oversized batches, immutable candidates, stale project/artwork/source
+  bases, destination collisions, metadata/origin/local-ID preservation, map range
+  re-encoding, exact acknowledgments, injected write failure and interrupted-save
+  recovery. Both ZIP scopes transfer native tiles/sprites; extracted project ZIPs
+  reopen for editing. Production `make build check-dist test-browser`, existing
+  SDK MCP/refresh browser acceptance, and native/first-use browser tests against
+  the isolated installed wheel exercise packaging and existing browser consumption.
+  An agent inspected [native Library/placement/save state](images/native-artwork-130.png)
+  at 1440×1000; this is a solid-color synthetic fixture.
+- **Result:** Lint/docs/type/model checks and 368 Python tests passed, including
+  21 native-artwork and 17 transfer regressions. Production distributions passed
+  metadata checks and seven installed-wheel checks. Regular Chromium acceptance
+  passed 47 scenarios, with two optional observational scalability profiles skipped;
+  both existing SDK/browser coexistence scenarios and both installed-wheel
+  native/first-use scenarios passed. Exact transparent RGB and sprite origins
+  survived native export, transfer and reopen; pixel-only saves left maps unchanged.
+- **Limits:** Local automated fixture evidence; ignored reports under `build/`
+  are not archived CI evidence. The broad browser run preceded the final native
+  inventory/batch-only tightening; final domain/package and installed-wheel
+  browser checks include it. Browser inspection covers the existing scene UI,
+  not pixel drawing controls. Native MCP commands, reviewed commits, artwork drafts,
+  shared-reference review and selected-placement variations remain subsequent
+  milestone issues. No human drawing/art-quality evaluation, integrated agent
+  pixel workflow, official Tiled/rasterizer, Windows or non-Chromium check is claimed.
+
 ## Legacy sprite artwork in scene transfer (#128)
 
 - **Scope:** Local 0.26.0 follow-up working tree based on `eafa61addfaf3949b55491729743216c231beb93`,
@@ -642,10 +934,14 @@ Dates, revisions and environments missing from the originals remain unknown.
 ## Remaining checks
 
 This is the single maintained validation checklist. Issue state was checked on
-2026-11-01; closing issues or publishing packages does not satisfy these checks.
+2026-11-02; closing issues or publishing packages does not satisfy these checks.
 Current automated procedures remain in [releasing](RELEASING.md) and
 [browser testing](BROWSER-TESTING.md). Add scoped evidence above when completing a
 check, retaining actual revision, environment, attribution, failures and limits.
+
+### Native artwork (milestone 14)
+
+- [ ] Have human participants assess prolonged drawing and novice success with integrated new-tile, sprite-variation and mixed authoring workflows; the bounded agent visual assessment and automated SDK/browser checks for #135 do not establish human usability or broad art quality.
 
 ### Scene scalability (#78, #92, #93)
 
@@ -653,7 +949,7 @@ check, retaining actual revision, environment, attribution, failures and limits.
 
 ### Platform, interoperability and publication gaps
 
-- [ ] Run the optional official Tiled/rasterizer interoperability checks for the current 0.26.0 baseline, including scene-transfer, object/definition and tile metadata compatibility, when those applications are available (#75, #109, #110, #111, #112, #113, #127).
+- [ ] Run the optional official Tiled/rasterizer interoperability checks for the prepared 0.27.0 baseline, including native RGBA artwork, scene-transfer, object/definition and tile metadata compatibility, when those applications are available (#75, #109, #110, #111, #112, #113, #127, #130).
 
 - [ ] Record non-Chromium desktop-browser and Windows runtime results with exact versions and workflows; these are outside the automated browser matrix.
 - [ ] Configure the TestPyPI trusted publisher and verify an upload if that channel is needed; the historical 0.1.4 attempt failed with `invalid-publisher`. Local wheel checks and PyPI publication are separate evidence.

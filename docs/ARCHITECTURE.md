@@ -38,6 +38,11 @@ payload fields to the owning domain service. The API retains the initialized
 project and refresh-probe state after project creation. Add fixed endpoints to the
 registry and keep payload defaults and response status decisions in their handlers.
 
+The fixed `artwork-*` route group dispatches through `adapters/http/artwork.py`
+to native document/review services and `artwork/drafts.py`. That adapter encodes
+review PNG bytes as base64 and requires a review receipt for browser saves;
+owned checkpoints remain outside committed project inventory.
+
 `adapters/http/server.py` owns HTTP framing, host/token checks, request limits,
 error translation and request serialization. Its small `WORKSPACE_ROUTES`
 registry handles workspace catalog/creation; scoped project dispatch preserves
@@ -95,6 +100,25 @@ or add connector compatibility shims.
 
 The companion [frontend architecture](FRONTEND-ARCHITECTURE.md) describes the supported
 browser composition, state owners, controller ports and resource lifecycle.
+
+The [editable artwork contract](EDITABLE-ARTWORK.md) specifies milestone 14
+native pixel documents, source ownership, revision guards and portable persistence.
+`ArtworkService.documents` composes `artwork/documents.py` use cases with pure
+candidate/raster rules in `artwork/editable.py`. Native persistence, exact saves
+and export/transfer are implemented. `ArtworkService.reviews` composes native
+candidate comparison and reference scans in `artwork/review.py`, reusing the
+canonical scene renderer with temporary catalogs. Review receipts bind candidate,
+asset inventory and every scanned scene revision; `documents.save` validates them
+and carries unchanged reviewed map guards into the final transaction. MCP routes
+these use cases through `adapters/mcp/artwork.py`, with strict wire envelopes in
+`adapters/mcp/schemas.py`; candidates and receipts stay client-held and PNGs use
+the existing session artifact cache. MCP commits require a matching review receipt.
+Browser drawing uses the same services; owned checkpoints live in `artwork/drafts.py`.
+`artwork/placements.py` validates exact saved selections and produces copied scenes
+for review/save. A duplicate candidate's optional selection is immutable, hash-bound
+and revalidated for review, restore and save. Native artwork and selected reference
+changes share the existing durable transaction. Schema validation remains read-free;
+saved-read asset verification also checks native descriptors and source geometry.
 
 External artwork intake keeps PNG slicing in `artwork/tilesheet.py` and strict
 external Tiled JSON conversion in `formats/intake.py`. `project/intake.py`

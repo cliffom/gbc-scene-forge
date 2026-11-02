@@ -14,6 +14,7 @@ start polling, or acquire canvas resources. No frontend framework is required.
 | `editor/editor-state.mts` | `SceneSession` owns the current scene descriptor, committed baseline/revision and `LayerEditor`, dirty comparisons and native serialization. `WorkspaceState` owns the adopted project catalog/revision, separately validated scene choices and navigation state. Selection, brushes/clipboard and gestures have separate owners. |
 | `scene/layers.mts`, `scene/model.mts` | Authored scene, active layer, strokes and undo/redo. Controllers mutate through this existing model. Bidirectional changed-path/subtree records retain up to 100 operations; one transaction clone supports cancellation. Layer context replays with undo/redo. Selection, camera scroll and preview positions are not authored history. |
 | `project/project-api.mts`, `project/project-contracts.mts`, `shared/decode.mts` | Standalone project-relative HTTP, mutation token, request cancellation, runtime JSON decoding and scene/catalog contracts. Decoder callbacks remain mandatory. JSON primitives live in `shared/`; project transport owns only standalone routes. |
+| `artwork/pixel-editor.mts`, `artwork/pixel-model.mts`, `artwork/artwork-session.mts`, `artwork/artwork-contracts.mts` | Separate native pixel dialog, exact bounded RGBA history, pointer cancellation, review and serial owned checkpoint writer. Schema decoding and pixel state stay outside scene history; the composition forwards exact save acknowledgments and stages catalog/image adoption. |
 | `artwork/editor-artwork.mts` | Imported images, derived tile/sprite indexes, palette filters/choices, brush capture/restore and atlas import/reimport/deletion. New PNG/Tiled intake belongs here or in focused intake helpers, not the composition. |
 | `project/editor-workspace.mts` | Stage catalog and artwork decoding before adoption; project chooser/folder UI. An adoption callback fences staged external snapshots immediately before mutation. |
 | `scene/scene-navigation.mts` | Project-relative scene paths and indexed browser history; restore the active entry before asynchronous confirmation, then traverse only after successful adoption. Resources belong to the editor lifetime. |
@@ -36,6 +37,12 @@ never eagerly resolves a controller that has not been constructed. Getters are
 used for current resources/state, not captured copies of mutable primitives.
 Keep ports limited to each consumer's needs; do not replace these owners with a
 shared miscellaneous state object or global event bus.
+
+Selected artwork variations capture at most 256 explicit locations from a clean
+saved scene. Pixel candidates/checkpoints retain that selection. After an exact
+atomic artwork/reference acknowledgment, the composition reloads matching saved
+scene content with fresh history; its old conflict guard remains until content
+adoption succeeds. Ordinary shared artwork edits retain local scene edits/history.
 
 ## Initialization, asynchronous work and disposal
 
@@ -100,6 +107,11 @@ baselines retain their existing equality semantics. See the
 [interaction measurements](evaluations/canvas-repainting.md#interaction-efficiency-77-90-91).
 
 ## Directory layout
+
+Planned native pixel editing follows the [editable artwork contract](EDITABLE-ARTWORK.md).
+Its document history/recovery owners will live under `artwork/`, separate from
+scene history and connected through the existing composition/lifetime. This is
+future milestone 14 work, not an additional mounted editor today.
 
 `frontend/project.ts` is the browser entry; `frontend/build.ts` is the Node build
 entry. All other modules live with their owning domain:

@@ -1,3 +1,4 @@
+import { createPixelEditor } from '../artwork/pixel-editor.mts';
 import { EditorLifetime } from './editor-lifetime.mts';
 import { createArtworkController } from '../artwork/editor-artwork.mts';
 import { createCommandsController } from './editor-commands.mts';
@@ -21,7 +22,7 @@ import {
 import { createViewportController } from './editor-viewport.mts';
 import { createWorkspaceController } from '../project/editor-workspace.mts';
 import { ProjectApi } from '../project/project-api.mts';
-import { decodeProject } from '../project/project-contracts.mts';
+import { decodeProject, decodeLoaded } from '../project/project-contracts.mts';
 import { createAnimationPreview } from '../preview/animation-preview.mts';
 import { createBlockoutLabels } from '../blockout/blockout-labels.mts';
 import { blockoutDefinitions } from '../blockout/blockout.mts';
@@ -179,6 +180,10 @@ export function mountProjectEditor() {
     button('fit-scene').disabled = !sceneSession.editor;
     select('zoom').disabled = !sceneSession.editor;
     button('library-import').disabled = activity.busy || gestures.anchor !== null;
+    button('show-artwork').disabled =
+      activity.busy || !workspaceState.project || gestures.anchor !== null;
+    button('edit-placement-artwork').disabled =
+      activity.busy || !sceneSession.editor || gestures.anchor !== null;
     button('show-export').disabled =
       activity.busy || !workspaceState.project || gestures.anchor !== null;
     button('show-palettes').disabled =
@@ -694,6 +699,78 @@ export function mountProjectEditor() {
       },
     },
   });
+  createPixelEditor({
+    lifetime,
+    api,
+    workspaceState,
+    sceneSession,
+    sceneSelection,
+    brushes,
+    ports: {
+      run,
+      saved: async (ack, reviewedScenes) => {
+        const replaced = Array.isArray(ack.replaced_scenes) ? ack.replaced_scenes : [];
+        const replacedOpen = sceneSession.loaded && replaced.includes(sceneSession.loaded.id);
+        // A rewritten map can advance only the scene base that was reviewed.
+        const revisions = record(ack.scene_revisions);
+        const sceneChanged = Boolean(
+          sceneSession.loaded &&
+          reviewedScenes[sceneSession.loaded.id] !== sceneSession.loaded.revision,
+        );
+        if (
+          sceneSession.loaded &&
+          !sceneChanged &&
+          !replacedOpen &&
+          revisions[sceneSession.loaded.id]
+        ) {
+          const previous = sceneSession.loaded.revision;
+          const revision = string(revisions[sceneSession.loaded.id]);
+          sceneSession.loaded = { ...sceneSession.loaded, revision };
+          if (sceneSession.committed?.revision === previous) {
+            sceneSession.committed = { ...sceneSession.committed, revision };
+          }
+        }
+        const data = await api('project', record);
+        if (data.revision !== ack.project_revision) {
+          throw Error(
+            'Artwork was saved, but another writer changed the project. Refresh before continuing.',
+          );
+        }
+        await workspaceController.refresh(data, async () => {
+          const current = await api('revisions', record);
+          if (current.revision !== ack.project_revision) {
+            throw Error('Artwork saved; project changed during reload. Refresh before continuing.');
+          }
+          return true;
+        });
+        renderingController.draw();
+        if (sceneChanged) {
+          throw Error(
+            'The open scene changed on disk. Local scene edits and history were retained; reconcile the scene before saving.',
+          );
+        }
+        if (replacedOpen && sceneSession.loaded) {
+          if (sceneSession.dirty()) {
+            throw Error('Variation saved. Local scene work is retained; reopen to reconcile.');
+          }
+          const loaded = await api(
+            `scene/${encodeURIComponent(sceneSession.loaded.id)}`,
+            decodeLoaded,
+          );
+          if (loaded.revision !== revisions[loaded.id]) {
+            throw Error('Variation saved, but the scene changed again. Reopen to reconcile.');
+          }
+          await recoveryController.clearDraft();
+          sceneActionsController.open(loaded, false);
+          status.textContent =
+            'Variation saved. Selected placements updated; other references retain the original.';
+          return;
+        }
+        status.textContent = 'Artwork saved. Scene edits and undo history are unchanged.';
+      },
+    },
+  });
+
   // Import boolean decoding here too: reject malformed preview defaults before first render.
   void run(async () => {
     if (!(await workspaceController.refresh()) || lifetime.disposed) {

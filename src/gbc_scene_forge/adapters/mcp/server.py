@@ -8,6 +8,7 @@ import time
 from pathlib import Path
 
 from gbc_scene_forge import __version__
+from gbc_scene_forge.adapters.mcp.artwork import NAMES as ARTWORK_TOOLS
 from gbc_scene_forge.adapters.mcp.tools import TOOLS, Adapter
 from gbc_scene_forge.core.errors import Conflict, TransactionBusy
 
@@ -46,6 +47,9 @@ def create_server(adapter):
         instructions="Local saved-project authoring. Inspect revisions before edits. Use dry_run and "
         "review_blockout to review candidates; import_atlas uploads artwork and review_artwork "
         "renders exact saved/candidate PNG views. place_stamp reuses saved compositions. "
+        "list_artwork discovers sources; create/open/duplicate_artwork and edit_artwork_pixels "
+        "prepare client-held artwork candidates. review_artwork_candidate returns PNG resources "
+        "and a receipt required by commit_artwork. Review again after pixel changes. "
         "Browser drafts and Undo are independent; stale saves "
         "conflict. Artifacts are immutable, session-scoped and may expire. No physics certification.",
     )
@@ -64,11 +68,18 @@ def create_server(adapter):
             for key in ("overview_resource", "camera_resource", "resource"):
                 if key in result:
                     content.append(types.ResourceLink(type="resource_link", **result[key]))
+            for resource in result.get("resources", []):
+                content.append(types.ResourceLink(type="resource_link", **resource))
             return types.CallToolResult(content=content, structuredContent=result)
         except (ValueError, OSError, KeyError, TypeError, RecursionError) as error:
+            busy = name in ARTWORK_TOOLS and (
+                isinstance(error, TransactionBusy) or isinstance(error.__cause__, TransactionBusy)
+            )
             result = {
                 "error": {
-                    "code": "conflict" if isinstance(error, Conflict) else "invalid_request",
+                    "code": "busy"
+                    if busy
+                    else ("conflict" if isinstance(error, Conflict) else "invalid_request"),
                     "message": str(error),
                 }
             }

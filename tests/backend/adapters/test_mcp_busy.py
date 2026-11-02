@@ -15,20 +15,26 @@ def result(error=None):
 
 class ToolBusyRetryTests(unittest.IsolatedAsyncioTestCase):
     async def test_busy_retries_keep_identical_arguments_and_revision_fences(self):
-        saved = result()
-        client = SimpleNamespace(call_tool=AsyncMock(side_effect=[result(BUSY_ERROR), saved]))
-        args = {"project_revision": "old-project", "scene_revision": "old-scene"}
-        self.assertIs(await call_tool(client, "edit_scene", args, delay=0), saved)
-        self.assertEqual(client.call_tool.await_count, 2)
-        for call in client.call_tool.call_args_list:
-            self.assertEqual(call.args, ("edit_scene", args))
-        self.assertEqual(args, {"project_revision": "old-project", "scene_revision": "old-scene"})
+        for code in ("invalid_request", "conflict"):
+            with self.subTest(code=code):
+                busy = {"error": {**BUSY_ERROR["error"], "code": code}}
+                saved = result()
+                client = SimpleNamespace(call_tool=AsyncMock(side_effect=[result(busy), saved]))
+                args = {"project_revision": "old-project", "scene_revision": "old-scene"}
+                self.assertIs(await call_tool(client, "edit_scene", args, delay=0), saved)
+                self.assertEqual(client.call_tool.await_count, 2)
+                for call in client.call_tool.call_args_list:
+                    self.assertEqual(call.args, ("edit_scene", args))
+                self.assertEqual(
+                    args, {"project_revision": "old-project", "scene_revision": "old-scene"}
+                )
 
     async def test_other_errors_and_revision_conflicts_are_not_retried(self):
         for error in (
             {"error": {"code": "conflict", "message": "Scene changed"}},
             {"error": {"code": "invalid_request", "message": "Invalid object"}},
-            {"error": {"code": "conflict", "message": BUSY_ERROR["error"]["message"]}},
+            {"error": {"code": "conflict", "message": BUSY_ERROR["error"]["message"] + "?"}},
+            {"error": {"code": "unknown", "message": BUSY_ERROR["error"]["message"]}},
             None,
         ):
             with self.subTest(error=error):
@@ -38,15 +44,20 @@ class ToolBusyRetryTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(client.call_tool.await_count, 1)
 
     async def test_busy_exhaustion_remains_an_error(self):
-        response = result(BUSY_ERROR)
-        client = SimpleNamespace(call_tool=AsyncMock(return_value=response))
-        self.assertIs(await call_tool(client, "edit_scene", {}, attempts=3, delay=0), response)
-        self.assertTrue(response.isError)
-        self.assertEqual(client.call_tool.await_count, 3)
+        for code in ("invalid_request", "conflict"):
+            with self.subTest(code=code):
+                response = result({"error": {**BUSY_ERROR["error"], "code": code}})
+                client = SimpleNamespace(call_tool=AsyncMock(return_value=response))
+                self.assertIs(
+                    await call_tool(client, "edit_scene", {}, attempts=3, delay=0), response
+                )
+                self.assertTrue(response.isError)
+                self.assertEqual(client.call_tool.await_count, 3)
 
     async def test_conflict_after_busy_is_not_rebased_or_swallowed(self):
         conflict = result({"error": {"code": "conflict", "message": "Scene changed"}})
-        client = SimpleNamespace(call_tool=AsyncMock(side_effect=[result(BUSY_ERROR), conflict]))
+        commit_busy = {"error": {**BUSY_ERROR["error"], "code": "conflict"}}
+        client = SimpleNamespace(call_tool=AsyncMock(side_effect=[result(commit_busy), conflict]))
         self.assertIs(await call_tool(client, "edit_scene", {}, delay=0), conflict)
         self.assertEqual(client.call_tool.await_count, 2)
 

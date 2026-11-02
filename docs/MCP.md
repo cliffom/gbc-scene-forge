@@ -11,11 +11,12 @@ transactions as browser authoring. There is no connector or game compiler.
 Install the release with Python 3.10 or newer:
 
 ```sh
-python -m pip install --upgrade 'gbc-scene-forge[mcp]==0.25.0'
+python -m pip install --upgrade 'gbc-scene-forge[mcp]==0.27.0'
 gbc-scene-forge-mcp --project-root /absolute/path/to/projects
 ```
 
-From this checkout, after the normal development setup:
+Version 0.27.0 is prepared on the milestone branch; until publication, install
+its built wheel or use this checkout after the normal development setup:
 
 ```sh
 poetry install --extras mcp
@@ -75,7 +76,7 @@ and [official Python SDK](https://github.com/modelcontextprotocol/python-sdk/tre
 | Creation | `create_project` (empty or blockout), `create_scene` (cell dimensions), `create_blockout_scene` (pixel/cell settings and camera). | Sample-project creation through MCP. |
 | Scene editing | `edit_scene`: atomic object, tile painting/erasing and layer creation/update/reorder/deletion batches. `place_stamp`: saved composition placement with layer mapping, fresh IDs and dry-run candidates. `save_scene`: validated full canonical layers, tiles, sprites and objects. `rename_scene`, `duplicate_scene`, `delete_scene`: guarded saved lifecycle with deletion consequences. | Semantic terrain brushes; use canonical `save_scene` or browser.  |
 | Project editing | `save_object_definition`, `save_world`, `save_stamp`, `delete_object_definition`, `delete_stamp` reuse native validators and transaction services; deletion previews identify references and retained overrides. | Palette profile/metadata and animation preference editing use browser. No arbitrary import paths. |
-| Artwork | `import_atlas`: bounded uploaded manifest/PNG, preflight and compatible reimport with exact project/scene acknowledgments. | Arbitrary filesystem paths; artwork creation/approval. |
+| Artwork | `import_atlas`: bounded upload/preflight/reimport. `list_artwork`, `create_artwork`, `duplicate_artwork`, `open_artwork`, `read_artwork_pixels`, `edit_artwork_pixels`, `review_artwork_candidate`, `commit_artwork`: native static RGBA authoring with explicit candidates and required review receipts. | Arbitrary filesystem paths; layered/animated drawing and automatic approval. |
 | Review | `review_artwork`: saved/candidate PNG camera and bounded/paged overview. `review_blockout`: full overview and chosen camera frame SVG resources, exact saved/candidate revisions, pixel dimensions and camera intent. | Animated playback and runtime/physics simulation. |
 | Verification | `diagnostics` checks the saved project; `palette_report` checks a guarded saved scene with the existing opt-in profile. | Missing metadata stays unverified; no reachability or hardware-fit certification. |
 | Portability | `export_bundle` returns existing project/scene Tiled ZIP exports as immutable resources. | Arbitrary output paths; exports over 16 MiB use browser. |
@@ -412,7 +413,8 @@ toggle and a manual check; no permanent refresh button is added. See
 Coordinate saved edits or use separate scenes while a human is editing.
 
 Tool failures have `isError:true`. Native errors also include
-`structuredContent.error` with `code:conflict` or `invalid_request` and a message.
+`structuredContent.error` with `code:conflict` or `invalid_request` and a message;
+native artwork tools additionally distinguish `busy` lock contention.
 SDK schema failures are text errors with `isError:true`. Unknown tools/capabilities
 fail explicitly. Reinspect after a conflict; never retry with fabricated revisions.
 
@@ -500,3 +502,175 @@ protection and draft download. Existing blockout acceptance covers native artwor
 placement and export; service tests check that importing later artwork preserves
 the MCP-edited plan. CI also tests the optional protocol against installed wheels
 on Python 3.13/3.14 after verifying the plain offline installation.
+
+## Native artwork authoring
+
+Prepared 0.27.0 adds eight tools backed by the shared
+[native artwork services](EDITABLE-ARTWORK.md). Until that version is published,
+install the milestone checkout or its built wheel with the MCP extra. Reconnect
+clients that cache tool schemas. No active browser selection or editor is used.
+
+For a selected-placement variation, pass `placements` to `duplicate_artwork`:
+
+```json
+[
+  {"scene_id": "<saved scene UUID>", "scene_revision": "<exact map digest>", "layer_id": 1, "x": 3, "y": 4},
+  {"scene_id": "<another saved scene UUID>", "scene_revision": "<exact map digest>", "layer_id": 1, "x": 0, "y": 2}
+]
+```
+
+Use `object_id` instead of `x`,`y` for a static sprite. All 1..256 locations must
+match the copied source asset and, for tiles, its grid. The candidate binds the
+selection; edits preserve it. Review returns the exact `replacements` and original
+source `references`; scene context must use `scene:null` to compare saved before
+with selected replacements after. A matching receipt is mandatory for atomic
+commit of artwork and reference changes. The acknowledgment includes
+`replaced_scenes` and exact rewritten scene revisions. Omitting `placements`
+creates artwork alone; opening a native document edits the shared original.
+
+The runnable [artwork workshop](../examples/mcp/artwork_workshop.py) seeds a moss
+tile and two lanterns, reviews new pixels in temporary scenes, commits and places
+them. Keep the same root/output for later invocations:
+
+```sh
+python examples/mcp/artwork_workshop.py --root /tmp/workshop/projects --output /tmp/workshop/review
+# After hand edits, request exact pixel changes from a fresh saved base.
+python examples/mcp/artwork_workshop.py --root /tmp/workshop/projects --output /tmp/workshop/review --asset moss --writes /tmp/moss-writes.json
+# Revise one placed lantern, retaining the original on the other placement.
+python examples/mcp/artwork_workshop.py --root /tmp/workshop/projects --output /tmp/workshop/review --asset lantern --variation cool_lantern --object 1 --writes /tmp/lantern-writes.json
+```
+
+Write files contain a JSON list such as `[{"x":7,"y":7,"rgba":[100,210,220,255]}]`.
+The example saves PNG resources and call transcripts, and stops on errors without
+replaying writes. Initial placement retains the reviewed scene base, advancing
+guards only to the artwork commit's acknowledged revisions; a competing scene
+save or external map edit causes a conflict instead of being overwritten.
+Inspect the previews before deciding the next revision. It is
+a scripted SDK client, not an embedded agent. The
+[workflow evaluation](evaluations/artwork-workflows.md) distinguishes those checks
+from agent visual inspection and outstanding human/platform work.
+
+| Tool | Inputs and result |
+| --- | --- |
+| `list_artwork` | Project/base revision → `documents` with native targets, descriptors and artwork revisions; `sources` with imported/native atlas IDs, regions and exact artwork revisions for duplication. |
+| `create_artwork` | Project/base revision, fresh `atlas_id`, name, kind, width/height, optional origin/region → transparent unsaved candidate. |
+| `duplicate_artwork` | Project/base revision, fresh atlas/name, explicit `source:{atlas_id,region,grid,cell,artwork_revision}`, optional `placements` → unsaved copy retaining source metadata/origin. Tile cell is `[x,y]`; sprite grid/cell are both null. |
+| `open_artwork` | Project/base revision, `target:{document_id,atlas_id,region}`, artwork revision → saved native pixels as an unsaved edit candidate. |
+| `read_artwork_pixels` | Project and complete candidate, optional in-bounds `rectangle:{x,y,width,height}` → exact base64 RGBA bytes, rectangle, target and revisions. |
+| `edit_artwork_pixels` | Project, complete candidate and `writes:[{x,y,rgba:[r,g,b,a]}]` → new candidate; original is unchanged. |
+| `review_artwork_candidate` | Project, complete candidate, optional scale/offset/scene context → before/after PNG resource links, paginated references and review receipt. |
+| `commit_artwork` | Project, exact reviewed candidate and required receipt → atomic save acknowledgment with candidate/review, project/artwork revisions, source PNG digest and rewritten scene revisions. |
+
+Only `commit_artwork` writes saved artwork. Other native artwork tools are marked
+read-only: creation, duplication and pixel edits return client-held candidates,
+without saving assets, drafts or placements. Preserve the entire candidate and
+receipt JSON. They carry explicit version, project/document/atlas identity and
+base/content revisions; there is no server candidate cache. Imported artwork
+must be copied to a fresh native identity before pixel editing.
+
+Pixels are row-major, top-left straight RGBA8 bytes in sRGB, with literal channels
+0..255. Alpha may be partial; exact reads preserve RGB under alpha zero. No GBC
+palette, quantization or color conversion is implicit. Tiles are one 8/16/32-pixel
+square. Sprite axes are multiples of eight within 8..256; origins are integer
+pixels inside the image. Pixel edits cannot resize or change origins/metadata.
+Batches reject duplicate coordinates, invalid channels, booleans, unknown fields
+and out-of-bounds writes as a whole; no clipping or valid-prefix application.
+They cap at 65,536 writes and 1 MiB batch JSON, within the 4 MiB total tool-input
+budget. Exact reads cap at 65,536 pixels. `capabilities.artwork` reports these bounds.
+
+Review defaults to 4× nearest-neighbor enlargement (scale 1..16); each output must
+fit the existing 1024-pixel axis limit. `before` is null for new/copied artwork
+unless selected placements are being replaced, when it shows the source pixels.
+`after` and non-null `before` contain `native_resource` and `enlarged_resource`;
+optional `scene` contains `before_resource` and `after_resource`. The flat
+`resources` list also appears as MCP resource-link content. Read them with
+`resources/read`; they use the same bounded session cache as existing previews.
+
+Reference scans cover at most 64 saved scenes and 16 MiB map input. Reports include
+all affected scene identities/revisions, total reference count and up to 256 exact
+scene/stamp/definition locations per page. Pass `offset:references.next_offset`
+for the next page; inspect `locations_complete` instead of assuming one page is
+complete. Scenes use canonical transforms, origins and layer ordering. A context
+has exactly `{scene_id,scene_revision,scene,viewport}`; set `scene:null` for saved
+placements, or provide an unsaved canonical scene referencing new artwork.
+`viewport:{x,y,width,height}` uses pixels, starts inside the scene and retains
+existing source/compositing bounds. Reviewing that scene does not save it.
+
+For example, inside an initialized official SDK `ClientSession` named `client`,
+this creates, inspects, revises, reviews, commits and places a tile into an
+existing 8-pixel-grid scene. Use a fresh atlas ID and a visible tile layer in your
+project. The helper deliberately does not retry failed calls:
+
+```python
+import base64
+import copy
+
+async def call(tool, **arguments):
+    result = await client.call_tool(tool, arguments)
+    if result.isError:
+        raise RuntimeError(result.content)
+    return result.structuredContent
+
+project = "project"  # --project alias; use the directory with --project-root
+catalog = await call("get_project", project=project)
+loaded = await call("get_scene", project=project,
+                    scene_id=catalog["project"]["scenes"][0]["id"])
+candidate = await call("create_artwork", project=project,
+                       project_revision=loaded["project_revision"],
+                       atlas_id="moss_tile", name="Moss tile", kind="tile",
+                       width=8, height=8)
+candidate = await call("edit_artwork_pixels", project=project, candidate=candidate,
+                       writes=[{"x": 1, "y": 1, "rgba": [77, 160, 81, 255]}])
+exact = await call("read_artwork_pixels", project=project, candidate=candidate,
+                   rectangle={"x": 1, "y": 1, "width": 1, "height": 1})
+assert base64.b64decode(exact["rgba"]) == bytes([77, 160, 81, 255])
+# Revise after inspecting the exact pixels; this returns a new candidate revision.
+candidate = await call("edit_artwork_pixels", project=project, candidate=candidate,
+                       writes=[{"x": 2, "y": 1, "rgba": [31, 90, 43, 128]}])
+scene = copy.deepcopy(loaded["scene"])
+# Scenes may use the compact single-layer form or explicit layers.
+layer = next(layer for layer in scene["layers"]
+             if layer["type"] == "tilelayer" and layer["visible"]) if "layers" in scene else scene
+layer["cells"][0][0] = "moss_tile/artwork/0/0"
+review = await call("review_artwork_candidate", project=project, candidate=candidate,
+                    scene={"scene_id": loaded["id"], "scene_revision": loaded["revision"],
+                           "scene": scene,
+                           "viewport": {"x": 0, "y": 0, "width": 32, "height": 32}})
+art_image = await client.read_resource(review["after"]["enlarged_resource"]["uri"])
+scene_image = await client.read_resource(review["scene"]["after_resource"]["uri"])
+# Inspect these images in the client before choosing to commit.
+saved = await call("commit_artwork", project=project, candidate=candidate,
+                   receipt=review["receipt"])
+assert saved["candidate_revision"] == candidate["revision"]
+assert saved["review_revision"] == review["receipt"]["revision"]
+# Adding artwork may re-encode saved maps. Only save over the expected scene base.
+current = await call("get_scene", project=project, scene_id=loaded["id"])
+expected_scene_revision = saved["scene_revisions"].get(loaded["id"], loaded["revision"])
+if current["revision"] != expected_scene_revision:
+    raise RuntimeError("Scene changed since review; inspect and review the placement again")
+placed = await call("save_scene", project=project, scene_id=current["id"],
+                    project_revision=current["project_revision"],
+                    scene_revision=current["revision"], scene=scene)
+```
+
+A receipt binds the candidate, saved project/artwork, declared inventory and every
+scanned scene revision. Changing pixels after review requires a new review. A
+stale base, changed source or competing save rejects the commit and retains your
+client-held candidate. Native tools return structured `invalid_request`, `busy`
+or `conflict` errors; SDK schema errors remain text errors. Busy means a cooperating
+writer owns the lock; wait for it to finish and inspect state before explicitly
+submitting again. Do not retry transport failures or lost acknowledgments: inspect
+`list_artwork`, reopen the exact saved document, and compare bytes/revisions first.
+No automatic rebasing, ambiguous write replay or browser draft mutation occurs.
+
+For an intentional shared edit, discover/open the native target, inspect the
+review's affected references and commit against its exact base. All placements
+continue referring to that asset. For a variation, duplicate an explicit source
+cell/static sprite and commit the reviewed copy. Duplication replaces no existing
+placements; selected-placement replacement remains separate milestone work.
+The [browser pixel editor](user/pixel-artwork.md) adds hand editing and owned drafts
+using the same candidates and guarded services. Layered documents and animation playback are deferred.
+The [native MCP regression/SDK workflow](../tests/backend/adapters/test_mcp_native_artwork.py)
+checks the full new-tile loop, strict nested schemas, exact transparency, resources,
+stale receipts, contention, atomic conflict and save/export/reopen. These scripted
+checks do not establish agent art quality or mixed human/agent usability.
