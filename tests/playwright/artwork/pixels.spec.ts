@@ -410,6 +410,54 @@ test('Undo to the saved base warns on reload until the recovery checkpoint catch
   assert.equal(recovered.current_rgba, original.rgba);
 });
 
+test('a lost checkpoint update acknowledgment keeps Undo protected until guarded reconciliation', async ({
+  page,
+  workspace,
+}) => {
+  const { url } = await setup(page, workspace);
+  await page.clock.install();
+  await page.clock.pauseAt(new Date());
+  await openGrass(page);
+  await page.locator('#art-color').fill('#ff0000');
+  await draw(page, 0, 0);
+  await page.clock.runFor(400);
+  await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
+  const acknowledged = array((await post(page, url, 'draft-list', {})).drafts, record)[0];
+  const first = decodeCandidate((await post(page, url, 'draft-download', acknowledged)).candidate);
+
+  await page.route('**/api/artwork-draft-write', async (route) => {
+    // Commit the update, then lose only its response to the browser.
+    assert.equal((await route.fetch()).status(), 200);
+    await route.abort('failed');
+  });
+  await draw(page, 1, 0);
+  await page.clock.runFor(400);
+  await expect(page.locator('#art-message')).toContainText('Checkpoint failed');
+  await page.unroute('**/api/artwork-draft-write');
+  await page.locator('#art-undo').click();
+  page.removeAllListeners('dialog');
+  const prompt = page.waitForEvent('dialog');
+  const reloading = page.reload({ timeout: 2000 }).catch(() => null);
+  const dialog = await prompt;
+  assert.equal(dialog.type(), 'beforeunload');
+  await dialog.dismiss();
+  await reloading;
+  await expect(page.locator('#artwork-dialog')).toBeVisible();
+  const uncertain = array((await post(page, url, 'draft-list', {})).drafts, record)[0];
+  assert.notEqual(uncertain.revision, acknowledged.revision);
+  const stored = decodeCandidate((await post(page, url, 'draft-download', uncertain)).candidate);
+  assert.deepEqual(new PixelModel(stored).color({ x: 1, y: 0 }), [255, 0, 0, 255]);
+
+  await page.clock.runFor(400);
+  await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
+  const reconciled = array((await post(page, url, 'draft-list', {})).drafts, record)[0];
+  const current = decodeCandidate((await post(page, url, 'draft-download', reconciled)).candidate);
+  assert.equal(current.rgba, first.rgba);
+  assert.notEqual(reconciled.revision, uncertain.revision);
+  await page.reload();
+  await expect(page.locator('#status')).toHaveText('Scene opened.');
+});
+
 for (const external of [false, true]) {
   test(`new artwork preserves the scene save guard with external change=${external}`, async ({
     page,

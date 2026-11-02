@@ -71,6 +71,9 @@ for the current checkpoint; a failed checkpoint keeps the dialog open and offers
 **Download work**. Leaving before a checkpoint finishes prompts the browser's
 unsaved-work warning, including after Undo returns to the saved pixels while an
 older checkpoint still needs updating. Disposing an editor preserves completed checkpoints.
+If a checkpoint response is lost, the warning remains active until Forge checks
+the owned checkpoint's stored revision and pixels. A later checkpoint or explicit
+discard performs that check before writing or deleting; failed checks retain local work.
 
 Reopen the artwork dialog to see recoverable records. **Recover copy** checks the
 original saved base and opens unsaved pixels under a fresh draft identity; it

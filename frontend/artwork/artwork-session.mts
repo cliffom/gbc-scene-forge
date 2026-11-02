@@ -14,6 +14,7 @@ export class ArtworkSession {
   revision: string | null = null;
   checkpointPixels = '';
   private checkpointAttempted = false;
+  private checkpointUncertain = false;
   private pendingCheckpoints = 0;
   private queue: Promise<unknown> = Promise.resolve();
   private api: ProjectApi['json'];
@@ -29,6 +30,7 @@ export class ArtworkSession {
   get uncheckpointed() {
     return (
       this.pendingCheckpoints > 0 ||
+      this.checkpointUncertain ||
       ((this.changed || this.checkpointAttempted) &&
         encoded(this.model.pixels) !== this.checkpointPixels)
     );
@@ -76,11 +78,16 @@ export class ArtworkSession {
     // Undo can return to the saved base while an older checkpoint is still queued.
     this.pendingCheckpoints++;
     return this.serialize(async () => {
+      if (this.checkpointUncertain) {
+        await this.inspectCheckpoint();
+      }
       const candidate = await this.synchronize(pixels);
       if (encoded(pixels) === this.checkpointPixels) {
         return;
       }
       this.checkpointAttempted = true;
+      // A failed response cannot tell us whether this write reached disk.
+      this.checkpointUncertain = true;
       const ack = await this.api('artwork-draft-write', record, {
         id: this.id,
         owner: this.owner,
@@ -92,6 +99,7 @@ export class ArtworkSession {
       });
       this.revision = string(ack.revision);
       this.checkpointPixels = encoded(pixels);
+      this.checkpointUncertain = false;
     }).finally(() => {
       this.pendingCheckpoints--;
     });
@@ -100,21 +108,29 @@ export class ArtworkSession {
     const pixels = this.model.pixels.slice();
     return this.serialize(() => this.synchronize(pixels));
   }
+  private async inspectCheckpoint() {
+    // Any checkpoint may have committed without a response. Inspect our exact
+    // identity and guarded bytes before another write or explicit cleanup.
+    const listing = await this.api('artwork-draft-list', record, {});
+    const own = array(listing.drafts, record).find((draft) => draft.id === this.id);
+    if (own) {
+      if (own.owner !== this.owner) {
+        throw Error('The checkpoint belongs to another owner. Inspect recovery before continuing.');
+      }
+      const revision = string(own.revision);
+      const draft = await this.api('artwork-draft-download', record, { id: this.id, revision });
+      this.checkpointPixels = decodeCandidate(draft.candidate).rgba;
+      this.revision = revision;
+    } else {
+      this.revision = null;
+      this.checkpointPixels = '';
+    }
+    this.checkpointUncertain = false;
+  }
   async removeCheckpoint() {
     await this.queue.catch(() => undefined);
-    if (!this.revision && this.checkpointAttempted) {
-      // A first checkpoint may have committed without a response. Inspect our
-      // exact identity before explicit cleanup; never replay an ambiguous write.
-      const listing = await this.api('artwork-draft-list', record, {});
-      const own = array(listing.drafts, record).find((draft) => draft.id === this.id);
-      if (own) {
-        if (own.owner !== this.owner) {
-          throw Error(
-            'The checkpoint belongs to another owner. Inspect recovery before discarding it.',
-          );
-        }
-        this.revision = string(own.revision);
-      }
+    if (this.checkpointUncertain) {
+      await this.inspectCheckpoint();
     }
     if (this.revision) {
       await this.api('artwork-draft-delete', record, {
@@ -123,5 +139,9 @@ export class ArtworkSession {
         owner: this.owner,
       });
     }
+    this.revision = null;
+    this.checkpointPixels = '';
+    this.checkpointAttempted = false;
+    this.checkpointUncertain = false;
   }
 }

@@ -164,13 +164,98 @@ const ambiguousApi: ProjectApi['json'] = (route, decode) => {
       decode({ drafts: [{ id: uncertain.id, owner: uncertain.owner, revision: 'stored' }] }),
     );
   }
+  if (route === 'artwork-draft-download') {
+    return Promise.resolve(decode({ candidate }));
+  }
   return Promise.resolve(decode({}));
 };
 const uncertain = new ArtworkSession(candidate, ambiguousApi);
 await assert.rejects(uncertain.checkpoint(), /lost acknowledgment/);
 assert.equal(uncertain.uncheckpointed, true);
 await uncertain.removeCheckpoint();
-assert.deepEqual(routes, ['artwork-draft-write', 'artwork-draft-list', 'artwork-draft-delete']);
+assert.deepEqual(routes, [
+  'artwork-draft-write',
+  'artwork-draft-list',
+  'artwork-draft-download',
+  'artwork-draft-delete',
+]);
+assert.equal(uncertain.uncheckpointed, false);
+
+// Losing an update response must not make Undo to acknowledged pixels look durable.
+let storedCandidate = candidate;
+let storedRevision = 0;
+let loseResponse = false;
+let failInspection = false;
+const updateRoutes: string[] = [];
+const updateApi: ProjectApi['json'] = async (route, decode, data) => {
+  if (route === 'artwork-edit') {
+    return api(route, decode, data);
+  }
+  updateRoutes.push(route);
+  const request = record(data);
+  if (route === 'artwork-draft-write') {
+    assert.equal(request.revision, storedRevision ? String(storedRevision) : null);
+    storedCandidate = decodeCandidate(request.candidate);
+    storedRevision++;
+    if (loseResponse) {
+      loseResponse = false;
+      throw Error('lost update acknowledgment');
+    }
+    return decode({ revision: String(storedRevision) });
+  }
+  if (route === 'artwork-draft-list') {
+    return decode({
+      drafts: [{ id: updated.id, owner: updated.owner, revision: String(storedRevision) }],
+    });
+  }
+  assert.equal(request.revision, String(storedRevision));
+  if (route === 'artwork-draft-download') {
+    if (failInspection) {
+      throw Error('inspection unavailable');
+    }
+    return decode({ candidate: storedCandidate });
+  }
+  assert.equal(route, 'artwork-draft-delete');
+  return decode({});
+};
+const updated = new ArtworkSession(candidate, updateApi);
+updated.model.apply(() => updated.model.put({ x: 0, y: 0 }, hidden));
+await updated.checkpoint();
+updated.model.apply(() => updated.model.put({ x: 1, y: 0 }, red));
+loseResponse = true;
+await assert.rejects(updated.checkpoint(), /lost update acknowledgment/);
+updated.model.undo();
+assert.equal(encoded(updated.model.pixels), updated.checkpointPixels);
+assert.equal(updated.uncheckpointed, true);
+failInspection = true;
+await assert.rejects(updated.checkpoint(), /inspection unavailable/);
+assert.equal(updated.uncheckpointed, true);
+failInspection = false;
+await updated.checkpoint();
+assert.equal(storedRevision, 3);
+assert.equal(storedCandidate.rgba, encoded(updated.model.pixels));
+assert.equal(updated.uncheckpointed, false);
+assert.deepEqual(updateRoutes.slice(-3), [
+  'artwork-draft-list',
+  'artwork-draft-download',
+  'artwork-draft-write',
+]);
+updated.model.redo();
+loseResponse = true;
+await assert.rejects(updated.checkpoint(), /lost update acknowledgment/);
+await updated.checkpoint();
+assert.equal(storedRevision, 4);
+assert.equal(updated.uncheckpointed, false);
+assert.deepEqual(updateRoutes.slice(-2), ['artwork-draft-list', 'artwork-draft-download']);
+updated.model.apply(() => updated.model.put({ x: 2, y: 0 }, red));
+loseResponse = true;
+await assert.rejects(updated.checkpoint(), /lost update acknowledgment/);
+await updated.removeCheckpoint();
+assert.deepEqual(updateRoutes.slice(-3), [
+  'artwork-draft-list',
+  'artwork-draft-download',
+  'artwork-draft-delete',
+]);
 
 // A maximum-size sprite synchronizes through bounded batches without losing pixels.
 const largeCandidate = decodeCandidate({

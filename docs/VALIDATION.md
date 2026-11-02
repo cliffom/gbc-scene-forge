@@ -15,6 +15,29 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Artwork checkpoint acknowledgment recovery (#141)
+
+- **Scope:** Prepared 0.27.0 working tree based on
+  `5835e0630c2ef34e5dfbac79d2e38f9b22d2a946`, on 2026-11-02; local macOS,
+  Python 3.13, Node 24 and Playwright Chromium with the source server and rebuilt bundle.
+- **Method:** Reproduced a committed checkpoint update with a lost response, followed
+  by Undo and reload without a warning. Added [model regressions](../tests/frontend/artwork/pixels.ts)
+  for unknown update outcomes, failed inspection, guarded correction, matching stored
+  pixels without write replay, and explicit cleanup after lost acknowledgments.
+  Added a [browser regression](../tests/playwright/artwork/pixels.spec.ts) that forwards
+  the write to disk and aborts its response, dismisses the reload warning after Undo,
+  then verifies corrected checkpoint bytes and reload. Ran `make docs-check lint test
+  PYTHON=.venv/bin/python`, rebuilt the frontend and ran all ten artwork browser scenarios.
+- **Result:** Unknown checkpoint outcomes retain unload protection even when current
+  pixels equal an older acknowledged checkpoint. Subsequent checkpointing and cleanup
+  inspect the owner and revision-guarded stored pixels before proceeding. Documentation,
+  lint/type checks, 403 Python tests, frontend suites and all ten browser scenarios passed.
+- **Limits:** Synthetic local fixtures and Chromium automation, including desktop
+  reload and existing compact-view coverage; no human usability, Windows or
+  non-Chromium assessment. Installed-wheel, packaging and full browser/MCP checks
+  were not repeated; earlier evidence below retains its original scope. No package
+  was published.
+
 ## Artwork Undo unload protection (#141)
 
 - **Scope:** Prepared 0.27.0 working tree based on
