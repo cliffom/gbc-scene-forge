@@ -1,6 +1,6 @@
 /** One artwork document, its serial checkpoint writer, and exact saved-base ownership. */
 import type { ProjectApi } from '../project/project-api.mts';
-import { record, string } from '../shared/decode.mts';
+import { record, string, array } from '../shared/decode.mts';
 import { bytes, encoded, PixelModel } from './pixel-model.mts';
 import { decodeCandidate, type Candidate } from './artwork-contracts.mts';
 
@@ -13,6 +13,7 @@ export class ArtworkSession {
   readonly owner = crypto.randomUUID();
   revision: string | null = null;
   checkpointPixels = '';
+  private checkpointAttempted = false;
   private queue: Promise<unknown> = Promise.resolve();
   private api: ProjectApi['json'];
   constructor(candidate: Candidate, api: ProjectApi['json'], original = candidate) {
@@ -72,6 +73,7 @@ export class ArtworkSession {
       if (encoded(pixels) === this.checkpointPixels) {
         return;
       }
+      this.checkpointAttempted = true;
       const ack = await this.api('artwork-draft-write', record, {
         id: this.id,
         owner: this.owner,
@@ -91,6 +93,20 @@ export class ArtworkSession {
   }
   async removeCheckpoint() {
     await this.queue.catch(() => undefined);
+    if (!this.revision && this.checkpointAttempted) {
+      // A first checkpoint may have committed without a response. Inspect our
+      // exact identity before explicit cleanup; never replay an ambiguous write.
+      const listing = await this.api('artwork-draft-list', record, {});
+      const own = array(listing.drafts, record).find((draft) => draft.id === this.id);
+      if (own) {
+        if (own.owner !== this.owner) {
+          throw Error(
+            'The checkpoint belongs to another owner. Inspect recovery before discarding it.',
+          );
+        }
+        this.revision = string(own.revision);
+      }
+    }
     if (this.revision) {
       await this.api('artwork-draft-delete', record, {
         id: this.id,
@@ -98,8 +114,5 @@ export class ArtworkSession {
         owner: this.owner,
       });
     }
-  }
-  async settled() {
-    await this.queue.catch(() => undefined);
   }
 }

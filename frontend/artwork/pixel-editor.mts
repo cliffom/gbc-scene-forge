@@ -446,7 +446,8 @@ export function createPixelEditor({
     if (session?.changed) {
       await session.checkpoint();
     } else {
-      await session?.settled();
+      // Undoing back to the saved base must not leave an older dirty checkpoint.
+      await session?.removeCheckpoint();
     }
     dialog.close();
     session = null;

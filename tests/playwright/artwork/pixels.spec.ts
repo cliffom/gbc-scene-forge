@@ -321,3 +321,39 @@ test('placed sprite editing preserves origin and references; blank sprites previ
   );
   assert.deepEqual(finalScene.scene, before.scene);
 });
+
+test('clean close removes an older checkpoint; failed checkpoint retains local work and blocks closing', async ({
+  page,
+  workspace,
+}) => {
+  const { url } = await setup(page, workspace);
+  await openGrass(page);
+  await page.locator('#art-color').fill('#ff0000');
+  await draw(page, 0, 0);
+  await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
+  await page.locator('#art-undo').click();
+  await page.locator('#art-close').click();
+  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+  assert.equal(array((await post(page, url, 'draft-list', {})).drafts, record).length, 0);
+  await openGrass(page);
+  await page.route('**/api/artwork-draft-write', (route) =>
+    route.fulfill({
+      status: 400,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'simulated disk full' }),
+    }),
+  );
+  await draw(page, 0, 0);
+  await page.locator('#art-close').click();
+  await expect(page.locator('#artwork-dialog')).toBeVisible();
+  await expect(page.locator('#art-message')).toContainText('simulated disk full');
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.locator('#art-download').click(),
+  ]);
+  assert.equal(download.suggestedFilename(), 'artwork-work.json');
+  await page.unroute('**/api/artwork-draft-write');
+  await page.locator('#art-close').click();
+  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+  assert.equal(array((await post(page, url, 'draft-list', {})).drafts, record).length, 1);
+});

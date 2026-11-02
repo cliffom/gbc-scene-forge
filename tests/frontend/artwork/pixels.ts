@@ -97,7 +97,9 @@ const api: ProjectApi['json'] = async (route, decode, data) => {
     }
     const c = decodeCandidate(request.candidate),
       model = new PixelModel(c);
-    for (const write of array(request.writes, record)) {
+    const writes = array(request.writes, record);
+    assert.ok(writes.length <= 8000);
+    for (const write of writes) {
       const color = array(write.rgba, number);
       model.put({ x: number(write.x), y: number(write.y) }, [
         color[0],
@@ -133,3 +135,43 @@ assert.deepEqual(new PixelModel(decodeCandidate(written[1].candidate)).color({ x
 assert.equal(session.uncheckpointed, false);
 assert.deepEqual(session.original, candidate);
 console.log('Pixel history, drawing, transforms, bounds, and serialized checkpoint races passed.');
+
+// A lost first checkpoint response is inspected before explicit cleanup, never replayed.
+let uncertain: ArtworkSession;
+const routes: string[] = [];
+const ambiguousApi: ProjectApi['json'] = (route, decode) => {
+  routes.push(route);
+  if (route === 'artwork-draft-write') {
+    return Promise.reject(Error('lost acknowledgment'));
+  }
+  if (route === 'artwork-draft-list') {
+    return Promise.resolve(
+      decode({ drafts: [{ id: uncertain.id, owner: uncertain.owner, revision: 'stored' }] }),
+    );
+  }
+  return Promise.resolve(decode({}));
+};
+uncertain = new ArtworkSession(candidate, ambiguousApi);
+await assert.rejects(uncertain.checkpoint(), /lost acknowledgment/);
+await uncertain.removeCheckpoint();
+assert.deepEqual(routes, ['artwork-draft-write', 'artwork-draft-list', 'artwork-draft-delete']);
+
+// A maximum-size sprite synchronizes through bounded batches without losing pixels.
+const largeCandidate = decodeCandidate({
+  ...candidate,
+  descriptor: { ...candidate.descriptor, kind: 'sprite', width: 256, height: 256 },
+  rgba: encoded(new Uint8ClampedArray(256 * 256 * 4)),
+});
+const large = new ArtworkSession(largeCandidate, api);
+large.model.apply(() => large.model.fill({ x: 0, y: 0 }, red));
+await large.checkpoint();
+const last = written.at(-1);
+assert.ok(last);
+const largeSaved = new PixelModel(decodeCandidate(last.candidate));
+assert.deepEqual(largeSaved.color({ x: 255, y: 255 }), red);
+assert.ok(largeSaved.pixels.every((value, index) => value === red[index % 4]));
+assert.throws(() =>
+  decodeCandidate({ ...candidate, descriptor: { ...candidate.descriptor, origin: [8, 0] } }),
+);
+assert.throws(() => decodeCandidate({ ...candidate, operation: 'create' }));
+assert.throws(() => decodeCandidate({ ...candidate, unexpected: true }));

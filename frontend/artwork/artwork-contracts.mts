@@ -13,21 +13,33 @@ const sourceEntries = {
   cell: v.nullable(v.tuple([bounded(0, 2047), bounded(0, 2047)])),
   artwork_revision: revision,
 };
-const descriptor = v.strictObject({
-  version: v.literal(1),
-  id: identity,
-  atlas_id: identifier,
-  region: identifier,
-  name: v.pipe(text, v.minLength(1), v.maxLength(100)),
-  kind: v.picklist(['tile', 'sprite']),
-  width: bounded(8, 256),
-  height: bounded(8, 256),
-  origin: v.tuple([bounded(0, 255), bounded(0, 255)]),
-  pixel_format: v.literal('rgba8'),
-  provenance: v.nullable(
-    v.strictObject({ ...sourceEntries, project_id: identity, source_format: v.nullable(text) }),
+const descriptor = v.pipe(
+  v.strictObject({
+    version: v.literal(1),
+    id: identity,
+    atlas_id: identifier,
+    region: identifier,
+    name: v.pipe(text, v.minLength(1), v.maxLength(100)),
+    kind: v.picklist(['tile', 'sprite']),
+    width: bounded(8, 256),
+    height: bounded(8, 256),
+    origin: v.tuple([bounded(0, 255), bounded(0, 255)]),
+    pixel_format: v.literal('rgba8'),
+    provenance: v.nullable(
+      v.strictObject({ ...sourceEntries, project_id: identity, source_format: v.nullable(text) }),
+    ),
+  }),
+  v.check(
+    (d) =>
+      d.width % 8 === 0 &&
+      d.height % 8 === 0 &&
+      d.origin[0] < d.width &&
+      d.origin[1] < d.height &&
+      (d.kind !== 'tile' ||
+        (d.width === d.height && [8, 16, 32].includes(d.width) && d.origin.every((n) => n === 0))),
+    'Invalid artwork dimensions or origin.',
   ),
-});
+);
 export const candidateSchema = v.pipe(
   v.strictObject({
     version: v.literal(1),
@@ -43,9 +55,18 @@ export const candidateSchema = v.pipe(
     source: v.nullable(v.strictObject(sourceEntries)),
     metadata: v.record(text, v.unknown()),
   }),
+  v.check(
+    (c) =>
+      c.document_id === c.descriptor.id &&
+      c.atlas_id === c.descriptor.atlas_id &&
+      (c.operation === 'edit' ? c.artwork_revision !== null : c.artwork_revision === null) &&
+      (c.operation === 'duplicate' ? c.source !== null : c.source === null),
+    'Invalid artwork identity or saved base.',
+  ),
   v.check((c) => {
     try {
-      return atob(c.rgba).length === c.descriptor.width * c.descriptor.height * 4;
+      const raw = atob(c.rgba);
+      return btoa(raw) === c.rgba && raw.length === c.descriptor.width * c.descriptor.height * 4;
     } catch {
       return false;
     }
