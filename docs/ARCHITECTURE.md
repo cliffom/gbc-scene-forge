@@ -100,8 +100,12 @@ The [editable artwork contract](EDITABLE-ARTWORK.md) specifies milestone 14
 native pixel documents, source ownership, revision guards and portable persistence.
 `ArtworkService.documents` composes `artwork/documents.py` use cases with pure
 candidate/raster rules in `artwork/editable.py`. Native persistence, exact saves
-and export/transfer are implemented; review, transports, drawing and artwork
-drafts follow in separate milestone issues. Schema validation remains read-free;
+and export/transfer are implemented. `ArtworkService.reviews` composes native
+candidate comparison and reference scans in `artwork/review.py`, reusing the
+canonical scene renderer with temporary catalogs. Review receipts bind candidate,
+asset inventory and every scanned scene revision; `documents.save` validates them
+and carries unchanged reviewed map guards into the final transaction. Transports,
+drawing and artwork drafts follow in separate milestone issues. Schema validation remains read-free;
 saved-read asset verification also checks native descriptors and source geometry.
 
 External artwork intake keeps PNG slicing in `artwork/tilesheet.py` and strict

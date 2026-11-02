@@ -5,6 +5,7 @@ import copy
 from uuid import uuid4
 
 from gbc_scene_forge.artwork import atlas, editable, png
+from gbc_scene_forge.artwork.review import check_receipt
 from gbc_scene_forge.core.errors import Conflict
 from gbc_scene_forge.core.identities import name
 from gbc_scene_forge.core.serialization import record_bytes
@@ -289,37 +290,39 @@ class ArtworkDocuments:
     edit = staticmethod(editable.edit_pixels)
     read = staticmethod(editable.read_pixels)
 
-    def save(self, candidate):
+    def validate_base(self, candidate, document):
+        """Validate candidate policy against a caller's already-held read session."""
+        d = candidate["descriptor"]
+        require(document["id"] == candidate["project_id"], "Candidate belongs to another project")
+        if candidate["operation"] == "edit":
+            previous, saved = self._native(document, self._target(d), candidate["artwork_revision"])
+            require(
+                saved == d and previous.get("metadata", {}) == candidate["metadata"],
+                "Pixel edits cannot change descriptor or tile metadata",
+            )
+            return previous
+        self._absence(document, d)
+        if candidate["operation"] == "create":
+            require(
+                d["provenance"] is None and not candidate["metadata"],
+                "Blank creation cannot declare provenance or tile metadata",
+            )
+        else:
+            _, metadata = self._duplicate_data(document, candidate["source"], d)
+            require(metadata == candidate["metadata"], "Duplicate metadata differs from source")
+        return None
+
+    def save(self, candidate, *, receipt=None):
         """Commit the exact submitted candidate; acknowledgments never reread later state."""
         pixels = editable.check_candidate(candidate)
         d = candidate["descriptor"]
         revision = candidate["project_revision"]
         with self.store.read_session(revision, verify_assets=True) as session:
             document = session.document
-            require(
-                document["id"] == candidate["project_id"], "Candidate belongs to another project"
-            )
-            previous = None
-            if candidate["operation"] == "edit":
-                previous, saved = self._native(
-                    document, self._target(d), candidate["artwork_revision"]
-                )
-                require(
-                    saved == d and previous.get("metadata", {}) == candidate["metadata"],
-                    "Pixel edits cannot change descriptor or tile metadata",
-                )
-            else:
-                self._absence(document, d)
-                if candidate["operation"] == "create":
-                    require(
-                        d["provenance"] is None and not candidate["metadata"],
-                        "Blank creation cannot declare provenance or tile metadata",
-                    )
-                else:
-                    _, metadata = self._duplicate_data(document, candidate["source"], d)
-                    require(
-                        metadata == candidate["metadata"], "Duplicate metadata differs from source"
-                    )
+            previous = self.validate_base(candidate, document)
+            reviewed = {}
+            if receipt is not None:
+                reviewed = check_receipt(candidate, receipt, session)
             # Adding an atlas changes Tiled ranges: decode all maps with the OLD catalog.
             scenes = (
                 [session.scene(item["id"]) for item in document["scenes"]]
@@ -334,7 +337,7 @@ class ArtworkDocuments:
             entry["editable"] = {"id": d["id"], "path": f"assets/{d['atlas_id']}/editable.json"}
             changes[entry["editable"]["path"]] = record_bytes(d)
             document["atlases"][d["atlas_id"]] = entry
-            expected, scene_revisions = {}, {}
+            expected, scene_revisions = dict(reviewed), {}
             for loaded in scenes:
                 path = f"scenes/{loaded['id']}.tmj"
                 encoded = record_bytes(tiled.encode(loaded["scene"], document))
@@ -357,5 +360,7 @@ class ArtworkDocuments:
                 "png_digest": digest(image),
                 "scene_revisions": scene_revisions,
             }
+            if receipt is not None:
+                acknowledgment["review_revision"] = receipt["revision"]
         self.store.commit(document, revision, changes, expected, "Save editable artwork")
         return acknowledgment

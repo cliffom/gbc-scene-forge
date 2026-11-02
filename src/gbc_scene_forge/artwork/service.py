@@ -6,6 +6,7 @@ import json
 from gbc_scene_forge.artwork import atlas, png, tilesheet
 from gbc_scene_forge.artwork import metadata as tile_metadata
 from gbc_scene_forge.artwork.documents import ArtworkDocuments
+from gbc_scene_forge.artwork.review import ArtworkReview
 from gbc_scene_forge.core.errors import Conflict
 from gbc_scene_forge.core.records import NativeDocument
 from gbc_scene_forge.core.serialization import json_text
@@ -22,6 +23,7 @@ class ArtworkService:
     def __init__(self, store: ProjectStore) -> None:
         self.store = store
         self.documents = ArtworkDocuments(store)
+        self.reviews = ArtworkReview(self.documents)
 
     def set_metadata(
         self, atlas_id: str, group: str, asset: str, value: NativeDocument, revision: str

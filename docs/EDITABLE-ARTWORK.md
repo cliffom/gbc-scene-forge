@@ -2,10 +2,11 @@
 
 This is the implementation contract for [#129](https://github.com/cliffom/gbc-scene-forge/issues/129)
 and [milestone 14](https://github.com/cliffom/gbc-scene-forge/milestone/14).
-The shared native service and portable format are implemented by #130 in the
-prepared 0.27.0 milestone branch. The browser still creates artwork through import.
-Review, MCP, hand editing/drafts and placement variations remain planned behavior
-for #131–#134; #135 owns integrated workflow evaluation. This contract itself is
+The shared native service and portable format are implemented by #130, and
+candidate review by #131, in the prepared 0.27.0 milestone branch.
+The browser still creates artwork through import. MCP, hand editing/drafts and
+placement variations remain planned behavior for #132–#134; #135 owns integrated
+workflow evaluation. This contract itself is
 not product-validation evidence; observed checks belong in [Validation](VALIDATION.md).
 
 ## Ownership and identities
@@ -325,7 +326,7 @@ from a verified saved-read session. Source provenance does not follow external f
 `edit(candidate, writes)` returns a new candidate; each write is
 `{"x": 0, "y": 0, "rgba": [12, 34, 56, 0]}`. `read(candidate, rectangle=None)`
 returns exact base64 row-major RGBA and identities/base/candidate revisions;
-rectangle has `x`, `y`, `width`, `height`. `save(candidate)` performs one durable
+rectangle has `x`, `y`, `width`, `height`. `save(candidate, receipt=None)` performs one durable
 transaction and returns exact project/artwork revisions, source PNG digest,
 submitted candidate revision and revisions of rewritten scenes. Imported artwork
 cannot be opened for pixel edits. Pixel saves cannot alter descriptor/metadata.
@@ -351,7 +352,59 @@ saved = artwork.save(candidate)
 
 This is a Python domain API, not a browser/MCP command. Preserve the original
 candidate on conflict and resolve its saved base explicitly. Durable artwork draft
-records, review receipts and placement replacement are not implemented by #130.
+records and placement replacement are not implemented by #130.
 Native artwork appears in the existing Library and can be placed/saved in scenes;
 there are no pixel drawing controls yet. Native project ZIP extraction retains
 editing, and Forge ZIP transfer validates/remaps native descriptors and identities.
+
+## Implemented candidate review API (#131)
+
+`project.artwork.reviews.review(candidate, scale=4, scene=None, offset=0)` returns
+native and enlarged nearest-neighbor PNG bytes under `after`, and the saved base
+under `before` (null for creation/duplication). Each image pair has `native_png`
+and `enlarged_png`. Exact RGBA, including hidden RGB, is retained in isolated
+PNGs. Scale is an integer within 1..16; enlarged dimensions must fit the existing
+1,024-pixel-per-axis and 1,048,576-pixel output limits.
+
+`references` scans every saved scene, reusable stamp and object definition.
+It returns affected saved scenes with their exact revisions and placement counts,
+a full `total`, and up to 256 detailed `locations` beginning at `offset`.
+Use `next_offset` for another page; `scan_complete` distinguishes the full scan
+from `locations_complete`. Hidden placements count too. The full scan rejects
+projects above 64 saved scenes or 16 MiB of serialized maps before map decoding;
+reduce project scope rather than accepting a partial consequence report.
+
+To compare scene placements, pass an explicit scene request:
+
+```python
+loaded = project.scenes.load(scene_id)
+comparison = project.artwork.reviews.review(candidate, scene={
+    "scene_id": loaded["id"],
+    "scene_revision": loaded["revision"],
+    "scene": None,
+    "viewport": {"x": 0, "y": 0, "width": 160, "height": 144},
+})
+saved = project.artwork.documents.save(candidate, receipt=comparison["receipt"])
+```
+
+Use null `scene` inside that request for saved placements, or a full canonical
+scene candidate to test new placements, including unsaved new artwork. The latter
+still requires an existing saved scene base. Only the temporary catalog includes
+new artwork. The scene result has `before_png`, `after_png`, viewport, saved base
+and canonical `snapshot_revision`. Both images use the same scene placement
+candidate; new artwork is transparent in the before view. Review never saves
+that scene or changes project inventory. Transforms, sprite origins, visibility,
+layer order and compositing use the existing scene renderer and its resource limits.
+
+The JSON `receipt` binds candidate/project/artwork revisions, the declared-file
+inventory digest, every scanned saved scene revision and optional scene candidate
+digest/viewport. All asset and scene dependencies are revalidated after rendering.
+Pass the receipt unchanged to `documents.save(candidate, receipt=...)`; changed
+pixels or stale dependencies reject the entire save and retain the candidate.
+Even unchanged reviewed scenes are guarded again by the final durable transaction.
+The acknowledgment adds `review_revision` identifying the accepted receipt.
+Direct saves may omit review. Receipts describe content and dependencies, not
+human approval; they are client-held hashes, not signed credentials.
+
+These are shared Python services. HTTP/MCP review transport and interactive drawing
+remain subsequent milestone work. No browser preview UI is introduced by #131.
