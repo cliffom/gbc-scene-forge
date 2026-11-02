@@ -13,10 +13,10 @@ import {
   text,
 } from '../shared/schema.mts';
 import type { SceneLayer } from '../scene/layers.mts';
-import { decodeDefinitions } from '../objects/object-definitions.mts';
-import { decodeObject } from '../objects/objects.mts';
-import { decodePaletteProfile } from '../diagnostics/palette-budget.mts';
-import { decodeMetadataSets } from '../artwork/tile-metadata.mts';
+import { definitionsSchema } from '../objects/object-definitions.mts';
+import { objectSchema } from '../objects/objects.mts';
+import { paletteProfileSchema } from '../diagnostics/palette-budget.mts';
+import { metadataSetsSchema } from '../artwork/tile-metadata.mts';
 import { decodeWorld } from '../world/world.mts';
 
 const cellsSchema = jsonArray(
@@ -27,7 +27,7 @@ const cellsSchema = jsonArray(
     ),
   ),
 );
-const objectsSchema = jsonArray(decoded(decodeObject));
+const objectsSchema = jsonArray(objectSchema);
 const layerSchema = v.pipe(
   jsonObject({
     id: finite,
@@ -156,7 +156,7 @@ const atlasSchema = v.pipe(
   jsonObject({
     tiles: jsonDictionary(jsonDictionary(finite)),
     png: text,
-    metadata: decoded(decodeMetadataSets),
+    metadata: metadataSetsSchema,
     manifest: decoded((value) => {
       const manifest = record(value);
       return parse(manifestSchema(manifest.regions), manifest);
@@ -195,8 +195,8 @@ const projectSchema = v.pipe(
     atlases: jsonDictionary(atlasSchema),
     id: text,
     name: text,
-    gbc_palette_profile: decoded(decodePaletteProfile),
-    object_definitions: decoded(decodeDefinitions),
+    gbc_palette_profile: paletteProfileSchema,
+    object_definitions: definitionsSchema,
     world: decoded(decodeWorld),
     stamps: v.nullish(jsonArray(stampSchema), []),
     scenes: jsonArray(jsonObject({ id: text, name: text })),
