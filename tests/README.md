@@ -5,7 +5,7 @@ Run commands from the repository root. Test code is grouped by runner and domain
 | Location | Ownership |
 | --- | --- |
 | `backend/project/` | project/workspace lifecycle, drafts, samples, saved updates and exports |
-| `backend/artwork/` | PNG decoding, artwork intake and tile metadata |
+| `backend/artwork/` | PNG decoding, intake, native candidates/persistence, revision-bound artwork review and tile metadata |
 | `backend/objects/` | object editing, definitions and preview preferences |
 | `backend/planning/` | blockout and world authoring |
 | `backend/analysis/` | diagnostics, palette and hardware budgets |
