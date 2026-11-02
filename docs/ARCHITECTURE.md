@@ -96,6 +96,10 @@ or add connector compatibility shims.
 The companion [frontend architecture](FRONTEND-ARCHITECTURE.md) describes the supported
 browser composition, state owners, controller ports and resource lifecycle.
 
+The [editable artwork contract](EDITABLE-ARTWORK.md) specifies planned milestone 14
+native pixel documents, source ownership, revision guards and portable persistence.
+It is a design for subsequent implementation, not current authoring support.
+
 External artwork intake keeps PNG slicing in `artwork/tilesheet.py` and strict
 external Tiled JSON conversion in `formats/intake.py`. `project/intake.py`
 coordinates the atomic artwork-and-scene transaction; HTTP adapters only decode

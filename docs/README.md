@@ -16,6 +16,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 - [Python backend ownership](ARCHITECTURE.md)
 - [Frontend architecture](FRONTEND-ARCHITECTURE.md)
+- [Editable artwork implementation contract (#129)](EDITABLE-ARTWORK.md) — planned milestone 14 behavior.
 - [Editor layout guidelines](UI-DESIGN.md)
 - [Documentation policy](DOCUMENTATION.md)
 - [Building and releasing](RELEASING.md)

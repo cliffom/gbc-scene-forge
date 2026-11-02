@@ -5,7 +5,7 @@ imported artwork or artwork-free blockouts, optional MCP, guarded browser refres
 scene links, bounded wide/tall scenes and transfer from Forge export ZIPs. See [usage](STANDALONE.md) and the
 [changelog](CHANGELOG.md) for supported behavior and compatibility.
 
-Open issue and milestone state was checked on 2026-11-01. These are outcome-based
+Open issue and milestone state was checked on 2026-11-02. These are outcome-based
 priorities, without promised release versions or dates. Measurements may justify
 retaining an existing implementation. Validation gaps live in the
 [single remaining-check list](VALIDATION.md#remaining-checks).
@@ -19,3 +19,17 @@ retaining an existing implementation. Validation gaps live in the
 
 Preserve standalone authoring, pane/Review behavior, keyboard access and guarded
 import/recovery. These focused findings do not imply a broad visual redesign.
+
+## Native pixel artwork through users and agents
+
+[Milestone 14](https://github.com/cliffom/gbc-scene-forge/milestone/14) develops on
+the `milestone/14` integration branch, with dedicated issue PRs targeting it.
+
+- [#129](https://github.com/cliffom/gbc-scene-forge/issues/129): establish the [editable artwork contract](EDITABLE-ARTWORK.md), including source ownership, RGBA representation and revision guards.
+- [#130](https://github.com/cliffom/gbc-scene-forge/issues/130), then [#131](https://github.com/cliffom/gbc-scene-forge/issues/131): implement shared creation/edit/save services and candidate review in scene context.
+- [#132](https://github.com/cliffom/gbc-scene-forge/issues/132) and [#133](https://github.com/cliffom/gbc-scene-forge/issues/133): expose the shared loop through MCP and focused browser editing.
+- [#134](https://github.com/cliffom/gbc-scene-forge/issues/134), then [#135](https://github.com/cliffom/gbc-scene-forge/issues/135): add placement-specific variations and evaluate integrated user/agent workflows.
+
+Preserve external import/reimport, portable scenes, metadata, optional target
+constraints and recoverable work across writers. Advanced animation and full
+Aseprite parity remain outside this milestone.
