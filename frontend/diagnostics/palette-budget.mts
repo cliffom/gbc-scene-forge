@@ -1,59 +1,66 @@
 import { EditorLifetime } from '../editor/editor-lifetime.mts';
 /** Debounced authoritative reports for the current canvas; stale replies never render. */
+import * as v from 'valibot';
 import { array, number, record, string } from '../shared/decode.mts';
+import { finite, jsonObject, parse } from '../shared/schema.mts';
 
-export interface PaletteProfile {
-  version: 1 | 2;
-  hardware?: {
-    id: 'gbc-static-split-v1';
-    sprite_height: 8 | 16;
-    bg_tiles_reserved: number | null;
-    obj_tiles_reserved: number | null;
-    oam_reserved: number | null;
-  };
-  bg_reserved: number | null;
-  obj_reserved: number | null;
+// Keep version/layout preflight ahead of reservations, as in the wire decoder.
+function reservedSchema(limit = 8) {
+  return v.nullable(
+    v.pipe(
+      finite,
+      v.check(
+        (value) => Number.isInteger(value) && value >= 0 && value <= limit,
+        `Reserve 0..${limit} slots, or leave unknown.`,
+      ),
+    ),
+  );
 }
-export function decodePaletteProfile(value: unknown): PaletteProfile | null {
-  if (value === undefined || value === null) {
-    return null;
-  }
-  const data = record(value);
-  const reserved = (value: unknown, limit = 8) => {
-    if (value === null) {
-      return null;
-    }
-    const result = number(value);
-    if (!Number.isInteger(result) || result < 0 || result > limit) {
-      throw Error(`Reserve 0..${limit} slots, or leave unknown.`);
-    }
-    return result;
-  };
-  if (data.version !== 1 && data.version !== 2) {
-    throw Error('Unsupported GBC palette profile.');
-  }
-  const hardware = data.version === 2 ? record(data.hardware) : null;
-  if (
-    hardware &&
-    (hardware.id !== 'gbc-static-split-v1' || ![8, 16].includes(number(hardware.sprite_height)))
-  ) {
-    throw Error('Unsupported hardware layout or sprite height.');
-  }
-  const result: PaletteProfile = {
-    version: data.version,
-    bg_reserved: reserved(data.bg_reserved),
-    obj_reserved: reserved(data.obj_reserved),
-  };
-  if (hardware) {
-    result.hardware = {
-      id: 'gbc-static-split-v1',
-      sprite_height: hardware.sprite_height === 8 ? 8 : 16,
-      bg_tiles_reserved: reserved(hardware.bg_tiles_reserved, 256),
-      obj_tiles_reserved: reserved(hardware.obj_tiles_reserved, 256),
-      oam_reserved: reserved(hardware.oam_reserved, 40),
+const layoutError = 'Unsupported hardware layout or sprite height.';
+const hardwareLayoutSchema = jsonObject({
+  id: v.literal('gbc-static-split-v1', layoutError),
+  sprite_height: v.pipe(finite, v.picklist([8, 16], layoutError)),
+  bg_tiles_reserved: v.unknown(),
+  obj_tiles_reserved: v.unknown(),
+  oam_reserved: v.unknown(),
+});
+const hardwareReservationsSchema = jsonObject({
+  bg_tiles_reserved: reservedSchema(256),
+  obj_tiles_reserved: reservedSchema(256),
+  oam_reserved: reservedSchema(40),
+});
+const profileSchema = v.pipe(
+  jsonObject({
+    version: v.picklist([1, 2], 'Unsupported GBC palette profile.'),
+    hardware: v.unknown(),
+    bg_reserved: v.unknown(),
+    obj_reserved: v.unknown(),
+  }),
+  v.transform(({ version, hardware, bg_reserved, obj_reserved }) => {
+    const layout = version === 2 ? parse(hardwareLayoutSchema, hardware) : null;
+    const reservations = parse(
+      jsonObject({ bg_reserved: reservedSchema(), obj_reserved: reservedSchema() }),
+      { bg_reserved, obj_reserved },
+    );
+    return {
+      version,
+      ...reservations,
+      ...(layout
+        ? {
+            hardware: {
+              id: layout.id,
+              sprite_height: layout.sprite_height,
+              ...parse(hardwareReservationsSchema, layout),
+            },
+          }
+        : {}),
     };
-  }
-  return result;
+  }),
+);
+export const paletteProfileSchema = v.nullish(profileSchema, null);
+export type PaletteProfile = NonNullable<v.InferOutput<typeof paletteProfileSchema>>;
+export function decodePaletteProfile(value: unknown): PaletteProfile | null {
+  return parse(paletteProfileSchema, value);
 }
 
 export function createPalettePanel(
