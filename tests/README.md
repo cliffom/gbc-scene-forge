@@ -40,6 +40,11 @@ the SDK-only test when the extra is absent. `packaging/package_smoke.py` is
 explicitly run with `python -I` after wheel installation, outside unit discovery.
 It imports only the installed application, never test helpers.
 
+`backend/adapters/test_mcp_native_artwork.py` covers client-held artwork candidates,
+strict schemas, exact RGBA/resource reads, reviewed commits, contention and a
+complete official-SDK new-tile review/commit/placement workflow. Run it against
+the installed optional-MCP wheel through `make test-mcp`.
+
 `make test-frontend` discovers the TypeScript suite files one domain level
 under `frontend/`; their basenames retain the public `make test-frontend-<suite>`
 selectors. For example, `make test-frontend-model test-frontend-contracts` runs

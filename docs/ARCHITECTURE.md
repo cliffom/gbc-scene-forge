@@ -104,8 +104,11 @@ and export/transfer are implemented. `ArtworkService.reviews` composes native
 candidate comparison and reference scans in `artwork/review.py`, reusing the
 canonical scene renderer with temporary catalogs. Review receipts bind candidate,
 asset inventory and every scanned scene revision; `documents.save` validates them
-and carries unchanged reviewed map guards into the final transaction. Transports,
-drawing and artwork drafts follow in separate milestone issues. Schema validation remains read-free;
+and carries unchanged reviewed map guards into the final transaction. MCP routes
+these use cases through `adapters/mcp/artwork.py`, with strict wire envelopes in
+`adapters/mcp/schemas.py`; candidates and receipts stay client-held and PNGs use
+the existing session artifact cache. MCP commits require a matching review receipt.
+Browser drawing and artwork drafts follow in separate milestone issues. Schema validation remains read-free;
 saved-read asset verification also checks native descriptors and source geometry.
 
 External artwork intake keeps PNG slicing in `artwork/tilesheet.py` and strict

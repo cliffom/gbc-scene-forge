@@ -13,6 +13,7 @@ from gbc_scene_forge.project.workspaces import ProjectRoot
 from gbc_scene_forge.scenes import authoring, rendering
 from gbc_scene_forge.storage.files import digest
 
+from . import artwork
 from .schemas import DEFERRED, TOOLS
 
 MAX_ARTIFACT = 16 * 1024 * 1024
@@ -74,6 +75,7 @@ class Adapter:
                 "max_source_pixels_per_view": rendering.MAX_SOURCE_PIXELS,
                 "max_composited_pixels_per_view": rendering.MAX_WORK,
                 "artifact_cache_bytes": MAX_CACHE,
+                "artwork": artwork.capabilities(),
                 "history": "Saved writes only. Browser drafts and Undo remain independent.",
             }
         if name == "list_projects":
@@ -96,6 +98,8 @@ class Adapter:
                     **session.scene(a["scene_id"]),
                     "project_revision": revision,
                 }
+        if name in artwork.NAMES:
+            return artwork.call(self, project, name, a)
         revision = a["project_revision"]
         if name in ("create_blockout_scene", "create_scene"):
             result = (

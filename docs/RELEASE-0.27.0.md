@@ -8,7 +8,11 @@ Shared read-only candidate review ([#131](https://github.com/cliffom/gbc-scene-f
 adds native/enlarged pixel comparisons, saved-reference scans and temporary
 scene previews. Review receipts bind exact candidate and saved dependencies;
 reviewed saves guard all scanned maps, including unchanged ones, at commit.
-Browser drawing tools, MCP commands and placement-specific
+MCP artwork commands ([#132](https://github.com/cliffom/gbc-scene-forge/issues/132))
+expose discovery, blank creation, duplication, exact pixels, immutable batched
+edits, candidate PNG resources and receipt-required commits. New artwork can be
+reviewed in a temporary scene before saving and placed through existing scene tools.
+Browser drawing tools and placement-specific
 variations are subsequent milestone work; this release preparation does not
 claim the complete user–agent authoring workflow.
 

@@ -349,3 +349,221 @@ DEFERRED = [
     "Generic PNG/Tiled intake, terrain brush commands and profile editing (use browser)",
     "Remote/HTTP MCP, subscriptions, prompts, tasks and game runtime/physics integration",
 ]
+
+# Version-1 native artwork envelopes. The shared domain validates cross-field
+# dimensions, hashes, metadata and byte/work budgets beyond these wire shapes.
+UUID = {
+    "type": "string",
+    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+}
+ASSET_ID = {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$"}
+NULL = {"type": "null"}
+ORIGIN = {
+    "type": "array",
+    "minItems": 2,
+    "maxItems": 2,
+    "items": {"type": "integer", "minimum": 0, "maximum": 255},
+}
+DIMENSION = {"type": "integer", "minimum": 8, "maximum": 256, "multipleOf": 8}
+SOURCE_PROPERTIES = {
+    "atlas_id": ASSET_ID,
+    "region": ASSET_ID,
+    "grid": {"enum": [None, 8, 16, 32]},
+    "cell": {
+        "anyOf": [
+            NULL,
+            {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {"type": "integer", "minimum": 0, "maximum": 2047},
+            },
+        ]
+    },
+    "artwork_revision": REVISION,
+}
+SOURCE = schema(SOURCE_PROPERTIES)
+TARGET = schema({"document_id": UUID, "atlas_id": ASSET_ID, "region": ASSET_ID})
+DESCRIPTOR = schema(
+    {
+        "version": {"const": 1},
+        "id": UUID,
+        "atlas_id": ASSET_ID,
+        "region": ASSET_ID,
+        "name": TEXT,
+        "kind": {"enum": ["tile", "sprite"]},
+        "width": DIMENSION,
+        "height": DIMENSION,
+        "origin": ORIGIN,
+        "pixel_format": {"const": "rgba8"},
+        "provenance": {
+            "anyOf": [
+                NULL,
+                schema(
+                    {
+                        **SOURCE_PROPERTIES,
+                        "project_id": UUID,
+                        "source_format": {"anyOf": [NULL, {"type": "string", "maxLength": 65536}]},
+                    }
+                ),
+            ]
+        },
+    }
+)
+CANDIDATE = schema(
+    {
+        "version": {"const": 1},
+        "project_id": UUID,
+        "document_id": UUID,
+        "atlas_id": ASSET_ID,
+        "descriptor": DESCRIPTOR,
+        "rgba": {"type": "string", "maxLength": 349528},
+        "project_revision": REVISION,
+        "artwork_revision": {"anyOf": [REVISION, NULL]},
+        "operation": {"enum": ["create", "edit", "duplicate"]},
+        "source": {"anyOf": [SOURCE, NULL]},
+        "metadata": {"type": "object", "maxProperties": 4},
+        "revision": REVISION,
+    }
+)
+RECTANGLE = schema(
+    {
+        "x": {"type": "integer", "minimum": 0, "maximum": 255},
+        "y": {"type": "integer", "minimum": 0, "maximum": 255},
+        "width": {"type": "integer", "minimum": 1, "maximum": 256},
+        "height": {"type": "integer", "minimum": 1, "maximum": 256},
+    }
+)
+VIEWPORT = schema(
+    {
+        "x": {"type": "integer", "minimum": 0, "maximum": 8192},
+        "y": {"type": "integer", "minimum": 0, "maximum": 8192},
+        "width": {"type": "integer", "minimum": 1, "maximum": 1024},
+        "height": {"type": "integer", "minimum": 1, "maximum": 1024},
+    }
+)
+RECEIPT = schema(
+    {
+        "version": {"const": 1},
+        "project_id": UUID,
+        "project_revision": REVISION,
+        "candidate_revision": REVISION,
+        "artwork_revision": {"anyOf": [REVISION, NULL]},
+        "files_revision": REVISION,
+        "scene_revisions": {
+            "type": "object",
+            "maxProperties": 64,
+            "additionalProperties": REVISION,
+        },
+        "context": {
+            "anyOf": [
+                NULL,
+                schema(
+                    {
+                        "scene_id": UUID,
+                        "scene_revision": REVISION,
+                        "snapshot_revision": REVISION,
+                        "viewport": VIEWPORT,
+                    }
+                ),
+            ]
+        },
+        "revision": REVISION,
+    }
+)
+ARTWORK_CANDIDATE = {**PROJECT, "candidate": CANDIDATE}
+TOOLS.extend(
+    [
+        tool(
+            "list_artwork",
+            "Discover native document targets and exact artwork revisions, plus imported/native source regions for duplication. Read-only.",
+            GUARD,
+            read=True,
+        ),
+        tool(
+            "create_artwork",
+            "Prepare a transparent unsaved tile/static sprite candidate. Tiles are 8/16/32 squares; sprite axes are multiples of 8 within 8..256. No inventory writes.",
+            {
+                **GUARD,
+                "atlas_id": ASSET_ID,
+                "name": TEXT,
+                "kind": {"enum": ["tile", "sprite"]},
+                "width": DIMENSION,
+                "height": DIMENSION,
+                "origin": ORIGIN,
+                "region": ASSET_ID,
+            },
+            ("origin", "region"),
+            read=True,
+        ),
+        tool(
+            "duplicate_artwork",
+            "Prepare an unsaved copy with fresh identity. Explicit source grid/cell for tiles; null grid/cell for sprites. Retains metadata/origin; replaces no placements.",
+            {**GUARD, "source": SOURCE, "atlas_id": ASSET_ID, "name": TEXT, "region": ASSET_ID},
+            ("region",),
+            read=True,
+        ),
+        tool(
+            "open_artwork",
+            "Open an exact saved native document as a client-held candidate. Imported assets must be duplicated first.",
+            {**GUARD, "target": TARGET, "artwork_revision": REVISION},
+            read=True,
+        ),
+        tool(
+            "read_artwork_pixels",
+            "Read exact row-major base64 straight RGBA8 bytes, including hidden RGB under alpha zero. Optional rectangle must fit. Retains original candidate/base revisions.",
+            {**ARTWORK_CANDIDATE, "rectangle": RECTANGLE},
+            ("rectangle",),
+            read=True,
+        ),
+        tool(
+            "edit_artwork_pixels",
+            "Return a new unsaved candidate from unique x/y/RGBA writes; no saved mutation. At most 65536 writes and 1 MiB batch JSON. Invalid batches reject entirely; review again after editing.",
+            {
+                **ARTWORK_CANDIDATE,
+                "writes": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 65536,
+                    "items": schema(
+                        {
+                            "x": {"type": "integer", "minimum": 0, "maximum": 255},
+                            "y": {"type": "integer", "minimum": 0, "maximum": 255},
+                            "rgba": {
+                                "type": "array",
+                                "minItems": 4,
+                                "maxItems": 4,
+                                "items": {"type": "integer", "minimum": 0, "maximum": 255},
+                            },
+                        }
+                    ),
+                },
+            },
+            read=True,
+        ),
+        tool(
+            "review_artwork_candidate",
+            "Read-only native/enlarged before/after PNG resources, saved references and commit receipt for exact candidate/base. Optional explicit saved or temporary scene context. Scale 1..16; output <=1024 per axis; 64 scenes/16 MiB map scan; 256 locations per offset page.",
+            {
+                **ARTWORK_CANDIDATE,
+                "scale": {"type": "integer", "minimum": 1, "maximum": 16},
+                "offset": {"type": "integer", "minimum": 0, "maximum": 2147483647},
+                "scene": schema(
+                    {
+                        "scene_id": UUID,
+                        "scene_revision": REVISION,
+                        "scene": {"anyOf": [NATIVE, NULL]},
+                        "viewport": VIEWPORT,
+                    }
+                ),
+            },
+            ("scale", "offset", "scene"),
+            read=True,
+        ),
+        tool(
+            "commit_artwork",
+            "Atomically save the exact candidate using its required matching review receipt. Reject stale candidate/project/artwork/scenes. Returns exact committed revisions/digests; never automatically replay an ambiguous write.",
+            {**ARTWORK_CANDIDATE, "receipt": RECEIPT},
+        ),
+    ]
+)
