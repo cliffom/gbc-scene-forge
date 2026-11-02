@@ -10,9 +10,39 @@ function element<T extends HTMLElement>(id: string, type: new () => T): T {
   return value;
 }
 
-export function createEditorLayout(lifetime: EditorLifetime = new EditorLifetime()) {
+export function createEditorLayout(
+  lifetime: EditorLifetime = new EditorLifetime(),
+  changeLayout: (apply: () => void) => void = (apply) => apply(),
+) {
+  const main = element('editor-layout', HTMLElement);
+  function reflectPane(name: 'library' | 'inspector', expanded: boolean) {
+    element(`${name}-pane`, HTMLElement).hidden = !expanded;
+    main.classList.toggle(`${name}-collapsed`, !expanded);
+    const toggle = element(`toggle-${name}`, HTMLButtonElement);
+    toggle.setAttribute('aria-expanded', String(expanded));
+    const label = name === 'library' ? 'Library' : 'Inspector';
+    toggle.textContent = `${expanded ? 'Hide' : 'Show'} ${label}`;
+  }
+  function showPane(name: 'library' | 'inspector', expanded: boolean) {
+    const pane = element(`${name}-pane`, HTMLElement);
+    if (pane.hidden === !expanded) {
+      return;
+    }
+    const toggle = element(`toggle-${name}`, HTMLButtonElement);
+    if (!expanded && pane.contains(document.activeElement)) {
+      toggle.focus({ preventScroll: true });
+    }
+    changeLayout(() => reflectPane(name, expanded));
+  }
+  for (const name of ['library', 'inspector'] as const) {
+    const toggle = element(`toggle-${name}`, HTMLButtonElement);
+    lifetime.assign(toggle, 'onclick', () =>
+      showPane(name, element(`${name}-pane`, HTMLElement).hidden),
+    );
+    lifetime.cleanup(() => reflectPane(name, true));
+  }
   const categories: LibraryCategory[] = ['artwork', 'objects', 'blockout', 'stamps'];
-  function showLibrary(category: LibraryCategory, focus = false) {
+  function selectLibrary(category: LibraryCategory, focus = false) {
     for (const name of categories) {
       const selected = name === category;
       const tab = element(`${name}-tab`, HTMLButtonElement);
@@ -23,6 +53,10 @@ export function createEditorLayout(lifetime: EditorLifetime = new EditorLifetime
         tab.focus();
       }
     }
+  }
+  function showLibrary(category: LibraryCategory, focus = false) {
+    showPane('library', true);
+    selectLibrary(category, focus);
   }
   for (const category of categories) {
     const tab = element(`${category}-tab`, HTMLButtonElement);
@@ -115,10 +149,16 @@ export function createEditorLayout(lifetime: EditorLifetime = new EditorLifetime
       const tab = element('blockout-tab', HTMLButtonElement);
       tab.hidden = !enabled;
       if (!enabled && tab.getAttribute('aria-selected') === 'true') {
-        showLibrary('artwork');
+        selectLibrary('artwork');
       }
     },
     reveal(this: void, target: HTMLElement) {
+      if (target.closest('#library-pane')) {
+        showPane('library', true);
+      }
+      if (target.closest('#inspector-pane')) {
+        showPane('inspector', true);
+      }
       const panel = target.closest('[role=tabpanel]');
       const category = categories.find((name) => panel?.id === `${name}-panel`);
       if (category) {

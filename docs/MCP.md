@@ -11,7 +11,7 @@ transactions as browser authoring. There is no connector or game compiler.
 Install the release with Python 3.10 or newer:
 
 ```sh
-python -m pip install --upgrade 'gbc-scene-forge[mcp]==0.24.0'
+python -m pip install --upgrade 'gbc-scene-forge[mcp]==0.25.0'
 gbc-scene-forge-mcp --project-root /absolute/path/to/projects
 ```
 

@@ -81,7 +81,9 @@ export function createFirstSceneGuide(
     const hidden = target?.closest('[hidden]');
     action.disabled =
       !target ||
-      Boolean(hidden && !(reveal && hidden.matches('[role=tabpanel]'))) ||
+      Boolean(
+        hidden && !(reveal && hidden.matches('[role=tabpanel], #library-pane, #inspector-pane')),
+      ) ||
       (target instanceof HTMLButtonElement && target.disabled);
     action.textContent = index === 0 ? 'Go to project creation' : 'Try this step';
     try {

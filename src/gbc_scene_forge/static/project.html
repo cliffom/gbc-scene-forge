@@ -58,6 +58,10 @@
       <div class="document-context" role="group" aria-label="Current document">
         <label>Project <select id="switch-project" aria-label="Current project" disabled></select></label>
         <label>Scene <select id="scenes" aria-label="Saved scenes"><option value="">Choose a scene…</option></select></label>
+        <div class="pane-controls" role="group" aria-label="Editor panes">
+          <button id="toggle-library" aria-controls="library-pane" aria-expanded="true">Hide Library</button>
+          <button id="toggle-inspector" aria-controls="inspector-pane" aria-expanded="true" title="Scene properties, layers and selection properties">Hide Inspector</button>
+        </div>
         <span id="scene-save-state" role="status" aria-live="polite"></span>
       </div>
       <div class="document-actions" role="group" aria-label="Document actions">
@@ -87,8 +91,8 @@
         <button id="save" disabled title="Save scene (⌘/Ctrl S)">Save scene</button>
       </div>
     </nav>
-    <main>
-      <aside class="library" aria-label="Authoring library">
+    <main id="editor-layout">
+      <aside id="library-pane" class="library" aria-label="Authoring library">
         <div class="panel-heading"><h2>Library</h2></div>
         <div class="library-tabs" role="tablist" aria-label="Library categories">
           <button id="artwork-tab" role="tab" aria-selected="true" aria-controls="artwork-panel" tabindex="0">Artwork</button>
@@ -178,7 +182,7 @@
         <div class="canvas-footer"><span id="coordinates" title="Cell column and row, followed by pixel X and Y. All coordinates start at zero.">Cell —, — · Pixel —, —</span><span id="scene-name">No scene open</span><span id="selected-brush">Select a brush</span></div>
         <div class="review-bar"><span class="eyebrow">VIEW</span><label><input id="grid" type="checkbox" checked> Grid</label><label class="snap-control" title="Snap sprite origins to grid intersections. Hold Alt to bypass; arrow keys nudge one pixel."><input id="snap" type="checkbox" checked> Snap to grid</label><label><input id="terrain-overlay" type="checkbox"> Terrain</label><label><input id="collision-overlay" type="checkbox"> Collision</label><span class="hint">Middle drag / Space: pan · Wheel: zoom · Alt: free placement · Arrow keys: 1 px</span></div>
       </section>
-      <aside class="inspector">
+      <aside id="inspector-pane" class="inspector" aria-label="Scene inspector">
         <section id="scene-panel" class="inspector-panel" aria-label="Scene properties">
           <div class="panel-heading"><h2>Scene properties</h2><span id="dirty" class="tag">NO SCENE</span></div>
           <label class="field">Scene name<input id="inspector-name" readonly placeholder="No scene open"></label>

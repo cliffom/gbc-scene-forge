@@ -7,7 +7,8 @@ system; hierarchy comes from grouping, spacing and clear labels.
 
 - **Document context:** project and scene selection, save state, Save and Export.
   Scene actions groups scene lifecycle commands; Project tools groups world and
-  diagnostic work. Separate destructive commands from ordinary actions.
+  diagnostic work. Independent Library and Inspector toggles stay in this visible
+  bar so both panes can always be reopened. Separate destructive commands from ordinary actions.
 - **Library:** Artwork, Objects and Stamps are separate authoring categories.
   Keep search and filters with artwork, definitions with objects, and stamp
   selection/placement together. Ordinary refreshes preserve the chosen category.
@@ -52,3 +53,16 @@ first-use instructions remain usable with this hierarchy.
 [Stamp library](screenshots/ui-cleanup/stamps.png) ·
 [Compact stamp library](screenshots/ui-cleanup/compact-stamps.png) ·
 [Project commands](screenshots/ui-cleanup/project-tools.png)
+
+## Collapsible panes
+
+[Expanded](screenshots/collapsible-panes/expanded.png) ·
+[Library hidden](screenshots/collapsible-panes/library-hidden.png) ·
+[Inspector hidden](screenshots/collapsible-panes/inspector-hidden.png) ·
+[Both hidden](screenshots/collapsible-panes/both-hidden.png) ·
+[Both hidden at 760px](screenshots/collapsible-panes/compact.png)
+
+The [pane acceptance tests](../tests/playwright/editor/panes.spec.ts) check all four
+combinations at 1440×900, 1024×768 and 760×640, including actual viewport width,
+keyboard reopening, focus, camera/pointer geometry, retained authored state and
+checkpoints, continued editing, guided reveal and Review scene transitions.

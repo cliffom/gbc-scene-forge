@@ -61,7 +61,9 @@ export function mountProjectEditor() {
   const brushes = new BrushState();
   const gestures = new GestureState();
   const activity = new EditorActivity();
-  const editorLayout = createEditorLayout(lifetime);
+  const editorLayout = createEditorLayout(lifetime, (apply) =>
+    viewportController.changeLayout(apply),
+  );
   const canvas = element('scene', HTMLCanvasElement);
   const blockoutLabels = createBlockoutLabels(canvas, element('viewport', HTMLElement), lifetime);
   const ctx = canvas.getContext('2d');
@@ -170,6 +172,10 @@ export function mountProjectEditor() {
       !sceneSession.editor ||
       gestures.anchor !== null ||
       !!sceneSession.editor.stroke;
+    for (const id of ['toggle-library', 'toggle-inspector']) {
+      button(id).disabled =
+        activity.busy || gestures.anchor !== null || !!sceneSession.editor?.stroke;
+    }
     button('fit-scene').disabled = !sceneSession.editor;
     select('zoom').disabled = !sceneSession.editor;
     button('library-import').disabled = activity.busy || gestures.anchor !== null;

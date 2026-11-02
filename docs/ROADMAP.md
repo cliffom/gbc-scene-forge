@@ -1,6 +1,6 @@
 # Roadmap
 
-Current baseline: prepared Forge 0.24.0 authors standalone portable Tiled projects with
+Current baseline: prepared Forge 0.25.0 authors standalone portable Tiled projects with
 imported artwork or artwork-free blockouts, optional MCP, guarded browser refresh,
 scene links and bounded wide/tall scenes. See [usage](STANDALONE.md) and the
 [changelog](CHANGELOG.md) for supported behavior and compatibility.
