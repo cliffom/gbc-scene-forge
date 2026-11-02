@@ -15,6 +15,40 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## MCP commit-lock contention in acceptance fixtures (#137)
+
+- **Scope:** Local macOS/Python 3.13.13, MCP SDK 1.30.0 and bundled Chromium,
+  working tree based on `584c837a8e8a6abeddce3781b7593ddc11abc700`, on 2026-11-02.
+- **Method:** Inspected [failed Linux CI](https://github.com/cliffom/gbc-scene-forge/actions/runs/41488600838/job/125425350965):
+  refresh acceptance stopped on the exact busy message wrapped as MCP `conflict`.
+  Extended fixture retry regressions for both busy error codes, bounded exhaustion,
+  unchanged revision arguments and a real revision conflict after contention.
+  Ran production lint/build/installed-wheel smoke checks, then installed that wheel
+  into an MCP environment and ran `make test-mcp test-mcp-browser`.
+- **Result:** Three regression assertions failed before the helper fix; all 11
+  fixture-retry tests passed afterward. Production lint/build and seven wheel smoke
+  tests passed; the installed wheel passed 66 MCP tests and both browser scenarios.
+  The helper retries only the two exact busy responses within its existing bound.
+- **Limits:** Local reproduction and validation; this does not establish a passing
+  Linux CI rerun. Runtime locking, MCP errors and automatic write-retry policy are
+  unchanged. Other browser/platform evidence retains its original scope below.
+
+## Reserved native format import rejection (#137)
+
+- **Scope:** Local macOS/Python 3.13.13 working tree based on
+  `584c837a8e8a6abeddce3781b7593ddc11abc700`, on 2026-11-02.
+- **Method:** Reproduced an external gbc-atlas import declaring `forge-rgba` that
+  returned success but left the project unreadable. Added fixture regressions for
+  local import, upload and preflight, each with new-import and reimport variants;
+  compare project bytes and reopen after every rejection. Ran
+  `make docs-check lint test PYTHON=.venv/bin/python`.
+- **Result:** The shared import service rejects the reserved format before writing;
+  all six cases preserve project bytes and reopen successfully. Lint and all 369
+  Python tests passed, including 22 native artwork tests; frontend model/API/build
+  checks and 7,655 domain contract cases passed.
+- **Limits:** Synthetic service fixtures; the rejection paths were not exercised
+  through browser controls or external Tiled. Packaged MCP checks are scoped above.
+
 ## Native editable artwork services (#130)
 
 - **Scope:** Prepared 0.27.0 issue-130 working tree based on

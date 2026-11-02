@@ -299,6 +299,35 @@ class EditableTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "cannot be reimported"):
             self.project.artwork.import_atlas(path, self.revision(), reimport=True)
 
+    def test_external_imports_reject_reserved_native_format_without_writes(self):
+        path, manifest = bundle(self.folder / "reserved-format")
+        for reimport in (False, True):
+            if reimport:
+                self.project.artwork.import_atlas(path, self.revision())
+            manifest["source_format"] = "forge-rgba"
+            path.write_text(json.dumps(manifest))
+            uploaded = {
+                "name": path.name,
+                "manifest": path.read_text(),
+                "png": base64.b64encode((path.parent / "atlas.png").read_bytes()).decode(),
+            }
+            revision, before = self.revision(), self.snapshot()
+            for intake in ("local", "upload", "preflight"):
+                with (
+                    self.subTest(reimport=reimport, intake=intake),
+                    self.assertRaisesRegex(ValueError, "cannot be imported as an external atlas"),
+                ):
+                    if intake == "local":
+                        self.project.artwork.import_atlas(path, revision, reimport=reimport)
+                    else:
+                        self.project.artwork.import_bundle(
+                            uploaded, revision, reimport=reimport, dry_run=intake == "preflight"
+                        )
+                self.assertEqual(self.snapshot(), before)
+                self.assertEqual(Project(self.project.root).catalog()["revision"], revision)
+            manifest.pop("source_format")
+            path.write_text(json.dumps(manifest))
+
     def test_final_journal_guards_scene_and_generated_paths(self):
         loaded = self.project.scenes.create("Original", 2, 2, 8, self.revision())
         candidate = self.create()

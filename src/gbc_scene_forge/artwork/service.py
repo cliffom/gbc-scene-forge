@@ -175,6 +175,11 @@ class ArtworkService:
 
     def _import_bundle(self, bundle, revision, *, reimport=False, dry_run=False):
         manifest, image, width, pixels = bundle
+        require(
+            manifest.get("source_format") != "forge-rgba",
+            "Native artwork cannot be imported as an external atlas; "
+            "use editable documents or Forge ZIP transfer",
+        )
         document = self.store.current(revision)
         atlas_id = manifest["id"]
         previous = document["atlases"].get(atlas_id)

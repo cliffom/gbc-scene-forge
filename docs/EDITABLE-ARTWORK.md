@@ -213,7 +213,9 @@ grid/cell are null for sprites, cell is `[x,y]` for tiles, and source_format is
 null for legacy gbc-atlas entries without that field. Provenance is informational,
 has no live path and grants no update authority. Copying one named animation
 region captures only that static image. Reimport of the original cannot modify
-the copy; reimport targeting a native atlas ID is rejected.
+the copy; reimport targeting a native atlas ID is rejected. External atlas imports
+also reject the reserved `forge-rgba` source format before writing; native artwork
+enters through editable document services or Forge ZIP transfer.
 
 Out-of-band edits to any declared source/derived file are drift, not an accepted
 new revision. Preserve local work and copy changed files outside the managed
