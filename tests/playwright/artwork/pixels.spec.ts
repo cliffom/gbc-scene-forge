@@ -357,3 +357,97 @@ test('clean close removes an older checkpoint; failed checkpoint retains local w
   await expect(page.locator('#artwork-dialog')).not.toBeVisible();
   assert.equal(array((await post(page, url, 'draft-list', {})).drafts, record).length, 1);
 });
+
+for (const external of [false, true]) {
+  test(`new artwork preserves the scene save guard with external change=${external}`, async ({
+    page,
+    workspace,
+  }) => {
+    const { url, scene, root } = await setup(page, workspace);
+    await page.locator('[data-asset="grass/artwork"]').first().click();
+    await paint(page, 20, 20);
+    await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
+    await page.locator('#show-artwork').click();
+    await page.locator('#art-id').fill('scene_guard_tile');
+    await page.locator('#art-create').click();
+    await expect(page.locator('#art-canvas')).toBeVisible();
+    await page.locator('#art-use-scene').uncheck();
+    if (external) {
+      execFileSync(workspace.python, [
+        '-c',
+        `
+from pathlib import Path
+import sys
+from gbc_scene_forge.project.application import Project
+p=Project(Path(sys.argv[1]))
+s=p.scenes.load(sys.argv[2])
+s['scene']['cells'][8][10]='grass/artwork/0/0'
+p.scenes.save(s['id'],s['scene'],s['revision'],p.catalog()['revision'])
+`,
+        root,
+        scene,
+      ]);
+    }
+    await page.locator('#art-review').click();
+    await expect(page.locator('#art-save')).toBeEnabled();
+    await page.locator('#art-save').click();
+    if (external) {
+      await expect(page.locator('#art-message')).toContainText('reconcile the scene');
+      await page.locator('#art-close').click();
+    }
+    await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+    await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
+    await expect(page.locator('#undo')).toBeEnabled();
+    const sceneUrl = new URL(`api/scene/${scene}`, url).href;
+    const before = record(await (await page.request.get(sceneUrl)).json());
+    const response = page.waitForResponse((r) => r.url().endsWith('/api/save-scene'));
+    await page.locator('#save').click();
+    assert.equal((await response).status(), external ? 409 : 200);
+    if (external) {
+      await expect(page.locator('#status')).toContainText('Scene changed on disk');
+      assert.deepEqual(await (await page.request.get(sceneUrl)).json(), before);
+      await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
+    } else {
+      await expect(page.locator('#scene-save-state')).toHaveText('Saved');
+    }
+    assert.equal((await opened(page, url, 'scene_guard_tile')).descriptor.kind, 'tile');
+  });
+}
+
+test('a pending checkpoint excludes a later canceled gesture through recovery', async ({
+  page,
+  workspace,
+}) => {
+  const { url } = await setup(page, workspace);
+  const original = await opened(page, url);
+  await page.clock.install();
+  await openGrass(page);
+  await page.locator('#art-color').fill('#ff0000');
+  await draw(page, 0, 0);
+  const next = await pixel(page, 1, 0);
+  await page.mouse.move(next.x, next.y);
+  await page.mouse.down();
+  await page.clock.runFor(400);
+  await expect
+    .poll(async () => array((await post(page, url, 'draft-list', {})).drafts, record).length)
+    .toBe(1);
+  await page.keyboard.press('Escape');
+  await page.mouse.up();
+  await page.clock.runFor(1000);
+  const drafts = array((await post(page, url, 'draft-list', {})).drafts, record);
+  const checkpoint = await post(page, url, 'draft-download', drafts[0]);
+  const pixels = new PixelModel(decodeCandidate(checkpoint.candidate));
+  assert.deepEqual(pixels.color({ x: 0, y: 0 }), [255, 0, 0, 255]);
+  assert.deepEqual(pixels.color({ x: 1, y: 0 }), new PixelModel(original).color({ x: 1, y: 0 }));
+  await page.reload();
+  await expect(page.locator('#status')).toHaveText('Scene opened.');
+  await page.locator('#show-artwork').click();
+  await page.getByRole('button', { name: 'Recover copy', exact: true }).click();
+  await expect(page.locator('#art-message')).toContainText('Recovered a new copy');
+  await page.locator('#art-review').click();
+  await page.locator('#art-save').click();
+  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+  const saved = new PixelModel(await opened(page, url));
+  assert.deepEqual(saved.color({ x: 0, y: 0 }), [255, 0, 0, 255]);
+  assert.deepEqual(saved.color({ x: 1, y: 0 }), new PixelModel(original).color({ x: 1, y: 0 }));
+});

@@ -66,8 +66,8 @@ export class ArtworkSession {
     await send();
     return this.candidate;
   }
-  checkpoint() {
-    const pixels = this.model.pixels.slice();
+  checkpoint(snapshot = this.model.pixels) {
+    const pixels = snapshot.slice();
     return this.serialize(async () => {
       const candidate = await this.synchronize(pixels);
       if (encoded(pixels) === this.checkpointPixels) {

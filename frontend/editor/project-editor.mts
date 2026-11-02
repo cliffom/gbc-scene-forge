@@ -708,13 +708,18 @@ export function mountProjectEditor() {
     brushes,
     ports: {
       run,
-      saved: async (ack) => {
-        // Advance only exact map acknowledgments caused by adding this artwork.
+      saved: async (ack, reviewedScenes) => {
+        // A rewritten map can advance only the scene base that was reviewed.
         const revisions = record(ack.scene_revisions);
-        if (sceneSession.loaded && revisions[sceneSession.loaded.id]) {
+        const sceneChanged = Boolean(
+          sceneSession.loaded &&
+          reviewedScenes[sceneSession.loaded.id] !== sceneSession.loaded.revision,
+        );
+        if (sceneSession.loaded && !sceneChanged && revisions[sceneSession.loaded.id]) {
+          const previous = sceneSession.loaded.revision;
           const revision = string(revisions[sceneSession.loaded.id]);
           sceneSession.loaded = { ...sceneSession.loaded, revision };
-          if (sceneSession.committed) {
+          if (sceneSession.committed?.revision === previous) {
             sceneSession.committed = { ...sceneSession.committed, revision };
           }
         }
@@ -732,6 +737,11 @@ export function mountProjectEditor() {
           return true;
         });
         renderingController.draw();
+        if (sceneChanged) {
+          throw Error(
+            'The open scene changed on disk. Local scene edits and history were retained; reconcile the scene before saving.',
+          );
+        }
         status.textContent = 'Artwork saved. Scene edits and undo history are unchanged.';
       },
     },

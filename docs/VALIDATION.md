@@ -15,6 +15,31 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Artwork scene guards and completed checkpoints (#141)
+
+- **Scope:** Prepared 0.27.0 follow-up working tree based on
+  `04678f3d61340d7957ba9f20739e1aff0c8ce7f4`, on 2026-11-02; macOS 27.0.1 arm64,
+  Python 3.13.13, Node 24.22.1 and Playwright Chromium 156.0.8078.4.
+- **Method:** Review reproduced two failures in disposable browser projects:
+  saving new artwork after isolated review advanced a stale local scene's revision,
+  allowing its next save to erase another writer's cell; a pending debounce captured
+  a later unfinished stroke and recovery retained it after cancellation. Added
+  [browser regressions](../tests/playwright/artwork/pixels.spec.ts) for matching/stale
+  scene bases and clock-controlled cancellation through recovery/save. Ran
+  `make docs-check lint test PYTHON=.venv/bin/python`, production `make build check-dist`,
+  and all eight artwork scenarios against source and the isolated installed wheel.
+- **Result:** Stale scene saves now return 409 and preserve the saved scene bytes,
+  local edits and undo history; matching scene bases remain saveable after adding
+  artwork. Completed checkpoint snapshots exclude the canceled gesture through
+  recovery and save. Documentation/lint/type checks, 403 Python tests, frontend
+  suites, distribution checks, seven wheel smoke tests and both eight-scenario
+  browser runs passed. An initial lint run rejected an untyped test JSON assignment;
+  decoding it before assignment resolved that failure.
+- **Limits:** Synthetic local fixtures and controlled clocks; no prolonged human
+  usability, art-quality, Windows, non-Chromium or official Tiled assessment.
+  The earlier broad browser/MCP evidence retains its original revision scope below;
+  those full suites were not rerun locally for this follow-up. No package was published.
+
 ## Browser pixel artwork editing (#133)
 
 - **Scope:** Prepared 0.27.0 at `cb5d5b3dfd0f5d0de8cc4224c4474e918e296b50`,

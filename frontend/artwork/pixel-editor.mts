@@ -38,7 +38,7 @@ export function createPixelEditor({
   brushes: BrushState;
   ports: {
     run: (work: () => Promise<void>) => Promise<void>;
-    saved: (ack: Record<string, unknown>) => Promise<void>;
+    saved: (ack: Record<string, unknown>, reviewedScenes: Record<string, unknown>) => Promise<void>;
   };
 }) {
   const dialog = element('artwork-dialog', HTMLDialogElement),
@@ -203,13 +203,15 @@ export function createPixelEditor({
     lifetime.cancelTimeout(timer);
     element('art-draft-status', HTMLElement).textContent = 'Unsaved artwork; checkpoint pending…';
     const current = session;
+    // Capture the completed edit before a later gesture can mutate the model.
+    const pixels = current?.model.pixels.slice();
     timer = lifetime.timeout(() => {
       timer = undefined;
-      if (!current) {
+      if (!current || !pixels) {
         return;
       }
       void current
-        .checkpoint()
+        .checkpoint(pixels)
         .then(() => {
           if (session === current && !lifetime.disposed) {
             element('art-draft-status', HTMLElement).textContent = current.uncheckpointed
@@ -818,6 +820,7 @@ export function createPixelEditor({
       cancelGesture();
       lifetime.cancelTimeout(timer);
       timer = undefined;
+      const reviewedScenes = record(current.receipt.scene_revisions);
       const ack = await api('artwork-save', record, {
         candidate: current.candidate,
         receipt: current.receipt,
@@ -828,7 +831,7 @@ export function createPixelEditor({
       session = null;
       try {
         await current.removeCheckpoint();
-        await ports.saved(ack);
+        await ports.saved(ack, reviewedScenes);
         dialog.close();
       } catch (error) {
         // The exact save already succeeded. Cleanup/adoption failures must not

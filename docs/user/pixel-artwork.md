@@ -59,10 +59,15 @@ preview for isolated review, including artwork incompatible with the open grid.
 artwork and scene bases. Further pixel edits invalidate the review. Save adds or
 updates artwork and reloads the Library/images without adding a scene undo item.
 After a successful save, place new artwork from the Library separately.
+If isolated artwork review finds that another writer changed the open scene,
+the artwork can still save, but local scene edits retain their original conflict
+guard. Reconcile the scene before saving it; artwork saves do not authorize
+overwriting newer scene content.
 
 Completed edits checkpoint after a short debounce into the project's
-`.forge/artwork-drafts/` directory, separately from scene checkpoints. Close waits
-for the checkpoint; a failed checkpoint keeps the dialog open and offers
+`.forge/artwork-drafts/` directory, separately from scene checkpoints. Checkpoints
+capture completed edits; unfinished or canceled gestures are excluded. Close waits
+for the current checkpoint; a failed checkpoint keeps the dialog open and offers
 **Download work**. Leaving before a checkpoint finishes prompts the browser's
 unsaved-work warning. Disposing an editor preserves completed checkpoints.
 

@@ -418,7 +418,9 @@ preview controls, keyboard behavior and recovery choices. `frontend/artwork` own
 candidate wire schemas, bounded pixel history, a serial checkpoint writer and the
 mounted dialog. Artwork saves reload the acknowledged catalog/images while
 retaining scene edits/history; adding artwork advances only exact rewritten-map
-acknowledgments. External changes during catalog decoding reject adoption.
+acknowledgments whose reviewed scene revision matches the local base. A newer
+reviewed scene leaves the local save guard intact and requires reconciliation.
+Project catalog changes during decoding reject adoption.
 
 Project-relative, mutation-token-protected POST routes `artwork-list`,
 `artwork-create`, `artwork-duplicate`, `artwork-open`, `artwork-edit`,
@@ -440,9 +442,9 @@ record is an explicit user action. Owner UUIDs distinguish writers rather than
 provide authentication. Records follow the paths, sizes and quotas above and are
 not added to project inventory or exports.
 
-A completed gesture schedules a checkpoint after 350 ms. Requests serialize per
-document; each snapshot retains its own captured pixels even when newer edits
-arrive. Close awaits a current checkpoint; failures retain pixels and a JSON
+A completed gesture captures its pixels and schedules a checkpoint after 350 ms.
+Requests serialize per document; each snapshot excludes later unfinished or
+canceled gestures. Close awaits a current checkpoint; failures retain pixels and a JSON
 inspection download. Before-unload warns for uncheckpointed work. Disposal aborts
 transport/timers and never deletes acknowledged checkpoints. Recovered history
 starts locally from the recovered pixels. No automatic rebase, selected-placement
