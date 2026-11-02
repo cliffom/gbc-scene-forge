@@ -6,6 +6,22 @@ const bounded = (min: number, max: number) =>
 const revision = v.pipe(text, v.regex(/^[0-9a-f]{64}$/));
 const identifier = v.pipe(text, v.regex(/^[a-z][a-z0-9_]{0,63}$/));
 const identity = v.pipe(text, v.uuid());
+const placementBase = {
+  scene_id: identity,
+  scene_revision: revision,
+  layer_id: bounded(1, 2147483646),
+};
+export const placementsSchema = v.pipe(
+  v.array(
+    v.union([
+      v.strictObject({ ...placementBase, x: bounded(0, 2047), y: bounded(0, 2047) }),
+      v.strictObject({ ...placementBase, object_id: bounded(1, 2147483646) }),
+    ]),
+  ),
+  v.minLength(1),
+  v.maxLength(256),
+);
+export type Placement = v.InferOutput<typeof placementsSchema>[number];
 const sourceEntries = {
   atlas_id: identifier,
   region: identifier,
@@ -54,12 +70,14 @@ export const candidateSchema = v.pipe(
     operation: v.picklist(['create', 'edit', 'duplicate']),
     source: v.nullable(v.strictObject(sourceEntries)),
     metadata: v.record(text, v.unknown()),
+    placements: v.optional(placementsSchema),
   }),
   v.check(
     (c) =>
       c.document_id === c.descriptor.id &&
       c.atlas_id === c.descriptor.atlas_id &&
       (c.operation === 'edit' ? c.artwork_revision !== null : c.artwork_revision === null) &&
+      (!c.placements || c.operation === 'duplicate') &&
       (c.operation === 'duplicate' ? c.source !== null : c.source === null),
     'Invalid artwork identity or saved base.',
   ),

@@ -16,7 +16,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 - [Python backend ownership](ARCHITECTURE.md)
 - [Frontend architecture](FRONTEND-ARCHITECTURE.md)
-- [Editable artwork implementation contract (#129)](EDITABLE-ARTWORK.md) — native artwork, browser/MCP contracts and planned placement variations.
+- [Editable artwork implementation contract (#129)](EDITABLE-ARTWORK.md) — native artwork, browser/MCP contracts and selected-placement variations.
 - [Editor layout guidelines](UI-DESIGN.md)
 - [Documentation policy](DOCUMENTATION.md)
 - [Building and releasing](RELEASING.md)
@@ -40,6 +40,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Evaluations
 
+- [Mixed pixel artwork workflows (#134, #135)](evaluations/artwork-workflows.md)
 - [Everyday editor usability (#117)](evaluations/editor-usability.md)
 - [Rendering and history scalability (#78, #92, #93)](evaluations/scene-scalability.md)
 - [Canvas repainting measurements (#76)](evaluations/canvas-repainting.md)

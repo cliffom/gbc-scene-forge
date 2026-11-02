@@ -882,7 +882,7 @@ check, retaining actual revision, environment, attribution, failures and limits.
 
 ### Native artwork (milestone 14)
 
-- [ ] Evaluate the integrated new-tile, sprite-variation and mixed human/agent workflows after review, MCP, hand editing/drafts and placement replacement are implemented (#135); scripted service calls and the solid-color browser fixture do not establish agent art quality or drawing usability.
+- [ ] Have human participants assess prolonged drawing and novice success with integrated new-tile, sprite-variation and mixed authoring workflows; the bounded agent visual assessment and automated SDK/browser checks for #135 do not establish human usability or broad art quality.
 
 ### Scene scalability (#78, #92, #93)
 

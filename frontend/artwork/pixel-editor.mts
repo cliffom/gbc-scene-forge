@@ -11,7 +11,7 @@ import type { ProjectApi } from '../project/project-api.mts';
 import { array, record, string, number } from '../shared/decode.mts';
 import { tileParts } from './tile-transform.mts';
 import { ArtworkSession } from './artwork-session.mts';
-import { decodeCandidate, type Candidate } from './artwork-contracts.mts';
+import { decodeCandidate, type Candidate, type Placement } from './artwork-contracts.mts';
 import { encoded, type Color, type Point, type PixelTool } from './pixel-model.mts';
 
 type Source = {
@@ -69,6 +69,7 @@ export function createPixelEditor({
     if (!active) {
       button('art-open').disabled = busy || !sources[Number(select('art-source').value)]?.target;
       button('art-duplicate').disabled = busy || !sources.length;
+      button('art-variation').disabled = busy || !sources.length;
     }
     button('art-save').disabled = busy || !session?.receipt;
     button('art-undo').disabled = busy || !session?.model.undoStack.length;
@@ -348,8 +349,22 @@ export function createPixelEditor({
     paletteSignature = '';
     element('art-recovery', HTMLElement).hidden = true;
     element('artwork-heading', HTMLElement).textContent = candidate.descriptor.name;
-    element('art-shared', HTMLElement).textContent =
-      candidate.operation === 'edit'
+    element('art-preview-help', HTMLElement).textContent = candidate.placements
+      ? 'A 256 × 256 view of the saved scene. The comparison replaces only captured selections; no extra temporary placement is added.'
+      : 'A 256 × 256 view of the open scene, including unsaved scene edits. New artwork is temporarily placed at this position for review only.';
+    element('art-selection-details', HTMLElement).hidden = !candidate.placements;
+    element('art-selection-list', HTMLElement).replaceChildren(
+      ...(candidate.placements ?? []).map((p) => {
+        const item = document.createElement('li');
+        const sceneName =
+          workspaceState.sceneChoices.find((s) => s.id === p.scene_id)?.name ?? p.scene_id;
+        item.textContent = `${sceneName} · layer ${p.layer_id} · ${'object_id' in p ? `sprite ${p.object_id}` : `cell ${p.x}, ${p.y}`}`;
+        return item;
+      }),
+    );
+    element('art-shared', HTMLElement).textContent = candidate.placements
+      ? `Independent variation for ${candidate.placements.length} selected placements. Saving updates artwork and those saved references together; all other placements retain the original.`
+      : candidate.operation === 'edit'
         ? 'Editing reusable artwork: saving updates every placement of this asset. To make a variation, close and choose Duplicate as new artwork first.'
         : 'New independent artwork. Original artwork and placements remain intact. Save adds it to the Library; place it separately.';
     element('art-draft-status', HTMLElement).textContent =
@@ -416,31 +431,86 @@ export function createPixelEditor({
       );
     });
   });
-  lifetime.assign(button('art-duplicate'), 'onclick', () => {
-    void execute(async () => {
-      const source = sources[Number(select('art-source').value)];
-      if (!source) {
-        return;
-      }
-      start(
-        await api('artwork-duplicate', decodeCandidate, {
-          source: {
-            atlas_id: source.atlas_id,
-            region: source.region,
-            artwork_revision: source.artwork_revision,
-            grid: source.kind === 'tile' ? Number(select('art-source-grid').value) : null,
-            cell:
-              source.kind === 'tile'
-                ? [Number(input('art-cell-x').value), Number(input('art-cell-y').value)]
-                : null,
-          },
-          atlas_id: input('art-id').value,
-          name: input('art-name').value,
-          project_revision: workspaceState.revision,
-        }),
+  function selectedPlacements(source: Source): Placement[] {
+    if (input('select-all-layers').checked) {
+      throw Error(
+        'Turn off Across layers and select placements on one active layer for a variation.',
       );
+    }
+    const loaded = sceneSession.loaded,
+      layer = sceneSession.editor?.active;
+    if (!loaded || !layer || sceneSession.dirty()) {
+      throw Error(
+        'Save the scene before creating a placement variation. Local scene edits are retained.',
+      );
+    }
+    const base = { scene_id: loaded.id, scene_revision: loaded.revision, layer_id: layer.id };
+    const asset = `${source.atlas_id}/${source.region}`;
+    const result: Placement[] = [];
+    if (source.kind === 'tile' && layer.type === 'tilelayer' && sceneSelection.selection) {
+      const rect = sceneSelection.selection;
+      const key = `${asset}/${input('art-cell-x').value}/${input('art-cell-y').value}`;
+      if (Number(select('art-source-grid').value) !== loaded.grid) {
+        throw Error('Choose the scene grid for selected tile placements.');
+      }
+      for (let y = rect.y; y < rect.y + rect.h; y++) {
+        for (let x = rect.x; x < rect.x + rect.w; x++) {
+          if (tileParts(layer.cells[y]?.[x] ?? '')[0] !== key) {
+            throw Error('Every selected cell must match the chosen source tile.');
+          }
+          result.push({ ...base, x, y });
+          if (result.length > 256) {
+            throw Error('Select at most 256 placements.');
+          }
+        }
+      }
+    } else if (source.kind === 'sprite' && layer.type === 'objectgroup') {
+      const ids = new Set(sceneSelection.selectedObjects);
+      if (sceneSelection.selectedObject) {
+        ids.add(sceneSelection.selectedObject);
+      }
+      for (const id of ids) {
+        const item = layer.objects.find((o) => o.id === id);
+        if (item?.kind !== 'sprite' || item.asset !== asset) {
+          throw Error('Every selected object must match the chosen source sprite.');
+        }
+        result.push({ ...base, object_id: Number(id) });
+      }
+    }
+    if (!result.length || result.length > 256) {
+      throw Error('Select 1..256 matching tile cells or sprite objects in the saved scene first.');
+    }
+    return result;
+  }
+  for (const id of ['art-duplicate', 'art-variation']) {
+    lifetime.assign(button(id), 'onclick', () => {
+      void execute(async () => {
+        const source = sources[Number(select('art-source').value)];
+        if (!source) {
+          return;
+        }
+        const placements = id === 'art-variation' ? selectedPlacements(source) : undefined;
+        start(
+          await api('artwork-duplicate', decodeCandidate, {
+            source: {
+              atlas_id: source.atlas_id,
+              region: source.region,
+              artwork_revision: source.artwork_revision,
+              grid: source.kind === 'tile' ? Number(select('art-source-grid').value) : null,
+              cell:
+                source.kind === 'tile'
+                  ? [Number(input('art-cell-x').value), Number(input('art-cell-y').value)]
+                  : null,
+            },
+            atlas_id: input('art-id').value,
+            name: input('art-name').value,
+            project_revision: workspaceState.revision,
+            ...(placements ? { placements } : {}),
+          }),
+        );
+      });
     });
-  });
+  }
   async function close() {
     cancelGesture();
     lifetime.cancelTimeout(timer);
@@ -717,13 +787,18 @@ export function createPixelEditor({
       timer = undefined;
       await session.checkpoint();
       const candidate = await session.synchronizeCurrent();
+      element('art-draft-status', HTMLElement).textContent =
+        'Unsaved artwork checkpointed in this project.';
       let scene: Record<string, unknown> | null = null;
       const loaded = sceneSession.loaded;
       if (loaded && sceneSession.editor && input('art-use-scene').checked) {
         const model = structuredClone(sceneSession.serialize());
         const x = Number(input('art-view-x').value),
           y = Number(input('art-view-y').value);
-        if (candidate.operation !== 'edit') {
+        if (candidate.placements && sceneSession.dirty()) {
+          throw Error('Save or reconcile scene edits before reviewing a placement variation.');
+        }
+        if (candidate.operation !== 'edit' && !candidate.placements) {
           const d = candidate.descriptor;
           if (d.kind === 'tile') {
             if (d.width % model.grid !== 0) {
@@ -774,7 +849,7 @@ export function createPixelEditor({
         scene = {
           scene_id: loaded.id,
           scene_revision: loaded.revision,
-          scene: model,
+          scene: candidate.placements ? null : model,
           viewport: { x, y, width: 256, height: 256 },
         };
       }
@@ -803,8 +878,9 @@ export function createPixelEditor({
         }
       }
       const references = record(result.references);
-      element('art-references', HTMLElement).textContent =
-        `${number(references.total)} saved references to this asset. Saving a shared edit updates all of them. Preview placements are temporary.`;
+      element('art-references', HTMLElement).textContent = candidate.placements
+        ? `${candidate.placements.length} selected replacements out of ${number(references.total)} saved source references. Only these selections change; other scenes, stamps and definitions retain the original.`
+        : `${number(references.total)} saved references to this asset. Saving a shared edit updates all of them. Preview placements are temporary.`;
       element('art-comparison', HTMLElement).hidden = false;
       message(
         'Review ready. Saving commits exactly these pixels against the reviewed saved bases.',
@@ -818,6 +894,9 @@ export function createPixelEditor({
         throw Error('Review current pixels before saving.');
       }
       cancelGesture();
+      if (current.candidate.placements && sceneSession.dirty()) {
+        throw Error('Local scene edits are retained. Reconcile them before saving this variation.');
+      }
       lifetime.cancelTimeout(timer);
       timer = undefined;
       const reviewedScenes = record(current.receipt.scene_revisions);

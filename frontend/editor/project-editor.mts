@@ -22,7 +22,7 @@ import {
 import { createViewportController } from './editor-viewport.mts';
 import { createWorkspaceController } from '../project/editor-workspace.mts';
 import { ProjectApi } from '../project/project-api.mts';
-import { decodeProject } from '../project/project-contracts.mts';
+import { decodeProject, decodeLoaded } from '../project/project-contracts.mts';
 import { createAnimationPreview } from '../preview/animation-preview.mts';
 import { createBlockoutLabels } from '../blockout/blockout-labels.mts';
 import { blockoutDefinitions } from '../blockout/blockout.mts';
@@ -709,13 +709,20 @@ export function mountProjectEditor() {
     ports: {
       run,
       saved: async (ack, reviewedScenes) => {
+        const replaced = Array.isArray(ack.replaced_scenes) ? ack.replaced_scenes : [];
+        const replacedOpen = sceneSession.loaded && replaced.includes(sceneSession.loaded.id);
         // A rewritten map can advance only the scene base that was reviewed.
         const revisions = record(ack.scene_revisions);
         const sceneChanged = Boolean(
           sceneSession.loaded &&
           reviewedScenes[sceneSession.loaded.id] !== sceneSession.loaded.revision,
         );
-        if (sceneSession.loaded && !sceneChanged && revisions[sceneSession.loaded.id]) {
+        if (
+          sceneSession.loaded &&
+          !sceneChanged &&
+          !replacedOpen &&
+          revisions[sceneSession.loaded.id]
+        ) {
           const previous = sceneSession.loaded.revision;
           const revision = string(revisions[sceneSession.loaded.id]);
           sceneSession.loaded = { ...sceneSession.loaded, revision };
@@ -741,6 +748,23 @@ export function mountProjectEditor() {
           throw Error(
             'The open scene changed on disk. Local scene edits and history were retained; reconcile the scene before saving.',
           );
+        }
+        if (replacedOpen && sceneSession.loaded) {
+          if (sceneSession.dirty()) {
+            throw Error('Variation saved. Local scene work is retained; reopen to reconcile.');
+          }
+          const loaded = await api(
+            `scene/${encodeURIComponent(sceneSession.loaded.id)}`,
+            decodeLoaded,
+          );
+          if (loaded.revision !== revisions[loaded.id]) {
+            throw Error('Variation saved, but the scene changed again. Reopen to reconcile.');
+          }
+          await recoveryController.clearDraft();
+          sceneActionsController.open(loaded, false);
+          status.textContent =
+            'Variation saved. Selected placements updated; other references retain the original.';
+          return;
         }
         status.textContent = 'Artwork saved. Scene edits and undo history are unchanged.';
       },

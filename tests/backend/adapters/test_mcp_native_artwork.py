@@ -548,3 +548,68 @@ class NativeArtworkTests(unittest.TestCase):
                 ],
                 "sdk_tile/artwork/0/0",
             )
+            loaded = self.project.scenes.load(loaded["id"])
+            selection = dict(
+                scene_id=loaded["id"], scene_revision=loaded["revision"], layer_id=layer, x=0, y=0
+            )
+            variation_args = {
+                **self.guard(),
+                "atlas_id": "sdk_variation",
+                "name": "SDK variation",
+                "source": dict(
+                    atlas_id="sdk_tile",
+                    region="artwork",
+                    grid=8,
+                    cell=[0, 0],
+                    artwork_revision=native["artwork_revision"],
+                ),
+                "placements": [selection],
+            }
+            for invalid in (
+                [{**selection, "x": True}],
+                [{**selection, "extra": True}],
+                [selection] * 257,
+            ):
+                response = await client.call_tool(
+                    "duplicate_artwork", {**variation_args, "placements": invalid}
+                )
+                self.assertTrue(response.isError)
+            variation = await call("duplicate_artwork", variation_args)
+            variation = await call(
+                "edit_artwork_pixels",
+                {
+                    **self.candidate_args(variation),
+                    "writes": [dict(x=0, y=0, rgba=[220, 100, 50, 255])],
+                },
+            )
+            report = await call(
+                "review_artwork_candidate",
+                {
+                    **self.candidate_args(variation),
+                    "scene": dict(
+                        scene_id=loaded["id"],
+                        scene_revision=loaded["revision"],
+                        scene=None,
+                        viewport=dict(x=0, y=0, width=32, height=32),
+                    ),
+                },
+            )
+            self.assertEqual(report["replacements"], [selection])
+            self.assertEqual(report["references"]["total"], 1)
+            self.assertNotEqual(
+                report["scene"]["before_resource"]["uri"], report["scene"]["after_resource"]["uri"]
+            )
+            ack = await call(
+                "commit_artwork", {**self.candidate_args(variation), "receipt": report["receipt"]}
+            )
+            self.assertEqual(ack["replaced_scenes"], [loaded["id"]])
+            self.assertEqual(
+                tiled.scene_layers(self.project.scenes.load(loaded["id"])["scene"])[0]["cells"][0][
+                    0
+                ],
+                "sdk_variation/artwork/0/0",
+            )
+            original = self.project.artwork.documents.open(
+                native["target"], self.revision(), native["artwork_revision"]
+            )
+            self.assertEqual(original["rgba"], candidate["rgba"])

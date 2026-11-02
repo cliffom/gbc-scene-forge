@@ -30,6 +30,7 @@ def capabilities():
         "commit_requires_review_receipt": True,
         "candidates": "Client-held immutable envelopes; no server candidate cache or draft writes.",
         "imported_artwork": "Read-only; duplicate an explicit tile cell or static sprite to edit.",
+        "placement_variations": "Duplicate with 1..256 explicit saved scene/layer/cell or object locations. Review and commit artwork plus selected replacements atomically.",
     }
 
 
@@ -55,6 +56,7 @@ def call(adapter, project, name, a):
             a["name"],
             a["project_revision"],
             region=a.get("region", "artwork"),
+            placements=a.get("placements"),
         )
     if name == "open_artwork":
         return documents.open(a["target"], a["project_revision"], a["artwork_revision"])

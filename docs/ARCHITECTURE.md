@@ -113,7 +113,11 @@ and carries unchanged reviewed map guards into the final transaction. MCP routes
 these use cases through `adapters/mcp/artwork.py`, with strict wire envelopes in
 `adapters/mcp/schemas.py`; candidates and receipts stay client-held and PNGs use
 the existing session artifact cache. MCP commits require a matching review receipt.
-Browser drawing and artwork drafts follow in separate milestone issues. Schema validation remains read-free;
+Browser drawing uses the same services; owned checkpoints live in `artwork/drafts.py`.
+`artwork/placements.py` validates exact saved selections and produces copied scenes
+for review/save. A duplicate candidate's optional selection is immutable, hash-bound
+and revalidated for review, restore and save. Native artwork and selected reference
+changes share the existing durable transaction. Schema validation remains read-free;
 saved-read asset verification also checks native descriptors and source geometry.
 
 External artwork intake keeps PNG slicing in `artwork/tilesheet.py` and strict

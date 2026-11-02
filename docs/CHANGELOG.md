@@ -8,7 +8,7 @@ and publication procedures in [releasing](RELEASING.md).
 
 ## 0.27.0 — Native pixel artwork, browser editing and MCP authoring
 
-[Release notes](RELEASE-0.27.0.md). Prepared milestone 14 foundation; publication is separate.
+[Release notes](RELEASE-0.27.0.md). Prepared milestone 14 artwork authoring and selected-placement variations; publication is separate.
 
 ## 0.26.0 — Transfer scenes between Forge projects
 

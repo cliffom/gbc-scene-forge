@@ -49,7 +49,8 @@ class ArtworkDrafts:
         editable.check_candidate(candidate)
         require(original["project_id"] == project_id, "Draft belongs to another project")
         require(
-            all(original[k] == candidate[k] for k in original if k not in {"rgba", "revision"}),
+            {k: v for k, v in original.items() if k not in {"rgba", "revision"}}
+            == {k: v for k, v in candidate.items() if k not in {"rgba", "revision"}},
             "Artwork draft must retain its original identity, metadata and saved base",
         )
 
@@ -123,6 +124,7 @@ class ArtworkDrafts:
         with self.store.read_session(candidate["project_revision"], verify_assets=True) as session:
             self.documents.validate_base(value["original"], session.document)
             self.documents.validate_base(candidate, session.document)
+            self.documents.placement_scenes(candidate, session)
         # The browser recovers into a fresh record/owner. The original remains available.
         return value
 

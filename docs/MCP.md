@@ -510,11 +510,48 @@ Prepared 0.27.0 adds eight tools backed by the shared
 install the milestone checkout or its built wheel with the MCP extra. Reconnect
 clients that cache tool schemas. No active browser selection or editor is used.
 
+For a selected-placement variation, pass `placements` to `duplicate_artwork`:
+
+```json
+[
+  {"scene_id": "<saved scene UUID>", "scene_revision": "<exact map digest>", "layer_id": 1, "x": 3, "y": 4},
+  {"scene_id": "<another saved scene UUID>", "scene_revision": "<exact map digest>", "layer_id": 1, "x": 0, "y": 2}
+]
+```
+
+Use `object_id` instead of `x`,`y` for a static sprite. All 1..256 locations must
+match the copied source asset and, for tiles, its grid. The candidate binds the
+selection; edits preserve it. Review returns the exact `replacements` and original
+source `references`; scene context must use `scene:null` to compare saved before
+with selected replacements after. A matching receipt is mandatory for atomic
+commit of artwork and reference changes. The acknowledgment includes
+`replaced_scenes` and exact rewritten scene revisions. Omitting `placements`
+creates artwork alone; opening a native document edits the shared original.
+
+The runnable [artwork workshop](../examples/mcp/artwork_workshop.py) seeds a moss
+tile and two lanterns, reviews new pixels in temporary scenes, commits and places
+them. Keep the same root/output for later invocations:
+
+```sh
+python examples/mcp/artwork_workshop.py --root /tmp/workshop/projects --output /tmp/workshop/review
+# After hand edits, request exact pixel changes from a fresh saved base.
+python examples/mcp/artwork_workshop.py --root /tmp/workshop/projects --output /tmp/workshop/review --asset moss --writes /tmp/moss-writes.json
+# Revise one placed lantern, retaining the original on the other placement.
+python examples/mcp/artwork_workshop.py --root /tmp/workshop/projects --output /tmp/workshop/review --asset lantern --variation cool_lantern --object 1 --writes /tmp/lantern-writes.json
+```
+
+Write files contain a JSON list such as `[{"x":7,"y":7,"rgba":[100,210,220,255]}]`.
+The example saves PNG resources and call transcripts, and stops on errors without
+replaying writes. Inspect the previews before deciding the next revision. It is
+a scripted SDK client, not an embedded agent. The
+[workflow evaluation](evaluations/artwork-workflows.md) distinguishes those checks
+from agent visual inspection and outstanding human/platform work.
+
 | Tool | Inputs and result |
 | --- | --- |
 | `list_artwork` | Project/base revision → `documents` with native targets, descriptors and artwork revisions; `sources` with imported/native atlas IDs, regions and exact artwork revisions for duplication. |
 | `create_artwork` | Project/base revision, fresh `atlas_id`, name, kind, width/height, optional origin/region → transparent unsaved candidate. |
-| `duplicate_artwork` | Project/base revision, fresh atlas/name, explicit `source:{atlas_id,region,grid,cell,artwork_revision}` → unsaved copy retaining source metadata/origin. Tile cell is `[x,y]`; sprite grid/cell are both null. |
+| `duplicate_artwork` | Project/base revision, fresh atlas/name, explicit `source:{atlas_id,region,grid,cell,artwork_revision}`, optional `placements` → unsaved copy retaining source metadata/origin. Tile cell is `[x,y]`; sprite grid/cell are both null. |
 | `open_artwork` | Project/base revision, `target:{document_id,atlas_id,region}`, artwork revision → saved native pixels as an unsaved edit candidate. |
 | `read_artwork_pixels` | Project and complete candidate, optional in-bounds `rectangle:{x,y,width,height}` → exact base64 RGBA bytes, rectangle, target and revisions. |
 | `edit_artwork_pixels` | Project, complete candidate and `writes:[{x,y,rgba:[r,g,b,a]}]` → new candidate; original is unchanged. |
@@ -539,7 +576,8 @@ They cap at 65,536 writes and 1 MiB batch JSON, within the 4 MiB total tool-inpu
 budget. Exact reads cap at 65,536 pixels. `capabilities.artwork` reports these bounds.
 
 Review defaults to 4× nearest-neighbor enlargement (scale 1..16); each output must
-fit the existing 1024-pixel axis limit. `before` is null for new/copied artwork.
+fit the existing 1024-pixel axis limit. `before` is null for new/copied artwork
+unless selected placements are being replaced, when it shows the source pixels.
 `after` and non-null `before` contain `native_resource` and `enlarged_resource`;
 optional `scene` contains `before_resource` and `after_resource`. The flat
 `resources` list also appears as MCP resource-link content. Read them with

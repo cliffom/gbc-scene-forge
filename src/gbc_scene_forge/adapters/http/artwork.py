@@ -34,7 +34,11 @@ def artwork_response(project, action, data):
         )
     if action == "duplicate":
         return documents.duplicate(
-            data.get("source"), data.get("atlas_id"), data.get("name"), data.get("project_revision")
+            data.get("source"),
+            data.get("atlas_id"),
+            data.get("name"),
+            data.get("project_revision"),
+            placements=data.get("placements"),
         )
     if action == "edit":
         return documents.edit(data.get("candidate"), data.get("writes"))

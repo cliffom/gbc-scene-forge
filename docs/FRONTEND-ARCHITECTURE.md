@@ -38,6 +38,12 @@ used for current resources/state, not captured copies of mutable primitives.
 Keep ports limited to each consumer's needs; do not replace these owners with a
 shared miscellaneous state object or global event bus.
 
+Selected artwork variations capture at most 256 explicit locations from a clean
+saved scene. Pixel candidates/checkpoints retain that selection. After an exact
+atomic artwork/reference acknowledgment, the composition reloads matching saved
+scene content with fresh history; its old conflict guard remains until content
+adoption succeeds. Ordinary shared artwork edits retain local scene edits/history.
+
 ## Initialization, asynchronous work and disposal
 
 Create the lifetime and state owners first, then the layout, preview and label

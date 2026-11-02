@@ -262,7 +262,9 @@ def seal(envelope):
 
 def check_candidate(value):
     require(
-        isinstance(value, dict) and set(value) == CANDIDATE_FIELDS | {"revision"},
+        isinstance(value, dict)
+        and set(value)
+        in (CANDIDATE_FIELDS | {"revision"}, CANDIDATE_FIELDS | {"revision", "placements"}),
         "Unsupported artwork candidate fields",
     )
     require(len(canonical_bytes(value)) <= MAX_CANDIDATE, "Artwork candidate exceeds 4 MiB")
@@ -287,6 +289,9 @@ def check_candidate(value):
         check_source(value["source"])
     else:
         require(value["source"] is None, "Unexpected source dependency")
+    if "placements" in value:
+        require(value["operation"] == "duplicate", "Only duplication can replace placements")
+        check_placements(value["placements"])
     encoded = value["rgba"]
     require(isinstance(encoded, str) and len(encoded) <= 349528, "Invalid RGBA byte count")
     try:
@@ -321,6 +326,36 @@ def check_candidate(value):
     entry["metadata"] = value["metadata"]
     tile_metadata.check_entry(entry)
     return pixels
+
+
+def check_placements(value):
+    """Explicit saved locations; scene revisions guard both content and selection."""
+    require(isinstance(value, list) and 1 <= len(value) <= 256, "Select 1..256 placements")
+    seen = set()
+    for location in value:
+        require(
+            isinstance(location, dict)
+            and set(location)
+            in (
+                {"scene_id", "scene_revision", "layer_id", "x", "y"},
+                {"scene_id", "scene_revision", "layer_id", "object_id"},
+            )
+            and identity(location["scene_id"])
+            and revision(location["scene_revision"])
+            and integer(location["layer_id"], 1, 2147483646),
+            "Expected explicit saved scene/revision, layer and tile cell or sprite object",
+        )
+        if "object_id" in location:
+            require(integer(location["object_id"], 1, 2147483646), "Invalid sprite object ID")
+            key = (location["scene_id"], location["layer_id"], "object", location["object_id"])
+        else:
+            require(
+                integer(location["x"], 0, 2047) and integer(location["y"], 0, 2047),
+                "Invalid tile placement coordinates",
+            )
+            key = (location["scene_id"], location["layer_id"], location["x"], location["y"])
+        require(key not in seen, "Duplicate placement selection")
+        seen.add(key)
 
 
 def edit_pixels(candidate, writes):

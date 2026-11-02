@@ -2,7 +2,7 @@
 
 import copy
 
-from gbc_scene_forge.artwork import atlas, editable, png
+from gbc_scene_forge.artwork import atlas, editable, placements, png
 from gbc_scene_forge.core.errors import Conflict
 from gbc_scene_forge.core.validation import integer, require
 from gbc_scene_forge.formats import tiled
@@ -95,12 +95,16 @@ def _locations(scene, prefix):
                 yield {"layer_id": layer["id"], "object_id": item["id"], "asset": item["asset"]}
 
 
-def references(document, scenes, prefix, offset):
+def references(document, scenes, prefix, offset, *, exact_asset=None, grid=None):
     """Count the full bounded scan; retain only a single page of exact locations."""
     details, count, affected = [], 0, []
 
     def add(location):
         nonlocal count
+        if exact_asset is not None and (
+            location["asset"] != exact_asset or (grid is not None and location.get("grid") != grid)
+        ):
+            return
         if offset <= count < offset + PAGE_SIZE:
             details.append(location)
         count += 1
@@ -189,29 +193,54 @@ class ArtworkReview:
                 max_bytes=MAX_MAP_BYTES,
                 limit_message="Artwork review exceeds 16 MiB saved maps; narrow the project scope",
             )
+            replacements = placements.replace(candidate, loaded)
             revisions = {s["id"]: s["revision"] for s in loaded}
             old_pixels = (
                 editable.decode_image(d, self.documents._asset(document, previous["png"]))
                 if previous is not None
                 else bytes(len(pixels))
             )
+            reference_prefix, exact_asset, reference_grid = d["atlas_id"] + "/", None, None
+            if replacements:
+                source = candidate["source"]
+                reference_prefix = f"{source['atlas_id']}/"
+                exact_asset = f"{source['atlas_id']}/{source['region']}"
+                if source["grid"] is not None:
+                    exact_asset += f"/{source['cell'][0]}/{source['cell'][1]}"
+                    reference_grid = source["grid"]
+                old_pixels = self.documents._copy_source(document, source)[4]
             result = {
                 "candidate_revision": candidate["revision"],
                 "target": self.documents._target(d),
                 "width": d["width"],
                 "height": d["height"],
                 "scale": scale,
-                "before": isolated(d, old_pixels, scale) if previous is not None else None,
+                "before": isolated(d, old_pixels, scale)
+                if previous is not None or replacements
+                else None,
                 "after": after,
-                "references": references(document, loaded, d["atlas_id"] + "/", offset),
+                "references": references(
+                    document,
+                    loaded,
+                    reference_prefix,
+                    offset,
+                    exact_asset=exact_asset,
+                    grid=reference_grid,
+                ),
                 "scene": None,
             }
+            if replacements:
+                result["replacements"] = copy.deepcopy(candidate["placements"])
             context = None
             if scene is not None:
                 saved = next((s for s in loaded if s["id"] == scene["scene_id"]), None)
                 require(saved is not None, "Choose an existing scene base for temporary review")
                 if saved["revision"] != scene["scene_revision"]:
                     raise Conflict("Scene base changed. Retain the candidate and review again.")
+                require(
+                    not replacements or scene["scene"] is None,
+                    "Variation review uses saved scenes, not unsaved scene candidates",
+                )
                 temporary = copy.deepcopy(document)
                 image = after["native_png"]
                 entry, _ = atlas.build_assets(
@@ -222,7 +251,11 @@ class ArtworkReview:
                     previous or {"metadata": candidate["metadata"]},
                 )
                 temporary["atlases"][d["atlas_id"]] = entry
-                model = saved["scene"] if scene["scene"] is None else scene["scene"]
+                model = (
+                    replacements.get(saved["id"], saved["scene"])
+                    if replacements
+                    else (saved["scene"] if scene["scene"] is None else scene["scene"])
+                )
                 tiled.check_scene(model, temporary)
                 model = tiled.decode(tiled.encode(model, temporary), temporary)
                 context = {
@@ -248,7 +281,14 @@ class ArtworkReview:
 
                 result["scene"] = {
                     **context,
-                    "before_png": render(png.encode(d["width"], d["height"], old_pixels)),
+                    "before_png": rendering.render(
+                        saved["scene"],
+                        document,
+                        lambda path: self.documents._asset(document, path),
+                        view,
+                    )
+                    if replacements
+                    else render(png.encode(d["width"], d["height"], old_pixels)),
                     "after_png": render(image),
                 }
             receipt = sealed(

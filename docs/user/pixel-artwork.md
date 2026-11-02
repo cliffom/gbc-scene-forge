@@ -18,8 +18,30 @@ size. Copies keep supported metadata and sprite origins.
 Imported artwork stays under import/reimport control and must be copied before
 pixel editing. Native artwork also offers **Edit shared artwork**: saving changes
 every placement that refers to that asset. Duplicate first when you want independent
-artwork. Copies appear in the Library after saving; selected-placement replacement
-is separate milestone work.
+artwork. Ordinary copies appear in the Library after saving for separate placement.
+
+## Make a variation for selected placements
+
+Save the scene, switch to Select, and select matching tile cells or sprite objects
+on one active layer with **Across layers** off. Open **Edit artwork…**, choose the matching source cell/sprite,
+enter a fresh asset ID and choose **Create variation for selected placements**.
+Every selected placement must use that source; tiles must use the chosen source
+grid. Select at most 256 placements. Expand **Placements this variation will replace**
+to inspect the captured scene/layer/cell or object locations.
+
+Draw the variation, then review. The before image shows the original pixels;
+the scene comparison shows the selected replacements without adding a temporary
+placement. The reference count describes the original asset, and the replacement
+count describes the selection. Other placements, reusable stamps and object
+definitions keep the original. Saving commits the new artwork and selected
+references together, preserving tile transforms, sprite origins and properties.
+The saved scene reloads with fresh scene history so later saves retain replacements.
+
+Unsaved scene work must be saved or reconciled before replacement. If another
+writer changes a selected scene, review/save and recovery reject its stale base;
+pixels and checkpoints remain available for download. Forge never applies a
+variation to a different or newer selection automatically. Browser selections
+come from the open saved scene; MCP may explicitly select locations across scenes.
 
 ## Draw and revise
 
@@ -97,5 +119,5 @@ excluded from portable exports.
 For pixel/service limits and revision semantics, see the
 [editable artwork contract](../EDITABLE-ARTWORK.md). The
 [MCP authoring loop](../MCP.md#native-artwork-authoring) uses the same candidate and
-save services; selected-placement variations and integrated task evaluation remain
-separate milestone issues.
+save services. See the [mixed workflow evaluation](../evaluations/artwork-workflows.md)
+for the exercised tasks, evidence and limits.

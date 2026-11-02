@@ -330,6 +330,8 @@
           <div class="art-row"><label class="field">Tile column<input id="art-cell-x" type="number" min="0" value="0"></label><label class="field">Tile row<input id="art-cell-y" type="number" min="0" value="0"></label><label class="field">Tile size<select id="art-source-grid"><option>8</option><option>16</option><option>32</option></select></label></div>
           <p class="hint">Native artwork can be edited in place. Imported artwork must be copied first. Tile coordinates start at zero within the region.</p>
           <button id="art-open">Edit shared artwork</button><button id="art-duplicate">Duplicate as new artwork</button>
+          <button id="art-variation">Create variation for selected placements</button>
+          <p class="hint">For a variation, save the scene first and select matching tile cells or sprite objects. Review shows the exact replacements; other placements keep the original.</p>
         </section>
         <section><h3>New artwork</h3>
           <label class="field">Name<input id="art-name" value="New artwork" maxlength="100"></label>
@@ -342,6 +344,7 @@
     </div>
     <div id="art-editor" hidden>
       <p id="art-shared" class="hint"></p>
+      <details id="art-selection-details" hidden><summary>Placements this variation will replace</summary><ul id="art-selection-list"></ul></details>
       <div class="art-row art-tools"><label class="field">Tool<select id="art-tool"><option value="pencil">Pencil</option><option value="erase">Eraser</option><option value="fill">Flood fill</option><option value="pick">Eyedropper</option><option value="line">Line</option><option value="rectangle">Rectangle outline</option><option value="select">Select rectangle</option><option value="move">Move selection</option></select></label>
         <label class="field">Color<input id="art-color" type="color" value="#729b4f"></label><label class="field">Alpha<input id="art-alpha" type="number" min="0" max="255" value="255"></label><button id="art-transparent">Transparent</button>
         <label class="field">Zoom<select id="art-zoom"><option>1</option><option>2</option><option>4</option><option selected>16</option><option>32</option></select></label><label><input id="art-grid" type="checkbox" checked> Pixel grid</label>
@@ -352,7 +355,7 @@
       <div class="art-workspace"><div class="art-canvas-scroll"><canvas id="art-canvas" tabindex="0" aria-label="Pixel artwork canvas"></canvas></div><aside class="art-review"><h3>Review before saving</h3>
         <label><input id="art-use-scene" type="checkbox" checked> Preview in the open scene</label>
         <label class="field">Scene preview X<input id="art-view-x" type="number" min="0" value="0"></label><label class="field">Scene preview Y<input id="art-view-y" type="number" min="0" value="0"></label>
-        <p class="hint">A 256 × 256 view of the open scene, including unsaved scene edits. New artwork is temporarily placed at this position for review only.</p>
+          <p id="art-preview-help" class="hint">A 256 × 256 view of the open scene, including unsaved scene edits. New artwork is temporarily placed at this position for review only.</p>
         <button id="art-review">Review current pixels</button>
         <div id="art-comparison" hidden><p id="art-references"></p><figure><figcaption>Saved artwork</figcaption><img id="art-before" alt="Saved artwork before pixel edits"></figure><figure><figcaption>Candidate artwork</figcaption><img id="art-after" alt="Candidate artwork after pixel edits"></figure><figure><figcaption>Scene before</figcaption><img id="art-scene-before" alt="Scene with saved artwork"></figure><figure><figcaption>Scene after</figcaption><img id="art-scene-after" alt="Scene with candidate artwork"></figure></div>
       </aside></div>
