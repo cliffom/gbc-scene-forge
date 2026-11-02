@@ -4,7 +4,7 @@ import copy
 import json
 from uuid import NAMESPACE_URL, uuid5
 
-from gbc_scene_forge.artwork import atlas, png
+from gbc_scene_forge.artwork import atlas, editable, png
 from gbc_scene_forge.core.errors import Conflict
 from gbc_scene_forge.core.identities import name
 from gbc_scene_forge.core.serialization import json_text
@@ -111,7 +111,7 @@ def prepare(store, document, encoded, selection, fingerprint):
             and not any(p.startswith(f"assets/{target}/") for p in document["files"]),
             "Generated asset identity exists; run preflight again after changing the selection",
         )
-        entry = checked_assets[key]
+        entry = copy.deepcopy(checked_assets[key])
         entry["manifest"]["id"] = target
         entry["png"] = f"assets/{target}/atlas.png"
         for mapping in entry["tiles"].values():
@@ -125,6 +125,21 @@ def prepare(store, document, encoded, selection, fingerprint):
         image = files[source["atlases"][key]["png"]]
         width, _, pixels = png.decode(image, generic=True)
         rebuilt, generated = atlas.build_assets(entry["manifest"], image, width, pixels, entry)
+        if "editable" in entry:
+            descriptor = editable.read_descriptor(
+                source["atlases"][key], files[source["atlases"][key]["editable"]["path"]]
+            )
+            descriptor["id"] = new_uuid("document", descriptor["id"])
+            descriptor["atlas_id"] = target
+            require(
+                all(
+                    e.get("editable", {}).get("id") != descriptor["id"]
+                    for e in document["atlases"].values()
+                ),
+                "Generated document identity exists",
+            )
+            rebuilt["editable"] = {"id": descriptor["id"], "path": f"assets/{target}/editable.json"}
+            generated[rebuilt["editable"]["path"]] = json_text(descriptor).encode()
         document["atlases"][target] = rebuilt
         changes.update(generated)
         report["assets"].append({"source": key, "destination": target, "decision": "copy"})
@@ -161,8 +176,9 @@ def prepare(store, document, encoded, selection, fingerprint):
         expected[path] = None
         document["scenes"].append({"id": target, "name": row["name"], "path": path})
     try:
-        validate(document, store.root)
-        store.prepare_commit(copy.deepcopy(document), dict(changes))
+        prepared = copy.deepcopy(document)
+        store.prepare_commit(prepared, dict(changes))
+        validate(prepared, store.root)
     except (ValueError, KeyError, TypeError) as error:
         report["compatible"] = False
         report["errors"].append(str(error))

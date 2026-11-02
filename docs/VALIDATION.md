@@ -15,6 +15,40 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Native editable artwork services (#130)
+
+- **Scope:** Prepared 0.27.0 issue-130 working tree based on
+  `26c9cefa13f7c29b3e7f7d24d76a204e871a55f9` (`milestone/14`), local macOS
+  27.0.1, Python 3.13.13, Node 24.22.1, Playwright 1.64.1 with bundled Chromium,
+  optional MCP SDK 1.30.0, on 2026-11-02. The screenshot is the production UI.
+- **Method:** `make docs-check lint test`, followed by final `make lint test-python`
+  after stricter native inventory/batch validation. Domain fixtures cover blank
+  tiles/sprites, imported/native duplication, exact hidden RGB/partial alpha,
+  malformed/oversized batches, immutable candidates, stale project/artwork/source
+  bases, destination collisions, metadata/origin/local-ID preservation, map range
+  re-encoding, exact acknowledgments, injected write failure and interrupted-save
+  recovery. Both ZIP scopes transfer native tiles/sprites; extracted project ZIPs
+  reopen for editing. Production `make build check-dist test-browser`, existing
+  SDK MCP/refresh browser acceptance, and native/first-use browser tests against
+  the isolated installed wheel exercise packaging and existing browser consumption.
+  An agent inspected [native Library/placement/save state](images/native-artwork-130.png)
+  at 1440×1000; this is a solid-color synthetic fixture.
+- **Result:** Lint/docs/type/model checks and 368 Python tests passed, including
+  21 native-artwork and 17 transfer regressions. Production distributions passed
+  metadata checks and seven installed-wheel checks. Regular Chromium acceptance
+  passed 47 scenarios, with two optional observational scalability profiles skipped;
+  both existing SDK/browser coexistence scenarios and both installed-wheel
+  native/first-use scenarios passed. Exact transparent RGB and sprite origins
+  survived native export, transfer and reopen; pixel-only saves left maps unchanged.
+- **Limits:** Local automated fixture evidence; ignored reports under `build/`
+  are not archived CI evidence. The broad browser run preceded the final native
+  inventory/batch-only tightening; final domain/package and installed-wheel
+  browser checks include it. Browser inspection covers the existing scene UI,
+  not pixel drawing controls. Native MCP commands, reviewed commits, artwork drafts,
+  shared-reference review and selected-placement variations remain subsequent
+  milestone issues. No human drawing/art-quality evaluation, integrated agent
+  pixel workflow, official Tiled/rasterizer, Windows or non-Chromium check is claimed.
+
 ## Legacy sprite artwork in scene transfer (#128)
 
 - **Scope:** Local 0.26.0 follow-up working tree based on `eafa61addfaf3949b55491729743216c231beb93`,
@@ -642,10 +676,14 @@ Dates, revisions and environments missing from the originals remain unknown.
 ## Remaining checks
 
 This is the single maintained validation checklist. Issue state was checked on
-2026-11-01; closing issues or publishing packages does not satisfy these checks.
+2026-11-02; closing issues or publishing packages does not satisfy these checks.
 Current automated procedures remain in [releasing](RELEASING.md) and
 [browser testing](BROWSER-TESTING.md). Add scoped evidence above when completing a
 check, retaining actual revision, environment, attribution, failures and limits.
+
+### Native artwork (milestone 14)
+
+- [ ] Evaluate the integrated new-tile, sprite-variation and mixed human/agent workflows after review, MCP, hand editing/drafts and placement replacement are implemented (#135); scripted service calls and the solid-color browser fixture do not establish agent art quality or drawing usability.
 
 ### Scene scalability (#78, #92, #93)
 
@@ -653,7 +691,7 @@ check, retaining actual revision, environment, attribution, failures and limits.
 
 ### Platform, interoperability and publication gaps
 
-- [ ] Run the optional official Tiled/rasterizer interoperability checks for the current 0.26.0 baseline, including scene-transfer, object/definition and tile metadata compatibility, when those applications are available (#75, #109, #110, #111, #112, #113, #127).
+- [ ] Run the optional official Tiled/rasterizer interoperability checks for the prepared 0.27.0 baseline, including native RGBA artwork, scene-transfer, object/definition and tile metadata compatibility, when those applications are available (#75, #109, #110, #111, #112, #113, #127, #130).
 
 - [ ] Record non-Chromium desktop-browser and Windows runtime results with exact versions and workflows; these are outside the automated browser matrix.
 - [ ] Configure the TestPyPI trusted publisher and verify an upload if that channel is needed; the historical 0.1.4 attempt failed with `invalid-publisher`. Local wheel checks and PyPI publication are separate evidence.

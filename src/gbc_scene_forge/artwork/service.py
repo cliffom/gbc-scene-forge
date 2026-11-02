@@ -5,6 +5,7 @@ import json
 
 from gbc_scene_forge.artwork import atlas, png, tilesheet
 from gbc_scene_forge.artwork import metadata as tile_metadata
+from gbc_scene_forge.artwork.documents import ArtworkDocuments
 from gbc_scene_forge.core.errors import Conflict
 from gbc_scene_forge.core.records import NativeDocument
 from gbc_scene_forge.core.serialization import json_text
@@ -20,6 +21,7 @@ class ArtworkService:
 
     def __init__(self, store: ProjectStore) -> None:
         self.store = store
+        self.documents = ArtworkDocuments(store)
 
     def set_metadata(
         self, atlas_id: str, group: str, asset: str, value: NativeDocument, revision: str
@@ -182,6 +184,10 @@ class ArtworkService:
         )
         require(previous is not None or not reimport, "Reimport requires an existing atlas ID")
         report = {"atlas": atlas_id, "added": [], "changed": [], "removed": []}
+        require(
+            previous is None or "editable" not in previous,
+            "Native artwork cannot be reimported; save an editable candidate instead",
+        )
         if previous:
             require(
                 previous["manifest"].get("source_format") == manifest.get("source_format")

@@ -96,9 +96,13 @@ or add connector compatibility shims.
 The companion [frontend architecture](FRONTEND-ARCHITECTURE.md) describes the supported
 browser composition, state owners, controller ports and resource lifecycle.
 
-The [editable artwork contract](EDITABLE-ARTWORK.md) specifies planned milestone 14
+The [editable artwork contract](EDITABLE-ARTWORK.md) specifies milestone 14
 native pixel documents, source ownership, revision guards and portable persistence.
-It is a design for subsequent implementation, not current authoring support.
+`ArtworkService.documents` composes `artwork/documents.py` use cases with pure
+candidate/raster rules in `artwork/editable.py`. Native persistence, exact saves
+and export/transfer are implemented; review, transports, drawing and artwork
+drafts follow in separate milestone issues. Schema validation remains read-free;
+saved-read asset verification also checks native descriptors and source geometry.
 
 External artwork intake keeps PNG slicing in `artwork/tilesheet.py` and strict
 external Tiled JSON conversion in `formats/intake.py`. `project/intake.py`

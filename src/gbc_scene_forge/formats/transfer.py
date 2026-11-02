@@ -9,7 +9,7 @@ import zipfile
 import zlib
 from pathlib import PurePosixPath
 
-from gbc_scene_forge.artwork import animations, atlas, png, tilesheet
+from gbc_scene_forge.artwork import animations, atlas, editable, png, tilesheet
 from gbc_scene_forge.core.validation import require
 from gbc_scene_forge.formats import exporting, tiled
 from gbc_scene_forge.storage.files import digest
@@ -133,7 +133,15 @@ def authoring_assets(entry, files):
     manifest = entry["manifest"]
     image = files[entry["png"]]
     encoded = base64.b64encode(image).decode()
-    if manifest.get("source_format") == "png-tilesheet":
+    descriptor = None
+    if manifest.get("source_format") == "forge-rgba":
+        editable.check_entry(entry)
+        path = entry["editable"]["path"]
+        require(path in files, f"Missing editable descriptor: {path}")
+        descriptor = editable.read_descriptor(entry, files[path])
+        pixels = editable.decode_image(descriptor, image)
+        width = descriptor["width"]
+    elif manifest.get("source_format") == "png-tilesheet":
         checked, _, width, pixels = tilesheet.bundle(
             {"id": manifest["id"], "png": encoded, **manifest["slicing"]}
         )
@@ -200,6 +208,8 @@ def authoring_assets(entry, files):
             original == json.loads(generated[path]),
             f"Tileset differs from Forge authoring metadata: {path}; export from Forge again",
         )
+    if descriptor is not None:
+        rebuilt["editable"] = copy.deepcopy(entry["editable"])
     return rebuilt
 
 
