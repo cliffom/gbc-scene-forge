@@ -10,9 +10,12 @@ priorities, without promised release versions or dates. Measurements may justify
 retaining an existing implementation. Validation gaps live in the
 [single remaining-check list](VALIDATION.md#remaining-checks).
 
-## Frontend contracts and infrastructure
+## Editor usability and UI cleanup
 
-- [#67](https://github.com/cliffom/gbc-scene-forge/issues/67): reconcile infrastructure adopt/retain/defer decisions with the completed routing and schema work.
+- [#117](https://github.com/cliffom/gbc-scene-forge/issues/117): scoped review recorded in the [usability evaluation](evaluations/editor-usability.md); follow-up implementations remain separate.
+- [#123](https://github.com/cliffom/gbc-scene-forge/issues/123): first, match artwork search against visible asset names while retaining raw-ID searches and filters.
+- [#124](https://github.com/cliffom/gbc-scene-forge/issues/124): next, remove stale import-preflight errors after a successful correction.
+- [#125](https://github.com/cliffom/gbc-scene-forge/issues/125): then, name the existing import entry and empty-state guidance for artwork and maps.
 
-See the [Valibot evaluation](evaluations/valibot-pilot.md). No transport, lifetime
-or compatibility rewrite is implied by schema adoption.
+Preserve standalone authoring, pane/Review behavior, keyboard access and guarded
+import/recovery. These focused findings do not imply a broad visual redesign.

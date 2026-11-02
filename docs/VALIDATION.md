@@ -566,6 +566,32 @@ Dates, revisions and environments missing from the originals remain unknown.
   were skipped. Tiled/rasterizer tools were unavailable; non-Chromium/Windows and
   physical-device checks were not run. Tagging/publication remain separate.
 
+## Everyday editor usability review (#117)
+
+- **Scope:** Published 0.25.1 at `f85d3ae`, reviewed on 2026-11-01 local time
+  (2026-11-02 UTC), macOS 27.0.1 arm64, Python 3.13.13, Node 24.22.1,
+  Playwright 1.64.1 and Chromium 156.0.8078.4. Source-checkout development bundle;
+  disposable sample/empty projects.
+- **Method:** Agent inspection of live accessibility snapshots and screenshots,
+  synthetic pointer/keyboard walkthroughs at 1440×900, 1024×768, 760×640 and
+  1440×600, and 15 existing import/layout/pane/Review/first-use/composition/
+  definition/draft browser scenarios. The [evaluation](evaluations/editor-usability.md)
+  records per-workflow coverage, reproduction steps, measured pane widths and
+  committed screenshots.
+- **Result:** All 15 selected scenarios passed without retries. All four pane
+  combinations restored through Review transitions at each requested size.
+  Independent findings established visible-name search failure (#123), stale
+  corrected-preflight status (#124) and atlas-specific wording for broader
+  import sources (#125), in recommended order. Existing guarded import,
+  recovery and pane/viewing behavior were retained; implementations are separate.
+- **Limits:** Agent/synthetic evidence is not human usability certification or
+  archived CI evidence. Full stamp, typed-property, Tiled and revision-conflict
+  workflows were not repeated at every matrix cell. Preliminary exploratory
+  scripts required corrections for hidden-control targeting, a no-op repaint
+  and a recovery-prompt wait; these were harness failures, not product findings.
+  No installed-wheel, production-mode, Windows/non-Chromium, screen-reader,
+  prolonged large-project or physical-device review was performed.
+
 ## Remaining checks
 
 This is the single maintained validation checklist. Issue state was checked on
