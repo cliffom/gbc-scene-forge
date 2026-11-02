@@ -16,7 +16,6 @@ Integrate [milestone 14](https://github.com/cliffom/gbc-scene-forge/milestone/14
 on `milestone/14` before a separate integration PR to main. The
 [editable artwork contract](EDITABLE-ARTWORK.md) defines identities, RGBA and guards.
 
-- [#133](https://github.com/cliffom/gbc-scene-forge/issues/133): hand editing, history and recoverable drafts.
 - [#134](https://github.com/cliffom/gbc-scene-forge/issues/134): shared consequences and selected-placement variations.
 - [#135](https://github.com/cliffom/gbc-scene-forge/issues/135): integrated mixed-writer workflow evaluation.
 

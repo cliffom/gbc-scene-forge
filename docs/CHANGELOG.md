@@ -6,7 +6,7 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
-## 0.27.0 — Native editable artwork services, review and MCP authoring
+## 0.27.0 — Native pixel artwork, browser editing and MCP authoring
 
 [Release notes](RELEASE-0.27.0.md). Prepared milestone 14 foundation; publication is separate.
 

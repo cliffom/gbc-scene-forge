@@ -1,0 +1,323 @@
+/** Native hand editing, scene-history isolation, revision conflicts and durable drafts. */
+import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { join } from 'node:path';
+import type { Page } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { record, array, string } from '../../../frontend/shared/decode.mts';
+import { PixelModel } from '../../../frontend/artwork/pixel-model.mts';
+import { decodeCandidate } from '../../../frontend/artwork/artwork-contracts.mts';
+import { test, paint } from '../support/browser-fixtures.ts';
+
+async function pixel(page: Page, x: number, y: number) {
+  const canvas = page.locator('#art-canvas');
+  await canvas.scrollIntoViewIfNeeded();
+  const box = await canvas.boundingBox();
+  assert.ok(box);
+  const zoom = Number(await page.locator('#art-zoom').inputValue());
+  return { x: box.x + (x + 0.5) * zoom, y: box.y + (y + 0.5) * zoom };
+}
+async function draw(page: Page, x: number, y: number, toX = x, toY = y) {
+  const a = await pixel(page, x, y),
+    b = await pixel(page, toX, toY);
+  await page.mouse.move(a.x, a.y);
+  await page.mouse.down();
+  await page.mouse.move(b.x, b.y, { steps: 4 });
+  await page.mouse.up();
+}
+async function post(page: Page, url: string, action: string, data: unknown) {
+  const catalog = record(await (await page.request.get(new URL('api/project', url).href)).json());
+  const response = await page.request.post(new URL('api/artwork-' + action, url).href, {
+    data,
+    headers: { 'X-Scene-Token': string(catalog.token) },
+  });
+  assert.equal(response.status(), 200, await response.text());
+  return record(await response.json());
+}
+async function opened(page: Page, url: string, id = 'grass') {
+  const catalog = record(await (await page.request.get(new URL('api/project', url).href)).json());
+  const inventory = await post(page, url, 'list', { project_revision: catalog.revision });
+  const item = array(inventory.documents, record).find((d) => record(d.target).atlas_id === id);
+  assert.ok(item);
+  return decodeCandidate(
+    await post(page, url, 'open', {
+      target: item.target,
+      artwork_revision: item.artwork_revision,
+      project_revision: catalog.revision,
+    }),
+  );
+}
+async function setup(
+  page: Page,
+  workspace: {
+    folder: string;
+    python: string;
+    start: (root: string, fixture?: boolean) => Promise<string>;
+  },
+) {
+  const root = join(workspace.folder, 'project');
+  const scene = execFileSync(
+    workspace.python,
+    [
+      '-c',
+      `
+import sys
+sys.path.insert(0,'tests')
+from pathlib import Path
+from support.atlas_fixture import bundle
+from gbc_scene_forge.project.application import Project
+p=Project.create(Path(sys.argv[1]),'Pixel workshop')
+r=lambda:p.catalog()['revision']
+a=p.artwork.documents
+for atlas,kind,w,h in [('grass','tile',8,8),('actor','sprite',16,16)]:
+    c=a.create(atlas,atlas.title(),kind,w,h,r(),origin=[4,8] if kind=='sprite' else None)
+    c=a.edit(c,[{'x':x,'y':y,'rgba':[76,112,53,255] if (x+y)%3 else [116,151,73,255]} for y in range(h) for x in range(w)])
+    a.save(c)
+path,_=bundle(Path(sys.argv[1]).parent/'imported')
+p.artwork.import_atlas(path,r())
+s=p.scenes.create('Workshop',12,10,8,r())
+s['scene']['cells'][0][0]='grass/artwork/0/0'
+s['scene']['cells'][1][1]='grass/artwork/0/0#1'
+s['scene']['objects']=[{'id':1,'asset':'actor/artwork','x':32,'y':32,'origin':[4,8]}]
+s['scene']['next_object_id']=2
+p.scenes.save(s['id'],s['scene'],s['revision'],r())
+print(s['id'])
+`,
+      root,
+    ],
+    { encoding: 'utf8' },
+  ).trim();
+  const url = await workspace.start(root, true);
+  await page.goto(url);
+  await expect(page.locator('#scenes')).toBeEnabled();
+  await page.locator('#scenes').selectOption(scene);
+  await expect(page.locator('#status')).toHaveText('Scene opened.');
+  return { url, scene, root };
+}
+async function openGrass(page: Page) {
+  await page.locator('#show-artwork').click();
+  await expect(page.locator('#art-source')).toBeEnabled();
+  await page.locator('#art-source').selectOption({ label: 'grass / artwork (editable)' });
+  await page.locator('#art-open').click();
+  await expect(page.locator('#art-canvas')).toBeVisible();
+  await expect(page.locator('#art-review')).toBeEnabled();
+}
+
+test('pixel drawing tools, exact transparency, reviewed save and scene history isolation', async ({
+  page,
+  workspace,
+}, info) => {
+  const { url, scene } = await setup(page, workspace);
+  // Dirty scene content/history must survive every artwork operation.
+  await page.locator('[data-asset="grass/artwork"]').first().click();
+  await paint(page, 20, 20);
+  await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
+  await openGrass(page);
+  await expect(page.locator('#art-shared')).toContainText('every placement');
+  await page.locator('#art-color').fill('#cc6633');
+  await draw(page, 0, 0, 7, 0);
+  await page.locator('#art-tool').selectOption('rectangle');
+  await draw(page, 1, 1, 6, 6);
+  await page.locator('#art-tool').selectOption('fill');
+  await draw(page, 2, 2);
+  await page.locator('#art-tool').selectOption('line');
+  await draw(page, 0, 7, 7, 0);
+  await page.locator('#art-tool').selectOption('pick');
+  await draw(page, 0, 0);
+  await expect(page.locator('#art-color')).toHaveValue('#cc6633');
+  await page.locator('#art-tool').selectOption('select');
+  await draw(page, 0, 0, 1, 1);
+  await page.locator('#art-copy').click();
+  await page.locator('#art-deselect').click();
+  await page.locator('#art-tool').selectOption('select');
+  await draw(page, 4, 4, 5, 5);
+  await page.locator('#art-paste').click();
+  await page.locator('#art-horizontal').click();
+  await page.locator('#art-vertical').click();
+  await page.locator('#art-rotate').click();
+  await page.locator('#art-canvas').focus();
+  await page.keyboard.press('ArrowRight');
+  await page.locator('#art-tool').selectOption('erase');
+  await draw(page, 7, 7);
+  await page.locator('#art-tool').selectOption('pencil');
+  await page.locator('#art-color').fill('#010203');
+  await page.locator('#art-alpha').fill('0');
+  await draw(page, 0, 0);
+  // Escape cancels a complete in-progress stroke without touching history.
+  const a = await pixel(page, 1, 0),
+    b = await pixel(page, 3, 0);
+  await page.mouse.move(a.x, a.y);
+  await page.mouse.down();
+  await page.mouse.move(b.x, b.y);
+  await page.keyboard.press('Escape');
+  await page.mouse.up();
+  await expect(page.locator('#artwork-dialog')).toBeVisible();
+  await page.locator('#art-undo').click();
+  await page.locator('#art-redo').click();
+  await page.locator('#art-review').click();
+  await expect(page.locator('#art-save')).toBeEnabled();
+  await expect(page.locator('#art-references')).toContainText('2 saved references');
+  await expect(page.locator('#art-scene-after')).toBeVisible();
+  const screenshot = info.outputPath('pixel-editor-desktop.png');
+  await page.screenshot({ path: screenshot });
+  await page.locator('#art-save').click();
+  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+  await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
+  await expect(page.locator('#undo')).toBeEnabled();
+  const saved = new PixelModel(await opened(page, url));
+  assert.deepEqual(saved.color({ x: 0, y: 0 }), [1, 2, 3, 0]);
+  assert.deepEqual(saved.color({ x: 1, y: 0 }), [204, 102, 51, 255]);
+  assert.deepEqual(saved.color({ x: 7, y: 7 }), [0, 0, 0, 0]);
+  await page.locator('#undo').click();
+  await expect(page.locator('#scene-save-state')).toHaveText('Saved');
+  await page.reload();
+  await expect(page.locator('#status')).toHaveText('Scene opened.');
+  assert.equal(await page.locator('#scenes').inputValue(), scene);
+  assert.deepEqual(new PixelModel(await opened(page, url)).color({ x: 0, y: 0 }), [1, 2, 3, 0]);
+});
+
+test('new artwork, duplicate imported pixels, compact UI and recoverable draft copy', async ({
+  page,
+  workspace,
+}, info) => {
+  const { url } = await setup(page, workspace);
+  await page.setViewportSize({ width: 800, height: 900 });
+  await page.locator('#show-artwork').click();
+  await page.locator('#art-id').fill('hand_tile');
+  await page.locator('#art-name').fill('Hand tile');
+  await page.locator('#art-width').fill('8');
+  await page.locator('#art-height').fill('8');
+  await page.locator('#art-create').click();
+  await expect(page.locator('#art-canvas')).toBeVisible();
+  await page.locator('#art-tool').selectOption('fill');
+  await draw(page, 0, 0);
+  await page.locator('#art-review').click();
+  await expect(page.locator('#art-save')).toBeEnabled();
+  const screenshot = info.outputPath('pixel-editor-compact.png');
+  await page.screenshot({ path: screenshot });
+  await page.locator('#art-save').click();
+  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+  assert.equal((await opened(page, url, 'hand_tile')).descriptor.name, 'Hand tile');
+  // Imported artwork offers only copying, and creation does not replace placements.
+  await page.locator('#show-artwork').click();
+  await page.locator('#art-source').selectOption({ label: 'terrain / earth (copy to edit)' });
+  await expect(page.locator('#art-open')).toBeDisabled();
+  await page.locator('#art-source-grid').selectOption('8');
+  await page.locator('#art-id').fill('copied_tile');
+  await page.locator('#art-name').fill('Copied tile');
+  await page.locator('#art-duplicate').click();
+  await expect(page.locator('#art-canvas')).toBeVisible();
+  await page.locator('#art-color').fill('#eeaa44');
+  await page.locator('#art-tool').selectOption('pencil');
+  await draw(page, 1, 1);
+  await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
+  // Interrupt the dialog after its checkpoint, without an explicit close/save.
+  await page.reload();
+  await expect(page.locator('#status')).toHaveText('Scene opened.');
+  await page.locator('#show-artwork').click();
+  await page.getByRole('button', { name: 'Recover copy', exact: true }).click();
+  await expect(page.locator('#art-message')).toContainText('Recovered a new copy');
+  await page.locator('#art-review').click();
+  await page.locator('#art-save').click();
+  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+  assert.deepEqual(
+    new PixelModel(await opened(page, url, 'copied_tile')).color({ x: 1, y: 1 }),
+    [238, 170, 68, 255],
+  );
+  const drafts = await post(page, url, 'draft-list', {});
+  assert.equal(array(drafts.drafts, record).length, 1); // Original retained after recovery.
+});
+
+test('external artwork save rejects reviewed pixels and preserves stale checkpoint for download', async ({
+  page,
+  workspace,
+}) => {
+  const { url } = await setup(page, workspace);
+  await openGrass(page);
+  await page.locator('#art-color').fill('#ff0000');
+  await draw(page, 0, 0);
+  await page.locator('#art-review').click();
+  await expect(page.locator('#art-save')).toBeEnabled();
+  let other = await opened(page, url);
+  other = decodeCandidate(
+    await post(page, url, 'edit', {
+      candidate: other,
+      writes: [{ x: 0, y: 0, rgba: [0, 0, 255, 255] }],
+    }),
+  );
+  const review = await post(page, url, 'review', { candidate: other });
+  await post(page, url, 'save', { candidate: other, receipt: review.receipt });
+  await page.locator('#art-save').click();
+  await expect(page.locator('#art-message')).toContainText('retained');
+  await expect(page.locator('#artwork-dialog')).toBeVisible();
+  await page.locator('#art-close').click();
+  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+  assert.deepEqual(new PixelModel(await opened(page, url)).color({ x: 0, y: 0 }), [0, 0, 255, 255]);
+  await page.reload();
+  await expect(page.locator('#status')).toHaveText('Scene opened.');
+  await page.locator('#show-artwork').click();
+  await page.getByRole('button', { name: 'Recover copy', exact: true }).click();
+  await expect(page.locator('#art-message')).toContainText('retained');
+  await expect(page.locator('#art-start')).toBeVisible();
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: 'Download', exact: true }).click(),
+  ]);
+  assert.equal(download.suggestedFilename(), 'artwork-draft.json');
+});
+
+test('placed sprite editing preserves origin and references; blank sprites preview without placing', async ({
+  page,
+  workspace,
+}) => {
+  const { url, scene } = await setup(page, workspace);
+  const before = record(
+    await (await page.request.get(new URL(`api/scene/${scene}`, url).href)).json(),
+  );
+  await page.locator('input[name=tool][value=select]').check();
+  await page.locator('.layer-choice').filter({ hasText: 'Sprites' }).click();
+  await paint(page, 34, 30);
+  await page.locator('#edit-placement-artwork').click();
+  await expect(page.locator('#art-source option:checked')).toContainText('actor / artwork');
+  await page.locator('#art-open').click();
+  await page.locator('#art-tool').selectOption('erase');
+  await draw(page, 0, 0, 15, 0);
+  // Pointer cancellation rolls back the next stroke in full.
+  const a = await pixel(page, 0, 1),
+    b = await pixel(page, 15, 1);
+  await page.mouse.move(a.x, a.y);
+  await page.mouse.down();
+  await page.mouse.move(b.x, b.y);
+  await page.locator('#art-canvas').dispatchEvent('pointercancel', { pointerId: 1 });
+  await page.mouse.up();
+  await page.locator('#art-review').click();
+  await expect(page.locator('#art-references')).toContainText('1 saved references');
+  await page.locator('#art-save').click();
+  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+  const saved = await opened(page, url, 'actor');
+  assert.deepEqual(saved.descriptor.origin, [4, 8]);
+  const pixels = new PixelModel(saved);
+  assert.deepEqual(pixels.color({ x: 0, y: 0 }), [0, 0, 0, 0]);
+  assert.deepEqual(pixels.color({ x: 0, y: 1 }), [76, 112, 53, 255]);
+  const after = record(
+    await (await page.request.get(new URL(`api/scene/${scene}`, url).href)).json(),
+  );
+  assert.equal(after.revision, before.revision);
+  assert.deepEqual(after.scene, before.scene);
+  await page.locator('#show-artwork').click();
+  await page.locator('#art-id').fill('new_sprite');
+  await page.locator('#art-name').fill('New sprite');
+  await page.locator('#art-kind').selectOption('sprite');
+  await page.locator('#art-create').click();
+  await page.locator('#art-tool').selectOption('rectangle');
+  await draw(page, 1, 1, 6, 6);
+  await page.locator('#art-review').click();
+  await expect(page.locator('#art-scene-after')).toBeVisible();
+  await page.locator('#art-save').click();
+  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+  assert.equal((await opened(page, url, 'new_sprite')).descriptor.kind, 'sprite');
+  const finalScene = record(
+    await (await page.request.get(new URL(`api/scene/${scene}`, url).href)).json(),
+  );
+  assert.deepEqual(finalScene.scene, before.scene);
+});

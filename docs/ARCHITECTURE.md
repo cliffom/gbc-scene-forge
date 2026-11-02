@@ -38,6 +38,11 @@ payload fields to the owning domain service. The API retains the initialized
 project and refresh-probe state after project creation. Add fixed endpoints to the
 registry and keep payload defaults and response status decisions in their handlers.
 
+The fixed `artwork-*` route group dispatches through `adapters/http/artwork.py`
+to native document/review services and `artwork/drafts.py`. That adapter encodes
+review PNG bytes as base64 and requires a review receipt for browser saves;
+owned checkpoints remain outside committed project inventory.
+
 `adapters/http/server.py` owns HTTP framing, host/token checks, request limits,
 error translation and request serialization. Its small `WORKSPACE_ROUTES`
 registry handles workspace catalog/creation; scoped project dispatch preserves
