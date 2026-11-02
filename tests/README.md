@@ -44,6 +44,8 @@ It imports only the installed application, never test helpers.
 strict schemas, exact RGBA/resource reads, reviewed commits, contention and a
 complete official-SDK new-tile and selected-variation review/commit/placement workflow. Run it against
 the installed optional-MCP wheel through `make test-mcp`.
+`backend/adapters/test_mcp_artwork_workshop.py` runs the example over the actual SDK,
+checking normal placement and conflicts with a competing saved scene or external map edit.
 
 `make test-frontend` discovers the TypeScript suite files one domain level
 under `frontend/`; their basenames retain the public `make test-frontend-<suite>`

@@ -15,6 +15,21 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Workshop placement conflict guards (PR #142 review)
+
+- **Scope:** Prepared 0.27.0 working tree based on
+  [`adbc257`](https://github.com/cliffom/gbc-scene-forge/commit/adbc257e807cae8d2212ce47f565f753b574539f),
+  checked on 2026-11-02 with Darwin 27.0.0, Python 3.13.13 and Node 24.22.1.
+- **Method:** Ran the [workshop regression tests](../tests/backend/adapters/test_mcp_artwork_workshop.py)
+  over actual SDK stdio, injecting a competing Forge scene save or external map edit
+  after artwork commit and before placement. Also ran `make lint test`.
+- **Result:** Both race cases failed before the fix because the workshop accepted
+  fresh guards and overwrote the competing edit. After the fix, both report conflicts
+  and preserve the winner's exact scene/revision; normal creation/placement passes.
+  Lint, documentation checks, all 413 Python tests and frontend suites passed.
+- **Limits:** Synthetic local SDK races and source-checkout checks; no new browser,
+  installed-wheel, human or external-platform validation was performed for this fix.
+
 ## Selected artwork variations and mixed authoring (#134, #135)
 
 - **Scope:** Prepared 0.27.0 implementation contents committed as

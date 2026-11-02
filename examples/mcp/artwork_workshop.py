@@ -202,18 +202,22 @@ async def workshop(args):
                     },
                 )
                 await capture(report, atlas_id)
-                await call(
+                committed = await call(
                     "commit_artwork",
                     project=project,
                     candidate=candidate,
                     receipt=report["receipt"],
                 )
-                loaded = await call("get_scene", project=project, scene_id=state["scene_id"])
+                # The model still derives from the reviewed scene. Only our own
+                # artwork commit may advance its guards, including map re-encoding.
                 await call(
                     "save_scene",
-                    **await guard(),
+                    project=project,
+                    project_revision=committed["project_revision"],
                     scene_id=loaded["id"],
-                    scene_revision=loaded["revision"],
+                    scene_revision=committed["scene_revisions"].get(
+                        loaded["id"], loaded["revision"]
+                    ),
                     scene=model,
                 )
         else:

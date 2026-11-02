@@ -542,7 +542,10 @@ python examples/mcp/artwork_workshop.py --root /tmp/workshop/projects --output /
 
 Write files contain a JSON list such as `[{"x":7,"y":7,"rgba":[100,210,220,255]}]`.
 The example saves PNG resources and call transcripts, and stops on errors without
-replaying writes. Inspect the previews before deciding the next revision. It is
+replaying writes. Initial placement retains the reviewed scene base, advancing
+guards only to the artwork commit's acknowledged revisions; a competing scene
+save or external map edit causes a conflict instead of being overwritten.
+Inspect the previews before deciding the next revision. It is
 a scripted SDK client, not an embedded agent. The
 [workflow evaluation](evaluations/artwork-workflows.md) distinguishes those checks
 from agent visual inspection and outstanding human/platform work.
