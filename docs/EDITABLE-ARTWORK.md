@@ -216,9 +216,15 @@ region captures only that static image. Reimport of the original cannot modify
 the copy; reimport targeting a native atlas ID is rejected.
 
 Out-of-band edits to any declared source/derived file are drift, not an accepted
-new revision: retain local work and require restoring the declared bytes or an
-explicit supported import into a fresh identity. Never repair inventory digests
-silently. A raw PNG replacement alone cannot acknowledge matching derived assets.
+new revision. Preserve local work and copy changed files outside the managed
+asset inventory before restoring every drifted file to its exact declared bytes.
+Only after inventory verification succeeds may the preserved artwork enter
+through a supported import under a fresh identity; subsequent native editing
+requires duplication as described above. Importing under a new ID does not bypass
+drift checks. If the original bytes are unavailable, saves and imports remain
+blocked; retain the changed files and drafts while recovering a consistent project
+from a backup. Never repair inventory digests silently. A raw PNG replacement
+alone cannot acknowledge matching derived assets.
 
 Artwork drafts live at `.forge/artwork-drafts/<draft_uuid>.json`, independent of
 scene checkpoints/history. Each record contains version, draft/project UUIDs,
