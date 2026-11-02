@@ -15,6 +15,21 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Legacy sprite artwork in scene transfer (#128)
+
+- **Scope:** Local 0.26.0 follow-up working tree based on `eafa61addfaf3949b55491729743216c231beb93`,
+  macOS, Python 3.13.13 and Node 24.22.1 on 2026-11-01.
+- **Method:** Added mixed tile/sprite legacy-project regressions to the transfer
+  suite, then ran `make docs-check lint test`. Checked both export scopes,
+  preflight without writes, generated sprite mappings/images, reopen/re-export,
+  unchanged source files and rejection of missing declared dependencies.
+- **Result:** The new roundtrip regression failed for both export scopes before
+  the fix; all 17 transfer tests passed afterward. Full validation passed lint,
+  347 Python tests and the TypeScript model/API/build checks.
+- **Limits:** Synthetic local fixtures; browser, installed-wheel and official Tiled
+  checks were not repeated for this backend-only follow-up. Earlier scene-transfer
+  evidence below describes its own revision and validation boundaries.
+
 ## Forge scene transfer (#127)
 
 - **Scope:** Prepared 0.26.0 issue branch based on `bdbef389f8b082d3b52ea99686bf0c566edd4264`,

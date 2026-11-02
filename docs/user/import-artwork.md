@@ -134,6 +134,9 @@ archive. Modified image-collection files must agree with their Forge authoring
 sheets and metadata; arbitrary external Tiled modifications remain unsupported.
 
 Whole-project ZIPs from earlier Forge versions can use their project manifest.
+For native projects predating sprite placement, undeclared sprite tilesets are
+rebuilt from the validated authoring sheet. Files declared in the asset inventory
+or referenced by a map must still be present.
 Scene-only ZIPs need the authoring metadata added in **0.26.0**; older scene-only
 ZIPs report an actionable re-export error. New scene exports include managed
 artwork sheets and a transfer manifest as well as their Tiled dependencies.

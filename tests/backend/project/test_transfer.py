@@ -8,6 +8,8 @@ import unittest
 import zipfile
 from unittest.mock import patch
 
+from support.atlas_fixture import bundle, image
+
 from backend.project import test_exporting as fixture
 from gbc_scene_forge.core.errors import Conflict
 from gbc_scene_forge.core.serialization import json_text
@@ -50,6 +52,108 @@ class TransferTests(unittest.TestCase):
         self.assertTrue(report["compatible"], report)
         result = self.check(payload, selection, dry_run=False, confirmation=report["confirmation"])
         return result
+
+    def legacy_mixed_source(self):
+        source = Project.create(self.folder / "legacy", "Legacy")
+        path, manifest = bundle(self.folder / "mixed", "mixed")
+        manifest["cell_palettes"] = [0] * 4
+        manifest["regions"] = [
+            {"name": "earth", "kind": "tile", "x": 0, "y": 0, "width": 8, "height": 16},
+            {"name": "idle", "kind": "sprite", "x": 8, "y": 0, "width": 8, "height": 16},
+        ]
+        manifest["animations"] = []
+        path.write_text(json_text(manifest))
+        (path.parent / "atlas.png").write_bytes(image(16, 16, rgb=(255, 255, 255)))
+        source.artwork.import_atlas(path, source.catalog()["revision"])
+        loaded = source.scenes.create("Legacy scene", 2, 2, 8, source.catalog()["revision"])
+        loaded["scene"]["cells"][0][0] = "mixed/earth/0/0"
+        source.scenes.save(
+            loaded["id"], loaded["scene"], loaded["revision"], source.catalog()["revision"]
+        )
+        # Supported native projects predating sprite placement have neither
+        # sprite mappings nor generated sprite files or map references.
+        document, _ = source.read()
+        document["atlases"]["mixed"]["tiles"].pop("sprites")
+        for asset_path in list(document["files"]):
+            if asset_path.startswith("assets/mixed/sprites"):
+                (source.root / asset_path).unlink()
+                del document["files"][asset_path]
+        map_path = source.root / document["scenes"][0]["path"]
+        encoded = json.loads(map_path.read_bytes())
+        encoded["tilesets"] = [
+            ref for ref in encoded["tilesets"] if not ref["source"].endswith("/sprites.tsj")
+        ]
+        map_path.write_text(json_text(encoded))
+        (source.root / "forge.project.json").write_text(json_text(document))
+        return source, source.scenes.load(loaded["id"])
+
+    def test_legacy_mixed_atlas_materializes_sprites_without_changing_source(self):
+        from gbc_scene_forge.artwork import png
+
+        source, loaded = self.legacy_mixed_source()
+        before = {p: p.read_bytes() for p in source.root.rglob("*") if p.is_file()}
+        for scope in ("project", "scene"):
+            with self.subTest(scope=scope):
+                raw, _ = source.export_bundle(
+                    scope,
+                    source.catalog()["revision"],
+                    **({"scene_id": loaded["id"]} if scope == "scene" else {}),
+                )
+                payload = base64.b64encode(raw).decode()
+                selection = {loaded["id"]: "Legacy " + scope}
+                destination_before = self.snapshot()
+                self.assertTrue(self.check(payload, selection)["compatible"])
+                self.assertEqual(self.snapshot(), destination_before)
+                result = self.import_checked(payload, selection)
+                target = result["assets"][0]["destination"]
+                entry = self.destination.read()[0]["atlases"][target]
+                self.assertEqual(entry["tiles"]["sprites"], {target + "/idle": 0})
+                self.assertTrue((self.destination.root / f"assets/{target}/sprites.tsj").is_file())
+                sprite = self.destination.root / f"assets/{target}/sprites/0.png"
+                self.assertEqual(
+                    png.decode(sprite.read_bytes()), (8, 16, bytes([255]) * 8 * 16 * 4)
+                )
+                reopened = Project(self.destination.root)
+                self.assertEqual(
+                    reopened.scenes.load(result["imported"][0])["scene"],
+                    transfer.remap_scene(loaded["scene"], {"mixed": target}, {}),
+                )
+                reopened.export_bundle("project", self.dest_revision())
+        self.assertEqual({p: p.read_bytes() for p in source.root.rglob("*") if p.is_file()}, before)
+
+    def test_legacy_sprite_omission_cannot_hide_declared_missing_dependencies(self):
+        source, loaded = self.legacy_mixed_source()
+        raw, _ = source.export_bundle("project", source.catalog()["revision"])
+        before = self.snapshot()
+        for declaration in ("inventory", "mapping", "map"):
+            with self.subTest(declaration=declaration):
+                files = self.files(raw)
+                document = json.loads(files["forge.project.json"])
+                path = "assets/mixed/sprites.tsj"
+                if declaration == "inventory":
+                    document["files"][path] = digest(b"missing")
+                elif declaration == "mapping":
+                    document["atlases"]["mixed"]["tiles"]["sprites"] = {"mixed/idle": 0}
+                else:
+                    map_path = document["scenes"][0]["path"]
+                    encoded = json.loads(files[map_path])
+                    encoded["tilesets"].append(
+                        {"firstgid": 3, "source": "../assets/mixed/sprites.tsj"}
+                    )
+                    files[map_path] = json_text(encoded).encode()
+                files["forge.project.json"] = json_text(document).encode()
+                report = json.loads(files["export.json"])
+                report["files"] = {
+                    p: digest(data) for p, data in files.items() if p != "export.json"
+                }
+                files["export.json"] = json_text(report).encode()
+                payload = base64.b64encode(exporting.archive(files)).decode()
+                report = self.check(payload, {loaded["id"]: "Invalid legacy"})
+                self.assertFalse(report["compatible"])
+                self.assertIn(path, "; ".join(report["errors"]))
+                with self.assertRaises(ValueError):
+                    self.check(payload, {loaded["id"]: "Invalid legacy"}, dry_run=False)
+                self.assertEqual(self.snapshot(), before)
 
     def test_preflight_names_selection_and_existing_scene_unchanged(self):
         before = self.snapshot()

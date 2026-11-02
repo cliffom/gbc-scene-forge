@@ -161,6 +161,11 @@ def authoring_assets(entry, files):
             if p["name"] == "forge:asset"
         }
         require(set(mapping) == expected_keys, f"Unsupported tile identities: {path}")
+        # Older native projects have no sprite mapping or generated sprite files.
+        # Inventory and map references are checked separately; rebuild only this
+        # undeclared legacy group from its already-validated authoring sheet.
+        if group == "sprites" and "sprites" not in entry["tiles"] and path not in files:
+            continue
         require(path in files, f"Missing tileset dependency: {path}")
         document = exporting.parse_json(files[path], path)
         for image_path, size in exporting.tileset_images(document, path).items():
@@ -198,11 +203,13 @@ def authoring_assets(entry, files):
     return rebuilt
 
 
-def dependencies(scene, source, references=()):
+def dependencies(scene, source, references, files):
     # Declared tilesets are dependencies even when no tile from that set is painted.
-    assets = {
-        exporting.dependency("scenes/map.tmj", ref["source"]).split("/")[1] for ref in references
-    }
+    assets = set()
+    for reference in references:
+        path = exporting.dependency("scenes/map.tmj", reference["source"])
+        require(path in files, f"Missing tileset dependency: {path}")
+        assets.add(path.split("/")[1])
     definitions = set()
     for layer in tiled.scene_layers(scene):
         for row in layer.get("cells", []):

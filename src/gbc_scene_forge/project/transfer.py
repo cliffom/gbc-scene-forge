@@ -51,7 +51,9 @@ def prepare(store, document, encoded, selection, fingerprint):
         try:
             encoded_scene = json.loads(files[item["path"]])
             scene = tiled.decode(encoded_scene, source)
-            assets, definitions = transfer.dependencies(scene, source, encoded_scene["tilesets"])
+            assets, definitions = transfer.dependencies(
+                scene, source, encoded_scene["tilesets"], files
+            )
             row.update(assets=assets, definitions=definitions)
             if chosen:
                 row["name"] = name(row["name"])
