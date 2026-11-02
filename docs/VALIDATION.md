@@ -15,6 +15,50 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Selected artwork variations and mixed authoring (#134, #135)
+
+- **Scope:** Prepared 0.27.0 implementation contents committed as
+  [`94bef74`](https://github.com/cliffom/gbc-scene-forge/commit/94bef74563d0151d0582db58fab793f09b841df9),
+  checked on 2026-11-02; macOS 27.0.1 arm64, Python 3.13.13, Node 24.22.1,
+  Playwright 1.64.1 and Chromium 156.0.8078.4. Production distributions were built
+  from the frozen source tree; plain and optional-MCP wheels used separate venvs.
+  The earlier source walkthrough retains its working-tree provenance in the
+  [task evaluation](evaluations/artwork-workflows.md).
+- **Method:** Ran `make docs-check lint test`, production `make build check-dist
+  test-browser`, isolated optional-MCP wheel smoke checks and `make test-mcp`.
+  Ran pixel/first-use acceptance with `FORGE_TEST_PYTHON` pointing to the plain
+  installed wheel, then all three optional MCP/browser scenarios with both
+  `FORGE_TEST_PYTHON` and `FORGE_MCP_PYTHON` pointing to the installed MCP wheel.
+  Final focused variation checks also exercise adding/removing optional selections
+  within an immutable draft. Domain/SDK coverage verifies transforms, metadata,
+  origins, stamps/definitions, selected/unselected scenes, receipt/scene races,
+  rollback and ZIP reopen. The evaluation separately records actual agent image
+  inspection and agent-driven browser Pencil/Undo/Redo followed by SDK revisions,
+  plus executable [mixed SDK/browser acceptance](../tests/playwright/mcp/artwork-mcp.spec.ts).
+  Agent screenshot inspection covered the production variation dialog at
+  [1440×1000](evaluations/assets/artwork-workflows/variation-desktop.png) and
+  [800×900](evaluations/assets/artwork-workflows/variation-compact.png).
+- **Result:** Documentation/lint/type checks, 411 Python tests, frontend suites
+  (including 7,655 contract cases) and eight final focused variation tests passed.
+  Both distributions passed strict metadata checks; plain and optional-MCP wheels
+  each passed seven smoke checks, and the installed optional-MCP suite passed 74
+  tests. Full Chromium acceptance passed 60 scenarios without retries; two opt-in
+  observational profiles were skipped. The installed plain wheel passed all 13
+  pixel scenarios and first use; the installed optional-MCP wheel passed all three
+  browser scenarios, including mixed artwork authoring and conflict recovery.
+  An initial missing required map-read budget
+  message broke native saves and was fixed; two initial browser assertions assumed
+  explicit layers after successful saves and were corrected for supported compact
+  scenes. The [evaluation](evaluations/artwork-workflows.md) retains these failures,
+  task outcomes, exact writes, observations and images.
+- **Limits:** Small synthetic tasks, local automation and bounded agent visual
+  assessment; no human participant, prolonged drawing/novice study or broad art
+  quality claim. Not every workflow was repeated at both viewports. External
+  PNG/gbc-atlas/Aseprite intake remains separate from native editing; no full layered
+  round-trip or target conversion is claimed. No Windows, non-Chromium, screen-reader,
+  physical-device or official Tiled/rasterizer assessment was performed. Ignored local
+  reports/transcripts are not archived CI evidence. No package was published.
+
 ## Artwork checkpoint acknowledgment recovery (#141)
 
 - **Scope:** Prepared 0.27.0 working tree based on

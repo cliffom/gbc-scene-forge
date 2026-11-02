@@ -421,7 +421,7 @@
     ]
   },
   "images": {
-    "variation-desktop.png": "f72881efd354b2d8f77c6245ed2c7f2f5be6e13b4d194e7c682b0ed4c4e93554",
+    "variation-desktop.png": "a55fce7a0d4f6918c273ce7589a942e8c65c9ce133e71aedf302e8318a1e3afb",
     "cool-lantern.png": "0b65c71d6b5e03a1c84946754fa54f16d2e9188c329f65ab5a8d963e1b588cd7",
     "workshop-before.png": "58c0a24d805b7703f4ea52e62a7217da9b3618458d3b728e8c19ee94fd2a576c",
     "workshop-after.png": "98cafbe01ee8cc89db6e291293e210af7d08c119577163436393c0f73919c432",
@@ -432,5 +432,6 @@
     "No independent human assessment",
     "No broad art-quality or prolonged drawing-comfort claim",
     "Local transcripts are ignored; committed example, observations and images are the retained evidence"
-  ]
+  ],
+  "screenshot_scope": "Production Chromium acceptance at implementation 94bef74563d0151d0582db58fab793f09b841df9; desktop 1440x1000 and compact 800x900, 2026-11-02"
 }
