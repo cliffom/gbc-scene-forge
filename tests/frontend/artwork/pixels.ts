@@ -137,7 +137,6 @@ assert.deepEqual(session.original, candidate);
 console.log('Pixel history, drawing, transforms, bounds, and serialized checkpoint races passed.');
 
 // A lost first checkpoint response is inspected before explicit cleanup, never replayed.
-let uncertain: ArtworkSession;
 const routes: string[] = [];
 const ambiguousApi: ProjectApi['json'] = (route, decode) => {
   routes.push(route);
@@ -151,7 +150,7 @@ const ambiguousApi: ProjectApi['json'] = (route, decode) => {
   }
   return Promise.resolve(decode({}));
 };
-uncertain = new ArtworkSession(candidate, ambiguousApi);
+const uncertain = new ArtworkSession(candidate, ambiguousApi);
 await assert.rejects(uncertain.checkpoint(), /lost acknowledgment/);
 await uncertain.removeCheckpoint();
 assert.deepEqual(routes, ['artwork-draft-write', 'artwork-draft-list', 'artwork-draft-delete']);
