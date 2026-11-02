@@ -15,6 +15,21 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Captured-byte artwork review budget (#138)
+
+- **Scope:** Local macOS working tree based on
+  `c4a8b6b47c051d69f65c7d3d0dafd3e17f1218da`, on 2026-11-02.
+- **Method:** Synthetic regressions grow five saved maps to 3,600,000 bytes each
+  immediately before loading, and exercise exact-budget and one-byte-over-budget
+  scans. Assert rejection before decoding the over-budget map, unchanged candidates
+  and no project writes beyond the simulated external edits. Ran `make lint test`
+  and `make docs-check` after updating this record.
+- **Result:** All 18 artwork-review tests passed. The 18,000,000-byte growth case
+  rejects against the production 16 MiB limit; an exact-budget scan returns a receipt.
+  Lint, type/documentation checks, all 387 Python tests and frontend suites passed.
+- **Limits:** Local service fixtures simulate external edits; no live editor,
+  browser acceptance or installed-wheel checks were run for this correction.
+
 ## Native candidate artwork review (#131)
 
 - **Scope:** Local macOS, Python 3.13.13 and Node 24.22.1, working tree based on

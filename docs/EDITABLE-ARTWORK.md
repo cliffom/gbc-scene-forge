@@ -371,8 +371,10 @@ It returns affected saved scenes with their exact revisions and placement counts
 a full `total`, and up to 256 detailed `locations` beginning at `offset`.
 Use `next_offset` for another page; `scan_complete` distinguishes the full scan
 from `locations_complete`. Hidden placements count too. The full scan rejects
-projects above 64 saved scenes or 16 MiB of serialized maps before map decoding;
-reduce project scope rather than accepting a partial consequence report.
+projects above 64 saved scenes or 16 MiB of serialized maps. Bounded reads count
+the actual captured bytes against the remaining budget before decoding each map,
+including maps changed by external editors during the scan. Reduce project scope
+rather than accepting a partial consequence report.
 
 To compare scene placements, pass an explicit scene request:
 

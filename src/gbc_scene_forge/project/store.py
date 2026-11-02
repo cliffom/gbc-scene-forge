@@ -22,6 +22,12 @@ from .schema import MANIFEST, validate
 
 
 @dataclass
+class _SceneReadBudget:
+    remaining: int
+    message: str
+
+
+@dataclass
 class ReadSession:
     """Manifest and map reads sharing the owning store's already-held lock."""
 
@@ -44,6 +50,16 @@ class ReadSession:
         if not self._active:
             raise RuntimeError("The saved-read session has ended")
         return self.store._load_scene(scene_id, self.document)
+
+    def scenes(self, *, max_bytes: int, limit_message: str) -> list[SceneRecord]:
+        """Bound the captured serialized bytes before decoding each saved map."""
+        if not self._active:
+            raise RuntimeError("The saved-read session has ended")
+        budget = _SceneReadBudget(max_bytes, limit_message)
+        return [
+            self.store._load_scene(entry["id"], self.document, budget=budget)
+            for entry in self.document["scenes"]
+        ]
 
 
 class ProjectStore:
@@ -179,13 +195,26 @@ class ProjectStore:
             guards[entry["path"]] = expected
         return guards
 
-    def _load_scene(self, scene_id: str, document: NativeDocument | None = None) -> SceneRecord:
+    def _load_scene(
+        self,
+        scene_id: str,
+        document: NativeDocument | None = None,
+        *,
+        budget: _SceneReadBudget | None = None,
+    ) -> SceneRecord:
         if document is None:
             document, _ = self.read()
         entry = next((s for s in document["scenes"] if s["id"] == scene_id), None)
         if entry is None:
             raise InvalidRequest("Choose a project scene")
-        data = safe_path(self.root, entry["path"]).read_bytes()
+        limit = 4 * 1024 * 1024
+        if budget is not None:
+            limit = min(limit, budget.remaining)
+        with safe_path(self.root, entry["path"]).open("rb") as stream:
+            data = stream.read(limit + 1)
+        if budget is not None:
+            require(len(data) <= budget.remaining, budget.message)
+            budget.remaining -= len(data)
         require(len(data) <= 4 * 1024 * 1024, "Scene exceeds 4 MiB")
         return {
             "id": scene_id,

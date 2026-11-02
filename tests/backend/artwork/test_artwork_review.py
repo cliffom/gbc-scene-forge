@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 from gbc_scene_forge.artwork import editable, png, review
 from gbc_scene_forge.core.errors import Conflict
+from gbc_scene_forge.formats import tiled
 from gbc_scene_forge.project.application import Project
 
 
@@ -242,6 +243,49 @@ class ArtworkReviewTests(unittest.TestCase):
         with patch.object(review, "MAX_MAP_BYTES", 1), self.assertRaisesRegex(ValueError, "16 MiB"):
             self.reviews.review(candidate)
         self.assertEqual(self.snapshot(), before)
+
+    def test_map_budget_counts_captured_bytes_and_accepts_exact_limit(self):
+        self.scene()
+        self.scene()
+        candidate = self.blank()
+        before = self.snapshot()
+        total = sum(len(data) for path, data in before.items() if path.startswith("scenes/"))
+        with patch.object(review, "MAX_MAP_BYTES", total):
+            self.assertTrue(self.reviews.review(candidate)["receipt"])
+        with (
+            patch.object(review, "MAX_MAP_BYTES", total - 1),
+            patch.object(tiled, "decode", wraps=tiled.decode) as decode,
+            self.assertRaisesRegex(ValueError, "16 MiB"),
+        ):
+            self.reviews.review(candidate)
+        self.assertEqual(decode.call_count, 1)
+        self.assertEqual(self.snapshot(), before)
+
+    def test_maps_growing_during_scan_reject_before_decoding_over_budget_map(self):
+        for _ in range(5):
+            self.scene()
+        candidate = self.blank()
+        original = copy.deepcopy(candidate)
+        expected = self.snapshot()
+        load = self.project.store._load_scene
+
+        def grow_before_load(scene_id, document=None, **kwargs):
+            entry = next(s for s in document["scenes"] if s["id"] == scene_id)
+            path = self.project.root / entry["path"]
+            data = path.read_bytes().ljust(3_600_000, b"\n")
+            path.write_bytes(data)
+            expected[entry["path"]] = data
+            return load(scene_id, document, **kwargs)
+
+        with (
+            patch.object(self.project.store, "_load_scene", side_effect=grow_before_load),
+            patch.object(tiled, "decode", wraps=tiled.decode) as decode,
+            self.assertRaisesRegex(ValueError, "16 MiB"),
+        ):
+            self.reviews.review(candidate)
+        self.assertEqual(decode.call_count, 4)
+        self.assertEqual(self.snapshot(), expected)
+        self.assertEqual(candidate, original)
 
     def test_receipt_missing_scene_guards_and_invalid_candidate_policies_rejected(self):
         self.scene()

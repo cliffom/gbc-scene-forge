@@ -8,7 +8,6 @@ from gbc_scene_forge.core.validation import integer, require
 from gbc_scene_forge.formats import tiled
 from gbc_scene_forge.scenes import authoring, rendering
 from gbc_scene_forge.storage.files import digest
-from gbc_scene_forge.storage.paths import safe_path
 
 MAX_SCENES = 64
 MAX_MAP_BYTES = 16 * 1024 * 1024
@@ -186,14 +185,10 @@ class ArtworkReview:
                 len(document["scenes"]) <= MAX_SCENES,
                 "Artwork review supports at most 64 saved scenes; narrow the project scope",
             )
-            require(
-                sum(
-                    safe_path(self.store.root, s["path"]).stat().st_size for s in document["scenes"]
-                )
-                <= MAX_MAP_BYTES,
-                "Artwork review exceeds 16 MiB saved maps; narrow the project scope",
+            loaded = session.scenes(
+                max_bytes=MAX_MAP_BYTES,
+                limit_message="Artwork review exceeds 16 MiB saved maps; narrow the project scope",
             )
-            loaded = [session.scene(s["id"]) for s in document["scenes"]]
             revisions = {s["id"]: s["revision"] for s in loaded}
             old_pixels = (
                 editable.decode_image(d, self.documents._asset(document, previous["png"]))
