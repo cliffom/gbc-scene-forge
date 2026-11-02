@@ -342,7 +342,9 @@ class ArtworkDocuments:
                 path = f"scenes/{loaded['id']}.tmj"
                 encoded = record_bytes(tiled.encode(loaded["scene"], document))
                 # Guard every saved scene even when its encoding need not change.
-                expected[path] = loaded["revision"]
+                if path in reviewed and loaded["revision"] != reviewed[path]:
+                    raise Conflict("Reviewed scene changed. Retain the candidate and review again.")
+                expected.setdefault(path, loaded["revision"])
                 if digest(encoded) != loaded["revision"]:
                     changes[path] = encoded
                     scene_revisions[loaded["id"]] = digest(encoded)

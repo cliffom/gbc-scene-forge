@@ -19,14 +19,16 @@ Dates, revisions and environments missing from the originals remain unknown.
 
 - **Scope:** Local macOS, Python 3.13.13 and Node 24.22.1, working tree based on
   `35ee452963f9b1a179d5cd2a57d13ca29ce73102`, on 2026-11-02; prepared 0.27.0.
-- **Method:** Added 15 synthetic domain regressions covering exact isolated RGBA,
+- **Method:** Added 16 synthetic domain regressions covering exact isolated RGBA,
   nearest-neighbor enlargement, all tile transforms, sprite origin overrides,
   layer visibility/order, alpha compositing, temporary new-art scene candidates,
   shared scene/stamp/definition references, pagination, resource bounds, stale
-  candidates, source drift and final unchanged-scene transaction guards. Ran
+  candidates, source drift and final unchanged-scene transaction guards. A
+  further race regression reproduced re-encoding replacing an original review
+  guard with a later map read; retaining and checking the original guard fixed it. Ran
   `make lint test PYTHON=.venv/bin/python`, production `make build check-dist`,
   and focused lint for the subsequently extended installed-wheel smoke regression.
-- **Result:** All 15 review regressions and the full Python/TypeScript suites
+- **Result:** All 16 review regressions and the full Python/TypeScript suites
   passed. Documentation, lint/type checks, production wheel/source build and
   strict metadata checks passed. All seven installed-wheel smoke tests passed,
   including reviewed save, export/reopen and temporary scene review. No inventory

@@ -400,3 +400,23 @@ class ArtworkReviewTests(unittest.TestCase):
             with self.assertRaises(TransactionBusy):
                 self.reviews.review(candidate)
         self.art.save(candidate, receipt=result["receipt"])
+
+    def test_new_artwork_reencoding_cannot_replace_original_review_guards(self):
+        from gbc_scene_forge.artwork import documents
+
+        loaded = self.scene()
+        candidate = self.blank()
+        receipt = self.reviews.review(candidate)["receipt"]
+        path = self.project.root / f"scenes/{loaded['id']}.tmj"
+        original = path.read_bytes()
+        check = documents.check_receipt
+
+        def race(*args, **kwargs):
+            expected = check(*args, **kwargs)
+            path.write_bytes(original + b"\n")
+            return expected
+
+        with patch.object(documents, "check_receipt", race), self.assertRaises(Conflict):
+            self.art.save(candidate, receipt=receipt)
+        self.assertFalse((self.project.root / "assets/native").exists())
+        self.assertEqual(path.read_bytes(), original + b"\n")
