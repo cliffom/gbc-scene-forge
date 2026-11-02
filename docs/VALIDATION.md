@@ -15,6 +15,38 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Forge scene transfer (#127)
+
+- **Scope:** Prepared 0.26.0 issue branch based on `bdbef389f8b082d3b52ea99686bf0c566edd4264`,
+  local macOS 27.0.1 on 2026-11-01, Python 3.13.13, Node 24.22.1 and Playwright
+  1.64.1 with bundled Chromium. Screenshots show the working-tree production UI.
+- **Method:** `make docs-check lint test`, production `make build check-dist test-browser`,
+  then a final production rebuild/installed-wheel smoke and import/first-use browser
+  scenarios with `FORGE_TEST_PYTHON` pointing to the isolated wheel environment.
+  Backend fixtures exercise A → B save/reopen/re-export, shared and unpainted
+  dependencies, transforms, sprites/objects/properties, definitions, terrain rules,
+  name/identity collisions, rename/skip, invalid ZIP/dependencies, stale revisions
+  and rollback after a simulated disk-write failure. Browser checks cover scene
+  list accuracy, invalid input, renamed/skipped selections, stale confirmation,
+  dirty-work cancellation, scene-only intake and real downloads.
+- **Result:** Final lint/model checks and 345 Python tests passed. Production build,
+  metadata and six installed-wheel smoke checks passed. The full regular browser
+  run passed 46 scenarios with two optional observational scalability profiles
+  skipped; final installed-wheel runs passed ZIP intake, generic intake and first
+  use. Reviewed [scene selection at 1440 × 1000](screenshots/imports/forge-preflight.png)
+  and [scrollable confirmation at 760 × 640](screenshots/imports/forge-compact.png).
+  Early browser failures were fixture assumptions about initial scene selection,
+  scrolling, dialog resets and default export scope; those were corrected before
+  the passing runs.
+- **Limits:** The full regular browser run preceded final additional malformed-input
+  and duplicate-destination-name guards; final Python and installed-wheel import
+  checks exercised the completed implementation. This is local synthetic evidence,
+  not a CI-pass claim or an official Tiled/physical-device review. Other desktop
+  browsers and Windows were not checked. Intake deliberately omits world links,
+  project preferences and unplaced stamps, rejects inconsistent externally edited
+  files, and requires re-export for older scene-only ZIPs; see the
+  [supported workflow and limits](user/import-artwork.md#forge-export-zips).
+
 ## Domain response-contract foundation (#75)
 
 - **Scope:** Prepared 0.25.1 working tree, local macOS 27.0.1 on 2026-11-01;
@@ -606,7 +638,7 @@ check, retaining actual revision, environment, attribution, failures and limits.
 
 ### Platform, interoperability and publication gaps
 
-- [ ] Run the optional official Tiled/rasterizer interoperability checks for the current 0.25.1 baseline, including object/definition and tile metadata compatibility, when those applications are available (#75, #109, #110, #111, #112, #113).
+- [ ] Run the optional official Tiled/rasterizer interoperability checks for the current 0.26.0 baseline, including scene-transfer, object/definition and tile metadata compatibility, when those applications are available (#75, #109, #110, #111, #112, #113, #127).
 
 - [ ] Record non-Chromium desktop-browser and Windows runtime results with exact versions and workflows; these are outside the automated browser matrix.
 - [ ] Configure the TestPyPI trusted publisher and verify an upload if that channel is needed; the historical 0.1.4 attempt failed with `invalid-publisher`. Local wheel checks and PyPI publication are separate evidence.

@@ -1,4 +1,5 @@
 /** Explicit preflight and confirmed import of generic, project-owned artwork. */
+import { createForgeImport } from '../project/forge-import.mts';
 import type { EditorLifetime } from '../editor/editor-lifetime.mts';
 import { button, element, input, select } from '../editor/editor-dom.mts';
 import { array, number, record, string } from '../shared/decode.mts';
@@ -34,6 +35,7 @@ export function createGenericImport({
   sceneId: () => string | undefined;
   status: HTMLElement;
 }) {
+  const forgeImport = createForgeImport({ lifetime, api, ports, revision, status });
   let prepared: { kind: string; data: Record<string, unknown> } | null = null;
   const apply = button('generic-apply');
   const report = element('generic-report', HTMLElement);
@@ -51,8 +53,10 @@ export function createGenericImport({
   const mode = select('import-kind');
   lifetime.assign(mode, 'onchange', () => {
     invalidate();
+    forgeImport.invalidate();
+    element('forge-import-fields', HTMLElement).hidden = mode.value !== 'forge';
     element('atlas-import-fields', HTMLElement).hidden = mode.value !== 'atlas';
-    element('generic-import-fields', HTMLElement).hidden = mode.value === 'atlas';
+    element('generic-import-fields', HTMLElement).hidden = ['atlas', 'forge'].includes(mode.value);
     element('png-import-fields', HTMLElement).hidden = mode.value !== 'png';
     element('tiled-import-fields', HTMLElement).hidden = mode.value !== 'tiled';
     button('atlas-apply').hidden = mode.value !== 'atlas';

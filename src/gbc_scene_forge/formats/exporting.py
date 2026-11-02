@@ -1,5 +1,6 @@
 """Read-only, deterministic Tiled dependency snapshots and portable ZIP archives."""
 
+import copy
 import io
 import json
 import posixpath
@@ -23,7 +24,9 @@ Extract the ZIP and open a map under scenes/ in Tiled. Keep assets/ beside scene
 Move the entire extracted directory to preserve relative references. No connector,
 original import folder, server or network connection is needed to open the maps.
 
-A scene export contains one map and its external tilesets and PNG dependencies.
+A scene export contains one map, managed artwork and forge-transfer.json authoring metadata.
+Use Import artwork or map → Forge export ZIP in another project to transfer scenes.
+Older scene ZIPs without authoring metadata must be exported again with Forge 0.26+.
 Maps may reference tilesets not currently painted on the canvas; those sets and
 all their tile images are retained. A project export includes all saved scenes,
 all managed assets and forge.project.json; launch Forge on the extracted directory
@@ -39,7 +42,7 @@ remain stable. A scene-only export can reference scenes not included in the ZIP.
 Connections describe authoring intent; Tiled does not execute transitions.
 
 Maps use finite orthogonal grids, ordered named tile/object layers and external
-image-collection tilesets. GID zero is empty; transformed GIDs are unsupported.
+image-collection tilesets. GID zero is empty; orthogonal tile transforms are retained.
 Objects support native-size sprites, points and rectangles, names, classes (Tiled
 type) and string/int/float/bool custom properties. Coordinates use whole pixels.
 Sprite object coordinates use Tiled's bottom-left anchor. Optional integer
@@ -435,6 +438,9 @@ def export_bundle(project, scope, revision, scene_id=None, scene=None, scene_rev
             sets.update(dependency(path, reference["source"]) for reference in encoded["tilesets"])
         if scope == "project":
             include(MANIFEST, manifest_bytes)
+        # Scene transfer needs original sheets and authoring metadata for every
+        # atlas referenced by its Tiled tileset catalog, including unused tiles.
+        if selected or scope == "project":
             for path in sorted(document["files"]):
                 asset(path)
             sets.update(path for path in files if path.endswith(".tsj"))
@@ -473,6 +479,16 @@ def export_bundle(project, scope, revision, scene_id=None, scene=None, scene_rev
             for path in document["files"]:
                 document["files"][path] = digest(files[path])
             replace(MANIFEST, json_text(document).encode())
+        if scope == "scene":
+            transfer = copy.deepcopy(document)
+            transfer["scenes"] = [
+                {k: item[k] for k in ("id", "name", "path")} for item in snapshots
+            ]
+            transfer["files"] = {path: digest(files[path]) for path in document["files"]}
+            transfer["preview"] = {}
+            for key in ("stamps", "world", "gbc_palette_profile"):
+                transfer.pop(key, None)
+            include("forge-transfer.json", json_text(transfer).encode())
         if document.get("world"):
             include("world.json", json_text(document["world"]).encode())
         if document.get("object_definitions"):

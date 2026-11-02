@@ -8,13 +8,13 @@ exports. Internal Python module paths are implementation details.
 
 | Package | Owns | Public entry points and tests |
 | --- | --- | --- |
-| `project` | Workspace/project lifecycle, manifest schema, coherent saved reads, service composition, draft recovery and refresh revisions | `project.application.Project`, `ProjectRoot`, `ProjectStore.read_session`; project/workspace/update tests |
+| `project` | Workspace/project lifecycle, manifest schema, coherent saved reads, service composition, draft recovery, refresh revisions and guarded scene transfer | `project.application.Project`, `ProjectRoot`, `ProjectStore.read_session`; project/workspace/update tests |
 | `scenes` | Scene lifecycle and canonical candidate editing | `SceneService`; scene/project and MCP authoring tests |
 | `scene_objects` | Native object/property rules, definitions, reusable stamps and preview preferences | Model/definition functions and `ObjectService`; object/definition/preview/composition tests |
 | `artwork` | Atlas intake, images, stable tile identities, metadata and atlas mutations | `ArtworkService`, atlas loading; atlas/project/tile metadata tests |
 | `planning` | Blockout geometry/cameras and world layouts/connections | Pure blockout/world rules and `PlanningService`; blockout/world tests |
 | `analysis` | Diagnostics, object validation and optional palette/target-budget reports | `ReportService`; diagnostics/palette/definition tests |
-| `formats` | Tiled encoding/decoding and portable export | Tiled functions and export operation; export/Tiled interoperability tests |
+| `formats` | Tiled encoding/decoding, portable export and bounded in-memory ZIP intake | Tiled functions and export operation; export/Tiled interoperability tests |
 | `storage` | Declared paths, file primitives, transaction journal, interrupted-write recovery | `Transactions`; transaction/draft/recovery tests |
 | `core` | Shared error classes, validation, serialization, identities and typed boundary records | Small explicit modules; boundary/type checks |
 | `adapters` | CLI arguments, HTTP routing/security/responses, MCP schema/resources/error translation and console presentation | Installed entry points and transport tests; browser/installed-wheel acceptance |

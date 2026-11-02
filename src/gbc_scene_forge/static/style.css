@@ -54,3 +54,6 @@ input[readonly]:focus {outline:none}
 #empty-scene {position:absolute;inset:0;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;text-align:center;padding:32px}
 #empty-scene h2 {font-size:22px;color:var(--text)}
 #empty-scene p {max-width:420px;font-size:14px;line-height:1.6;color:var(--muted)}
+
+#forge-scenes p, #forge-report { white-space: pre-wrap; overflow-wrap: anywhere; }
+#forge-scenes fieldset { margin-block: 12px; min-width: 0; }

@@ -260,7 +260,8 @@ export function mountProjectEditor() {
       HTMLButtonElement | HTMLInputElement | HTMLSelectElement
     >('#project-form button, #import-form button, #scene-form button')) {
       control.disabled =
-        activity.busy || (control.id === 'generic-apply' && control.dataset.ready !== 'true');
+        activity.busy ||
+        (['generic-apply', 'forge-apply'].includes(control.id) && control.dataset.ready !== 'true');
     }
     select('scenes').disabled =
       activity.busy || gestures.anchor !== null || !workspaceState.sceneChoices.length;
