@@ -270,7 +270,11 @@ export function createArtworkViewport(
     hideTarget,
     suspend,
     cursor,
-    remember(): ArtworkViewState {
+    remember(): ArtworkViewState | null {
+      // Hidden viewports report zero scroll offsets; retain the last visible snapshot.
+      if (!viewport.clientWidth || !viewport.clientHeight) {
+        return null;
+      }
       return { center: center(), panTool };
     },
     restore(state: ArtworkViewState) {

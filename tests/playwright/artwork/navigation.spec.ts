@@ -272,6 +272,55 @@ test('pan, Fit, cancellation and document restoration preserve authoring and foc
   ).toBe(false);
 });
 
+for (const route of ['Documents', 'Library'] as const) {
+  test(`Scene round trip through ${route} preserves the retained artwork view`, async ({
+    page,
+    workspace,
+  }, info) => {
+    await setup(page, workspace);
+    await page.locator('#art-frame').selectOption('f1');
+    await page.locator('#art-frame-view').click();
+    await page.locator('#art-zoom').selectOption('16');
+    await page.locator('#art-color').fill('#cc7744');
+    const p = await pixel(page, 2, 3);
+    await page.mouse.click(p.x, p.y);
+    await expect(page.locator('#art-document-state')).toHaveText('Modified');
+    await drag(page, 85, 45, 'tool');
+    const before = await page.locator('#art-canvas').boundingBox();
+    if (!before) {
+      throw Error('Expected canvas');
+    }
+
+    await page.locator('#art-close').click();
+    await expect(page.locator('#artwork-dialog')).toBeHidden();
+    if (route === 'Documents') {
+      await page.locator('#document-switcher').click();
+      await page.locator('#artwork-documents button').filter({ hasText: longName }).click();
+    } else {
+      await page.locator('[data-asset="player/f1"]').click();
+    }
+
+    await expect(page.locator('#artwork-dialog')).toBeVisible();
+    await expect(page.locator('#art-frame')).toHaveValue('f1');
+    await expect(page.locator('#art-edit-frame')).toBeChecked();
+    await expect(page.locator('#art-zoom')).toHaveValue('16');
+    await expect(page.locator('#art-color')).toHaveValue('#cc7744');
+    await expect(page.locator('#art-pan')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#art-document-state')).toHaveText('Modified');
+    await expect
+      .poll(async () => {
+        const restored = await page.locator('#art-canvas').boundingBox();
+        return restored
+          ? Math.max(Math.abs(restored.x - before.x), Math.abs(restored.y - before.y))
+          : Infinity;
+      })
+      .toBeLessThan(2);
+    await page.screenshot({ path: info.outputPath('restored-artwork.png') });
+    await page.locator('#art-undo').click();
+    await expect(page.locator('#art-document-state')).toHaveText('Saved');
+  });
+}
+
 test('Documents is modal, dismisses predictably and fits long names at compact widths', async ({
   page,
   workspace,

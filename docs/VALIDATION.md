@@ -15,6 +15,24 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Retained artwork viewport correction (PR #178)
+
+- **Scope:** Prepared 0.30.0 feedback working tree based on `001ea19cbac6f195eddf286250cec27833e83c2d`,
+  checked 2026-11-03 on macOS with production assets and Playwright Chromium,
+  using a disposable project at 1440 × 1000.
+- **Method:** Browser regressions pan and modify a retained sheet frame, return to
+  Scene, then reopen through Documents or the Library. Assertions compare canvas
+  position within 2 px and verify zoom, frame scope, color, Pan choice and Undo.
+  Agent screenshot inspection checks the restored canvas through both routes.
+- **Result:** The original Documents regression displaced the canvas by 620 px.
+  Rejecting snapshots from unmeasurable viewports preserves the last visible
+  presentation. All seven artwork navigation browser cases pass after the fix.
+  `make lint test` passes with 429 Python tests and all TypeScript suites;
+  `make docs-check` passes.
+- **Limits:** Local automated Chromium checks and bounded agent inspection;
+  other browsers, physical display scaling and independent human checks were
+  not repeated. Previous release validation below predates this correction.
+
 ## Artwork interaction polish (#173–#176)
 
 - **Scope:** Prepared production 0.30.0 working tree on `milestone/20-artwork-polish`,

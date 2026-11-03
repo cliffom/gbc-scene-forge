@@ -122,6 +122,10 @@ export function createPixelEditor({
     if (!session) {
       return;
     }
+    const view = artworkViewport.remember();
+    if (!view) {
+      return;
+    }
     const values = new Map<string, { value: string; checked: boolean; open?: boolean }>();
     for (const control of dialog.querySelectorAll<
       HTMLInputElement | HTMLSelectElement | HTMLDetailsElement
@@ -138,7 +142,7 @@ export function createPixelEditor({
     documents.set(session.id, {
       session,
       values,
-      view: artworkViewport.remember(),
+      view,
     });
     tabs();
   }
