@@ -14,6 +14,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 
 from gbc_scene_forge.adapters.console import ServerConsole
 from gbc_scene_forge.adapters.http.common import LocalHandler
+from gbc_scene_forge.artwork import dimensions
 from gbc_scene_forge.core.errors import Conflict
 from gbc_scene_forge.core.validation import require
 from gbc_scene_forge.project.application import Project
@@ -128,7 +129,26 @@ def make_handler(root, token):
                     self.headers.get("Content-Type") == "application/json", "Use application/json"
                 )
                 length = int(self.headers.get("Content-Length", "0"))
-                require(0 < length <= 8 * 1024 * 1024, "Request must be within 8 MiB")
+                route = urlparse(self.path).path
+                artwork_action = route.rsplit("/", 1)[-1]
+                limit = (
+                    56 * 1024 * 1024
+                    if artwork_action == "import-forge"
+                    else dimensions.MAX_REQUEST_BYTES
+                    if artwork_action == "artwork-draft-write"
+                    else dimensions.MAX_CANDIDATE_BYTES + 2 * 1024 * 1024
+                    if artwork_action
+                    in {
+                        "artwork-candidate-retain",
+                        "artwork-edit",
+                        "artwork-layout",
+                        "artwork-review",
+                        "artwork-save",
+                        "artwork-animation-review",
+                    }
+                    else 8 * 1024 * 1024
+                )
+                require(0 < length <= limit, f"Request must be within {limit // (1024 * 1024)} MiB")
                 data = json.loads(self.rfile.read(length))
                 require(isinstance(data, dict), "Expected a JSON object")
                 route = urlparse(self.path).path

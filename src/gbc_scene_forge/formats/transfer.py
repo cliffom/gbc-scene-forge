@@ -9,12 +9,12 @@ import zipfile
 import zlib
 from pathlib import PurePosixPath
 
-from gbc_scene_forge.artwork import animations, atlas, editable, png, tilesheet
+from gbc_scene_forge.artwork import animations, atlas, dimensions, editable, png, tilesheet
 from gbc_scene_forge.core.validation import require
 from gbc_scene_forge.formats import exporting, tiled
 from gbc_scene_forge.storage.files import digest
 
-MAX_ZIP = 5 * 1024 * 1024
+MAX_ZIP = 40 * 1024 * 1024
 MAX_EXPANDED = 256 * 1024 * 1024
 MAX_MEMBERS = 8192
 
@@ -37,11 +37,11 @@ def member_path(path):
 def read_bundle(encoded):
     require(
         isinstance(encoded, str) and len(encoded) <= 4 * ((MAX_ZIP + 2) // 3),
-        "Forge ZIP must be at most 5 MiB compressed",
+        "Forge ZIP must be at most 40 MiB compressed",
     )
     try:
         raw = base64.b64decode(encoded, validate=True)
-        require(len(raw) <= MAX_ZIP, "Forge ZIP must be at most 5 MiB compressed")
+        require(len(raw) <= MAX_ZIP, "Forge ZIP must be at most 40 MiB compressed")
         with zipfile.ZipFile(io.BytesIO(raw)) as archive:
             entries = archive.infolist()
             require(len(entries) <= MAX_MEMBERS, "Forge ZIP exceeds 8192 members")
@@ -59,7 +59,13 @@ def read_bundle(encoded):
                     and info.compress_type in (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED),
                     "Unsupported ZIP compression",
                 )
-                limit = 8 * 1024 * 1024 if path.endswith(".json") else 4 * 1024 * 1024
+                limit = (
+                    dimensions.MAX_IMAGE_BYTES
+                    if path.endswith(".png")
+                    else 8 * 1024 * 1024
+                    if path.endswith(".json")
+                    else 4 * 1024 * 1024
+                )
                 total += info.file_size
                 require(
                     info.file_size <= limit and total <= MAX_EXPANDED,

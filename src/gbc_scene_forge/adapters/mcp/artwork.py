@@ -1,6 +1,6 @@
 """Thin native-artwork routing for full candidates and recoverable compact handles."""
 
-from gbc_scene_forge.artwork import editable, review
+from gbc_scene_forge.artwork import dimensions, editable, review
 from gbc_scene_forge.artwork.candidates import ArtworkCandidates
 from gbc_scene_forge.artwork.conversion import ArtworkConversion
 from gbc_scene_forge.core.validation import require
@@ -33,7 +33,12 @@ def capabilities():
         "pixel_format": "rgba8",
         "pixel_order": "Row-major, top-left; base64 straight RGBA8 bytes (sRGB).",
         "tile_sizes": [8, 16, 32],
-        "sprite_dimension": {"minimum": 8, "maximum": 256, "multiple_of": 8},
+        "sprite_dimension": {"minimum": 1, "maximum": dimensions.MAX_AXIS},
+        "max_document_pixels": dimensions.MAX_PIXELS,
+        "max_pixel_read_pixels": dimensions.MAX_READ_PIXELS,
+        "max_input_bytes": dimensions.MAX_CANDIDATE_BYTES + 2 * 1024 * 1024,
+        "max_image_bytes": dimensions.MAX_IMAGE_BYTES,
+        "review_views": "Default: whole-document overview <=1024 per axis. Explicit rectangle: native detail, with scale fitting <=1024 per axis.",
         "max_pixel_writes": 65536,
         "max_pixel_batch_bytes": editable.MAX_BATCH,
         "max_candidate_bytes": editable.MAX_CANDIDATE,
@@ -139,6 +144,9 @@ def _call(adapter, project, name, a):
             return documents.read(candidate, a.get("rectangle"))
         if name == "edit_artwork_layout":
             return documents.layout(candidate, a["frames"], a["sequences"])
+        if "patch" in a:
+            require("writes" not in a, "Choose pixel writes or a rectangular patch")
+            return editable.patch_pixels(candidate, a["patch"])
         return documents.edit(candidate, a["writes"])
     if name == "review_artwork_animation":
         result = project.artwork.reviews.animation(
@@ -151,7 +159,7 @@ def _call(adapter, project, name, a):
         resources = []
         for key in ("before", "after"):
             if result[key] is not None:
-                for image_key in list(result[key]):
+                for image_key in [k for k in result[key] if k.endswith("_png")]:
                     resource = adapter.artifact(
                         result[key].pop(image_key), "image/png", f"{key}-{image_key}.png"
                     )
@@ -162,7 +170,11 @@ def _call(adapter, project, name, a):
         require(isinstance(a["receipt"], dict), "A matching artwork review receipt is required")
         return documents.save(candidate, receipt=a["receipt"])
     result = project.artwork.reviews.review(
-        candidate, scale=a.get("scale", 4), scene=a.get("scene"), offset=a.get("offset", 0)
+        candidate,
+        scale=a.get("scale", 4),
+        scene=a.get("scene"),
+        offset=a.get("offset", 0),
+        rectangle=a.get("rectangle"),
     )
     resources = []
     for group in ("before", "after", "scene"):

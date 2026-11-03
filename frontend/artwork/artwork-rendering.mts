@@ -1,4 +1,5 @@
 /** Main artwork raster and overlays; sheet synchronization stays with the composition. */
+import { MAX_ARTWORK_PIXELS } from './artwork-limits.mts';
 import type { EditorLifetime } from '../editor/editor-lifetime.mts';
 import type { ArtworkFrame } from './artwork-contracts.mts';
 import type { ArtworkRaster } from './artwork-raster.mts';
@@ -18,6 +19,7 @@ export function createArtworkRendering(
     grid: () => boolean;
   },
 ) {
+  const pixelGrid = canvas.parentElement?.querySelector<HTMLElement>('#art-pixel-grid');
   const context = canvas.getContext('2d');
   if (!context) {
     throw Error('Pixel canvas is unavailable.');
@@ -31,21 +33,34 @@ export function createArtworkRendering(
     if (!model || !context || lifetime.disposed) {
       return;
     }
-    const zoom = ports.zoom();
+    const displayZoom = ports.zoom();
     const view = ports.view() ?? { x: 0, y: 0, width: model.width, height: model.height };
+    const zoom = Math.min(
+      displayZoom,
+      Math.max(1, Math.floor(4096 / Math.max(view.width, view.height))),
+      Math.max(1, Math.floor(Math.sqrt(MAX_ARTWORK_PIXELS / (view.width * view.height)))),
+    );
     const width = view.width * zoom,
       height = view.height * zoom;
+    const displayWidth = view.width * displayZoom,
+      displayHeight = view.height * displayZoom;
+    if (pixelGrid) {
+      pixelGrid.hidden = !ports.grid() || displayZoom < 4 || displayZoom === zoom;
+      pixelGrid.style.width = `${displayWidth}px`;
+      pixelGrid.style.height = `${displayHeight}px`;
+      pixelGrid.style.backgroundSize = `${displayZoom}px ${displayZoom}px`;
+    }
     if (canvas.width !== width) {
-      canvas.width = width;
+      canvas.width = Math.ceil(width);
     }
     if (canvas.height !== height) {
-      canvas.height = height;
+      canvas.height = Math.ceil(height);
     }
-    if (canvas.style.width !== `${width}px`) {
-      canvas.style.width = `${width}px`;
+    if (canvas.style.width !== `${displayWidth}px`) {
+      canvas.style.width = `${displayWidth}px`;
     }
-    if (canvas.style.height !== `${height}px`) {
-      canvas.style.height = `${height}px`;
+    if (canvas.style.height !== `${displayHeight}px`) {
+      canvas.style.height = `${displayHeight}px`;
     }
     // Reusing a canvas must reset alpha, dash, transform and transparent pixels.
     context.reset();
@@ -83,7 +98,7 @@ export function createArtworkRendering(
       canvas.width,
       canvas.height,
     );
-    if (ports.grid() && zoom >= 4) {
+    if (ports.grid() && zoom >= 4 && zoom === displayZoom) {
       context.strokeStyle = '#0005';
       context.lineWidth = 1;
       context.beginPath();

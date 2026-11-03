@@ -100,8 +100,8 @@ export function createArtworkViewport(
   }
   function position(p: Point) {
     viewport.scrollTo(
-      gutter.x + p.x * canvas.width - viewport.clientWidth / 2,
-      gutter.y + p.y * canvas.height - viewport.clientHeight / 2,
+      gutter.x + p.x * canvas.offsetWidth - viewport.clientWidth / 2,
+      gutter.y + p.y * canvas.offsetHeight - viewport.clientHeight / 2,
     );
   }
   function layout(reset = false) {
@@ -110,20 +110,25 @@ export function createArtworkViewport(
       return;
     }
     const next = `${view.x},${view.y},${view.width},${view.height}`;
-    const key = `${next},${canvas.width},${canvas.height},${viewport.clientWidth},${viewport.clientHeight}`;
+    const key = `${next},${canvas.offsetWidth},${canvas.offsetHeight},${viewport.clientWidth},${viewport.clientHeight}`;
     if (!reset && layoutKey === key) {
       return;
     }
     const p = reset || next !== geometry ? { x: 0.5, y: 0.5 } : center();
     geometry = next;
     layoutKey = key;
-    size = { width: canvas.width, height: canvas.height };
+    size = { width: canvas.offsetWidth, height: canvas.offsetHeight };
     // A viewport of surrounding space on each side also lets fitting artwork pan.
     gutter = { x: viewport.clientWidth, y: viewport.clientHeight };
-    stage.style.width = `${canvas.width + 2 * gutter.x}px`;
-    stage.style.height = `${canvas.height + 2 * gutter.y}px`;
+    stage.style.width = `${canvas.offsetWidth + 2 * gutter.x}px`;
+    stage.style.height = `${canvas.offsetHeight + 2 * gutter.y}px`;
     canvas.style.left = `${gutter.x}px`;
     canvas.style.top = `${gutter.y}px`;
+    const pixelGrid = stage.querySelector<HTMLElement>('#art-pixel-grid');
+    if (pixelGrid) {
+      pixelGrid.style.left = canvas.style.left;
+      pixelGrid.style.top = canvas.style.top;
+    }
     position(p);
     hideTarget();
   }

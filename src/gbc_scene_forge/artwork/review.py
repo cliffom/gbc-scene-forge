@@ -140,9 +140,39 @@ def references(document, scenes, prefix, offset, *, exact_asset=None, grid=None)
     }
 
 
-def isolated(descriptor, pixels, scale):
+def isolated(descriptor, pixels, scale, rectangle=None):
+    """Bound both overview and detail images, independently of source dimensions."""
     width, height = descriptor["width"], descriptor["height"]
-    rendering.viewport({"x": 0, "y": 0, "width": width * scale, "height": height * scale})
+    if rectangle is not None:
+        require(
+            isinstance(rectangle, dict)
+            and set(rectangle) == {"x", "y", "width", "height"}
+            and integer(rectangle["x"], 0, width - 1)
+            and integer(rectangle["y"], 0, height - 1)
+            and integer(rectangle["width"], 1, width - rectangle["x"])
+            and integer(rectangle["height"], 1, height - rectangle["y"]),
+            "Review rectangle must fit the artwork",
+        )
+        rendering.viewport(rectangle)
+        x, y, w, h = (rectangle[k] for k in ("x", "y", "width", "height"))
+        pixels = b"".join(
+            pixels[((y + row) * width + x) * 4 : ((y + row) * width + x + w) * 4]
+            for row in range(h)
+        )
+        width, height = w, h
+    else:
+        rectangle = {"x": 0, "y": 0, "width": width, "height": height}
+    # Integer nearest-neighbor sampling covers the entire image without allocating
+    # an enlarged source. Exact source pixels remain available via bounded reads.
+    step = max(1, (max(width, height) + 1023) // 1024)
+    if step > 1:
+        pixels = b"".join(
+            pixels[(y * width + x) * 4 : (y * width + x + 1) * 4]
+            for y in range(0, height, step)
+            for x in range(0, width, step)
+        )
+        width, height = (width + step - 1) // step, (height + step - 1) // step
+    scale = min(scale, 1024 // max(width, height))
     rows = []
     for y in range(height):
         row = b"".join(
@@ -150,6 +180,9 @@ def isolated(descriptor, pixels, scale):
         )
         rows.extend([row] * scale)
     return {
+        "rectangle": dict(rectangle),
+        "sample_step": step,
+        "scale": scale,
         "native_png": png.encode(width, height, pixels),
         "enlarged_png": png.encode(width * scale, height * scale, b"".join(rows)),
     }
@@ -178,20 +211,9 @@ class ArtworkReview:
         require(d["version"] == 2, "Frame reviews require a native sheet")
         frame = next((f for f in d["frames"] if f["id"] == frame_id), None)
         require(frame is not None, "Choose an existing frame ID")
-        report = self.review(candidate, scale=1)
-        images = {}
-        for key in ("before", "after"):
-            source = report[key]
-            if source is None:
-                images[key] = None
-                continue
-            width, _, pixels = png.decode(source["native_png"])
-            raw = png.decode(
-                png.crop_rectangle(
-                    width, pixels, frame["x"], frame["y"], frame["width"], frame["height"]
-                )
-            )[2]
-            images[key] = isolated(frame, raw, scale)
+        rectangle = {k: frame[k] for k in ("x", "y", "width", "height")}
+        report = self.review(candidate, scale=scale, rectangle=rectangle)
+        images = {key: report[key] for key in ("before", "after")}
         with self.store.read_session(candidate["project_revision"], verify_assets=True) as session:
             self.documents.validate_base(candidate, session.document)
             check_receipt(candidate, report["receipt"], session)
@@ -203,7 +225,7 @@ class ArtworkReview:
             **images,
         }
 
-    def review(self, candidate, *, scale=4, scene=None, offset=0):
+    def review(self, candidate, *, scale=4, scene=None, offset=0, rectangle=None):
         """Compare artwork and optionally one explicitly based saved/candidate scene.
 
         Scene input: {scene_id, scene_revision, scene, viewport}; scene may be null
@@ -223,7 +245,7 @@ class ArtworkReview:
             )
             rendering.viewport(scene["viewport"])
         d = candidate["descriptor"]
-        after = isolated(d, pixels, scale)
+        after = isolated(d, pixels, scale, rectangle)
         revision = candidate["project_revision"]
         with self.store.read_session(revision, verify_assets=True) as session:
             document = session.document
@@ -258,7 +280,7 @@ class ArtworkReview:
                 "width": d["width"],
                 "height": d["height"],
                 "scale": scale,
-                "before": isolated(d, old_pixels, scale)
+                "before": isolated(d, old_pixels, scale, rectangle)
                 if previous is not None or replacements
                 else None,
                 "after": after,
@@ -285,7 +307,7 @@ class ArtworkReview:
                     "Variation review uses saved scenes, not unsaved scene candidates",
                 )
                 temporary = copy.deepcopy(document)
-                image = after["native_png"]
+                image = png.encode(d["width"], d["height"], pixels)
                 entry, _ = atlas.build_assets(
                     editable.manifest(d),
                     image,

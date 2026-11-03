@@ -95,7 +95,7 @@ class ArtworkDraftTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "limit"):
                 self.drafts.write({**self.data, "id": str(uuid4())})
         with patch("gbc_scene_forge.artwork.drafts.MAX_TOTAL", 1):
-            with self.assertRaisesRegex(ValueError, "64 MiB"):
+            with self.assertRaisesRegex(ValueError, "128 MiB"):
                 self.drafts.write({**self.data, "revision": ack["revision"]})
 
     def test_corrupt_record_does_not_hide_other_drafts(self):

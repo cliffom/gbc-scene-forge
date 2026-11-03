@@ -235,7 +235,7 @@ library and portable project data.
 
 You can continue this step later, once you have an atlas:
 
-1. Save the plan, open the **Artwork** tab, and choose **Import artwork or map… → gbc-atlas bundle**.
+1. Save the plan, open the **Artwork** tab, and choose **Import → gbc-atlas bundle**.
 2. Select a supported gbc-atlas manifest/PNG folder and import it. Ordinary PNG
    tilesheet import is a separate planned feature.
 3. Select the **Artwork** tile layer before painting. Put sprite artwork on an

@@ -61,6 +61,9 @@ PROJECT_ROUTES = {
 
 for _action in (
     "list",
+    "candidate-retain",
+    "candidate-release",
+    "candidate-export",
     "open",
     "create",
     "sheet-create",

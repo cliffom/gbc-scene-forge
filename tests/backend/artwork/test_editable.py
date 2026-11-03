@@ -142,7 +142,7 @@ class EditableTests(unittest.TestCase):
             self.art.save(changed)
         with (
             patch.object(editable, "MAX_CANDIDATE", 1),
-            self.assertRaisesRegex(ValueError, "4 MiB"),
+            self.assertRaisesRegex(ValueError, "24 MiB"),
         ):
             self.art.save(candidate)
 
@@ -151,8 +151,8 @@ class EditableTests(unittest.TestCase):
             ("tile", 8, 16, [0, 0]),
             ("tile", 64, 64, [0, 0]),
             ("tile", 8, 8, [1, 0]),
-            ("sprite", 7, 8, [0, 0]),
-            ("sprite", 264, 8, [0, 0]),
+            ("sprite", 0, 8, [0, 0]),
+            ("sprite", 4097, 8, [0, 0]),
             ("sprite", 8, 8, [8, 0]),
             ("sprite", 8, True, [0, 0]),
             ("sprite", 8, 8, [False, 0]),

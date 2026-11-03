@@ -99,6 +99,48 @@ export class ArtworkSession {
       });
     }
     const previous = bytes(this.candidate.rgba);
+    if (pixels.length > 256 * 256 * 4) {
+      let handle: Record<string, unknown> | null = null;
+      try {
+        const rowsPerChunk = Math.floor(65536 / this.model.width);
+        for (let y = 0; y < this.model.height; y += rowsPerChunk) {
+          const height = Math.min(rowsPerChunk, this.model.height - y);
+          const start = y * this.model.width * 4,
+            end = start + height * this.model.width * 4;
+          let different = false;
+          for (let i = start; i < end; i++) {
+            if (previous[i] !== pixels[i]) {
+              different = true;
+              break;
+            }
+          }
+          if (!different) {
+            continue;
+          }
+          handle ??= await this.api('artwork-candidate-retain', record, {
+            candidate: this.candidate,
+          });
+          const next: Record<string, unknown> = await this.api('artwork-edit', record, {
+            candidate: handle,
+            patch: {
+              rectangle: { x: 0, y, width: this.model.width, height },
+              rgba: encoded(pixels.subarray(start, end)),
+            },
+          });
+          const old = handle;
+          handle = next;
+          await this.api('artwork-candidate-release', record, { candidate: old });
+        }
+      } finally {
+        if (handle) {
+          this.candidate = await this.api('artwork-candidate-export', decodeCandidate, {
+            candidate: handle,
+          });
+          await this.api('artwork-candidate-release', record, { candidate: handle });
+        }
+      }
+      return this.candidate;
+    }
     let writes: { x: number; y: number; rgba: number[] }[] = [];
     const send = async () => {
       if (!writes.length) {

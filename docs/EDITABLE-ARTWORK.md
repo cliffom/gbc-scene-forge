@@ -48,14 +48,24 @@ optional analysis/conversion, owned separately from generic editing and gbc-atla
 | Input/work | Version-1 bound |
 | --- | --- |
 | New or duplicated tile | One square of 8, 16 or 32 pixels |
-| New or duplicated static sprite | Each dimension a multiple of 8 within 8..256; origin an integer pixel inside its rectangle |
-| Decoded native raster | At most 65,536 pixels / 262,144 RGBA bytes |
+| New or duplicated static sprite | Each dimension an integer within 1..4,096, area ≤4,194,304 pixels; origin an integer pixel inside its rectangle |
+| Decoded native raster | At most 4,194,304 pixels / 16 MiB RGBA bytes |
 | Exact pixel read | One in-bounds rectangle, at most 65,536 pixels |
-| Pixel batch | At most 65,536 unique coordinate writes and 1 MiB decoded JSON |
-| Source PNG / descriptor | At most 4 MiB / 64 KiB respectively |
-| Serialized candidate or draft | At most 4 MiB; includes guards and metadata |
+| Pixel batch | At most 65,536 unique coordinate writes and 1 MiB decoded JSON, or a rectangular RGBA patch ≤65,536 pixels |
+| Source PNG / descriptor | At most 17 MiB / 64 KiB respectively |
+| Serialized candidate / draft | At most 24 MiB / 49 MiB; draft includes original and edited candidates |
+| Browser artwork request / MCP artwork input | At most 50 MiB for checkpoints / 26 MiB; other HTTP requests retain their own limits |
+| Browser undo history | Up to 100 operations / 64 MiB retained changed-block data and metadata per document; active stroke snapshot is separate |
+| Review images | Whole-document overview or explicit detail rectangle; each output ≤1,024 pixels per axis |
 | Reference scan/review dependency set | At most 64 saved scenes and 16 MiB total serialized map input; at most 256 detailed locations per response |
-| Artwork drafts per project | At most 64 records and 64 MiB total, separate from scene draft quotas |
+| Artwork drafts per project | At most 64 records and 128 MiB total, separate from scene draft quotas |
+
+Version-2 sheets retain aligned 8..256-pixel canvases and frame geometry.
+General illustrations use static sprite documents and remain scene-placeable.
+Compact candidates retain the separate 256-record / 64 MiB project quota; release
+superseded handles explicitly. The browser uses compact handles and ≤65,536-pixel
+rectangular patches for larger documents, exporting the full envelope only at
+synchronization boundaries. Quota errors preserve previous candidates.
 
 Coordinates, dimensions and channels must be integers (booleans are invalid).
 Reject duplicate coordinates, out-of-bounds writes, invalid colors, excess work

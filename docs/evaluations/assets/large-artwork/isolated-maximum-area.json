@@ -1,0 +1,22 @@
+{
+  "width": 2048,
+  "height": 2048,
+  "rgba_bytes": 16777216,
+  "zip_bytes": 33584169,
+  "create_ms": 375.3,
+  "create_peak_rss": 172441600,
+  "edit_ms": 304.4,
+  "edit_peak_rss": 464027648,
+  "checkpoint_ms": 779.2,
+  "checkpoint_peak_rss": 688160768,
+  "recover_ms": 1057.4,
+  "recover_peak_rss": 754581504,
+  "review_ms": 1884.7,
+  "review_peak_rss": 810172416,
+  "save_ms": 4853.0,
+  "save_peak_rss": 810172416,
+  "reopen_ms": 790.1,
+  "reopen_peak_rss": 810172416,
+  "export_ms": 1615.6,
+  "export_peak_rss": 810172416
+}

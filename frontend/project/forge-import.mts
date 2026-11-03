@@ -43,8 +43,8 @@ export function createForgeImport({
     const request = generation;
     void ports.run(async () => {
       const chosen = file.files?.[0];
-      if (!chosen || chosen.size > 5 * 1024 * 1024) {
-        throw Error('Choose a Forge export ZIP of at most 5 MiB compressed.');
+      if (!chosen || chosen.size > 40 * 1024 * 1024) {
+        throw Error('Choose a Forge export ZIP of at most 40 MiB compressed.');
       }
       const bytes = new Uint8Array(await chosen.arrayBuffer());
       let binary = '';

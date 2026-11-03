@@ -179,7 +179,7 @@ camera intent, limits, the opening-forest example and shared services for MCP #5
 
 ## Import and edit
 
-1. Choose **Import artwork or map… → gbc-atlas bundle**, then **Browse folder…** to select an
+1. Choose **Import → gbc-atlas bundle**, then **Browse folder…** to select an
    atlas folder.
    Choose a manifest if the folder contains several, then confirm with **Import
    atlas**. Its declared PNG is included automatically.
@@ -220,7 +220,7 @@ The message below the tools names the active layer; a hidden layer offers
 **Show layer** there. View changes do not mark the scene as unsaved.
 
 **Unsaved changes** appears beside the scene selector, and **Save scene** gains
-an accent when edits need saving. The asset library contains **Import artwork or map…** for
+an accent when edits need saving. The asset library contains **Import** for
 artwork, Tiled maps and Forge export ZIPs. **New artwork…** opens the
 [native artwork editor](user/pixel-artwork.md) for creating tiles and sprites, with optional sheet layout. **Edit artwork…** and
 **Browse / recover** open existing artwork, editable copies and recovery. Artwork

@@ -6,6 +6,14 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.31.0 — Bounded illustration canvases and artwork palette
+
+[Release notes](RELEASE-0.31.0.md). Support arbitrary static artwork dimensions
+within explicit pixel, transport and recovery budgets; add bounded review views,
+compact chunk editing, changed-block history and a hue-sorted palette dropdown.
+Shorten the Library entry to **Import**.
+Publication is separate.
+
 ## 0.30.1 — Artwork save scope and workflow guidance
 
 [Release notes](RELEASE-0.30.1.md). Distinguish new artwork from shared-edit review,

@@ -3,6 +3,8 @@
 import struct
 import zlib
 
+from gbc_scene_forge.artwork import dimensions
+
 SIGNATURE = b"\x89PNG\r\n\x1a\n"
 
 
@@ -22,8 +24,9 @@ def encode(width, height, pixels):
 
 
 def decode(data, *, generic=False):
-    if not data.startswith(SIGNATURE) or len(data) > 4 * 1024 * 1024:
-        raise ValueError("Expected a PNG atlas no larger than 4 MiB")
+    limit = dimensions.MAX_IMAGE_BYTES if generic else 4 * 1024 * 1024
+    if not data.startswith(SIGNATURE) or len(data) > limit:
+        raise ValueError(f"Expected a PNG no larger than {limit // (1024 * 1024)} MiB")
     offset, chunks, ended = 8, {}, False
     while offset + 12 <= len(data):
         length = struct.unpack_from(">I", data, offset)[0]
@@ -51,8 +54,7 @@ def decode(data, *, generic=False):
         ">IIBBBBB", chunks[b"IHDR"]
     )
     if generic:
-        if not (1 <= width <= 2048 and 1 <= height <= 2048):
-            raise ValueError("PNG dimensions must be within 1..2048")
+        dimensions.check(width, height)
     elif not (8 <= width <= 256 and 8 <= height <= 256 and width % 8 == height % 8 == 0):
         raise ValueError("Atlas dimensions must be multiples of eight within 8..256")
     if (
@@ -87,6 +89,10 @@ def decode(data, *, generic=False):
         row = bytearray(raw[start + 1 : start + 1 + stride])
         if method > 4:
             raise ValueError("Invalid PNG filter")
+        if method == 0 and color == 6:
+            pixels.extend(row)
+            previous = row
+            continue
         for i in range(stride):
             a, b, c = (
                 (row[i - step] if i >= step else 0),

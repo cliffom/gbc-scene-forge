@@ -7,6 +7,8 @@ usable by ordinary Python tests without installing any MCP dependencies.
 import base64
 from collections import OrderedDict
 
+from gbc_scene_forge.artwork import dimensions
+from gbc_scene_forge.core.serialization import record_bytes
 from gbc_scene_forge.core.validation import require
 from gbc_scene_forge.project.application import Project
 from gbc_scene_forge.project.workspaces import ProjectRoot
@@ -49,7 +51,13 @@ class Adapter:
         return {"uri": uri, "mimeType": mime, "blob": base64.b64encode(data).decode()}
 
     def call(self, name, arguments):
-        authoring.bounded(arguments)
+        if name in artwork.NAMES:
+            require(
+                len(record_bytes(arguments)) <= dimensions.MAX_CANDIDATE_BYTES + 2 * 1024 * 1024,
+                "Artwork tool input exceeds 26 MiB; use compact handles and bounded pixel batches",
+            )
+        else:
+            authoring.bounded(arguments)
         definition = next((t for t in TOOLS if t["name"] == name), None)
         require(definition is not None, "Unsupported capability; inspect capabilities/tools/list")
         shape = definition["inputSchema"]

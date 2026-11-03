@@ -15,7 +15,7 @@ start polling, or acquire canvas resources. No frontend framework is required.
 | `scene/layers.mts`, `scene/model.mts` | Authored scene, active layer, strokes and undo/redo. Controllers mutate through this existing model. Bidirectional changed-path/subtree records retain up to 100 operations; one transaction clone supports cancellation. Layer context replays with undo/redo. Selection, camera scroll and preview positions are not authored history. |
 | `project/project-api.mts`, `project/project-contracts.mts`, `shared/decode.mts` | Standalone project-relative HTTP, mutation token, request cancellation, runtime JSON decoding and scene/catalog contracts. Decoder callbacks remain mandatory. JSON primitives live in `shared/`; project transport owns only standalone routes. |
 | `artwork/pixel-editor.mts` | Artwork composition, active document transitions, setup, review/save and recovery. Wires retained-document, gesture, rendering, sheet and workspace owners through typed callbacks. `artwork/conversion-views.mts` derives bounded origin-aware scene views covering selected sprite conversions; confirmation requires all views of the same plan. The composition forwards exact save acknowledgments and stages catalog/image adoption. Successful saves retain the document/history and reopen the exact acknowledged revision before advancing its base; failed post-save adoption retires the submitted candidate. |
-| `artwork/pixel-model.mts`, `artwork/artwork-session.mts`, `artwork/artwork-contracts.mts` | Exact bounded RGBA/layout history, serialized candidate/checkpoint writer, saved base and schema decoding. Pixel state stays outside scene history. |
+| `artwork/pixel-model.mts`, `artwork/artwork-session.mts`, `artwork/artwork-contracts.mts` | Exact RGBA/layout history using reversible changed 4 KiB blocks (100 operations / 64 MiB), serialized candidate/checkpoint writer, saved base and schema decoding. Large documents synchronize bounded rectangular patches through compact handles. Pixel state stays outside scene history. |
 | `artwork/artwork-documents.mts`, `artwork/artwork-gestures.mts`, `artwork/artwork-rendering.mts` | Retained sessions/control snapshots, captured authored gestures and main canvas drawing respectively. See the state/resource inventory below. |
 | `artwork/editor-artwork.mts` | Imported images, derived tile/sprite indexes, palette filters/choices, brush capture/restore and atlas import/reimport/deletion. New PNG/Tiled intake belongs here or in focused intake helpers, not the composition. |
 | `project/editor-workspace.mts` | Stage catalog and artwork decoding before adoption; project chooser/folder UI. An adoption callback fences staged external snapshots immediately before mutation. |
@@ -244,6 +244,12 @@ transitions, review/save and recovery. Opening the chooser cancels an
 unfinished authored gesture and suspends transient navigation. Busy requests
 disable its trigger. The mounted lifetime owns listeners, capture, the hover
 frame and ResizeObserver; disposal releases them together.
+
+The pure `artwork/artwork-palette.mts` collector bounds exact RGBA colors to
+1,024 and sorts neutral colors followed by hue. The composition owns its native
+popover, keyboard focus and lifetime; swatches never mutate artwork pixels.
+Main artwork backing surfaces stay within 4,194,304 pixels and 4,096 per axis,
+independently of CSS zoom; a CSS overlay draws the zoomed grid when needed.
 
 ## Artwork state and resource inventory
 

@@ -59,6 +59,27 @@ class HttpRoutingTests(unittest.TestCase):
         finally:
             connection.close()
 
+    def test_artwork_request_budgets_are_endpoint_scoped_before_body_read(self):
+        for workspace in (False, True):
+            with self.server(workspace) as server:
+                prefix = "/projects/world" if workspace else ""
+                for action, mib in (
+                    ("artwork-draft-write", 50),
+                    ("artwork-edit", 26),
+                    ("artwork-candidate-retain", 26),
+                    ("import-forge", 56),
+                    ("create-scene", 8),
+                ):
+                    with self.subTest(workspace=workspace, action=action):
+                        status, _, body = self.request(
+                            server,
+                            prefix + "/api/" + action,
+                            {},
+                            headers={"Content-Length": str(mib * 1024 * 1024 + 1)},
+                        )
+                        self.assertEqual(status, 400)
+                        self.assertIn(f"within {mib} MiB".encode(), body)
+
     def test_static_allowlist_contents_mime_and_response_security(self):
         # The expected list is independent of the implementation's registry.
         assets = {

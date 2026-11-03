@@ -1,0 +1,53 @@
+{
+  "run": "2026-11-03T22-00-50.993Z-32677",
+  "cases": [
+    {
+      "width": 384,
+      "height": 544,
+      "editCheckpointMs": 1006,
+      "recoverReviewMs": 521,
+      "saveMs": 189,
+      "reopenMs": 348
+    },
+    {
+      "width": 375,
+      "height": 525,
+      "editCheckpointMs": 1012,
+      "recoverReviewMs": 573,
+      "saveMs": 182,
+      "reopenMs": 333
+    },
+    {
+      "width": 411,
+      "height": 561,
+      "editCheckpointMs": 1008,
+      "recoverReviewMs": 566,
+      "saveMs": 177,
+      "reopenMs": 331
+    },
+    {
+      "width": 750,
+      "height": 1050,
+      "editCheckpointMs": 1866,
+      "recoverReviewMs": 1474,
+      "saveMs": 341,
+      "reopenMs": 618
+    },
+    {
+      "width": 822,
+      "height": 1122,
+      "editCheckpointMs": 1757,
+      "recoverReviewMs": 1634,
+      "saveMs": 359,
+      "reopenMs": 688
+    },
+    {
+      "width": 1500,
+      "height": 2100,
+      "editCheckpointMs": 4447,
+      "recoverReviewMs": 5139,
+      "saveMs": 1283,
+      "reopenMs": 1808
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 /** Exact RGBA authoring/history. No DOM, transport or scene state. */
+import { MAX_HISTORY_BYTES } from './artwork-limits.mts';
 import { decodeDescriptor, type Candidate } from './artwork-contracts.mts';
 export type Color = [number, number, number, number];
 export type Point = { x: number; y: number };
@@ -9,16 +10,19 @@ export function bytes(encoded: string) {
   return Uint8ClampedArray.from(atob(encoded), (c) => c.charCodeAt(0));
 }
 export function encoded(pixels: Uint8ClampedArray) {
-  let value = '';
-  for (const byte of pixels) {
-    value += String.fromCharCode(byte);
+  const chunks: string[] = [];
+  for (let i = 0; i < pixels.length; i += 8192) {
+    chunks.push(String.fromCharCode(...pixels.subarray(i, i + 8192)));
   }
-  return btoa(value);
+  return btoa(chunks.join(''));
 }
 type PixelSnapshot = {
   pixels: Uint8ClampedArray;
   selection: Rectangle | null;
   descriptor: Candidate['descriptor'];
+};
+type PixelHistory = Omit<PixelSnapshot, 'pixels'> & {
+  chunks: { offset: number; bytes: Uint8ClampedArray }[];
 };
 export class PixelModel {
   readonly width: number;
@@ -28,8 +32,8 @@ export class PixelModel {
   bounds: Rectangle | null = null;
   selection: Rectangle | null = null;
   clipboard: { width: number; height: number; pixels: Uint8ClampedArray } | null = null;
-  readonly undoStack: PixelSnapshot[] = [];
-  readonly redoStack: PixelSnapshot[] = [];
+  readonly undoStack: PixelHistory[] = [];
+  readonly redoStack: PixelHistory[] = [];
   private stroke: PixelSnapshot | null = null;
   constructor(candidate: Candidate) {
     this.width = candidate.descriptor.width;
@@ -62,16 +66,35 @@ export class PixelModel {
         } catch {
           // Saved frame identities are mandatory. Skip states that no longer
           // fit the document limits, keeping valid history on either side.
+          const older = stack[index - 1];
+          if (older) {
+            // Removing a state must bridge its pixel delta to the next surviving
+            // state. This applies symmetrically to Undo and Redo stacks.
+            const chunks = new Map(older.chunks.map((chunk) => [chunk.offset, chunk.bytes]));
+            for (const chunk of snapshot.chunks) {
+              const previous = chunks.get(chunk.offset);
+              if (previous) {
+                for (let i = 0; i < previous.length; i++) {
+                  previous[i] ^= chunk.bytes[i];
+                }
+              } else {
+                chunks.set(chunk.offset, chunk.bytes.slice());
+              }
+            }
+            older.chunks = [...chunks]
+              .filter(([, bytes]) => bytes.some((v) => v !== 0))
+              .map(([offset, bytes]) => ({ offset, bytes }));
+          }
           stack.splice(index, 1);
         }
       }
       // Saving a representation can turn its history entry into a no-op.
       // Keep earlier pixel/sequence edits reachable in a single Undo/Redo.
-      let next = { pixels: this.pixels, descriptor: this.descriptor };
+      let next = { descriptor: this.descriptor };
       for (let index = stack.length - 1; index >= 0; index--) {
         const snapshot = stack[index];
         if (
-          snapshot.pixels.every((value, i) => value === next.pixels[i]) &&
+          snapshot.chunks.length === 0 &&
           JSON.stringify(snapshot.descriptor) === JSON.stringify(next.descriptor)
         ) {
           stack.splice(index, 1);
@@ -140,13 +163,36 @@ export class PixelModel {
     ) {
       return false;
     }
-    this.undoStack.push(before);
-    while (
-      this.undoStack.length > Math.min(100, Math.floor((16 * 1024 * 1024) / before.pixels.length))
-    ) {
-      this.undoStack.shift();
+    // XOR chunks are reversible and retain only changed 4 KiB blocks. A
+    // single-pixel stroke on a large illustration no longer stores a full image.
+    const chunks: PixelHistory['chunks'] = [];
+    for (let offset = 0; offset < this.pixels.length; offset += 4096) {
+      const end = Math.min(offset + 4096, this.pixels.length);
+      let changed = false;
+      for (let i = offset; i < end; i++) {
+        if (this.pixels[i] !== before.pixels[i]) {
+          changed = true;
+          break;
+        }
+      }
+      if (!changed) {
+        continue;
+      }
+      const bytes = before.pixels.slice(offset, end);
+      for (let i = offset; i < end; i++) {
+        bytes[i - offset] ^= this.pixels[i];
+      }
+      chunks.push({ offset, bytes });
     }
+    this.undoStack.push({ chunks, descriptor: before.descriptor, selection: before.selection });
     this.redoStack.length = 0;
+    let total = this.undoStack.reduce((sum, item) => sum + this.historyBytes(item), 0);
+    while (this.undoStack.length > 100 || total > MAX_HISTORY_BYTES) {
+      const removed = this.undoStack.shift();
+      if (removed) {
+        total -= this.historyBytes(removed);
+      }
+    }
     return true;
   }
   apply(work: () => void) {
@@ -159,33 +205,37 @@ export class PixelModel {
       throw error;
     }
   }
-  undo() {
+  private historyBytes(value: PixelHistory) {
+    return (
+      value.chunks.reduce((sum, chunk) => sum + chunk.bytes.byteLength + 16, 0) +
+      new TextEncoder().encode(JSON.stringify(value.descriptor)).length +
+      64
+    );
+  }
+  private travel(from: PixelHistory[], to: PixelHistory[]) {
     this.cancel();
-    const value = this.undoStack.pop();
-    if (value) {
-      this.redoStack.push({
-        pixels: this.pixels,
-        descriptor: structuredClone(this.descriptor),
-        selection: this.selection ? { ...this.selection } : null,
-      });
-      this.pixels = value.pixels;
-      this.descriptor = value.descriptor;
-      this.selection = value.selection;
+    const value = from.pop();
+    if (!value) {
+      return;
     }
+    to.push({
+      chunks: value.chunks,
+      descriptor: structuredClone(this.descriptor),
+      selection: this.selection ? { ...this.selection } : null,
+    });
+    for (const chunk of value.chunks) {
+      for (let i = 0; i < chunk.bytes.length; i++) {
+        this.pixels[chunk.offset + i] ^= chunk.bytes[i];
+      }
+    }
+    this.descriptor = value.descriptor;
+    this.selection = value.selection;
+  }
+  undo() {
+    this.travel(this.undoStack, this.redoStack);
   }
   redo() {
-    this.cancel();
-    const value = this.redoStack.pop();
-    if (value) {
-      this.undoStack.push({
-        pixels: this.pixels,
-        descriptor: structuredClone(this.descriptor),
-        selection: this.selection ? { ...this.selection } : null,
-      });
-      this.pixels = value.pixels;
-      this.descriptor = value.descriptor;
-      this.selection = value.selection;
-    }
+    this.travel(this.redoStack, this.undoStack);
   }
   line(a: Point, b: Point, color: Color) {
     let x = a.x,

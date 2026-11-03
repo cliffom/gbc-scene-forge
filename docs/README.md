@@ -42,6 +42,8 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Evaluations
 
+- [Large illustrations and hue-sorted palette (#181)](evaluations/large-artwork.md)
+
 - [Artwork asynchronous ownership audit (#169)](evaluations/artwork-ownership.md)
 - [Existing workflow usability and session protocol (#165–#167)](evaluations/workflow-usability.md)
 - [Artwork interaction polish (#173–#176)](evaluations/artwork-interaction-polish.md)
@@ -67,6 +69,8 @@ Test ownership and commands are in [test organization](../tests/README.md).
 - [Editor responsiveness and resource measurements (#160–#164)](evaluations/editor-responsiveness.md)
 
 ## Release notes
+
+- [Scene Forge 0.31.0](RELEASE-0.31.0.md) — prepared release.
 
 - [Scene Forge 0.30.1](RELEASE-0.30.1.md) — [published release](https://github.com/cliffom/gbc-scene-forge/releases/tag/v0.30.1).
 - [Scene Forge 0.30.0](RELEASE-0.30.0.md)

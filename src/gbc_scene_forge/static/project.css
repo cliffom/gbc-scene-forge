@@ -557,9 +557,14 @@
 .pixel-view-controls {align-items:flex-end;margin-left:auto}
 .art-tools .pixel-view-controls {gap:6px;flex-wrap:nowrap}
 .pixel-view-controls>label:last-child {height:32px;font-size:11px}
-.art-swatches {display:flex;flex:1;min-width:26px;align-self:center;gap:5px;max-height:28px;overflow:auto;padding:3px;flex-wrap:nowrap}
-.art-swatches:empty {display:none}
-.art-swatches button {flex:none;width:20px;min-height:20px;height:20px;border:1px solid var(--line);padding:0}
+#art-palette {position:fixed;inset:auto;margin:0;width:min(334px,calc(100vw - 16px));max-height:380px;overflow:auto;padding:12px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 24px #0008}
+#art-palette-toggle::before {content:"";display:inline-block;width:14px;height:14px;margin-right:6px;vertical-align:middle;border:1px solid var(--line);background:var(--swatch,#000)}
+.art-swatches button[aria-pressed=true] {outline:2px solid var(--accent);outline-offset:1px}
+#art-palette::backdrop {background:transparent}
+.art-swatches {display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:4px}
+.art-swatches button {width:100%;min-height:22px;aspect-ratio:1;border:1px solid var(--line);padding:0;background:linear-gradient(var(--swatch),var(--swatch)),repeating-conic-gradient(#aaa 0% 25%,#555 0% 50%) 0/8px 8px}
+.art-swatches button:focus-visible {outline:2px solid var(--accent);outline-offset:1px}
+#art-pixel-grid {position:absolute;pointer-events:none;background-image:linear-gradient(to right,#0005 1px,transparent 1px),linear-gradient(to bottom,#0005 1px,transparent 1px)}
 #art-editor>.art-workspace {position:relative;display:flex;gap:12px;min-height:160px;flex:1;overflow:hidden}
 .art-canvas-scroll {overflow:auto;flex:1;width:0;min-height:0;padding:0;background:#171b16;border:1px solid var(--line);border-radius:5px;overflow-anchor:none;touch-action:none}
 #art-stage {position:relative;flex:none}

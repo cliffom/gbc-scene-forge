@@ -1,5 +1,6 @@
 /** Native candidate wire boundary. Saved policy and digest validation stay in artwork services. */
 import * as v from 'valibot';
+import { MAX_ARTWORK_AXIS, MAX_ARTWORK_PIXELS, MAX_RGBA_BASE64 } from './artwork-limits.mts';
 import { parse, text } from '../shared/schema.mts';
 const bounded = (min: number, max: number) =>
   v.pipe(v.number(), v.integer(), v.minValue(min), v.maxValue(max));
@@ -35,9 +36,9 @@ const descriptorEntries = {
   region: identifier,
   name: v.pipe(text, v.minLength(1), v.maxLength(100)),
   kind: v.picklist(['tile', 'sprite']),
-  width: bounded(8, 256),
-  height: bounded(8, 256),
-  origin: v.tuple([bounded(0, 255), bounded(0, 255)]),
+  width: bounded(1, MAX_ARTWORK_AXIS),
+  height: bounded(1, MAX_ARTWORK_AXIS),
+  origin: v.tuple([bounded(0, MAX_ARTWORK_AXIS - 1), bounded(0, MAX_ARTWORK_AXIS - 1)]),
   pixel_format: v.literal('rgba8'),
   provenance: v.nullable(
     v.strictObject({ ...sourceEntries, project_id: identity, source_format: v.nullable(text) }),
@@ -77,8 +78,14 @@ const descriptor = v.pipe(
   ]),
   v.check(
     (d) =>
-      d.width % 8 === 0 &&
-      d.height % 8 === 0 &&
+      d.width * d.height <= MAX_ARTWORK_PIXELS &&
+      ((d.version === 1 && d.kind === 'sprite') ||
+        (d.width >= 8 &&
+          d.height >= 8 &&
+          d.width <= 256 &&
+          d.height <= 256 &&
+          d.width % 8 === 0 &&
+          d.height % 8 === 0)) &&
       d.origin[0] < d.width &&
       d.origin[1] < d.height &&
       (d.version === 2 ||
@@ -153,7 +160,7 @@ export const candidateSchema = v.pipe(
     document_id: identity,
     atlas_id: identifier,
     descriptor,
-    rgba: v.pipe(text, v.maxLength(349528)),
+    rgba: v.pipe(text, v.maxLength(MAX_RGBA_BASE64)),
     revision,
     project_revision: revision,
     artwork_revision: v.nullable(revision),
@@ -173,6 +180,9 @@ export const candidateSchema = v.pipe(
   ),
   v.check((c) => {
     try {
+      if (c.rgba.length !== 4 * Math.ceil((c.descriptor.width * c.descriptor.height * 4) / 3)) {
+        return false;
+      }
       const raw = atob(c.rgba);
       return btoa(raw) === c.rgba && raw.length === c.descriptor.width * c.descriptor.height * 4;
     } catch {

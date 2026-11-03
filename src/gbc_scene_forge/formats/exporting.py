@@ -25,7 +25,7 @@ Move the entire extracted directory to preserve relative references. No connecto
 original import folder, server or network connection is needed to open the maps.
 
 A scene export contains one map, managed artwork and forge-transfer.json authoring metadata.
-Use Import artwork or map → Forge export ZIP in another project to transfer scenes.
+Use Import → Forge export ZIP in another project to transfer scenes.
 Older scene ZIPs without authoring metadata must be exported again with Forge 0.26+.
 Maps may reference tilesets not currently painted on the canvas; those sets and
 all their tile images are retained. A project export includes all saved scenes,
@@ -461,7 +461,7 @@ def export_bundle(project, scope, revision, scene_id=None, scene=None, scene_rev
             for image, expected_size in images.items():
                 raw = asset(image)
                 try:
-                    width, height, _ = png.decode(raw)
+                    width, height, _ = png.decode(raw, generic=True)
                 except ValueError as error:
                     raise ValueError(f"Cannot export image {image}: {error}") from error
                 require(

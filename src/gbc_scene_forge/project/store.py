@@ -164,7 +164,7 @@ class ProjectStore:
                 image = changes.get(path)
                 if image is None:
                     image = safe_path(self.root, path).read_bytes()
-                width, _, pixels = png.decode(image)
+                width, _, pixels = png.decode(image, generic=True)
                 for path, data in atlas.build_sprites(entry, width, pixels).items():
                     changes.setdefault(path, data)
         for path, data in changes.items():

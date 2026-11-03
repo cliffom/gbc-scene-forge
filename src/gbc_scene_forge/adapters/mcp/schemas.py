@@ -1,5 +1,7 @@
 """MCP capability inventory and wire input schemas; no SDK import required."""
 
+from gbc_scene_forge.artwork import dimensions
+
 TEXT = {"type": "string", "minLength": 1, "maxLength": 100}
 REVISION = {"type": "string", "pattern": "^[0-9a-f]{64}$"}
 ID = {"type": "integer", "minimum": 1, "maximum": 2147483646}
@@ -392,9 +394,10 @@ ORIGIN = {
     "type": "array",
     "minItems": 2,
     "maxItems": 2,
-    "items": {"type": "integer", "minimum": 0, "maximum": 255},
+    "items": {"type": "integer", "minimum": 0, "maximum": dimensions.MAX_AXIS - 1},
 }
-DIMENSION = {"type": "integer", "minimum": 8, "maximum": 256, "multipleOf": 8}
+GRID_DIMENSION = {"type": "integer", "minimum": 8, "maximum": 256, "multipleOf": 8}
+DIMENSION = {"type": "integer", "minimum": 1, "maximum": dimensions.MAX_AXIS}
 SOURCE_PROPERTIES = {
     "atlas_id": ASSET_ID,
     "region": ASSET_ID,
@@ -465,8 +468,8 @@ FRAME = schema(
         "kind": {"enum": ["tile", "sprite"]},
         "x": {"type": "integer", "minimum": 0, "maximum": 248, "multipleOf": 8},
         "y": {"type": "integer", "minimum": 0, "maximum": 248, "multipleOf": 8},
-        "width": DIMENSION,
-        "height": DIMENSION,
+        "width": GRID_DIMENSION,
+        "height": GRID_DIMENSION,
         "origin": ORIGIN,
     }
 )
@@ -497,6 +500,8 @@ SHEET_DESCRIPTOR = schema(
     {
         **DESCRIPTOR["properties"],
         "version": {"const": 2},
+        "width": GRID_DIMENSION,
+        "height": GRID_DIMENSION,
         "frames": FRAMES,
         "sequences": SEQUENCES,
     }
@@ -509,7 +514,7 @@ CANDIDATE = schema(
         "document_id": UUID,
         "atlas_id": ASSET_ID,
         "descriptor": DESCRIPTOR,
-        "rgba": {"type": "string", "maxLength": 349528},
+        "rgba": {"type": "string", "maxLength": dimensions.MAX_RGBA_BASE64},
         "project_revision": REVISION,
         "artwork_revision": {"anyOf": [REVISION, NULL]},
         "operation": {"enum": ["create", "edit", "duplicate"]},
@@ -522,10 +527,10 @@ CANDIDATE = schema(
 )
 RECTANGLE = schema(
     {
-        "x": {"type": "integer", "minimum": 0, "maximum": 255},
-        "y": {"type": "integer", "minimum": 0, "maximum": 255},
-        "width": {"type": "integer", "minimum": 1, "maximum": 256},
-        "height": {"type": "integer", "minimum": 1, "maximum": 256},
+        "x": {"type": "integer", "minimum": 0, "maximum": dimensions.MAX_AXIS - 1},
+        "y": {"type": "integer", "minimum": 0, "maximum": dimensions.MAX_AXIS - 1},
+        "width": {"type": "integer", "minimum": 1, "maximum": dimensions.MAX_AXIS},
+        "height": {"type": "integer", "minimum": 1, "maximum": dimensions.MAX_AXIS},
     }
 )
 VIEWPORT = schema(
@@ -621,7 +626,7 @@ TOOLS.extend(
         ),
         tool(
             "create_artwork",
-            "Prepare a transparent unsaved tile/static sprite candidate. Tiles are 8/16/32 squares; sprite axes are multiples of 8 within 8..256. No inventory writes.",
+            "Prepare a transparent unsaved tile/static sprite candidate. Tiles are 8/16/32 squares; static sprite axes are integer pixels within 1..4096, with at most 4194304 total pixels. No inventory writes.",
             {
                 **GUARD,
                 "atlas_id": ASSET_ID,
@@ -657,24 +662,35 @@ TOOLS.extend(
         ),
         tool(
             "read_artwork_pixels",
-            "Read exact row-major base64 straight RGBA8 bytes, including hidden RGB under alpha zero. Optional rectangle must fit. Retains original candidate/base revisions.",
+            "Read exact row-major base64 straight RGBA8 bytes, including hidden RGB under alpha zero. Reads at most 65536 pixels; use explicit rectangles for larger documents. Retains original candidate/base revisions.",
             {**ARTWORK_CANDIDATE, "rectangle": RECTANGLE},
             ("rectangle",),
             read=True,
         ),
         tool(
             "edit_artwork_pixels",
-            "Return a new unsaved candidate from unique x/y/RGBA writes; no saved mutation. At most 65536 writes and 1 MiB batch JSON. Invalid batches reject entirely; review again after editing.",
+            "Return a new unsaved candidate from unique x/y/RGBA writes; no saved mutation. Choose writes (at most 65536 and 1 MiB batch JSON) or a base64 rectangle patch (at most 65536 pixels). Invalid batches reject entirely; review again after editing.",
             {
                 **ARTWORK_CANDIDATE,
+                "patch": schema(
+                    {"rectangle": RECTANGLE, "rgba": {"type": "string", "maxLength": 349528}}
+                ),
                 "writes": {
                     "type": "array",
                     "minItems": 1,
                     "maxItems": 65536,
                     "items": schema(
                         {
-                            "x": {"type": "integer", "minimum": 0, "maximum": 255},
-                            "y": {"type": "integer", "minimum": 0, "maximum": 255},
+                            "x": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": dimensions.MAX_AXIS - 1,
+                            },
+                            "y": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": dimensions.MAX_AXIS - 1,
+                            },
                             "rgba": {
                                 "type": "array",
                                 "minItems": 4,
@@ -685,14 +701,16 @@ TOOLS.extend(
                     ),
                 },
             },
+            ("writes", "patch"),
             read=True,
         ),
         tool(
             "review_artwork_candidate",
-            "Read-only native/enlarged before/after PNG resources, saved references and commit receipt for exact candidate/base. Optional explicit saved or temporary scene context. Scale 1..16; output <=1024 per axis; 64 scenes/16 MiB map scan; 256 locations per offset page.",
+            "Read-only native/enlarged before/after PNG resources, saved references and commit receipt for exact candidate/base. Optional explicit saved or temporary scene context. Default whole-document overview; optional rectangle selects native detail. Scale 1..16 is fitted to output <=1024 per axis; 64 scenes/16 MiB map scan; 256 locations per offset page.",
             {
                 **ARTWORK_CANDIDATE,
                 "scale": {"type": "integer", "minimum": 1, "maximum": 16},
+                "rectangle": RECTANGLE,
                 "offset": {"type": "integer", "minimum": 0, "maximum": 2147483647},
                 "scene": schema(
                     {
@@ -703,7 +721,7 @@ TOOLS.extend(
                     }
                 ),
             },
-            ("scale", "offset", "scene"),
+            ("scale", "offset", "scene", "rectangle"),
             read=True,
         ),
         tool(

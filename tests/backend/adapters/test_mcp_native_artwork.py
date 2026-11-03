@@ -345,7 +345,7 @@ class NativeArtworkTests(unittest.TestCase):
     def test_input_and_review_bounds_are_explicit(self):
         candidate = self.create(kind="sprite", width=256, height=256)
         before = self.snapshot()
-        for kwargs in (dict(scale=5), dict(scale=True), dict(offset=-1)):
+        for kwargs in (dict(scale=True), dict(offset=-1)):
             with self.assertRaises(ValueError):
                 self.review(candidate, **kwargs)
         with self.assertRaises(ValueError):
