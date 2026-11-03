@@ -516,7 +516,8 @@ export function createSheetEditor(
     'toggle',
     () => {
       if (timeline.open) {
-        sync();
+        // Revealing deferred images must preserve the owner's busy controls.
+        paint();
       }
     },
     { signal: lifetime.signal },

@@ -1,5 +1,7 @@
 /** Exact raster invalidation, including transparent pixels, history and disposal. */
 import { build } from 'esbuild';
+import { execFileSync } from 'node:child_process';
+import { join } from 'node:path';
 import { test, expect } from '../support/browser-fixtures.ts';
 
 // Exercise the real raster module with browser canvas semantics, independently of UI timing.
@@ -81,4 +83,67 @@ document.body.textContent=JSON.stringify({initial,hidden,cancelled,painted,alpha
   expect(get('stable')).toEqual(get('noChange'));
   expect(get('moved')[0]).not.toBe(get('stable')[0]);
   expect(get('switched')[0]).not.toBe(get('moved')[0]);
+});
+
+test('revealing timeline thumbnails preserves busy controls until animation review completes', async ({
+  page,
+  workspace,
+}) => {
+  const root = join(workspace.folder, 'project');
+  execFileSync(workspace.python, [
+    '-I',
+    '-c',
+    `
+import sys
+from pathlib import Path
+from gbc_scene_forge.project.application import Project
+p=Project.create(Path(sys.argv[1]),'Timeline review')
+frame=dict(id='idle',name='Idle',kind='sprite',x=0,y=0,width=8,height=8,origin=[0,0])
+sequence=dict(id='idle',name='Idle',loop=True,frames=[dict(frame_id='idle',duration_ms=120)])
+c=p.artwork.documents.create_sheet('player','Player','sprite',8,8,p.catalog()['revision'],frames=[frame],sequences=[sequence])
+p.artwork.documents.save(c)
+`,
+    root,
+  ]);
+  await page.goto(await workspace.start(root));
+  await page.locator('[data-asset="player/idle"]').click();
+  const timeline = page.locator('#art-timeline');
+  const summary = timeline.locator(':scope > summary');
+  await summary.click();
+  await expect(page.locator('#art-animation-review')).toBeEnabled();
+
+  let release = () => {};
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/api/artwork-animation-review', async (route) => {
+    await pending;
+    await route.continue();
+  });
+  try {
+    const requested = page.waitForRequest('**/api/artwork-animation-review');
+    await page.locator('#art-animation-review').click();
+    await requested;
+    await expect(page.locator('#art-play')).toBeDisabled();
+    // This listener runs after the controller's toggle handler, so the assertions
+    // observe the completed deferred refresh rather than racing the toggle event.
+    await timeline.evaluate((element) => {
+      element.addEventListener('toggle', () => {
+        element.setAttribute('data-toggled-open', String(element.hasAttribute('open')));
+      });
+    });
+    await summary.click();
+    await expect(timeline).toHaveAttribute('data-toggled-open', 'false');
+    await summary.click();
+    await expect(timeline).toHaveAttribute('data-toggled-open', 'true');
+    for (const control of await timeline.locator('button,input,select').all()) {
+      await expect(control).toBeDisabled();
+    }
+  } finally {
+    release();
+  }
+  await expect(page.locator('#art-animation-image')).toBeVisible();
+  for (const id of ['art-play', 'art-step', 'art-loop', 'art-animation-review']) {
+    await expect(page.locator('#' + id)).toBeEnabled();
+  }
 });
