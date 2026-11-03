@@ -15,8 +15,9 @@ python -m pip install --upgrade 'gbc-scene-forge[mcp]==0.30.1'
 gbc-scene-forge-mcp --project-root /absolute/path/to/projects
 ```
 
-Version 0.30.1 is prepared on the milestone branch; until publication, install
-its built wheel or use this checkout after the normal development setup:
+Version 0.30.1 is published on [PyPI](https://pypi.org/project/gbc-scene-forge/0.30.1/)
+and [GitHub](https://github.com/cliffom/gbc-scene-forge/releases/tag/v0.30.1).
+For checkout development after the normal setup, enable the optional SDK:
 
 ```sh
 poetry install --extras mcp

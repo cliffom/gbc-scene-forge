@@ -15,6 +15,40 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Artwork ownership extraction and asynchronous audit (#168, #169)
+
+- **Scope:** Internal-refactor working tree on `milestone/18-artwork-ownership`,
+  based on `166eda046c4121452615e16048100ad48107e0d6`, checked 2026-11-03 on
+  Darwin 27.0.0 arm64 / Apple M4 Max, Python 3.13.13, Node 24.22.1 and Chromium
+  156.0.8078.4. Package/runtime versions remain 0.30.1; no new release is prepared.
+- **Method:** Existing browser cases exercise retained controls/viewports,
+  exact pixels/layout/history, checkpoint uncertainty and guarded review/save.
+  A focused extracted-gesture check replaces the model during capture, sends an
+  unrelated pointer release and disposes with a stroke pending. The unchanged
+  eight-case production profile compares all view/timeline phases against the
+  source baseline; [methods, digests and measurements](evaluations/editor-responsiveness.md#artwork-ownership-extraction-comparison-168)
+  identify the variants. The [asynchronous audit](evaluations/artwork-ownership.md)
+  maps identity/queue/receipt/journal boundaries and adds lost-save-response,
+  acknowledged-save/reopen-failure and late-read/disposal checks. Distribution
+  checks inspect source-module inclusion, source maps and a fresh wheel installation.
+- **Result:** `make docs-check lint test` passes, as do all 51 focused browser
+  cases, production distribution/metadata checks and seven installed-wheel smoke
+  checks. All eight profile cases pass before and after extraction; per-handler
+  resize/upload/draw/encode counts match across 24 phases and 72 measured trials.
+  The full plain installed-wheel browser run passes 113 cases with 11 opt-in
+  profiles skipped; three final added async cases pass against that wheel, and
+  all four real SDK/browser handoff/refresh cases pass using the source environment.
+  Strict checking initially found a nullable canvas context in the extracted
+  closure; retaining its draw-time guard corrected the build before browser runs.
+  The first async download fixture targeted a closed disclosure; revealing it
+  corrected that timeout. No additional product defect was verified by the audit.
+- **Limits:** Synthetic local Chromium checks do not establish human usability,
+  physical-device latency, Windows/non-Chromium or official Tiled application
+  behavior. Shared-host timings are observations; local raw profile JSON is
+  ignored rather than archived. The audit covers selected deterministic schedules,
+  with UI busy gates and mounted cancellation as documented assumptions; it does
+  not certify every endpoint/interleaving. Existing unperformed checks below remain.
+
 ## Workflow usability and browser/MCP outcomes (milestone 17)
 
 - **Scope:** Prepared 0.30.1 working tree on `milestone/17-workflow-usability`,

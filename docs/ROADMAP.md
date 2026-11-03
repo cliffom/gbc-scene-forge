@@ -14,11 +14,10 @@ these outcomes have no promised dates. Validation gaps live in the
 
 [Milestone 17](https://github.com/cliffom/gbc-scene-forge/milestone/17): complete
 independent-user evaluation (#165) and findings-based remediation/retesting (#166)
-using the [evaluation protocol](evaluations/workflow-usability.md). The next release
-preparation includes bounded agent-observed document-state fixes and the maintained
-[browser/MCP outcome matrix](AUTHORING-OUTCOMES.md) for #167. Participant-dependent
+using the [evaluation protocol](evaluations/workflow-usability.md) and maintained
+[browser/MCP outcome matrix](AUTHORING-OUTCOMES.md). Participant-dependent
 acceptance remains open until observations exist. Preserve browser-only, agent-only
-and mixed authoring workflows; release preparation does not close the milestone.
+and mixed authoring workflows; publication does not close the milestone.
 
 ## Authoring maintainability and correctness (milestone 18)
 

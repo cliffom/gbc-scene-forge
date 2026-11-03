@@ -11,7 +11,7 @@ exports. Internal Python module paths are implementation details.
 | `project` | Workspace/project lifecycle, manifest schema, coherent saved reads, service composition, draft recovery, refresh revisions and guarded scene transfer | `project.application.Project`, `ProjectRoot`, `ProjectStore.read_session`; project/workspace/update tests |
 | `scenes` | Scene lifecycle and canonical candidate editing | `SceneService`; scene/project and MCP authoring tests |
 | `scene_objects` | Native object/property rules, definitions, reusable stamps and preview preferences | Model/definition functions and `ObjectService`; object/definition/preview/composition tests |
-| `artwork` | Atlas intake, images, stable tile identities, metadata and atlas mutations | `ArtworkService`, atlas loading; atlas/project/tile metadata tests |
+| `artwork` | Atlas intake, images, native pixel/sheet documents and animation, reviewed saves, owned artwork drafts, stable tile identities and metadata | `ArtworkService`, document/review/draft services; native artwork/sheet/review/variation and atlas/tile metadata tests |
 | `planning` | Blockout geometry/cameras and world layouts/connections | Pure blockout/world rules and `PlanningService`; blockout/world tests |
 | `analysis` | Diagnostics, object validation and optional palette/target-budget reports | `ReportService`; diagnostics/palette/definition tests |
 | `formats` | Tiled encoding/decoding, portable export and bounded in-memory ZIP intake | Tiled functions and export operation; export/Tiled interoperability tests |
@@ -87,7 +87,7 @@ and path security have one maintained implementation.
 
 Run `make lint test build check-dist`, full browser acceptance, and optional-SDK
 MCP tests/browser acceptance. The Python compatibility matrix installs the built
-wheel on 3.10–3.14. Scoped mypy checks cover shared primitives and saved-read
+wheel on 3.13 and 3.14; the declared package minimum remains 3.10. Scoped mypy checks cover shared primitives and saved-read
 contracts; dynamic domain payloads retain their existing runtime validation until
 there is a concrete reason to expand the typed boundary. No runtime dependency or
 project migration is introduced. See [RELEASING.md](RELEASING.md).

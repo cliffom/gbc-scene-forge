@@ -14,7 +14,9 @@ start polling, or acquire canvas resources. No frontend framework is required.
 | `editor/editor-state.mts` | `SceneSession` owns the current scene descriptor, committed baseline/revision and `LayerEditor`, dirty comparisons and native serialization. `WorkspaceState` owns the adopted project catalog/revision, separately validated scene choices and navigation state. Selection, brushes/clipboard and gestures have separate owners. |
 | `scene/layers.mts`, `scene/model.mts` | Authored scene, active layer, strokes and undo/redo. Controllers mutate through this existing model. Bidirectional changed-path/subtree records retain up to 100 operations; one transaction clone supports cancellation. Layer context replays with undo/redo. Selection, camera scroll and preview positions are not authored history. |
 | `project/project-api.mts`, `project/project-contracts.mts`, `shared/decode.mts` | Standalone project-relative HTTP, mutation token, request cancellation, runtime JSON decoding and scene/catalog contracts. Decoder callbacks remain mandatory. JSON primitives live in `shared/`; project transport owns only standalone routes. |
-| `artwork/pixel-editor.mts`, `artwork/pixel-model.mts`, `artwork/artwork-session.mts`, `artwork/artwork-contracts.mts` | Native artwork documents in the main workbench (with creation/properties/review presentation in `artwork/artwork-workspace.mts` and frame/sequence controls in `artwork/sheet-editor.mts`), exact bounded RGBA history, pointer cancellation, review and serial owned checkpoint writer. `artwork/conversion-views.mts` derives bounded origin-aware scene views covering selected sprite conversions; confirmation requires all views of the same plan. Schema decoding and pixel state stay outside scene history; the composition forwards exact save acknowledgments and stages catalog/image adoption. Successful saves retain the document/history and reopen the exact acknowledged revision before advancing its base; failed post-save adoption retires the submitted candidate. |
+| `artwork/pixel-editor.mts` | Artwork composition, active document transitions, setup, review/save and recovery. Wires retained-document, gesture, rendering, sheet and workspace owners through typed callbacks. `artwork/conversion-views.mts` derives bounded origin-aware scene views covering selected sprite conversions; confirmation requires all views of the same plan. The composition forwards exact save acknowledgments and stages catalog/image adoption. Successful saves retain the document/history and reopen the exact acknowledged revision before advancing its base; failed post-save adoption retires the submitted candidate. |
+| `artwork/pixel-model.mts`, `artwork/artwork-session.mts`, `artwork/artwork-contracts.mts` | Exact bounded RGBA/layout history, serialized candidate/checkpoint writer, saved base and schema decoding. Pixel state stays outside scene history. |
+| `artwork/artwork-documents.mts`, `artwork/artwork-gestures.mts`, `artwork/artwork-rendering.mts` | Retained sessions/control snapshots, captured authored gestures and main canvas drawing respectively. See the state/resource inventory below. |
 | `artwork/editor-artwork.mts` | Imported images, derived tile/sprite indexes, palette filters/choices, brush capture/restore and atlas import/reimport/deletion. New PNG/Tiled intake belongs here or in focused intake helpers, not the composition. |
 | `project/editor-workspace.mts` | Stage catalog and artwork decoding before adoption; project chooser/folder UI. An adoption callback fences staged external snapshots immediately before mutation. |
 | `scene/scene-navigation.mts` | Project-relative scene paths and indexed browser history; restore the active entry before asynchronous confirmation, then traverse only after successful adoption. Resources belong to the editor lifetime. |
@@ -126,7 +128,7 @@ entry. All other modules live with their owning domain:
 | `editor/` | Composition, editor session/interaction state, canvas/viewport, command wiring, layout, DOM and mounted lifetime. |
 | `project/` | Native transport/contracts, workspace adoption, recovery/checkpoints, external refresh, first-scene guide and Forge scene-transfer preflight. |
 | `scene/` | Authoring model, layers/history, scene lifecycle, resizing and exports. |
-| `artwork/` | Imported images, atlas intake, tile metadata/transforms, terrain adjacency model and tile inspector. |
+| `artwork/` | Imported images/intake, native artwork documents, pixel history/gestures/rendering, sheet/animation controls, tile metadata/transforms, terrain adjacency model and tile inspector. |
 | `objects/` | Objects/properties, reusable definitions, inspector and definition library. |
 | `compositions/` | Clipboard and reusable stamp model. Editor command wiring remains in `editor/`. |
 | `blockout/` | Blockout model, review UI and label layout/rendering. |
@@ -159,6 +161,7 @@ helper coverage now uses supported native contracts.
   stopped polling and exactly one scene-opening handler after replacement.
 - `tests/playwright/mcp/refresh.spec.ts`: real MCP concurrent saves, local-edit/form protection,
   paused/hidden refresh, interaction and decode races, tools/brushes and animation.
+- `tests/playwright/artwork/ownership.spec.ts`: captured strokes retain their original model across replacement and disposal; unrelated pointers cannot finish a stroke.
 - Existing model suites cover layers, compositions, previews, definitions, world,
   drafts and resize. Existing Chrome suites exercise the complete editor workflows.
 - `tests/frontend/infrastructure/frontend-build.ts`: real strict build, maps/identity, atomic failed builds,
@@ -168,7 +171,7 @@ helper coverage now uses supported native contracts.
 
 Run `make lint test build check-dist`, `make test-browser`, and optional-SDK
 `make test-mcp test-mcp-browser`. See [RELEASING.md](RELEASING.md). Behavior-preserving
-internal cleanup retains 0.13.1; publication requires a separately chosen,
+internal cleanup does not require a dedicated version bump; publication requires a separately chosen,
 unpublished version and release authorization.
 
 ## Response schemas
@@ -235,9 +238,27 @@ when sheet/frame geometry, zoom or viewport dimensions change. Fit and frame
 scope changes recenter; resize and zoom preserve the viewed center.
 
 `artwork/document-chooser.mts` owns the native modal chooser, dismissal and focus
-restoration. `artwork/pixel-editor.mts` continues to own retained sessions,
-authoring tools, review/save and recovery. Each retained session additionally
-remembers the viewport center and Pan choice. Opening the chooser cancels an
+restoration. `artwork/artwork-documents.mts` retains sessions and their control,
+viewport-center and Pan snapshots; `artwork/pixel-editor.mts` coordinates their
+transitions, review/save and recovery. Opening the chooser cancels an
 unfinished authored gesture and suspends transient navigation. Busy requests
 disable its trigger. The mounted lifetime owns listeners, capture, the hover
 frame and ResizeObserver; disposal releases them together.
+
+## Artwork state and resource inventory
+
+| Owner | State/resources | Typed boundary |
+| --- | --- | --- |
+| `pixel-editor.mts` | Current session, busy gate, source inventory, palette signature, checkpoint debounce and conversion plan. | Composes owners with fresh getters for current session/model, sheet view and selected frame. Owns API calls, error presentation, authored-change/checkpoint notification and exact save adoption. |
+| `artwork-documents.mts` | Retained session identities, input/radio/select/details snapshots and normalized viewport/Pan snapshots. Cleared on mounted disposal. | Receives the dialog and lifetime; remembers only measurable views. Creates no model, writer or timer. The composition creates sheet options, restores controls, then forces sheet callback rebinding before drawing/restoring the viewport. Save retirement removes the submitted entry before fallible adoption; successful adoption reuses its snapshot. |
+| `artwork-gestures.mts` | One captured pointer, start/last points, tool and original model identity. Tool values remain in the native radio group. | Receives current-model/availability getters, clamped coordinate conversion, color and narrow mutation/paint/cancellation callbacks. Pointer segments synchronously paint through the composition; completion alone notifies authored changes. Cancellation rolls back the original model and releases capture, including replacement/disposal. Listeners and captures belong to the lifetime. |
+| `artwork-rendering.mts` | Main canvas/context, dimensions and raster/overlay drawing. Disposal releases its backing surface. | Reads current model, frame view/selection, zoom and grid/onion preferences through getters. Receives the shared raster; never synchronizes sheets, checkpoints or controls itself. |
+| `artwork-raster.mts`, `sheet-editor.mts` | Exact reusable RGBA upload/cache; weak thumbnail stamps, frame/sequence binding, playback position and owned timer. | The composition synchronizes controls before rendering. During a stroke it uses pixel/thumbnail painting only; completion/cancellation performs full synchronization. Sheet mutation still enters PixelModel history through its existing port. |
+| `pixel-model.mts`, `artwork-session.mts` | Pixel/layout history and selection/clipboard; candidate/original/receipt, serialized checkpoint queue, checkpoint identity/uncertainty and exact saved/checkpoint baselines. | Remain the authoring and persistence authorities. Retained-document and rendering owners neither clone these owners nor replace their identity checks. |
+| `artwork-workspace.mts`, `artwork-viewport.mts`, `document-chooser.mts` | Setup/properties/review presentation; scroll geometry, pan/capture, target frame and ResizeObserver; modal focus/dismissal. | Existing presentation/lifetime contracts remain. Navigation has no authored mutation or checkpoint port. |
+
+Imports acquire no DOM, canvas, listeners or timers. All owners are created once
+per mount and use the same lifetime; callback forwarding avoids sibling runtime
+controller imports. Rendering remains synchronous, resets context state and
+retains geometry checks, exact RGBA comparisons and bounded thumbnail work from
+the [responsiveness measurements](evaluations/editor-responsiveness.md).

@@ -1105,11 +1105,12 @@ See [measurements and limits](evaluations/scene-scalability.md).
 
 ## Native editable artwork
 
-Native editable artwork is available through the shared Python service API and
-[MCP authoring tools](MCP.md#native-artwork-authoring) in
-prepared 0.27.0; see [native documents and limits](EDITABLE-ARTWORK.md#implemented-service-api-130).
-Its generated tiles/sprites use the existing Library and scene save/export flow.
-Browser pixel tools are subsequent milestone 14 work. Imported
-artwork remains read-only to native edits; duplicate an explicit cell/static sprite.
-Projects containing native documents require Forge 0.27+; ordinary imported
-projects keep their existing format without migration.
+Create artwork or open a native Library tile/sprite in the integrated
+[pixel workspace](user/pixel-artwork.md). Browser drawing, frame/animation editing
+and [MCP authoring](MCP.md#native-artwork-authoring) use the same document/review
+services and portable scene save/export flow. Imported pixels are preserved;
+make an editable copy of an explicit cell, sprite or whole sheet before drawing.
+See [native documents and limits](EDITABLE-ARTWORK.md#implemented-service-api-130)
+and the [sheet contract](UNIFIED-EDITOR-DESIGN.md). Static version-1 documents need
+Forge 0.27+; version-2 sheets need 0.29+. Ordinary imported projects keep their
+existing format without migration.

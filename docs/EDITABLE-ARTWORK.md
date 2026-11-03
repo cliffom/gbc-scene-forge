@@ -3,7 +3,8 @@
 This is the implementation contract for [#129](https://github.com/cliffom/gbc-scene-forge/issues/129)
 and [milestone 14](https://github.com/cliffom/gbc-scene-forge/milestone/14).
 The shared native service and portable format are implemented by #130, and
-candidate review by #131, in the prepared 0.27.0 milestone branch.
+candidate review by #131. Version-2 sheets extend this static contract through
+the [unified editor contract](UNIFIED-EDITOR-DESIGN.md).
 The [MCP artwork loop](MCP.md#native-artwork-authoring) implements #132; the
 [browser pixel editor](user/pixel-artwork.md) implements hand editing and owned
 recoverable drafts (#133). Selected-placement variations implement #134; the

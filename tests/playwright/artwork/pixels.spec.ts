@@ -1244,6 +1244,106 @@ test('saved artwork stays open across saves and undo compares with the latest sa
   await expect(page.locator('#art-undo')).toBeEnabled();
 });
 
+for (const failure of ['save acknowledgment', 'saved reopen'] as const) {
+  test(`successful artwork write with failed ${failure} preserves the correct recovery boundary`, async ({
+    page,
+    workspace,
+  }) => {
+    const { url } = await setup(page, workspace);
+    await openGrass(page);
+    await page.locator('#art-color').fill('#cc7744');
+    await draw(page, 0, 0);
+    await reviewArtwork(page);
+    const route = failure === 'save acknowledgment' ? 'save' : 'open';
+    await page.route(`**/api/artwork-${route}`, async (request) => {
+      if (route === 'save') {
+        const committed = await request.fetch();
+        expect(committed.status()).toBe(200);
+      }
+      await request.abort('failed');
+    });
+    await page.locator('#art-save').click();
+    await expect(page.locator('#art-message')).toContainText(
+      failure === 'save acknowledgment' ? 'Local pixels are retained' : 'Artwork saved.',
+    );
+    expect(new PixelModel(await opened(page, url)).color({ x: 0, y: 0 })).toEqual([
+      204, 119, 68, 255,
+    ]);
+    const drafts = array((await post(page, url, 'draft-list', {})).drafts, record);
+    if (failure === 'save acknowledgment') {
+      expect(drafts).toHaveLength(1);
+      const checkpoint = await post(page, url, 'draft-download', {
+        id: drafts[0].id,
+        revision: drafts[0].revision,
+      });
+      expect(new PixelModel(decodeCandidate(checkpoint.candidate)).color({ x: 0, y: 0 })).toEqual([
+        204, 119, 68, 255,
+      ]);
+      await revealArtworkControl(page, 'art-download');
+      const [download] = await Promise.all([
+        page.waitForEvent('download'),
+        page.locator('#art-download').click(),
+      ]);
+      const path = await download.path();
+      assert.ok(path);
+      const work = record(JSON.parse(await readFile(path, 'utf8')));
+      expect(work.current_rgba).toBe(decodeCandidate(checkpoint.candidate).rgba);
+      // Retrying an ambiguous save cannot reuse its now-stale review/base.
+      await page.unroute(`**/api/artwork-${route}`);
+      await page.locator('#art-save').click();
+      await expect(page.locator('#art-message')).toContainText('retained');
+      expect(array((await post(page, url, 'draft-list', {})).drafts, record)).toHaveLength(1);
+    } else {
+      expect(drafts).toHaveLength(0);
+      // The exact save succeeded; failed adoption must retire its stale session.
+      await expect(page.locator('#art-editor')).toBeHidden();
+      await expect(page.locator('#document-switcher')).toBeHidden();
+    }
+  });
+}
+
+test('a late artwork open cannot adopt into a replacement mounted editor', async ({
+  page,
+  workspace,
+}) => {
+  await setup(page, workspace);
+  await page.locator('#show-artwork').click();
+  await page.locator('#art-existing-mode').click();
+  await page.locator('#art-source').selectOption({ label: 'grass / artwork (editable)' });
+  let release = () => {};
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let read = () => {};
+  const readComplete = new Promise<void>((resolve) => {
+    read = resolve;
+  });
+  await page.route('**/api/artwork-open', async (route) => {
+    const response = await route.fetch();
+    read();
+    await pending;
+    await route.fulfill({ response });
+  });
+  await page.locator('#art-open').click();
+  await readComplete;
+  try {
+    await page.evaluate(`(async()=>{
+      const module=await import('/project.js');
+      module.editor.dispose();
+      window.__replacement=module.mountProjectEditor();
+    })()`);
+    await expect(page.locator('#show-artwork')).toBeEnabled();
+  } finally {
+    release();
+  }
+  await page.unrouteAll({ behavior: 'wait' });
+  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+  await expect(page.locator('#document-switcher')).toBeHidden();
+  await openGrass(page);
+  await expect(page.locator('#art-document-state')).toHaveText('Saved');
+  await page.evaluate('window.__replacement.dispose()');
+});
+
 test('document restoration binds the selected sequence and clears other artwork reviews', async ({
   page,
   workspace,

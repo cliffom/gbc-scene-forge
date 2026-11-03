@@ -42,6 +42,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Evaluations
 
+- [Artwork asynchronous ownership audit (#169)](evaluations/artwork-ownership.md)
 - [Existing workflow usability and session protocol (#165–#167)](evaluations/workflow-usability.md)
 - [Artwork interaction polish (#173–#176)](evaluations/artwork-interaction-polish.md)
 
@@ -67,17 +68,17 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Release notes
 
-- [Scene Forge 0.30.1](RELEASE-0.30.1.md) — prepared; publication is separate.
-- [Scene Forge 0.30.0](RELEASE-0.30.0.md) — prepared; publication is separate.
-- [Scene Forge 0.29.2](RELEASE-0.29.2.md) — prepared; publication is separate.
+- [Scene Forge 0.30.1](RELEASE-0.30.1.md) — [published release](https://github.com/cliffom/gbc-scene-forge/releases/tag/v0.30.1).
+- [Scene Forge 0.30.0](RELEASE-0.30.0.md)
+- [Scene Forge 0.29.2](RELEASE-0.29.2.md)
 
-- [Scene Forge 0.29.1](RELEASE-0.29.1.md) — prepared; publication is separate.
+- [Scene Forge 0.29.1](RELEASE-0.29.1.md)
 
-- [Scene Forge 0.29.0](RELEASE-0.29.0.md) — prepared; publication is separate.
-- [Scene Forge 0.28.0](RELEASE-0.28.0.md) — prepared; publication is separate.
+- [Scene Forge 0.29.0](RELEASE-0.29.0.md)
+- [Scene Forge 0.28.0](RELEASE-0.28.0.md)
 
-- [Scene Forge 0.27.1](RELEASE-0.27.1.md) — prepared; publication is separate.
-- [Scene Forge 0.27.0](RELEASE-0.27.0.md) — prepared; publication is separate.
+- [Scene Forge 0.27.1](RELEASE-0.27.1.md)
+- [Scene Forge 0.27.0](RELEASE-0.27.0.md)
 - [Scene Forge 0.26.0](RELEASE-0.26.0.md)
 - [Scene Forge 0.25.1](RELEASE-0.25.1.md)
 - [Scene Forge 0.25.0](RELEASE-0.25.0.md)
