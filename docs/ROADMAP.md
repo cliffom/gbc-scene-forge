@@ -6,25 +6,16 @@ artwork-free blockouts, optional MCP and conflict-aware recovery. See
 [usage](STANDALONE.md) and the [changelog](CHANGELOG.md) for supported behavior.
 
 Open milestone state was checked on 2026-11-03. Stabilization of existing workflows
-precedes new authoring features. Priority order is **16 → 20 → 17 → 18 → 19**;
+precedes new authoring features. Priority order is **20 → 17 → 18 → 19**;
 these outcomes have no promised dates. Validation gaps live in the
 [single remaining-check list](VALIDATION.md#remaining-checks).
-
-## Editor responsiveness and performance (milestone 16)
-
-[Milestone 16](https://github.com/cliffom/gbc-scene-forge/milestone/16), #160–#164:
-repeatable interaction/resource baselines, pixel raster and dirty-state costs,
-scene control/checkpoint preparation, large libraries and resource lifetimes.
-The [performance evaluation](evaluations/editor-responsiveness.md) records measured
-changes and deliberately retained paths. Timing is observational; deterministic
-work counts guard known duplication. Preserve exact pixels, history, cancellation,
-review receipts, checkpoint acknowledgments and revision guards.
 
 ## Artwork editor interaction polish (milestone 20)
 
 [Milestone 20](https://github.com/cliffom/gbc-scene-forge/milestone/20), #173–#176:
 hover targets, toolbar density, document selection prominence and canvas panning,
-based on direct editor use. This follows the performance work.
+based on direct editor use. Preserve the measured performance improvements and
+exact pixel/history/recovery contracts while preparing the next release.
 
 ## Existing workflow usability and manual–MCP parity (milestone 17)
 

@@ -1,0 +1,184 @@
+{
+  "date": "2026-11-03T18:41:25.981Z",
+  "build": {
+    "version": "0.30.0"
+  },
+  "observations": [
+    {
+      "width": 1440,
+      "height": 900,
+      "state": "normal",
+      "toolbarHeight": 41.5,
+      "drawingHeight": 418.5,
+      "drawingWidth": 1155,
+      "footerVisible": true,
+      "overflow": false,
+      "commandsVisible": true
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "state": "animation",
+      "toolbarHeight": 41.5,
+      "drawingHeight": 342.5,
+      "drawingWidth": 1155,
+      "footerVisible": true,
+      "overflow": false,
+      "commandsVisible": true
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "state": "properties",
+      "toolbarHeight": 41.5,
+      "drawingHeight": 342.5,
+      "drawingWidth": 863,
+      "footerVisible": true,
+      "overflow": false,
+      "commandsVisible": true
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "state": "review",
+      "toolbarHeight": 41.5,
+      "drawingHeight": 318.5,
+      "drawingWidth": 863,
+      "footerVisible": true,
+      "overflow": false,
+      "commandsVisible": true
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "state": "normal",
+      "toolbarHeight": 77.5,
+      "drawingHeight": 258.5,
+      "drawingWidth": 995,
+      "footerVisible": true,
+      "overflow": false,
+      "commandsVisible": true
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "state": "animation",
+      "toolbarHeight": 77.5,
+      "drawingHeight": 182.5,
+      "drawingWidth": 995,
+      "footerVisible": true,
+      "overflow": false,
+      "commandsVisible": true
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "state": "properties",
+      "toolbarHeight": 77.5,
+      "drawingHeight": 182.5,
+      "drawingWidth": 703,
+      "footerVisible": true,
+      "overflow": false,
+      "commandsVisible": true
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "state": "review",
+      "toolbarHeight": 77.5,
+      "drawingHeight": 182.5,
+      "drawingWidth": 703,
+      "footerVisible": true,
+      "overflow": false,
+      "commandsVisible": true
+    },
+    {
+      "width": 800,
+      "height": 640,
+      "state": "normal",
+      "toolbarHeight": 77.5,
+      "drawingHeight": 196.5,
+      "drawingWidth": 783,
+      "footerVisible": true,
+      "overflow": false,
+      "commandsVisible": true
+    },
+    {
+      "width": 800,
+      "height": 640,
+      "state": "animation",
+      "toolbarHeight": 77.5,
+      "drawingHeight": 150,
+      "drawingWidth": 783,
+      "footerVisible": true,
+      "overflow": false,
+      "commandsVisible": true
+    },
+    {
+      "width": 800,
+      "height": 640,
+      "state": "properties",
+      "toolbarHeight": 77.5,
+      "drawingHeight": 150,
+      "drawingWidth": 783,
+      "footerVisible": true,
+      "overflow": false,
+      "commandsVisible": true
+    },
+    {
+      "width": 800,
+      "height": 640,
+      "state": "review",
+      "toolbarHeight": 77.5,
+      "drawingHeight": 150,
+      "drawingWidth": 783,
+      "footerVisible": true,
+      "overflow": false,
+      "commandsVisible": true
+    },
+    {
+      "width": 1440,
+      "height": 600,
+      "state": "normal",
+      "toolbarHeight": 41.5,
+      "drawingHeight": 207,
+      "drawingWidth": 1163,
+      "footerVisible": true,
+      "overflow": false,
+      "commandsVisible": true
+    },
+    {
+      "width": 1440,
+      "height": 600,
+      "state": "animation",
+      "toolbarHeight": 41.5,
+      "drawingHeight": 150,
+      "drawingWidth": 1163,
+      "footerVisible": true,
+      "overflow": false,
+      "commandsVisible": true
+    },
+    {
+      "width": 1440,
+      "height": 600,
+      "state": "properties",
+      "toolbarHeight": 41.5,
+      "drawingHeight": 150,
+      "drawingWidth": 871,
+      "footerVisible": true,
+      "overflow": false,
+      "commandsVisible": true
+    },
+    {
+      "width": 1440,
+      "height": 600,
+      "state": "review",
+      "toolbarHeight": 41.5,
+      "drawingHeight": 150,
+      "drawingWidth": 871,
+      "footerVisible": true,
+      "overflow": false,
+      "commandsVisible": true
+    }
+  ]
+}

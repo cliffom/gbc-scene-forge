@@ -15,6 +15,56 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Retained artwork viewport correction (PR #178)
+
+- **Scope:** Prepared 0.30.0 feedback working tree based on `001ea19cbac6f195eddf286250cec27833e83c2d`,
+  checked 2026-11-03 on macOS with production assets and Playwright Chromium,
+  using a disposable project at 1440 × 1000.
+- **Method:** Browser regressions pan and modify a retained sheet frame, return to
+  Scene, then reopen through Documents or the Library. Assertions compare canvas
+  position within 2 px and verify zoom, frame scope, color, Pan choice and Undo.
+  Agent screenshot inspection checks the restored canvas through both routes.
+- **Result:** The original Documents regression displaced the canvas by 620 px.
+  Rejecting snapshots from unmeasurable viewports preserves the last visible
+  presentation. All seven artwork navigation browser cases pass after the fix.
+  `make lint test` passes with 429 Python tests and all TypeScript suites;
+  `make docs-check` passes.
+- **Limits:** Local automated Chromium checks and bounded agent inspection;
+  other browsers, physical display scaling and independent human checks were
+  not repeated. Previous release validation below predates this correction.
+
+## Artwork interaction polish (#173–#176)
+
+- **Scope:** Prepared production 0.30.0 working tree on `milestone/20-artwork-polish`,
+  based on `02aa30a43aeb5b1522618feae0cb08c8a00c2c9f`, checked 2026-11-03 on macOS
+  27.0.1, Python 3.13.13, Node 24.22.1 and Playwright 1.64.1/Chromium 156.0.8078.4.
+  The [evaluation](evaluations/artwork-interaction-polish.md) archives baseline
+  provenance, raw measurements and inspected screenshots.
+- **Method:** Real pointer/keyboard browser checks cover sheet/frame coordinates,
+  zoom/scroll/pan, exact partial-alpha writes, Undo, Fit, per-document restoration,
+  cancellation, native radio focus and modal dismissal. Synthetic instrumentation
+  counts hover raster/control work. Geometry checks cover four sizes and four
+  panel states; chooser checks include long names, no scene and 125% CSS zoom.
+  Agent screenshot inspection includes light/dark/transparent targets, desktop,
+  compact Review, Properties, short Animation and modal focus/backdrop.
+- **Result:** `make lint test` passed with 429 Python tests and all TypeScript
+  suites. Production build/metadata and seven installed-wheel checks passed;
+  installed-wheel first use, 81 optional MCP tests and three MCP/browser workflows
+  passed. The broad browser run had 105 passes, 11 optional profiles skipped and
+  two geometry-test failures from treating scrollable palette swatches as fixed
+  commands. Corrected geometry checks passed: 18 other focused cases passed,
+  followed by the corrected legacy artwork layout case and all seven navigation
+  cases. Fixed commands fit in all 16 measured states. Normal drawing height grows
+  by 42 px at 1440 px widths and 6 px at the tested narrower widths. Eighty hover
+  moves produce one overlay update, no raster uploads/control mutations and no
+  artwork API calls. Inspection also caught and corrected a clipped Zoom value.
+- **Limits:** Local synthetic automation and bounded agent inspection, with the
+  broad run preceding the final Zoom-width/lifetime guard adjustments; final
+  affected cases were rerun. Work counts do not measure user-perceived latency.
+  CSS zoom is not physical display scaling. No independent human, Windows,
+  non-Chromium or official Tiled application checks were repeated; existing
+  remaining checks below still apply. Release publication is separate.
+
 ## Library search and import usability (#123, #124, #125)
 
 - **Scope:** Prepared 0.29.1 working tree on `milestone-13-usability`, based on

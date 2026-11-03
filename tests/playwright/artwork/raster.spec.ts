@@ -125,6 +125,8 @@ p.artwork.documents.save(c)
     await page.locator('#art-animation-review').click();
     await requested;
     await expect(page.locator('#art-play')).toBeDisabled();
+    await expect(page.locator('#art-target')).toBeHidden();
+    await expect(page.locator('#document-switcher')).toBeDisabled();
     // This listener runs after the controller's toggle handler, so the assertions
     // observe the completed deferred refresh rather than racing the toggle event.
     await timeline.evaluate((element) => {

@@ -17,6 +17,8 @@ import { ArtworkRaster } from './artwork-raster.mts';
 import { createSheetEditor } from './sheet-editor.mts';
 import { createArtworkWorkspace } from './artwork-workspace.mts';
 import { conversionViews } from './conversion-views.mts';
+import { createArtworkViewport, type ArtworkViewState } from './artwork-viewport.mts';
+import { createDocumentChooser } from './document-chooser.mts';
 
 type Source = {
   atlas_id: string;
@@ -62,9 +64,13 @@ export function createPixelEditor({
     {
       session: ArtworkSession;
       values: Map<string, { value: string; checked: boolean; open?: boolean }>;
-      scroll: [number, number];
+      view: ArtworkViewState;
     }
   >();
+  const chooser = createDocumentChooser(lifetime, () => {
+    cancelGesture();
+    artworkViewport.suspend();
+  });
   const presentation = createArtworkWorkspace(lifetime, dialog, () => {
     controls();
     tabs();
@@ -97,6 +103,7 @@ export function createPixelEditor({
           : 'Modified · local changes';
   }
   function workspace(active: boolean) {
+    artworkViewport.suspend();
     document.body.classList.toggle('editing-artwork', active);
     reflectOpacity();
     button('scene-document').setAttribute('aria-pressed', String(!active));
@@ -108,11 +115,15 @@ export function createPixelEditor({
     }
     element('art-document-state', HTMLElement).hidden = !active;
     element('palette', HTMLElement).dispatchEvent(new Event('artwork-workspace'));
-    element('document-tabs', HTMLElement).hidePopover();
+    chooser.close();
     sheetEditor.stop();
   }
   function remember() {
     if (!session) {
+      return;
+    }
+    const view = artworkViewport.remember();
+    if (!view) {
       return;
     }
     const values = new Map<string, { value: string; checked: boolean; open?: boolean }>();
@@ -128,11 +139,10 @@ export function createPixelEditor({
         open: control instanceof HTMLDetailsElement ? control.open : undefined,
       });
     }
-    const scroll = dialog.querySelector('.art-canvas-scroll');
     documents.set(session.id, {
       session,
       values,
-      scroll: [scroll?.scrollLeft ?? 0, scroll?.scrollTop ?? 0],
+      view,
     });
     tabs();
   }
@@ -140,11 +150,16 @@ export function createPixelEditor({
     button('document-switcher').hidden = !session && documents.size === 0;
     button('document-switcher').textContent =
       dialog.open && session ? `${session.model.descriptor.name} ▾` : 'Documents ▾';
+    button('document-switcher').disabled = busy;
     documentState();
+    button('scene-document').textContent = sceneSession.loaded
+      ? 'Return to scene'
+      : 'Return to Scene workspace';
     element('artwork-documents', HTMLElement).replaceChildren(
       ...Array.from(documents.values(), ({ session: current }) => {
         const tab = document.createElement('button');
-        tab.textContent = `${current.model.descriptor.name}${current.changed ? ' •' : ''}`;
+        const active = dialog.open && session === current;
+        tab.textContent = `${active ? 'Current · ' : ''}${current.model.descriptor.name} · ${current.original.operation !== 'edit' ? 'New' : current.changed ? 'Modified' : 'Saved'}`;
         tab.setAttribute('aria-pressed', String(dialog.open && session === current));
         lifetime.assign(tab, 'onclick', () => {
           void execute(async () => {
@@ -187,8 +202,7 @@ export function createPixelEditor({
     paletteSignature = '';
     draw();
     swatches();
-    const scroll = dialog.querySelector('.art-canvas-scroll');
-    scroll?.scrollTo(...saved.scroll);
+    artworkViewport.restore(saved.view);
     tabs();
   }
   async function suspend() {
@@ -228,6 +242,20 @@ export function createPixelEditor({
       });
     },
   });
+  const artworkViewport = createArtworkViewport(lifetime, canvas, {
+    available: () => dialog.open && !!session && !busy && !chooser.open,
+    drawing: () => gesture !== null,
+    tool,
+    view: () =>
+      session
+        ? (sheetEditor.view() ?? {
+            x: 0,
+            y: 0,
+            width: session.model.width,
+            height: session.model.height,
+          })
+        : null,
+  });
   lifetime.assign(button('art-fit'), 'onclick', () => {
     const model = session?.model,
       viewport = dialog.querySelector('.art-canvas-scroll');
@@ -247,7 +275,9 @@ export function createPixelEditor({
         (value) => width * value <= availableWidth && height * value <= availableHeight,
       ) ?? 1;
     select('art-zoom').value = String(scale);
+    cancelGesture();
     draw();
+    artworkViewport.layout(true);
   });
   let conversionPlan: Record<string, unknown> | null = null;
   const conversionDialog = element('conversion-dialog', HTMLDialogElement);
@@ -399,6 +429,9 @@ export function createPixelEditor({
     element('art-message', HTMLElement).dataset.error = String(error);
   }
   function controls() {
+    if (busy) {
+      artworkViewport.suspend();
+    }
     for (const control of dialog.querySelectorAll<
       HTMLButtonElement | HTMLInputElement | HTMLSelectElement
     >('button,input,select')) {
@@ -437,6 +470,7 @@ export function createPixelEditor({
     button('art-paste').disabled = busy || !session?.model.clipboard;
     input('art-use-scene').disabled = busy || !sceneSession.loaded;
     sheetEditor.controls(busy);
+    button('document-switcher').disabled = busy;
     button('document-switcher').textContent =
       dialog.open && session ? `${session.model.descriptor.name} ▾` : 'Documents ▾';
   }
@@ -453,6 +487,7 @@ export function createPixelEditor({
     if (busy) {
       return;
     }
+    chooser.close();
     busy = true;
     controls();
     message('');
@@ -518,6 +553,7 @@ export function createPixelEditor({
     if (!model || !context || lifetime.disposed) {
       return;
     }
+    artworkViewport.hideTarget();
     const zoom = Number(select('art-zoom').value);
     if (gestureOnly) {
       sheetEditor.paint();
@@ -635,6 +671,7 @@ export function createPixelEditor({
     } else {
       controls();
     }
+    artworkViewport.layout();
   }
   function swatches() {
     const pixels = session?.model.pixels;
@@ -716,6 +753,7 @@ export function createPixelEditor({
     tabs();
   }
   function cancelGesture() {
+    artworkViewport.hideTarget();
     if (!gesture) {
       return;
     }
@@ -827,7 +865,12 @@ export function createPixelEditor({
   }
   function start(candidate: Candidate, original = candidate) {
     session = new ArtworkSession(candidate, api, original);
-    documents.set(session.id, { session, values: new Map(), scroll: [0, 0] });
+    documents.set(session.id, {
+      session,
+      values: new Map(),
+      view: { center: { x: 0.5, y: 0.5 }, panTool: false },
+    });
+    artworkViewport.authoringTool();
     tabs();
     input('art-use-scene').checked = sceneSession.loaded !== null;
     paletteSignature = '';
@@ -839,6 +882,7 @@ export function createPixelEditor({
     invalidate();
     swatches();
     draw();
+    artworkViewport.layout(true);
     controls();
     if (candidate.operation !== 'edit' || candidate.rgba !== original.rgba) {
       checkpointSoon();
@@ -1253,26 +1297,11 @@ export function createPixelEditor({
     );
   }
   function point(event: PointerEvent): Point {
-    const r = canvas.getBoundingClientRect(),
-      model = session?.model;
-    const view = sheetEditor.view() ?? {
-      x: 0,
-      y: 0,
-      width: model?.width ?? 1,
-      height: model?.height ?? 1,
-    };
-    return {
-      x:
-        Math.max(
-          0,
-          Math.min(view.width - 1, Math.floor(((event.clientX - r.left) / r.width) * view.width)),
-        ) + view.x,
-      y:
-        Math.max(
-          0,
-          Math.min(view.height - 1, Math.floor(((event.clientY - r.top) / r.height) * view.height)),
-        ) + view.y,
-    };
+    const p = artworkViewport.point({ x: event.clientX, y: event.clientY }, true);
+    if (!p) {
+      throw Error('Artwork viewport is unavailable.');
+    }
+    return p;
   }
   function tool(): PixelTool {
     const value = dialog.querySelector<HTMLInputElement>('input[name=art-tool]:checked')?.value;
@@ -1293,9 +1322,10 @@ export function createPixelEditor({
   for (const control of dialog.querySelectorAll<HTMLInputElement>('input[name=art-tool]')) {
     lifetime.assign(control, 'onchange', () => {
       cancelGesture();
-      canvas.style.cursor = tool() === 'move' ? 'move' : 'crosshair';
+      artworkViewport.authoringTool();
     });
     lifetime.assign(control, 'onclick', (event) => {
+      artworkViewport.authoringTool();
       if (event.detail > 0) {
         canvas.focus({ preventScroll: true });
       }
@@ -1324,7 +1354,8 @@ export function createPixelEditor({
       return;
     }
     event.preventDefault();
-    canvas.focus();
+    artworkViewport.hideTarget();
+    canvas.focus({ preventScroll: true });
     try {
       const p = point(event),
         t = tool();
@@ -1597,7 +1628,11 @@ export function createPixelEditor({
         session = current;
         documents.set(
           current.id,
-          retained ?? { session: current, values: new Map(), scroll: [0, 0] },
+          retained ?? {
+            session: current,
+            values: new Map(),
+            view: { center: { x: 0.5, y: 0.5 }, panTool: false },
+          },
         );
         reviewPanel(false);
         invalidate();
