@@ -1511,6 +1511,103 @@ for (const [label, name, expectedPrefix] of [
   });
 }
 
+test('oversized layout edits preserve valid history, checkpoints and document navigation', async ({
+  page,
+  workspace,
+}) => {
+  const root = join(workspace.folder, 'bounded-sheet');
+  execFileSync(
+    workspace.python,
+    [
+      '-c',
+      `
+import copy
+import sys
+from pathlib import Path
+from gbc_scene_forge.core.serialization import record_bytes
+from gbc_scene_forge.project.application import Project
+p=Project.create(Path(sys.argv[1]),'Animation workshop')
+a=p.artwork.documents
+f=dict(id='p',name='Pose',kind='sprite',x=0,y=0,width=8,height=8,origin=[0,0])
+c=a.create_sheet('player','Player 🌲','sprite',8,8,p.catalog()['revision'],frames=[f],sequences=[])
+d=copy.deepcopy(c['descriptor'])
+last=[]
+for total in range(1,1025):
+    sequences=[dict(id='seq_'+str(i),name='Sequence '+str(i),loop=True,
+        frames=[dict(frame_id='p',duration_ms=120) for j in range(min(256,total-i*256))])
+        for i in range((total+255)//256)]
+    d['sequences']=sequences
+    if len(record_bytes(d))>65536:
+        break
+    last=sequences
+c=a.create_sheet('player','Player 🌲','sprite',8,8,p.catalog()['revision'],frames=[f],sequences=last)
+assert 65450 < len(record_bytes(c['descriptor'])) <= 65536
+a.save(c,receipt=p.artwork.reviews.review(c)['receipt'])
+`,
+      root,
+    ],
+    { encoding: 'utf8' },
+  );
+  const url = await workspace.start(root, true);
+  const layoutFailures: number[] = [];
+  page.on('response', (response) => {
+    if (response.url().endsWith('/api/artwork-layout') && !response.ok()) {
+      layoutFailures.push(response.status());
+    }
+  });
+  await page.goto(url);
+  await page.locator('[data-asset="player/p"]').click();
+  await revealArtworkControl(page, 'art-play');
+  // Retain a valid edit in Redo while trying several rejected mutations.
+  const duration = page.getByLabel('Frame 1 duration in milliseconds', { exact: true });
+  await duration.fill('121');
+  await duration.press('Tab');
+  await expect(page.locator('#art-draft-status')).toHaveText(
+    'Unsaved artwork checkpointed in this project.',
+  );
+  await page.locator('#art-undo').click();
+  await expect(duration).toHaveValue('120');
+  await page.locator('#art-sequence').selectOption('seq_3');
+  await (await revealArtworkControl(page, 'art-sequence-id')).fill('Extra');
+  await page.locator('#art-add-sequence').click();
+  await expect(page.locator('#art-message')).toContainText('Editable descriptor exceeds 64 KiB');
+  await expect(page.locator('#art-sequence option')).toHaveCount(4);
+  await expect(page.locator('#art-sequence')).toHaveValue('seq_3');
+
+  await (await revealArtworkControl(page, 'art-frame-name')).fill('Tree 🌲'.repeat(12));
+  await page.locator('#art-rename-frame').click();
+  await expect(page.locator('#art-frame-name')).toHaveValue('Pose');
+  await page.locator('#art-properties summary').click();
+  await page.locator('#art-tile-representation').click();
+  await expect(page.locator('#art-frame option')).toHaveCount(1);
+  await revealArtworkControl(page, 'art-play');
+  await page.locator('#art-sequence').selectOption('seq_3');
+  const entries = await page.locator('#art-sequence-frames input').count();
+  await page.locator('#art-add-animation-frame').click();
+  await expect(page.locator('#art-sequence-frames input')).toHaveCount(entries);
+
+  await page.locator('#art-sequence').selectOption('seq_0');
+  await page.locator('#art-redo').click();
+  await expect(duration).toHaveValue('121');
+  await page.locator('#art-undo').click();
+  await expect(duration).toHaveValue('120');
+  await page.locator('#art-redo').click();
+  await page.locator('#art-close').click();
+  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+  await page.locator('#document-switcher').click();
+  await page.locator('#artwork-documents button').click();
+  await saveArtwork(page);
+  const saved = await opened(page, url, 'player');
+  if (saved.descriptor.version !== 2) {
+    throw Error('Expected sheet');
+  }
+  assert.equal(saved.descriptor.frames.length, 1);
+  assert.equal(saved.descriptor.frames[0].name, 'Pose');
+  assert.equal(saved.descriptor.sequences.length, 4);
+  assert.equal(saved.descriptor.sequences[0].frames[0].duration_ms, 121);
+  assert.deepEqual(layoutFailures, []);
+});
+
 test('saved representation keeps earlier Undo checkpointable and reviewable', async ({
   page,
   workspace,

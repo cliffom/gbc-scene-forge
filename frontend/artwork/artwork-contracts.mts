@@ -137,7 +137,15 @@ const descriptor = v.pipe(
       );
     });
   }, 'Invalid sheet frames or sequence geometry.'),
+  // Match core.serialization.record_bytes: two-space JSON, UTF-8 and a final newline.
+  v.check(
+    (d) => new TextEncoder().encode(JSON.stringify(d, null, 2) + '\n').length <= 64 * 1024,
+    'Editable descriptor exceeds 64 KiB. Reduce the layout before adding more artwork or animation.',
+  ),
 );
+export function decodeDescriptor(value: unknown) {
+  return parse(descriptor, value);
+}
 export const candidateSchema = v.pipe(
   v.strictObject({
     version: v.literal(1),

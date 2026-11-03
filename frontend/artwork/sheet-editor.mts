@@ -2,7 +2,7 @@
 import { button, element, input, select } from '../editor/editor-dom.mts';
 import type { EditorLifetime } from '../editor/editor-lifetime.mts';
 import type { ArtworkSession } from './artwork-session.mts';
-import type { ArtworkFrame, ArtworkSequence } from './artwork-contracts.mts';
+import { decodeDescriptor, type ArtworkFrame, type ArtworkSequence } from './artwork-contracts.mts';
 
 export function createSheetEditor(
   lifetime: EditorLifetime,
@@ -148,12 +148,23 @@ export function createSheetEditor(
   }
   function edit(work: (d: NonNullable<ReturnType<typeof descriptor>>) => void) {
     stop();
+    const before = descriptor();
+    const frame = select('art-frame').value;
+    const sequence = select('art-sequence').value;
     ports.mutate(() => {
       const d = descriptor();
       if (d) {
         work(d);
+        // Throw inside the history transaction so a rejected layout rolls back
+        // without losing valid pixels, checkpoint state or the Redo stack.
+        decodeDescriptor(d);
       }
     });
+    if (descriptor() !== before) {
+      // Rollback replaces the descriptor; restore navigation as well as data.
+      select('art-frame').value = frame;
+      select('art-sequence').value = sequence;
+    }
     signature = '';
     sync();
   }

@@ -202,6 +202,9 @@ Onion skin overlays the preceding
 sheet pose in Frame mode. **Generate animation review** produces a self-contained
 timed APNG. Save still opens explicit shared-change review before confirmation.
 Layout and pixel edits share Undo/Redo; changes require another review.
+Layouts must fit the 64 KiB document descriptor limit, including frame names and
+animation timing entries. An edit that exceeds this limit is rejected with a
+message; the previous layout, pixels and Undo/Redo history remain available.
 Undo/Redo stops artwork playback at the first frame of the restored sequence;
 press Play to preview it again.
 

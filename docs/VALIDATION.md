@@ -15,6 +15,26 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Layout descriptor byte budget (PR #158)
+
+- **Scope:** Prepared 0.29.0 working tree based on `9961110`, checked
+  2026-11-02 local time (2026-11-03 UTC), macOS, Node 24.22.1 and
+  Playwright 1.64.1/Chromium at 1440 × 1000 with disposable synthetic artwork.
+- **Method:** Browser automation opens a saved sheet near the 64 KiB descriptor
+  limit, including a Unicode document name. It attempts oversized animation
+  creation, Unicode frame renaming, tile representation creation and frame
+  appending, then exercises retained Undo/Redo, checkpointing, document switching
+  and reviewed save. Ran frontend build, `make lint test`, the complete
+  pixel-artwork browser suite and `make docs-check`.
+- **Result:** All 35 browser scenarios passed, including rejection before any
+  failed layout request, restoration of the selected sequence, and saving the
+  previous valid layout. Lint, all frontend suites and 429 Python tests passed.
+  The initial regression harness toggled an already-open Properties panel while
+  revealing its nested Representations disclosure; opening that disclosure
+  directly corrected the harness.
+- **Limits:** Local source Chromium automation only; full browser, installed-wheel,
+  MCP, remote CI and independent human usability checks were not repeated.
+
 ## Generated representation name bounds (PR #158)
 
 - **Scope:** Prepared 0.29.0 working tree based on `41422ea`, checked
