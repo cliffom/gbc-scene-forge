@@ -174,3 +174,26 @@ repeated saves with retained history, exact manual/agent handoff, first use and
 portable export/reopen. The [validation record](../VALIDATION.md) owns results,
 material failures and remaining checks. The review does not promise a browser
 inbox for unpublished agent candidates or a complete accessibility audit.
+
+
+## Feedback refinements
+
+User feedback on the working tree based on `3a13eb4` identified the setup's
+“New artwork” switcher as a duplicate action and the Browse/recover label as cut
+off. On 2026-11-02 local time (2026-11-03 UTC), the source-checkout captures above
+were refreshed after hiding the switcher in setup when no document is retained,
+using **Documents ▾** when retained documents exist, and allowing the complete
+**Browse / recover** Library label to wrap. Capture fixture and viewport sizes
+remain those in the delivered-layout table. Asset identity now follows the name
+with punctuation removed and whitespace normalized; explicit overrides survive
+later name changes. A [1280 × 800 identity capture](../images/artwork-name-identity.png)
+comes from the installed-wheel sample fixture and demonstrates the requested
+Dover’s Quest normalization with advanced identity expanded.
+
+Two reported restoration bugs are addressed by rebuilding timeline controls
+against the restored sequence and clearing shared comparison images, references,
+APNG reviews and receipts. Returning to a document requires a fresh review before
+saving. Automated acceptance uses two sheets with matching sequence IDs and
+contrasting pixels/timings, then verifies a saved Walk edit leaves Idle and the
+other sheet unchanged. Results and test-setup failures remain in the
+[validation record](../VALIDATION.md#artwork-setup-and-document-restoration-feedback-pr-158).

@@ -1118,3 +1118,86 @@ test('saved artwork stays open across saves and undo compares with the latest sa
   await expect(page.locator('#art-document-state')).toHaveText('Saved');
   await expect(page.locator('#art-undo')).toBeEnabled();
 });
+
+test('document restoration binds the selected sequence and clears other artwork reviews', async ({
+  page,
+  workspace,
+}) => {
+  const root = join(workspace.folder, 'project');
+  execFileSync(workspace.python, [
+    '-c',
+    `
+import sys
+from pathlib import Path
+from gbc_scene_forge.project.application import Project
+p=Project.create(Path(sys.argv[1]),'Independent sheet reviews')
+a=p.artwork.documents
+for atlas,offset,color in [('player_a',0,[220,40,30,255]),('player_b',333,[30,60,220,255])]:
+    frames=[dict(id=k,name=k.title(),kind='sprite',x=i*8,y=0,width=8,height=8,origin=[0,0]) for i,k in enumerate(['idle','walk'])]
+    sequences=[dict(id='idle',name='Idle',loop=True,frames=[dict(frame_id='idle',duration_ms=111+offset)]),dict(id='walk',name='Walk',loop=False,frames=[dict(frame_id='walk',duration_ms=222+offset),dict(frame_id='idle',duration_ms=333+offset)])]
+    c=a.create_sheet(atlas,atlas.title(),'sprite',16,8,p.catalog()['revision'],frames=frames,sequences=sequences)
+    c=a.edit(c,[dict(x=x,y=y,rgba=color) for y in range(8) for x in range(16)])
+    a.save(c,receipt=p.artwork.reviews.animation(c,'walk',scale=1)['receipt'])
+`,
+    root,
+  ]);
+  const url = await workspace.start(root, true);
+  await page.goto(url);
+  await page.locator('[data-asset="player_a/walk"]').click();
+  await revealArtworkControl(page, 'art-play');
+  await page.locator('#art-sequence').selectOption('walk');
+  await expect(page.getByLabel('Frame 1 duration in milliseconds', { exact: true })).toHaveValue(
+    '222',
+  );
+  await reviewArtwork(page);
+  const firstReview = await page.locator('#art-after').getAttribute('src');
+  await page.locator('#art-animation-review').click();
+  await expect(page.locator('#art-animation-image')).toBeVisible();
+  await page.locator('[data-asset="player_b/idle"]').click();
+  await expect(page.locator('#artwork-heading')).toHaveText('Player_B');
+  await revealArtworkControl(page, 'art-play');
+  await page.locator('#art-sequence').selectOption('idle');
+  await reviewArtwork(page);
+  const secondReview = await page.locator('#art-after').getAttribute('src');
+  assert.notEqual(firstReview, secondReview);
+  await revealArtworkControl(page, 'art-play');
+  await page.locator('#art-animation-review').click();
+  await expect(page.locator('#art-animation-image')).toBeVisible();
+  await page.locator('#document-switcher').click();
+  await page.locator('#artwork-documents button').filter({ hasText: 'Player_A' }).click();
+  await expect(page.locator('#art-sequence')).toHaveValue('walk');
+  await expect(page.locator('#art-loop')).not.toBeChecked();
+  await expect(page.locator('#art-sequence-frames input')).toHaveCount(2);
+  const duration = page.getByLabel('Frame 1 duration in milliseconds', { exact: true });
+  await expect(duration).toHaveValue('222');
+  await expect(page.locator('#art-comparison')).toBeHidden();
+  await expect(page.locator('#art-animation-result')).toBeHidden();
+  await expect(page.locator('#art-references')).toBeEmpty();
+  for (const id of [
+    'art-before',
+    'art-after',
+    'art-scene-before',
+    'art-scene-after',
+    'art-animation-image',
+  ]) {
+    await expect(page.locator('#' + id)).not.toHaveAttribute('src');
+  }
+  await duration.fill('277');
+  await duration.press('Tab');
+  await reviewArtwork(page);
+  await expect(page.locator('#art-after')).toHaveAttribute('src', firstReview ?? 'missing');
+  await saveArtwork(page);
+  const saved = await opened(page, url, 'player_a');
+  assert.equal(saved.descriptor.version, 2);
+  if (saved.descriptor.version !== 2) {
+    throw Error('Expected sheet');
+  }
+  assert.equal(saved.descriptor.sequences[0].frames[0].duration_ms, 111);
+  assert.equal(saved.descriptor.sequences[1].frames[0].duration_ms, 277);
+  const other = await opened(page, url, 'player_b');
+  assert.equal(other.descriptor.version, 2);
+  if (other.descriptor.version !== 2) {
+    throw Error('Expected sheet');
+  }
+  assert.equal(other.descriptor.sequences[0].frames[0].duration_ms, 444);
+});

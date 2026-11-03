@@ -9,13 +9,17 @@ options. Scene undo and unsaved scene edits remain intact.
 ## Start a tile or sprite
 
 The **New artwork** flow asks for a name, Tile or Sprite, and dimensions, followed
-by **Create artwork**. Asset IDs are generated; expand **Asset identity** to provide
-a fresh lowercase ID yourself. Single tiles are square 8, 16 or 32 pixels. Static
+by **Create artwork**. Asset IDs follow the name: **Dover’s Quest Sprite** becomes
+`dovers_quest_sprite`. Punctuation is dropped, spaces become underscores and
+accents are simplified. An ID beginning with a digit gets an `art_` prefix; an
+empty normalized name uses `artwork`. Expand **Asset identity** to supply a unique
+ID yourself; that override stays intact when the name changes. Single tiles are
+square 8, 16 or 32 pixels. Static
 sprites use multiples of eight up to 256 × 256, with origin 0, 0. Check **Create a
 sheet with multiple frames** for a tile or character sheet; the layout summary
 shows its rows, columns and frame count.
 
-**Browse / recover… → Existing artwork** opens source-specific options.
+**Browse / recover → Existing artwork** opens source-specific options.
 Native artwork offers **Edit shared artwork**: saving changes every placement
 that refers to that asset. **Create editable sheet copy** makes an independent
 copy of the complete source. Imported artwork must be copied before pixel editing.
@@ -122,7 +126,7 @@ If a checkpoint response is lost, the warning remains active until Forge checks
 the owned checkpoint's stored revision and pixels. A later checkpoint or explicit
 discard performs that check before writing or deleting; failed checks retain local work.
 
-Choose **Browse / recover…** in the Library or document switcher to see recoverable records. **Recover copy** checks the
+Choose **Browse / recover** in the Library or document switcher to see recoverable records. **Recover copy** checks the
 original saved base and opens unsaved pixels under a fresh draft identity; it
 retains the original record. **Delete checkpoint** explicitly removes a listed
 record; **Document actions → Close artwork** closes a saved document; **Discard draft…** removes a modified working record and closes it. Save and discard
@@ -155,8 +159,13 @@ Artwork shares the main workspace with Scene. The document-name button in the
 existing context bar opens a switcher for retained documents; no extra document
 row is reserved. **Return to scene** checkpoints artwork, and choosing its name
 in the switcher restores history, selection, tools, zoom and viewport. A failed
-checkpoint keeps the current document open. Saving retains it; closing/discarding
-removes it. Up to 16 artwork documents can remain open at once. The switcher also
+checkpoint keeps the current document open. Returning to a document restores its
+selected sequence and rebuilds its timing controls. Previous comparison images,
+reference summaries and generated animation reviews are cleared; Save requires
+a fresh review of that document. Saving retains it; closing/discarding
+removes it. Up to 16 artwork documents can remain open at once. Setup hides the
+switcher when no artwork documents are retained. Otherwise its
+**Documents ▾** label distinguishes navigation from creation. The switcher also
 provides New and Browse actions when the Library is hidden in compact windows.
 
 For a sheet, set overall Width/Height, enable multiple frames, then choose Frame
@@ -190,7 +199,8 @@ sequences; plain Tiled's one-loop-per-starting-tile limitation is reported durin
 export. Non-looping sequences retain their Forge definition without being changed
 into looping Tiled animations.
 
-Current workspace: [new artwork](../images/artwork-workspace-new.png),
+Current workspace: [name-derived identity](../images/artwork-name-identity.png),
+[new artwork](../images/artwork-workspace-new.png),
 [sheet overview](../images/artwork-workspace-sheet.png),
 [animation editing](../images/artwork-workspace-animation.png),
 [800×640 layout](../images/artwork-workspace-compact.png) and

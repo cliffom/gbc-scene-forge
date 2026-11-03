@@ -135,11 +135,9 @@ export function createPixelEditor({
     tabs();
   }
   function tabs() {
-    button('document-switcher').hidden = !dialog.open && documents.size === 0;
-    button('document-switcher').textContent = dialog.open
-      ? (session?.model.descriptor.name ??
-        (presentation.mode === 'new' ? 'New artwork' : 'Open artwork'))
-      : 'Open documents';
+    button('document-switcher').hidden = !session && documents.size === 0;
+    button('document-switcher').textContent =
+      dialog.open && session ? `${session.model.descriptor.name} ▾` : 'Documents ▾';
     documentState();
     element('artwork-documents', HTMLElement).replaceChildren(
       ...Array.from(documents.values(), ({ session: current }) => {
@@ -175,6 +173,11 @@ export function createPixelEditor({
         control.open = value.open ?? false;
       }
     }
+    // Options exist now; rebuild callbacks against the restored sequence, not
+    // the selection inherited from the previously active document.
+    sheetEditor.sync(true);
+    invalidate();
+    message('');
     workspace(true);
     presentation.resetPanels();
     describe(current.candidate);
@@ -385,10 +388,8 @@ export function createPixelEditor({
     button('art-paste').disabled = busy || !session?.model.clipboard;
     input('art-use-scene').disabled = busy || !sceneSession.loaded;
     sheetEditor.controls(busy);
-    button('document-switcher').textContent = dialog.open
-      ? (session?.model.descriptor.name ??
-        (presentation.mode === 'new' ? 'New artwork' : 'Open artwork'))
-      : 'Open documents';
+    button('document-switcher').textContent =
+      dialog.open && session ? `${session.model.descriptor.name} ▾` : 'Documents ▾';
   }
   async function execute(work: () => Promise<void>) {
     if (busy) {
@@ -597,6 +598,16 @@ export function createPixelEditor({
     session?.invalidate();
     element('art-comparison', HTMLElement).hidden = true;
     element('art-animation-result', HTMLElement).hidden = true;
+    element('art-references', HTMLElement).textContent = '';
+    for (const id of [
+      'art-before',
+      'art-after',
+      'art-scene-before',
+      'art-scene-after',
+      'art-animation-image',
+    ]) {
+      element(id, HTMLImageElement).removeAttribute('src');
+    }
   }
   function checkpointSoon() {
     lifetime.cancelTimeout(timer);
@@ -816,7 +827,7 @@ export function createPixelEditor({
       await inventory();
       await recoveries();
       controls();
-      input('art-id').value = `art_${crypto.randomUUID().slice(0, 8)}`;
+      presentation.prepareIdentity();
     });
   }
   lifetime.assign(button('show-artwork'), 'onclick', () => {
@@ -870,8 +881,7 @@ export function createPixelEditor({
           );
           focusFrame(string(detail.region));
         } else {
-          input('art-name').value = `${string(detail.region)} copy`;
-          input('art-id').value = `art_${crypto.randomUUID().slice(0, 8)}`;
+          presentation.prepareIdentity(`${string(detail.region)} copy`);
           message('Imported artwork: copy the selected source to native artwork to edit.');
         }
       });

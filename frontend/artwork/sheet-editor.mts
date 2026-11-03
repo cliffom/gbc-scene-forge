@@ -236,7 +236,7 @@ export function createSheetEditor(
       target.append(row);
     }
   }
-  function sync() {
+  function sync(rebind = false) {
     const d = descriptor();
     element('art-sheet-controls', HTMLElement).hidden = !d;
     if (!d) {
@@ -249,7 +249,7 @@ export function createSheetEditor(
     const next = JSON.stringify(d);
     // Undo/Redo can replace the descriptor with equal content. Rebind row
     // callbacks to that live object rather than editing a detached snapshot.
-    if (next !== signature || d !== boundDescriptor) {
+    if (rebind || next !== signature || d !== boundDescriptor) {
       const f = select('art-frame'),
         s = select('art-sequence');
       const oldFrame = f.value,

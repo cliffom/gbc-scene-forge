@@ -96,8 +96,15 @@ Imported assets open a focused copy flow. Scene placement remains the ordinary
 single-click behavior when a scene is open. Opening a frame selects that frame
 in a whole-sheet overview, including in an already-open document.
 
+Setup hides the document switcher until artwork is active or retained; its setup
+label is Documents. Creation IDs follow normalized names while preserving manual
+overrides.
+
 Switching checkpoints outgoing changed artwork and retains its local model,
 Undo/Redo, selection, pixel tool, frame/sequence controls, zoom and scroll.
+Restoration rebuilds timeline callbacks after restoring sequence selection.
+Comparison images, reference summaries, generated animation reviews and receipts
+are cleared on restoration; saving requires a fresh document-specific review.
 Checkpoint failure blocks switching and retains local work. Scene history remains
 owned by its existing session. Saving retains the document, history and viewport while adopting the exact
 acknowledged saved base; Undo then compares with that new base. Close/discard

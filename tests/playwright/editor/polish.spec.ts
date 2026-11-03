@@ -418,7 +418,7 @@ test.describe('editor polish', () => {
     await page.locator('#show-artwork').click();
     await page.locator('#art-existing-mode').click();
     await expect(page.locator('#artwork-heading')).toHaveText('Open artwork');
-    await expect(page.locator('#document-switcher')).toHaveText('Open artwork');
+    await expect(page.locator('#document-switcher')).toBeHidden();
     await expect(page.locator('#art-source-help')).not.toBeEmpty();
     await expect(page.locator('#art-source')).toBeEnabled();
     for (const [width, height] of sizes) {
@@ -442,7 +442,7 @@ test.describe('editor polish', () => {
     }
     await page.locator('#art-new-mode').click();
     await expect(page.locator('#artwork-heading')).toHaveText('New artwork');
-    await expect(page.locator('#document-switcher')).toHaveText('New artwork');
+    await expect(page.locator('#document-switcher')).toBeHidden();
     await (await revealArtworkControl(page, 'art-id')).fill('toolbar_tile');
     await page
       .locator('#art-name')
@@ -530,6 +530,60 @@ test.describe('editor polish', () => {
     await expect(page.locator('#artwork-dialog')).not.toBeVisible();
     await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   });
+  test('artwork setup has clear navigation, complete Library labels and name-derived identity', async ({
+    page,
+    forge,
+  }, info) => {
+    await page.goto(forge.url);
+    await editorReady(page);
+    for (const [width, height] of sizes) {
+      await page.setViewportSize({ width, height });
+      const browse = page.locator('#art-browse');
+      await expect(browse).toHaveText('Browse / recover');
+      expect(
+        await browse.evaluate((node) => {
+          const range = document.createRange();
+          range.selectNodeContents(node);
+          const bounds = node.getBoundingClientRect();
+          return (
+            [...range.getClientRects()].every(
+              (rect) =>
+                rect.left >= bounds.left &&
+                rect.right <= bounds.right &&
+                rect.top >= bounds.top &&
+                rect.bottom <= bounds.bottom,
+            ) && node.scrollWidth <= node.clientWidth
+          );
+        }),
+      ).toBe(true);
+    }
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.locator('#show-artwork').click();
+    await expect(page.locator('#document-switcher')).toBeHidden();
+    const name = page.locator('#art-name');
+    const id = await revealArtworkControl(page, 'art-id');
+    await name.fill("Dover's Quest Sprite");
+    await expect(id).toHaveValue('dovers_quest_sprite');
+    await name.fill('Dover’s Quest Sprite!');
+    await expect(id).toHaveValue('dovers_quest_sprite');
+    await name.fill('  Café   Hero  ');
+    await expect(id).toHaveValue('cafe_hero');
+    await name.fill('123 Hero');
+    await expect(id).toHaveValue('art_123_hero');
+    await name.fill('!!!');
+    await expect(id).toHaveValue('artwork');
+    await name.fill("Dover's Quest Sprite");
+    await page.screenshot({ path: info.outputPath('name-derived-identity.png') });
+    await id.fill('my_player');
+    await name.fill("Dover's Quest Player");
+    await expect(id).toHaveValue('my_player');
+    await page.locator('#art-create').click();
+    await expect(page.locator('#document-switcher')).toHaveText("Dover's Quest Player ▾");
+    await page.locator('#show-artwork').click();
+    await expect(page.locator('#document-switcher')).toHaveText('Documents ▾');
+    await expect(await revealArtworkControl(page, 'art-id')).toHaveValue('new_artwork');
+  });
+
   test('Inspector keyboard traversal keeps controls below the sticky heading', async ({
     page,
     forge,

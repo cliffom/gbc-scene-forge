@@ -15,6 +15,36 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Artwork setup and document restoration feedback (PR #158)
+
+- **Scope:** Prepared 0.29.0 working tree based on
+  [`3a13eb4`](https://github.com/cliffom/gbc-scene-forge/commit/3a13eb471337473c9474eede2abb05f6fd3e23fa),
+  checked 2026-11-02 local time (2026-11-03 UTC), macOS arm64, Python 3.13.13,
+  Node 24.22.1 and Chrome/Playwright 1.64.1. The updated
+  [workflow evaluation](evaluations/unified-editor-ux.md#feedback-refinements)
+  records screenshot scope.
+- **Method:** Ran `make lint test`, `make docs-check`, production
+  `make build check-dist`, installed-wheel artwork/polish browser acceptance and
+  the actual optional-SDK/browser artwork handoff. New regressions use two saved
+  sheets with shared frame/sequence IDs but distinct colors and timings: restore
+  Walk after visiting Idle in the other sheet, change duration, save/reopen and
+  verify only the intended sequence changed. Review checks clear both sheets'
+  comparison/APNG output and regenerate the active sheet's review before saving.
+  Checked complete Library label text at five viewport sizes, setup navigation,
+  name normalization and manual ID overrides; inspected refreshed captures.
+- **Result:** Lint and all frontend suites passed; 429 Python tests and 20
+  documentation-checker tests passed. Production metadata and seven installed-
+  wheel smoke tests passed. All 30 installed-wheel artwork/polish scenarios
+  and the installed optional-SDK/browser artwork handoff passed. The first new restoration test attempted to
+  select a sequence before opening the second document's collapsed animation
+  dock; its next attempt raced the asynchronous document opening. Waiting for
+  that document's heading before revealing its controls fixes the test setup.
+- **Limits:** Scoped local synthetic acceptance and agent screenshot inspection;
+  the complete browser suite was not rerun for this feedback. Its earlier
+  76-scenario result below retains its revision boundary. Independent human,
+  screen-reader, Windows/non-Chromium and official Tiled assessments remain
+  unperformed. No new asset format, release version, tag or publication.
+
 ## Human artwork workflow redesign (milestone 15)
 
 - **Scope:** Prepared 0.29.0 working tree on `milestone/15`, based on

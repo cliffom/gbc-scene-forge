@@ -16,6 +16,31 @@ export function createArtworkWorkspace(
   if (help) {
     dialog.querySelector('.art-document-actions>div')?.append(help);
   }
+  let automaticIdentity = true;
+  function identityFromName() {
+    const normalized = input('art-name')
+      .value.normalize('NFKD')
+      .replace(/\p{M}/gu, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9_\s]/g, '')
+      .trim()
+      .replace(/\s+/g, '_');
+    const identity = normalized || 'artwork';
+    return (/^[a-z]/.test(identity) ? identity : `art_${identity}`).slice(0, 64);
+  }
+  function prepareIdentity(name = 'New artwork') {
+    automaticIdentity = true;
+    input('art-name').value = name;
+    input('art-id').value = identityFromName();
+  }
+  lifetime.assign(input('art-name'), 'oninput', () => {
+    if (automaticIdentity) {
+      input('art-id').value = identityFromName();
+    }
+  });
+  lifetime.assign(input('art-id'), 'oninput', () => {
+    automaticIdentity = input('art-id').value === identityFromName();
+  });
   let setupMode: 'new' | 'existing' = 'new';
   function setup(mode: 'new' | 'existing') {
     setupMode = mode;
@@ -83,6 +108,7 @@ export function createArtworkWorkspace(
   layoutPreview();
   return {
     setup,
+    prepareIdentity,
     reviewPanel,
     resetPanels() {
       reviewPanel(false);

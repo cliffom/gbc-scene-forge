@@ -12,7 +12,10 @@ contextual tools. Creation and existing-artwork copying use separate flows;
 frames and animation occupy a dock beneath the canvas, with optional Properties
 and focused change review. The active document uses the existing context bar.
 Opening a pose selects it; saving retains the document and Undo/Redo against its
-new saved base. Existing version-1 static artwork remains supported.
+new saved base. Setup omits document navigation until artwork is retained;
+asset IDs follow normalized names with optional manual overrides. Returning to
+a document rebinds its selected timeline and clears review output from other
+assets. Existing version-1 static artwork remains supported.
 
 Create tile and sprite sheets with stable frames, origins and named timed
 sequences. Use frame editing, tile repetition review, onion skinning, playback,
