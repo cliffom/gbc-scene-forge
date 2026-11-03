@@ -16,6 +16,7 @@ import { LayerEditor } from '../scene/layers.mts';
 import type { ProjectApi } from '../project/project-api.mts';
 
 export interface Ports {
+  allVisible: () => boolean;
   run: (work: () => Promise<void> | void) => Promise<void>;
   showImport: (reimport?: boolean) => void;
   filterPalette: () => void;
@@ -353,6 +354,15 @@ export function createCommandsController({
           }
           ports.draw();
         } else if (sceneSelection.selection && sceneSession.editor) {
+          if (
+            !ports.allVisible() &&
+            ['Delete', 'Backspace', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(
+              event.key,
+            )
+          ) {
+            event.preventDefault();
+            throw Error('Show all scene view categories before changing a rectangular selection.');
+          }
           if (event.key === 'Delete' || event.key === 'Backspace') {
             event.preventDefault();
             eraseCaptured(sceneSession.editor, ports.compositionSelection());

@@ -342,6 +342,11 @@ changes. Object creation, movement, deletion and metadata editing share layer
 undo/redo and survive Save/Reopen, atlas reimport and moving the project directory.
 Save preserves session history; reopening starts a new history.
 
+See [mixed scene view filters](user/review-mode.md#inspect-one-mixed-scene) for
+separate tile/sprite artwork, geometry, gameplay marker and guide display. The
+same controls remain available in Review scene; authored layer visibility and
+portable exports remain independent.
+
 ## Terrain and tile collision
 
 Choose a tile or sprite brush, then **Tile terrain & collision…**. For multi-cell
@@ -368,7 +373,7 @@ controls scene edits; it does not reverse saved shared tileset changes. Reopen
 the dialog to edit saved metadata. A conflict leaves the draft available for
 review; cancel and reopen the scene to refresh project revisions before retrying.
 
-The canvas **Terrain** and **Collision** toggles display metadata on visible tile
+The canvas **Artwork terrain** and **Artwork collision** toggles display metadata on visible tile
 layers and sprite instances. Terrain colors are deterministic per label. Custom
 collision shapes define the displayed footprint even if **Solid** is unchecked;
 with no shapes, the flag supplies the full-tile fallback. Sprite collision is

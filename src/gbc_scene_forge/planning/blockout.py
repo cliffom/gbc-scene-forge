@@ -4,6 +4,7 @@ These pure services are independent of HTTP and the browser, so other local clie
 can create and inspect the same plans without introducing another document format.
 """
 
+import base64
 import copy
 import hashlib
 import html
@@ -420,8 +421,8 @@ def svg_labels(candidates, view):
     return body
 
 
-def render_svg(scene, project, camera=None):
-    """Portable, escaped planning preview. Artwork stays in the main editor/export.
+def render_svg(scene, project, camera=None, *, artwork=None, generic=False):
+    """Portable, escaped planning preview with optional embedded native artwork.
 
     This is a bounded geometric review, not a physics or reachability simulation.
     """
@@ -440,7 +441,15 @@ def render_svg(scene, project, camera=None):
             continue
         for item in layer.get("objects", []):
             style = appearance(item, project)
-            if style is None or (camera and style["role"] == "camera"):
+            if style is None and generic and item.get("kind") in ("point", "rectangle"):
+                style = dict(
+                    role=item.get("class") or item["kind"],
+                    color="#83cfc1",
+                    pattern="outline",
+                    symbol="?",
+                    properties={},
+                )
+            if style is None or (camera and artwork is None and style["role"] == "camera"):
                 continue
             x, y, color = item["x"], item["y"], style["color"]
             label = f"{style['symbol']} {item.get('name') or style['role']}"
@@ -509,9 +518,17 @@ def render_svg(scene, project, camera=None):
             )
             body.append("</g>")
     body.extend(svg_labels(labels, view))
+    if artwork is not None:
+        body.insert(
+            0,
+            f'<image x="{view["x"]}" y="{view["y"]}" width="{view["width"]}" '
+            f'height="{view["height"]}" style="image-rendering:pixelated" '
+            f'href="data:image/png;base64,{base64.b64encode(artwork).decode()}"/>',
+        )
     require(
-        sum(len(part.encode("utf-8")) for part in body) <= 2 * 1024 * 1024,
-        "Review exceeds 2 MiB; hide layers to review a subset",
+        sum(len(part.encode("utf-8")) for part in body)
+        <= (8 if artwork is not None else 2) * 1024 * 1024,
+        "Review exceeds SVG byte budget; use a smaller view or fewer objects",
     )
     return (
         (

@@ -260,6 +260,182 @@ class ArtworkTests(unittest.TestCase):
         )
         self.assertEqual(report["overview"]["x"], 1024)
 
+    def mixed_scene(self):
+        from gbc_scene_forge.planning import blockout
+
+        self.adapter.call("import_atlas", dict(**self.guard(), bundle=self.upload()))
+        source, _ = sprite_bundle(self.root / "sprites")
+        self.adapter.call("import_atlas", dict(**self.guard(), bundle=self.upload(source)))
+        model = self.project.scenes.load(self.loaded["id"])["scene"]
+        model["layers"][0]["cells"][0][0] = "terrain/floor/0/0"
+        definitions = self.project.catalog()["project"]["object_definitions"]["definitions"]
+        for role, name, x in (
+            ("solid", "Ground", 0),
+            ("enemy", "Enemy start", 16),
+            ("patrol", "Activity bounds", 32),
+            ("note", "Design note", 64),
+        ):
+            definition = next(
+                d
+                for d in definitions
+                if any(
+                    f["name"] == "blockout_role" and f.get("default") == role for f in d["fields"]
+                )
+            )
+            model, _ = blockout.place(
+                model,
+                self.project.catalog()["project"],
+                definition["id"],
+                x,
+                32,
+                name=name,
+                layer_id=2,
+            )
+        objects = model["layers"][1]["objects"]
+        for item in (
+            dict(asset="actors/idle", x=8, y=24, name="Decoration"),
+            dict(kind="point", x=20, y=20, name="Unclassified point"),
+            dict(kind="rectangle", x=40, y=20, width=8, height=8, name="Unclassified rectangle"),
+            dict(
+                kind="rectangle",
+                x=56,
+                y=20,
+                width=8,
+                height=8,
+                name="Custom bounds",
+                properties=[dict(name="forge_view", type="string", value="gameplay")],
+            ),
+        ):
+            objects.append(dict(id=model["next_object_id"], **item))
+            model["next_object_id"] += 1
+        # Mixed layers and arbitrary names must not influence classification.
+        model["layers"][1]["name"] = "Everything together"
+        model["layers"][2]["visible"] = False
+        model["layers"][2]["objects"] = [
+            dict(id=model["next_object_id"], kind="point", x=0, y=0, name="Authored hidden")
+        ]
+        model["next_object_id"] += 1
+        return self.adapter.call("save_scene", dict(**self.scene_guard(), scene=model))["scene"]
+
+    def test_combined_filters_labels_embedded_artwork_and_exact_read_only_identity(self):
+        import itertools
+        import xml.etree.ElementTree as ET
+
+        from gbc_scene_forge.scenes import authoring, view_filters
+
+        model = self.mixed_scene()
+        original = copy.deepcopy(model)
+        before = self.snapshot()
+        expected = {
+            "Ground": "geometry",
+            "Enemy start": "gameplay",
+            "Activity bounds": "gameplay",
+            "Design note": "guides",
+            "Unclassified point": "gameplay",
+            "Unclassified rectangle": "geometry",
+            "Custom bounds": "gameplay",
+        }
+        for combination in itertools.product((False, True), repeat=5):
+            choices = dict(zip(view_filters.CATEGORIES, combination))
+            with self.subTest(filters=choices):
+                result = self.adapter.call(
+                    "review_scene", dict(**self.scene_guard(), filters=choices)
+                )
+                self.assertEqual(result["snapshot_revision"], authoring.snapshot(model))
+                self.assertEqual(result["filters"], choices)
+                self.assertEqual(result["scale"], 1)
+                self.assertEqual(result["scene_revision"], self.scene_guard()["scene_revision"])
+                self.assertTrue(result["includes_planning_overlays"])
+                svg = self.adapter.read_artifact(result["overview_resource"]["uri"])["text"]
+                tree = ET.fromstring(svg)
+                self.assertEqual((tree.attrib["width"], tree.attrib["height"]), ("128", "64"))
+                for name, category in expected.items():
+                    self.assertEqual(name in svg, choices[category], name)
+                self.assertNotIn("Authored hidden", svg)
+                image = tree.find("{http://www.w3.org/2000/svg}image")
+                w, h, pixels = png.decode(
+                    base64.b64decode(image.attrib["href"].split(",")[1]), generic=True
+                )
+                self.assertEqual((w, h), (128, 64))
+                self.assertEqual(
+                    pixels[:4], bytes([82, 82, 82, 255]) if choices["tiles"] else bytes(4)
+                )
+                # Sprite's native origin places white artwork at (4,5).
+                start = (5 * w + 4) * 4
+                self.assertEqual(
+                    pixels[start : start + 4],
+                    bytes([255] * 4)
+                    if choices["sprites"]
+                    else bytes([0, 0, 0, 255])
+                    if choices["tiles"]
+                    else bytes(4),
+                )
+                camera = ET.fromstring(
+                    self.adapter.read_artifact(result["camera_resource"]["uri"])["text"]
+                )
+                self.assertEqual((camera.attrib["width"], camera.attrib["height"]), ("32", "32"))
+        self.assertEqual(model, original)
+        self.assertEqual(self.snapshot(), before)
+        self.assertEqual(self.project.scenes.load(self.loaded["id"])["scene"], model)
+        # Portable export still contains all categories and authored hidden content.
+        exported = self.adapter.call("export_bundle", dict(**self.scene_guard(), scope="scene"))
+        data = base64.b64decode(self.adapter.read_artifact(exported["resource"]["uri"])["blob"])
+        with zipfile.ZipFile(io.BytesIO(data)) as archive:
+            decoded = tiled.decode(
+                json.loads(archive.read(f"scenes/{self.loaded['id']}.tmj")),
+                self.project.catalog()["project"],
+            )
+        self.assertEqual(decoded, model)
+
+    def test_combined_candidate_stale_guards_limits_and_existing_review_contracts(self):
+        from gbc_scene_forge.planning import blockout
+        from gbc_scene_forge.scenes import authoring
+
+        model = self.mixed_scene()
+        guard = self.scene_guard()
+        candidate = copy.deepcopy(model)
+        candidate["layers"][1]["objects"][0]["name"] = "Candidate ground"
+        before = self.snapshot()
+        report = self.adapter.call(
+            "review_scene", dict(**guard, scene=candidate, filters={"guides": False})
+        )
+        self.assertEqual(report["snapshot_revision"], authoring.snapshot(candidate))
+        self.assertEqual(report["scene_revision"], guard["scene_revision"])
+        self.assertEqual(self.snapshot(), before)
+        for filters in ({"geometry": 1}, {"unknown": True}, []):
+            with self.assertRaises(ValueError):
+                self.adapter.call("review_scene", dict(**guard, filters=filters))
+        with self.assertRaisesRegex(ValueError, "1024"):
+            self.adapter.call(
+                "review_scene", dict(**guard, overview=dict(x=0, y=0, width=1025, height=1))
+            )
+        oversized = copy.deepcopy(candidate)
+        oversized["layers"][1]["objects"] *= 600
+        # Isolate the SVG work bound from normal identity validation.
+        with self.assertRaisesRegex(ValueError, "4096"):
+            blockout.render_svg(oversized, self.project.catalog()["project"], artwork=b"")
+        png_report = self.adapter.call("review_artwork", guard)
+        self.assertFalse(png_report["includes_planning_overlays"])
+        self.assertEqual(png_report["camera_resource"]["mimeType"], "image/png")
+        blockout_report = self.adapter.call("review_blockout", guard)
+        self.assertFalse(blockout_report["includes_artwork"])
+        self.assertNotIn(
+            "data:image/png",
+            self.adapter.read_artifact(blockout_report["camera_resource"]["uri"])["text"],
+        )
+        path = self.project.root / f"scenes/{self.loaded['id']}.tmj"
+        original = path.read_bytes()
+        render = rendering.render
+
+        def race(*args, **kwargs):
+            path.write_bytes(original + b"\n")
+            return render(*args, **kwargs)
+
+        with patch.object(rendering, "render", race), self.assertRaises(Conflict):
+            self.adapter.call("review_scene", dict(**guard, scene=candidate))
+        with self.assertRaises(Conflict):
+            self.adapter.call("review_scene", dict(**guard, scene=candidate))
+
 
 class RasterTests(unittest.TestCase):
     def test_all_orthogonal_flags_visibility_order_and_alpha(self):

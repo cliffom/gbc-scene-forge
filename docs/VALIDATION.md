@@ -15,6 +15,39 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Mixed scene view filters and combined review (#140)
+
+- **Scope:** Prepared 0.28.0 working tree based on
+  [`ac83235`](https://github.com/cliffom/gbc-scene-forge/commit/ac83235), checked
+  2026-11-02 on Darwin arm64, Python 3.13.13, Node 24.22.1 and Playwright Chromium.
+  [Combined Review scene](screenshots/scene-views/combined.png),
+  [artwork-only editing](screenshots/scene-views/artwork-only.png) and
+  [390px review](screenshots/scene-views/narrow.png) are source-checkout captures.
+- **Method:** Ran `make docs-check lint test`, production `make build check-dist`,
+  full Chromium acceptance, focused World/filter regression acceptance, 78 optional
+  MCP tests, three MCP/browser acceptance scenarios and installed-wheel first use.
+  Synthetic mixed scenes exercise all 32 filter combinations, tile/sprite pixels,
+  point/rectangle defaults, explicit categories, labels, native 1x camera sizes,
+  authored hidden layers, selection, Undo/dirty/recovery neutrality, save/reopen,
+  export and stale saved/candidate guards. Inspected browser captures at 1440px and
+  390px and the actual embedded-artwork MCP SVG in Chromium with 4x CSS enlargement.
+- **Result:** Lint, 415 Python tests, all TypeScript suites (including 7,655 domain
+  contract cases), documentation, distribution metadata and seven plain installed-
+  wheel smoke tests pass. Optional MCP tests, three MCP/browser scenarios and the
+  installed-wheel first-use scenario pass. Browser development exposed a keyboard
+  rectangle-delete path reaching filtered objects; guarded rectangle operations
+  now pass. The first complete browser run had 71 passes, two optional profile
+  skips and one World regression: following an authored hidden endpoint cleared
+  its Inspector selection. Preserving that inspect-only selection fixes the
+  regression; paired World/filter acceptance passes both scenarios. The repaired
+  complete browser rerun passes 72 scenarios with the same two optional profile skips.
+- **Limits:** Synthetic automation and agent visual inspection do not establish
+  prolonged human authoring comfort, live gameplay behavior or runtime inclusion.
+  Crowded captions may be suppressed while full SVG titles remain available.
+  Official Tiled/rasterizer tools were not on PATH; no new interoperability result
+  is claimed. Checks are local macOS/Chromium results; no remote CI pass, Windows,
+  non-Chromium or publication result is claimed here.
+
 ## Layer pointer focus after sticky-header scrolling (PR #145 CI)
 
 - **Scope:** Prepared 0.27.1 working tree based on
@@ -1132,7 +1165,7 @@ check, retaining actual revision, environment, attribution, failures and limits.
 
 ### Platform, interoperability and publication gaps
 
-- [ ] Run the optional official Tiled/rasterizer interoperability checks for the prepared 0.27.0 baseline, including native RGBA artwork, scene-transfer, object/definition and tile metadata compatibility, when those applications are available (#75, #109, #110, #111, #112, #113, #127, #130).
+- [ ] Run the optional official Tiled/rasterizer interoperability checks for the prepared 0.28.0 baseline, including native RGBA artwork, scene-transfer, object/definition, mixed-scene classification properties and tile metadata compatibility, when those applications are available (#75, #109, #110, #111, #112, #113, #127, #130, #140).
 
 - [ ] Record non-Chromium desktop-browser and Windows runtime results with exact versions and workflows; these are outside the automated browser matrix.
 - [ ] Configure the TestPyPI trusted publisher and verify an upload if that channel is needed; the historical 0.1.4 attempt failed with `invalid-publisher`. Local wheel checks and PyPI publication are separate evidence.

@@ -568,3 +568,9 @@
   #art-editor {gap:6px}
   .pixel-toolbar {padding:4px 0}
 }
+
+.scene-view-controls {padding:6px 12px;border-bottom:1px solid var(--line)}
+.scene-view-controls summary {cursor:pointer;font-size:12px}
+.scene-view-controls fieldset {display:flex;flex-wrap:wrap;gap:8px 14px;margin:6px 0;padding:6px 10px}
+.scene-view-controls label {display:inline-flex;align-items:center;gap:4px;font-size:12px}
+.scene-view-controls p {font-size:11px;margin:4px 0}

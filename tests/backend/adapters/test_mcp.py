@@ -459,6 +459,12 @@ class ProtocolTests(unittest.TestCase):
                 image = await client.read_resource(review["camera_resource"]["uri"])
                 self.assertEqual(image.contents[0].mimeType, "image/png")
                 self.assertTrue(base64.b64decode(image.contents[0].blob).startswith(b"\x89PNG"))
+                combined = await call("review_scene", {**args, "filters": {"guides": False}})
+                overlay = await client.read_resource(combined["camera_resource"]["uri"])
+                self.assertEqual(overlay.contents[0].mimeType, "image/svg+xml")
+                self.assertIn("data:image/png;base64,", overlay.contents[0].text)
+                self.assertEqual(combined["snapshot_revision"], review["snapshot_revision"])
+                self.assertEqual(combined["scale"], 1)
                 # Real SDK workflow: create, rename/hide, reorder, paint, erase and delete.
                 next_layer = loaded["scene"]["next_layer_id"]
                 operations = [

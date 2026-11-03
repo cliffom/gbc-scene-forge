@@ -136,8 +136,13 @@ Saved or candidate artwork review belongs to `scenes/rendering.py` and
 `SceneService.review_artwork`. It reuses canonical Tiled layers/transform flags,
 atlas grid slicing, sprite origins and shared planning camera selection. Views
 retain native scale and transparency without browser overlays/playback; the
-existing planning SVG review remains separate. One verified saved-read session
-binds both PNGs to project/scene revisions, checks the bytes read against declared
+existing planning SVG review remains separate. `SceneService.review_scene` shares
+that verified read/render path, applies the transient classification from
+`scenes/view_filters.py`, and embeds artwork PNGs under bounded planning SVGs.
+Browser classification in `scene/view-filters.mts` follows the same portable
+property/default rules. Filtering copies only rendering inputs; candidate hashes
+and saved guards identify the unfiltered canonical scene. One verified saved-read
+session binds both PNGs to project/scene revisions, checks the bytes read against declared
 asset digests and revalidates before returning. Output, compositing and decoded
 source budgets bound work; source images load lazily. MCP only creates bounded
 session artifacts from those bytes. Atlas upload preflight and writes both use

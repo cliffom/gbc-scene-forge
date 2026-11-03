@@ -4,6 +4,10 @@ Start with a spatial plan before preparing artwork. Blockout objects are ordinar
 point/rectangle objects on normal layers, with reusable typed definitions. Later
 artwork can be painted on separate tile/object layers without replacing the plan.
 
+Use [Scene view filters](user/review-mode.md#inspect-one-mixed-scene) to inspect
+artwork alone, blockout alone or their combination without copying scenes. These
+transient preferences do not change exported geometry or runtime inclusion.
+
 For a guided first session, follow [Create your first level blockout](user/blockout-tutorial.md).
 
 ## Start a plan

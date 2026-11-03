@@ -12,7 +12,7 @@ from gbc_scene_forge.formats import tiled
 from gbc_scene_forge.planning import blockout, world
 from gbc_scene_forge.project.store import ProjectStore
 from gbc_scene_forge.scene_objects import compositions
-from gbc_scene_forge.scenes import authoring, rendering
+from gbc_scene_forge.scenes import authoring, rendering, view_filters
 from gbc_scene_forge.scenes.dimensions import check_dimensions
 from gbc_scene_forge.storage.files import digest, read_optional
 from gbc_scene_forge.storage.paths import safe_path
@@ -270,6 +270,44 @@ class SceneService:
     def review_artwork(
         self, scene_id, revision, scene_revision, *, camera_id=None, overview=None, scene=None
     ):
+        """Render artwork alone, retaining the existing PNG contract."""
+        return self._review_scene(
+            scene_id, revision, scene_revision, camera_id=camera_id, overview=overview, scene=scene
+        )
+
+    def review_scene(
+        self,
+        scene_id,
+        revision,
+        scene_revision,
+        *,
+        camera_id=None,
+        overview=None,
+        scene=None,
+        filters=None,
+    ):
+        """Read-only combined artwork and planning SVGs with transient view filters."""
+        return self._review_scene(
+            scene_id,
+            revision,
+            scene_revision,
+            camera_id=camera_id,
+            overview=overview,
+            scene=scene,
+            choices=view_filters.filters(filters),
+        )
+
+    def _review_scene(
+        self,
+        scene_id,
+        revision,
+        scene_revision,
+        *,
+        camera_id=None,
+        overview=None,
+        scene=None,
+        choices=None,
+    ):
         """Render a saved scene or canonical candidate under one verified read session."""
         if scene is not None:
             authoring.bounded(scene)
@@ -306,13 +344,14 @@ class SceneService:
                     raise Conflict("Project artwork changed while reviewing.")
                 return data
 
+            visible = scene if choices is None else view_filters.filtered(scene, document, choices)
             result = dict(
                 scene_id=scene_id,
                 project_revision=revision,
                 scene_revision=scene_revision,
                 snapshot_revision=authoring.snapshot(scene),
                 includes_artwork=True,
-                includes_planning_overlays=False,
+                includes_planning_overlays=choices is not None,
                 units="pixels",
                 scale=1,
                 width=width,
@@ -324,9 +363,15 @@ class SceneService:
                     and overview["width"] >= width
                     and overview["height"] >= height
                 ),
-                camera_png=rendering.render(scene, document, read_image, camera_view),
-                overview_png=rendering.render(scene, document, read_image, overview),
+                camera_png=rendering.render(visible, document, read_image, camera_view),
+                overview_png=rendering.render(visible, document, read_image, overview),
             )
+            if choices is not None:
+                result["filters"] = choices
+                for label, view in (("camera", camera_view), ("overview", overview)):
+                    result[f"{label}_svg"] = blockout.render_svg(
+                        visible, document, view, artwork=result.pop(f"{label}_png"), generic=True
+                    )
             self.store.current(revision)
             if session.scene(scene_id)["revision"] != scene_revision:
                 raise Conflict("Scene changed while reviewing artwork.")

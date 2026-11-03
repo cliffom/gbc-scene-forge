@@ -210,7 +210,18 @@
           <div id="canvas-surround" class="canvas-surround" hidden><canvas id="scene" hidden tabindex="0" aria-label="Editable scene on a tile grid"></canvas></div>
         </div>
         <div class="canvas-footer"><span id="coordinates" title="Cell column and row, followed by pixel X and Y. All coordinates start at zero.">Cell —, — · Pixel —, —</span><span id="scene-name">No scene open</span><span id="selected-brush">Select a brush</span></div>
-        <div class="review-bar"><span class="eyebrow">VIEW</span><label><input id="grid" type="checkbox" checked> Grid</label><label class="snap-control" title="Snap sprite origins to grid intersections. Hold Alt to bypass; arrow keys nudge one pixel."><input id="snap" type="checkbox" checked> Snap to grid</label><label><input id="terrain-overlay" type="checkbox"> Terrain</label><label><input id="collision-overlay" type="checkbox"> Collision</label><span class="hint">Middle drag / Space: pan · Wheel: zoom · Alt: free placement · Arrow keys: 1 px</span></div>
+        <details class="scene-view-controls">
+          <summary id="scene-view-summary">Scene view filters</summary>
+          <fieldset><legend>Show in canvas (view only)</legend>
+            <label><input id="view-tiles" type="checkbox" checked> Tile artwork</label>
+            <label><input id="view-sprites" type="checkbox" checked> Sprite artwork</label>
+            <label><input id="view-geometry" type="checkbox" checked> Geometry</label>
+            <label><input id="view-gameplay" type="checkbox" checked> Gameplay markers</label>
+            <label><input id="view-guides" type="checkbox" checked> Guides</label>
+          </fieldset>
+          <p>Layer eyes still control authored visibility. Show all categories before placing stamps or transforming across layers.</p>
+        </details>
+        <div class="review-bar"><span class="eyebrow">VIEW</span><label><input id="grid" type="checkbox" checked> Grid</label><label class="snap-control" title="Snap sprite origins to grid intersections. Hold Alt to bypass; arrow keys nudge one pixel."><input id="snap" type="checkbox" checked> Snap to grid</label><label><input id="terrain-overlay" type="checkbox"> Artwork terrain</label><label><input id="collision-overlay" type="checkbox"> Artwork collision</label><span class="hint">Middle drag / Space: pan · Wheel: zoom · Alt: free placement · Arrow keys: 1 px</span></div>
       </section>
       <div id="inspector-rail" class="pane-rail inspector-rail" hidden></div>
       <aside id="inspector-pane" class="inspector" aria-label="Scene inspector">

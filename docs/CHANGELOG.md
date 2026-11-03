@@ -6,6 +6,11 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.28.0 — Mixed scene view filters and combined review
+
+[Release notes](RELEASE-0.28.0.md). Prepared view-only tile/sprite artwork, geometry,
+gameplay and guide filters with revision-bound combined MCP review.
+
 ## 0.27.1 — Editor toolbar and layout polish
 
 [Release notes](RELEASE-0.27.1.md). Prepared UI polish for scene/pixel tools, bounded dialog layout and clearer empty artwork setup; publication is separate.

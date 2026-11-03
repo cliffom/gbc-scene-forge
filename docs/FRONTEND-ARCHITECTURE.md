@@ -44,6 +44,12 @@ atomic artwork/reference acknowledgment, the composition reloads matching saved
 scene content with fresh history; its old conflict guard remains until content
 adoption succeeds. Ordinary shared artwork edits retain local scene edits/history.
 
+Canvas view filters belong to the mounted rendering controller and use the pure
+classification in `scene/view-filters.mts`. They never enter scene history,
+serialization, recovery or diagnostics. Hidden categories lose selection and hit
+tests; gestures reject hidden placements/tiles, and composition commands require
+all categories visible. Filter redraws refresh controls without checkpointing.
+
 ## Initialization, asynchronous work and disposal
 
 Create the lifetime and state owners first, then the layout, preview and label
