@@ -471,10 +471,15 @@ export function createSheetEditor(
       if (d.frames.some((frame) => frame.id === id)) {
         throw Error('This tile representation already exists.');
       }
+      let name = f.name;
+      // Reserve the suffix within the shared name limit, keeping Unicode intact.
+      while (name.length > 94) {
+        name = Array.from(name).slice(0, -1).join('');
+      }
       d.frames.push({
         ...structuredClone(f),
         id,
-        name: `${f.name} tiles`,
+        name: `${name.trimEnd()} tiles`,
         kind: 'tile',
         origin: [0, 0],
       });

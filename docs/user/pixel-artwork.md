@@ -233,6 +233,8 @@ APNG-capable viewer; this sequence plays once with 180 ms and 120 ms frames.
 For the same pixels to serve both purposes, choose a sprite frame, open **Properties → Representations**, and choose
 **Add tile representation**. Both rectangles share pixels in that document;
 editing either updates both. A copied sheet has independent pixels from its source.
+The generated name ends in “tiles”; long source names are shortened to keep it
+within the 100-character limit. The source frame name is unchanged.
 Review and save the tile representation first.
 
 Save the scene and select sprite objects on one object layer. Choose **Convert

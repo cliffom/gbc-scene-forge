@@ -1468,6 +1468,49 @@ test('artwork Undo and Redo stop playback before restoring sequence frames', asy
   assert.deepEqual(errors, []);
 });
 
+for (const [label, name, expectedPrefix] of [
+  ['94-character', 'A'.repeat(94), 'A'.repeat(94)],
+  ['95-character', 'B'.repeat(95), 'B'.repeat(94)],
+  ['100-character', 'C'.repeat(100), 'C'.repeat(94)],
+  ['Unicode boundary', 'D'.repeat(93) + '😀 pose', 'D'.repeat(93)],
+] as const) {
+  test(`tile representation from a ${label} frame name stays recoverable`, async ({
+    page,
+    workspace,
+  }) => {
+    const { url } = await reviewedSheetFixture(workspace);
+    await page.goto(url);
+    await page.locator('[data-asset="player/idle"]').click();
+    await (await revealArtworkControl(page, 'art-frame-name')).fill(name);
+    await page.locator('#art-rename-frame').click();
+    await page.locator('#art-properties summary').click();
+    await page.locator('#art-tile-representation').click();
+    await expect(page.locator('#art-frame option')).toHaveCount(3);
+    await expect(page.locator('#art-draft-status')).toHaveText(
+      'Unsaved artwork checkpointed in this project.',
+    );
+    await page.locator('#art-undo').click();
+    await expect(page.locator('#art-frame option')).toHaveCount(2);
+    await page.locator('#art-redo').click();
+    await expect(page.locator('#art-frame option')).toHaveCount(3);
+    await page.locator('#art-close').click();
+    await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+    await page.locator('#document-switcher').click();
+    await page.locator('#artwork-documents button').click();
+    await saveArtwork(page);
+    const saved = await opened(page, url, 'player');
+    if (saved.descriptor.version !== 2) {
+      throw Error('Expected sheet');
+    }
+    assert.equal(saved.descriptor.frames[0].name, name);
+    const tiles = saved.descriptor.frames.find((frame) => frame.id === 'idle_tiles');
+    assert.ok(tiles);
+    assert.equal(tiles.name, `${expectedPrefix} tiles`);
+    assert.ok(tiles.name.length <= 100);
+    assert.equal(saved.descriptor.frames.length, 3);
+  });
+}
+
 test('saved representation keeps earlier Undo checkpointable and reviewable', async ({
   page,
   workspace,

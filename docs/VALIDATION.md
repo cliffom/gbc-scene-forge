@@ -15,6 +15,25 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Generated representation name bounds (PR #158)
+
+- **Scope:** Prepared 0.29.0 working tree based on `41422ea`, checked
+  2026-11-02 local time (2026-11-03 UTC), macOS, Node 24.22.1 and
+  Playwright 1.64.1/Chromium at 1440 × 1000 with synthetic artwork.
+- **Method:** Browser automation renames a sprite frame to 94, 95 and 100
+  characters and tests a Unicode character at the truncation boundary. Each
+  scenario adds a tile representation, checkpoints, performs Undo/Redo, switches
+  documents, reviews/saves and reopens the exact saved descriptor. Ran frontend
+  build, `make lint test` and `make docs-check`.
+- **Result:** Before the fix, the 95-character scenario failed to checkpoint
+  with HTTP 400. All four corrected scenarios passed, preserving the original
+  frame name and a valid suffixed representation name. Initial test setup had
+  duplicate titles and toggled the already-open Properties panel; unique labels
+  and opening its visible Representations disclosure corrected the harness.
+  Lint, all frontend suites, 429 Python tests and documentation checks passed.
+- **Limits:** Local source Chromium automation only; full browser, installed-wheel,
+  MCP, remote CI and independent human usability checks were not repeated.
+
 ## CI playback test timing (PR #158)
 
 - **Scope:** Prepared 0.29.0 working tree based on `84eb2dc`, checked
