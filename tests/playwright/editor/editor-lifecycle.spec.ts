@@ -97,7 +97,7 @@ print(p.catalog()['project']['scenes'][0]['id'])
     await new Promise((resolve) => setTimeout(resolve, 50));
     assert.equal(
       await evaluate("document.getElementById('status').textContent"),
-      'Choose a scene, or import an atlas and create one.',
+      'Choose a scene, or import artwork or a map to get started.',
     );
     assert.equal(await evaluate("document.querySelectorAll('.scene-surface').length"), 1);
     assert.equal(await evaluate("document.querySelectorAll('#diagnostics-dialog').length"), 1);
@@ -257,7 +257,7 @@ print(p.catalog()['project']['scenes'][0]['id'])
       );
       assert.equal(
         await evaluate("document.getElementById('status').textContent"),
-        'Choose a scene, or import an atlas and create one.',
+        'Choose a scene, or import artwork or a map to get started.',
       );
     }
     await evaluate('window.__mounted.dispose()');

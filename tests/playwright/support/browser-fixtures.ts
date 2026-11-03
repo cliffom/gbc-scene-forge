@@ -156,7 +156,7 @@ export const test = base.extend<{
 /** A status label can appear before refresh has enabled the scene selector. */
 export async function editorReady(page: Page): Promise<void> {
   await expect(page.locator('#status')).toHaveText(
-    'Choose a scene, or import an atlas and create one.',
+    'Choose a scene, or import artwork or a map to get started.',
   );
   await expect(page.locator('#scenes')).toBeEnabled();
 }

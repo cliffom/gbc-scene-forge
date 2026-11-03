@@ -9,7 +9,7 @@ const steps = [
   },
   {
     title: 'Bring in artwork',
-    text: 'A sample project already has tiles and sprites, so you can continue to the next step. For your own artwork, choose Import → gbc-atlas bundle → Browse folder, select a gbc-atlas manifest and PNG folder, then confirm Import atlas. Forge copies the files and leaves the source unchanged. Choose PNG tilesheet for an ordinary sheet, or Forge export ZIP to bring scenes from another project.',
+    text: 'A sample project already has tiles and sprites, so you can continue to the next step. For your own artwork, choose Import artwork or map → gbc-atlas bundle → Browse folder, select a gbc-atlas manifest and PNG folder, then confirm Import atlas. Forge copies the files and leaves the source unchanged. Choose PNG tilesheet for an ordinary sheet, Tiled JSON map for a supported external map, or Forge export ZIP to bring scenes from another project.',
     target: 'library-import',
   },
   {

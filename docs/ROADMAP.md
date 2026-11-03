@@ -42,10 +42,7 @@ priority before merging. Workstreams are tracked by #150–#157.
 ## Editor usability and UI cleanup
 
 - [#144](https://github.com/cliffom/gbc-scene-forge/issues/144): implement coherent scene/pixel toolbars, fix clipped/misaligned controls and validate efficient manual workflows across desktop sizes. See the [polish evaluation](evaluations/editor-polish.md).
-- [#117](https://github.com/cliffom/gbc-scene-forge/issues/117): scoped review recorded in the [usability evaluation](evaluations/editor-usability.md); follow-up implementations remain separate.
-- [#123](https://github.com/cliffom/gbc-scene-forge/issues/123): first, match artwork search against visible asset names while retaining raw-ID searches and filters.
-- [#124](https://github.com/cliffom/gbc-scene-forge/issues/124): next, remove stale import-preflight errors after a successful correction.
-- [#125](https://github.com/cliffom/gbc-scene-forge/issues/125): then, finish source-type and empty-state guidance for artwork, maps and Forge exports.
+- [#117](https://github.com/cliffom/gbc-scene-forge/issues/117): scoped review recorded in the [usability evaluation](evaluations/editor-usability.md); its findings guide future workflow reviews.
 
 Preserve standalone authoring, pane/Review behavior, keyboard access and guarded
 import/recovery. The current polish pass targets the existing feature set and manual editing efficiency.

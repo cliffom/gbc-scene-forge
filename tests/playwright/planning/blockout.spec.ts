@@ -273,7 +273,7 @@ test('blockout: Artwork-free planning, native edits/history, camera review and l
   ]);
   await page.goto(new URL('/projects/forest-example/', url).href);
   await wait(
-    "document.getElementById('status')?.textContent==='Choose a scene, or import an atlas and create one.'",
+    "document.getElementById('status')?.textContent==='Choose a scene, or import artwork or a map to get started.'",
   );
   await set('scenes', example.trim());
   await wait("document.getElementById('scene-save-state').textContent==='Saved'");

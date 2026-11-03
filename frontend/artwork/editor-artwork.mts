@@ -103,7 +103,9 @@ export function createArtworkController({
     );
     for (const item of items) {
       item.hidden = Boolean(
-        (query && !item.dataset.asset?.toLowerCase().includes(query)) ||
+        (query &&
+          !item.dataset.asset?.toLowerCase().includes(query) &&
+          !item.querySelector('.asset-name')?.textContent?.toLowerCase().includes(query)) ||
         (atlas && item.dataset.atlas !== atlas) ||
         (kind && item.dataset.kind !== kind),
       );
@@ -130,7 +132,7 @@ export function createArtworkController({
     button('library-edit-artwork').disabled = !editAsset;
     element('asset-count', HTMLElement).textContent = `${count} / ${items.length}`;
     element('library-hint', HTMLElement).textContent = !items.length
-      ? 'Import an atlas to add tiles and sprites to this project.'
+      ? 'Import artwork or a map: PNG tilesheets, gbc-atlas bundles, Tiled JSON maps or Forge export ZIPs.'
       : !count
         ? 'No matching assets. Clear the search or change the filters.'
         : document.body.classList.contains('editing-artwork')
@@ -437,10 +439,7 @@ export function createArtworkController({
       empty.className = 'library-empty';
       const title = document.createElement('strong');
       title.textContent = 'Your asset library is empty';
-      empty.append(
-        title,
-        document.createTextNode('Import an atlas to see its tiles and sprites here.'),
-      );
+      empty.append(title, document.createTextNode('Import artwork or a map to get started.'));
       paletteElement.append(empty);
     }
     filterPalette();
