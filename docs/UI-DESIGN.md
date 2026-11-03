@@ -12,7 +12,9 @@ system; hierarchy comes from grouping, spacing and clear labels.
 - **Pane edges:** independent Library and Inspector chevrons sit in the open pane
   headers, leaving no extra column between pane and canvas. Closing a pane replaces
   it with a 24px edge handle; the arrow reverses, with Show/Hide tooltips and
-  accessible names. Handles avoid covering canvas controls; Review scene hides them.
+  accessible names. The Inspector header stays above its scrolling sections,
+  including when Selection rises to the top. Handles avoid covering canvas
+  controls; Review scene hides them.
 - **Project path:** copy icons beside the header folder name and the full path in
   its popover copy directly, confirm success with a checkmark and announce status.
   If clipboard access fails, show the selectable path and manual-copy guidance.
@@ -24,6 +26,8 @@ system; hierarchy comes from grouping, spacing and clear labels.
   disclosure for secondary commands instead of automatically adding rows. At the
   narrowest widths drawing tools share the disclosure and its trigger names the
   current tool. Keyboard shortcuts remain available; Escape collapses the disclosure.
+  When resizing hides the focused command, move focus to the disclosure or Review
+  button; leave focus outside the toolbar undisturbed.
   Put less frequent transforms in a labeled
   command popover. Keep view overlays and coordinate feedback beside the canvas.
 - **Inspector:** scene, layers and contextual selection properties belong here.

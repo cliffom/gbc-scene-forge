@@ -161,3 +161,30 @@ Final installed-wheel captures show the compact document bar and both menus:
 
 Prior screenshots retain their earlier revision scope. Results and limitations
 belong in the [validation record](../VALIDATION.md).
+
+## Persistent Inspector header and responsive focus
+
+The 0.27.1 working tree based on
+[`13537f9`](https://github.com/cliffom/gbc-scene-forge/commit/13537f9eb17113b621db01f92d3f6a173323312b),
+checked on 2026-11-02, keeps the Inspector chevron and save badge in a sticky
+header directly under the pane. Its lifetime spans all sections, and its flex
+order stays above Selection when that section rises to the top. Scrolling to
+recovery or project assets keeps the arrow visible without adding a column.
+Synthetic checks hit-test the arrow and use physical pointer coordinates to
+collapse it without a locator scrolling it into view first. Reopening retains
+the scroll position. Both selection states are checked at the five desktop sizes.
+
+The toolbar remembers a focused command when responsive CSS hides it before the
+resize observer runs. Focus moves to the disclosure, or Review when the disclosure
+disappears on a wider canvas. Explicit blur and focus on another control clear the
+remembered target. Keyboard checks cross both breakpoints and verify that focus
+outside the toolbar stays put.
+
+Source-checkout Chromium captures, inspected by the agent, show the scrolled
+Inspector with an active tile selection:
+
+- [Scrolled Inspector at 1440×900](../screenshots/editor-polish/inspector-scrolled-desktop.png)
+- [Scrolled Inspector at 760×640](../screenshots/editor-polish/inspector-scrolled-compact.png)
+
+These captures are from the working tree, not the previously installed wheel.
+Earlier captures retain their original revision scope.

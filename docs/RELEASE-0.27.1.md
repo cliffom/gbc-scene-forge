@@ -14,6 +14,8 @@ Project tools. The document bar keeps selectors, save status and these two menus
 
 Library and Inspector use header chevrons to collapse their panes, with slim
 reopen handles only when closed; expanded panes reserve no extra arrow columns.
+The Inspector header stays reachable while scrolling, and toolbar focus follows
+commands hidden by a narrower layout to the visible disclosure.
 Copy icons beside the project folder and its popover path provide direct copying,
 success feedback and a selectable fallback when clipboard access is unavailable.
 

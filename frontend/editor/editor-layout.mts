@@ -57,10 +57,36 @@ export function createEditorLayout(
     { signal: lifetime.signal },
   );
   if (toolbar) {
+    let toolbarFocus: HTMLElement | null = null;
+    document.addEventListener(
+      'focusin',
+      (event) => {
+        toolbarFocus =
+          event.target instanceof HTMLElement && toolbar.contains(event.target)
+            ? event.target
+            : null;
+      },
+      { signal: lifetime.signal },
+    );
+    toolbar.addEventListener(
+      'focusout',
+      (event) => {
+        // Hiding a radio can blur it before ResizeObserver runs. Retain only
+        // that case; explicit blur and focus moving elsewhere must stay put.
+        if (
+          event.relatedTarget ||
+          (event.target instanceof HTMLElement && event.target.checkVisibility())
+        ) {
+          toolbarFocus = null;
+        }
+      },
+      { signal: lifetime.signal },
+    );
     lifetime
       .observe(
         new ResizeObserver(() => {
-          const focused = document.activeElement;
+          const focused =
+            document.activeElement === document.body ? toolbarFocus : document.activeElement;
           if (
             focused instanceof HTMLElement &&
             toolbar.contains(focused) &&

@@ -279,6 +279,107 @@ test.describe('editor polish', () => {
     await page.screenshot({ path: info.outputPath('folder-copy-compact.png') });
   });
 
+  test('toolbar resizing preserves keyboard focus without taking it from other controls', async ({
+    page,
+    forge,
+  }) => {
+    await page.goto(forge.url);
+    await editorReady(page);
+    await page.locator('#scenes').selectOption({ index: 1 });
+    await expect(page.locator('#scene-save-state')).toHaveText('Saved');
+    const expand = page.locator('#expand-scene-tools');
+    await page.setViewportSize({ width: 1280, height: 900 });
+    const paint = page.getByRole('radio', { name: 'Paint', exact: true });
+    await paint.focus();
+    await page.setViewportSize({ width: 760, height: 640 });
+    await expect(paint).toBeHidden();
+    await expect(expand).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(paint).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(paint).toBeHidden();
+
+    // The trigger itself disappears when all commands fit on the first row.
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.locator('#toggle-library').click();
+    await page.locator('#toggle-inspector').click();
+    await expect(expand).toBeHidden();
+    await page.setViewportSize({ width: 760, height: 640 });
+    await expect(expand).toBeVisible();
+    await expand.focus();
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await expect(page.locator('#review-mode')).toBeFocused();
+
+    await page.locator('#toggle-library').click();
+    await page.locator('#toggle-inspector').click();
+    await paint.focus();
+    await page.locator('#scenes').focus();
+    await page.setViewportSize({ width: 760, height: 640 });
+    await expect(page.locator('#scenes')).toBeFocused();
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await paint.focus();
+    await paint.evaluate((node) => node.blur());
+    await page.setViewportSize({ width: 760, height: 640 });
+    await expect(page.locator('body')).toBeFocused();
+    await expect(page.locator('#scene-save-state')).toHaveText('Saved');
+  });
+
+  test('Inspector collapse stays reachable after scrolling and with selection first', async ({
+    page,
+    forge,
+  }, info) => {
+    await page.goto(forge.url);
+    await editorReady(page);
+    await page.locator('#scenes').selectOption({ index: 1 });
+    await expect(page.locator('#scene-save-state')).toHaveText('Saved');
+    const inspector = page.locator('#inspector-pane');
+    const toggle = page.locator('#toggle-inspector');
+    for (const [width, height] of sizes) {
+      await page.setViewportSize({ width, height });
+      for (const selected of [false, true]) {
+        if (!selected) {
+          await page.locator('#scene').focus();
+          await page.keyboard.press('Escape');
+          await expect(inspector).not.toHaveClass(/has-selection/);
+        }
+        if (selected) {
+          await page.locator('#fit-scene').click();
+          const expand = page.locator('#expand-scene-tools');
+          if (
+            (await expand.isVisible()) &&
+            (await expand.getAttribute('aria-expanded')) === 'false'
+          ) {
+            await expand.click();
+          }
+          await page.getByRole('radio', { name: 'Select', exact: true }).check();
+          await paint(page, 12, 12);
+          await expect(inspector).toHaveClass(/has-selection/);
+        }
+        await inspector.evaluate((node) => (node.scrollTop = node.scrollHeight));
+        expect(await inspector.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
+        expect(
+          await toggle.evaluate((node) => {
+            const r = node.getBoundingClientRect();
+            const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+            return r.top >= 0 && r.bottom <= innerHeight && !!hit && node.contains(hit);
+          }),
+        ).toBe(true);
+        const scroll = await inspector.evaluate((node) => node.scrollTop);
+        // Use the physical pointer: locator.click would scroll an offscreen arrow into view.
+        const rect = await toggle.boundingBox();
+        if (!rect) {
+          throw Error('Expected Inspector toggle bounds');
+        }
+        await page.mouse.click(rect.x + rect.width / 2, rect.y + rect.height / 2);
+        await expect(inspector).toBeHidden();
+        await toggle.click();
+        await expect(inspector).toBeVisible();
+        expect(await inspector.evaluate((node) => node.scrollTop)).toBe(scroll);
+      }
+      await page.screenshot({ path: info.outputPath(`inspector-scrolled-${width}-${height}.png`) });
+    }
+  });
+
   test('collapsed tools reflect shortcuts and library choices without hiding viewing controls', async ({
     page,
     forge,

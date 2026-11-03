@@ -214,8 +214,9 @@
       </section>
       <div id="inspector-rail" class="pane-rail inspector-rail" hidden></div>
       <aside id="inspector-pane" class="inspector" aria-label="Scene inspector">
+        <div id="inspector-heading" class="panel-heading pane-heading"><h2>Inspector</h2><span id="dirty" class="tag">NO SCENE</span><button id="toggle-inspector" class="pane-toggle" aria-label="Hide Inspector" title="Hide Inspector" aria-controls="inspector-pane" aria-expanded="true"><svg class="command-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div>
         <section id="scene-panel" class="inspector-panel" aria-label="Scene properties">
-          <div id="inspector-heading" class="panel-heading pane-heading"><h2>Scene properties</h2><span id="dirty" class="tag">NO SCENE</span><button id="toggle-inspector" class="pane-toggle" aria-label="Hide Inspector" title="Hide Inspector" aria-controls="inspector-pane" aria-expanded="true"><svg class="command-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div>
+          <h3>Scene properties</h3>
           <label class="field">Scene name<input id="inspector-name" readonly placeholder="No scene open"></label>
           <div class="property-grid scene-dimensions"><label class="field">Dimensions<input id="inspector-size" readonly placeholder="—"></label><label class="field">Grid<input id="inspector-grid" readonly placeholder="—"></label></div>
           <p id="scene-summary" class="hint">Open a scene to inspect its dimensions and placed sprites.</p>

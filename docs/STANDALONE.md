@@ -133,7 +133,8 @@ The desktop layout is checked from 760px wide, including short windows; the
 canvas scrolls independently of the library and inspector.
 
 Arrow controls in the pane headers collapse the Library and Inspector
-independently. Closed panes leave slim edge handles for reopening; open panes
+independently. The Inspector header stays visible while its sections scroll.
+Closed panes leave slim edge handles for reopening; open panes
 meet the canvas directly without reserving arrow columns. Their direction reverses
 when collapsed. The Inspector
 toggle hides the entire right pane: scene, layers, selection, preview and recovery

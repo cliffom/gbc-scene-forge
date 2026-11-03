@@ -15,6 +15,31 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Responsive focus and persistent Inspector header (PR #145 review)
+
+- **Scope:** Prepared 0.27.1 working tree based on
+  [`13537f9`](https://github.com/cliffom/gbc-scene-forge/commit/13537f9eb17113b621db01f92d3f6a173323312b),
+  checked on 2026-11-02 in the Darwin/Python/Node/Chromium environment below.
+  [Design and source-checkout captures](evaluations/editor-polish.md#persistent-inspector-header-and-responsive-focus).
+- **Method:** Reproduced both review findings in Chromium, added synthetic
+  keyboard and pointer regressions, ran `make lint test`, and ran 17 focused
+  polish, pane, layout, Review and editor-lifetime browser scenarios. Inspected
+  scrolled Inspector captures at 1440×900 and 760×640. Scroll/hit-test assertions
+  cover five desktop sizes with and without selection, reopening at the same
+  scroll offset, and actual pointer activation without automatic locator scrolling.
+- **Result:** Lint, 413 Python tests, frontend checks and all 17 final browser
+  scenarios passed. Responsive hiding now transfers toolbar focus to a visible
+  command without disturbing external focus or explicit blur. The Inspector
+  header remains visible above scrolling content, including reordered Selection.
+  Initial regression-test attempts clicked a hidden disclosure and later an
+  offscreen scene cell; conditional disclosure and Fit scene correct the test
+  setup. The corrected final run passed together with the existing scenarios.
+- **Limits:** Local source-checkout Chromium evidence. The full browser suite,
+  distribution rebuild and installed-wheel checks were not repeated for these
+  fixes. Earlier wheel evidence retains its original scope. No independent human,
+  other-browser or actual OS/browser zoom validation is claimed. Version remains
+  0.27.1; no tag or publication was performed.
+
 ## Save and export menus (#144 refinement)
 
 - **Scope:** Prepared 0.27.1 working tree based on
