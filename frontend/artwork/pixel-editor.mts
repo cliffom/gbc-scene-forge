@@ -1,4 +1,5 @@
 /** Artwork composition: document transitions, review/save and recovery with typed ports. */
+import { paletteColors } from './artwork-palette.mts';
 import { button, element, input, select } from '../editor/editor-dom.mts';
 import type { EditorLifetime } from '../editor/editor-lifetime.mts';
 import type {
@@ -235,7 +236,7 @@ export function createPixelEditor({
     onion: () => input('art-onion').checked,
     grid: () => input('art-grid').checked,
   });
-  lifetime.assign(button('art-fit'), 'onclick', () => {
+  function fitArtwork() {
     const model = session?.model,
       viewport = dialog.querySelector('.art-canvas-scroll');
     if (!model || !viewport) {
@@ -249,15 +250,18 @@ export function createPixelEditor({
       viewport.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - 4;
     const availableHeight =
       viewport.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom) - 4;
+    const zoom = select('art-zoom');
+    const scales = [...zoom.options].map((option) => Number(option.value)).sort((a, b) => b - a);
     const scale =
-      [32, 16, 8, 4, 2, 1].find(
+      scales.find(
         (value) => width * value <= availableWidth && height * value <= availableHeight,
-      ) ?? 1;
-    select('art-zoom').value = String(scale);
+      ) ?? scales[scales.length - 1];
+    zoom.value = String(scale);
     cancelGesture();
     draw();
     artworkViewport.layout(true);
-  });
+  }
+  lifetime.assign(button('art-fit'), 'onclick', fitArtwork);
   let conversionPlan: Record<string, unknown> | null = null;
   const conversionDialog = element('conversion-dialog', HTMLDialogElement);
   function conversionError(error: unknown) {
@@ -409,6 +413,7 @@ export function createPixelEditor({
   }
   function controls() {
     if (busy) {
+      element('art-palette', HTMLElement).hidePopover();
       artworkViewport.suspend();
     }
     for (const control of dialog.querySelectorAll<
@@ -528,6 +533,13 @@ export function createPixelEditor({
         .map((v) => v.toString(16).padStart(2, '0'))
         .join('');
     input('art-alpha').value = String(c[3]);
+    button('art-palette-toggle').style.setProperty(
+      '--swatch',
+      `rgba(${c[0]},${c[1]},${c[2]},${c[3] / 255})`,
+    );
+    for (const swatch of element('art-swatches', HTMLElement).querySelectorAll('button')) {
+      swatch.setAttribute('aria-pressed', String(swatch.dataset.rgba === c.join(',')));
+    }
     reflectOpacity();
   }
   function draw(gestureOnly = false) {
@@ -554,28 +566,82 @@ export function createPixelEditor({
     if (!pixels) {
       return;
     }
-    const colors = new Map<string, Color>();
-    for (let i = 0; i < pixels.length && colors.size < 64; i += 4) {
-      const c: Color = [pixels[i], pixels[i + 1], pixels[i + 2], pixels[i + 3]];
-      colors.set(c.join(','), c);
-    }
-    const signature = JSON.stringify([...colors]);
+    const { colors, limited } = paletteColors(pixels);
+    const signature = JSON.stringify({ colors, limited });
     if (signature === paletteSignature) {
       return;
     }
     paletteSignature = signature;
+    element('art-palette-count', HTMLElement).textContent = limited
+      ? `${colors.length} colors shown · use the eyedropper for additional colors.`
+      : `${colors.length} colors · sorted by hue`;
     element('art-swatches', HTMLElement).replaceChildren(
-      ...[...colors.values()].map((c) => {
+      ...colors.map((c) => {
         const swatch = document.createElement('button');
         swatch.type = 'button';
         swatch.title = `RGBA ${c.join(', ')}`;
         swatch.setAttribute('aria-label', swatch.title);
-        swatch.style.backgroundColor = `rgba(${c[0]},${c[1]},${c[2]},${c[3] / 255})`;
-        lifetime.assign(swatch, 'onclick', () => chooseColor(c));
+        swatch.style.setProperty('--swatch', `rgba(${c[0]},${c[1]},${c[2]},${c[3] / 255})`);
+        swatch.dataset.rgba = c.join(',');
+        swatch.onclick = () => {
+          if (busy) {
+            return;
+          }
+          chooseColor(c);
+          element('art-palette', HTMLElement).hidePopover();
+          button('art-palette-toggle').focus();
+        };
         return swatch;
       }),
     );
   }
+  const palettePanel = element('art-palette', HTMLElement);
+  palettePanel.addEventListener(
+    'keydown',
+    (event) => {
+      const buttons = [...palettePanel.querySelectorAll('button')];
+      const index = buttons.findIndex((button) => button === document.activeElement);
+      const step: Record<string, number> = {
+        ArrowRight: 1,
+        ArrowLeft: -1,
+        ArrowDown: 12,
+        ArrowUp: -12,
+      };
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        palettePanel.hidePopover();
+        button('art-palette-toggle').focus();
+      } else if (event.key in step || event.key === 'Home' || event.key === 'End') {
+        event.preventDefault();
+        event.stopPropagation();
+        const next =
+          event.key === 'Home'
+            ? 0
+            : event.key === 'End'
+              ? buttons.length - 1
+              : Math.max(0, Math.min(buttons.length - 1, index + step[event.key]));
+        buttons[next]?.focus();
+      }
+    },
+    { signal: lifetime.signal },
+  );
+  palettePanel.addEventListener(
+    'toggle',
+    () => {
+      if (palettePanel.matches(':popover-open')) {
+        const trigger = button('art-palette-toggle').getBoundingClientRect();
+        palettePanel.style.left = `${Math.max(8, Math.min(trigger.left, window.innerWidth - 350))}px`;
+        palettePanel.style.top = `${Math.max(8, Math.min(trigger.bottom + 5, window.innerHeight - Math.min(380, palettePanel.offsetHeight) - 8))}px`;
+        palettePanel.querySelector('button')?.focus();
+      }
+    },
+    { signal: lifetime.signal },
+  );
+  lifetime.cleanup(() => {
+    palettePanel.hidePopover();
+    element('art-swatches', HTMLElement).replaceChildren();
+  });
   function invalidate() {
     session?.invalidate();
     element('art-comparison', HTMLElement).hidden = true;
@@ -743,13 +809,21 @@ export function createPixelEditor({
     describe(candidate);
     presentation.resetPanels();
     element('art-timeline', HTMLDetailsElement).open = false;
+    input('art-review-detail').checked = false;
+    input('art-review-x').value = '0';
+    input('art-review-y').value = '0';
+    input('art-review-width').value = String(Math.min(256, candidate.descriptor.width));
+    input('art-review-height').value = String(Math.min(256, candidate.descriptor.height));
     documentState();
     input('art-edit-frame').checked = false;
     invalidate();
     swatches();
-    draw();
-    artworkViewport.layout(true);
     controls();
+    draw();
+    if (candidate.descriptor.width > 256 || candidate.descriptor.height > 256) {
+      fitArtwork();
+    }
+    artworkViewport.layout(true);
     if (candidate.operation !== 'edit' || candidate.rgba !== original.rgba) {
       checkpointSoon();
     }
@@ -1165,6 +1239,9 @@ export function createPixelEditor({
   dialog.addEventListener(
     'keydown',
     (event) => {
+      if (element('art-palette', HTMLElement).matches(':popover-open')) {
+        return;
+      }
       if (event.key === 'Escape' && gestures.active) {
         event.preventDefault();
         event.stopPropagation();
@@ -1297,15 +1374,26 @@ export function createPixelEditor({
     }
     const result = await api('artwork-review', record, {
       candidate,
-      scale: Math.min(
-        4,
-        Math.floor(1024 / Math.max(candidate.descriptor.width, candidate.descriptor.height)),
-      ),
+      scale: 4,
+      ...(input('art-review-detail').checked
+        ? {
+            rectangle: {
+              x: Number(input('art-review-x').value),
+              y: Number(input('art-review-y').value),
+              width: Number(input('art-review-width').value),
+              height: Number(input('art-review-height').value),
+            },
+          }
+        : {}),
       scene,
     });
     session.receipt = record(result.receipt);
     const before = result.before === null ? null : record(result.before),
       after = record(result.after);
+    element('art-review-view', HTMLElement).textContent =
+      number(after.sample_step) > 1
+        ? 'Whole artwork overview · use Artwork detail view to inspect individual pixels.'
+        : 'Native pixel review · selected view.';
     const previews: [string, unknown][] = [
       ['art-before', before?.enlarged_png],
       ['art-after', after.enlarged_png],

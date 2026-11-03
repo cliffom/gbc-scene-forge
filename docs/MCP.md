@@ -11,7 +11,7 @@ transactions as browser authoring. There is no connector or game compiler.
 Install the release with Python 3.10 or newer:
 
 ```sh
-python -m pip install --upgrade 'gbc-scene-forge[mcp]==0.30.1'
+python -m pip install --upgrade 'gbc-scene-forge[mcp]==0.31.0'
 gbc-scene-forge-mcp --project-root /absolute/path/to/projects
 ```
 
@@ -583,15 +583,23 @@ identity before pixel editing.
 Pixels are row-major, top-left straight RGBA8 bytes in sRGB, with literal channels
 0..255. Alpha may be partial; exact reads preserve RGB under alpha zero. No GBC
 palette, quantization or color conversion is implicit. Tiles are one 8/16/32-pixel
-square. Sprite axes are multiples of eight within 8..256; origins are integer
+square. Static sprite axes are integer pixels within 1..4,096, with at most 4,194,304 total pixels; origins are integer
 pixels inside the image. Pixel edits cannot resize or change origins/metadata.
 Batches reject duplicate coordinates, invalid channels, booleans, unknown fields
 and out-of-bounds writes as a whole; no clipping or valid-prefix application.
-They cap at 65,536 writes and 1 MiB batch JSON, within the 4 MiB total tool-input
-budget. Exact reads cap at 65,536 pixels. `capabilities.artwork` reports these bounds.
+They cap at 65,536 writes and 1 MiB batch JSON. Alternatively supply
+`patch:{rectangle:{x,y,width,height},rgba}` with at most 65,536 pixels of canonical
+base64 straight RGBA8; choose writes or patch, never both. Artwork tool input
+caps at 26 MiB; candidates cap at 24 MiB. Other authoring tools retain their
+4 MiB input budget. Exact reads cap at 65,536 pixels; larger documents require
+explicit rectangles. `capabilities.artwork` reports these bounds.
 
-Review defaults to 4× nearest-neighbor enlargement (scale 1..16); each output must
-fit the existing 1024-pixel axis limit. `before` is null for new/copied artwork
+Review defaults to a whole-document overview, sampled with integer nearest-neighbor
+steps when needed. Optional `rectangle:{x,y,width,height}` selects a detail view
+up to 1,024 pixels per axis. `sample_step`, `rectangle` and effective `scale`
+accompany each image pair. Requested scale 1..16 is fitted to the 1,024-pixel
+output-axis budget; a receipt continues to identify the complete candidate.
+Use several detail rectangles to inspect the whole artwork at native resolution. `before` is null for new/copied artwork
 unless selected placements are being replaced, when it shows the source pixels.
 `after` and non-null `before` contain `native_resource` and `enlarged_resource`;
 optional `scene` contains `before_resource` and `after_resource`. The flat
@@ -742,6 +750,9 @@ Create/open/duplicate/edit calls accept `compact=true`, returning only
 that exact handle or the full original envelope. Handle-based edits return a new
 handle; old handles remain immutable. `read_artwork_pixels` still returns exact
 bounded RGBA, including hidden RGB under alpha zero.
+Browser transfer handles additionally carry an `owner` UUID. Preserve that field
+when exporting, editing or releasing a listed browser handle: each owner has a
+separate copy, so automatic browser cleanup cannot remove another client's copy.
 
 `review_artwork_frame(candidate, frame_id, scale)` returns isolated native/enlarged
 PNG resources; `review_artwork_animation(candidate, sequence_id, scale)` returns a
@@ -773,7 +784,7 @@ saved = await call("commit_artwork", project=project, candidate=candidate,
 
 Handles are scoped to one declared project root. Canonical full envelopes persist
 in `.forge/artwork-candidates/` through server restarts, bounded to 256 records and
-64 MiB per project, with no expiry or automatic eviction. Quota errors leave old
+64 MiB per project across all owners, with no expiry or automatic eviction. Quota errors leave old
 records intact. `list_artwork_candidates` recovers handles;
 `export_artwork_candidate` returns the full envelope even against a stale saved
 base; `retain_artwork_candidate` restores an exported envelope;

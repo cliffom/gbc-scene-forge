@@ -417,8 +417,10 @@ class ArtworkReviewTests(unittest.TestCase):
 
     def test_large_isolated_output_is_bounded_before_allocating(self):
         candidate = self.blank(kind="sprite", width=256, height=256)
-        with self.assertRaisesRegex(ValueError, "1024 pixels"):
-            self.reviews.review(candidate, scale=5)
+        result = self.reviews.review(candidate, scale=5)
+        self.assertEqual(
+            png.decode(result["after"]["enlarged_png"], generic=True)[:2], (1024, 1024)
+        )
 
     def test_duplicate_candidate_and_busy_reads_preserve_unsaved_work(self):
         self.art.save(self.blank())

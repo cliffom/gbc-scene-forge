@@ -3,7 +3,7 @@
 import json
 from datetime import datetime, timezone
 
-from gbc_scene_forge.artwork import editable, sheets
+from gbc_scene_forge.artwork import dimensions, editable, sheets
 from gbc_scene_forge.core.errors import Conflict
 from gbc_scene_forge.core.identities import identity
 from gbc_scene_forge.core.serialization import record_bytes
@@ -11,9 +11,9 @@ from gbc_scene_forge.core.validation import require
 from gbc_scene_forge.storage.files import atomic_write, digest, read_optional
 from gbc_scene_forge.storage.paths import safe_path
 
-MAX_BYTES = editable.MAX_CANDIDATE
+MAX_BYTES = dimensions.MAX_DRAFT_BYTES
 MAX_DRAFTS = 64
-MAX_TOTAL = 64 * 1024 * 1024
+MAX_TOTAL = 128 * 1024 * 1024  # Room for a recovered copy while retaining its original.
 
 
 class ArtworkDrafts:
@@ -61,7 +61,7 @@ class ArtworkDrafts:
     def read(self, draft_id):
         with self.path(draft_id).open("rb") as stream:
             raw = stream.read(MAX_BYTES + 1)
-        require(len(raw) <= MAX_BYTES, "Artwork draft exceeds 4 MiB")
+        require(len(raw) <= MAX_BYTES, "Artwork draft exceeds 49 MiB")
         value = json.loads(raw)
         document, _ = self.store.read()
         self.validate(value, document["id"])
@@ -90,12 +90,12 @@ class ArtworkDrafts:
             if current != data.get("revision"):
                 raise Conflict("Artwork draft changed. Retain work and refresh recovery.")
             raw = record_bytes(value)
-            require(len(raw) <= MAX_BYTES, "Artwork draft exceeds 4 MiB")
+            require(len(raw) <= MAX_BYTES, "Artwork draft exceeds 49 MiB")
             paths = self.paths()
             require(path in paths or len(paths) < MAX_DRAFTS, "Artwork draft limit reached")
             require(
                 sum(p.stat().st_size for p in paths if p != path) + len(raw) <= MAX_TOTAL,
-                "Artwork draft storage exceeds 64 MiB",
+                "Artwork draft storage exceeds 128 MiB",
             )
             # Stale bases remain checkpointable: recovery must never overwrite a later save.
             atomic_write(path, raw)

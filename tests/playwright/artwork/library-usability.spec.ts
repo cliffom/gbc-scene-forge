@@ -106,7 +106,7 @@ for (const viewport of [
     await page.goto(await workspace.start(workspace.folder, true, true));
     await page.locator('#project-title').fill('Import feedback');
     await page.locator('#project-form button.primary').click();
-    const entry = page.getByRole('button', { name: 'Import artwork or map…', exact: true });
+    const entry = page.getByRole('button', { name: 'Import', exact: true });
     await expect(entry).toBeEnabled();
     await expect(page.locator('#library-hint')).toContainText('PNG tilesheets');
     await expect(page.locator('#library-hint')).toContainText('Tiled JSON maps');

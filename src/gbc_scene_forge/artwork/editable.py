@@ -5,14 +5,14 @@ import copy
 import json
 import re
 
-from gbc_scene_forge.artwork import atlas, png, sheets
+from gbc_scene_forge.artwork import atlas, dimensions, png, sheets
 from gbc_scene_forge.artwork import metadata as tile_metadata
 from gbc_scene_forge.core.identities import identity, name
 from gbc_scene_forge.core.serialization import record_bytes
 from gbc_scene_forge.core.validation import identifier, integer, require
 from gbc_scene_forge.storage.files import digest
 
-MAX_CANDIDATE = 4 * 1024 * 1024
+MAX_CANDIDATE = dimensions.MAX_CANDIDATE_BYTES
 MAX_BATCH = 1024 * 1024
 DESCRIPTOR_FIELDS = {
     "version",
@@ -45,7 +45,9 @@ CANDIDATE_FIELDS = {
 def canonical_bytes(value):
     """Sort aggregate hashes without changing saved file serialization."""
     try:
-        return record_bytes(json.loads(json.dumps(value, sort_keys=True, allow_nan=False)))
+        return (
+            json.dumps(value, sort_keys=True, indent=2, ensure_ascii=False, allow_nan=False) + "\n"
+        ).encode()
     except (ValueError, TypeError, RecursionError) as error:
         raise ValueError("Expected finite JSON artwork data") from error
 
@@ -110,10 +112,9 @@ def check_descriptor(value):
     )
     require(name(value["name"]) == value["name"], "Use a trimmed artwork name")
     w, h = value["width"], value["height"]
-    require(
-        integer(w, 8, 256) and integer(h, 8, 256) and w % 8 == h % 8 == 0,
-        "Artwork dimensions must be multiples of eight within 8..256",
-    )
+    dimensions.check(w, h)
+    if value["kind"] == "tile" or value["version"] == 2:
+        dimensions.grid_canvas(w, h)
     require(value["kind"] in ("tile", "sprite"), "Choose tile or sprite artwork")
     require(
         value["version"] == 2 or value["kind"] != "tile" or (w == h and w in atlas.GRIDS),
@@ -283,7 +284,7 @@ def read_descriptor(entry, data):
 
 
 def decode_image(descriptor, image):
-    w, h, pixels = png.decode(image)
+    w, h, pixels = png.decode(image, generic=True)
     require(
         (w, h) == (descriptor["width"], descriptor["height"]),
         "Editable PNG dimensions differ from descriptor",
@@ -305,7 +306,7 @@ def check_candidate(value):
         in (CANDIDATE_FIELDS | {"revision"}, CANDIDATE_FIELDS | {"revision", "placements"}),
         "Unsupported artwork candidate fields",
     )
-    require(len(canonical_bytes(value)) <= MAX_CANDIDATE, "Artwork candidate exceeds 4 MiB")
+    require(len(canonical_bytes(value)) <= MAX_CANDIDATE, "Artwork candidate exceeds 24 MiB")
     check_descriptor(value["descriptor"])
     d = value["descriptor"]
     require(
@@ -331,7 +332,12 @@ def check_candidate(value):
         require(value["operation"] == "duplicate", "Only duplication can replace placements")
         check_placements(value["placements"])
     encoded = value["rgba"]
-    require(isinstance(encoded, str) and len(encoded) <= 349528, "Invalid RGBA byte count")
+    require(
+        isinstance(encoded, str)
+        and len(encoded) == 4 * ((d["width"] * d["height"] * 4 + 2) // 3)
+        and len(encoded) <= dimensions.MAX_RGBA_BASE64,
+        "Invalid RGBA byte count",
+    )
     try:
         pixels = base64.b64decode(encoded, validate=True)
     except ValueError as error:
@@ -449,14 +455,40 @@ def edit_pixels(candidate, writes):
     return seal(envelope)
 
 
-def read_pixels(candidate, rectangle=None):
-    pixels = check_candidate(candidate)
-    d = candidate["descriptor"]
-    r = (
-        rectangle
-        if rectangle is not None
-        else {"x": 0, "y": 0, "width": d["width"], "height": d["height"]}
+def patch_pixels(candidate, patch):
+    """Replace a bounded rectangular chunk with exact straight RGBA bytes."""
+    pixels = bytearray(check_candidate(candidate))
+    require(
+        isinstance(patch, dict) and set(patch) == {"rectangle", "rgba"},
+        "Expected a rectangle and base64 RGBA patch",
     )
+    r = patch["rectangle"]
+    # Check geometry and decoded area before decoding a patch.
+    check_rectangle(candidate["descriptor"], r)
+    require(
+        isinstance(patch["rgba"], str)
+        and len(patch["rgba"]) <= 4 * ((dimensions.MAX_READ_PIXELS * 4 + 2) // 3),
+        "Pixel patch exceeds 65536 pixels; use smaller rectangles",
+    )
+    try:
+        raw = base64.b64decode(patch["rgba"], validate=True)
+    except ValueError as error:
+        raise ValueError("Expected canonical base64 patch RGBA bytes") from error
+    require(
+        len(raw) == r["width"] * r["height"] * 4
+        and base64.b64encode(raw).decode() == patch["rgba"],
+        "Patch RGBA byte count differs from rectangle",
+    )
+    for row in range(r["height"]):
+        start = ((r["y"] + row) * candidate["descriptor"]["width"] + r["x"]) * 4
+        length = r["width"] * 4
+        pixels[start : start + length] = raw[row * length : (row + 1) * length]
+    envelope = {k: copy.deepcopy(v) for k, v in candidate.items() if k != "revision"}
+    envelope["rgba"] = base64.b64encode(pixels).decode()
+    return seal(envelope)
+
+
+def check_rectangle(d, r):
     require(
         isinstance(r, dict)
         and set(r) == {"x", "y", "width", "height"}
@@ -466,6 +498,21 @@ def read_pixels(candidate, rectangle=None):
         and integer(r["height"], 1, d["height"] - r["y"]),
         "Read rectangle must fit the artwork",
     )
+    require(
+        r["width"] * r["height"] <= dimensions.MAX_READ_PIXELS,
+        "Pixel read exceeds 65536 pixels; request smaller explicit rectangles",
+    )
+
+
+def read_pixels(candidate, rectangle=None):
+    pixels = check_candidate(candidate)
+    d = candidate["descriptor"]
+    r = (
+        rectangle
+        if rectangle is not None
+        else {"x": 0, "y": 0, "width": d["width"], "height": d["height"]}
+    )
+    check_rectangle(d, r)
     raw = b"".join(
         pixels[
             ((r["y"] + y) * d["width"] + r["x"]) * 4 : (

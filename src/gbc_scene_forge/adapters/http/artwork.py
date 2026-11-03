@@ -2,8 +2,11 @@
 
 import base64
 
+from gbc_scene_forge.artwork import editable
+from gbc_scene_forge.artwork.candidates import ArtworkCandidates
 from gbc_scene_forge.artwork.conversion import ArtworkConversion
 from gbc_scene_forge.artwork.drafts import ArtworkDrafts
+from gbc_scene_forge.core.identities import identity
 from gbc_scene_forge.core.validation import require
 
 
@@ -16,6 +19,25 @@ def images(value):
 
 
 def artwork_response(project, action, data):
+    candidates = ArtworkCandidates(project.artwork.documents)
+    if action == "candidate-retain":
+        require(identity(data.get("owner")), "Expected a browser candidate owner UUID")
+        return candidates.retain(data.get("candidate"), owner=data["owner"])
+    if action == "candidate-release":
+        return candidates.release(data.get("candidate"))
+    if action == "candidate-export":
+        return candidates.resolve(data.get("candidate"))
+    candidate = data.get("candidate")
+    compact = isinstance(candidate, dict) and "handle" in candidate
+    if compact:
+        data = {**data, "candidate": candidates.resolve(candidate)}
+    result = _response(project, action, data)
+    if compact and action in {"edit", "layout"}:
+        return candidates.retain(result, owner=candidate.get("owner"))
+    return result
+
+
+def _response(project, action, data):
     documents = project.artwork.documents
     drafts = ArtworkDrafts(documents)
     if action == "conversion-review":
@@ -74,6 +96,9 @@ def artwork_response(project, action, data):
             placements=data.get("placements"),
         )
     if action == "edit":
+        if "patch" in data:
+            require("writes" not in data, "Choose pixel writes or a rectangular patch")
+            return editable.patch_pixels(data.get("candidate"), data["patch"])
         return documents.edit(data.get("candidate"), data.get("writes"))
     if action == "review":
         return images(
@@ -82,6 +107,7 @@ def artwork_response(project, action, data):
                 scale=data.get("scale", 4),
                 scene=data.get("scene"),
                 offset=data.get("offset", 0),
+                rectangle=data.get("rectangle"),
             )
         )
     if action == "save":

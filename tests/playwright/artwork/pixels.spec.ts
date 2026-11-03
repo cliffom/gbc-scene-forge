@@ -796,9 +796,11 @@ test('transparent drawing restores opacity and preserves partial alpha in saved 
   await expect(page.locator('#art-alpha')).toHaveValue('128');
   await expect(transparent).toHaveAttribute('aria-pressed', 'false');
   await expect(transparent).toHaveAccessibleName('Transparent');
+  await page.locator('#art-palette-toggle').click();
   await page.getByRole('button', { name: 'RGBA 204, 136, 51, 0', exact: true }).click();
   await expect(transparent).toHaveAttribute('aria-pressed', 'true');
   await expect(transparent).toHaveAccessibleName('Resume color');
+  await page.locator('#art-palette-toggle').click();
   await page.getByRole('button', { name: 'RGBA 204, 136, 51, 128', exact: true }).click();
   await expect(transparent).toHaveAttribute('aria-pressed', 'false');
   await expect(transparent).toHaveAccessibleName('Transparent');

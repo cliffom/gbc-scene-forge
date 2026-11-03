@@ -1,5 +1,6 @@
 /** Presentation for artwork creation, contextual properties and focused change review. */
-import { button, element, input } from '../editor/editor-dom.mts';
+import { MAX_ARTWORK_AXIS } from './artwork-limits.mts';
+import { button, element, input, select } from '../editor/editor-dom.mts';
 import type { EditorLifetime } from '../editor/editor-lifetime.mts';
 
 export function createArtworkWorkspace(
@@ -86,6 +87,12 @@ export function createArtworkWorkspace(
   lifetime.assign(button('art-existing-mode'), 'onclick', () => setup('existing'));
   function layoutPreview() {
     const multiple = input('art-multiple').checked;
+    const grid = multiple || select('art-kind').value === 'tile';
+    for (const id of ['art-width', 'art-height']) {
+      input(id).min = grid ? '8' : '1';
+      input(id).max = grid ? '256' : String(MAX_ARTWORK_AXIS);
+      input(id).step = grid ? '8' : '1';
+    }
     element('art-sheet-layout', HTMLElement).hidden = !multiple;
     const w = Number(input('art-width').value),
       h = Number(input('art-height').value),
@@ -105,6 +112,7 @@ export function createArtworkWorkspace(
   ]) {
     lifetime.assign(input(id), 'oninput', layoutPreview);
   }
+  lifetime.assign(select('art-kind'), 'onchange', layoutPreview);
   layoutPreview();
   return {
     setup,

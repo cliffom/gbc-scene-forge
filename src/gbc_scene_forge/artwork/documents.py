@@ -4,7 +4,7 @@ import base64
 import copy
 from uuid import uuid4
 
-from gbc_scene_forge.artwork import atlas, editable, placements, png, sheets
+from gbc_scene_forge.artwork import atlas, dimensions, editable, placements, png, sheets
 from gbc_scene_forge.artwork.review import check_receipt
 from gbc_scene_forge.core.errors import Conflict
 from gbc_scene_forge.core.identities import name
@@ -57,7 +57,7 @@ class ArtworkDocuments:
             "region": descriptor["region"],
         }
 
-    def _asset(self, document, path, limit=4 * 1024 * 1024):
+    def _asset(self, document, path, limit=dimensions.MAX_IMAGE_BYTES):
         target = safe_path(self.store.root, path)
         require(
             path in document["files"] and target.stat().st_size <= limit,
@@ -265,7 +265,7 @@ class ArtworkDocuments:
             x, y, w, h = (region[k] for k in ("x", "y", "width", "height"))
             origin = region.get("origin", [0, 0])
             group, key = "sprites", f"{source['atlas_id']}/{source['region']}"
-        raw = png.decode(png.crop_rectangle(width, pixels, x, y, w, h))[2]
+        raw = png.decode(png.crop_rectangle(width, pixels, x, y, w, h), generic=True)[2]
         metadata = copy.deepcopy(entry.get("metadata", {}).get(group, {}).get(key))
         return region["kind"], w, h, origin, raw, group, metadata, entry
 

@@ -50,7 +50,9 @@ class ArtworkService:
             source = json.loads(safe_path(self.store.root, path).read_bytes())
         else:
             require(group == "sprites", "Missing tileset dependency. Restore it before editing.")
-            width, _, pixels = png.decode(safe_path(self.store.root, entry["png"]).read_bytes())
+            width, _, pixels = png.decode(
+                safe_path(self.store.root, entry["png"]).read_bytes(), generic=True
+            )
             changes = atlas.build_sprites(entry, width, pixels)
             source = json.loads(changes[path])
         changes[path] = json_text(tile_metadata.decorate(entry, group, source)).encode()

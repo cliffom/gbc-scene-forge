@@ -1,6 +1,6 @@
 # Import artwork, Tiled maps and Forge scenes
 
-Open **Library → Import artwork or map…**, then choose **PNG tilesheet** or **Tiled JSON
+Open **Library → Import**, then choose **PNG tilesheet** or **Tiled JSON
 map** in Source type. The existing gbc-atlas bundle workflow remains available.
 These generic inputs need no gbc-atlas installation, manifest or GBC palette setup.
 
@@ -94,7 +94,7 @@ The supported JSON fields and tile IDs follow the official
 
 1. In the source project, choose **Export…** and download either **Whole project**
    or **Open scene**. Canvas exports include the chosen canvas snapshot.
-2. In the destination project, open **Library → Import artwork or map…**,
+2. In the destination project, open **Library → Import**,
    choose **Forge export ZIP**, select the ZIP, then click **Check selection**.
    Intake accepts ZIP files directly; extracted folders use the separate project
    reopening workflow.
@@ -127,8 +127,9 @@ and unplaced stamps are not copied. Placed stamp content is ordinary scene data
 and is retained. Ordinary string properties are copied literally: Forge does not
 interpret them as scene links or rewrite user-defined strings.
 
-ZIP intake is bounded to **5 MiB compressed, 256 MiB expanded and 8,192 regular
-files**; maps/PNGs/tilesets are at most 4 MiB each and manifests at most 8 MiB.
+ZIP intake is bounded to **40 MiB compressed, 256 MiB expanded and 8,192 regular
+files**; PNGs are at most 17 MiB, maps/tilesets at most 4 MiB each, and manifests
+at most 8 MiB.
 Absolute/traversing paths, symlinks, duplicate members, unsupported compression,
 unexpected members, checksum mismatches, missing dependencies and unsupported maps/tilesets are
 rejected before commit. No ZIP members are extracted to disk. Saved output must

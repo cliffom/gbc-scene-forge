@@ -15,6 +15,85 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## PR #183 maximum-axis artwork Fit correction
+
+- **Scope:** Prepared 0.31.0 working tree based on
+  `bb0f36c3308cdd2fee1fb37d8347aa5e6bb80b83`, checked 2026-11-03 on macOS 27.0.1
+  arm64, Python 3.13.13, Node 24.22.1 and Playwright 1.64.1 / Chromium 156.0.8078.4.
+- **Method:** [Browser regressions](../tests/playwright/artwork/large-artwork.spec.ts)
+  check automatic and explicit Fit for 1,024 × 4,096 and 4,096 × 1,024 documents
+  at 1440 × 800 and explicit Fit at 760 × 600, including returning from 32× zoom.
+  Agent inspection covers the fitted tall document at 760 × 600 in the production bundle.
+- **Result:** The tall-document regression fails against the previous bundle:
+  automatic Fit falls back to 1×. After adding smaller zoom presets and using the
+  smallest preset as the fallback, the production build and all ten large-artwork
+  browser cases pass. `make docs-check lint test` passes with 435 Python tests
+  and all TypeScript suites.
+- **Limits:** Local Chromium automation and agent inspection do not establish
+  non-Chromium or physical-device usability. These checks cover the artwork suite,
+  not the full browser suite, installed-wheel behavior or new CI results.
+
+## PR #183 candidate ownership and detail-review corrections
+
+- **Scope:** Prepared 0.31.0 working tree on `feat/181-large-artwork`, based on
+  `13164c0cef1393a6502964563996f0e7542a8eab`, checked 2026-11-03 on macOS 27.0.1
+  arm64, Python 3.13.13, Node 24.22.1 and Playwright 1.64.1 / Chromium 156.0.8078.4.
+- **Method:** [Candidate regression](../tests/backend/artwork/test_large_artwork.py)
+  interleaves two browser owners and an MCP handle with identical content, checks
+  shared quotas, restart listing/export and independent release. The
+  [MCP sheet checks](../tests/backend/adapters/test_mcp_sheets.py) exercise owned
+  handles through real stdio SDK export/edit/release and reject invalid owners. The
+  [browser regression](../tests/playwright/artwork/large-artwork.spec.ts) switches
+  from a large detail review to a new 16 × 16 tile, reviews/saves valid defaults,
+  then verifies retained large-document settings. Agent inspection covers the
+  small-document detail panel at 1440 × 1000 in the production bundle.
+- **Result:** `make docs-check lint test` passes with 435 Python tests and all
+  TypeScript suites; the production frontend build and all three focused MCP
+  sheet checks pass. The large-artwork and
+  pixel-editor browser run passes 49 cases and exposes one test-helper mistake:
+  revealing a collapsed detail checkbox clicked Confirm save. The corrected test
+  expands the detail section directly and passes its focused rerun.
+- **Limits:** These are local synthetic checks, not a new CI, installed-wheel,
+  non-Chromium or physical-device result. The entire browser suite was not rerun.
+  Scoped candidate copies share the existing project quota; abandoned transfers
+  remain discoverable for explicit export/release rather than expiring.
+
+## Large illustrations and artwork palette (#181)
+
+- **Scope:** Prepared 0.31.0 working tree on `feat/181-large-artwork`, based on
+  `62b864c73d014ec5b8607e88020e3029d2a0c6f2`, checked 2026-11-03 on macOS 27.0.1
+  arm64 / Apple M4 Max, Python 3.13.13, Node 24.22.1, Playwright 1.64.1 /
+  Chromium 156.0.8078.4 and MCP SDK 1.30.0. Release preparation is not publication.
+- **Method:** Synthetic service/frontend/browser tests exercise the six requested
+  card sizes, exact RGBA including hidden RGB, bounded patches/reads/reviews,
+  receipts, original-plus-copy recovery, stale bases, undo/redo, save/reopen and
+  portable ZIP transfer. Separate plain and optional-MCP wheel environments
+  exercise package smoke, first use and real stdio/browser workflows. Agent
+  inspection covers production palette captures at 1440 × 900 and 760 × 900.
+  The [evaluation and archived data](evaluations/large-artwork.md) record service
+  timings, browser workflow timings, process peak RSS and screenshot provenance.
+- **Result:** `make docs-check lint test` passes with 434 Python tests and all
+  TypeScript suites, including final request-budget and expanded incompressible
+  ZIP-transfer/recovery checks. Production
+  build/metadata checks, seven plain wheel smoke tests, installed-wheel first use,
+  81 optional MCP tests and all four installed MCP/browser workflows pass. The
+  broad browser run passes 122 cases, skips 11 opt-in profiles and finds one stale
+  transparency test that selected a collapsed swatch; its corrected focused
+  rerun passes. All seven new card/palette cases pass in that broad run.
+  Largest-card recovery initially exceeded the former 64 MiB draft quota; the
+  separate 128 MiB quota permits original and recovered records, with regression
+  coverage. Automatic Fit initially invoked a disabled button while opening;
+  direct fitting after layout corrects it, and initial-zoom assertions pass.
+- **Limits:** Local automation and agent image inspection do not establish
+  independent human discovery, prolonged drawing comfort, lower-memory physical
+  devices, non-Chromium/Windows or official Tiled application behavior. Official
+  Tiled/rasterizer executables were unavailable. One raw raster is at most 16 MiB;
+  cumulative service-process peak RSS reached 1,337,049,088 bytes. MCP artifacts
+  retain their 16 MiB cap; larger ZIPs require browser download. Shared-host
+  measurements are observations, not latency or total-memory guarantees. The
+  full broad local suite was not rerun after its test-only dropdown correction;
+  no CI pass is claimed here. Existing unperformed checks remain below.
+
 ## Artwork ownership extraction and asynchronous audit (#168, #169)
 
 - **Scope:** Internal-refactor working tree on `milestone/18-artwork-ownership`,
@@ -1643,6 +1722,8 @@ check, retaining actual revision, environment, attribution, failures and limits.
 - [ ] Have independent users assess prolonged drawing and scene navigation on ordinary and slower physical devices with actual browser zoom/display scaling; synthetic next-rAF/CPU-throttle samples and bounded GC cycles do not establish input-to-present latency or hours-long stability (#160–#164).
 
 ### Platform, interoperability and publication gaps
+
+- [ ] Verify large native illustrations in official Tiled/rasterizer applications, including odd dimensions, full-size sprites and portable scene export (#181).
 
 - [ ] Run the optional official Tiled/rasterizer interoperability checks for the prepared 0.29.0 baseline, including native RGBA sheets/animations, scene-transfer, object/definition, mixed-scene classification properties and tile metadata compatibility, when those applications are available (#75, #109, #110, #111, #112, #113, #127, #130, #140, #149).
 

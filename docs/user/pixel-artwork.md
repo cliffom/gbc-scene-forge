@@ -27,7 +27,9 @@ accents are simplified. An ID beginning with a digit gets an `art_` prefix; an
 empty normalized name uses `artwork`. Expand **Asset identity** to supply a unique
 ID yourself; that override stays intact when the name changes. Single tiles are
 square 8, 16 or 32 pixels. Static
-sprites use multiples of eight up to 256 × 256, with origin 0, 0. Check **Create a
+sprites also serve as general illustrations: use any positive integer dimensions
+up to 4,096 pixels on either axis and 4,194,304 pixels total, with origin 0, 0.
+For example, one 375 × 525 or 1,500 × 2,100 card stays in one document. Check **Create a
 sheet with multiple frames** for a tile or character sheet; the layout summary
 shows its rows, columns and frame count.
 
@@ -74,8 +76,7 @@ choice returns focus to the canvas. History, clipboard and transforms use the
 same icon style as scene commands; gold marks the selected drawing tool.
 
 The toolbar groups tools, history/transforms, Color/Opacity and Pan/Fit/Zoom on
-one row when space permits. Groups wrap together at smaller widths; the palette
-scrolls within its remaining space. A badge beside the document name distinguishes shared artwork, new artwork and
+one row when space permits. Groups wrap together at smaller widths; the **Palette ▾** dropdown opens a scrollable 12-column swatch grid. A badge beside the document name distinguishes shared artwork, new artwork and
 selected-placement variations. Save stays beneath the canvas. **Document actions**
 contains download, close/discard and **Drawing & keyboard help**. **Fit** chooses
 the largest available zoom that fits the current sheet or frame and centers it.
@@ -108,13 +109,25 @@ Opacity supports exact alpha values from 0 (transparent) to 255 (opaque), includ
 partial transparency for PNG compositing. **Transparent** toggles alpha to zero
 and changes its accessible name to **Resume color**; click again to restore the previous nonzero
 opacity. Choosing a color also resumes painting at that opacity. Eraser writes
-transparent black. The eyedropper and the first 64 distinct artwork palette
-swatches preserve exact RGBA, including hidden RGB
-beneath transparency. GBC target profiles do not restrict these colors. Zoom uses
+transparent black. The eyedropper and palette swatches preserve exact RGBA, including
+hidden RGB beneath transparency. The dropdown sorts neutral colors first, then
+colors by hue, lightness and saturation. Alpha variants remain separate. Arrow
+keys navigate the grid; Enter selects, and Escape closes it and restores focus.
+Choosing a swatch sets both Color and Opacity without recoloring existing pixels.
+The palette shows up to 1,024 distinct source colors; an explicit notice appears
+when more exist, and Eyedropper can select any other pixel. GBC target profiles do not restrict these colors. Zoom uses
 nearest-neighbor pixels; toggle the pixel grid as needed.
 
+Large artwork uses a bounded whole-image review overview. Expand **Artwork detail
+view**, select **Review detail region**, and enter a rectangle up to 1,024 pixels
+per axis to inspect native pixels. Review additional regions as needed. **Fit**
+includes fractional zoom down to ¹⁄₃₂× for large artwork in short windows; drawing
+coordinates continue to use source pixels.
+Newly opened artwork starts with whole-image review and a detail rectangle that
+fits its dimensions. Switching between open documents restores their detail settings.
+
 Each stroke, fill, paste, move or transform is one undo operation. Artwork keeps up
-to 100 operations within a 16 MiB history budget, independently of scene history.
+to 100 operations within a 64 MiB history budget using changed pixel blocks, independently of scene history.
 Use Undo/Redo or ⌘/Ctrl Z and Shift Z (Ctrl Y also redoes); ⌘/Ctrl C/V copies/pastes.
 Undo/Redo keeps the active frame. If a restored selection extends outside that
 frame, it is cleared so clipboard and transform commands use the active frame.
@@ -179,7 +192,7 @@ is an inspection/reconciliation record, not an automatic import format. **Downlo
 work** captures the live layout as `current_descriptor` and exact pixels as
 `current_rgba`, plus the original base and last synchronized candidate. It works
 even when layout synchronization fails. Artwork
-drafts are bounded to 64 records, 4 MiB each and 64 MiB total per project, and are
+drafts are bounded to 64 records, 49 MiB each and 128 MiB total per project, and are
 excluded from portable exports.
 
 Historical pre-unification captures:

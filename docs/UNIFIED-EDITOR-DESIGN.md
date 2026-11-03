@@ -69,7 +69,8 @@ provenance and pixel-format fields; it is not a complete descriptor.
 - Existing saved frame IDs, geometry, origin and kind cannot change or disappear.
   Rename/reorder and append are supported. Create an independent copy/variation
   for incompatible layout changes. Sequence edits retain normal revision guards.
-- Descriptor and candidate limits remain 64 KiB and 4 MiB. Bounds reject the whole
+- Descriptors retain their 64 KiB limit; candidates use the shared 24 MiB
+  [native-artwork budget](EDITABLE-ARTWORK.md#pixels-and-bounds). Bounds reject the whole
   operation. No clipping, partial writes or truncation.
 
 The native atlas manifest embeds the complete descriptor as `sheet`, plus derived
