@@ -6,6 +6,13 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.29.2 — Editor responsiveness
+
+[Release notes](RELEASE-0.29.2.md). Reuse pixel raster surfaces and affected
+thumbnails, remove pointer-time RGBA encoding, retain unchanged object options,
+capture checkpoint JSON once and release artwork surfaces on disposal.
+Publication is separate.
+
 ## 0.29.1 — Library search and import feedback
 
 [Release notes](RELEASE-0.29.1.md). Match displayed artwork names and raw IDs,

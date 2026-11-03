@@ -157,3 +157,16 @@ painting and sprite animation, plus deterministic canvas sizing and history
 regressions. It attaches raw `rendering-profile.json` samples to the report.
 Timings are observational; CI asserts resource/state behavior without speed
 thresholds. See [the baseline, results and scheduling decision](evaluations/canvas-repainting.md).
+
+## Responsiveness profiles
+
+The regular artwork response case checks deterministic canvas/encoding work counts;
+it never fails on a timing percentile. `FORGE_RESPONSIVENESS_PROFILE=1` enables the
+full sheet/frame/timeline and normal/4× CPU matrix. `FORGE_SCENE_COST_PROFILE=1`
+enables mixed-inventory scene-control and resource-lifetime observations.
+`FORGE_PROFILE_OUTPUT` archives their JSON in a caller-selected directory, and
+`FORGE_COST_BASELINE=1` reads the pinned pre-optimization frontend from Git for the
+scene profile. See the [evaluation](evaluations/editor-responsiveness.md) for exact
+commands, workload sizes, provenance, reference-build instructions and limits.
+These optional profiles extend the regular tests; unchanged CI does not collect
+the entire timing/resource matrix.

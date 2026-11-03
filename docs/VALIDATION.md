@@ -1462,6 +1462,35 @@ Dates, revisions and environments missing from the originals remain unknown.
   No installed-wheel, production-mode, Windows/non-Chromium, screen-reader,
   prolonged large-project or physical-device review was performed.
 
+## Editor responsiveness and resource measurements (#160–#164)
+
+- **Scope:** Agent measurements on 2026-11-03, macOS arm64, baseline
+  `a268f271102e97fd9b31448b8721f0b07ddfc5ec` (0.29.1) and the milestone 16
+  working tree preparing 0.29.2. Exact browser/runtime/CPU and bundle variants
+  accompany [archived measurements](evaluations/editor-responsiveness.md).
+- **Method:** Synthetic production-bundle pointer, release and history profiles;
+  normal/4× CPU comparison; test-only scene boundary instrumentation; GC-assisted
+  bounded switching/remount samples; agent inspection at 1,440×1,000 and 800×900.
+  Functional source, browser and package checks are recorded in the evaluation.
+- **Result:** Measurements demonstrated repeated full-raster uploads, RGBA encoding,
+  hidden-thumbnail drawing, unchanged disabled assignments, object-option rebuilding
+  and retained artwork surfaces. Changes target those paths while preserving exact
+  content, history, receipts and recovery. Source checks passed (429 Python tests
+  and all TypeScript suites), as did lint/docs, production build, seven wheel smoke
+  checks, 101 regular browser scenarios (11 optional profiles skipped), installed-
+  wheel first use, 81 installed MCP tests and three MCP/browser refresh scenarios.
+  The eight-case final artwork profile and all four original/final scene-resource
+  cases passed, including automatic adoption after actual external writes.
+  The original expanded timeline exceeded
+  180 seconds at 120 moves and 600 seconds under 4× CPU at 24 moves; these failures
+  and the corrected legal mixed-fixture boundary remain in the evaluation.
+- **Limits:** Synthetic handler and next-rAF timings do not establish physical input
+  presentation latency, human drawing comfort, historical feature-growth regression,
+  non-Chromium/Windows behavior or hours-long resource stability. Forced-GC heap and
+  canvas estimates do not measure total resident/GPU memory. Timing is observational;
+  deterministic work counts provide regression guards. No new CI-pass or publication
+  claim is made by this local record.
+
 ## Remaining checks
 
 This is the single maintained validation checklist. Issue state was checked on
@@ -1485,6 +1514,10 @@ check, retaining actual revision, environment, attribution, failures and limits.
 ### Scene scalability (#78, #92, #93)
 
 - [ ] Have a human assess prolonged painting, panning and selection on the current consumer Forest project; automated archived-v4 measurements do not establish physical-device editing comfort (#93).
+
+### Editor responsiveness (milestone 16)
+
+- [ ] Have independent users assess prolonged drawing and scene navigation on ordinary and slower physical devices with actual browser zoom/display scaling; synthetic next-rAF/CPU-throttle samples and bounded GC cycles do not establish input-to-present latency or hours-long stability (#160–#164).
 
 ### Platform, interoperability and publication gaps
 

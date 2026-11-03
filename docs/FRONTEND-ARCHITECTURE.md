@@ -197,3 +197,28 @@ reports and preferences; there is no open-ended conversion requirement. It also
 owns reproducible compatibility/bundle methods and dependency/license handling.
 Browser dependencies are bundled during build; the installed Python editor still
 requires no Node or CDN requests.
+
+## Artwork and scene refresh costs
+
+`artwork/artwork-raster.mts` owns one reusable canvas/ImageData snapshot for the
+mounted pixel editor. It compares all RGBA channels against mutable model bytes;
+history replacement, hidden RGB and direct writes require no mutation flag.
+Changed bounds invalidate intersecting frame stamps; geometry and document
+changes also invalidate thumbnails. The sheet controller owns weak per-canvas
+stamps, refreshes collapsed timeline images on reveal, and releases rows/surfaces
+on disposal. Pixel gesture painting updates the raster, overlays and dirty
+command label; completion and cancellation perform full control synchronization.
+No pointer segments are dropped or deferred.
+
+Artwork sessions retain at most two decoded pixel baselines for exact saved and
+checkpoint comparisons. Dirty state itself is never cached. Encoding remains at
+persistence/download boundaries. Pending and uncertain checkpoint acknowledgments
+continue to protect departure, even when Undo reaches the saved base.
+
+`editor/editor-layers.mts` compares exact object option labels/order/IDs before
+replacing options, then updates selection and availability separately. Scene
+models and validation remain authoritative on each refresh. `project/drafts.mts`
+captures JSON at observation, compares that immutable string directly and decodes
+only when flushing. A caller cannot mutate an observed or uncertain-retry payload.
+See the [performance evaluation](evaluations/editor-responsiveness.md) for costs
+retained deliberately and the bounds of current measurements.

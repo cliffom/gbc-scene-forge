@@ -197,3 +197,46 @@ for (const firstWrite of [true, false]) {
   assert.equal(stored.size, 0);
 }
 console.log('Draft cross-tab deletion recovery and unacknowledged-write cleanup passed.');
+
+// Completed observations own their bytes. Neither a caller mutation nor a later
+// transient refresh may silently change an in-flight/idempotent payload.
+const captured: Record<string, unknown>[] = [];
+const immutable = new DraftWriter(
+  async (_route, data) => {
+    captured.push(data);
+    return Promise.resolve({ revision: 'captured' });
+  },
+  () => {},
+);
+const observed = { scene: { cells: ['first'] } };
+immutable.observe(observed);
+observed.scene.cells[0] = 'later';
+await immutable.flush();
+assert.deepEqual(captured[0].scene, { cells: ['first'] });
+immutable.observe(observed);
+await immutable.flush();
+assert.deepEqual(captured[1].scene, { cells: ['later'] });
+immutable.stop();
+
+// One encoding per observation, independent of how large the previous scene is.
+const counting = new DraftWriter(
+  () => Promise.resolve({ revision: 'counted' }),
+  () => {},
+);
+const stringifyBefore = JSON.stringify;
+let observationEncodes = 0;
+JSON.stringify = new Proxy(stringifyBefore, {
+  apply(target, receiver, args) {
+    observationEncodes++;
+    const result: unknown = Reflect.apply(target, receiver, args);
+    return result;
+  },
+});
+try {
+  counting.observe({ scene: { cells: ['same'] } });
+  counting.observe({ scene: { cells: ['same'] } });
+  assert.equal(observationEncodes, 2);
+} finally {
+  JSON.stringify = stringifyBefore;
+  counting.stop();
+}

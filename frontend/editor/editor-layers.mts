@@ -215,6 +215,7 @@ export function createLayersController({
     layerAction((editor) => editor.visibility()),
   );
 
+  let objectOptions = '';
   function inspect() {
     input('inspector-name').value = sceneSession.loaded?.name || '';
     input('inspector-size').value = sceneSession.loaded
@@ -249,17 +250,19 @@ export function createLayersController({
         inspector.scrollTop = 0;
       }
     }
-    select('object-list').replaceChildren(
-      ...(inspectedObjects.map(
-        (item) =>
-          new Option(
-            `${item.name || item.class || item.kind} · #${item.id}`,
-            item.id,
-            false,
-            item.id === sceneSelection.selectedObject,
-          ),
-      ) || []),
-    );
+    const choices = inspectedObjects.map((item) => [
+      `${item.name || item.class || item.kind} · #${item.id}`,
+      item.id,
+    ]);
+    const signature = JSON.stringify(choices);
+    const objectList = select('object-list');
+    // Selection, camera and busy state do not change option labels. Compare
+    // exact labels/order/IDs so history, renames and refreshed scenes still rebind.
+    if (signature !== objectOptions) {
+      objectList.replaceChildren(...choices.map(([label, id]) => new Option(label, id)));
+      objectOptions = signature;
+    }
+    objectList.value = item?.id ?? inspectedObjects[0]?.id ?? '';
     select('object-list').disabled =
       activity.busy || !sceneSession.editor?.objects.length || gestures.anchor !== null;
     const sprite = item?.kind === 'sprite' && ports.sprites.get(item.asset);

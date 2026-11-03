@@ -1,3 +1,4 @@
+import { record } from '../shared/decode.mts';
 import { HttpError } from '../shared/errors.mts';
 
 /** Serializes checkpoint writes and cleanup, including edits made during a request. */
@@ -7,7 +8,9 @@ export class DraftWriter {
     return this.draftId;
   }
   revision: string | null = null;
-  private desired: Record<string, unknown> | null = null;
+  // Observe captures immutable JSON once. Deferred writes cannot see later caller
+  // mutations, and transient refreshes do not encode the previous scene again.
+  private desired = 'null';
   private saved = '';
   private retryValue: Record<string, unknown> | null | undefined;
   private timer: ReturnType<typeof setTimeout> | undefined;
@@ -66,10 +69,10 @@ export class DraftWriter {
       return;
     }
     const key = JSON.stringify(value);
-    if (key === JSON.stringify(this.desired) && this.timer) {
+    if (key === this.desired && this.timer) {
       return;
     }
-    this.desired = value;
+    this.desired = key;
     if (key === this.saved) {
       return;
     }
@@ -86,11 +89,16 @@ export class DraftWriter {
       if (this.stopped) {
         return;
       }
-      const value = this.retryValue === undefined ? this.desired : this.retryValue;
-      const key = JSON.stringify(value);
+      const key = this.retryValue === undefined ? this.desired : JSON.stringify(this.retryValue);
       if (key === this.saved) {
         return;
       }
+      const value =
+        this.retryValue === undefined
+          ? key === 'null'
+            ? null
+            : record(JSON.parse(key))
+          : this.retryValue;
       try {
         await this.persist(value);
         if (value) {
