@@ -18,6 +18,28 @@ export class ArtworkSession {
   private checkpointUncertain = false;
   private pendingCheckpoints = 0;
   private queue: Promise<unknown> = Promise.resolve();
+  // At most the saved base and acknowledged checkpoint. Cache decoded baselines,
+  // never dirty state: callers may mutate bytes directly or replace history.
+  private pixelBases = new Map<string, Uint8ClampedArray>();
+  private matches(pixels: Uint8ClampedArray, rgba: string) {
+    let previous = this.pixelBases.get(rgba);
+    if (!previous) {
+      previous = bytes(rgba);
+      if (this.pixelBases.size === 2) {
+        this.pixelBases.delete(this.pixelBases.keys().next().value ?? '');
+      }
+      this.pixelBases.set(rgba, previous);
+    }
+    if (previous.length !== pixels.length) {
+      return false;
+    }
+    for (let i = 0; i < pixels.length; i++) {
+      if (previous[i] !== pixels[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
   private api: ProjectApi['json'];
   constructor(candidate: Candidate, api: ProjectApi['json'], original = candidate) {
     this.api = api;
@@ -44,7 +66,7 @@ export class ArtworkSession {
   get changed() {
     return (
       this.original.operation !== 'edit' ||
-      encoded(this.model.pixels) !== this.original.rgba ||
+      !this.matches(this.model.pixels, this.original.rgba) ||
       JSON.stringify(this.model.descriptor) !== JSON.stringify(this.original.descriptor)
     );
   }
@@ -53,7 +75,7 @@ export class ArtworkSession {
       this.pendingCheckpoints > 0 ||
       this.checkpointUncertain ||
       ((this.changed || this.checkpointAttempted) &&
-        (encoded(this.model.pixels) !== this.checkpointPixels ||
+        (!this.matches(this.model.pixels, this.checkpointPixels) ||
           JSON.stringify(this.model.descriptor) !== this.checkpointLayout))
     );
   }
@@ -89,7 +111,12 @@ export class ArtworkSession {
       writes = [];
     };
     for (let i = 0; i < pixels.length; i += 4) {
-      if ([0, 1, 2, 3].every((channel) => previous[i + channel] === pixels[i + channel])) {
+      if (
+        previous[i] === pixels[i] &&
+        previous[i + 1] === pixels[i + 1] &&
+        previous[i + 2] === pixels[i + 2] &&
+        previous[i + 3] === pixels[i + 3]
+      ) {
         continue;
       }
       writes.push({
@@ -116,7 +143,7 @@ export class ArtworkSession {
       }
       const candidate = await this.synchronize(pixels, descriptor);
       if (
-        encoded(pixels) === this.checkpointPixels &&
+        this.matches(pixels, this.checkpointPixels) &&
         JSON.stringify(descriptor) === this.checkpointLayout
       ) {
         return;

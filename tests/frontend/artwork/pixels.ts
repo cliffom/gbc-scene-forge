@@ -457,3 +457,36 @@ while (boundedModel.redoStack.length) {
   decodeDescriptor(boundedModel.descriptor);
 }
 assert.equal(boundedSession.changed, false);
+
+// Dirty reads do not serialize RGBA, including hidden RGB and direct byte edits.
+const exact = new ArtworkSession(candidate, api);
+const encodeBefore = globalThis.btoa;
+let dirtyEncodes = 0;
+globalThis.btoa = (value) => {
+  dirtyEncodes++;
+  return encodeBefore(value);
+};
+try {
+  assert.equal(exact.changed, false);
+  exact.model.begin();
+  exact.model.put({ x: 0, y: 0 }, hidden);
+  assert.equal(exact.changed, true);
+  assert.equal(exact.uncheckpointed, true);
+  exact.model.cancel();
+  assert.equal(exact.changed, false);
+  exact.model.apply(() => exact.model.put({ x: 1, y: 1 }, hidden));
+  exact.model.undo();
+  assert.equal(exact.changed, false);
+  exact.model.redo();
+  assert.equal(exact.changed, true);
+  exact.model.undo();
+  // Public base replacement and buffer mutation must invalidate comparisons.
+  exact.original = { ...candidate, rgba: candidate.rgba };
+  exact.model.pixels[3] = 1;
+  assert.equal(exact.changed, true);
+  exact.model.pixels[3] = 0;
+  assert.equal(exact.changed, false);
+  assert.equal(dirtyEncodes, 0);
+} finally {
+  globalThis.btoa = encodeBefore;
+}

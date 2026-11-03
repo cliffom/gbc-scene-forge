@@ -1,4 +1,5 @@
 /** Sheet/frame navigation and sequence authoring, owned by the artwork lifetime. */
+import type { ArtworkRaster } from './artwork-raster.mts';
 import { button, element, input, select } from '../editor/editor-dom.mts';
 import type { EditorLifetime } from '../editor/editor-lifetime.mts';
 import type { ArtworkSession } from './artwork-session.mts';
@@ -6,6 +7,7 @@ import { decodeDescriptor, type ArtworkFrame, type ArtworkSequence } from './art
 
 export function createSheetEditor(
   lifetime: EditorLifetime,
+  raster: ArtworkRaster,
   ports: {
     current: () => ArtworkSession | null;
     mutate: (work: () => void) => void;
@@ -62,39 +64,32 @@ export function createSheetEditor(
     timer = undefined;
     button('art-play').textContent = 'Play';
   }
-  const source = document.createElement('canvas');
-  function refreshRaster() {
-    const model = ports.current()?.model;
-    if (!model) {
+  const rendered = new WeakMap<HTMLCanvasElement, string>();
+  function image(frame: ArtworkFrame, target: HTMLCanvasElement, repetitions = 1) {
+    const stamp = raster.stamp(frame, repetitions);
+    if (rendered.get(target) === stamp) {
       return;
     }
-    if (source.width !== model.width) {
-      source.width = model.width;
-    }
-    if (source.height !== model.height) {
-      source.height = model.height;
-    }
-    source
-      .getContext('2d')
-      ?.putImageData(
-        new ImageData(new Uint8ClampedArray(model.pixels), model.width, model.height),
-        0,
-        0,
-      );
-  }
-  function image(frame: ArtworkFrame, target: HTMLCanvasElement, repetitions = 1) {
     const context = target.getContext('2d');
     if (!context) {
       return;
     }
     const scale = Math.min(8, 256 / Math.max(frame.width, frame.height));
-    target.width = frame.width * scale * repetitions;
-    target.height = frame.height * scale * repetitions;
+    const width = frame.width * scale * repetitions,
+      height = frame.height * scale * repetitions;
+    if (target.width !== width) {
+      target.width = width;
+    }
+    if (target.height !== height) {
+      target.height = height;
+    }
+    context.reset();
+    rendered.set(target, stamp);
     context.imageSmoothingEnabled = false;
     for (let y = 0; y < repetitions; y++) {
       for (let x = 0; x < repetitions; x++) {
         context.drawImage(
-          source,
+          raster.canvas,
           frame.x,
           frame.y,
           frame.width,
@@ -210,10 +205,6 @@ export function createSheetEditor(
         }
       });
       const thumbnail = document.createElement('canvas');
-      const frame = d.frames.find((f) => f.id === item.frame_id);
-      if (frame) {
-        image(frame, thumbnail);
-      }
       thumbnail.setAttribute('aria-hidden', 'true');
       thumbnail.dataset.frame = item.frame_id;
       const unit = document.createElement('span');
@@ -250,6 +241,10 @@ export function createSheetEditor(
     }
   }
   function sync(rebind = false) {
+    const current = ports.current();
+    if (current) {
+      raster.refresh(current.model);
+    }
     const d = descriptor();
     element('art-sheet-controls', HTMLElement).hidden = !d;
     if (!d) {
@@ -257,8 +252,6 @@ export function createSheetEditor(
       stop();
       return;
     }
-    // Upload the source once per drawing update, then crop all thumbnails from it.
-    refreshRaster();
     const next = JSON.stringify(d);
     // Undo/Redo can replace the descriptor with equal content. Rebind row
     // callbacks to that live object rather than editing a detached snapshot.
@@ -340,14 +333,6 @@ export function createSheetEditor(
         image(frame, thumbnail);
       }
     }
-    for (const thumbnail of element('art-sequence-frames', HTMLElement).querySelectorAll(
-      'canvas',
-    )) {
-      const frame = d.frames.find((f) => f.id === thumbnail.dataset.frame);
-      if (frame) {
-        image(frame, thumbnail);
-      }
-    }
     button('art-sheet-view').setAttribute('aria-pressed', String(!view()));
     button('art-frame-view').setAttribute('aria-pressed', String(Boolean(view())));
     input('art-onion').disabled = !view() || selectedFrame()?.kind !== 'sprite';
@@ -356,8 +341,38 @@ export function createSheetEditor(
     element('art-frame-geometry', HTMLElement).textContent = selected
       ? `${selected.width} × ${selected.height} · origin ${selected.origin.join(', ')}`
       : '';
-    preview();
+    paint(false);
     controls(false);
+  }
+  /** During a gesture only pixels/overlays change; navigation and row bindings
+   * remain stable until completion/cancellation performs a full synchronization. */
+  function paint(refresh = true) {
+    const current = ports.current();
+    if (refresh && current) {
+      raster.refresh(current.model);
+    }
+    const d = descriptor();
+    if (!d) {
+      return;
+    }
+    const frames = new Map(d.frames.map((frame) => [frame.id, frame]));
+    for (const control of element('art-frame-strip', HTMLElement).querySelectorAll('button')) {
+      const frame = frames.get(control.dataset.frame ?? '');
+      const thumbnail = control.querySelector('canvas');
+      if (frame && thumbnail) {
+        image(frame, thumbnail);
+      }
+    }
+    const timeline = element('art-sequence-frames', HTMLElement);
+    if (!timeline.closest('details:not([open])')) {
+      for (const thumbnail of timeline.querySelectorAll('canvas')) {
+        const frame = frames.get(thumbnail.dataset.frame ?? '');
+        if (frame) {
+          image(frame, thumbnail);
+        }
+      }
+    }
+    preview();
   }
   for (const [id, frame] of [
     ['art-sheet-view', false],
@@ -391,7 +406,7 @@ export function createSheetEditor(
     completed = false;
     input('art-loop').checked = sequence()?.loop ?? true;
     rows(sequence());
-    preview();
+    paint();
     controls(false);
   });
   lifetime.assign(button('art-add-sequence'), 'onclick', () =>
@@ -496,6 +511,33 @@ export function createSheetEditor(
       });
     }),
   );
-  lifetime.cleanup(stop);
-  return { sync, view, stop, selectedFrame, controls };
+  const timeline = element('art-sequence-frames', HTMLElement).closest('details');
+  timeline?.addEventListener(
+    'toggle',
+    () => {
+      if (timeline.open) {
+        // Revealing deferred images must preserve the owner's busy controls.
+        paint();
+      }
+    },
+    { signal: lifetime.signal },
+  );
+  lifetime.cleanup(() => {
+    stop();
+    // The host reuses static editor markup across mounts. Retire backing stores
+    // and old row callbacks, including strips with equal frame IDs on remount.
+    for (const id of ['art-frame-strip', 'art-sequence-frames']) {
+      const container = element(id, HTMLElement);
+      for (const canvas of container.querySelectorAll('canvas')) {
+        canvas.width = canvas.height = 0;
+      }
+      container.replaceChildren();
+      delete container.dataset.frames;
+    }
+    for (const id of ['art-animation-canvas', 'art-repeat-canvas']) {
+      const canvas = element(id, HTMLCanvasElement);
+      canvas.width = canvas.height = 0;
+    }
+  });
+  return { sync, paint, view, stop, selectedFrame, controls };
 }

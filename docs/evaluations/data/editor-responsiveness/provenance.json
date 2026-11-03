@@ -1,0 +1,46 @@
+{
+  "baseline_revision": "a268f271102e97fd9b31448b8721f0b07ddfc5ec",
+  "stage_bundles": {
+    "baseline": "9bfbd319c5a28ad4b2492acaa5e9f48a9b99838fd5b7a8bc7d31ed63f7de9159",
+    "raster-only": "e62cb4b85d9c8bd13fb7acc581f00ca3c97356c57d187925853791bb3da59680",
+    "byte-comparison": "f89c74f21981a3e0ba57c78e462c6f0ef99a93c83c474731d65876dbe7ffceba"
+  },
+  "stage_notes": {
+    "baseline": "Production 0.29.1 frontend at baseline revision; initial harness; normal cases 120 moves, 256-step case reduced to24.",
+    "raster-only": "Working-tree shared raster/thumbnail invalidation and unchanged-disabled assignment guard; original ArtworkSession dirty encoder; no gesture-only paint path.",
+    "byte-comparison": "Raster changes plus exact byte dirty baselines; no gesture-only paint path. Artifact labels say optimized; retained as this intermediate stage.",
+    "scene-baseline": "Test-only boundary wrappers; original DraftWriter and object options; shared raster and byte comparisons present; before disposal cleanup. Required-field fixtures without defaults, four clean retained artwork documents.",
+    "checkpoint-only": "Original object options; immutable JSON observations and disposal cleanup; four clean retained documents. No retained stroke histories yet.",
+    "scene-reference": "Pinned original frontend with current boundary wrappers and 24 completed strokes/review/save per retained document.",
+    "optimized": "Final production frontend. Exact bundle hash and 0.29.2 build identity recorded per result.",
+    "scene-optimized": "Final frontend and boundary wrappers; bundle hash recorded per result; 24 completed strokes/review/save per retained document."
+  },
+  "failures": [
+    {
+      "variant": "baseline near-limit 256-step normal CPU",
+      "moves_per_trial": 120,
+      "timeout_ms": 180000,
+      "result": "Timed out in expanded-timeline pointer work; reduced samples for repeatable completion."
+    },
+    {
+      "variant": "baseline near-limit 256-step CPU4",
+      "moves_per_trial": 24,
+      "timeout_ms": 600000,
+      "result": "Timed out in expanded-timeline pointer work. No completed profile or usable percentile for this variant."
+    },
+    {
+      "variant": "initial mixed fixtures",
+      "result": "Rejected by existing 4 MiB scene bound with default-expanded properties. Replaced with legal required fields without defaults."
+    }
+  ],
+  "limits": "Stage records identify uncommitted source variants; commit SHA alone names their common base. Some runs overlapped independent validation on the same host; timing is observational. Failed traces remained in ignored local Playwright reports; this record archives the material failure facts, not those traces.",
+  "environment": {
+    "scope": "All archived runs in this session used this host and the default .venv fixture interpreter; exact per-run browser/Node/CPU values are in each result.",
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "architecture": "arm64",
+    "python": "Python 3.13.13",
+    "node": "v24.22.1",
+    "build_mode": "production for artwork; minified test-only boundary wrappers for scene profiles",
+    "timer_resolution": "Browser samples are quantized; zeros are below observed timer resolution, not zero CPU cost."
+  }
+}

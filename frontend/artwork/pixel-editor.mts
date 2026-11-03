@@ -13,6 +13,7 @@ import { tileParts } from './tile-transform.mts';
 import { ArtworkSession } from './artwork-session.mts';
 import { decodeCandidate, type Candidate, type Placement } from './artwork-contracts.mts';
 import { type Color, type Point, type PixelTool } from './pixel-model.mts';
+import { ArtworkRaster } from './artwork-raster.mts';
 import { createSheetEditor } from './sheet-editor.mts';
 import { createArtworkWorkspace } from './artwork-workspace.mts';
 import { conversionViews } from './conversion-views.mts';
@@ -202,7 +203,9 @@ export function createPixelEditor({
     }
     remember();
   }
-  const sheetEditor = createSheetEditor(lifetime, {
+  const raster = new ArtworkRaster();
+  lifetime.cleanup(() => raster.dispose());
+  const sheetEditor = createSheetEditor(lifetime, raster, {
     current: () => session,
     mutate: (work) => operation(work),
     draw: () => draw(),
@@ -399,7 +402,10 @@ export function createPixelEditor({
     for (const control of dialog.querySelectorAll<
       HTMLButtonElement | HTMLInputElement | HTMLSelectElement
     >('button,input,select')) {
-      control.disabled = busy || control.dataset.unavailable === 'true';
+      const disabled = busy || control.dataset.unavailable === 'true';
+      if (control.disabled !== disabled) {
+        control.disabled = disabled;
+      }
     }
     const active = session !== null;
     element('art-setup', HTMLElement).hidden = active;
@@ -425,8 +431,7 @@ export function createPixelEditor({
         ? 'Edit the shared original, or name an independent copy below.'
         : 'Imported artwork is preserved. Name an editable copy to begin drawing.';
     }
-    button('art-discard').textContent = session?.changed ? 'Discard draft…' : 'Close artwork';
-    button('art-discard').classList.toggle('destructive-command', Boolean(session?.changed));
+    dirtyControls();
     button('art-undo').disabled = busy || !session?.model.undoStack.length;
     button('art-redo').disabled = busy || !session?.model.redoStack.length;
     button('art-paste').disabled = busy || !session?.model.clipboard;
@@ -434,6 +439,15 @@ export function createPixelEditor({
     sheetEditor.controls(busy);
     button('document-switcher').textContent =
       dialog.open && session ? `${session.model.descriptor.name} ▾` : 'Documents ▾';
+  }
+  function dirtyControls() {
+    const modified = session?.changed ?? false;
+    const discard = button('art-discard');
+    const label = modified ? 'Discard draft…' : 'Close artwork';
+    if (discard.textContent !== label) {
+      discard.textContent = label;
+    }
+    discard.classList.toggle('destructive-command', modified);
   }
   async function execute(work: () => Promise<void>) {
     if (busy) {
@@ -499,28 +513,35 @@ export function createPixelEditor({
     input('art-alpha').value = String(c[3]);
     reflectOpacity();
   }
-  function draw() {
+  function draw(gestureOnly = false) {
     const model = session?.model;
     if (!model || !context || lifetime.disposed) {
       return;
     }
     const zoom = Number(select('art-zoom').value);
-    sheetEditor.sync();
+    if (gestureOnly) {
+      sheetEditor.paint();
+    } else {
+      sheetEditor.sync();
+    }
     const view = sheetEditor.view() ?? { x: 0, y: 0, width: model.width, height: model.height };
-    canvas.width = view.width * zoom;
-    canvas.height = view.height * zoom;
-    canvas.style.width = `${canvas.width}px`;
-    canvas.style.height = `${canvas.height}px`;
-    const small = document.createElement('canvas');
-    small.width = model.width;
-    small.height = model.height;
-    small
-      .getContext('2d')
-      ?.putImageData(
-        new ImageData(new Uint8ClampedArray(model.pixels), model.width, model.height),
-        0,
-        0,
-      );
+    const width = view.width * zoom,
+      height = view.height * zoom;
+    if (canvas.width !== width) {
+      canvas.width = width;
+    }
+    if (canvas.height !== height) {
+      canvas.height = height;
+    }
+    if (canvas.style.width !== `${width}px`) {
+      canvas.style.width = `${width}px`;
+    }
+    if (canvas.style.height !== `${height}px`) {
+      canvas.style.height = `${height}px`;
+    }
+    // Reusing a canvas must reset alpha, dash, transform and transparent pixels.
+    context.reset();
+    const small = raster.canvas;
     context.imageSmoothingEnabled = false;
     if (sheetEditor.view() && input('art-onion').checked && model.descriptor.version === 2) {
       const frames = model.descriptor.frames,
@@ -609,7 +630,11 @@ export function createPixelEditor({
         context.stroke();
       }
     }
-    controls();
+    if (gestureOnly) {
+      dirtyControls();
+    } else {
+      controls();
+    }
   }
   function swatches() {
     const pixels = session?.model.pixels;
@@ -1149,6 +1174,8 @@ export function createPixelEditor({
         documents.delete(session.id);
       }
       session = null;
+      raster.dispose();
+      canvas.width = canvas.height = 0;
       workspace(false);
       tabs();
       message('Artwork document closed.');
@@ -1290,7 +1317,7 @@ export function createPixelEditor({
       model.select(g.start, p);
     }
     g.last = p;
-    draw();
+    draw(true);
   }
   lifetime.assign(canvas, 'onpointerdown', (event) => {
     if (busy || !session || event.button !== 0 || gesture) {
@@ -1619,6 +1646,7 @@ export function createPixelEditor({
     cancelGesture();
     session = null;
     documents.clear();
+    canvas.width = canvas.height = 0;
     document.body.classList.remove('editing-artwork');
   });
   return {

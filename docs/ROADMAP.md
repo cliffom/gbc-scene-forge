@@ -1,48 +1,45 @@
 # Roadmap
 
-Current baseline: standalone portable Tiled authoring with imported or native pixel
-artwork, artwork-free blockouts, optional MCP, guarded browser refresh, scene
-links, bounded wide/tall scenes and transfer from Forge export ZIPs. See
-[usage](STANDALONE.md) and the [changelog](CHANGELOG.md) for supported behavior and compatibility.
+Current baseline: standalone portable Tiled authoring with imported/native artwork,
+editable tile and sprite sheets, native animation, scene/artwork documents,
+artwork-free blockouts, optional MCP and conflict-aware recovery. See
+[usage](STANDALONE.md) and the [changelog](CHANGELOG.md) for supported behavior.
 
-Open issue and milestone state below was checked on 2026-11-02. These are outcome-based
-priorities, without promised release versions or dates. Measurements may justify
-retaining an existing implementation. Validation gaps live in the
+Open milestone state was checked on 2026-11-03. Stabilization of existing workflows
+precedes new authoring features. Priority order is **16 → 20 → 17 → 18 → 19**;
+these outcomes have no promised dates. Validation gaps live in the
 [single remaining-check list](VALIDATION.md#remaining-checks).
 
-## Native pixel artwork (milestone 14)
+## Editor responsiveness and performance (milestone 16)
 
-The integrated [editable artwork contract](EDITABLE-ARTWORK.md) and
-[workflow evaluation](evaluations/artwork-workflows.md) define the current scope.
+[Milestone 16](https://github.com/cliffom/gbc-scene-forge/milestone/16), #160–#164:
+repeatable interaction/resource baselines, pixel raster and dirty-state costs,
+scene control/checkpoint preparation, large libraries and resource lifetimes.
+The [performance evaluation](evaluations/editor-responsiveness.md) records measured
+changes and deliberately retained paths. Timing is observational; deterministic
+work counts guard known duplication. Preserve exact pixels, history, cancellation,
+review receipts, checkpoint acknowledgments and revision guards.
 
-Preserve external import/reimport, portable scenes, metadata, optional target
-constraints and recoverable work across writers. Advanced animation and broad
-external-editor feature parity remain outside this milestone.
+## Artwork editor interaction polish (milestone 20)
 
-## Agent and manual tile and sprite authoring (milestone 15)
+[Milestone 20](https://github.com/cliffom/gbc-scene-forge/milestone/20), #173–#176:
+hover targets, toolbar density, document selection prominence and canvas panning,
+based on direct editor use. This follows the performance work.
 
-The [implementation contract](UNIFIED-EDITOR-DESIGN.md) and
-[parent issue #149](https://github.com/cliffom/gbc-scene-forge/issues/149) define
-[milestone 15](https://github.com/cliffom/gbc-scene-forge/milestone/15): first-class scene/artwork
-documents with contextual tools, direct Library access without an open scene,
-sheet overview/frame editing, tile repetition review and native animation
-authoring. The outcome is complete tile and animated-sprite workflows without
-requiring third-party external tools. Users review agent output, correct pixels
-and timing manually, then let agents continue from the exact saved changes.
-All three modes require completion: manual-only, agent-only and mixed. Animation
-review outputs, transparent scenery layering, lossless migration of existing
-artwork and sprite-to-tile representation with explicit placement replacement
-are included. The [chosen contract](UNIFIED-EDITOR-DESIGN.md) and implementation
-are under review on `milestone/15`; acceptance and release readiness remain the
-priority before merging. Workstreams are tracked by #150–#157.
+## Existing workflow usability and manual–MCP parity (milestone 17)
 
-- [#147](https://github.com/cliffom/gbc-scene-forge/issues/147): independent asset persistence without unrelated scene rewrites supports this foundation.
-- [#148](https://github.com/cliffom/gbc-scene-forge/issues/148): compact MCP artwork candidates support efficient agent authoring and can proceed independently.
+[Milestone 17](https://github.com/cliffom/gbc-scene-forge/milestone/17), #165–#167:
+improve discovery and the manual/agent handoff for the existing feature set.
+Preserve manual-only, agent-only and mixed authoring workflows.
 
-## Editor usability and UI cleanup
+## Authoring maintainability and correctness (milestone 18)
 
-- [#144](https://github.com/cliffom/gbc-scene-forge/issues/144): implement coherent scene/pixel toolbars, fix clipped/misaligned controls and validate efficient manual workflows across desktop sizes. See the [polish evaluation](evaluations/editor-polish.md).
-- [#117](https://github.com/cliffom/gbc-scene-forge/issues/117): scoped review recorded in the [usability evaluation](evaluations/editor-usability.md); its findings guide future workflow reviews.
+[Milestone 18](https://github.com/cliffom/gbc-scene-forge/milestone/18), #168–#170:
+clarify ownership, simplify code organization and strengthen correctness around
+existing authoring and persistence contracts.
 
-Preserve standalone authoring, pane/Review behavior, keyboard access and guarded
-import/recovery. The current polish pass targets the existing feature set and manual editing efficiency.
+## Explicit limits and policy constants (milestone 19)
+
+[Milestone 19](https://github.com/cliffom/gbc-scene-forge/milestone/19), #171–#172:
+replace unexplained values with named, owned policies and boundary coverage.
+Separate format/hardware constraints from tunable interaction choices.
