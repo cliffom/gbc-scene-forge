@@ -104,7 +104,7 @@ export class AnimationPlayback {
       }
       this.frame = (this.frame + 1) % frames.length;
     }
-    return previous !== this.frame;
+    return previous !== this.frame || !this.playing;
   }
 }
 

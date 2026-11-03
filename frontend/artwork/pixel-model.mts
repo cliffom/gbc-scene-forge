@@ -37,6 +37,42 @@ export class PixelModel {
     this.pixels = bytes(candidate.rgba);
     this.descriptor = structuredClone(candidate.descriptor);
   }
+  retainSavedFrames(saved: Candidate['descriptor']) {
+    if (saved.version !== 2) {
+      return;
+    }
+    for (const stack of [this.undoStack, this.redoStack]) {
+      for (const snapshot of stack) {
+        if (snapshot.descriptor.version !== 2) {
+          continue;
+        }
+        const frames = snapshot.descriptor.frames;
+        for (const frame of saved.frames) {
+          const index = frames.findIndex((previous) => previous.id === frame.id);
+          if (index < 0) {
+            frames.push(structuredClone(frame));
+          } else {
+            // Names remain undoable; acknowledged frame identity/geometry does not.
+            frames[index] = { ...structuredClone(frame), name: frames[index].name };
+          }
+        }
+      }
+      // Saving a representation can turn its history entry into a no-op.
+      // Keep earlier pixel/sequence edits reachable in a single Undo/Redo.
+      let next = { pixels: this.pixels, descriptor: this.descriptor };
+      for (let index = stack.length - 1; index >= 0; index--) {
+        const snapshot = stack[index];
+        if (
+          snapshot.pixels.every((value, i) => value === next.pixels[i]) &&
+          JSON.stringify(snapshot.descriptor) === JSON.stringify(next.descriptor)
+        ) {
+          stack.splice(index, 1);
+        } else {
+          next = snapshot;
+        }
+      }
+    }
+  }
   private inside(p: Point) {
     return (
       Number.isInteger(p.x) &&

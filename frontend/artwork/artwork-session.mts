@@ -26,9 +26,20 @@ export class ArtworkSession {
     this.model = new PixelModel(candidate);
   }
   adoptSaved(candidate: Candidate) {
+    this.model.retainSavedFrames(candidate.descriptor);
     this.candidate = candidate;
     this.original = candidate;
     this.receipt = null;
+  }
+  downloadWork() {
+    return {
+      original: structuredClone(this.original),
+      candidate: structuredClone(this.candidate),
+      current_descriptor: structuredClone(this.model.descriptor),
+      current_rgba: encoded(this.model.pixels),
+      width: this.model.width,
+      height: this.model.height,
+    };
   }
   get changed() {
     return (

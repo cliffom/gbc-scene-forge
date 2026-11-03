@@ -9,7 +9,7 @@ import { expect } from '@playwright/test';
 import { record, array, string } from '../../../frontend/shared/decode.mts';
 import { PixelModel } from '../../../frontend/artwork/pixel-model.mts';
 import { decodeCandidate } from '../../../frontend/artwork/artwork-contracts.mts';
-import { test, clickControl, paint } from '../support/browser-fixtures.ts';
+import { test, clickControl, paint, setControl } from '../support/browser-fixtures.ts';
 
 async function pixel(page: Page, x: number, y: number) {
   const canvas = page.locator('#art-canvas');
@@ -1200,4 +1200,137 @@ for atlas,offset,color in [('player_a',0,[220,40,30,255]),('player_b',333,[30,60
     throw Error('Expected sheet');
   }
   assert.equal(other.descriptor.sequences[0].frames[0].duration_ms, 444);
+});
+
+async function reviewedSheetFixture(workspace: {
+  folder: string;
+  python: string;
+  start: (root: string, fixture?: boolean) => Promise<string>;
+}) {
+  const root = join(workspace.folder, 'project');
+  const scene = execFileSync(
+    workspace.python,
+    [
+      '-c',
+      `
+import sys
+from pathlib import Path
+from gbc_scene_forge.project.application import Project
+p=Project.create(Path(sys.argv[1]),'Saved sheet history')
+a=p.artwork.documents
+frames=[dict(id=k,name=k.title(),kind='sprite',x=i*8,y=0,width=8,height=8,origin=[0,0]) for i,k in enumerate(['idle','step'])]
+sequences=[dict(id='walk',name='Walk',loop=False,frames=[dict(frame_id=k,duration_ms=120) for k in ['idle','step']]),dict(id='pose',name='Pose',loop=False,frames=[dict(frame_id='idle',duration_ms=120)])]
+c=a.create_sheet('player','Player','sprite',16,8,p.catalog()['revision'],frames=frames,sequences=sequences)
+a.save(c,receipt=p.artwork.reviews.review(c)['receipt'])
+s=p.scenes.create('Stage',4,4,8,p.catalog()['revision'])
+s['scene']['objects']=[dict(id=1,asset='player/idle',x=8,y=8)]
+s['scene']['next_object_id']=2
+p.scenes.save(s['id'],s['scene'],s['revision'],p.catalog()['revision'])
+print(s['id'])
+`,
+      root,
+    ],
+    { encoding: 'utf8' },
+  ).trim();
+  return { url: await workspace.start(root, true), scene };
+}
+
+test('saved representation keeps earlier Undo checkpointable and reviewable', async ({
+  page,
+  workspace,
+}) => {
+  const { url } = await reviewedSheetFixture(workspace);
+  await page.goto(url);
+  await page.locator('[data-asset="player/idle"]').click();
+  await expect(page.locator('#art-canvas')).toBeVisible();
+  await page.locator('#art-color').fill('#cc6633');
+  await draw(page, 1, 1);
+  await revealArtworkControl(page, 'art-play');
+  const duration = page.getByLabel('Frame 1 duration in milliseconds', { exact: true });
+  await duration.fill('277');
+  await duration.press('Tab');
+  await (await revealArtworkControl(page, 'art-tile-representation')).click();
+  await saveArtwork(page);
+  await page.locator('#art-undo').click();
+  await revealArtworkControl(page, 'art-play');
+  await expect(duration).toHaveValue('120');
+  await expect(page.locator('#art-frame option')).toHaveCount(3);
+  await page.locator('#art-close').click();
+  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+  await page.locator('#document-switcher').click();
+  await page.locator('#artwork-documents button').click();
+  await saveArtwork(page);
+  const saved = await opened(page, url, 'player');
+  assert.equal(saved.descriptor.version, 2);
+  if (saved.descriptor.version !== 2) {
+    throw Error('Expected sheet');
+  }
+  assert.equal(saved.descriptor.frames.length, 3);
+  assert.equal(saved.descriptor.sequences[0].frames[0].duration_ms, 120);
+  assert.deepEqual(new PixelModel(saved).color({ x: 1, y: 1 }), [204, 102, 51, 255]);
+  await page.locator('#art-redo').click();
+  await revealArtworkControl(page, 'art-play');
+  await expect(duration).toHaveValue('277');
+  await saveArtwork(page);
+});
+
+test('offline Download work includes live layout after failed synchronization', async ({
+  page,
+  workspace,
+}) => {
+  const { url } = await reviewedSheetFixture(workspace);
+  await page.goto(url);
+  await page.locator('[data-asset="player/idle"]').click();
+  await expect(page.locator('#art-canvas')).toBeVisible();
+  await page.route('**/api/artwork-layout', (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'Layout offline' }),
+    }),
+  );
+  await revealArtworkControl(page, 'art-play');
+  const duration = page.getByLabel('Frame 1 duration in milliseconds', { exact: true });
+  await duration.fill('277');
+  await duration.press('Tab');
+  await (await revealArtworkControl(page, 'art-frame-name')).fill('Offline pose');
+  await page.locator('#art-rename-frame').click();
+  await page.locator('#art-properties summary').click();
+  await page.locator('#art-tile-representation').click();
+  await expect(page.locator('#art-message')).toContainText('Checkpoint failed');
+  const pending = page.waitForEvent('download');
+  await (await revealArtworkControl(page, 'art-download')).click();
+  const path = await (await pending).path();
+  assert.ok(path);
+  const data = record(JSON.parse(await readFile(path, 'utf8')));
+  const descriptor = record(data.current_descriptor);
+  assert.equal(array(descriptor.frames, record).length, 3);
+  assert.equal(array(descriptor.frames, record)[0].name, 'Offline pose');
+  const sequence = array(descriptor.sequences, record)[0];
+  assert.equal(array(sequence.frames, record)[0].duration_ms, 277);
+  assert.notDeepEqual(descriptor, record(data.candidate).descriptor);
+});
+
+test('non-looping scene playback refreshes Play on completion for one or multiple frames', async ({
+  page,
+  workspace,
+}, info) => {
+  const { url, scene } = await reviewedSheetFixture(workspace);
+  await page.goto(url);
+  await expect(page.locator('#scenes')).toBeEnabled();
+  await page.locator('#scenes').selectOption(scene);
+  await expect(page.locator('#status')).toHaveText('Scene opened.');
+  await page
+    .getByRole('radio', { name: /Sprites Objects/ })
+    .locator('..')
+    .click();
+  await page.locator('input[name=tool][value=select]').check();
+  await setControl(page, 'object-list', '1');
+  for (const name of ['walk', 'pose']) {
+    await setControl(page, 'preview-animation', name);
+    await clickControl(page, 'preview-play');
+    await expect(page.locator('#preview-play')).toHaveText('Play');
+    await expect(page.locator('#scene-save-state')).toHaveText('Saved');
+  }
+  await page.screenshot({ path: info.outputPath('completed-non-looping-playback.png') });
 });

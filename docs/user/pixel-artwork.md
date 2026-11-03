@@ -106,7 +106,10 @@ artwork and scene bases. Further pixel edits invalidate the review. Save adds or
 updates artwork and reloads the Library/images without adding a scene undo item.
 The document stays open after saving, with its selected frame, tool, zoom and
 Undo/Redo retained. Saved, Modified and New identify its actual state. Undo after
-a save compares with that new saved base. Return to Scene to place new artwork
+a save compares with that new saved base. Saved frame identities and geometry
+remain present through Undo; earlier pixel, name and animation changes remain
+undoable. Saving a new representation removes history steps that become no-ops.
+Return to Scene to place new artwork
 from the Library separately. **Close review** returns space to drawing; **Update
 review** regenerates the comparison after adjustments. A failed scene preview
 leaves its options available so you can switch to isolated review.
@@ -137,7 +140,10 @@ If another browser or MCP writer saves first, review/save or restoration rejects
 the stale base. Local pixels and existing checkpoints remain available. Download
 the work, inspect the latest saved asset, and reconcile explicitly; Forge never
 rebases stale pixels or overwrites another writer automatically. Downloaded JSON
-is an inspection/reconciliation record, not an automatic import format. Artwork
+is an inspection/reconciliation record, not an automatic import format. **Download
+work** captures the live layout as `current_descriptor` and exact pixels as
+`current_rgba`, plus the original base and last synchronized candidate. It works
+even when layout synchronization fails. Artwork
 drafts are bounded to 64 records, 4 MiB each and 64 MiB total per project, and are
 excluded from portable exports.
 
@@ -197,7 +203,9 @@ layers or place sprite frames on object layers. Existing scene animation preview
 can select the saved sequences. The complete portable project retains all named
 sequences; plain Tiled's one-loop-per-starting-tile limitation is reported during
 export. Non-looping sequences retain their Forge definition without being changed
-into looping Tiled animations.
+into looping Tiled animations. Scene preview returns to **Play** when a
+non-looping sequence finishes, including a one-frame pose
+([completed preview](../images/non-looping-preview-complete.png)).
 
 Current workspace: [name-derived identity](../images/artwork-name-identity.png),
 [new artwork](../images/artwork-workspace-new.png),

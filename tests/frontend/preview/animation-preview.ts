@@ -102,3 +102,20 @@ playback.advance(1000);
 assert.equal(playback.frame, 1);
 assert.equal(playback.playing, false);
 assert.equal(playback.advance(1000), false);
+
+// Completion must refresh controls even when the displayed frame stays the same.
+playback.speed = 1;
+playback.choose({ ...animation, loop: false });
+playback.playing = true;
+assert.equal(playback.advance(100), true);
+assert.equal(playback.advance(249), false);
+assert.equal(playback.advance(1), true);
+assert.equal(playback.frame, 1);
+assert.equal(playback.playing, false);
+assert.equal(playback.advance(1), false);
+playback.choose({ name: 'pose', loop: false, frames: [{ region: 'left', duration: 100 }] });
+playback.playing = true;
+assert.equal(playback.advance(99), false);
+assert.equal(playback.advance(1), true);
+assert.equal(playback.frame, 0);
+assert.equal(playback.playing, false);

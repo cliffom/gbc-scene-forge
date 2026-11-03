@@ -107,7 +107,12 @@ Comparison images, reference summaries, generated animation reviews and receipts
 are cleared on restoration; saving requires a fresh document-specific review.
 Checkpoint failure blocks switching and retains local work. Scene history remains
 owned by its existing session. Saving retains the document, history and viewport while adopting the exact
-acknowledged saved base; Undo then compares with that new base. Close/discard
+acknowledged saved base; Undo then compares with that new base. History
+snapshots preserve every acknowledged frame identity and geometry while
+allowing earlier pixel, name and sequence edits to be undone. Representation-only
+history entries which become no-ops are removed. Offline work downloads contain
+the live descriptor and RGBA snapshot alongside the last synchronized candidate
+and original base, without requiring successful synchronization. Close/discard
 removes it; Return to scene retains it. A failure during post-save adoption retires
 the submitted candidate and reports the committed save rather than making it
 editable against a stale base. Dirty inactive documents keep their original saved bases;

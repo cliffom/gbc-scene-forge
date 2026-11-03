@@ -15,6 +15,34 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Saved artwork history, offline layout recovery and playback completion (PR #158)
+
+- **Scope:** Prepared 0.29.0 working tree based on
+  [`86efe41`](https://github.com/cliffom/gbc-scene-forge/commit/86efe4165338bae8fca2ee9b8b91001a4a90ac6d),
+  checked 2026-11-02 local time (2026-11-03 UTC), macOS arm64, Python 3.13.13,
+  Node 24.22.1 and Playwright 1.64.1/Chromium. Source and installed production
+  wheel; disposable synthetic sheets and scenes.
+- **Method:** Ran `make lint test`, `make build check-dist`, `make docs-check`,
+  frontend model regressions and installed-wheel artwork/polish browser acceptance.
+  Saved a new tile representation, undid earlier timing, switched documents,
+  saved, redid and saved again. Simulated a layout HTTP 503 and inspected the
+  downloaded live descriptor. Checked one- and two-frame non-looping scene
+  playback completion. Agent visually inspected the
+  [completed preview](images/non-looping-preview-complete.png), captured at
+  1440 × 1000 from the installed-wheel one-frame scenario with transparent
+  synthetic artwork.
+- **Result:** Lint, all frontend suites, 429 Python tests and 20 documentation-
+  checker tests passed. Distribution metadata and seven installed-wheel smoke
+  tests passed. All three new source browser regressions passed. Installed-wheel
+  artwork/polish: 33 passed, including all three new regressions. An initial offline-download test
+  attempt inadvertently closed Properties through its disclosure helper; opening
+  the visible Representations disclosure directly corrected the test setup.
+- **Limits:** Local automated acceptance and agent screenshot inspection only.
+  The complete browser suite, installed MCP suites, independent human usability,
+  Windows/non-Chromium and official Tiled assessments were not repeated for
+  these fixes. Downloaded JSON remains an inspection/reconciliation record, not
+  an automatic import format. No version bump, tag or publication.
+
 ## Artwork setup and document restoration feedback (PR #158)
 
 - **Scope:** Prepared 0.29.0 working tree based on

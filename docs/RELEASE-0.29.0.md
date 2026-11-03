@@ -15,7 +15,10 @@ Opening a pose selects it; saving retains the document and Undo/Redo against its
 new saved base. Setup omits document navigation until artwork is retained;
 asset IDs follow normalized names with optional manual overrides. Returning to
 a document rebinds its selected timeline and clears review output from other
-assets. Existing version-1 static artwork remains supported.
+assets. Saved frame identities remain in retained Undo history so earlier pixel
+and animation edits stay checkpointable. Offline work downloads include live
+layout edits, and scene preview controls refresh when non-looping playback ends.
+Existing version-1 static artwork remains supported.
 
 Create tile and sprite sheets with stable frames, origins and named timed
 sequences. Use frame editing, tile repetition review, onion skinning, playback,

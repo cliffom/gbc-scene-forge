@@ -12,7 +12,7 @@ import { array, record, string, number } from '../shared/decode.mts';
 import { tileParts } from './tile-transform.mts';
 import { ArtworkSession } from './artwork-session.mts';
 import { decodeCandidate, type Candidate, type Placement } from './artwork-contracts.mts';
-import { encoded, type Color, type Point, type PixelTool } from './pixel-model.mts';
+import { type Color, type Point, type PixelTool } from './pixel-model.mts';
 import { createSheetEditor } from './sheet-editor.mts';
 import { createArtworkWorkspace } from './artwork-workspace.mts';
 
@@ -1112,16 +1112,7 @@ export function createPixelEditor({
   });
   lifetime.assign(button('art-download'), 'onclick', () => {
     if (session) {
-      download(
-        {
-          original: session.original,
-          candidate: session.candidate,
-          current_rgba: encoded(session.model.pixels),
-          width: session.model.width,
-          height: session.model.height,
-        },
-        'artwork-work.json',
-      );
+      download(session.downloadWork(), 'artwork-work.json');
     }
   });
   function operation(work: () => void) {
