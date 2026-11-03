@@ -5,9 +5,10 @@ work, keep common edits close to that canvas, and organize management commands
 by what they affect. The established dark colors and accent remain the visual
 system; hierarchy comes from grouping, spacing and clear labels.
 
-- **Document context:** project and scene selection, save state, Save and Export.
-  Scene actions groups scene lifecycle commands; Project tools groups world and
-  diagnostic work. Separate destructive commands from ordinary actions.
+- **Document context:** project and scene selection, save state and two command
+  groups. Scene actions starts with Save scene and its keyboard shortcut, followed
+  by scene lifecycle commands; Project tools starts with Export, followed by world
+  and diagnostic work. Separate destructive commands from ordinary actions.
 - **Pane edges:** independent Library and Inspector chevrons sit in the open pane
   headers, leaving no extra column between pane and canvas. Closing a pane replaces
   it with a 24px edge handle; the arrow reverses, with Show/Hide tooltips and

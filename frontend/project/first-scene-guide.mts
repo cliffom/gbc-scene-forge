@@ -24,7 +24,7 @@ const steps = [
   },
   {
     title: 'Save and reopen',
-    text: 'Choose Save scene (Ctrl/⌘ S) and wait for “Saved”. Reload the browser, then select “First scene” in the Scene dropdown to confirm your painted tiles survived. Resume this guide from the header. If a save fails, keep the page open and resolve the reported error before reloading.',
+    text: 'Choose Scene actions → Save scene (Ctrl/⌘ S) and wait for “Saved”. Reload the browser, then select “First scene” in the Scene dropdown to confirm your painted tiles survived. Resume this guide from the header. If a save fails, keep the page open and resolve the reported error before reloading.',
     target: 'save',
   },
   {
@@ -34,7 +34,7 @@ const steps = [
   },
   {
     title: 'Export your project',
-    text: 'Choose Export → Whole project → Download ZIP. Extract it to find portable Tiled scenes and copied artwork. Keep your project folder to continue editing. You have finished when a painted scene survives reopening, a sprite previews, and a ZIP downloads. Close this guide whenever you want; Restart returns to the beginning.',
+    text: 'Choose Project tools → Export → Whole project → Download ZIP. Extract it to find portable Tiled scenes and copied artwork. Keep your project folder to continue editing. You have finished when a painted scene survives reopening, a sprite previews, and a ZIP downloads. Close this guide whenever you want; Restart returns to the beginning.',
     target: 'show-export',
   },
 ];

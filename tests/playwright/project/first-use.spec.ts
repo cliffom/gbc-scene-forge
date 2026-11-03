@@ -5,13 +5,13 @@ import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { record } from '../../../frontend/shared/decode.mts';
-import { test, paint } from '../support/browser-fixtures.ts';
+import { test, paint, clickControl } from '../support/browser-fixtures.ts';
 
 test('first scene: sample, guide, paint, save/reopen, preview and export', async ({
   page,
   forge,
 }, testInfo) => {
-  const click = (id: string) => page.locator('#' + id).click();
+  const click = (id: string) => clickControl(page, id);
   await page.goto(forge.url);
   await expect(page.locator('#project-form')).toBeVisible();
   await page.locator('#project-title').fill('My first world');

@@ -1,6 +1,6 @@
 /** Bounds and real input acceptance for the shared scene/pixel command hierarchy. */
 import { expect, type Page } from '@playwright/test';
-import { test, editorReady, paint } from '../support/browser-fixtures.ts';
+import { test, clickControl, editorReady, paint } from '../support/browser-fixtures.ts';
 
 const sizes = [
   [1440, 900],
@@ -46,6 +46,69 @@ async function boundedCommands(page: Page, container: string, controls: string) 
 
 test.describe('editor polish', () => {
   test.use({ projectMode: 'sample' });
+
+  test('save and export are keyboard-accessible in their menus, shortcuts and guide', async ({
+    page,
+    forge,
+  }, info) => {
+    await page.setViewportSize({ width: 760, height: 640 });
+    await page.goto(forge.url);
+    await editorReady(page);
+    await page.locator('#scenes').selectOption({ index: 1 });
+    await expect(page.locator('#scene-save-state')).toHaveText('Saved');
+    await expect(page.locator('.document-actions > button')).toHaveText([
+      'Scene actions',
+      'Project tools!',
+    ]);
+    await expect(page.locator('#save')).toBeHidden();
+    await expect(page.locator('#show-export')).toBeHidden();
+    await page.locator('#layer-name').fill('Save through the scene menu');
+    await page.locator('#layer-name').press('Tab');
+    await page.locator('#scene-commands').focus();
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Tab');
+    await expect(page.locator('#save')).toBeFocused();
+    await expect(page.locator('#save')).toHaveAccessibleName('Save scene');
+    await boundedCommands(page, '#scene-command-panel', 'button');
+    await page.screenshot({ path: info.outputPath('scene-save-menu.png') });
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#scene-save-state')).toHaveText('Saved');
+    await expect(page.locator('#save')).toBeHidden();
+    for (const shortcut of ['Control+s', 'Meta+s']) {
+      await page.locator('#layer-name').fill(`Save through ${shortcut}`);
+      await page.locator('#scene').focus();
+      await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
+      await page.keyboard.press(shortcut);
+      await expect(page.locator('#scene-save-state')).toHaveText('Saved');
+      await expect(page.locator('#save')).toBeHidden();
+    }
+    await page.locator('#layer-name').fill('Save through the guide');
+    await page.locator('#layer-name').press('Tab');
+    await page.locator('#show-first-scene-guide').click();
+    await page.locator('#guide-restart').click();
+    for (let i = 0; i < 4; i++) {
+      await page.locator('#guide-next').click();
+    }
+    await expect(page.locator('#guide-text')).toContainText('Scene actions → Save scene');
+    await page.locator('#guide-action').click();
+    await expect(page.locator('#scene-save-state')).toHaveText('Saved');
+    await page.locator('#show-first-scene-guide').click();
+    await page.locator('#guide-next').click();
+    await page.locator('#guide-next').click();
+    await expect(page.locator('#guide-text')).toContainText('Project tools → Export');
+    await page.locator('#guide-action').click();
+    await expect(page.locator('#export-dialog')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await page.locator('#project-commands').focus();
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Tab');
+    await expect(page.locator('#show-export')).toBeFocused();
+    await boundedCommands(page, '#project-command-panel', 'button, label');
+    await page.screenshot({ path: info.outputPath('project-export-menu.png') });
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#export-dialog')).toBeVisible();
+    await expect(page.locator('#project-command-panel')).toBeHidden();
+  });
 
   test('scene command groups stay bounded with every pane configuration and desktop scaling', async ({
     page,
@@ -386,12 +449,12 @@ test('first-use authoring from visible controls: empty artwork, draw, place, sav
   await page.locator('#palette .asset').first().click();
   await paint(page, 4, 4);
   await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
-  await page.locator('#save').click();
+  await clickControl(page, 'save');
   await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   await page.reload();
   await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   await expect(page.locator('#scene-name')).toContainText('My first scene');
-  await page.locator('#show-export').click();
+  await clickControl(page, 'show-export');
   await page.locator('#export-scope').selectOption('project');
   const download = page.waitForEvent('download');
   await page.locator('#export-confirm').click();

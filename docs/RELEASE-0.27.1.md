@@ -9,6 +9,8 @@ canvases reveal secondary commands through an expand arrow instead of automatic
 toolbar wrapping. At the smallest widths the trigger names the current drawing
 tool and expands to expose drawing choices as well.
 Management and save actions retain text labels; compact review uses a named eye icon.
+Save scene leads the Scene actions menu with its keyboard shortcut; Export leads
+Project tools. The document bar keeps selectors, save status and these two menus.
 
 Library and Inspector use header chevrons to collapse their panes, with slim
 reopen handles only when closed; expanded panes reserve no extra arrow columns.

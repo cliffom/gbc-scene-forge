@@ -20,6 +20,7 @@ remain user reports, not a fully reproduced browser/environment combination.
 
 | Task | Prior friction | Implemented behavior and retained tradeoff |
 | --- | --- | --- |
+| Save and export | Separate document-bar buttons compete with scene/project navigation | Save scene is first in Scene actions, with a visible shortcut hint; Export is first in Project tools. Save status stays beside the selectors. Ctrl/⌘ S works with the menu closed, and guide instructions name the menu paths. |
 | Paint, fill, erase, select and pan | Labeled tools plus a separate textual clipboard/action row consume canvas space | Consistent icon tools, history and selection groups share a responsive toolbar. Familiar commands have names/tooltips; save, management and destructive commands retain text, while compact review uses a named eye icon. Native radio navigation and scene shortcuts remain. |
 | Copy, transform and reuse a selection | Large Copy/Cut/Paste/Duplicate/Deselect/Save stamp buttons compete with drawing | Grouped 32px commands stay close to the canvas. Transform retains its named popover; Across layers stays with the selection commands, including in the expanded toolbar. Stamps still use the existing placement library. |
 | Copy the project root | Copying requires opening the folder popover and finding a text button | Copy icons beside the header folder and full popover path copy directly. Success uses a checkmark and announced status; clipboard failures expose the selectable path. |
@@ -132,3 +133,31 @@ refinement's screenshots, which retain their earlier revision scope:
 - [Header chevrons at 1440×900](../screenshots/editor-polish/pane-headers-desktop.png)
 - [Header chevrons at 760×640](../screenshots/editor-polish/pane-headers-compact.png)
 - [Closed edge handles at 760×640](../screenshots/editor-polish/pane-handles-compact.png)
+
+## Save and export menu consolidation
+
+Further user feedback placed Save scene in Scene actions and Export in Project
+tools. The 0.27.1 working tree based on
+[`a9ed6a0`](https://github.com/cliffom/gbc-scene-forge/commit/a9ed6a0), checked on
+2026-11-02, keeps each command first in its menu. Save has a visible keyboard
+shortcut and retains its enabled/unsaved treatment; current save status remains
+visible beside scene selection. This trades an additional pointer click for fewer
+permanent controls. Ctrl/⌘ S continues working without opening a menu.
+
+Synthetic keyboard checks enter each menu with Enter, Tab to the command and
+activate it. Both Control+S and Meta+S save with the menu closed. The first-scene
+guide names the new locations and its Save/Export actions still work. The UI-only
+first-use flow now explicitly opens each menu. Existing save/export scenarios use
+the shared visible-menu helper instead of trying to click hidden commands.
+Initial screenshot inspection caught inherited dark primary-button text against
+the menu background; the menu Save action now uses the readable accent color.
+
+Final installed-wheel captures show the compact document bar and both menus:
+
+- [Document bar at 1440×900](../screenshots/editor-polish/command-bar-desktop.png)
+- [Document bar at 760×640](../screenshots/editor-polish/command-bar-compact.png)
+- [Scene actions with Save scene](../screenshots/editor-polish/scene-save-menu.png)
+- [Project tools with Export](../screenshots/editor-polish/project-export-menu.png)
+
+Prior screenshots retain their earlier revision scope. Results and limitations
+belong in the [validation record](../VALIDATION.md).

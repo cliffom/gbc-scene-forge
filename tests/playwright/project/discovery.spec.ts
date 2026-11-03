@@ -4,7 +4,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { join } from 'node:path';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { test, paint } from '../support/browser-fixtures.ts';
+import { test, clickControl, paint } from '../support/browser-fixtures.ts';
 
 const execute = promisify(execFile);
 const create = async (python: string, root: string, title: string) => {
@@ -139,7 +139,7 @@ test.describe('scene inventory in a directly opened project', () => {
     await page.locator('#scene-switch-cancel').click();
     await expect(page.locator('#scenes')).toHaveValue(active);
     await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
-    await page.locator('#save').click();
+    await clickControl(page, 'save');
     await expect(page.locator('#status')).toContainText('Project changed');
     await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
     await page.locator('#undo').click();

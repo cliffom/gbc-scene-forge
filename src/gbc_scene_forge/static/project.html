@@ -93,6 +93,8 @@
         <button id="scene-commands" popovertarget="scene-command-panel" class="command-trigger" disabled>Scene actions</button>
         <div id="scene-command-panel" class="command-panel" popover aria-label="Scene actions">
           <p class="command-heading">Scene</p>
+          <button id="save" disabled title="Save scene (⌘/Ctrl S)" aria-keyshortcuts="Control+s Meta+s">Save scene<span class="command-shortcut" aria-hidden="true">⌘/Ctrl S</span></button>
+          <div class="command-divider"></div>
           <button id="show-create">Create scene…</button>
           <button id="show-blockout-create">Create blockout scene…</button>
           <button id="show-rename" disabled>Rename scene…</button>
@@ -105,6 +107,7 @@
         <button id="project-commands" popovertarget="project-command-panel" class="command-trigger" disabled>Project tools<span class="command-alert" aria-hidden="true">!</span></button>
         <div id="project-command-panel" class="command-panel" popover aria-label="Project tools">
           <p class="command-heading">Project</p>
+          <button id="show-export" disabled>Export…</button>
           <button id="show-world" disabled>World view &amp; connections…</button>
           <button id="show-diagnostics" disabled>Diagnostics…</button>
           <button id="show-palettes" disabled>GBC budgets…</button>
@@ -112,8 +115,6 @@
           <label class="refresh-choice"><input id="auto-refresh" type="checkbox" checked> Automatically refresh</label>
           <button id="check-external">Check for external changes</button>
         </div>
-        <button id="show-export" disabled>Export…</button>
-        <button id="save" disabled title="Save scene (⌘/Ctrl S)">Save scene</button>
       </div>
     </nav>
     <main id="editor-layout">

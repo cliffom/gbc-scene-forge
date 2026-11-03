@@ -15,6 +15,32 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Save and export menus (#144 refinement)
+
+- **Scope:** Prepared 0.27.1 working tree based on
+  [`a9ed6a0`](https://github.com/cliffom/gbc-scene-forge/commit/a9ed6a0), checked
+  on 2026-11-02 in the Darwin/Python/Node/Chromium environment recorded below.
+  [Design and final installed-wheel captures](evaluations/editor-polish.md#save-and-export-menu-consolidation).
+- **Method:** Agent screenshot inspection and synthetic keyboard/pointer input.
+  Ran `make lint test`, production `make build check-dist test-browser`, then
+  rebuilt the final wheel and ran six polish scenarios plus the corrected
+  project first-use scenario against it. Checks exercise keyboard menu entry,
+  Save/Export activation and dismissal, Control+S and Meta+S with menus closed,
+  guide Save/Export actions, and the UI-only save/reload/download flow.
+- **Result:** Lint, 413 Python tests, frontend checks, production build/metadata
+  and seven wheel smoke tests passed. The full browser run passed 65 scenarios,
+  skipped two opt-in profiles and failed one older first-use test that still
+  clicked Save without opening its menu. Updated that test to use the shared
+  visible-menu helper; its installed-wheel rerun passed. All six final wheel
+  polish scenarios passed. Initial visual inspection caught dark inherited Save
+  text; the final wheel uses accent text. Final captures show desktop and compact
+  layouts, including a single document-bar row at 760×640.
+- **Limits:** The full browser run began before the final Save color correction;
+  final wheel checks/captures include it. The entire suite was not repeated after
+  correcting the first-use test helper. Local agent/synthetic Chromium evidence
+  does not certify independent human usability, actual OS/browser zoom or other
+  browsers. Prepared version remains 0.27.1; no tag or publication was performed.
+
 ## Pane header controls (#144 refinement)
 
 - **Scope:** Prepared 0.27.1 working tree based on

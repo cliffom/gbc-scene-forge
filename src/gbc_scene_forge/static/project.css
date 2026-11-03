@@ -290,6 +290,9 @@
 .command-panel button {display:block;width:100%;text-align:left;padding:8px 10px;border-color:transparent;background:transparent;font-size:12px;white-space:normal}
 .command-panel button:hover:not(:disabled) {background:#393e33;border-color:#747961}
 .command-panel button:focus-visible {outline-offset:-2px}
+.command-panel #save {display:flex;align-items:center;justify-content:space-between;gap:12px}
+.command-panel #save.primary {color:var(--accent)}
+.command-shortcut {font-size:10px;color:var(--muted);white-space:nowrap}
 .command-heading {padding:8px 10px;color:var(--muted);font-size:10px;font-weight:650;letter-spacing:1px;text-transform:uppercase}
 .command-divider {border-top:1px solid var(--line);margin:6px}
 .destructive-command {color:#efaf98}

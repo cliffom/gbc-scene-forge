@@ -8,7 +8,7 @@ import { expect } from '@playwright/test';
 import { record, array, string } from '../../../frontend/shared/decode.mts';
 import { PixelModel } from '../../../frontend/artwork/pixel-model.mts';
 import { decodeCandidate } from '../../../frontend/artwork/artwork-contracts.mts';
-import { test, paint } from '../support/browser-fixtures.ts';
+import { test, clickControl, paint } from '../support/browser-fixtures.ts';
 
 async function pixel(page: Page, x: number, y: number) {
   const canvas = page.locator('#art-canvas');
@@ -159,7 +159,7 @@ test('selected tile variation recovers, reviews exact replacements and preserves
   await page.locator('input[name=tool][value=paint]').check();
   await page.locator('[data-asset="grass/artwork"]').first().click();
   await paint(page, 20, 20);
-  await page.locator('#save').click();
+  await clickControl(page, 'save');
   await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   await page.reload();
   await expect(page.locator('#status')).toHaveText('Scene opened.');
@@ -185,7 +185,7 @@ test('variation refuses dirty scene work and stale selected scene without losing
   await page.locator('#art-variation').click();
   await expect(page.locator('#art-message')).toContainText('Save the scene before');
   await page.locator('#art-close').click();
-  await page.locator('#save').click();
+  await clickControl(page, 'save');
   await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   await page.locator('#edit-placement-artwork').click();
   await page.locator('#art-id').fill('stale_variation');
@@ -636,7 +636,7 @@ p.scenes.save(s['id'],s['scene'],s['revision'],p.catalog()['revision'])
     const sceneUrl = new URL(`api/scene/${scene}`, url).href;
     const before = record(await (await page.request.get(sceneUrl)).json());
     const response = page.waitForResponse((r) => r.url().endsWith('/api/save-scene'));
-    await page.locator('#save').click();
+    await clickControl(page, 'save');
     assert.equal((await response).status(), external ? 409 : 200);
     if (external) {
       await expect(page.locator('#status')).toContainText('Scene changed on disk');

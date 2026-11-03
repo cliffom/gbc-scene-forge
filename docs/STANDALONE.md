@@ -102,10 +102,11 @@ not included. A browser remains necessary even when Python runs headlessly.
 
 ## Editor layout
 
-The document bar keeps the project and scene selectors beside **Save scene** and
-**Export…**. **Scene actions** contains create, rename, duplicate, resize/crop,
-revert and delete. **Project tools** contains World view, Diagnostics and optional
-GBC palette checks. A warning beside Project tools remains visible when a scene
+The document bar keeps project and scene selectors, save state and two command
+groups. **Scene actions** starts with **Save scene** (Ctrl/⌘ S), followed by create,
+rename, duplicate, resize/crop, revert and delete. **Project tools** starts with
+**Export…**, followed by World view, Diagnostics and optional GBC palette checks.
+A warning beside Project tools remains visible when a scene
 exceeds its configured palette budget. Open a command group with Enter or Space;
 Tab moves between its buttons and Escape dismisses it.
 
@@ -528,7 +529,7 @@ counting policy, headless command and reproducible cross-atlas examples.
 
 ## Portable export
 
-Choose **Export…** to download a ZIP, then choose **Open scene** or **Whole
+Choose **Project tools → Export…** to download a ZIP, then choose **Open scene** or **Whole
 project**. The source project and editor undo/redo history stay unchanged.
 
 - **Open scene** exports the open scene, its Tiled tilesets/PNGs, managed
