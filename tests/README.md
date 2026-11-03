@@ -95,7 +95,7 @@ Historical results and the unavailable Tiled-tool limitation are recorded in
 Canvas repaint coverage for #76 adds `playwright/editor/rendering.spec.ts` with
 small and large multi-layer workloads. Regular discovery also includes viewport/reference pixel comparisons and tile-cache
 invalidation checks. Two observational scalability matrix cases require
-`FORGE_SCALABILITY_PROFILE=1`; the three optional MCP/refresh scenarios remain separate, including
+`FORGE_SCALABILITY_PROFILE=1`; the four optional MCP/refresh scenarios remain separate, including
 `playwright/mcp/artwork-mcp.spec.ts` for alternating SDK/browser artwork, selected
 sprite variation, stale recovery and portable export/reopen. See the
 [rendering measurements](../docs/evaluations/canvas-repainting.md) for reproduction

@@ -222,3 +222,48 @@ not emulate a different GPU, display or memory subsystem. Other applications and
 some independent validation runs shared the host, so small timing differences are
 not evidence of an improvement or regression. No historical feature-growth regression
 or human drawing comfort is established by these measurements.
+
+## Artwork ownership extraction comparison (#168)
+
+On 2026-11-03 the implementing agent compared production bundles from
+`166eda046c4121452615e16048100ad48107e0d6` and the ownership-extraction working
+tree based on that revision. The host reported Darwin 27.0.0 arm64, Apple M4 Max
+(16 logical CPUs), Python 3.13.13, Node 24.22.1 and Chromium 156.0.8078.4.
+Baseline bundle SHA-256:
+`3f4a448edf288329f5f94578ca1e10f8f3130c1619e730a950e46a460d76e170`.
+Extracted bundle SHA-256:
+`91b8f89cc7ecc46bf862552b48aa0b2786714521e10a390fcb627fa353faf4c8`.
+
+The unchanged [artwork profile](../../tests/playwright/artwork/responsiveness-profile.spec.ts)
+ran all eight workloads before and after extraction, using the reproduction
+procedure above. `FORGE_PROFILE_BUNDLE` selected a saved baseline bundle;
+`FORGE_PROFILE_LABEL` identified each variant. Both runs passed. Exact
+per-handler resize/upload/draw/encode counts matched across all 24 view/timeline
+phases and 72 measured trials. Warm handlers retained zero dimension assignments
+and RGBA encodes. For the 128² workload each 120-move trial retained 74 uploads
+and 268 collapsed / 342 expanded crop draws in both frame and sheet views.
+
+Frame-view handler times below are pooled **median / p95 milliseconds**, using
+the lower order statistic at `floor((n - 1) × percentile)` across three measured
+trials. Timeline state is collapsed unless indicated.
+
+| Workload | Before extraction | After extraction |
+| --- | ---: | ---: |
+| 16² / 1 frame / CPU1 | 0.00 / 0.20 | 0.00 / 0.20 |
+| 16² / 1 frame / CPU4 | 0.00 / 0.80 | 0.00 / 0.90 |
+| 128² / 32 frames / 8 steps / CPU1 | 0.10 / 0.20 | 0.10 / 0.20 |
+| 128² / 32 frames / 8 steps / CPU4 | 0.50 / 1.20 | 0.50 / 1.10 |
+| 256² / 128 frames / no sequence / CPU1 | 0.30 / 0.50 | 0.30 / 0.50 |
+| 256² / 128 frames / no sequence / CPU4 | 1.50 / 2.10 | 1.40 / 2.20 |
+| 256² / 128 frames / 256 steps / CPU1 | 2.50 / 2.90 | 2.60 / 3.00 |
+| 256² / 128 frames / 256 steps / CPU4 | 11.90 / 13.00 | 11.80 / 12.70 |
+| 256² / 128 frames / 256 steps expanded / CPU1 | 6.70 / 7.90 | 7.00 / 8.50 |
+| 256² / 128 frames / 256 steps expanded / CPU4 | 34.20 / 38.40 | 33.90 / 37.00 |
+
+These are synthetic local observations. Other validation work shared the host
+during part of the baseline; small timing differences do not establish a speed
+change. The identical work counts support retaining the measured optimizations.
+This comparison does not rerun or replace the earlier milestone-16 baseline,
+scene/resource matrix or physical-device checks. Raw local JSON lives under
+ignored `build/issue-168/{before,after}/` and is not an archived capture; the table,
+digests and workload definition above are the committed comparison record.
