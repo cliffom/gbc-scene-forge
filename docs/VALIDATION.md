@@ -15,6 +15,40 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Workflow usability and browser/MCP outcomes (milestone 17)
+
+- **Scope:** Prepared 0.30.1 working tree on `milestone/17-workflow-usability`,
+  based on `0d3ab3c`, checked 2026-11-03 on macOS 27.0.1 arm64, Python 3.13.13,
+  Node 24.22.1, Playwright 1.64.1 / Chromium 156.0.8078.4 and MCP SDK 1.30.0.
+- **Method:** Synthetic browser/SDK checks compare identical saved-sheet baselines
+  through browser-only, SDK-only and mixed pixel/timing edits; full RGBA (including
+  hidden RGB), descriptor and looping are compared after saved reopen. Existing
+  real stdio/browser cases exercise external refresh, conflicts and recovery.
+  Installed-wheel checks cover first use, shared/new review at 1440×900 and 800×640,
+  keyboard disclosure/focus, copy explanations, a 360-reference bounded page,
+  clean review labels, Undo and lost checkpoint acknowledgments. Agent screenshot
+  inspection and initial fixture failures are scoped in the
+  [evaluation](evaluations/workflow-usability.md); the
+  [outcome matrix](AUTHORING-OUTCOMES.md) distinguishes inherited coverage.
+- **Result:** `make docs-check lint test` passes (429 Python tests and all
+  TypeScript suites). Production distribution/metadata checks and seven plain
+  installed-wheel smoke tests pass. Seven focused installed-wheel browser checks
+  pass, including first use, new/shared review, 256-of-360 location disclosure,
+  Undo protection and ambiguous checkpoint acknowledgment. The three-route
+  comparison produces identical saved pixels and descriptors. Optional MCP
+  service/SDK checks pass with 81 tests in a fresh wheel environment, followed by
+  all four real SDK/browser workflows (including identical three-route content,
+  external refresh and conflicts). The broad regular browser run passes 112
+  cases with 11 opt-in performance profiles skipped.
+- **Limits:** Synthetic automation and agent image inspection do not establish
+  independent novice discovery, prolonged comfort, actual browser zoom/OS scaling,
+  Windows, non-Chromium or official Tiled application behavior. No participants or
+  participant observations were available; #165 and participant-dependent #166
+  acceptance remain open. No new MCP authoring capability or browser candidate
+  inbox is claimed. The broad browser run began before the final checkpoint-label
+  correction; final affected states were rechecked with the installed wheel.
+  Release preparation is separate from publication.
+
 ## Retained artwork viewport correction (PR #178)
 
 - **Scope:** Prepared 0.30.0 feedback working tree based on `001ea19cbac6f195eddf286250cec27833e83c2d`,
@@ -1542,6 +1576,11 @@ Dates, revisions and environments missing from the originals remain unknown.
   claim is made by this local record.
 
 ## Remaining checks
+
+### Existing workflow usability (milestone 17, #165–#167)
+
+- [ ] Run the independent novice/experienced sessions in the [workflow protocol](evaluations/workflow-usability.md), recording consent-appropriate task observations, discovery time, assistance, actual browser zoom/OS scaling and prolonged comfort (#165). Earlier human-check groups below retain their original scope; one session may provide evidence for several groups when explicitly recorded.
+- [ ] Select and retest participant-supported remediation after those observations are available (#166). The bounded agent-observed save-scope fixes and synthetic three-route comparisons do not complete independent-human acceptance.
 
 This is the single maintained validation checklist. Issue state was checked on
 2026-11-02; closing issues or publishing packages does not satisfy these checks.

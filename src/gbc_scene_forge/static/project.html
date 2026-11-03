@@ -382,7 +382,7 @@
       <div class="art-start-tabs"><button id="art-new-mode" aria-pressed="true">New artwork</button><button id="art-existing-mode" aria-pressed="false">Existing artwork</button></div>
       <section id="art-source-panel" hidden><h3>Open or copy artwork</h3>
         <label class="field">Source artwork<select id="art-source"></select></label>
-        <button id="art-open" class="primary">Edit shared artwork</button>
+        <button id="art-open" class="primary" aria-describedby="art-source-help">Edit shared artwork</button>
         <p id="art-source-help" class="hint"></p>
         <div id="art-copy-fields"></div>
         <button id="art-duplicate-sheet">Create editable sheet copy</button>
@@ -435,7 +435,7 @@
           <div class="property-grid"><label class="field">X (px)<input id="art-view-x" type="number" min="0" value="0"></label><label class="field">Y (px)<input id="art-view-y" type="number" min="0" value="0"></label></div>
           <p id="art-preview-help" class="hint">A 256 × 256 view of the open scene, including unsaved scene edits. New artwork is temporarily placed at this position for review only.</p>
         </details>
-        <div id="art-comparison" hidden><p id="art-references"></p><figure><figcaption>Saved artwork</figcaption><img id="art-before" alt="Saved artwork before pixel edits"></figure><figure><figcaption>Candidate artwork</figcaption><img id="art-after" alt="Candidate artwork after pixel edits"></figure><figure><figcaption>Scene before</figcaption><img id="art-scene-before" alt="Scene with saved artwork"></figure><figure><figcaption>Scene after</figcaption><img id="art-scene-after" alt="Scene with candidate artwork"></figure></div>
+        <div id="art-comparison" hidden><p id="art-references"></p><details id="art-reference-details" hidden><summary id="art-reference-summary">Saved source references</summary><p id="art-reference-scenes"></p><ul id="art-reference-locations"></ul><p id="art-reference-limit" class="hint"></p></details><figure><figcaption>Saved artwork</figcaption><img id="art-before" alt="Saved artwork before pixel edits"></figure><figure><figcaption>Candidate artwork</figcaption><img id="art-after" alt="Candidate artwork after pixel edits"></figure><figure><figcaption>Scene before</figcaption><img id="art-scene-before" alt="Scene with saved artwork"></figure><figure><figcaption>Scene after</figcaption><img id="art-scene-after" alt="Scene with candidate artwork"></figure></div>
       </aside></div>
       <p id="art-draft-status" role="status"></p>
       <div class="dialog-actions"><details class="art-document-actions"><summary>Document actions</summary><div><button id="art-download">Download work</button><button id="art-discard" class="destructive-command">Close / discard draft</button></div></details><button id="art-save" class="primary" disabled>Save…</button></div>

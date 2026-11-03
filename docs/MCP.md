@@ -11,11 +11,11 @@ transactions as browser authoring. There is no connector or game compiler.
 Install the release with Python 3.10 or newer:
 
 ```sh
-python -m pip install --upgrade 'gbc-scene-forge[mcp]==0.27.0'
+python -m pip install --upgrade 'gbc-scene-forge[mcp]==0.30.1'
 gbc-scene-forge-mcp --project-root /absolute/path/to/projects
 ```
 
-Version 0.27.0 is prepared on the milestone branch; until publication, install
+Version 0.30.1 is prepared on the milestone branch; until publication, install
 its built wheel or use this checkout after the normal development setup:
 
 ```sh
@@ -69,6 +69,13 @@ See the [MCP lifecycle](https://modelcontextprotocol.io/specification/2025-11-25
 and [official Python SDK](https://github.com/modelcontextprotocol/python-sdk/tree/v1.x).
 
 ## Supported surface
+
+Use the maintained [outcome matrix](AUTHORING-OUTCOMES.md) for browser/MCP routes,
+saved/candidate boundaries, limits and classified differences. Broad scene and
+native-artwork coverage does not imply parity for imports, terrain semantics,
+project metadata/preferences or recovery interfaces. Browser checkpoints and
+unpublished MCP handles are separate; mixed work hands off through reviewed saved
+content and fresh revision reads.
 
 | Area | Tools and behavior | Deferred |
 | --- | --- | --- |
@@ -505,10 +512,10 @@ on Python 3.13/3.14 after verifying the plain offline installation.
 
 ## Native artwork authoring
 
-Prepared 0.27.0 adds eight tools backed by the shared
-[native artwork services](EDITABLE-ARTWORK.md). Until that version is published,
-install the milestone checkout or its built wheel with the MCP extra. Reconnect
-clients that cache tool schemas. No active browser selection or editor is used.
+Native artwork tools use the shared [native artwork services](EDITABLE-ARTWORK.md).
+Install the optional extra described above and reconnect clients that cache tool
+schemas. No active browser selection or editor is used. See the
+[outcome matrix](AUTHORING-OUTCOMES.md) for sheet, timing and recovery boundaries.
 
 For a selected-placement variation, pass `placements` to `duplicate_artwork`:
 

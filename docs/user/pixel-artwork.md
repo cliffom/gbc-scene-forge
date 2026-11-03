@@ -1,5 +1,17 @@
 # Create and edit pixel artwork
 
+Before confirming a save, check whether you are adding **new independent artwork**,
+editing a **shared original**, or replacing **selected placements**. New artwork is
+added to the Library and must be placed separately. Shared edits affect every saved
+reference. Review's **Saved source references** disclosure names affected scenes and
+shows exact reference identities; a partial location page is explicitly labeled.
+A selected variation changes only its captured placements, even when the source has
+more references. Imported originals require an editable copy before drawing.
+
+For agent handoffs, see the [browser/MCP outcome matrix](../AUTHORING-OUTCOMES.md).
+Saved artwork appears in both interfaces; an unpublished agent candidate is separate
+from browser local documents and recovery checkpoints.
+
 Choose **New artwork…** in the Artwork Library to create a tile or sprite.
 To edit existing artwork, select it and choose **Edit artwork…**, or double-click
 its thumbnail. With no scene open, a thumbnail opens artwork directly. A scene

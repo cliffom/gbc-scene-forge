@@ -6,22 +6,19 @@ artwork-free blockouts, optional MCP and conflict-aware recovery. See
 [usage](STANDALONE.md) and the [changelog](CHANGELOG.md) for supported behavior.
 
 Open milestone state was checked on 2026-11-03. Stabilization of existing workflows
-precedes new authoring features. Priority order is **20 → 17 → 18 → 19**;
+precedes new authoring features. Open priority order is **17 → 18 → 19**;
 these outcomes have no promised dates. Validation gaps live in the
 [single remaining-check list](VALIDATION.md#remaining-checks).
 
-## Artwork editor interaction polish (milestone 20)
-
-[Milestone 20](https://github.com/cliffom/gbc-scene-forge/milestone/20), #173–#176:
-hover targets, toolbar density, document selection prominence and canvas panning,
-based on direct editor use. Preserve the measured performance improvements and
-exact pixel/history/recovery contracts while preparing the next release.
-
 ## Existing workflow usability and manual–MCP parity (milestone 17)
 
-[Milestone 17](https://github.com/cliffom/gbc-scene-forge/milestone/17), #165–#167:
-improve discovery and the manual/agent handoff for the existing feature set.
-Preserve manual-only, agent-only and mixed authoring workflows.
+[Milestone 17](https://github.com/cliffom/gbc-scene-forge/milestone/17): complete
+independent-user evaluation (#165) and findings-based remediation/retesting (#166)
+using the [evaluation protocol](evaluations/workflow-usability.md). The next release
+preparation includes bounded agent-observed document-state fixes and the maintained
+[browser/MCP outcome matrix](AUTHORING-OUTCOMES.md) for #167. Participant-dependent
+acceptance remains open until observations exist. Preserve browser-only, agent-only
+and mixed authoring workflows; release preparation does not close the milestone.
 
 ## Authoring maintainability and correctness (milestone 18)
 

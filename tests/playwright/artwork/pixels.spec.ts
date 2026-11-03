@@ -1824,3 +1824,99 @@ test('non-looping scene playback replays completed sequences and resumes paused 
   }
   await page.screenshot({ path: info.outputPath('completed-non-looping-playback.png') });
 });
+
+for (const viewport of [
+  { width: 1440, height: 900 },
+  { width: 800, height: 640 },
+]) {
+  test(`review identifies shared references and independent new artwork at ${viewport.width}`, async ({
+    page,
+    workspace,
+  }, info) => {
+    await page.setViewportSize(viewport);
+    await setup(page, workspace);
+    await openGrass(page);
+    await reviewArtwork(page);
+    await expect(page.locator('#art-document-state')).toHaveText('Saved');
+    await expect(page.locator('#art-draft-status')).toHaveText(
+      'Saved artwork checkpointed in this project.',
+    );
+    await expect(page.locator('#art-references')).toContainText('2 saved references');
+    const details = page.locator('#art-reference-details');
+    await details.locator('summary').focus();
+    await page.keyboard.press('Enter');
+    await expect(details).toHaveAttribute('open', '');
+    await expect(page.locator('#art-reference-scenes')).toHaveText('Workshop (2 placements)');
+    await expect(page.locator('#art-reference-locations li')).toHaveCount(2);
+    await expect(page.locator('#art-reference-locations')).toContainText('cell 0, 0');
+    await expect(page.locator('#art-reference-locations')).toContainText('cell 1, 1');
+    await expect(page.locator('#art-reference-limit')).toContainText('All saved source locations');
+    await expect(page.locator('#art-save')).toHaveText('Confirm save');
+    const footer = await page.locator('#art-save').boundingBox();
+    assert.ok(footer);
+    expect(footer.y + footer.height).toBeLessThanOrEqual(viewport.height);
+    await page.locator('#art-reference-locations li').first().scrollIntoViewIfNeeded();
+    await page.screenshot({ path: info.outputPath(`references-${viewport.width}.png`) });
+    await page.locator('#art-review-close').click();
+    await expect(page.locator('#art-save')).toBeFocused();
+    await page.locator('#art-close').click();
+    await page.locator('#show-artwork').click();
+    await page.locator('#art-existing-mode').click();
+    const imported = page
+      .locator('#art-source option')
+      .filter({ hasText: '(copy to edit)' })
+      .first();
+    await page.locator('#art-source').selectOption(string(await imported.getAttribute('value')));
+    await expect(page.locator('#art-open')).toBeDisabled();
+    await expect(page.locator('#art-open')).toHaveAttribute('aria-describedby', 'art-source-help');
+    await expect(page.locator('#art-source-help')).toContainText('Name an editable copy');
+    await expect(page.locator('#art-open')).toHaveAttribute('title', /requires an editable copy/);
+    await page.locator('#art-new-mode').click();
+    await page.locator('#art-name').fill('Independent tile');
+    await page.locator('#art-create').click();
+    await reviewArtwork(page);
+    await expect(page.locator('#art-references')).toContainText('New independent artwork');
+    await expect(page.locator('#art-references')).toContainText('place it separately');
+    await expect(details).toBeHidden();
+    await page.screenshot({ path: info.outputPath(`new-review-${viewport.width}.png`) });
+    await saveArtwork(page);
+    await expect(page.locator('#art-document-state')).toHaveText('Saved');
+  });
+}
+
+test('shared review discloses a bounded location page and every affected scene', async ({
+  page,
+  workspace,
+}) => {
+  const { root, scene } = await setup(page, workspace, true);
+  // Use the canonical saved scene API to construct more than one reference page.
+  execFileSync(workspace.python, [
+    '-c',
+    `
+import sys
+from pathlib import Path
+from gbc_scene_forge.project.application import Project
+p=Project(Path(sys.argv[1]));s=p.scenes.load(sys.argv[2])
+s['scene']['cells']=[['grass/artwork/0/0']*12 for _ in range(10)]
+p.scenes.save(s['id'],s['scene'],s['revision'],p.catalog()['revision'])
+p.scenes.duplicate(s['id'],'Second affected scene',p.scenes.load(s['id'])['revision'],p.catalog()['revision'])
+p.scenes.duplicate(s['id'],'Third affected scene',p.scenes.load(s['id'])['revision'],p.catalog()['revision'])
+`,
+    root,
+    scene,
+  ]);
+  await page.reload();
+  await expect(page.locator('#status')).toHaveText('Scene opened.');
+  await openGrass(page);
+  await reviewArtwork(page);
+  await page.locator('#art-reference-summary').click();
+  await expect(page.locator('#art-reference-scenes')).toContainText('Workshop (120 placements)');
+  await expect(page.locator('#art-reference-scenes')).toContainText(
+    'Second affected scene (120 placements)',
+  );
+  await expect(page.locator('#art-reference-scenes')).toContainText(
+    'Third affected scene (120 placements)',
+  );
+  await expect(page.locator('#art-reference-locations li')).toHaveCount(256);
+  await expect(page.locator('#art-reference-limit')).toContainText('Showing 256 of 360');
+});

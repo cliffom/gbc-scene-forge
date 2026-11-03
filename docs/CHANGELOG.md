@@ -6,6 +6,12 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.30.1 — Artwork save scope and workflow guidance
+
+[Release notes](RELEASE-0.30.1.md). Distinguish new artwork from shared-edit review,
+expose affected scenes and bounded reference locations, explain imported-copy
+requirements and document browser/MCP outcome boundaries. Publication is separate.
+
 ## 0.30.0 — Artwork interaction polish
 
 [Release notes](RELEASE-0.30.0.md). Add precise pixel targets and transient artwork
