@@ -1,5 +1,5 @@
 /** Exact RGBA authoring/history. No DOM, transport or scene state. */
-import type { Candidate } from './artwork-contracts.mts';
+import { decodeDescriptor, type Candidate } from './artwork-contracts.mts';
 export type Color = [number, number, number, number];
 export type Point = { x: number; y: number };
 export type Rectangle = Point & { width: number; height: number };
@@ -42,7 +42,8 @@ export class PixelModel {
       return;
     }
     for (const stack of [this.undoStack, this.redoStack]) {
-      for (const snapshot of stack) {
+      for (let index = stack.length - 1; index >= 0; index--) {
+        const snapshot = stack[index];
         if (snapshot.descriptor.version !== 2) {
           continue;
         }
@@ -55,6 +56,13 @@ export class PixelModel {
             // Names remain undoable; acknowledged frame identity/geometry does not.
             frames[index] = { ...structuredClone(frame), name: frames[index].name };
           }
+        }
+        try {
+          decodeDescriptor(snapshot.descriptor);
+        } catch {
+          // Saved frame identities are mandatory. Skip states that no longer
+          // fit the document limits, keeping valid history on either side.
+          stack.splice(index, 1);
         }
       }
       // Saving a representation can turn its history entry into a no-op.

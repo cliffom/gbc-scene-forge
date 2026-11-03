@@ -110,8 +110,10 @@ updates artwork and reloads the Library/images without adding a scene undo item.
 The document stays open after saving, with its selected frame, tool, zoom and
 Undo/Redo retained. Saved, Modified and New identify its actual state. Undo after
 a save compares with that new saved base. Saved frame identities and geometry
-remain present through Undo; earlier pixel, name and animation changes remain
-undoable. Saving a new representation removes history steps that become no-ops.
+remain present through Undo. Saving a new representation removes history states
+that become no-ops or exceed document limits after retaining the saved frames.
+Other pixel, name and animation history remains undoable, including valid states
+before and after a removed state.
 Return to Scene to place new artwork
 from the Library separately. **Close review** returns space to drawing; **Update
 review** regenerates the comparison after adjustments. A failed scene preview

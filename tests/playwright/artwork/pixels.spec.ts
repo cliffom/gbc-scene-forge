@@ -1511,10 +1511,11 @@ for (const [label, name, expectedPrefix] of [
   });
 }
 
-test('oversized layout edits preserve valid history, checkpoints and document navigation', async ({
-  page,
-  workspace,
-}) => {
+async function boundedSheetFixture(workspace: {
+  folder: string;
+  python: string;
+  start: (root: string, fixture?: boolean) => Promise<string>;
+}) {
   const root = join(workspace.folder, 'bounded-sheet');
   execFileSync(
     workspace.python,
@@ -1548,7 +1549,14 @@ a.save(c,receipt=p.artwork.reviews.review(c)['receipt'])
     ],
     { encoding: 'utf8' },
   );
-  const url = await workspace.start(root, true);
+  return workspace.start(root, true);
+}
+
+test('oversized layout edits preserve valid history, checkpoints and document navigation', async ({
+  page,
+  workspace,
+}) => {
+  const url = await boundedSheetFixture(workspace);
   const layoutFailures: number[] = [];
   page.on('response', (response) => {
     if (response.url().endsWith('/api/artwork-layout') && !response.ok()) {
@@ -1606,6 +1614,64 @@ a.save(c,receipt=p.artwork.reviews.review(c)['receipt'])
   assert.equal(saved.descriptor.sequences.length, 4);
   assert.equal(saved.descriptor.sequences[0].frames[0].duration_ms, 121);
   assert.deepEqual(layoutFailures, []);
+});
+
+test('saving a representation retains only valid near-limit history states', async ({
+  page,
+  workspace,
+}) => {
+  const url = await boundedSheetFixture(workspace);
+  const failures: string[] = [];
+  page.on('response', (response) => {
+    if (response.url().includes('/api/artwork-') && !response.ok()) {
+      failures.push(response.url());
+    }
+  });
+  await page.goto(url);
+  await page.locator('[data-asset="player/p"]').click();
+  await revealArtworkControl(page, 'art-play');
+  await page.locator('#art-sequence').selectOption('seq_3');
+  const entries = await page.locator('#art-sequence-frames input').count();
+  for (let i = 0; i < 5; i++) {
+    await page.getByRole('button', { name: 'Remove animation frame 1', exact: true }).click();
+  }
+  // This pixel history remains valid after making the representation permanent.
+  await page.locator('#art-color').fill('#cc6633');
+  await draw(page, 1, 1);
+  await (await revealArtworkControl(page, 'art-tile-representation')).click();
+  await saveArtwork(page);
+  await revealArtworkControl(page, 'art-play');
+  await page.locator('#art-undo').click();
+  // Two earlier timing states still fit; older ones exceed the budget after rebasing.
+  await page.locator('#art-undo').click();
+  await page.locator('#art-undo').click();
+  await expect(page.locator('#art-sequence-frames input')).toHaveCount(entries - 3);
+  await expect(page.locator('#art-undo')).toBeDisabled();
+  await expect(page.locator('#art-frame option')).toHaveCount(2);
+  await expect(page.locator('#art-draft-status')).toHaveText(
+    'Unsaved artwork checkpointed in this project.',
+  );
+  await page.locator('#art-close').click();
+  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+  await page.locator('#document-switcher').click();
+  await page.locator('#artwork-documents button').click();
+  await saveArtwork(page);
+  const earlier = await opened(page, url, 'player');
+  assert.deepEqual(new PixelModel(earlier).color({ x: 1, y: 1 }), [0, 0, 0, 0]);
+  for (let i = 0; i < 3; i++) {
+    await page.locator('#art-redo').click();
+  }
+  await expect(page.locator('#art-redo')).toBeDisabled();
+  await saveArtwork(page);
+  const restored = await opened(page, url, 'player');
+  assert.deepEqual(new PixelModel(restored).color({ x: 1, y: 1 }), [204, 102, 51, 255]);
+  assert.equal(restored.descriptor.version, 2);
+  if (restored.descriptor.version !== 2) {
+    throw Error('Expected sheet');
+  }
+  assert.equal(restored.descriptor.frames.length, 2);
+  assert.equal(restored.descriptor.sequences[3].frames.length, entries - 5);
+  assert.deepEqual(failures, []);
 });
 
 test('saved representation keeps earlier Undo checkpointable and reviewable', async ({

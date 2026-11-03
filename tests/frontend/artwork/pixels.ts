@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { decodeCandidate } from '../../../frontend/artwork/artwork-contracts.mts';
+import { decodeCandidate, decodeDescriptor } from '../../../frontend/artwork/artwork-contracts.mts';
 import { encoded, PixelModel, type Color } from '../../../frontend/artwork/pixel-model.mts';
 import { ArtworkSession } from '../../../frontend/artwork/artwork-session.mts';
 import { record, array, number } from '../../../frontend/shared/decode.mts';
@@ -392,3 +392,68 @@ assert.deepEqual(representationSession.model.color({ x: 1, y: 1 }), [0, 0, 0, 0]
 assert.deepEqual(representationSession.model.descriptor, representationSession.original.descriptor);
 await representationSession.checkpoint();
 assert.equal(representationSession.uncheckpointed, false);
+
+// Rebasing saved frames can invalidate some history without invalidating all of it.
+const bounded = structuredClone(sheet.descriptor);
+if (bounded.version !== 2) {
+  throw Error('Expected sheet');
+}
+for (let total = 1; total <= 1024; total++) {
+  const sequences = Array.from({ length: Math.ceil(total / 256) }, (_, index) => ({
+    id: `seq_${index}`,
+    name: `Sequence ${index}`,
+    loop: true,
+    frames: Array.from({ length: Math.min(256, total - index * 256) }, () => ({
+      frame_id: 'artwork',
+      duration_ms: 120,
+    })),
+  }));
+  if (
+    new TextEncoder().encode(JSON.stringify({ ...bounded, sequences }, null, 2) + '\n').length >
+    65536
+  ) {
+    break;
+  }
+  bounded.sequences = sequences;
+}
+decodeDescriptor(bounded);
+const boundedSession = new ArtworkSession(sheet, api);
+const boundedModel = boundedSession.model;
+boundedModel.apply(() => boundedModel.put({ x: 1, y: 1 }, red));
+boundedModel.apply(() => {
+  boundedModel.descriptor = structuredClone(bounded);
+});
+boundedModel.apply(() => boundedModel.put({ x: 1, y: 1 }, hidden));
+boundedModel.apply(() => {
+  const d = boundedModel.descriptor;
+  if (d.version === 2) {
+    d.sequences.at(-1)?.frames.splice(-5);
+  }
+});
+boundedModel.apply(() => boundedModel.put({ x: 1, y: 1 }, red));
+boundedModel.apply(() => {
+  const d = boundedModel.descriptor;
+  if (d.version === 2) {
+    d.frames.push({ ...d.frames[0], id: 'pose_tiles', kind: 'tile', name: 'Tiles' });
+  }
+});
+boundedSession.adoptSaved(
+  decodeCandidate({
+    ...sheet,
+    descriptor: structuredClone(boundedModel.descriptor),
+    rgba: encoded(boundedModel.pixels),
+  }),
+);
+// Valid older snapshots survive even on the far side of the oversized states.
+assert.equal(boundedModel.undoStack.length, 3);
+while (boundedModel.undoStack.length) {
+  boundedModel.undo();
+  decodeDescriptor(boundedModel.descriptor);
+  assert.equal(boundedModel.descriptor.version === 2 && boundedModel.descriptor.frames.length, 2);
+}
+assert.deepEqual(boundedModel.color({ x: 1, y: 1 }), [0, 0, 0, 0]);
+while (boundedModel.redoStack.length) {
+  boundedModel.redo();
+  decodeDescriptor(boundedModel.descriptor);
+}
+assert.equal(boundedSession.changed, false);

@@ -15,6 +15,27 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Saved representation history bounds (PR #158)
+
+- **Scope:** Prepared 0.29.0 working tree based on `355582d`, checked
+  2026-11-02 local time (2026-11-03 UTC), macOS, Node 24.22.1 and
+  Playwright 1.64.1/Chromium at 1440 × 1000 with disposable synthetic artwork.
+- **Method:** Model checks traverse Undo/Redo across valid states on both sides
+  of oversized snapshots after saved-frame reconciliation. Browser automation
+  removes five timing entries from a near-limit sheet, paints pixels, saves a
+  tile representation, traverses retained history, checkpoints, switches documents
+  and saves both earlier and redone work. Ran frontend build, `make lint test`,
+  the complete pixel-artwork browser suite and `make docs-check`.
+- **Result:** Before the fix, Chromium restored a 65,714-byte descriptor after
+  Undo and Return to Scene failed with HTTP 400. The fixed model retains valid
+  older states while removing snapshots that exceed document limits. All 36
+  browser scenarios passed, including pixel Undo/Redo and reviewed saves without
+  failed artwork requests. Lint, all frontend suites and 429 Python tests passed.
+- **Limits:** Invalid history states are removed rather than altering their
+  layout or pixels. Local source Chromium automation only; full browser,
+  installed-wheel, MCP, remote CI and independent human usability checks were
+  not repeated.
+
 ## Layout descriptor byte budget (PR #158)
 
 - **Scope:** Prepared 0.29.0 working tree based on `9961110`, checked
