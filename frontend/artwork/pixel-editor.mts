@@ -463,6 +463,9 @@ export function createPixelEditor({
       ]?.target
         ? 'Edit the shared original, or name an independent copy below.'
         : 'Imported artwork is preserved. Name an editable copy to begin drawing.';
+      button('art-open').title = button('art-open').disabled
+        ? 'Imported artwork requires an editable copy. Name a copy below.'
+        : 'Edit the shared original; saving updates its references.';
     }
     dirtyControls();
     button('art-undo').disabled = busy || !session?.model.undoStack.length;
@@ -717,7 +720,9 @@ export function createPixelEditor({
   }
   function checkpointSoon() {
     lifetime.cancelTimeout(timer);
-    element('art-draft-status', HTMLElement).textContent = 'Unsaved artwork; checkpoint pending…';
+    element('art-draft-status', HTMLElement).textContent = session?.changed
+      ? 'Unsaved artwork; checkpoint pending…'
+      : 'Saved artwork; recovery checkpoint pending…';
     const current = session;
     // Capture the completed edit before a later gesture can mutate the model.
     const pixels = current?.model.pixels.slice();
@@ -732,7 +737,9 @@ export function createPixelEditor({
           if (session === current && !lifetime.disposed) {
             element('art-draft-status', HTMLElement).textContent = current.uncheckpointed
               ? 'New edits await checkpoint.'
-              : 'Unsaved artwork checkpointed in this project.';
+              : current.changed
+                ? 'Unsaved artwork checkpointed in this project.'
+                : 'Saved artwork checkpointed in this project.';
           }
         })
         .catch((error) => {
@@ -1477,8 +1484,9 @@ export function createPixelEditor({
     timer = undefined;
     await session.checkpoint();
     const candidate = await session.synchronizeCurrent();
-    element('art-draft-status', HTMLElement).textContent =
-      'Unsaved artwork checkpointed in this project.';
+    element('art-draft-status', HTMLElement).textContent = session.changed
+      ? 'Unsaved artwork checkpointed in this project.'
+      : 'Saved artwork checkpointed in this project.';
     let scene: Record<string, unknown> | null = null;
     const loaded = sceneSession.loaded;
     if (loaded && sceneSession.editor && input('art-use-scene').checked) {
@@ -1574,7 +1582,37 @@ export function createPixelEditor({
     const references = record(result.references);
     element('art-references', HTMLElement).textContent = candidate.placements
       ? `${candidate.placements.length} selected replacements out of ${number(references.total)} saved source references. Only these selections change; other scenes, stamps and definitions retain the original.`
-      : `${number(references.total)} saved references to this asset. Saving a shared edit updates all of them. Preview placements are temporary.`;
+      : candidate.operation === 'edit'
+        ? `${number(references.total)} saved references to this asset. Saving a shared edit updates all of them. Preview placements are temporary.`
+        : 'New independent artwork. Confirm save adds it to the Library; place it separately. Existing artwork and placements remain intact.';
+    const locations = array(references.locations, record);
+    element('art-reference-details', HTMLElement).hidden = number(references.total) === 0;
+    element('art-reference-summary', HTMLElement).textContent =
+      `Saved source references · ${number(references.total)} total`;
+    element('art-reference-scenes', HTMLElement).textContent = array(references.scenes, record)
+      .map((scene) => {
+        const name = workspaceState.sceneChoices.find((s) => s.id === scene.id)?.name ?? scene.id;
+        return `${String(name)} (${number(scene.placements)} placements)`;
+      })
+      .join('; ');
+    element('art-reference-locations', HTMLElement).replaceChildren(
+      ...locations.map((location) => {
+        const item = document.createElement('li');
+        const kind = string(location.kind);
+        const id = location[`${kind}_id`];
+        const position =
+          location.object_id !== undefined
+            ? ` · object ${number(location.object_id)}`
+            : location.x !== undefined
+              ? ` · cell ${number(location.x)}, ${number(location.y)}`
+              : '';
+        item.textContent = `${kind} ${String(id)}${location.layer_id !== undefined ? ` · layer ${number(location.layer_id)}` : ''}${position} · ${string(location.asset)}`;
+        return item;
+      }),
+    );
+    element('art-reference-limit', HTMLElement).textContent = references.locations_complete
+      ? 'All saved source locations shown. Selected variations replace only the captured selections listed above.'
+      : `Showing ${locations.length} of ${number(references.total)} saved source locations. The affected scene summary includes every scanned scene. Use MCP review reference pagination for additional exact locations. Selected variations replace only captured selections.`;
     element('art-comparison', HTMLElement).hidden = false;
     reviewPanel(true);
     message('Review ready. Saving commits exactly these pixels against the reviewed saved bases.');

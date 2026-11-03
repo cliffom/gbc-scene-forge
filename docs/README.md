@@ -9,6 +9,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 - [Standalone Scene Forge](STANDALONE.md)
 - [Artwork-free level blockouts](BLOCKOUT.md)
 - [Local MCP authoring](MCP.md)
+- [Browser and MCP authoring outcomes](AUTHORING-OUTCOMES.md)
 - [GBC scene palette budgets](PALETTE-BUDGETS.md)
 - [User tutorials](user/README.md)
 
@@ -41,6 +42,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Evaluations
 
+- [Existing workflow usability and session protocol (#165–#167)](evaluations/workflow-usability.md)
 - [Artwork interaction polish (#173–#176)](evaluations/artwork-interaction-polish.md)
 
 - [Unified editor human workflow review](evaluations/unified-editor-ux.md)
@@ -65,6 +67,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Release notes
 
+- [Scene Forge 0.30.1](RELEASE-0.30.1.md) — prepared; publication is separate.
 - [Scene Forge 0.30.0](RELEASE-0.30.0.md) — prepared; publication is separate.
 - [Scene Forge 0.29.2](RELEASE-0.29.2.md) — prepared; publication is separate.
 
