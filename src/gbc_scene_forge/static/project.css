@@ -657,7 +657,12 @@
   #art-editor>.art-workspace {min-height:150px}
 }
 
-#conversion-images {display:flex;flex-wrap:wrap;gap:16px}
+.standalone #conversion-dialog {width:620px}
+#conversion-dialog>.dialog-actions {position:sticky;bottom:-24px;background:var(--panel);padding:12px 0;border-top:1px solid var(--line)}
+#conversion-views {display:grid;gap:16px}
+.conversion-view {display:flex;flex-wrap:wrap;gap:12px}
+.conversion-view h3 {flex-basis:100%;margin:0}
+.conversion-view figure {flex:1;min-width:0;margin:0}
 #conversion-images img {image-rendering:pixelated;max-width:100%;background:#888}
 #conversion-mapping {max-height:140px;overflow:auto;flex-basis:100%}
 .art-canvas-scroll {display:flex;align-items:flex-start}

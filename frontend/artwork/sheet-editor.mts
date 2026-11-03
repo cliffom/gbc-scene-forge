@@ -282,6 +282,20 @@ export function createSheetEditor(
     const model = ports.current()?.model;
     if (model) {
       model.bounds = view();
+      const bounds = model.bounds,
+        selection = model.selection;
+      // History restores sheet coordinates, while frame navigation stays local
+      // to the current view. Keep only selections fully inside that frame.
+      if (
+        bounds &&
+        selection &&
+        (selection.x < bounds.x ||
+          selection.y < bounds.y ||
+          selection.x + selection.width > bounds.x + bounds.width ||
+          selection.y + selection.height > bounds.y + bounds.height)
+      ) {
+        model.selection = null;
+      }
     }
     const strip = element('art-frame-strip', HTMLElement);
     if (strip.dataset.frames !== d.frames.map((f) => f.id).join(',')) {

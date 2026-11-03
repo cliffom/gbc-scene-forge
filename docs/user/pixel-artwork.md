@@ -86,6 +86,9 @@ nearest-neighbor pixels; toggle the pixel grid as needed.
 Each stroke, fill, paste, move or transform is one undo operation. Artwork keeps up
 to 100 operations within a 16 MiB history budget, independently of scene history.
 Use Undo/Redo or ⌘/Ctrl Z and Shift Z (Ctrl Y also redoes); ⌘/Ctrl C/V copies/pastes.
+Undo/Redo keeps the active frame. If a restored selection extends outside that
+frame, it is cleared so clipboard and transform commands use the active frame.
+Selections within the frame, or anywhere in Sheet view, remain selected.
 Escape during a stroke, pointer cancellation, lost capture or window blur cancels
 that gesture. Escape otherwise returns to Scene after checkpointing unsaved work.
 Keyboard shortcuts in text/color/number inputs retain their native behavior.
@@ -235,7 +238,11 @@ Review and save the tile representation first.
 Save the scene and select sprite objects on one object layer. Choose **Convert
 selected sprites to tiles…**, select the matching saved tile region, explicitly
 acknowledge static scenery, then **Review mapping**. Inspect the origin-adjusted
-cell locations and before/after images. **Replace reviewed placements** updates
+cell locations and before/after images. Views center on the selected sprites,
+including their origins. Distant selections and artwork larger than one
+256 × 256 view receive additional numbered views; inspect each pair. A failed
+view keeps confirmation disabled until a complete review succeeds.
+**Replace reviewed placements** updates
 only that selection atomically, retaining unselected references, source artwork
 and source animation sequences. Intervening object drawing order is preserved.
 
@@ -247,3 +254,5 @@ Stale scenes/assets reject review or commit without partial changes.
 
 [Reviewed placement conversion](../images/sprite-tile-conversion.png) shows the
 before/after scene and the explicit tile coordinates to replace.
+[Distant selections](../images/conversion-selected-views.png) shows separate
+review views for sprites far apart in the scene.

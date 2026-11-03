@@ -15,6 +15,70 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## CI playback test timing (PR #158)
+
+- **Scope:** Prepared 0.29.0 working tree based on `84eb2dc`, checked
+  2026-11-02 local time (2026-11-03 UTC), macOS, Node 24.22.1 and
+  Playwright 1.64.1/Chromium. The failed
+  [Ubuntu CI job](https://github.com/cliffom/gbc-scene-forge/actions/runs/41582684705/job/125740894419)
+  tested merge `210a0a8` containing that head.
+- **Method:** Inspected the job log and paused the installed clocks in the
+  scene/artwork replay tests so only explicit clock advances consume frame
+  durations. Built with `FORGE_BUILD_MODE=production` and repeated each replay
+  scenario ten times; ran `make lint test` and `make docs-check`.
+- **Result:** CI reported 82 browser passes, two opt-in skips and one failure:
+  the resumed scene preview had already returned to Play when Pause was asserted.
+  Both corrected playback scenarios passed all 20 local production repetitions.
+  Lint, all frontend suites, 429 Python tests and documentation checks passed.
+- **Limits:** Local Chromium evidence only; the original Ubuntu scheduling race
+  was identified from its log rather than reproduced on the CI runner. The full
+  browser suite, installed-wheel/MCP checks and remote CI were not rerun for this
+  test timing correction.
+
+## Conversion review coverage (PR #158)
+
+- **Scope:** Prepared 0.29.0 source working tree based on `84eb2dc`, checked
+  2026-11-02 local time (2026-11-03 UTC), macOS, Node 24.22.1 and
+  Playwright 1.64.1/Chromium. Disposable synthetic sheets and an 800 × 800 scene.
+- **Method:** Browser acceptance selects two distant sprites beyond pixel 256,
+  using an artwork origin and an object origin override at the scene edge.
+  It samples opposite image corners of both sprites in their review views,
+  compares before/after pixels, fails the second view, retries and commits.
+  Compact checks cover 760 × 640; agent inspected the generic
+  [two-view capture](images/conversion-selected-views.png) at 1440 × 1280.
+  Model checks cover clustered selections, small scenes and every pixel of a
+  sprite larger than one view. Ran frontend build, `make lint test`, the complete
+  pixel-artwork browser suite and `make docs-check`.
+- **Result:** All 30 pixel-artwork browser scenarios, lint, frontend suites,
+  429 Python tests and 20 documentation-checker tests passed. A failed view kept
+  confirmation disabled and hid stale images; retry covered both selected
+  placements before commit. The initial browser attempt missed the second
+  selection because it lay below the canvas viewport; explicit scrolling and a
+  two-object selection assertion corrected the harness. Lint initially rejected
+  test type/non-null assertions; runtime guards corrected those violations.
+- **Limits:** Local source Chromium automation and agent image inspection only;
+  full browser/MCP suites, installed-wheel, other browsers and independent human
+  usability checks were not repeated for this viewport fix.
+
+## Artwork selections across frame history (PR #158)
+
+- **Scope:** Prepared 0.29.0 source working tree based on `84eb2dc`, checked
+  2026-11-02 local time (2026-11-03 UTC), macOS, Node 24.22.1 and
+  Playwright 1.64.1/Chromium at 1440 × 1000. Disposable synthetic sheets.
+- **Method:** Browser pointer/keyboard acceptance reproduces Undo and Redo
+  restoring a selection outside the active frame, then exercises Copy, transform,
+  Paste and reviewed save. Separate scenarios verify retained selections within
+  a frame and across frame boundaries in Sheet view through saved pixel values.
+  Ran `npm run build`, `make lint test`, the complete pixel-artwork browser suite
+  and `make docs-check`.
+- **Result:** Both cross-frame scenarios failed before the fix with an uncaught
+  Copy error and disabled Paste. After reconciliation, all 29 pixel-artwork
+  browser scenarios passed, including four new history scenarios. Lint, all
+  frontend suites, 429 Python tests and 20 documentation-checker tests passed.
+- **Limits:** Local source Chromium automation only; full browser/MCP suites,
+  installed-wheel, other browsers and independent human usability checks were
+  not repeated for this selection fix.
+
 ## Artwork playback history and replay (PR #158)
 
 - **Scope:** Prepared 0.29.0 source working tree based on

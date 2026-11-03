@@ -15,6 +15,7 @@ import { decodeCandidate, type Candidate, type Placement } from './artwork-contr
 import { type Color, type Point, type PixelTool } from './pixel-model.mts';
 import { createSheetEditor } from './sheet-editor.mts';
 import { createArtworkWorkspace } from './artwork-workspace.mts';
+import { conversionViews } from './conversion-views.mts';
 
 type Source = {
   atlas_id: string;
@@ -280,6 +281,17 @@ export function createPixelEditor({
   lifetime.assign(button('conversion-close'), 'onclick', () => conversionDialog.close());
   lifetime.assign(button('conversion-review'), 'onclick', () => {
     void execute(async () => {
+      conversionPlan = null;
+      button('conversion-save').disabled = true;
+      element('conversion-images', HTMLElement).hidden = true;
+      const controls = [
+        select('conversion-target'),
+        input('conversion-static'),
+        button('conversion-review'),
+      ];
+      for (const control of controls) {
+        control.disabled = true;
+      }
       try {
         const loaded = sceneSession.loaded,
           layer = sceneSession.editor?.active;
@@ -290,42 +302,74 @@ export function createPixelEditor({
         if (sceneSelection.selectedObject) {
           ids.add(sceneSelection.selectedObject);
         }
-        const result = await api('artwork-conversion-review', record, {
-          request: {
-            project_revision: workspaceState.revision,
-            scene_id: loaded.id,
-            scene_revision: loaded.revision,
-            layer_id: layer.id,
-            object_ids: Array.from(ids, Number),
-            tile_asset: select('conversion-target').value,
-            acknowledge_static: input('conversion-static').checked,
-          },
-          viewport: {
-            x: 0,
-            y: 0,
-            width: Math.min(256, loaded.width * loaded.grid),
-            height: Math.min(256, loaded.height * loaded.grid),
-          },
-        });
-        conversionPlan = record(result.plan);
-        for (const key of ['before', 'after']) {
-          element(`conversion-${key}`, HTMLImageElement).src =
-            `data:image/png;base64,${string(result[`${key}_png`])}`;
+        const request = {
+          project_revision: workspaceState.revision,
+          scene_id: loaded.id,
+          scene_revision: loaded.revision,
+          layer_id: layer.id,
+          object_ids: Array.from(ids, Number),
+          tile_asset: select('conversion-target').value,
+          acknowledge_static: input('conversion-static').checked,
+        };
+        const viewports = conversionViews(
+          (layer.type === 'objectgroup' ? layer.objects : []).filter((item) => ids.has(item.id)),
+          workspaceState.project?.atlases ?? {},
+          loaded.width * loaded.grid,
+          loaded.height * loaded.grid,
+        );
+        let plan: Record<string, unknown> | null = null;
+        let timing = '';
+        const views: HTMLElement[] = [];
+        for (const [index, viewport] of viewports.entries()) {
+          const result = await api('artwork-conversion-review', record, { request, viewport });
+          const currentPlan = record(result.plan);
+          if (plan && string(plan.revision) !== string(currentPlan.revision)) {
+            throw Error('Conversion changed during review. Review the selection again.');
+          }
+          plan = currentPlan;
+          timing = string(result.timing);
+          const view = document.createElement('section');
+          view.className = 'conversion-view';
+          const heading = document.createElement('h3');
+          heading.textContent = `View ${index + 1} of ${viewports.length} · pixels ${viewport.x}, ${viewport.y} · ${viewport.width} × ${viewport.height}`;
+          view.append(heading);
+          for (const key of ['before', 'after']) {
+            const figure = document.createElement('figure');
+            const caption = document.createElement('figcaption');
+            caption.textContent = key === 'before' ? 'Before' : 'After';
+            const image = document.createElement('img');
+            image.id = `conversion-${key}${index ? `-${index + 1}` : ''}`;
+            image.alt = `Selected scene ${key} conversion, view ${index + 1}`;
+            image.src = `data:image/png;base64,${string(result[`${key}_png`])}`;
+            await image.decode();
+            figure.append(caption, image);
+            view.append(figure);
+          }
+          views.push(view);
         }
+        if (!plan) {
+          throw Error('Select sprite objects to review.');
+        }
+        element('conversion-views', HTMLElement).replaceChildren(...views);
         element('conversion-mapping', HTMLElement).replaceChildren(
-          ...array(conversionPlan.mapping, record).map((value) => {
+          ...array(plan.mapping, record).map((value) => {
             const row = document.createElement('li');
             row.textContent = `Sprite #${number(value.object_id)}: ${string(value.source_asset)} → ${string(value.tile_asset)}; ${number(value.columns)} × ${number(value.rows)} tiles at column ${number(value.x)}, row ${number(value.y)}.`;
             return row;
           }),
         );
         element('conversion-images', HTMLElement).hidden = false;
-        element('conversion-message', HTMLElement).textContent = string(result.timing);
+        element('conversion-message', HTMLElement).textContent = timing;
+        conversionPlan = plan;
         button('conversion-save').disabled = false;
       } catch (error) {
         conversionPlan = null;
         button('conversion-save').disabled = true;
         conversionError(error);
+      } finally {
+        for (const control of controls) {
+          control.disabled = false;
+        }
       }
     });
   });

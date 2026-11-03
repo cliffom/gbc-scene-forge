@@ -370,7 +370,7 @@
     <label class="field">Saved tile region<select id="conversion-target"></select></label>
     <label><input id="conversion-static" type="checkbox"> Convert these poses to static scenery; retain source animations</label>
     <p id="conversion-message" role="status"></p>
-    <div id="conversion-images" hidden><figure><figcaption>Before</figcaption><img id="conversion-before" alt="Selected scene before conversion"></figure><figure><figcaption>After</figcaption><img id="conversion-after" alt="Identical scene after conversion"></figure><ul id="conversion-mapping" aria-label="Reviewed replacements; tile coordinates start at zero"></ul></div>
+    <div id="conversion-images" hidden><div id="conversion-views"></div><ul id="conversion-mapping" aria-label="Reviewed replacements; tile coordinates start at zero"></ul></div>
     <div class="dialog-actions"><button id="conversion-close">Cancel</button><button id="conversion-review">Review mapping</button><button id="conversion-save" disabled>Replace reviewed placements</button></div>
   </dialog>
   <dialog id="artwork-dialog" aria-labelledby="artwork-heading">

@@ -1084,6 +1084,131 @@ p.scenes.save(s['id'],s['scene'],s['revision'],p.catalog()['revision'])
   );
 });
 
+test('conversion review covers distant origin-adjusted sprites and requires every view', async ({
+  page,
+  workspace,
+}, info) => {
+  const root = join(workspace.folder, 'project');
+  execFileSync(workspace.python, [
+    '-c',
+    `
+import sys
+from pathlib import Path
+from gbc_scene_forge.project.application import Project
+p=Project.create(Path(sys.argv[1]),'Conversion views')
+a=p.artwork.documents
+frames=[dict(id='pose',name='Pose',kind='sprite',x=0,y=0,width=16,height=16,origin=[4,8]),dict(id='tiles',name='Tiles',kind='tile',x=0,y=0,width=16,height=16,origin=[0,0])]
+c=a.create_sheet('scenery','Scenery','sprite',16,16,p.catalog()['revision'],frames=frames,sequences=[])
+c=a.edit(c,[dict(x=x,y=y,rgba=[40,80,200,255] if x==y==15 else [200,80,40,255]) for y in range(16) for x in range(16)])
+a.save(c,receipt=p.artwork.reviews.review(c)['receipt'])
+s=p.scenes.create('Stage',100,100,8,p.catalog()['revision'])
+s['scene']['objects']=[dict(id=1,asset='scenery/pose',x=324,y=328),dict(id=2,asset='scenery/pose',x=796,y=784,origin=[12,0])]
+s['scene']['next_object_id']=3
+p.scenes.save(s['id'],s['scene'],s['revision'],p.catalog()['revision'])
+`,
+    root,
+  ]);
+  const url = await workspace.start(root, true);
+  await page.goto(url);
+  await page.locator('#scenes').selectOption({ label: 'Stage' });
+  await expect(page.locator('#status')).toHaveText('Scene opened.');
+  await page.locator('#fit-scene').click();
+  await page.locator('input[name=tool][value=select]').check();
+  await page.locator('.layer-choice').filter({ hasText: 'Sprites' }).click();
+  await paint(page, 328, 328);
+  await page
+    .locator('#viewport')
+    .evaluate((node) => node.scrollTo(node.scrollWidth, node.scrollHeight));
+  await page.keyboard.down('Shift');
+  await paint(page, 792, 792);
+  await page.keyboard.up('Shift');
+  await expect(page.locator('#selection-name')).toHaveText('2 objects selected');
+  await page.locator('#convert-sprites').click();
+  await page.locator('#conversion-target').selectOption('scenery/tiles');
+  await page.locator('#conversion-static').check();
+  const viewports: { x: number; y: number; width: number; height: number }[] = [];
+  let fail = true;
+  await page.route('**/api/artwork-conversion-review', async (route) => {
+    const data = record(route.request().postDataJSON());
+    const v = record(data.viewport);
+    viewports.push({
+      x: Number(v.x),
+      y: Number(v.y),
+      width: Number(v.width),
+      height: Number(v.height),
+    });
+    if (fail && viewports.length === 2) {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Review view unavailable' }),
+      });
+    } else {
+      await route.continue();
+    }
+  });
+  await page.locator('#conversion-review').click();
+  await expect(page.locator('#conversion-message')).toContainText('Review view unavailable');
+  await expect(page.locator('#conversion-save')).toBeDisabled();
+  await expect(page.locator('#conversion-images')).not.toBeVisible();
+  fail = false;
+  viewports.length = 0;
+  await page.locator('#conversion-review').click();
+  await expect(page.locator('#conversion-save')).toBeEnabled();
+  await expect(page.locator('.conversion-view')).toHaveCount(2);
+  await expect(page.locator('#conversion-mapping li')).toHaveCount(2);
+  for (const [index, bound] of [
+    { x: 320, y: 320 },
+    { x: 784, y: 784 },
+  ].entries()) {
+    const v = viewports[index];
+    assert.ok(v.x <= bound.x && v.y <= bound.y);
+    assert.ok(v.x + v.width >= bound.x + 16 && v.y + v.height >= bound.y + 16);
+    assert.ok(v.x + v.width <= 800 && v.y + v.height <= 800);
+    const images = page.locator('.conversion-view').nth(index).locator('img');
+    assert.equal(await images.nth(0).getAttribute('src'), await images.nth(1).getAttribute('src'));
+    const colors = await images.nth(0).evaluate(
+      async (node, point) => {
+        if (!(node instanceof HTMLImageElement)) {
+          throw Error('Expected a conversion review image');
+        }
+        const image = node;
+        await image.decode();
+        const canvas = document.createElement('canvas');
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        const context = canvas.getContext('2d');
+        if (!context) {
+          throw Error('Expected a canvas context');
+        }
+        context.drawImage(image, 0, 0);
+        return [
+          Array.from(context.getImageData(point.x, point.y, 1, 1).data),
+          Array.from(context.getImageData(point.x + 15, point.y + 15, 1, 1).data),
+        ];
+      },
+      { x: bound.x - v.x, y: bound.y - v.y },
+    );
+    assert.deepEqual(colors, [
+      [200, 80, 40, 255],
+      [40, 80, 200, 255],
+    ]);
+  }
+  await page.setViewportSize({ width: 760, height: 640 });
+  await page.locator('#conversion-save').scrollIntoViewIfNeeded();
+  await expect(page.locator('#conversion-save')).toBeVisible();
+  assert.ok(
+    await page
+      .locator('#conversion-dialog')
+      .evaluate((node) => node.scrollWidth <= node.clientWidth),
+  );
+  await page.setViewportSize({ width: 1440, height: 1280 });
+  await page.locator('#conversion-dialog').evaluate((node) => node.scrollTo(0, 0));
+  await page.screenshot({ path: info.outputPath('conversion-selected-views.png') });
+  await page.locator('#conversion-save').click();
+  await expect(page.locator('#conversion-dialog')).not.toBeVisible();
+});
+
 test('saved artwork stays open across saves and undo compares with the latest saved base', async ({
   page,
   workspace,
@@ -1235,6 +1360,74 @@ print(s['id'])
   return { url: await workspace.start(root, true), scene };
 }
 
+for (const history of ['undo', 'redo'] as const) {
+  test(`artwork ${history} across frames clears selections outside the active frame`, async ({
+    page,
+    workspace,
+  }) => {
+    const { url } = await reviewedSheetFixture(workspace);
+    await page.goto(url);
+    await page.locator('[data-asset="player/idle"]').click();
+    await page.locator('#art-frame-view').click();
+    await page.locator('#art-frame').selectOption('step');
+    await page.locator('#art-color').fill('#cc6633');
+    await draw(page, 1, 1);
+    await page.locator('#art-frame').selectOption('idle');
+    await page.locator('input[name="art-tool"][value="select"]').check();
+    await draw(page, 1, 1, 2, 1);
+    await page.locator('input[name="art-tool"][value="pencil"]').check();
+    await draw(page, 1, 1);
+    if (history === 'redo') {
+      await page.locator('#art-undo').click();
+    }
+    await page.locator('#art-frame').selectOption('step');
+    await page.locator(`#art-${history}`).click();
+    await expect(page.locator('#art-frame')).toHaveValue('step');
+    // Copy must use the active frame, and transforms/paste must remain usable.
+    await page.locator('#art-copy').click();
+    await expect(page.locator('#art-paste')).toBeEnabled();
+    await page.locator('#art-horizontal').click();
+    await page.locator('#art-paste').click();
+    await saveArtwork(page);
+    const saved = new PixelModel(await opened(page, url, 'player'));
+    assert.deepEqual(saved.color({ x: 9, y: 1 }), [204, 102, 51, 255]);
+    assert.deepEqual(saved.color({ x: 14, y: 1 }), [0, 0, 0, 0]);
+    assert.deepEqual(
+      saved.color({ x: 1, y: 1 }),
+      history === 'redo' ? [204, 102, 51, 255] : [0, 0, 0, 0],
+    );
+  });
+}
+
+for (const scope of ['frame', 'sheet'] as const) {
+  test(`artwork history retains compatible selections in ${scope} view`, async ({
+    page,
+    workspace,
+  }) => {
+    const { url } = await reviewedSheetFixture(workspace);
+    await page.goto(url);
+    await page.locator('[data-asset="player/idle"]').click();
+    await page.locator(`#art-${scope}-view`).click();
+    const x = scope === 'frame' ? 1 : 7;
+    await page.locator('input[name="art-tool"][value="select"]').check();
+    await draw(page, x, 1, x + 1, 1);
+    await page.locator('input[name="art-tool"][value="pencil"]').check();
+    await page.locator('#art-color').fill('#cc6633');
+    await draw(page, x, 1);
+    await page.locator('#art-undo').click();
+    await page.locator('#art-redo').click();
+    await page.locator('#art-copy').click();
+    await page.locator('#art-frame-view').click();
+    await page.locator('#art-frame').selectOption('step');
+    await page.locator('#art-paste').click();
+    await saveArtwork(page);
+    const saved = new PixelModel(await opened(page, url, 'player'));
+    // The retained two-pixel selection, rather than a whole sheet/frame, was copied.
+    assert.deepEqual(saved.color({ x: 8, y: 0 }), [204, 102, 51, 255]);
+    assert.deepEqual(saved.color({ x: 9, y: 0 }), [0, 0, 0, 0]);
+  });
+}
+
 test('artwork Undo and Redo stop playback before restoring sequence frames', async ({
   page,
   workspace,
@@ -1360,6 +1553,8 @@ test('non-looping artwork playback replays completed sequences and resumes pause
   await page.locator('[data-asset="player/idle"]').click();
   await revealArtworkControl(page, 'art-play');
   await page.clock.install();
+  // Only runFor should advance these short poses, including between UI actions.
+  await page.clock.pauseAt(new Date());
   for (const name of ['walk', 'pose']) {
     await page.locator('#art-sequence').selectOption(name);
     await page.locator('#art-play').click();
@@ -1398,6 +1593,8 @@ test('non-looping scene playback replays completed sequences and resumes paused 
   await page.locator('input[name=tool][value=select]').check();
   await setControl(page, 'object-list', '1');
   await page.clock.install();
+  // CI action/assertion latency must not consume the remaining frame duration.
+  await page.clock.pauseAt(new Date());
   for (const name of ['walk', 'pose']) {
     await setControl(page, 'preview-animation', name);
     await clickControl(page, 'preview-play');
