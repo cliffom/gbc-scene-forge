@@ -21,6 +21,7 @@ async function panes(page: Page, library: boolean, inspector: boolean) {
     if ((await toggle.getAttribute('aria-expanded')) !== String(expanded)) {
       await toggle.focus();
       await page.keyboard.press('Enter');
+      await expect(toggle).toBeFocused();
     }
     await expect(toggle).toHaveAttribute('aria-expanded', String(expanded));
     await expect(toggle).toHaveAccessibleName(
@@ -60,7 +61,7 @@ test('panes expand the viewport independently at supported widths and survive re
       await panes(page, library, inspector);
       await expect
         .poll(() => page.locator('#viewport').evaluate((node) => node.clientWidth))
-        .toBe(original + (library ? 0 : libraryWidth) + (inspector ? 0 : inspectorWidth));
+        .toBe(original + (library ? 0 : libraryWidth - 24) + (inspector ? 0 : inspectorWidth - 24));
       expect(
         await page.evaluate(() => {
           const viewport = document.getElementById('viewport');

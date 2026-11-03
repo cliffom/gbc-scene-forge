@@ -117,9 +117,9 @@
       </div>
     </nav>
     <main id="editor-layout">
-      <div class="pane-rail library-rail"><button id="toggle-library" class="pane-toggle" aria-label="Hide Library" title="Hide Library" aria-controls="library-pane" aria-expanded="true"><svg class="command-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button></div>
+      <div id="library-rail" class="pane-rail library-rail" hidden></div>
       <aside id="library-pane" class="library" aria-label="Authoring library">
-        <div class="panel-heading"><h2>Library</h2></div>
+        <div id="library-heading" class="panel-heading pane-heading"><h2>Library</h2><button id="toggle-library" class="pane-toggle" aria-label="Hide Library" title="Hide Library" aria-controls="library-pane" aria-expanded="true"><svg class="command-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button></div>
         <div class="library-tabs" role="tablist" aria-label="Library categories">
           <button id="artwork-tab" role="tab" aria-selected="true" aria-controls="artwork-panel" tabindex="0">Artwork</button>
           <button id="objects-tab" role="tab" aria-selected="false" aria-controls="objects-panel" tabindex="-1">Objects</button>
@@ -211,10 +211,10 @@
         <div class="canvas-footer"><span id="coordinates" title="Cell column and row, followed by pixel X and Y. All coordinates start at zero.">Cell —, — · Pixel —, —</span><span id="scene-name">No scene open</span><span id="selected-brush">Select a brush</span></div>
         <div class="review-bar"><span class="eyebrow">VIEW</span><label><input id="grid" type="checkbox" checked> Grid</label><label class="snap-control" title="Snap sprite origins to grid intersections. Hold Alt to bypass; arrow keys nudge one pixel."><input id="snap" type="checkbox" checked> Snap to grid</label><label><input id="terrain-overlay" type="checkbox"> Terrain</label><label><input id="collision-overlay" type="checkbox"> Collision</label><span class="hint">Middle drag / Space: pan · Wheel: zoom · Alt: free placement · Arrow keys: 1 px</span></div>
       </section>
-      <div class="pane-rail inspector-rail"><button id="toggle-inspector" class="pane-toggle" aria-label="Hide Inspector" title="Hide Inspector" aria-controls="inspector-pane" aria-expanded="true"><svg class="command-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div>
+      <div id="inspector-rail" class="pane-rail inspector-rail" hidden></div>
       <aside id="inspector-pane" class="inspector" aria-label="Scene inspector">
         <section id="scene-panel" class="inspector-panel" aria-label="Scene properties">
-          <div class="panel-heading"><h2>Scene properties</h2><span id="dirty" class="tag">NO SCENE</span></div>
+          <div id="inspector-heading" class="panel-heading pane-heading"><h2>Scene properties</h2><span id="dirty" class="tag">NO SCENE</span><button id="toggle-inspector" class="pane-toggle" aria-label="Hide Inspector" title="Hide Inspector" aria-controls="inspector-pane" aria-expanded="true"><svg class="command-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div>
           <label class="field">Scene name<input id="inspector-name" readonly placeholder="No scene open"></label>
           <div class="property-grid scene-dimensions"><label class="field">Dimensions<input id="inspector-size" readonly placeholder="—"></label><label class="field">Grid<input id="inspector-grid" readonly placeholder="—"></label></div>
           <p id="scene-summary" class="hint">Open a scene to inspect its dimensions and placed sprites.</p>

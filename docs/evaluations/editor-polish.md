@@ -23,7 +23,7 @@ remain user reports, not a fully reproduced browser/environment combination.
 | Paint, fill, erase, select and pan | Labeled tools plus a separate textual clipboard/action row consume canvas space | Consistent icon tools, history and selection groups share a responsive toolbar. Familiar commands have names/tooltips; save, management and destructive commands retain text, while compact review uses a named eye icon. Native radio navigation and scene shortcuts remain. |
 | Copy, transform and reuse a selection | Large Copy/Cut/Paste/Duplicate/Deselect/Save stamp buttons compete with drawing | Grouped 32px commands stay close to the canvas. Transform retains its named popover; Across layers stays with the selection commands, including in the expanded toolbar. Stamps still use the existing placement library. |
 | Copy the project root | Copying requires opening the folder popover and finding a text button | Copy icons beside the header folder and full popover path copy directly. Success uses a checkmark and announced status; clipboard failures expose the selectable path. |
-| Hide/reopen authoring panes | Text buttons occupy the document bar rather than the pane boundary | Independent chevrons stay in narrow edge rails when panes collapse; native keyboard activation, Show/Hide names and focus recovery remain. Rails reserve layout space rather than covering the canvas. |
+| Hide/reopen authoring panes | Text buttons occupy the document bar rather than the pane boundary | Independent chevrons use open pane headers and narrow reopen handles only when collapsed; native keyboard activation, Show/Hide names and focus recovery remain. Expanded panes meet the workbench without reserved arrow columns. |
 | Keep zoom and review available | Automatic toolbar wrapping places viewing controls on another row | A canvas-width disclosure reserves the first row for zoom/review/fit. Secondary commands expand explicitly; very narrow canvases also disclose drawing tools and name the current tool. Shortcuts remain active; Escape collapses the toolbar. |
 | Choose a pixel tool repeatedly | Each change requires opening the Tool dropdown and choosing an item | Eight native radio tools are directly available in one pointer choice. Keyboard arrow navigation retains focus; pointer choice returns to the drawing canvas. No second mutable tool state is introduced. |
 | Choose RGBA and view scale | Transparent is centered against labeled fields rather than their controls | Color, Alpha and Transparent align at the bottom of their controls. Zoom and Pixel grid form a separate view group. |
@@ -107,3 +107,28 @@ now resets it. An existing variation scenario initially tried clicking a hidden
 drawing radio after switching to 800px; it now opens the disclosure before
 continuing the scene edit. This was an outdated interaction expectation. Final
 results and limits belong in the [validation record](../VALIDATION.md).
+
+## Pane header refinement
+
+User feedback identified wasted horizontal space in the permanent arrow rails.
+The subsequent 0.27.1 working tree based on
+[`9687665`](https://github.com/cliffom/gbc-scene-forge/commit/9687665b485094aec11b296a95968cb9d5b457ad),
+checked on 2026-11-02, moves each open pane's chevron into its existing header.
+Expanded panes now meet the workbench directly, returning 48px to the canvas when
+both panes are open. Only closed panes reserve 24px reopen handles. The Inspector
+keeps its save-status badge below the heading so the arrow stays at the outer edge.
+
+The same native button moves between header and closed handle, retaining its
+event handlers and accessible state. Focus is restored after moving it; hiding a
+pane with focus inside still sends focus to its toggle. Geometry checks verify
+header placement, direct pane/workbench adjacency, non-overlapping header content
+and reachable handles across five desktop sizes and every pane combination.
+Keyboard checks exercise both transitions; existing state, camera, review and
+lifetime checks remain applicable.
+
+These installed-wheel captures supersede the open-pane layout in the previous
+refinement's screenshots, which retain their earlier revision scope:
+
+- [Header chevrons at 1440×900](../screenshots/editor-polish/pane-headers-desktop.png)
+- [Header chevrons at 760×640](../screenshots/editor-polish/pane-headers-compact.png)
+- [Closed edge handles at 760×640](../screenshots/editor-polish/pane-handles-compact.png)

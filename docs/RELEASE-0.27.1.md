@@ -10,7 +10,8 @@ toolbar wrapping. At the smallest widths the trigger names the current drawing
 tool and expands to expose drawing choices as well.
 Management and save actions retain text labels; compact review uses a named eye icon.
 
-Library and Inspector use persistent edge chevrons to collapse/reopen their panes.
+Library and Inspector use header chevrons to collapse their panes, with slim
+reopen handles only when closed; expanded panes reserve no extra arrow columns.
 Copy icons beside the project folder and its popover path provide direct copying,
 success feedback and a selectable fallback when clipboard access is unavailable.
 

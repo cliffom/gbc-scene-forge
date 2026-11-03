@@ -15,6 +15,30 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Pane header controls (#144 refinement)
+
+- **Scope:** Prepared 0.27.1 working tree based on
+  [`9687665`](https://github.com/cliffom/gbc-scene-forge/commit/9687665b485094aec11b296a95968cb9d5b457ad),
+  checked on 2026-11-02 in the same Darwin/Python/Node/Chromium environment as the
+  follow-up below. [Design and installed-wheel captures](evaluations/editor-polish.md#pane-header-refinement).
+- **Method:** Agent screenshot inspection and synthetic Chromium interaction.
+  Ran `make lint test`, production `make build check-dist`, and 14 focused pane,
+  toolbar, layout, review and editor-lifetime scenarios on source and the installed
+  wheel. The final wheel run includes the final Inspector header placement and
+  explicit focus assertions on both keyboard pane transitions. Geometry checks
+  cover five desktop sizes, every pane combination, header content and direct
+  pane/workbench adjacency.
+- **Result:** Lint, 413 Python tests and frontend checks passed. Production build,
+  metadata and seven wheel smoke tests passed. All 14 source scenarios and all 14
+  final installed-wheel scenarios passed. Open panes no longer reserve arrow
+  columns; both open recover 48px of canvas width. Captures inspected at 1440×900
+  and 760×640 include expanded panes and closed handles.
+- **Limits:** Focused regression evidence; the full browser suite was not rerun
+  for this refinement. Source captures precede the final Inspector badge/arrow
+  alignment; archived captures and final browser results use the final wheel.
+  Local agent/synthetic Chromium checks do not certify independent human usability,
+  actual OS/browser zoom or other browsers. No tag or publication was performed.
+
 ## Pane controls, path copy and responsive toolbar (#144 follow-up)
 
 - **Scope:** Prepared 0.27.1 working tree based on

@@ -78,9 +78,15 @@ export function createEditorLayout(
   lifetime.cleanup(() => reflectToolbar(false));
   reflectToolbar(false);
   function reflectPane(name: 'library' | 'inspector', expanded: boolean) {
+    const rail = element(`${name}-rail`, HTMLElement);
+    const toggle = element(`toggle-${name}`, HTMLButtonElement);
+    const host = expanded ? element(`${name}-heading`, HTMLElement) : rail;
+    if (toggle.parentElement !== host) {
+      host.append(toggle);
+    }
+    rail.hidden = expanded;
     element(`${name}-pane`, HTMLElement).hidden = !expanded;
     main.classList.toggle(`${name}-collapsed`, !expanded);
-    const toggle = element(`toggle-${name}`, HTMLButtonElement);
     toggle.setAttribute('aria-expanded', String(expanded));
     const label = name === 'library' ? 'Library' : 'Inspector';
     const action = `${expanded ? 'Hide' : 'Show'} ${label}`;
@@ -93,10 +99,13 @@ export function createEditorLayout(
       return;
     }
     const toggle = element(`toggle-${name}`, HTMLButtonElement);
-    if (!expanded && pane.contains(document.activeElement)) {
+    const restoreFocus =
+      document.activeElement === toggle || (!expanded && pane.contains(document.activeElement));
+    changeLayout(() => reflectPane(name, expanded));
+    // Moving a focused control between its header and closed edge loses native focus.
+    if (restoreFocus) {
       toggle.focus({ preventScroll: true });
     }
-    changeLayout(() => reflectPane(name, expanded));
   }
   for (const name of ['library', 'inspector'] as const) {
     const toggle = element(`toggle-${name}`, HTMLButtonElement);

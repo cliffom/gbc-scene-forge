@@ -106,16 +106,36 @@ test.describe('editor polish', () => {
               await page.locator(`#toggle-${name}`).evaluate((node, side) => {
                 const r = node.getBoundingClientRect();
                 const workbench = document.querySelector('.workbench')?.getBoundingClientRect();
+                const pane = document.getElementById(`${side}-pane`);
+                const heading = document.getElementById(`${side}-heading`)?.getBoundingClientRect();
+                const p = pane?.getBoundingClientRect();
                 const target = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
                 return (
                   workbench &&
                   node.contains(target) &&
                   r.left >= 0 &&
                   r.right <= innerWidth &&
-                  (side === 'library' ? r.right <= workbench.left : r.left >= workbench.right)
+                  (side === 'library' ? r.right <= workbench.left : r.left >= workbench.right) &&
+                  (pane?.hidden ||
+                    (p &&
+                      heading &&
+                      r.left >= heading.left &&
+                      r.right <= heading.right &&
+                      r.top >= heading.top &&
+                      r.bottom <= heading.bottom &&
+                      // Open panes meet the workbench directly, with no arrow column.
+                      (side === 'library'
+                        ? p.right === workbench.left
+                        : p.left === workbench.right)))
                 );
               }, name),
             ).toBe(true);
+          }
+          if (library) {
+            await boundedCommands(page, '#library-heading', 'h2, button');
+          }
+          if (inspector) {
+            await boundedCommands(page, '#inspector-heading', 'h2, #dirty, button');
           }
           expect(
             await page.locator('#viewport').evaluate((n) => n.clientHeight),

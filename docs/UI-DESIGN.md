@@ -8,10 +8,10 @@ system; hierarchy comes from grouping, spacing and clear labels.
 - **Document context:** project and scene selection, save state, Save and Export.
   Scene actions groups scene lifecycle commands; Project tools groups world and
   diagnostic work. Separate destructive commands from ordinary actions.
-- **Pane edges:** independent Library and Inspector chevrons occupy slim rails
-  beside the canvas. They point toward the pane when expanded and toward the
-  canvas when collapsed, with Show/Hide tooltips and accessible names. Rails stay
-  available when panes close, without covering canvas controls; Review scene hides them.
+- **Pane edges:** independent Library and Inspector chevrons sit in the open pane
+  headers, leaving no extra column between pane and canvas. Closing a pane replaces
+  it with a 24px edge handle; the arrow reverses, with Show/Hide tooltips and
+  accessible names. Handles avoid covering canvas controls; Review scene hides them.
 - **Project path:** copy icons beside the header folder name and the full path in
   its popover copy directly, confirm success with a checkmark and announce status.
   If clipboard access fails, show the selectable path and manual-copy guidance.

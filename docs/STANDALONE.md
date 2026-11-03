@@ -131,8 +131,10 @@ retain text labels; secondary commands use native popovers.
 The desktop layout is checked from 760px wide, including short windows; the
 canvas scrolls independently of the library and inspector.
 
-Arrow controls in slim rails at the canvas edges collapse the Library and
-Inspector independently. Their direction reverses when collapsed. The Inspector
+Arrow controls in the pane headers collapse the Library and Inspector
+independently. Closed panes leave slim edge handles for reopening; open panes
+meet the canvas directly without reserving arrow columns. Their direction reverses
+when collapsed. The Inspector
 toggle hides the entire right pane: scene, layers, selection, preview and recovery
 controls. Both arrows remain visible when the panes are hidden, with Show/Hide
 tooltips and accessible names. Use Tab to reach each
