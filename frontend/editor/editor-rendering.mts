@@ -1,3 +1,4 @@
+import { allViewFilters, objectViewCategory, viewCategories } from '../scene/view-filters.mts';
 import type { EditorLifetime } from './editor-lifetime.mts';
 import type { createAnimationPreview } from '../preview/animation-preview.mts';
 import type { createBlockoutLabels } from '../blockout/blockout-labels.mts';
@@ -64,7 +65,7 @@ export interface Ports {
   tileMetadata: (group: string, asset: string) => TileMetadata | undefined;
   syncBlockoutZoom: () => boolean;
   sceneZoom: () => number;
-  update: () => void;
+  update: (checkpoint?: boolean) => void;
   regions: ReadonlyMap<string, { image: HTMLImageElement; x: number; y: number }>;
   sprites: ReadonlyMap<string, { image: HTMLImageElement; region: Region }>;
 }
@@ -95,6 +96,36 @@ export function createRenderingController({
   gestures: Pick<GestureState, 'hover' | 'pan' | 'spacePan'>;
   ports: Ports;
 }) {
+  const filters = allViewFilters();
+  function objectVisible(item: SceneObject) {
+    return filters[objectViewCategory(item, workspaceState.project?.definitions ?? [])];
+  }
+  function allVisible() {
+    return viewCategories.every((key) => filters[key]);
+  }
+  function canPlace(item?: SceneObject) {
+    return item ? objectVisible(item) : filters.tiles;
+  }
+  for (const key of viewCategories) {
+    const control = input(`view-${key}`);
+    lifetime.assign(control, 'onchange', () => {
+      if (gestures.pan || sceneSession.editor?.stroke) {
+        control.checked = filters[key];
+        return;
+      }
+      filters[key] = control.checked;
+      element('scene-view-summary', HTMLElement).textContent =
+        `Scene view filters · ${viewCategories.filter((key) => filters[key]).length} of 5 shown`;
+      element('status', HTMLElement).textContent = 'Scene view updated.';
+      // A filter never schedules a recovery checkpoint or changes authored history.
+      draw(false);
+      ports.update(false);
+    });
+    lifetime.cleanup(() => {
+      element('scene-view-summary', HTMLElement).textContent = 'Scene view filters';
+      control.checked = true;
+    });
+  }
   const tileCache = new TileCache();
   let cachedEditor = sceneSession.editor;
   lifetime.cleanup(() => tileCache.clear());
@@ -128,7 +159,9 @@ export function createRenderingController({
       sceneSelection.selectedObject &&
       !(
         sceneSession.editor.active.type === 'objectgroup' &&
-        sceneSession.editor.active.objects.some((item) => item.id === sceneSelection.selectedObject)
+        sceneSession.editor.active.objects.some(
+          (item) => item.id === sceneSelection.selectedObject && objectVisible(item),
+        )
       )
     ) {
       sceneSelection.selectedObject = null;
@@ -137,10 +170,16 @@ export function createRenderingController({
     sceneSelection.selectedObjects = new Set(
       [...sceneSelection.selectedObjects].filter((id) =>
         sceneSession.editor?.layers.some(
-          (l) => l.type === 'objectgroup' && l.objects.some((o) => o.id === id),
+          (l) =>
+            l.visible &&
+            l.type === 'objectgroup' &&
+            l.objects.some((o) => o.id === id && objectVisible(o)),
         ),
       ),
     );
+    if (!filters.tiles) {
+      sceneSelection.selection = null;
+    }
     sceneSession.loaded = {
       ...sceneSession.loaded,
       width: sceneSession.editor.scene.width,
@@ -182,7 +221,7 @@ export function createRenderingController({
     }
   }
 
-  /** Draw authored artwork independently of display clipping, zoom and transient previews. */
+  /** Draw the current filtered view independently of display clipping and transient previews. */
   function drawOverview(
     target: CanvasRenderingContext2D,
     x: number,
@@ -232,7 +271,7 @@ export function createRenderingController({
     const retain =
       !overview && visibleChunks * chunkPixels * chunkPixels * 4 * tileLayers <= tileCache.limit;
     for (const layer of sceneSession.editor.layers) {
-      if (!layer.visible) {
+      if (!layer.visible || (layer.type === 'tilelayer' && !filters.tiles)) {
         continue;
       }
       if (layer.type === 'tilelayer') {
@@ -240,6 +279,9 @@ export function createRenderingController({
       }
       if (layer.type === 'objectgroup') {
         for (const item of layer.objects) {
+          if (!objectVisible(item)) {
+            continue;
+          }
           const sprite = item.kind === 'sprite' && ports.sprites.get(item.asset);
           if (sprite) {
             const r =
@@ -333,7 +375,7 @@ export function createRenderingController({
         context.restore();
       };
       for (const layer of sceneSession.editor.layers) {
-        if (!layer.visible) {
+        if (!layer.visible || (layer.type === 'tilelayer' && !filters.tiles)) {
           continue;
         }
         if (layer.type === 'tilelayer') {
@@ -353,6 +395,9 @@ export function createRenderingController({
           }
         } else {
           for (const item of layer.objects) {
+            if (!objectVisible(item)) {
+              continue;
+            }
             if (item.kind !== 'sprite') {
               continue;
             }
@@ -388,6 +433,9 @@ export function createRenderingController({
     for (const layer of sceneSession.editor.layers) {
       if (layer.visible && layer.type === 'objectgroup') {
         for (const item of layer.objects) {
+          if (!objectVisible(item)) {
+            continue;
+          }
           if (!activity.reviewing && sceneSelection.selectedObjects.has(item.id)) {
             const r = bounds(item);
             context.strokeStyle = '#f2d67b';
@@ -427,7 +475,7 @@ export function createRenderingController({
     blockoutLabels.update(
       labelCandidates(
         sceneSession.editor.layers.flatMap((layer) =>
-          layer.visible && layer.type === 'objectgroup' ? layer.objects : [],
+          layer.visible && layer.type === 'objectgroup' ? layer.objects.filter(objectVisible) : [],
         ),
         workspaceState.project?.definitions ?? [],
         new Set([
@@ -496,6 +544,9 @@ export function createRenderingController({
 
   function hitObject(px: number, py: number): SceneObject | undefined {
     return sceneSession.editor?.objects.findLast((item) => {
+      if (!objectVisible(item)) {
+        return false;
+      }
       const r = bounds(item);
       return px >= r.x && px < r.x + r.width && py >= r.y && py < r.y + r.height;
     });
@@ -517,6 +568,8 @@ export function createRenderingController({
   return {
     draw,
     drawOverview,
+    allVisible,
+    canPlace,
     requestHoverDraw: hoverPaint.request,
     previewBlocked,
     point,

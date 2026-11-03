@@ -22,6 +22,8 @@ import { definitionInstance } from '../objects/object-definitions.mts';
 import type { SceneObject } from '../objects/objects.mts';
 
 export interface Ports {
+  canPlace: (item?: SceneObject) => boolean;
+  allVisible: () => boolean;
   point: (event: { clientX: number; clientY: number }) => {
     x: number;
     y: number;
@@ -81,6 +83,9 @@ export function createGesturesController({
     const tool = document.querySelector<HTMLInputElement>('input[name="tool"]:checked')?.value;
     try {
       sceneSession.editor.editable();
+      if (sceneSession.editor.active.type === 'tilelayer' && !ports.canPlace()) {
+        throw Error('Show Tile artwork before editing this layer.');
+      }
       if (gestures.blockoutDraw || gestures.objectResize) {
         const gesture = gestures.blockoutDraw ?? gestures.objectResize;
         const item = sceneSession.editor.objects.find((item) => item.id === gesture?.id);
@@ -179,8 +184,9 @@ export function createGesturesController({
         }
         const position = ports.spritePosition(p.px, p.py, event.altKey);
         const common = { x: position.x, y: position.y, name: '', properties: [] };
-        sceneSelection.selectedObject = sceneSession.editor.createObject(
-          brushes.objectBrush === 'point'
+        const newObject: SceneObject = {
+          id: 'preview',
+          ...(brushes.objectBrush === 'point'
             ? { ...common, kind: 'point', class: 'spawn' }
             : {
                 ...common,
@@ -188,12 +194,30 @@ export function createGesturesController({
                 class: 'trigger',
                 width: Math.min(sceneSession.loaded?.grid || 8, canvas.width - position.x),
                 height: Math.min(sceneSession.loaded?.grid || 8, canvas.height - position.y),
-              },
-        );
+              }),
+        };
+        if (!ports.canPlace(newObject)) {
+          throw Error('Show this object category before placing it.');
+        }
+        sceneSelection.selectedObject = sceneSession.editor.createObject(newObject);
         sceneSelection.selection = null;
       } else if (brushes.spriteBrush && tool === 'paint' && event.type === 'pointerdown') {
         sceneSession.editor.editable('objectgroup');
         const asset = brushes.spriteBrush;
+        if (
+          !ports.canPlace({
+            id: 'preview',
+            kind: 'sprite',
+            asset,
+            x: 0,
+            y: 0,
+            name: '',
+            class: '',
+            properties: [],
+          })
+        ) {
+          throw Error('Show Sprite artwork before placing it.');
+        }
         if (p.px < 0 || p.py < 0 || p.px >= canvas.width || p.py >= canvas.height) {
           throw Error('Place the sprite origin inside the scene.');
         }
@@ -479,6 +503,9 @@ export function createGesturesController({
         const p = ports.point(event);
         const position = ports.spritePosition(p.px, p.py, event.altKey);
         const item = definitionInstance(definition, position.x, position.y);
+        if (!ports.canPlace({ ...item, id: 'preview' })) {
+          throw Error('Show this object category before placing it.');
+        }
         const isBlockout = definitionRole(definition).length > 0;
         if (isBlockout) {
           item.name = definition.name;
@@ -508,6 +535,10 @@ export function createGesturesController({
       return;
     }
     if (brushes.stampBrush && workspaceState.project) {
+      if (!ports.allVisible()) {
+        status.textContent = 'Show all scene view categories before placing a stamp.';
+        return;
+      }
       try {
         const p = ports.point(event);
         paste(

@@ -98,7 +98,7 @@ export function mountProjectEditor() {
       dialog.showModal();
     });
   }
-  function update() {
+  function update(checkpoint = true) {
     if (lifetime.disposed) {
       return;
     }
@@ -134,7 +134,16 @@ export function mountProjectEditor() {
       !select('object-definition-brush').value ||
       gestures.anchor !== null;
     select('object-definition-brush').disabled = activity.busy || !workspaceState.project;
-    recoveryController.checkpoint(unsaved);
+    if (checkpoint) {
+      recoveryController.checkpoint(unsaved);
+    }
+    for (const key of ['tiles', 'sprites', 'geometry', 'gameplay', 'guides']) {
+      input(`view-${key}`).disabled =
+        activity.busy ||
+        !sceneSession.editor ||
+        gestures.anchor !== null ||
+        !!sceneSession.editor.stroke;
+    }
     button('show-recovery').disabled = activity.busy || gestures.anchor !== null || unsaved;
     panelsController.palettePanel.sync(
       workspaceState.project?.paletteProfile ?? null,
@@ -384,6 +393,7 @@ export function mountProjectEditor() {
     editorLayout,
     canvas,
     ports: {
+      allVisible: () => renderingController.allVisible(),
       get regions() {
         return artworkController.regions;
       },
@@ -546,6 +556,8 @@ export function mountProjectEditor() {
     workspaceState,
     animationPreview,
     ports: {
+      allVisible: () => renderingController.allVisible(),
+      canPlace: (...args) => renderingController.canPlace(...args),
       point: (...args) => renderingController.point(...args),
 
       draw: (...args) => renderingController.draw(...args),
@@ -688,6 +700,7 @@ export function mountProjectEditor() {
     canvas,
     animationPreview,
     ports: {
+      allVisible: () => renderingController.allVisible(),
       run: (...args) => run(...args),
       showImport: (...args) => artworkController.showImport(...args),
       filterPalette: (...args) => artworkController.filterPalette(...args),

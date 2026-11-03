@@ -485,7 +485,7 @@ Follow the [blockout tutorial](user/blockout-tutorial.md) for normal browser edi
 
 The forest is a starting section, not a required complete stage. Planning and
 palette reports (disabled without an opt-in profile) do not establish jump/climb reachability, runtime game feel or
-hardware fit. SVGs show planning geometry; use the main browser canvas for artwork.
+hardware fit. Blockout SVGs show planning geometry; use `review_scene` for combined artwork and planning.
 
 ## Validation
 
@@ -674,3 +674,43 @@ The [native MCP regression/SDK workflow](../tests/backend/adapters/test_mcp_nati
 checks the full new-tile loop, strict nested schemas, exact transparency, resources,
 stale receipts, contention, atomic conflict and save/export/reopen. These scripted
 checks do not establish agent art quality or mixed human/agent usability.
+
+## Combined scene review
+
+`review_scene` is an explicit read-only counterpart to artwork-only
+`review_artwork` and planning-only `review_blockout`; their existing PNG/SVG
+contracts remain unchanged. It takes the same project/scene revision guards,
+optional canonical `scene` candidate, `camera_id` and bounded `overview` pixel
+rectangle as `review_artwork`, plus optional `filters`:
+
+```json
+{"tiles": true, "sprites": true, "geometry": true, "gameplay": true, "guides": false}
+```
+
+Omitted keys default to true. Classification follows the browser's
+[portable property rules](user/review-mode.md#inspect-one-mixed-scene), independently
+of layer names. Authored hidden layers stay hidden. The camera is selected from
+an authored visible typed camera before applying filters, so turning off guides
+does not remove the review viewport. Display preferences do not change the scene
+or downstream interpretation of its data.
+
+The result identifies `scene_id`, `project_revision`, original saved
+`scene_revision`, exact canonical candidate `snapshot_revision`, normalized
+`filters`, camera, overview, `overview_complete`, `units:"pixels"` and `scale:1`.
+`camera_resource` and `overview_resource` are self-contained SVGs: ordered static
+artwork is embedded as a PNG, then planning geometry and readable vector captions
+are overlaid above it. Camera frames remain visible when guides are enabled.
+Unclassified non-art points/rectangles use a generic outline; full names remain
+in SVG titles even when crowded captions are suppressed. Browser playback,
+selection, grid and artwork metadata overlays are excluded. This shows authored
+positions/bounds, with no simulation or inferred actor sprites.
+
+Each artwork viewport retains native pixels and the existing 1024-pixel axis,
+1,048,576 output-pixel, 4,194,304 decoded-source-pixel and 16,777,216 compositing
+budgets. Planning rendering permits at most 4096 filtered visible objects and
+8 MiB per combined SVG, including its embedded PNG; the existing artifact/cache
+limits still apply. The overview defaults to the top-left bounded rectangle,
+never a silently scaled whole scene. Request another rectangle for larger scenes.
+Both resources are produced under the shared verified saved-read service and
+revalidated before returning. A stale candidate base, changed artwork or concurrent
+scene save rejects the review without changing the client-held candidate or project.

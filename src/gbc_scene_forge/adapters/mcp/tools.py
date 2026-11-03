@@ -157,19 +157,30 @@ class Adapter:
                 reimport=a.get("reimport", False),
                 dry_run=a.get("dry_run", False),
             )
-        if name == "review_artwork":
-            result = project.scenes.review_artwork(
+        if name in ("review_artwork", "review_scene"):
+            review = (
+                project.scenes.review_scene
+                if name == "review_scene"
+                else project.scenes.review_artwork
+            )
+            result = review(
                 a["scene_id"],
                 revision,
                 a["scene_revision"],
                 camera_id=a.get("camera_id"),
                 overview=a.get("overview"),
                 scene=a.get("scene"),
+                **({"filters": a.get("filters")} if name == "review_scene" else {}),
             )
             for view in ("overview", "camera"):
-                result[f"{view}_resource"] = self.artifact(
-                    result.pop(f"{view}_png"), "image/png", f"{view}.png"
-                )
+                if name == "review_scene":
+                    result[f"{view}_resource"] = self.artifact(
+                        result.pop(f"{view}_svg").encode(), "image/svg+xml", f"{view}.svg"
+                    )
+                else:
+                    result[f"{view}_resource"] = self.artifact(
+                        result.pop(f"{view}_png"), "image/png", f"{view}.png"
+                    )
             return result
         if name == "diagnostics":
             return project.reports.diagnostics(revision, a.get("options"))

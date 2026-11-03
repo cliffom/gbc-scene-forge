@@ -18,6 +18,7 @@ import { encodeObject } from '../objects/objects.mts';
 import type { ProjectApi } from '../project/project-api.mts';
 
 export interface Ports {
+  allVisible: () => boolean;
   regions: ReadonlyMap<string, { image: HTMLImageElement; x: number; y: number }>;
   draw: (refreshUI?: boolean) => void;
   update: () => void;
@@ -79,6 +80,9 @@ export function createCompositionsController({
       return;
     }
     try {
+      if (!ports.allVisible()) {
+        throw Error('Show all scene view categories before copying or transforming a composition.');
+      }
       const choice = compositionSelection();
       if (action === 'copy' || action === 'cut') {
         brushes.clipboard = capture(
@@ -199,6 +203,9 @@ export function createCompositionsController({
       return;
     }
     try {
+      if (!ports.allVisible()) {
+        throw Error('Show all scene view categories before saving a stamp.');
+      }
       const value = capture(
         sceneSession.editor,
         compositionSelection(),

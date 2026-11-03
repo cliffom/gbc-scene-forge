@@ -273,6 +273,36 @@ TOOLS = [
         read=True,
     ),
     tool(
+        "review_scene",
+        "Read-only combined artwork and planning SVG camera/overview at native pixel scale. "
+        "Embedded PNG artwork with planning geometry/labels above it. Respects authored hidden "
+        "layers; filters are view-only. Camera selection uses authored visible cameras. "
+        "Bounded to 1024x1024 per view, 4096 objects and 8 MiB per SVG. "
+        "Optional canonical candidate retains saved guards and exact snapshot identity.",
+        {
+            **SCENE,
+            "filters": schema(
+                {
+                    key: {"type": "boolean"}
+                    for key in ("tiles", "sprites", "geometry", "gameplay", "guides")
+                },
+                ("tiles", "sprites", "geometry", "gameplay", "guides"),
+            ),
+            "camera_id": ID,
+            "scene": NATIVE,
+            "overview": schema(
+                {
+                    "x": {"type": "integer", "minimum": 0, "maximum": 8192},
+                    "y": {"type": "integer", "minimum": 0, "maximum": 8192},
+                    "width": {"type": "integer", "minimum": 1, "maximum": 1024},
+                    "height": {"type": "integer", "minimum": 1, "maximum": 1024},
+                }
+            ),
+        },
+        ("camera_id", "overview", "scene", "filters"),
+        read=True,
+    ),
+    tool(
         "diagnostics",
         "Read-only project diagnostics at guarded saved revisions; no reachability certification.",
         {**GUARD, "options": NATIVE},
