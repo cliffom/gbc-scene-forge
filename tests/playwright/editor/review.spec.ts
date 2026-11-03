@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { expect } from '@playwright/test';
-import { test, editorReady } from '../support/browser-fixtures.ts';
+import { test, clickControl, editorReady } from '../support/browser-fixtures.ts';
 
 test.use({ projectMode: 'sample' });
 
@@ -190,7 +190,7 @@ test('review mode expands the canvas and preserves edits, selection and history'
   await expect(page.locator('#undo')).toBeDisabled();
   await page.locator('#redo').click();
   await expect(page.locator('#layer-name')).toHaveValue('Review keeps my edits');
-  await page.locator('#save').click();
+  await clickControl(page, 'save');
   await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   await page.reload();
   await editorReady(page);

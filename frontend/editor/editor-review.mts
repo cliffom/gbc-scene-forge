@@ -26,7 +26,13 @@ export function createReviewController({
   function reflect(reviewing: boolean) {
     activity.reviewing = reviewing;
     document.body.classList.toggle('reviewing', reviewing);
-    toggle.textContent = reviewing ? 'Return to editing' : 'Review scene';
+    const label = reviewing ? 'Return to editing' : 'Review scene';
+    const text = toggle.querySelector('.review-action-label');
+    if (text) {
+      text.textContent = label;
+    }
+    toggle.setAttribute('aria-label', label);
+    toggle.title = label;
     toggle.setAttribute('aria-pressed', String(reviewing));
     canvas.setAttribute('aria-label', reviewing ? 'Scene review' : 'Editable scene on a tile grid');
   }

@@ -2168,7 +2168,13 @@ p.scenes.save(loaded['id'], s, loaded['revision'], p.catalog()['revision'])
     const point = array(
       await evaluate(`(() => {
       const control=${expression}; control.scrollIntoView({block:'nearest'});
-      const rect=control.getBoundingClientRect(); return [rect.left+rect.width/2,rect.top+rect.height/2];
+      const rect=control.getBoundingClientRect();
+      const x=rect.left+rect.width/2,y=rect.top+rect.height/2;
+      const hit=document.elementFromPoint(x,y);
+      if (!hit || !control.contains(hit)) {
+        throw Error('Pointer target is covered: '+control.outerHTML+'; hit '+hit?.outerHTML);
+      }
+      return [x,y];
     })()`),
       number,
     );

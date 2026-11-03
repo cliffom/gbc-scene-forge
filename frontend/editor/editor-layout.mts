@@ -15,13 +15,132 @@ export function createEditorLayout(
   changeLayout: (apply: () => void) => void = (apply) => apply(),
 ) {
   const main = element('editor-layout', HTMLElement);
+  const inspector = element('inspector-pane', HTMLElement);
+  const inspectorHeading = element('inspector-heading', HTMLElement);
+  function inspectorScrollOffset() {
+    inspector.style.scrollPaddingTop = `${inspectorHeading.offsetHeight + 8}px`;
+  }
+  lifetime.observe(new ResizeObserver(inspectorScrollOffset)).observe(inspectorHeading);
+  inspector.addEventListener(
+    'focusin',
+    (event) => {
+      if (!(event.target instanceof HTMLElement) || inspectorHeading.contains(event.target)) {
+        return;
+      }
+      // Layer radios use their visible row as the focus indicator. Nested layer
+      // scrolling can still leave that row under the outer sticky heading.
+      const target = event.target.closest('.layer-row') ?? event.target;
+      const top = target.getBoundingClientRect().top;
+      const visibleTop = inspectorHeading.getBoundingClientRect().bottom + 4;
+      if (top < visibleTop) {
+        inspector.scrollTop -= visibleTop - top;
+      }
+    },
+    { signal: lifetime.signal },
+  );
+  const toolbar = document.querySelector<HTMLElement>('.canvas-toolbar');
+  const expandTools = element('expand-scene-tools', HTMLButtonElement);
+  function reflectToolbar(expanded: boolean) {
+    toolbar?.classList.toggle('toolbar-expanded', expanded);
+    expandTools.setAttribute('aria-expanded', String(expanded));
+    const tool = document.querySelector<HTMLInputElement>('input[name=tool]:checked');
+    const name =
+      tool?.closest('.tool')?.querySelector('.tool-label')?.textContent?.trim() || 'Paint';
+    const label = `${expanded ? 'Collapse' : 'Expand'} tools (${name})`;
+    expandTools.setAttribute('aria-label', label);
+    expandTools.title = label;
+    const text = expandTools.querySelector('.toolbar-tool-name');
+    if (text) {
+      text.textContent = `Tools · ${name}`;
+    }
+  }
+  lifetime.assign(expandTools, 'onclick', () => {
+    changeLayout(() => reflectToolbar(expandTools.getAttribute('aria-expanded') !== 'true'));
+  });
+  toolbar?.addEventListener(
+    'change',
+    () => reflectToolbar(expandTools.getAttribute('aria-expanded') === 'true'),
+    { capture: true, signal: lifetime.signal },
+  );
+  toolbar?.addEventListener(
+    'keydown',
+    (event) => {
+      if (
+        event.key === 'Escape' &&
+        expandTools.checkVisibility() &&
+        expandTools.getAttribute('aria-expanded') === 'true' &&
+        !document.querySelector('[popover]:popover-open')
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        expandTools.focus({ preventScroll: true });
+        changeLayout(() => reflectToolbar(false));
+      }
+    },
+    { signal: lifetime.signal },
+  );
+  if (toolbar) {
+    let toolbarFocus: HTMLElement | null = null;
+    document.addEventListener(
+      'focusin',
+      (event) => {
+        toolbarFocus =
+          event.target instanceof HTMLElement && toolbar.contains(event.target)
+            ? event.target
+            : null;
+      },
+      { signal: lifetime.signal },
+    );
+    toolbar.addEventListener(
+      'focusout',
+      (event) => {
+        // Hiding a radio can blur it before ResizeObserver runs. Retain only
+        // that case; explicit blur and focus moving elsewhere must stay put.
+        if (
+          event.relatedTarget ||
+          (event.target instanceof HTMLElement && event.target.checkVisibility())
+        ) {
+          toolbarFocus = null;
+        }
+      },
+      { signal: lifetime.signal },
+    );
+    lifetime
+      .observe(
+        new ResizeObserver(() => {
+          const focused =
+            document.activeElement === document.body ? toolbarFocus : document.activeElement;
+          if (
+            focused instanceof HTMLElement &&
+            toolbar.contains(focused) &&
+            !focused.checkVisibility()
+          ) {
+            const target = expandTools.checkVisibility()
+              ? expandTools
+              : element('review-mode', HTMLButtonElement);
+            target.focus({ preventScroll: true });
+          }
+        }),
+      )
+      .observe(toolbar);
+  }
+  lifetime.cleanup(() => reflectToolbar(false));
+  reflectToolbar(false);
   function reflectPane(name: 'library' | 'inspector', expanded: boolean) {
+    const rail = element(`${name}-rail`, HTMLElement);
+    const toggle = element(`toggle-${name}`, HTMLButtonElement);
+    const host = expanded ? element(`${name}-heading`, HTMLElement) : rail;
+    if (toggle.parentElement !== host) {
+      host.append(toggle);
+    }
+    rail.hidden = expanded;
     element(`${name}-pane`, HTMLElement).hidden = !expanded;
     main.classList.toggle(`${name}-collapsed`, !expanded);
-    const toggle = element(`toggle-${name}`, HTMLButtonElement);
     toggle.setAttribute('aria-expanded', String(expanded));
     const label = name === 'library' ? 'Library' : 'Inspector';
-    toggle.textContent = `${expanded ? 'Hide' : 'Show'} ${label}`;
+    const action = `${expanded ? 'Hide' : 'Show'} ${label}`;
+    toggle.setAttribute('aria-label', action);
+    toggle.title = action;
   }
   function showPane(name: 'library' | 'inspector', expanded: boolean) {
     const pane = element(`${name}-pane`, HTMLElement);
@@ -29,10 +148,13 @@ export function createEditorLayout(
       return;
     }
     const toggle = element(`toggle-${name}`, HTMLButtonElement);
-    if (!expanded && pane.contains(document.activeElement)) {
+    const restoreFocus =
+      document.activeElement === toggle || (!expanded && pane.contains(document.activeElement));
+    changeLayout(() => reflectPane(name, expanded));
+    // Moving a focused control between its header and closed edge loses native focus.
+    if (restoreFocus) {
       toggle.focus({ preventScroll: true });
     }
-    changeLayout(() => reflectPane(name, expanded));
   }
   for (const name of ['library', 'inspector'] as const) {
     const toggle = element(`toggle-${name}`, HTMLButtonElement);
@@ -145,6 +267,9 @@ export function createEditorLayout(
   reflectPaletteState();
   return {
     showLibrary,
+    syncToolbar() {
+      reflectToolbar(expandTools.getAttribute('aria-expanded') === 'true');
+    },
     enableBlockout(enabled: boolean) {
       const tab = element('blockout-tab', HTMLButtonElement);
       tab.hidden = !enabled;

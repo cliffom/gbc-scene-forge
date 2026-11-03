@@ -222,7 +222,7 @@ recheck the nearby camera view. Decide which version you prefer and save it.
 1. Choose **Save scene** and wait for **Saved**.
 2. Reload the browser. Select **Opening forest** in the Scene dropdown.
 3. Confirm that your named objects, pool color, note and camera position survived.
-4. Choose **Export…**, select **Whole project**, and choose **Download ZIP**.
+4. Choose **Project tools → Export…**, select **Whole project**, and choose **Download ZIP**.
 5. Extract the ZIP. The scene uses native Tiled objects and custom properties;
    its camera is a rectangle with saved dimensions and scrolling properties.
 

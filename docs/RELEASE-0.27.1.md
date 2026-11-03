@@ -1,0 +1,40 @@
+# Scene Forge 0.27.1
+
+Prepared editor usability and visual polish for
+[#144](https://github.com/cliffom/gbc-scene-forge/issues/144). Scene commands now
+share a compact toolbar with consistent SVG icons, named tooltips, shortcut hints
+and clear selected-tool treatment. Drawing, history, clipboard and selection
+commands remain grouped. Zoom, review and fit retain their first row; narrower
+canvases reveal secondary commands through an expand arrow instead of automatic
+toolbar wrapping. At the smallest widths the trigger names the current drawing
+tool and expands to expose drawing choices as well.
+Management and save actions retain text labels; compact review uses a named eye icon.
+Save scene leads the Scene actions menu with its keyboard shortcut; Export leads
+Project tools. The document bar keeps selectors, save status and these two menus.
+
+Library and Inspector use header chevrons to collapse their panes, with slim
+reopen handles only when closed; expanded panes reserve no extra arrow columns.
+The Inspector header stays reachable while scrolling, and toolbar focus follows
+commands hidden by a narrower layout to the visible disclosure.
+Copy icons beside the project folder and its popover path provide direct copying,
+success feedback and a selectable fallback when clipboard access is unavailable.
+
+The pixel editor exposes all eight drawing/selection tools directly, keeps
+Color/Opacity/Transparent aligned, and groups zoom/grid separately. Setup/recovery
+share a padded scroll surface, an empty source selector explains its unavailable
+state, and the drawing canvas/review column scroll independently above the save
+footer. Drawing help and preview-position settings use contextual disclosures;
+upper controls scroll under height pressure so expanded help, placement details
+and dense palettes leave save actions accessible. Transparent drawing visibly
+toggles back to the previous opacity; choosing a color resumes painting, while
+exact partial alpha remains supported. Inspector keyboard focus stays below its
+sticky header, including layer controls.
+
+This compatible patch changes presentation and input wiring, with no project,
+Tiled, MCP or artwork schema migration and no new runtime dependencies. Scene and
+artwork histories, receipt-required saves and conflict-aware recovery retain their
+existing contracts. Existing native artwork still requires Forge 0.27 or newer.
+
+See the [layout guide](UI-DESIGN.md), [pixel workflow](user/pixel-artwork.md) and
+[scoped evaluation](evaluations/editor-polish.md). Actual checks and limitations
+belong in [validation](VALIDATION.md). Tagging and publication are separate.

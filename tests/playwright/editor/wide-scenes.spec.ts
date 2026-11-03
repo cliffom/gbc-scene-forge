@@ -113,7 +113,7 @@ a.call('save_scene',dict(project='project',project_revision=p.catalog()['revisio
   await page.locator('#undo').click();
   await expect(page.locator('#scene')).toHaveAttribute('width', '7680');
   await page.locator('#redo').click();
-  await page.locator('#save').click();
+  await clickControl(page, 'save');
   await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   await page.reload();
   await expect(page.locator('#scene')).toHaveAttribute('width', '8192');

@@ -540,7 +540,7 @@ print(loaded['id'])
     await expect(page.locator('#scene')).toHaveAttribute('width', String(width * 8));
     await expect(page.locator('#scene-save-state')).toHaveText('Saved');
     await page.locator('#redo').click();
-    await page.locator('#save').click();
+    await clickControl(page, 'save');
     await expect(page.locator('#scene-save-state')).toHaveText('Saved');
     await page.locator('#scenes').selectOption({ label: 'River' });
     await expect(page.locator('#scene')).toHaveAttribute('width', '56');

@@ -1,7 +1,7 @@
 # Create and edit pixel artwork
 
-The prepared 0.27.0 milestone build adds **Create / edit pixels…** in the Artwork
-Library. For an existing scene placement, select its tile cells or sprite and
+Choose **Create / edit pixels…** in the Artwork Library. For an existing scene
+placement, select its tile cells or sprite and
 choose **Edit artwork…** in the Selection inspector. Select the sprite's object
 layer first. Both entry points open a separate artwork document; scene undo and
 unsaved scene edits remain intact.
@@ -45,17 +45,31 @@ come from the open saved scene; MCP may explicitly select locations across scene
 
 ## Draw and revise
 
-Use Pencil, Eraser, Flood fill, Eyedropper, Line or Rectangle outline. Drag a
-rectangular selection, then move it with the Move selection tool or arrow keys
+The toolbar exposes Pencil, Eraser, Flood fill, Eyedropper, Line, Rectangle
+outline, Select rectangle and Move selection directly as icons. Hover for names;
+Tab reaches the selected tool and arrow keys choose adjacent tools. A pointer
+choice returns focus to the canvas. History, clipboard and transforms use the
+same icon style as scene commands; gold marks the selected drawing tool.
+
+Color, Opacity and the checkerboard **Transparent** button sit together; Zoom and
+Pixel grid form a separate view group. Shared-edit and selected-variation scope
+remain available in a scrolling controls area when space is limited; save actions
+stay beneath the canvas. Expand **Drawing & keyboard help** for occasional
+instructions.
+
+Drag a rectangular selection, then move it with the Move selection tool or arrow keys
 while the canvas has focus. Copy/Paste uses the artwork's own clipboard and pastes
 at the selection's top-left (or 0, 0 without a selection). Flip and clockwise
 quarter-turn rotation affect the selection, or the whole artwork when deselected.
 A rotated rectangle must fit without resizing the document; otherwise select a
 smaller area or move it inside the bounds first.
 
-Color and Alpha support generic RGBA, including partial transparency. **Transparent**
-sets alpha to zero; Eraser writes transparent black. The eyedropper and the first
-64 distinct artwork palette swatches preserve exact RGBA, including hidden RGB
+Opacity supports exact alpha values from 0 (transparent) to 255 (opaque), including
+partial transparency for PNG compositing. **Transparent** toggles alpha to zero
+and changes to **Resume color**; click again to restore the previous nonzero
+opacity. Choosing a color also resumes painting at that opacity. Eraser writes
+transparent black. The eyedropper and the first 64 distinct artwork palette
+swatches preserve exact RGBA, including hidden RGB
 beneath transparency. GBC target profiles do not restrict these colors. Zoom uses
 nearest-neighbor pixels; toggle the pixel grid as needed.
 
@@ -71,7 +85,7 @@ Keyboard shortcuts in text/color/number inputs retain their native behavior.
 **Review current pixels** compares the saved and proposed artwork and reports the
 number of affected saved references across scenes, stamps and definitions. With
 **Preview in the open scene** checked, the preview includes local unsaved scene
-edits, within a 256 × 256 view at the chosen pixel X/Y. Existing placements retain
+edits, within a 256 × 256 view. Expand **Scene preview position** to set pixel X/Y. Existing placements retain
 their transforms and origins. New artwork is temporarily placed at that position;
 a tile spanning several scene cells is reviewed in full when its size divides
 into the scene grid. Temporary placement never changes the scene. Uncheck scene
@@ -80,7 +94,9 @@ preview for isolated review, including artwork incompatible with the open grid.
 **Save reviewed artwork** commits the exact reviewed pixels against the project,
 artwork and scene bases. Further pixel edits invalidate the review. Save adds or
 updates artwork and reloads the Library/images without adding a scene undo item.
-After a successful save, place new artwork from the Library separately.
+After a successful save, place new artwork from the Library separately. The save,
+download and discard actions remain below the independently scrolling canvas and
+review panel, including in short desktop windows.
 If isolated artwork review finds that another writer changed the open scene,
 the artwork can still save, but local scene edits retain their original conflict
 guard. Reconcile the scene before saving it; artwork saves do not authorize

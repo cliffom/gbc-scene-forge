@@ -15,6 +15,185 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Layer pointer focus after sticky-header scrolling (PR #145 CI)
+
+- **Scope:** Prepared 0.27.1 working tree based on
+  [`ca90a5a`](https://github.com/cliffom/gbc-scene-forge/commit/ca90a5a9bf674656e3338f4b11457c49cf23c050),
+  checked on 2026-11-02 in local Darwin/Python/Node/Chromium. Original Linux CI
+  failure: [checks job](https://github.com/cliffom/gbc-scene-forge/actions/runs/41555546329/job/125653432137).
+- **Method:** Inspected the failed job and its retained browser trace. The test
+  scrolled the selected layer label to the Inspector's top and clicked its center
+  at y=135, inside the sticky header. Checked the full standalone history,
+  metadata, export, navigation and moved-project workflow locally. Added a pointer
+  hit-test assertion before physical clicks so covered targets fail explicitly.
+  Ran the complete `make test-browser` suite, targeted ESLint/format checks,
+  `make docs-check` and `git diff --check`.
+- **Result:** Original CI reported 67 passes, two skips and one failure: clicking
+  the covered layer label did not return focus to the scene. The working tree's
+  measured Inspector scroll padding and nested focus correction address that
+  overlap; the previously failing standalone workflow passes locally. The complete
+  browser run passed 71 scenarios with two optional scalability-profile skips.
+  Targeted lint/format, documentation and whitespace checks passed.
+- **Limits:** Local source-checkout result; no successful remote rerun is claimed.
+  Installed-wheel checks were not repeated. The original CI failure remains
+  linked above and is not superseded by a remote pass.
+
+## Dense pixel controls, keyboard focus and opacity (PR #145 feedback)
+
+- **Scope:** Prepared 0.27.1 working tree based on
+  [`ca90a5a`](https://github.com/cliffom/gbc-scene-forge/commit/ca90a5a9bf674656e3338f4b11457c49cf23c050),
+  checked on 2026-11-02 in local Darwin/Python/Node/Chromium.
+  [Design and source-checkout captures](evaluations/editor-polish.md#dense-pixel-controls-inspector-focus-and-transparency).
+- **Method:** Ran `make lint test`, frontend build and 24 pixel/polish browser
+  scenarios, plus nine pane/layout/Review/editor-lifetime scenarios. Repeated the
+  opacity scenario after adding exact-alpha swatch assertions and numeric-zero
+  normalization. Checked a seven-placement, 64-color variation with expanded help
+  and placement details at 1440×900, 760×640 and 1440×600; used physical Save
+  activation and footer hit tests. Checked Inspector Tab/Shift+Tab visibility and
+  hit testing at 760×640. Inspected dense desktop/compact and active transparency
+  captures; saved/reopened pixels verify alpha 0 and 128 and restored drawing.
+- **Result:** Lint, 413 Python tests, frontend checks, all 33 browser scenarios
+  and the final extended opacity scenario passed. Upper controls scroll without
+  clipping save actions; Inspector focus stays below its sticky header;
+  transparency visibly toggles back to the previous nonzero opacity. Initial
+  test setup placed the Inspector check outside the sample fixture group; it
+  timed out before reaching the scenario. The corrected group and final run pass.
+- **Limits:** Source-checkout Chromium only; full browser, distribution and
+  installed-wheel checks were not repeated. Historical wheel evidence keeps its
+  original scope. No independent human or other-browser usability check is
+  claimed. Exact partial alpha remains supported; no artwork schema change or
+  additional version bump was needed.
+
+## Responsive focus and persistent Inspector header (PR #145 review)
+
+- **Scope:** Prepared 0.27.1 working tree based on
+  [`13537f9`](https://github.com/cliffom/gbc-scene-forge/commit/13537f9eb17113b621db01f92d3f6a173323312b),
+  checked on 2026-11-02 in the Darwin/Python/Node/Chromium environment below.
+  [Design and source-checkout captures](evaluations/editor-polish.md#persistent-inspector-header-and-responsive-focus).
+- **Method:** Reproduced both review findings in Chromium, added synthetic
+  keyboard and pointer regressions, ran `make lint test`, and ran 17 focused
+  polish, pane, layout, Review and editor-lifetime browser scenarios. Inspected
+  scrolled Inspector captures at 1440×900 and 760×640. Scroll/hit-test assertions
+  cover five desktop sizes with and without selection, reopening at the same
+  scroll offset, and actual pointer activation without automatic locator scrolling.
+- **Result:** Lint, 413 Python tests, frontend checks and all 17 final browser
+  scenarios passed. Responsive hiding now transfers toolbar focus to a visible
+  command without disturbing external focus or explicit blur. The Inspector
+  header remains visible above scrolling content, including reordered Selection.
+  Initial regression-test attempts clicked a hidden disclosure and later an
+  offscreen scene cell; conditional disclosure and Fit scene correct the test
+  setup. The corrected final run passed together with the existing scenarios.
+- **Limits:** Local source-checkout Chromium evidence. The full browser suite,
+  distribution rebuild and installed-wheel checks were not repeated for these
+  fixes. Earlier wheel evidence retains its original scope. No independent human,
+  other-browser or actual OS/browser zoom validation is claimed. Version remains
+  0.27.1; no tag or publication was performed.
+
+## Save and export menus (#144 refinement)
+
+- **Scope:** Prepared 0.27.1 working tree based on
+  [`a9ed6a0`](https://github.com/cliffom/gbc-scene-forge/commit/a9ed6a0), checked
+  on 2026-11-02 in the Darwin/Python/Node/Chromium environment recorded below.
+  [Design and final installed-wheel captures](evaluations/editor-polish.md#save-and-export-menu-consolidation).
+- **Method:** Agent screenshot inspection and synthetic keyboard/pointer input.
+  Ran `make lint test`, production `make build check-dist test-browser`, then
+  rebuilt the final wheel and ran six polish scenarios plus the corrected
+  project first-use scenario against it. Checks exercise keyboard menu entry,
+  Save/Export activation and dismissal, Control+S and Meta+S with menus closed,
+  guide Save/Export actions, and the UI-only save/reload/download flow.
+- **Result:** Lint, 413 Python tests, frontend checks, production build/metadata
+  and seven wheel smoke tests passed. The full browser run passed 65 scenarios,
+  skipped two opt-in profiles and failed one older first-use test that still
+  clicked Save without opening its menu. Updated that test to use the shared
+  visible-menu helper; its installed-wheel rerun passed. All six final wheel
+  polish scenarios passed. Initial visual inspection caught dark inherited Save
+  text; the final wheel uses accent text. Final captures show desktop and compact
+  layouts, including a single document-bar row at 760×640.
+- **Limits:** The full browser run began before the final Save color correction;
+  final wheel checks/captures include it. The entire suite was not repeated after
+  correcting the first-use test helper. Local agent/synthetic Chromium evidence
+  does not certify independent human usability, actual OS/browser zoom or other
+  browsers. Prepared version remains 0.27.1; no tag or publication was performed.
+
+## Pane header controls (#144 refinement)
+
+- **Scope:** Prepared 0.27.1 working tree based on
+  [`9687665`](https://github.com/cliffom/gbc-scene-forge/commit/9687665b485094aec11b296a95968cb9d5b457ad),
+  checked on 2026-11-02 in the same Darwin/Python/Node/Chromium environment as the
+  follow-up below. [Design and installed-wheel captures](evaluations/editor-polish.md#pane-header-refinement).
+- **Method:** Agent screenshot inspection and synthetic Chromium interaction.
+  Ran `make lint test`, production `make build check-dist`, and 14 focused pane,
+  toolbar, layout, review and editor-lifetime scenarios on source and the installed
+  wheel. The final wheel run includes the final Inspector header placement and
+  explicit focus assertions on both keyboard pane transitions. Geometry checks
+  cover five desktop sizes, every pane combination, header content and direct
+  pane/workbench adjacency.
+- **Result:** Lint, 413 Python tests and frontend checks passed. Production build,
+  metadata and seven wheel smoke tests passed. All 14 source scenarios and all 14
+  final installed-wheel scenarios passed. Open panes no longer reserve arrow
+  columns; both open recover 48px of canvas width. Captures inspected at 1440×900
+  and 760×640 include expanded panes and closed handles.
+- **Limits:** Focused regression evidence; the full browser suite was not rerun
+  for this refinement. Source captures precede the final Inspector badge/arrow
+  alignment; archived captures and final browser results use the final wheel.
+  Local agent/synthetic Chromium checks do not certify independent human usability,
+  actual OS/browser zoom or other browsers. No tag or publication was performed.
+
+## Pane controls, path copy and responsive toolbar (#144 follow-up)
+
+- **Scope:** Prepared 0.27.1 working tree based on
+  [`6e8b7dd`](https://github.com/cliffom/gbc-scene-forge/commit/6e8b7ddf1a470ca89bbb4c6c068a7042dfb1cddd),
+  checked on 2026-11-02 with Darwin 27.0.0, Python 3.13.13, Node 24.22.1 and
+  Chromium 156.0.8078.4. [Decisions and archived captures](evaluations/editor-polish.md#pane-path-and-responsive-toolbar-refinements).
+- **Method:** Agent code/screenshot inspection and synthetic browser input in
+  disposable projects. Ran `make lint test`, production `make build check-dist test-browser`,
+  focused toolbar/pane/review/layout scenarios, and all five polish/first-use
+  scenarios against the installed wheel. Bounds checks include all five desktop
+  sizes and pane combinations, collapsed/expanded toolbar states, fixed viewing
+  controls, keyboard disclosure and current-tool synchronization. Clipboard
+  success uses Chromium permissions; fallback injects a clipboard rejection.
+- **Result:** Lint/docs, 413 Python tests and frontend checks passed. Production
+  metadata/build and seven installed-wheel smoke tests passed. Full browser
+  acceptance passed 65 scenarios; two opt-in scalability profiles were skipped.
+  All five final focused scenarios and all five installed-wheel scenarios passed. Inspection
+  caught stale copy-success feedback after failure, now reset per request. An
+  older compact variation test initially clicked a newly hidden tool; its
+  corrected flow explicitly opens the disclosure and passes.
+- **Limits:** Local source and installed-wheel Chromium evidence, not independent
+  human usability or non-Chrome certification. DPR emulation is not actual OS or
+  browser zoom validation. The injected clipboard failure covers the fallback,
+  not every platform's permission prompt. Original captures/results below retain
+  their earlier working-tree scope. No tag or publication was performed.
+
+## Editor toolbar and layout polish (#144)
+
+- **Scope:** Prepared 0.27.1 working tree based on
+  [`06ca6f8`](https://github.com/cliffom/gbc-scene-forge/commit/06ca6f8f1b9c2de2dea9dc303e3ce10d3f3bf6f1),
+  checked on 2026-11-02 with Darwin 27.0.0, Python 3.13.13, Node 24.22.1 and
+  Chromium 156.0.8078.4. [Task flows and archived comparisons](evaluations/editor-polish.md).
+- **Method:** Agent code/visual inspection, baseline comparison and synthetic
+  pointer/keyboard interaction in disposable projects. Ran `make lint test`,
+  production `make build check-dist test-browser`, then the first-use and polish
+  scenarios with `FORGE_TEST_PYTHON` pointing to the installed wheel. New bounds
+  checks cover five desktop sizes, every pane combination, focus clearance,
+  control alignment, long names, expanded help and representative 1.25 DPR
+  emulation; the first-use flow creates/draws/places/saves/reopens/exports without
+  the guide or MCP.
+- **Result:** Lint, documentation, Python/TypeScript tests, distribution metadata
+  and seven installed-wheel smoke tests passed. Full browser acceptance passed
+  63 scenarios; two opt-in scalability profiles were skipped. All four selected
+  installed-wheel browser scenarios passed. An intermediate narrow layout clipped
+  Across layers; bounded wrapping and pairwise-control assertions resolve it.
+  Initial new-test empty-project fixture assumptions failed and were corrected,
+  as recorded in the evaluation. Save/recovery, selection variations, imports,
+  sprite preview, layers, blockouts, stamps and export acceptance passed.
+- **Limits:** Local source and installed-wheel evidence, not a linked CI claim or
+  human usability certification. Chromium scaling emulation does not establish
+  actual OS/browser zoom behavior. Recovery was exercised at representative sizes,
+  not the full state/size cross product. Non-Chrome browsers, physical-device
+  comfort and independent novice success remain unmeasured; the original reported
+  screenshot environment was unspecified. No tag or publication was performed.
+
 ## Workshop placement conflict guards (PR #142 review)
 
 - **Scope:** Prepared 0.27.0 working tree based on
@@ -938,6 +1117,10 @@ This is the single maintained validation checklist. Issue state was checked on
 Current automated procedures remain in [releasing](RELEASING.md) and
 [browser testing](BROWSER-TESTING.md). Add scoped evidence above when completing a
 check, retaining actual revision, environment, attribution, failures and limits.
+
+### Editor usability (#144)
+
+- [ ] Have independent users assess icon discovery, an unguided first-use flow and prolonged scene/pixel editing; check actual browser zoom and OS display scaling on physical devices. Automated task success and Chromium DPR emulation do not establish those outcomes.
 
 ### Native artwork (milestone 14)
 

@@ -27,7 +27,19 @@
 .standalone .library {grid-column:1;grid-row:1}
 .standalone .workbench {grid-column:2;grid-row:1}
 .standalone .inspector {grid-column:3;grid-row:1}
-.pane-controls {display:flex;gap:6px;flex:none}
+.pane-rail {grid-row:1;display:flex;justify-content:center;align-items:flex-start;border-inline:1px solid var(--line);background:var(--panel)}
+.library-rail {grid-column:1}
+.inspector-rail {grid-column:3}
+.standalone .pane-toggle {display:flex;flex:none;align-items:center;justify-content:center;width:28px;min-height:28px;padding:0;border-color:transparent;border-radius:3px;background:transparent;color:var(--muted)}
+.pane-rail .pane-toggle {width:22px;min-height:36px;margin-top:12px}
+.pane-heading {min-height:28px;flex:none}
+.pane-heading h2 {margin-right:auto}
+.inspector .pane-heading {display:grid;grid-template-columns:minmax(0,1fr) auto}
+.inspector .pane-heading #dirty {grid-row:2;grid-column:1/-1;justify-self:start}
+.inspector>#inspector-heading {position:sticky;top:calc(-1 * var(--pane-padding));z-index:2;order:-2;background:var(--panel);margin:calc(-1 * var(--pane-padding)) calc(-1 * var(--pane-padding)) 12px;padding:var(--pane-padding);border-bottom:1px solid var(--line)}
+.pane-toggle:hover {color:var(--text);background:#373b30}
+.pane-toggle:focus-visible {outline:2px solid var(--accent);outline-offset:-2px}
+.pane-toggle[aria-expanded=false] svg {transform:rotate(180deg)}
 .standalone .masthead {padding:10px 16px;gap:16px;min-height:64px}
 .standalone .mark {width:40px;height:40px}
 .standalone h1 {font-size:18px}
@@ -43,7 +55,7 @@
 .standalone .property-grid {grid-template-columns:repeat(2,minmax(0,1fr))}
 .standalone .property-grid input {min-width:0}
 .standalone .viewport {min-height:160px}
-.standalone .library,.standalone .inspector {min-width:0;padding:14px}
+.standalone .library,.standalone .inspector {--pane-padding:14px;min-width:0;padding:var(--pane-padding)}
 .library-tabs {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;padding:3px;border:1px solid var(--line);border-radius:6px;background:#1c1f1a;flex:none}
 .library-tabs button {min-width:0;padding:6px 2px;font-size:12px;border-color:transparent;background:transparent;color:var(--muted)}
 .library-tabs [aria-selected=true] {background:#373b30;color:var(--text);border-color:#656b54}
@@ -151,7 +163,7 @@
   .standalone .connection {letter-spacing:.8px}
   .standalone .canvas-toolbar {padding:8px}
   .standalone .tool {padding:6px 5px}
-  .standalone .library,.standalone .inspector {padding:10px}
+  .standalone .library,.standalone .inspector {--pane-padding:10px}
   .document-context {gap:6px}
   .document-actions {gap:6px}
   .standalone .document-bar {padding:8px 12px}
@@ -252,12 +264,17 @@
 .github-link:hover {color:var(--accent);border-color:var(--line);background:#2b2e28}
 .github-link:focus-visible {outline:2px solid var(--accent);outline-offset:2px}
 
+.folder-control {display:flex;align-items:center;gap:2px}
+.sr-only {position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
 .folder-button {display:flex;align-items:center;gap:7px;max-width:min(220px,25vw);padding:6px 8px;font-size:12px;letter-spacing:0;background:transparent;color:var(--muted);border-color:transparent}
 .folder-button svg {flex:none}
 #folder-name {min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .folder-button:hover {color:var(--text);border-color:var(--line)}
 .folder-popover {position:fixed;inset:auto;margin:0;width:min(360px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;padding:16px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--text);box-shadow:0 8px 30px #0006;font-size:12px;letter-spacing:0}
 .folder-path {margin:12px 0;white-space:pre-wrap;overflow-wrap:anywhere;user-select:text;font:12px/1.7 ui-monospace,SFMono-Regular,monospace}
+.folder-path-row {display:flex;align-items:flex-start;gap:8px;margin:12px 0}
+.folder-path-row .folder-path {flex:1;min-width:0;margin:0}
+.folder-path-row .icon-button {flex:none}
 #folder-copy-status:not(:empty) {margin-top:10px}
 
 /* Keep clipboard commands near the canvas; library management lives in its own panel. */
@@ -274,6 +291,9 @@
 .command-panel button {display:block;width:100%;text-align:left;padding:8px 10px;border-color:transparent;background:transparent;font-size:12px;white-space:normal}
 .command-panel button:hover:not(:disabled) {background:#393e33;border-color:#747961}
 .command-panel button:focus-visible {outline-offset:-2px}
+.command-panel #save {display:flex;align-items:center;justify-content:space-between;gap:12px}
+.command-panel #save.primary {color:var(--accent)}
+.command-shortcut {font-size:10px;color:var(--muted);white-space:nowrap}
 .command-heading {padding:8px 10px;color:var(--muted);font-size:10px;font-weight:650;letter-spacing:1px;text-transform:uppercase}
 .command-divider {border-top:1px solid var(--line);margin:6px}
 .destructive-command {color:#efaf98}
@@ -385,15 +405,15 @@
 #palette-dialog>#hardware-settings[open] {max-height:35dvh;overflow:auto;flex-shrink:1;min-height:120px}
 #palette-dialog:has(#hardware-settings[open]) #palette-findings {max-height:18dvh}
 
-.standalone main.library-collapsed {--library-width:0px}
-.standalone main.inspector-collapsed {--inspector-width:0px}
+.standalone main.library-collapsed {--library-width:24px}
+.standalone main.inspector-collapsed {--inspector-width:24px}
 
 /* Review mode reuses viewing controls while removing authoring chrome from layout/focus. */
 .review-mode-label {display:none;color:var(--accent);font-size:12px;white-space:nowrap}
 .standalone.reviewing {min-width:360px}
 .standalone.reviewing main {grid-template-columns:minmax(0,1fr)}
 .standalone.reviewing .workbench {grid-column:1}
-.reviewing .masthead,.reviewing .document-bar,.reviewing .library,.reviewing .inspector,
+.reviewing .masthead,.reviewing .document-bar,.reviewing .library,.reviewing .inspector,.reviewing .pane-rail,
 .reviewing .authoring-tools,.reviewing .composition-tools,.reviewing #layer-context,
 .reviewing #coordinates,.reviewing #selected-brush,.reviewing .snap-control,
 .reviewing .review-bar .hint {display:none}
@@ -409,51 +429,142 @@
   .reviewing .zoom-controls {flex-wrap:wrap}
 }
 
-/* Native artwork is a separate document/history within the mounted editor. */
-#artwork-dialog {width:min(1120px,94vw);max-width:1120px;max-height:92dvh;overflow:auto;padding:20px}
-.art-heading {display:flex;align-items:center;justify-content:space-between;gap:12px}
-.art-heading h2 {margin:0}
-.art-start-grid {display:grid;grid-template-columns:1fr 1fr;gap:28px}
-.art-row {display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.art-row .field {margin:6px 0;flex:1;min-width:70px}
-.art-tools input[type=color] {padding:2px;height:32px}
-.art-tools {border-block:1px solid var(--line);padding:8px 0}
-.art-tools .field {flex:0 1 130px}
-.art-tools .field:has(#art-alpha) {flex-basis:70px}
-.art-swatches {display:flex;gap:5px;flex-wrap:wrap;margin:10px 0}
-.art-swatches button {width:28px;min-height:28px;border:1px solid var(--line);padding:0}
-.art-workspace {display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:20px;align-items:start}
-.art-canvas-scroll {overflow:auto;max-height:52dvh;min-height:260px;padding:12px;background:#171b16;border:1px solid var(--line)}
+/* Compact commands use the same icon, hit target and selected state in both editors. */
+.icon-definitions {position:absolute;width:0;height:0;overflow:hidden;pointer-events:none}
+.command-icon {display:block;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.standalone .icon-button,.standalone .tool {display:inline-flex;align-items:center;justify-content:center;flex:none;width:32px;height:32px;min-height:32px;padding:6px;border:1px solid transparent;border-radius:5px;background:transparent;color:var(--text)}
+.standalone .icon-button:hover:not(:disabled),.standalone .tool:hover:not(:has(input:disabled)) {background:#393e33;border-color:#747961}
+.standalone .tool:has(input:checked) {background:#403b28;border-color:var(--accent);color:#f2d482;box-shadow:inset 0 -2px var(--accent)}
+.standalone .tool:has(input:disabled) {opacity:.4}
+.standalone .tool>.tool-label {position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.standalone .icon-button:focus-visible,.standalone .tool:has(input:focus-visible) {outline:2px solid var(--accent);outline-offset:-2px}
+.standalone .canvas-toolbar {gap:6px;padding:8px;flex:none;background:#242723}
+.standalone .canvas-toolbar .tool-group {gap:2px}
+.standalone .canvas-toolbar .composition-tools {padding:0;border:0;gap:6px;font-size:11px;flex:0 1 auto;min-width:0;max-width:100%}
+.standalone .canvas-toolbar .command-group {gap:2px}
+.standalone .canvas-toolbar .tool-group+.tool-group,.standalone .canvas-toolbar .composition-tools {border-left:1px solid var(--line);padding-left:6px}
+.standalone .canvas-toolbar .command-group+.command-group {border-left:1px solid var(--line);padding-left:6px}
+.standalone #transform-commands {width:46px;gap:4px}
+.standalone .selection-scope {margin:0 4px;gap:4px}
+.standalone .zoom-controls {gap:6px}
+.standalone #zoom {width:68px}
+.standalone #review-mode {font-size:11px;padding:5px 8px}
+.standalone .review-bar {padding:7px 12px;gap:10px}
+.standalone dialog {max-height:calc(100dvh - 32px);overflow:auto}
+.standalone dialog button {max-width:100%;white-space:normal}
+.standalone dialog .dialog-actions {flex-wrap:wrap}
+.standalone dialog .field input {min-width:0}
+
+/* Reserve the first row for viewing; reveal overflow explicitly instead of wrapping it. */
+.standalone .workbench {container-type:inline-size;container-name:scene-workbench}
+.standalone .canvas-toolbar {display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center}
+#scene-drawing-tools {grid-column:1;grid-row:1}
+.toolbar-secondary {grid-column:2;grid-row:1;display:flex;align-items:center;gap:6px;min-width:0}
+.standalone .canvas-toolbar .zoom-controls {grid-column:3;grid-row:1;margin-left:0;justify-self:end;flex-wrap:nowrap}
+.standalone #review-mode {display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.toolbar-expand {display:none;align-items:center;justify-content:center;gap:6px;grid-row:1;grid-column:3;padding:6px;min-width:0;max-width:100%}
+.toolbar-tool-name {display:none;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toolbar-expand[aria-expanded=true] svg {transform:rotate(180deg)}
+@container scene-workbench (max-width:1100px) {
+  .standalone #review-mode {width:32px;height:32px;padding:6px}
+  .review-action-label,.zoom-label {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+}
+@container scene-workbench (max-width:840px) {
+  .standalone .canvas-toolbar {grid-template-columns:minmax(0,1fr) auto auto}
+  .standalone .canvas-toolbar .zoom-controls {grid-column:2}
+  .toolbar-expand {display:inline-flex}
+  .toolbar-secondary {display:none;grid-column:1/-1;grid-row:2;flex-wrap:wrap}
+  .toolbar-expanded .toolbar-secondary {display:flex}
+}
+@container scene-workbench (max-width:460px) {
+  .standalone .canvas-toolbar {grid-template-columns:minmax(0,1fr) auto}
+  .standalone #scene-drawing-tools {display:none;grid-column:1/-1;grid-row:2}
+  .standalone .toolbar-expanded #scene-drawing-tools {display:flex}
+  .toolbar-secondary {grid-row:3}
+  .toolbar-expand {grid-column:1;justify-self:start}
+  .toolbar-tool-name {display:inline;font-size:12px}
+}
+.standalone.reviewing .canvas-toolbar {grid-template-columns:minmax(0,1fr) auto}
+.standalone.reviewing .canvas-toolbar .zoom-controls {grid-column:2}
+.standalone.reviewing #review-mode {width:auto}
+.standalone.reviewing #scene-drawing-tools,.standalone.reviewing .toolbar-secondary,.standalone.reviewing #expand-scene-tools {display:none}
+.reviewing .review-action-label {position:static;width:auto;height:auto;clip-path:none}
+
+/* Native artwork is a separate document/history within the mounted editor.
+   Setup scrolls as one surface; editor controls and save actions surround a bounded workspace. */
+#artwork-dialog[open] {display:flex;flex-direction:column;gap:10px;width:min(1120px,calc(100vw - 32px));max-width:1120px;height:min(900px,calc(100dvh - 32px));max-height:calc(100dvh - 32px);overflow:hidden;padding:16px}
+#artwork-dialog[open]:has(#art-editor[hidden]) {height:auto}
+.art-heading {display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none;min-width:0}
+.art-heading h2 {margin:0;overflow-wrap:anywhere;min-width:0}
+.art-heading button {flex:none}
+#art-message {flex:none;margin:0;max-height:72px;overflow:auto;overflow-wrap:anywhere}
+#art-message:empty {display:none}
+#art-message[data-error=true] {color:#f19b82}
+#art-setup {flex:1;min-height:0;overflow:auto;padding:4px;scroll-padding:6px}
+.art-start-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.art-start-grid>section {min-width:0}
+.art-start-grid h3 {font-size:13px;margin:6px 0 12px}
+.art-start-grid section>button {margin:4px 4px 4px 0}
+.art-start-grid section+section {border-left:1px solid var(--line);padding-left:24px}
+#art-recovery {padding:10px 0 14px;margin-bottom:12px;border-bottom:1px solid var(--line)}
+#art-recovery p {margin:6px 0}
+#art-drafts {max-height:120px;overflow:auto;padding:4px}
+#art-drafts>div {display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
+#art-drafts span {flex:1;min-width:120px;overflow-wrap:anywhere}
+.art-row {display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;min-width:0}
+.art-row .field {margin:0;flex:1;min-width:70px}
+#art-editor {display:flex;flex-direction:column;gap:8px;min-height:0;flex:1}
+#art-editor>* {flex:none;min-width:0}
+#art-editor>.art-controls {display:flex;flex-direction:column;gap:8px;flex:0 1 auto;min-height:84px;overflow:auto;padding:3px;scroll-padding:3px}
+.art-controls>* {flex:none;min-width:0}
+#art-shared {font-size:11px;margin:0;max-height:48px;overflow:auto}
+.art-help {font-size:11px;color:var(--muted)}
+.art-help summary {cursor:pointer;width:fit-content}
+.art-help p {margin:6px 0;max-height:48px;overflow:auto}
+#art-selection-details {font-size:11px;max-height:80px;overflow:auto}
+.pixel-toolbar {display:flex;gap:6px;flex-wrap:wrap;align-items:center;border-block:1px solid var(--line);padding:6px 0}
+.pixel-toolbar .tool-group {gap:2px}
+.pixel-toolbar .tool-group+.tool-group {border-left:1px solid var(--line);padding-left:6px}
+.art-tools {justify-content:space-between;gap:10px 20px}
+.art-tools .field {flex:none;width:76px;min-width:0}
+.art-tools .field:has(#art-alpha) {width:68px}
+.art-tools input,.art-tools select {height:32px}
+.art-tools input[type=color] {padding:3px;cursor:pointer}
+.standalone #art-transparent {width:auto;gap:6px;border-color:var(--line);background:repeating-conic-gradient(#4b5045 0% 25%,#262a23 0% 50%) 0/10px 10px}
+.standalone #art-transparent[aria-pressed=true] {border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);color:var(--accent)}
+.pixel-view-controls {align-items:flex-end;margin-left:auto}
+.pixel-view-controls>label:last-child {height:32px;font-size:11px}
+.art-swatches {display:flex;gap:5px;flex-wrap:wrap;max-height:66px;overflow:auto;padding:3px}
+.art-swatches:empty {display:none}
+.art-swatches button {width:24px;min-height:24px;height:24px;border:1px solid var(--line);padding:0}
+#art-editor>.art-workspace {display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:16px;flex:1;min-height:120px;overflow:hidden}
+.art-canvas-scroll {overflow:auto;height:100%;min-height:0;padding:16px;background:#171b16;border:1px solid var(--line);border-radius:5px;scroll-padding:16px}
 #art-canvas {display:block;touch-action:none;image-rendering:pixelated;background-color:#ccc;background-image:conic-gradient(#888 25%,transparent 0 50%,#888 0 75%,transparent 0);background-size:16px 16px}
 #art-canvas:focus-visible {outline:2px solid var(--accent);outline-offset:3px}
-.art-review {min-width:0}
-.art-review h3 {margin-top:0}
+.art-review {height:100%;overflow:auto;box-sizing:border-box;padding:4px 8px 12px 4px;min-width:0;scroll-padding:6px;background:transparent}
+.art-review h3 {margin-top:0;font-size:13px}
+.art-review>label {margin:8px 0;font-size:11px}
+#art-review {display:block;width:100%;margin-bottom:10px;border-color:#656b54}
+.art-preview-settings {font-size:11px;color:var(--muted);padding-bottom:10px;border-bottom:1px solid var(--line)}
+.art-preview-settings summary {cursor:pointer}
+.art-preview-settings .property-grid {margin-top:10px}
 .art-review figure {margin:12px 0}
 .art-review img {display:block;max-width:100%;image-rendering:pixelated;background:repeating-conic-gradient(#aaa 0% 25%,#ddd 0% 50%) 0/12px 12px}
-#art-message[data-error=true] {color:#f19b82}
-#art-drafts>div {display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
-#art-drafts span {flex:1;overflow-wrap:anywhere}
+#art-before,#art-after {width:128px;height:auto}
+#art-preview-help {margin:6px 0}
+#art-draft-status {font-size:11px;margin:0;overflow-wrap:anywhere;max-height:48px;overflow:auto}
+#art-editor>.dialog-actions {flex:none;padding-top:10px;margin-top:0;border-top:1px solid var(--line);gap:8px;align-items:center}
+#art-download {margin-right:auto}
 #artwork-dialog [hidden] {display:none!important}
 @media (max-width:850px) {
-  .art-workspace,.art-start-grid {grid-template-columns:minmax(0,1fr)}
-  #artwork-dialog {padding:14px}
-  .art-review {border-top:1px solid var(--line);padding-top:16px}
-  .art-tools .field {flex-basis:100px}
+  #artwork-dialog[open] {padding:12px;gap:8px}
+  .art-start-grid {grid-template-columns:minmax(0,1fr);gap:20px}
+  .art-start-grid section+section {border-left:0;border-top:1px solid var(--line);padding:16px 0 0}
+  #art-editor>.art-workspace {grid-template-columns:minmax(0,1fr) 210px;gap:10px}
+  .art-review {padding-right:4px}
 }
-#artwork-dialog[open] {display:flex;flex-direction:column;overflow:hidden;height:min(900px,92dvh)}
-#artwork-dialog>header,#artwork-dialog>#art-message {flex:none}
-#art-start,#art-recovery {overflow:auto;min-height:0}
-#art-editor {display:flex;flex-direction:column;min-height:0;flex:1}
-#art-editor>* {flex:none}
-#art-editor>.art-workspace {flex:1;min-height:180px;overflow:hidden}
-.art-canvas-scroll {height:100%;max-height:none;min-height:0;box-sizing:border-box}
-.art-review {height:100%;overflow:auto;box-sizing:border-box;padding:0 12px 12px}
-#art-before,#art-after {width:128px;height:auto}
-#art-editor>.dialog-actions {padding-top:10px;border-top:1px solid var(--line);background:var(--panel)}
-@media (max-width:850px) {
-  #art-editor {overflow:auto;display:block}
-  #art-editor>.art-workspace {overflow:visible}
-  .art-canvas-scroll {height:240px;min-height:180px}
-  .art-review {height:auto;overflow:visible;padding:16px 0}
-  #art-editor>.dialog-actions {position:sticky;bottom:0;padding:10px 0;flex-wrap:wrap}
+@media (max-height:650px) {
+  #artwork-dialog[open] {gap:6px;padding:12px}
+  #art-editor {gap:6px}
+  .pixel-toolbar {padding:4px 0}
 }

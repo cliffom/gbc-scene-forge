@@ -8,7 +8,7 @@ import { expect } from '@playwright/test';
 import { record, array, string } from '../../../frontend/shared/decode.mts';
 import { PixelModel } from '../../../frontend/artwork/pixel-model.mts';
 import { decodeCandidate } from '../../../frontend/artwork/artwork-contracts.mts';
-import { test, paint } from '../support/browser-fixtures.ts';
+import { test, clickControl, paint } from '../support/browser-fixtures.ts';
 
 async function pixel(page: Page, x: number, y: number) {
   const canvas = page.locator('#art-canvas');
@@ -55,6 +55,7 @@ async function setup(
     python: string;
     start: (root: string, fixture?: boolean) => Promise<string>;
   },
+  dense = false,
 ) {
   const root = join(workspace.folder, 'project');
   const scene = execFileSync(
@@ -72,12 +73,14 @@ r=lambda:p.catalog()['revision']
 a=p.artwork.documents
 for atlas,kind,w,h in [('grass','tile',8,8),('actor','sprite',16,16)]:
     c=a.create(atlas,atlas.title(),kind,w,h,r(),origin=[4,8] if kind=='sprite' else None)
-    c=a.edit(c,[{'x':x,'y':y,'rgba':[76,112,53,255] if (x+y)%3 else [116,151,73,255]} for y in range(h) for x in range(w)])
+    c=a.edit(c,[{'x':x,'y':y,'rgba':([x*32,y*32,(x+y)*16,255] if ${dense ? 'True' : 'False'} and kind=='tile' else ([76,112,53,255] if (x+y)%3 else [116,151,73,255]))} for y in range(h) for x in range(w)])
     a.save(c)
 path,_=bundle(Path(sys.argv[1]).parent/'imported')
 p.artwork.import_atlas(path,r())
 s=p.scenes.create('Workshop',12,10,8,r())
 s['scene']['cells'][0][0]='grass/artwork/0/0'
+if ${dense ? 'True' : 'False'}:
+    s['scene']['cells'][1]=['grass/artwork/0/0']*12
 s['scene']['cells'][1][1]='grass/artwork/0/0#1'
 s['scene']['objects']=[{'id':1,'asset':'actor/artwork','x':32,'y':32,'origin':[4,8]}]
 s['scene']['next_object_id']=2
@@ -155,10 +158,11 @@ test('selected tile variation recovers, reviews exact replacements and preserves
     [204, 136, 51, 255],
   );
   // A later normal scene save must retain the adopted replacement.
+  await page.locator('#expand-scene-tools').click();
   await page.locator('input[name=tool][value=paint]').check();
   await page.locator('[data-asset="grass/artwork"]').first().click();
   await paint(page, 20, 20);
-  await page.locator('#save').click();
+  await clickControl(page, 'save');
   await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   await page.reload();
   await expect(page.locator('#status')).toHaveText('Scene opened.');
@@ -184,7 +188,7 @@ test('variation refuses dirty scene work and stale selected scene without losing
   await page.locator('#art-variation').click();
   await expect(page.locator('#art-message')).toContainText('Save the scene before');
   await page.locator('#art-close').click();
-  await page.locator('#save').click();
+  await clickControl(page, 'save');
   await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   await page.locator('#edit-placement-artwork').click();
   await page.locator('#art-id').fill('stale_variation');
@@ -251,20 +255,20 @@ test('pixel drawing tools, exact transparency, reviewed save and scene history i
   await expect(page.locator('#art-shared')).toContainText('every placement');
   await page.locator('#art-color').fill('#cc6633');
   await draw(page, 0, 0, 7, 0);
-  await page.locator('#art-tool').selectOption('rectangle');
+  await page.locator('input[name=art-tool][value=rectangle]').check();
   await draw(page, 1, 1, 6, 6);
-  await page.locator('#art-tool').selectOption('fill');
+  await page.locator('input[name=art-tool][value=fill]').check();
   await draw(page, 2, 2);
-  await page.locator('#art-tool').selectOption('line');
+  await page.locator('input[name=art-tool][value=line]').check();
   await draw(page, 0, 7, 7, 0);
-  await page.locator('#art-tool').selectOption('pick');
+  await page.locator('input[name=art-tool][value=pick]').check();
   await draw(page, 0, 0);
   await expect(page.locator('#art-color')).toHaveValue('#cc6633');
-  await page.locator('#art-tool').selectOption('select');
+  await page.locator('input[name=art-tool][value=select]').check();
   await draw(page, 0, 0, 1, 1);
   await page.locator('#art-copy').click();
   await page.locator('#art-deselect').click();
-  await page.locator('#art-tool').selectOption('select');
+  await page.locator('input[name=art-tool][value=select]').check();
   await draw(page, 4, 4, 5, 5);
   await page.locator('#art-paste').click();
   await page.locator('#art-horizontal').click();
@@ -272,9 +276,9 @@ test('pixel drawing tools, exact transparency, reviewed save and scene history i
   await page.locator('#art-rotate').click();
   await page.locator('#art-canvas').focus();
   await page.keyboard.press('ArrowRight');
-  await page.locator('#art-tool').selectOption('erase');
+  await page.locator('input[name=art-tool][value=erase]').check();
   await draw(page, 7, 7);
-  await page.locator('#art-tool').selectOption('pencil');
+  await page.locator('input[name=art-tool][value=pencil]').check();
   await page.locator('#art-color').fill('#010203');
   await page.locator('#art-alpha').fill('0');
   await draw(page, 0, 0);
@@ -324,7 +328,7 @@ test('new artwork, duplicate imported pixels, compact UI and recoverable draft c
   await page.locator('#art-height').fill('8');
   await page.locator('#art-create').click();
   await expect(page.locator('#art-canvas')).toBeVisible();
-  await page.locator('#art-tool').selectOption('fill');
+  await page.locator('input[name=art-tool][value=fill]').check();
   await draw(page, 0, 0);
   await page.locator('#art-review').click();
   await expect(page.locator('#art-save')).toBeEnabled();
@@ -343,7 +347,7 @@ test('new artwork, duplicate imported pixels, compact UI and recoverable draft c
   await page.locator('#art-duplicate').click();
   await expect(page.locator('#art-canvas')).toBeVisible();
   await page.locator('#art-color').fill('#eeaa44');
-  await page.locator('#art-tool').selectOption('pencil');
+  await page.locator('input[name=art-tool][value=pencil]').check();
   await draw(page, 1, 1);
   await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
   // Interrupt the dialog after its checkpoint, without an explicit close/save.
@@ -415,7 +419,7 @@ test('placed sprite editing preserves origin and references; blank sprites previ
   await page.locator('#edit-placement-artwork').click();
   await expect(page.locator('#art-source option:checked')).toContainText('actor / artwork');
   await page.locator('#art-open').click();
-  await page.locator('#art-tool').selectOption('erase');
+  await page.locator('input[name=art-tool][value=erase]').check();
   await draw(page, 0, 0, 15, 0);
   // Pointer cancellation rolls back the next stroke in full.
   const a = await pixel(page, 0, 1),
@@ -444,7 +448,7 @@ test('placed sprite editing preserves origin and references; blank sprites previ
   await page.locator('#art-name').fill('New sprite');
   await page.locator('#art-kind').selectOption('sprite');
   await page.locator('#art-create').click();
-  await page.locator('#art-tool').selectOption('rectangle');
+  await page.locator('input[name=art-tool][value=rectangle]').check();
   await draw(page, 1, 1, 6, 6);
   await page.locator('#art-review').click();
   await expect(page.locator('#art-scene-after')).toBeVisible();
@@ -635,7 +639,7 @@ p.scenes.save(s['id'],s['scene'],s['revision'],p.catalog()['revision'])
     const sceneUrl = new URL(`api/scene/${scene}`, url).href;
     const before = record(await (await page.request.get(sceneUrl)).json());
     const response = page.waitForResponse((r) => r.url().endsWith('/api/save-scene'));
-    await page.locator('#save').click();
+    await clickControl(page, 'save');
     assert.equal((await response).status(), external ? 409 : 200);
     if (external) {
       await expect(page.locator('#status')).toContainText('Scene changed on disk');
@@ -684,4 +688,105 @@ test('a pending checkpoint excludes a later canceled gesture through recovery', 
   const saved = new PixelModel(await opened(page, url));
   assert.deepEqual(saved.color({ x: 0, y: 0 }), [255, 0, 0, 255]);
   assert.deepEqual(saved.color({ x: 1, y: 0 }), new PixelModel(original).color({ x: 1, y: 0 }));
+});
+
+test('dense variation controls scroll while reviewed save actions remain clickable', async ({
+  page,
+  workspace,
+}, info) => {
+  await setup(page, workspace, true);
+  await page.locator('input[name=tool][value=select]').check();
+  const points = await page.locator('#scene').evaluate((canvas: HTMLCanvasElement) => {
+    const r = canvas.getBoundingClientRect();
+    return {
+      x: r.x + (4 * r.width) / canvas.width,
+      end: r.x + (52 * r.width) / canvas.width,
+      y: r.y + (12 * r.height) / canvas.height,
+    };
+  });
+  await page.mouse.move(points.x, points.y);
+  await page.mouse.down();
+  await page.mouse.move(points.end, points.y, { steps: 7 });
+  await page.mouse.up();
+  await page.locator('#edit-placement-artwork').click();
+  await page.locator('#art-id').fill('dense_variation');
+  await page.locator('#art-variation').click();
+  await expect(page.locator('#art-shared')).toContainText('7 selected placements');
+  await expect(page.locator('#art-swatches button')).toHaveCount(64);
+  await page.locator('.art-help summary').click();
+  await page.locator('#art-selection-details summary').click();
+  await page.locator('#art-review').click();
+  await expect(page.locator('#art-save')).toBeEnabled();
+  for (const [width, height] of [
+    [1440, 900],
+    [760, 640],
+    [1440, 600],
+  ]) {
+    await page.setViewportSize({ width, height });
+    for (const id of ['art-save', 'art-download', 'art-discard']) {
+      expect(
+        await page.locator('#' + id).evaluate((node) => {
+          const r = node.getBoundingClientRect();
+          const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+          return r.bottom <= innerHeight && !!hit && node.contains(hit);
+        }),
+      ).toBe(true);
+    }
+    await page.screenshot({ path: info.outputPath(`dense-${width}-${height}.png`) });
+  }
+  // Physical click avoids Playwright scrolling a clipped Save into view.
+  const save = await page.locator('#art-save').boundingBox();
+  assert.ok(save);
+  await page.mouse.click(save.x + save.width / 2, save.y + save.height / 2);
+  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+});
+
+test('transparent drawing restores opacity and preserves partial alpha in saved pixels', async ({
+  page,
+  workspace,
+}, info) => {
+  const { url } = await setup(page, workspace);
+  await openGrass(page);
+  await page.locator('#art-color').fill('#cc8833');
+  await page.locator('#art-alpha').fill('128');
+  await draw(page, 0, 0);
+  const transparent = page.locator('#art-transparent');
+  await expect(transparent).toHaveAccessibleName('Transparent');
+  await transparent.click();
+  await expect(transparent).toHaveAttribute('aria-pressed', 'true');
+  await expect(transparent).toHaveAccessibleName('Resume color');
+  await expect(transparent).toContainText('Resume color');
+  await draw(page, 1, 0);
+  await page.screenshot({ path: info.outputPath('transparent-active.png') });
+  await transparent.click();
+  await expect(page.locator('#art-alpha')).toHaveValue('128');
+  await expect(transparent).toHaveAccessibleName('Transparent');
+  await draw(page, 2, 0);
+  await transparent.click();
+  await page.locator('#art-color').fill('#112233');
+  await expect(transparent).toHaveAttribute('aria-pressed', 'false');
+  await expect(transparent).toHaveAccessibleName('Transparent');
+  await draw(page, 3, 0);
+  await page.locator('#art-alpha').fill('0');
+  await expect(transparent).toHaveAttribute('aria-pressed', 'true');
+  await expect(transparent).toHaveAccessibleName('Resume color');
+  await page.getByRole('radio', { name: 'Eyedropper', exact: true }).check();
+  await draw(page, 0, 0);
+  await expect(page.locator('#art-alpha')).toHaveValue('128');
+  await expect(transparent).toHaveAttribute('aria-pressed', 'false');
+  await expect(transparent).toHaveAccessibleName('Transparent');
+  await page.getByRole('button', { name: 'RGBA 204, 136, 51, 0', exact: true }).click();
+  await expect(transparent).toHaveAttribute('aria-pressed', 'true');
+  await expect(transparent).toHaveAccessibleName('Resume color');
+  await page.getByRole('button', { name: 'RGBA 204, 136, 51, 128', exact: true }).click();
+  await expect(transparent).toHaveAttribute('aria-pressed', 'false');
+  await expect(transparent).toHaveAccessibleName('Transparent');
+  await page.locator('#art-review').click();
+  await page.locator('#art-save').click();
+  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+  const saved = new PixelModel(await opened(page, url));
+  assert.deepEqual(saved.color({ x: 0, y: 0 }), [204, 136, 51, 128]);
+  assert.deepEqual(saved.color({ x: 1, y: 0 }), [204, 136, 51, 0]);
+  assert.deepEqual(saved.color({ x: 2, y: 0 }), [204, 136, 51, 128]);
+  assert.deepEqual(saved.color({ x: 3, y: 0 }), [17, 34, 51, 128]);
 });

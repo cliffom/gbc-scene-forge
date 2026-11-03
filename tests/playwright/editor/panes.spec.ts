@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { array, record, string } from '../../../frontend/shared/decode.mts';
 import { expect, type Page } from '@playwright/test';
-import { test, editorReady, paint } from '../support/browser-fixtures.ts';
+import { test, clickControl, editorReady, paint } from '../support/browser-fixtures.ts';
 
 test.use({ projectMode: 'sample' });
 
@@ -21,9 +21,10 @@ async function panes(page: Page, library: boolean, inspector: boolean) {
     if ((await toggle.getAttribute('aria-expanded')) !== String(expanded)) {
       await toggle.focus();
       await page.keyboard.press('Enter');
+      await expect(toggle).toBeFocused();
     }
     await expect(toggle).toHaveAttribute('aria-expanded', String(expanded));
-    await expect(toggle).toHaveText(
+    await expect(toggle).toHaveAccessibleName(
       `${expanded ? 'Hide' : 'Show'} ${name === 'library' ? 'Library' : 'Inspector'}`,
     );
     await expect(page.locator(`#${name}-pane`)).toBeVisible({ visible: expanded });
@@ -60,7 +61,7 @@ test('panes expand the viewport independently at supported widths and survive re
       await panes(page, library, inspector);
       await expect
         .poll(() => page.locator('#viewport').evaluate((node) => node.clientWidth))
-        .toBe(original + (library ? 0 : libraryWidth) + (inspector ? 0 : inspectorWidth));
+        .toBe(original + (library ? 0 : libraryWidth - 24) + (inspector ? 0 : inspectorWidth - 24));
       expect(
         await page.evaluate(() => {
           const viewport = document.getElementById('viewport');
@@ -76,7 +77,7 @@ test('panes expand the viewport independently at supported widths and survive re
           );
         }),
       ).toBe(true);
-      for (const id of ['toggle-library', 'toggle-inspector', 'review-mode', 'fit-scene', 'save']) {
+      for (const id of ['toggle-library', 'toggle-inspector', 'review-mode', 'fit-scene']) {
         expect(
           await page.locator(`#${id}`).evaluate((node) => {
             const box = node.getBoundingClientRect();
@@ -199,7 +200,7 @@ test('pane transitions preserve dirty content, selection, brush, category, histo
   await paint(page, 4, 4);
   await expect(page.locator('#status')).not.toHaveAttribute('data-state', 'error');
   await expect(page.locator('#undo')).toBeEnabled();
-  await page.locator('#save').click();
+  await clickControl(page, 'save');
   await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   const id = await page.locator('#scenes').inputValue();
   const response = await page.request.get(

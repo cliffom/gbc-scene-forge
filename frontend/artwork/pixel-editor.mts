@@ -64,9 +64,14 @@ export function createPixelEditor({
       control.disabled = busy;
     }
     const active = session !== null;
-    element('art-start', HTMLElement).hidden = active;
+    element('art-setup', HTMLElement).hidden = active;
     element('art-editor', HTMLElement).hidden = !active;
     if (!active) {
+      select('art-source').disabled = busy || !sources.length;
+      select('art-source-grid').disabled = busy || !sources.length;
+      for (const id of ['art-cell-x', 'art-cell-y']) {
+        input(id).disabled = busy || !sources.length;
+      }
       button('art-open').disabled = busy || !sources[Number(select('art-source').value)]?.target;
       button('art-duplicate').disabled = busy || !sources.length;
       button('art-variation').disabled = busy || !sources.length;
@@ -115,6 +120,18 @@ export function createPixelEditor({
       alpha,
     ];
   }
+  let drawingAlpha = 255;
+  function reflectOpacity() {
+    const alpha = Number(input('art-alpha').value);
+    if (Number.isInteger(alpha) && alpha > 0 && alpha <= 255) {
+      drawingAlpha = alpha;
+    }
+    const transparent = alpha === 0;
+    button('art-transparent').setAttribute('aria-pressed', String(transparent));
+    element('art-transparency-label', HTMLElement).textContent = transparent
+      ? 'Resume color'
+      : 'Transparent';
+  }
   function chooseColor(c: Color) {
     input('art-color').value =
       '#' +
@@ -123,6 +140,7 @@ export function createPixelEditor({
         .map((v) => v.toString(16).padStart(2, '0'))
         .join('');
     input('art-alpha').value = String(c[3]);
+    reflectOpacity();
   }
   function draw() {
     const model = session?.model;
@@ -333,6 +351,9 @@ export function createPixelEditor({
           ),
       ),
     );
+    if (!sources.length) {
+      select('art-source').add(new Option('No artwork yet — create blank artwork', ''));
+    }
     const asset = selectedAsset(),
       parts = asset.split('/');
     const index = sources.findIndex((s) => s.atlas_id === parts[0] && s.region === parts[1]);
@@ -600,8 +621,21 @@ export function createPixelEditor({
     }
   });
   lifetime.assign(button('art-transparent'), 'onclick', () => {
-    input('art-alpha').value = '0';
+    input('art-alpha').value = Number(input('art-alpha').value) === 0 ? String(drawingAlpha) : '0';
+    reflectOpacity();
   });
+  input('art-alpha').addEventListener('input', reflectOpacity, { signal: lifetime.signal });
+  input('art-color').addEventListener(
+    'input',
+    () => {
+      if (Number(input('art-alpha').value) === 0) {
+        input('art-alpha').value = String(drawingAlpha);
+      }
+      reflectOpacity();
+    },
+    { signal: lifetime.signal },
+  );
+  reflectOpacity();
   for (const id of ['art-zoom', 'art-grid']) {
     element(id, HTMLElement).addEventListener(
       'change',
@@ -633,7 +667,7 @@ export function createPixelEditor({
     };
   }
   function tool(): PixelTool {
-    const value = select('art-tool').value;
+    const value = dialog.querySelector<HTMLInputElement>('input[name=art-tool]:checked')?.value;
     switch (value) {
       case 'pencil':
       case 'erase':
@@ -647,6 +681,17 @@ export function createPixelEditor({
       default:
         throw Error('Unknown pixel tool');
     }
+  }
+  for (const control of dialog.querySelectorAll<HTMLInputElement>('input[name=art-tool]')) {
+    lifetime.assign(control, 'onchange', () => {
+      cancelGesture();
+      canvas.style.cursor = tool() === 'move' ? 'move' : 'crosshair';
+    });
+    lifetime.assign(control, 'onclick', (event) => {
+      if (event.detail > 0) {
+        canvas.focus({ preventScroll: true });
+      }
+    });
   }
   function preview(p: Point) {
     const model = session?.model,
@@ -743,7 +788,7 @@ export function createPixelEditor({
       if (
         busy ||
         !session ||
-        event.target instanceof HTMLInputElement ||
+        (event.target instanceof HTMLInputElement && event.target.type !== 'radio') ||
         event.target instanceof HTMLSelectElement ||
         event.target instanceof HTMLTextAreaElement
       ) {

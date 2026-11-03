@@ -173,7 +173,7 @@ export function mountProjectEditor() {
       !sceneSession.editor ||
       gestures.anchor !== null ||
       !!sceneSession.editor.stroke;
-    for (const id of ['toggle-library', 'toggle-inspector']) {
+    for (const id of ['toggle-library', 'toggle-inspector', 'expand-scene-tools']) {
       button(id).disabled =
         activity.busy || gestures.anchor !== null || !!sceneSession.editor?.stroke;
     }
@@ -299,6 +299,7 @@ export function mountProjectEditor() {
     layersController.renderLayers();
     layersController.renderLayerContext();
     layersController.inspect();
+    editorLayout.syncToolbar();
   }
   async function run(work: () => Promise<void> | void) {
     if (lifetime.disposed) {
