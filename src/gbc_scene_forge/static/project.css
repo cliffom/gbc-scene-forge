@@ -490,22 +490,37 @@
 .standalone.reviewing #scene-drawing-tools,.standalone.reviewing .toolbar-secondary,.standalone.reviewing #expand-scene-tools {display:none}
 .reviewing .review-action-label {position:static;width:auto;height:auto;clip-path:none}
 
-/* Native artwork is a separate document/history within the mounted editor.
-   Setup scrolls as one surface; editor controls and save actions surround a bounded workspace. */
-#artwork-dialog[open] {display:flex;flex-direction:column;gap:10px;width:min(1120px,calc(100vw - 32px));max-width:1120px;height:min(900px,calc(100dvh - 32px));max-height:calc(100dvh - 32px);overflow:hidden;padding:16px}
-#artwork-dialog[open]:has(#art-editor[hidden]) {height:auto}
-.art-heading {display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none;min-width:0}
-.art-heading h2 {margin:0;overflow-wrap:anywhere;min-width:0}
+.scene-view-controls {padding:6px 12px;border-bottom:1px solid var(--line)}
+.scene-view-controls summary {cursor:pointer;font-size:12px}
+.scene-view-controls fieldset {display:flex;flex-wrap:wrap;gap:8px 14px;margin:6px 0;padding:6px 10px}
+.scene-view-controls label {display:inline-flex;align-items:center;gap:4px;font-size:12px}
+.scene-view-controls p {font-size:11px;margin:4px 0}
+
+
+/* Native artwork shares the mounted workbench; creation, drawing and review are separate surfaces. */
+#artwork-dialog[open] {display:flex;flex-direction:column;gap:6px;overflow:hidden;padding:12px}
+#artwork-dialog [hidden] {display:none!important}
+.editing-artwork #editor-layout>.workbench,.editing-artwork #editor-layout>.inspector,.editing-artwork #inspector-rail {display:none!important}
+.standalone #editor-layout>#artwork-dialog[open] {position:static;inset:auto;grid-column:2/-1;grid-row:1;margin:0;width:100%;max-width:none;height:100%;max-height:none;box-sizing:border-box;border:0;border-left:1px solid var(--line);border-radius:0;background:var(--panel)}
+.art-heading {display:flex;align-items:center;gap:12px;flex:none;min-width:0}
+.art-heading h2 {margin:0;font-size:16px;overflow-wrap:anywhere;min-width:0}
 .art-heading button {flex:none}
-#art-message {flex:none;margin:0;max-height:72px;overflow:auto;overflow-wrap:anywhere}
+.art-heading-actions {display:flex;gap:6px;align-items:center;margin-left:auto}
+#art-scope-label {font-size:11px}
+#art-message {flex:none;margin:0;max-height:36px;font-size:12px;overflow:auto;overflow-wrap:anywhere}
 #art-message:empty {display:none}
 #art-message[data-error=true] {color:#f19b82}
 #art-setup {flex:1;min-height:0;overflow:auto;padding:4px;scroll-padding:6px}
-.art-start-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
-.art-start-grid>section {min-width:0}
-.art-start-grid h3 {font-size:13px;margin:6px 0 12px}
-.art-start-grid section>button {margin:4px 4px 4px 0}
-.art-start-grid section+section {border-left:1px solid var(--line);padding-left:24px}
+#art-start {max-width:620px;margin:12px auto;width:100%}
+#art-start section {padding:0 12px 12px}
+#art-start h3 {margin-top:0}
+#art-start .field {margin:12px 0}
+#art-start details {margin:12px 0}
+#art-start summary {cursor:pointer;font-size:12px;color:var(--muted)}
+.art-start-tabs {display:flex;gap:8px;margin-bottom:20px}
+.art-start-tabs [aria-pressed=true],.art-scope [aria-pressed=true],#art-frame-strip [aria-pressed=true],#art-properties-toggle[aria-expanded=true] {border-color:var(--accent);color:var(--accent)}
+#art-copy-fields {margin:20px 0 12px;padding-top:8px;border-top:1px solid var(--line)}
+#art-create {margin-top:16px}
 #art-recovery {padding:10px 0 14px;margin-bottom:12px;border-bottom:1px solid var(--line)}
 #art-recovery p {margin:6px 0}
 #art-drafts {max-height:120px;overflow:auto;padding:4px}
@@ -515,35 +530,44 @@
 .art-row .field {margin:0;flex:1;min-width:70px}
 #art-editor {display:flex;flex-direction:column;gap:8px;min-height:0;flex:1}
 #art-editor>* {flex:none;min-width:0}
-#art-editor>.art-controls {display:flex;flex-direction:column;gap:8px;flex:0 1 auto;min-height:84px;overflow:auto;padding:3px;scroll-padding:3px}
+#art-editor>.art-controls {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;overflow:visible;min-height:0;padding:3px;scroll-padding:3px}
 .art-controls>* {flex:none;min-width:0}
-#art-shared {font-size:11px;margin:0;max-height:48px;overflow:auto}
+#art-shared {display:none}
 .art-help {font-size:11px;color:var(--muted)}
 .art-help summary {cursor:pointer;width:fit-content}
 .art-help p {margin:6px 0;max-height:48px;overflow:auto}
 #art-selection-details {font-size:11px;max-height:80px;overflow:auto}
-.pixel-toolbar {display:flex;gap:6px;flex-wrap:wrap;align-items:center;border-block:1px solid var(--line);padding:6px 0}
+.pixel-toolbar {display:flex;grid-column:1/-1;gap:4px;align-items:center;flex-wrap:nowrap;overflow:auto;min-height:34px}
 .pixel-toolbar .tool-group {gap:2px}
 .pixel-toolbar .tool-group+.tool-group {border-left:1px solid var(--line);padding-left:6px}
-.art-tools {justify-content:space-between;gap:10px 20px}
-.art-tools .field {flex:none;width:76px;min-width:0}
-.art-tools .field:has(#art-alpha) {width:68px}
+.art-tools {grid-column:2;grid-row:3;gap:6px;justify-content:flex-end;flex-wrap:nowrap}
+.art-tools label.field {display:flex;flex-direction:row;align-items:center;gap:4px;width:auto;margin:0;font-size:11px;flex:none;min-width:0}
 .art-tools input,.art-tools select {height:32px}
 .art-tools input[type=color] {padding:3px;cursor:pointer}
-.standalone #art-transparent {width:auto;gap:6px;border-color:var(--line);background:repeating-conic-gradient(#4b5045 0% 25%,#262a23 0% 50%) 0/10px 10px}
+#art-alpha {width:64px}
+#art-color {width:40px}
+#art-zoom {width:80px}
+.standalone #art-transparent {width:auto;gap:6px;border-color:var(--line);background:repeating-conic-gradient(#4b5045 0% 25%,#262a23 0% 50%) 0/10px 10px;font-size:0}
 .standalone #art-transparent[aria-pressed=true] {border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);color:var(--accent)}
+#art-transparency-label {display:none}
 .pixel-view-controls {align-items:flex-end;margin-left:auto}
+.art-tools .pixel-view-controls {gap:6px;flex-wrap:nowrap}
 .pixel-view-controls>label:last-child {height:32px;font-size:11px}
-.art-swatches {display:flex;gap:5px;flex-wrap:wrap;max-height:66px;overflow:auto;padding:3px}
+.art-swatches {display:flex;grid-column:1;grid-row:3;align-self:center;gap:5px;max-height:28px;overflow:auto;padding:3px;flex-wrap:nowrap}
 .art-swatches:empty {display:none}
-.art-swatches button {width:24px;min-height:24px;height:24px;border:1px solid var(--line);padding:0}
-#art-editor>.art-workspace {display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:16px;flex:1;min-height:124px;overflow:hidden}
-.art-canvas-scroll {overflow:auto;height:100%;min-height:0;padding:16px;background:#171b16;border:1px solid var(--line);border-radius:5px;scroll-padding:16px}
+.art-swatches button {flex:none;width:20px;min-height:20px;height:20px;border:1px solid var(--line);padding:0}
+#art-editor>.art-workspace {position:relative;display:flex;gap:12px;min-height:160px;flex:1;overflow:hidden}
+.art-canvas-scroll {overflow:auto;flex:1;width:0;min-height:0;padding:16px;background:#171b16;border:1px solid var(--line);border-radius:5px;scroll-padding:16px}
 #art-canvas {display:block;touch-action:none;image-rendering:pixelated;background-color:#ccc;background-image:conic-gradient(#888 25%,transparent 0 50%,#888 0 75%,transparent 0);background-size:16px 16px}
 #art-canvas:focus-visible {outline:2px solid var(--accent);outline-offset:3px}
-.art-review {height:100%;overflow:auto;box-sizing:border-box;padding:4px 8px 12px 4px;min-width:0;scroll-padding:6px;background:transparent}
-.art-review h3 {margin-top:0;font-size:13px}
+#art-properties,.art-review {flex:none;width:280px;height:100%;overflow:auto;box-sizing:border-box;padding:8px;background:var(--panel);min-width:0;scroll-padding:6px}
+#art-properties h3,.art-review h3 {margin-top:0;font-size:13px}
+#art-properties p {font-size:12px}
+#art-properties button {max-width:100%;white-space:normal}
 .art-review>label {margin:8px 0;font-size:11px}
+.art-review-heading {display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:12px}
+.art-review-heading h3 {margin:0}
+.art-review-heading button {font-size:11px}
 #art-review {display:block;width:100%;margin-bottom:10px;border-color:#656b54}
 .art-preview-settings {font-size:11px;color:var(--muted);padding-bottom:10px;border-bottom:1px solid var(--line)}
 .art-preview-settings summary {cursor:pointer}
@@ -552,49 +576,91 @@
 .art-review img {display:block;max-width:100%;image-rendering:pixelated;background:repeating-conic-gradient(#aaa 0% 25%,#ddd 0% 50%) 0/12px 12px}
 #art-before,#art-after {width:128px;height:auto}
 #art-preview-help {margin:6px 0}
-#art-draft-status {font-size:11px;margin:0;overflow-wrap:anywhere;max-height:48px;overflow:auto}
-#art-editor>.dialog-actions {flex:none;padding-top:10px;margin-top:0;border-top:1px solid var(--line);gap:8px;align-items:center}
+#art-draft-status {font-size:11px;margin:0;overflow-wrap:anywhere;max-height:28px;overflow:auto}
+#art-editor>.dialog-actions {flex:none;padding-top:6px;margin-top:0;border-top:1px solid var(--line);gap:8px;align-items:center;justify-content:space-between}
+.art-document-actions {position:relative;font-size:12px}
+.art-document-actions summary {cursor:pointer;padding:8px}
+.art-document-actions>div {position:absolute;bottom:100%;left:0;z-index:3;display:flex;flex-direction:column;gap:6px;padding:8px;background:var(--panel);border:1px solid var(--line);border-radius:4px}
 #art-download {margin-right:auto}
-#artwork-dialog [hidden] {display:none!important}
-@media (max-width:850px) {
-  #artwork-dialog[open] {padding:12px;gap:8px}
-  .art-start-grid {grid-template-columns:minmax(0,1fr);gap:20px}
-  .art-start-grid section+section {border-left:0;border-top:1px solid var(--line);padding:16px 0 0}
-  #art-editor>.art-workspace {grid-template-columns:minmax(0,1fr) 210px;gap:10px}
-  .art-review {padding-right:4px}
-}
-@media (max-height:650px) {
-  #artwork-dialog[open] {gap:6px;padding:12px}
-  #art-editor {gap:6px}
-  .pixel-toolbar {padding:4px 0}
-}
-
-.scene-view-controls {padding:6px 12px;border-bottom:1px solid var(--line)}
-.scene-view-controls summary {cursor:pointer;font-size:12px}
-.scene-view-controls fieldset {display:flex;flex-wrap:wrap;gap:8px 14px;margin:6px 0;padding:6px 10px}
-.scene-view-controls label {display:inline-flex;align-items:center;gap:4px;font-size:12px}
-.scene-view-controls p {font-size:11px;margin:4px 0}
-
-/* Scene and artwork documents share the main workbench and Library. */
-#document-tabs {display:flex;gap:6px;align-items:center;padding:6px 12px;border-bottom:1px solid var(--line);overflow:auto;flex:none}
-#document-tabs button {white-space:nowrap}
-#document-tabs button[aria-pressed=true] {border-color:var(--accent);color:var(--accent)}
-#artwork-documents {display:contents}
-.editing-artwork #editor-layout>.workbench,.editing-artwork #editor-layout>.inspector,.editing-artwork #inspector-rail {display:none!important}
-.standalone #editor-layout>#artwork-dialog[open] {position:static;inset:auto;grid-column:2 / -1;grid-row:1;margin:0;width:100%;max-width:none;height:100%;max-height:none;box-sizing:border-box;border:0;border-left:1px solid var(--line);border-radius:0;background:var(--panel)}
+#art-sheet-controls {flex:0 1 auto;min-height:0;border:0;border-top:1px solid var(--line);margin:0;padding:6px 0 0;max-height:210px;overflow:auto}
+#art-sheet-controls button {font-size:11px}
+.art-frame-bar {display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.art-frame-bar>.field {display:flex;flex-direction:row;align-items:center;gap:6px;margin:0;min-width:0}
+.art-frame-bar select {width:140px}
+.art-frame-bar label {font-size:12px}
+.art-scope {display:flex;gap:2px}
+#art-frame-strip {display:flex;gap:6px;overflow:auto;padding:2px;max-height:78px}
+#art-frame-strip button {flex:none;display:flex;align-items:center;gap:6px;max-width:180px;font-size:11px;padding:4px 8px}
+#art-frame-strip canvas {width:28px;height:40px;object-fit:contain;image-rendering:pixelated}
+#art-frame-strip span {overflow:hidden;text-overflow:ellipsis}
+#art-sheet-controls:has(#art-timeline[open]) #art-frame-strip {display:none}
+#art-timeline {margin-top:8px;border-top:1px solid var(--line);padding-top:6px}
+#art-timeline>summary {margin:0;font-size:12px;cursor:pointer}
+.art-animation-layout {display:grid;grid-template-columns:minmax(0,1fr) 140px;gap:12px;margin-top:8px}
+.art-animation-edit {min-width:0}
+.art-animation-edit>.art-row {flex-wrap:wrap;align-items:center}
+.art-animation-edit .field {flex:none;display:flex;flex-direction:row;align-items:center;gap:6px;font-size:12px}
+.art-animation-edit .field select {max-width:150px}
+.art-animation-edit details {font-size:12px;margin:6px 0}
+.art-playback {min-width:0;font-size:11px}
 #art-animation-canvas,#art-repeat-canvas,#art-animation-image {image-rendering:pixelated;max-width:100%;background:repeating-conic-gradient(#888 0% 25%,#ccc 0% 50%) 0/12px 12px}
+#art-animation-canvas {max-height:80px;width:100%;object-fit:contain}
+#art-animation-status {margin:4px 0}
+#art-animation-result {margin:8px 0}
+#art-animation-image {max-height:80px;object-fit:contain}
 #art-repeat-canvas {max-height:180px;object-fit:contain}
-@media (max-width:700px) { .editing-artwork #editor-layout>#artwork-dialog[open] {grid-column:1 / -1} .editing-artwork #library-pane {display:none} }
+#art-sequence-frames {display:flex;gap:6px;overflow:auto;padding:4px 0}
+#art-sequence-frames .art-row {flex:none;width:144px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;margin:0;padding:5px;border:1px solid var(--line);border-radius:4px}
+#art-sequence-frames canvas {grid-column:1;width:28px;height:32px;object-fit:contain;image-rendering:pixelated}
+#art-sequence-frames select {grid-column:2/4;font-size:11px}
+#art-sequence-frames input {grid-column:1/3;min-height:28px;width:100%;min-width:0;padding:3px 6px}
+#art-sequence-frames button {font-size:10px;padding:3px;min-height:28px}
+#art-sequence-frames .art-row>span {font-size:11px;align-self:center;color:var(--muted)}
+
+/* Document navigation stays in the existing context row. */
+#document-tabs {padding:8px;max-width:min(360px,calc(100vw - 32px));max-height:65dvh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:6px}
+#document-tabs:popover-open,#artwork-documents {display:flex;flex-direction:column;gap:6px}
+#document-tabs:not(:popover-open) {display:none}
+#document-tabs button {text-align:left;white-space:nowrap}
+#document-tabs button[aria-pressed=true] {border-color:var(--accent);color:var(--accent)}
+#document-switcher {max-width:180px;overflow:hidden;text-overflow:ellipsis}
+#art-document-state {font-size:12px;color:var(--muted)}
+.editing-artwork #scene-save-state,.editing-artwork #scene-commands {display:none}
+.editing-artwork .document-context label:has(#scenes) {display:none}
+.editing-artwork #edit-tile,.editing-artwork #terrain-tools,.editing-artwork .library-tabs {display:none}
 .asset-card {display:flex;flex-direction:column;gap:3px;min-width:0}
 .asset-card .asset {width:100%;flex:1}
-.asset-card .asset-open {font-size:10px;padding:4px 2px;white-space:normal;line-height:1.3}
-#art-sheet-controls {border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:12px}
-#art-sheet-controls summary {font-weight:600;cursor:pointer;margin-bottom:10px}
-#art-sheet-controls>.art-row {margin:8px 0}
-#art-sheet-controls button {font-size:11px}
-#art-sequence-frames .art-row {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin:8px 0}
-#art-sequence-frames select {grid-column:span 2}
-#art-sequence-frames input {width:100%;min-width:0;padding:6px 3px}
+.asset-group-title {display:none;grid-column:1/-1;margin:6px 0;font-size:12px;overflow-wrap:anywhere}
+.editing-artwork .asset-group-title:not([hidden]) {display:block}
+.library-art-actions {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;flex:none}
+.library-art-actions button {width:100%;min-width:0;font-size:11px;padding:6px 3px;white-space:normal}
+#artwork-panel {overflow:auto}
+#art-browse {font-size:11px}
+
+@media (max-width:1200px) {
+  #art-properties,.art-review {position:absolute;inset:0 0 0 auto;z-index:2;max-width:100%;box-shadow:-8px 0 20px #0007;border-left:1px solid var(--line)}
+}
+@media (max-width:850px) {
+  .editing-artwork #library-pane,.editing-artwork #library-rail {display:none!important}
+  .editing-artwork #editor-layout>#artwork-dialog[open] {grid-column:1/-1}
+  .art-frame-bar {gap:6px;flex-wrap:wrap}
+  .art-tools {gap:4px}
+  #art-frame-strip canvas {height:28px}
+  #art-frame-strip {max-height:44px}
+}
+@media (max-height:700px) {
+  #artwork-dialog[open] {padding:8px;gap:4px}
+  #art-editor {gap:4px}
+  #art-draft-status,#art-frame-strip {display:none}
+  #art-sheet-controls {max-height:140px}
+  #art-timeline {margin-top:4px;padding-top:4px}
+  #art-editor>.art-workspace {min-height:150px}
+}
+
 #conversion-images {display:flex;flex-wrap:wrap;gap:16px}
 #conversion-images img {image-rendering:pixelated;max-width:100%;background:#888}
 #conversion-mapping {max-height:140px;overflow:auto;flex-basis:100%}
+.art-canvas-scroll {display:flex;align-items:flex-start}
+#art-canvas {margin:auto;flex:none}
+#art-recovery summary {cursor:pointer;font-size:12px;color:var(--muted)}
+@media (max-height:700px) { .art-canvas-scroll {padding:10px} }

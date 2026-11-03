@@ -15,6 +15,43 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Human artwork workflow redesign (milestone 15)
+
+- **Scope:** Prepared 0.29.0 working tree on `milestone/15`, based on
+  [`88f25d0`](https://github.com/cliffom/gbc-scene-forge/commit/88f25d0fe771ad66b5e5eb99f818f2125f0309df),
+  checked 2026-11-02 local time (2026-11-03 UTC), macOS arm64, Python 3.13.13,
+  Node 24.22.1 and Chrome/Playwright 1.64.1. The
+  [design review and final captures](evaluations/unified-editor-ux.md) distinguish
+  baseline observations from the delivered interface.
+- **Method:** Ran `make docs-check lint test`, production `make build check-dist`,
+  complete source browser acceptance, installed-wheel artwork/polish acceptance,
+  and actual installed optional-SDK/browser artwork handoff. Inspected fresh
+  Scene/New/Sheet/Frame/Animation/Review captures at 1440 × 900, 1280 × 800 and
+  800 × 640. Exercised keyboard entry, progressive disclosure, recovery,
+  requested-frame targeting, exact review, repeated saves, retained Undo/Redo
+  against the new saved base, and manual/agent continuity. Rechecked resize,
+  pixel equivalence, cache bounds and disposal against the final installed wheel.
+- **Result:** Lint and all frontend suites passed; 429 Python tests and 20
+  documentation-checker tests passed. Distributions/metadata and seven installed-
+  wheel smoke tests passed. All 28 installed-wheel artwork/polish scenarios and
+  the installed optional-SDK/browser artwork handoff passed. The initial full
+  browser run had 75 passes, two optional profile skips and one resize-overview
+  pixel failure caused by individually scaled tiles. Native chunk composition
+  fixed the seams; its first targeted run exposed temporary canvas resources
+  exceeding the retained-resource assertion. Explicitly releasing non-retained
+  chunks fixes that failure, and all three final installed-wheel resize/cache
+  scenarios pass. The complete source browser rerun passed
+  76 scenarios with two optional scalability profiles skipped.
+- **Limits:** Local synthetic acceptance and agent screenshot inspection do not
+  certify human drawing comfort, independent novice success, accessibility,
+  physical-device behavior or production art quality. The complete source browser rerun began before the final New/Existing
+  heading correction; installed-wheel UI and SDK acceptance were rerun with
+  that correction. Three installed-wheel rendering scenarios exercise the
+  chunk-composition/resource fix. Historical
+  milestone evidence below retains its original scope. Windows, non-Chromium,
+  screen-reader and official Tiled/rasterizer assessments remain unperformed.
+  No tag, release publication or independent human study is claimed.
+
 ## Native sheets and unified artwork workspaces (milestone 15)
 
 - **Scope:** Prepared 0.29.0 working tree on `milestone/15`, based on

@@ -48,6 +48,7 @@ export function createSheetEditor(
       const control = id === 'art-loop' ? input(id) : button(id);
       control.disabled = busy || !s;
     }
+    input('art-onion').disabled = busy || !view() || f?.kind !== 'sprite';
     button('art-add-animation-frame').disabled =
       busy || !s || !f || !first || !compatible(f, first) || s.frames.length >= 256;
     button('art-add-sequence').disabled = busy || !d || d.sequences.length >= 64;
@@ -60,15 +61,18 @@ export function createSheetEditor(
     timer = undefined;
     button('art-play').textContent = 'Play';
   }
-  function image(frame: ArtworkFrame, target: HTMLCanvasElement, repetitions = 1) {
+  const source = document.createElement('canvas');
+  function refreshRaster() {
     const model = ports.current()?.model;
-    const context = target.getContext('2d');
-    if (!model || !context) {
+    if (!model) {
       return;
     }
-    const source = document.createElement('canvas');
-    source.width = model.width;
-    source.height = model.height;
+    if (source.width !== model.width) {
+      source.width = model.width;
+    }
+    if (source.height !== model.height) {
+      source.height = model.height;
+    }
     source
       .getContext('2d')
       ?.putImageData(
@@ -76,6 +80,12 @@ export function createSheetEditor(
         0,
         0,
       );
+  }
+  function image(frame: ArtworkFrame, target: HTMLCanvasElement, repetitions = 1) {
+    const context = target.getContext('2d');
+    if (!context) {
+      return;
+    }
     const scale = Math.min(8, 256 / Math.max(frame.width, frame.height));
     target.width = frame.width * scale * repetitions;
     target.height = frame.height * scale * repetitions;
@@ -186,7 +196,16 @@ export function createSheetEditor(
           });
         }
       });
-      row.append(choice, duration);
+      const thumbnail = document.createElement('canvas');
+      const frame = d.frames.find((f) => f.id === item.frame_id);
+      if (frame) {
+        image(frame, thumbnail);
+      }
+      thumbnail.setAttribute('aria-hidden', 'true');
+      thumbnail.dataset.frame = item.frame_id;
+      const unit = document.createElement('span');
+      unit.textContent = 'ms';
+      row.append(thumbnail, choice, duration, unit);
       for (const [label, delta] of [
         ['Up', -1],
         ['Down', 1],
@@ -225,6 +244,8 @@ export function createSheetEditor(
       stop();
       return;
     }
+    // Upload the source once per drawing update, then crop all thumbnails from it.
+    refreshRaster();
     const next = JSON.stringify(d);
     // Undo/Redo can replace the descriptor with equal content. Rebind row
     // callbacks to that live object rather than editing a detached snapshot.
@@ -256,8 +277,65 @@ export function createSheetEditor(
     if (model) {
       model.bounds = view();
     }
+    const strip = element('art-frame-strip', HTMLElement);
+    if (strip.dataset.frames !== d.frames.map((f) => f.id).join(',')) {
+      strip.replaceChildren(
+        ...d.frames.map((frame) => {
+          const control = document.createElement('button');
+          control.dataset.frame = frame.id;
+          control.append(document.createElement('canvas'), document.createElement('span'));
+          lifetime.assign(control, 'onclick', () => {
+            select('art-frame').value = frame.id;
+            select('art-frame').dispatchEvent(new Event('change'));
+          });
+          return control;
+        }),
+      );
+      strip.dataset.frames = d.frames.map((f) => f.id).join(',');
+    }
+    for (const control of strip.querySelectorAll<HTMLButtonElement>('button')) {
+      const frame = d.frames.find((f) => f.id === control.dataset.frame);
+      if (!frame) {
+        continue;
+      }
+      control.setAttribute('aria-label', `Select ${frame.name} frame`);
+      control.setAttribute('aria-pressed', String(frame.id === selectedFrame()?.id));
+      const label = control.querySelector('span'),
+        thumbnail = control.querySelector('canvas');
+      if (label) {
+        label.textContent = frame.name;
+      }
+      if (thumbnail) {
+        image(frame, thumbnail);
+      }
+    }
+    for (const thumbnail of element('art-sequence-frames', HTMLElement).querySelectorAll(
+      'canvas',
+    )) {
+      const frame = d.frames.find((f) => f.id === thumbnail.dataset.frame);
+      if (frame) {
+        image(frame, thumbnail);
+      }
+    }
+    button('art-sheet-view').setAttribute('aria-pressed', String(!view()));
+    button('art-frame-view').setAttribute('aria-pressed', String(Boolean(view())));
+    input('art-onion').disabled = !view() || selectedFrame()?.kind !== 'sprite';
+    const selected = selectedFrame();
+    input('art-frame-name').value = selected?.name ?? '';
+    element('art-frame-geometry', HTMLElement).textContent = selected
+      ? `${selected.width} × ${selected.height} · origin ${selected.origin.join(', ')}`
+      : '';
     preview();
     controls(false);
+  }
+  for (const [id, frame] of [
+    ['art-sheet-view', false],
+    ['art-frame-view', true],
+  ] as const) {
+    lifetime.assign(button(id), 'onclick', () => {
+      input('art-edit-frame').checked = frame;
+      input('art-edit-frame').dispatchEvent(new Event('change'));
+    });
   }
   for (const id of ['art-frame', 'art-edit-frame', 'art-onion']) {
     const control = id === 'art-frame' ? select(id) : input(id);
@@ -286,14 +364,18 @@ export function createSheetEditor(
   });
   lifetime.assign(button('art-add-sequence'), 'onclick', () =>
     edit((d) => {
-      const id = input('art-sequence-id').value;
+      const name = input('art-sequence-id').value.trim();
+      const id = name
+        .toLowerCase()
+        .replace(/[^a-z0-9_]+/g, '_')
+        .replace(/^_+|_+$/g, '');
       const f = selectedFrame();
       if (!/^[a-z][a-z0-9_]{0,63}$/.test(id) || d.sequences.some((s) => s.id === id) || !f) {
-        throw Error('Choose a unique lowercase sequence ID and a frame.');
+        throw Error('Use a unique animation name beginning with a letter, and choose a frame.');
       }
       d.sequences.push({
         id,
-        name: id,
+        name,
         loop: true,
         frames: [{ frame_id: f.id, duration_ms: 120 }],
       });

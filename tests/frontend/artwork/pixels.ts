@@ -276,3 +276,23 @@ assert.throws(() =>
 );
 assert.throws(() => decodeCandidate({ ...candidate, operation: 'create' }));
 assert.throws(() => decodeCandidate({ ...candidate, unexpected: true }));
+
+// A successful guarded save advances only this document's base and keeps undo usable.
+const continued = new ArtworkSession(candidate, api);
+continued.model.apply(() => continued.model.put({ x: 2, y: 1 }, hidden));
+assert.equal(continued.changed, true);
+const savedBase = {
+  ...candidate,
+  rgba: encoded(continued.model.pixels),
+  project_revision: 'd'.repeat(64),
+  artwork_revision: 'e'.repeat(64),
+};
+continued.adoptSaved(savedBase);
+assert.equal(continued.changed, false);
+assert.equal(continued.original.artwork_revision, 'e'.repeat(64));
+continued.model.undo();
+assert.equal(continued.changed, true);
+assert.deepEqual(continued.model.color({ x: 2, y: 1 }), [0, 0, 0, 0]);
+continued.model.redo();
+assert.equal(continued.changed, false);
+assert.deepEqual(continued.model.color({ x: 2, y: 1 }), hidden);

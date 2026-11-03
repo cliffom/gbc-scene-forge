@@ -41,6 +41,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Evaluations
 
+- [Unified editor human workflow review](evaluations/unified-editor-ux.md)
 - [Native sheet authoring evidence and payload measurements](evaluations/native-authoring.md)
 
 - [Editor toolbar and layout polish (#144)](evaluations/editor-polish.md)

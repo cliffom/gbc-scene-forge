@@ -60,6 +60,19 @@ export function createArtworkController({
   ports: Ports;
 }) {
   let atlasFolder: AtlasFolder | null = null;
+  let editAsset = '';
+  function editArtwork(asset = editAsset) {
+    const [atlas, region] = asset.split('/');
+    if (atlas && region) {
+      element('palette', HTMLElement).dispatchEvent(
+        new CustomEvent('open-artwork', { detail: { atlas, region } }),
+      );
+    }
+  }
+  lifetime.assign(button('library-edit-artwork'), 'onclick', () => editArtwork());
+  element('palette', HTMLElement).addEventListener('artwork-workspace', filterPalette, {
+    signal: lifetime.signal,
+  });
 
   let deleteAtlasCandidate: { id: string; projectRevision: string } | null = null;
 
@@ -94,10 +107,9 @@ export function createArtworkController({
         (atlas && item.dataset.atlas !== atlas) ||
         (kind && item.dataset.kind !== kind),
       );
-      const open = item.nextElementSibling;
-      if (open instanceof HTMLButtonElement && open.classList.contains('asset-open')) {
-        open.hidden = item.hidden;
-      }
+      item.disabled =
+        !document.body.classList.contains('editing-artwork') &&
+        item.dataset.sceneUnavailable === 'true';
       if (item.parentElement?.classList.contains('asset-card')) {
         item.parentElement.hidden = item.hidden;
       }
@@ -105,14 +117,27 @@ export function createArtworkController({
         count++;
       }
     }
+    for (const title of element('palette', HTMLElement).querySelectorAll<HTMLElement>(
+      '.asset-group-title',
+    )) {
+      title.hidden = !Array.from(items).some(
+        (item) => !item.hidden && item.dataset.atlas === title.dataset.atlas,
+      );
+    }
+    if (!Array.from(items).some((item) => item.dataset.asset === editAsset)) {
+      editAsset = items[0]?.dataset.asset ?? '';
+    }
+    button('library-edit-artwork').disabled = !editAsset;
     element('asset-count', HTMLElement).textContent = `${count} / ${items.length}`;
     element('library-hint', HTMLElement).textContent = !items.length
       ? 'Import an atlas to add tiles and sprites to this project.'
       : !count
         ? 'No matching assets. Clear the search or change the filters.'
-        : !sceneSession.loaded
-          ? 'Open or create a scene to start using these assets.'
-          : 'Choose a tile to paint or a sprite to place. Dimmed tiles need a smaller grid.';
+        : document.body.classList.contains('editing-artwork')
+          ? 'Choose a frame to open its artwork. Shared sheets stay together.'
+          : !sceneSession.loaded
+            ? 'Choose artwork to edit, or create a scene to place it.'
+            : 'Choose a tile to paint or a sprite to place. Dimmed tiles need a smaller grid.';
   }
 
   let terrainSignature = '';
@@ -255,6 +280,11 @@ export function createArtworkController({
       if (!image) {
         continue;
       }
+      const title = document.createElement('h3');
+      title.className = 'asset-group-title';
+      title.dataset.atlas = id;
+      title.textContent = id.replaceAll('_', ' ');
+      paletteElement.append(title);
       for (const region of atlas.regions) {
         const asset = `${id}/${region.name}`;
         const sprite = region.kind === 'sprite';
@@ -281,7 +311,15 @@ export function createArtworkController({
         item.dataset.asset = asset;
         item.dataset.atlas = id;
         item.dataset.kind = region.kind;
-        item.disabled = !sceneSession.loaded || (!sprite && !compatible);
+        item.dataset.sceneUnavailable = String(
+          Boolean(sceneSession.loaded) && !sprite && !compatible,
+        );
+        item.disabled =
+          !document.body.classList.contains('editing-artwork') &&
+          item.dataset.sceneUnavailable === 'true';
+        if (!editAsset) {
+          editAsset = asset;
+        }
         item.draggable = !item.disabled;
         lifetime.assign(item, 'ondragstart', (event) => {
           if (activity.busy || !event.dataTransfer) {
@@ -341,6 +379,8 @@ export function createArtworkController({
           artworkBrushes.set(asset, selectBrush);
         }
         const chooseAsset = (reveal = true) => {
+          editAsset = asset;
+          button('library-edit-artwork').disabled = false;
           if (reveal) {
             editorLayout.showLibrary('artwork');
           }
@@ -370,19 +410,19 @@ export function createArtworkController({
             : `Paint ${region.name}.`;
           ports.draw();
         };
-        lifetime.assign(item, 'onclick', () => chooseAsset());
+        lifetime.assign(item, 'onclick', () => {
+          editAsset = asset;
+          button('library-edit-artwork').disabled = false;
+          if (document.body.classList.contains('editing-artwork') || !sceneSession.loaded) {
+            editArtwork(asset);
+          } else {
+            chooseAsset();
+          }
+        });
+        lifetime.assign(item, 'ondblclick', () => editArtwork(asset));
         const card = document.createElement('div');
         card.className = 'asset-card';
-        const open = document.createElement('button');
-        open.className = 'asset-open';
-        open.textContent = 'Open artwork';
-        open.setAttribute('aria-label', `Open ${region.name} artwork`);
-        lifetime.assign(open, 'onclick', () => {
-          paletteElement.dispatchEvent(
-            new CustomEvent('open-artwork', { detail: { atlas: id, region: region.name } }),
-          );
-        });
-        card.append(item, open);
+        card.append(item);
         paletteElement.append(card);
         if (!initialBrush && !item.disabled) {
           initialBrush = () => chooseAsset(false);

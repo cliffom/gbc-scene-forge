@@ -88,16 +88,22 @@ to looping playback; their complete definitions remain in Forge metadata.
 
 ## Document navigation and editing
 
-The main workbench has a Scene tab, New / open artwork, and up to 16 artwork tabs.
-The shared Library offers explicit Open artwork buttons without requiring a
-scene. Imported assets open the copy workflow. Choosing an asset for scene
-placement does not enter pixel editing.
+The existing context bar contains an active-document switcher for Scene and up
+to 16 retained artwork documents, without a separate permanent tab row. The Library
+separates New artwork from opening existing assets. Select then Edit artwork, or
+double-click a thumbnail; without a scene, a thumbnail opens artwork directly.
+Imported assets open a focused copy flow. Scene placement remains the ordinary
+single-click behavior when a scene is open. Opening a frame selects that frame
+in a whole-sheet overview, including in an already-open document.
 
 Switching checkpoints outgoing changed artwork and retains its local model,
 Undo/Redo, selection, pixel tool, frame/sequence controls, zoom and scroll.
 Checkpoint failure blocks switching and retains local work. Scene history remains
-owned by its existing session. Saving/discarding closes that artwork tab; Return
-to scene retains it. Dirty inactive documents keep their original saved bases;
+owned by its existing session. Saving retains the document, history and viewport while adopting the exact
+acknowledged saved base; Undo then compares with that new base. Close/discard
+removes it; Return to scene retains it. A failure during post-save adoption retires
+the submitted candidate and reports the committed save rather than making it
+editable against a stale base. Dirty inactive documents keep their original saved bases;
 external changes do not silently rebase them. Explicit reopen/recovery follows
 the existing conflict contract.
 
@@ -105,6 +111,10 @@ Artwork offers whole-sheet overview, frame boundaries and origin crosses,
 selected-frame editing, repetition preview for tiles, named sequences,
 order/duration/loop editing, Play/Pause/Step, onion skinning and generated APNG
 review. Frame mode bounds drawing/fill/selection/transforms to that rectangle.
+Frame thumbnails and a bounded animation dock sit below the canvas; properties
+and change review are separate optional surfaces. Saved, Modified and New reflect
+the document's actual state. Save opens exact-change review and requires explicit
+confirmation; an animation receipt alone does not bypass that human confirmation.
 Pixel/layout changes share one document history and invalidate review receipts.
 The [user guide](user/pixel-artwork.md) describes the controls.
 

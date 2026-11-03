@@ -6,7 +6,7 @@ import { decodeCandidate, type Candidate } from './artwork-contracts.mts';
 
 export class ArtworkSession {
   readonly model: PixelModel;
-  readonly original: Candidate;
+  original: Candidate;
   candidate: Candidate;
   receipt: Record<string, unknown> | null = null;
   readonly id = crypto.randomUUID();
@@ -24,6 +24,11 @@ export class ArtworkSession {
     this.candidate = candidate;
     this.original = original;
     this.model = new PixelModel(candidate);
+  }
+  adoptSaved(candidate: Candidate) {
+    this.candidate = candidate;
+    this.original = candidate;
+    this.receipt = null;
   }
   get changed() {
     return (

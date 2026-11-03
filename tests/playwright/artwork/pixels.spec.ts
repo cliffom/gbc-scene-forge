@@ -1,3 +1,4 @@
+import { revealArtworkControl, reviewArtwork, saveArtwork } from '../support/artwork-controls.ts';
 /** Native hand editing, scene-history isolation, revision conflicts and durable drafts. */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -100,7 +101,9 @@ print(s['id'])
 }
 async function openGrass(page: Page) {
   await page.locator('#show-artwork').click();
+  await page.locator('#art-existing-mode').click();
   await expect(page.locator('#art-source')).toBeEnabled();
+  await page.locator('#art-existing-mode').click();
   await page.locator('#art-source').selectOption({ label: 'grass / artwork (editable)' });
   await page.locator('#art-open').click();
   await expect(page.locator('#art-canvas')).toBeVisible();
@@ -122,9 +125,9 @@ test('selected tile variation recovers, reviews exact replacements and preserves
   await page.locator('input[name=tool][value=select]').check();
   await paint(page, 12, 12);
   await page.locator('#edit-placement-artwork').click();
-  await page.locator('#art-id').fill('autumn_grass');
+  await (await revealArtworkControl(page, 'art-id')).fill('autumn_grass');
   await page.locator('#art-name').fill('Autumn grass');
-  await page.locator('#art-variation').click();
+  await (await revealArtworkControl(page, 'art-variation')).click();
   await expect(page.locator('#art-shared')).toContainText('1 selected placements');
   await page.locator('#art-color').fill('#cc8833');
   await draw(page, 1, 2);
@@ -132,9 +135,10 @@ test('selected tile variation recovers, reviews exact replacements and preserves
   await page.locator('#art-redo').click();
   await page.locator('#art-close').click();
   await page.locator('#show-artwork').click();
+  await revealArtworkControl(page, 'art-drafts');
   await page.getByRole('button', { name: 'Recover copy', exact: true }).click();
   await expect(page.locator('#art-shared')).toContainText('1 selected placements');
-  await page.locator('#art-review').click();
+  await reviewArtwork(page);
   await expect(page.locator('#art-references')).toHaveText(
     '1 selected replacements out of 2 saved source references. Only these selections change; other scenes, stamps and definitions retain the original.',
   );
@@ -143,7 +147,8 @@ test('selected tile variation recovers, reviews exact replacements and preserves
   await page.screenshot({ path: info.outputPath('variation-desktop.png') });
   await page.setViewportSize({ width: 800, height: 900 });
   await page.screenshot({ path: info.outputPath('variation-compact.png') });
-  await page.locator('#art-save').click();
+  await saveArtwork(page);
+  await page.locator('#art-close').click();
   await expect(page.locator('#artwork-dialog')).not.toBeVisible();
   await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   const data = record(
@@ -185,16 +190,16 @@ test('variation refuses dirty scene work and stale selected scene without losing
   await page.locator('input[name=tool][value=select]').check();
   await paint(page, 4, 4);
   await page.locator('#edit-placement-artwork').click();
-  await page.locator('#art-variation').click();
+  await (await revealArtworkControl(page, 'art-variation')).click();
   await expect(page.locator('#art-message')).toContainText('Save the scene before');
   await page.locator('#art-close').click();
   await clickControl(page, 'save');
   await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   await page.locator('#edit-placement-artwork').click();
-  await page.locator('#art-id').fill('stale_variation');
-  await page.locator('#art-variation').click();
+  await (await revealArtworkControl(page, 'art-id')).fill('stale_variation');
+  await (await revealArtworkControl(page, 'art-variation')).click();
   await draw(page, 0, 0);
-  await page.locator('#art-review').click();
+  await reviewArtwork(page);
   await expect(page.locator('#art-save')).toBeEnabled();
   execFileSync(workspace.python, [
     '-c',
@@ -222,12 +227,13 @@ test('selected sprite variation preserves its origin and keeps original artwork 
   await page.locator('.layer-choice').filter({ hasText: 'Sprites' }).click();
   await paint(page, 34, 30);
   await page.locator('#edit-placement-artwork').click();
-  await page.locator('#art-id').fill('actor_warm');
-  await page.locator('#art-variation').click();
+  await (await revealArtworkControl(page, 'art-id')).fill('actor_warm');
+  await (await revealArtworkControl(page, 'art-variation')).click();
   await page.locator('#art-color').fill('#f0b050');
   await draw(page, 4, 4);
-  await page.locator('#art-review').click();
-  await page.locator('#art-save').click();
+  await reviewArtwork(page);
+  await saveArtwork(page);
+  await page.locator('#art-close').click();
   await expect(page.locator('#artwork-dialog')).not.toBeVisible();
   const after = record(
     await (await page.request.get(new URL(`api/scene/${scene}`, url).href)).json(),
@@ -293,13 +299,14 @@ test('pixel drawing tools, exact transparency, reviewed save and scene history i
   await expect(page.locator('#artwork-dialog')).toBeVisible();
   await page.locator('#art-undo').click();
   await page.locator('#art-redo').click();
-  await page.locator('#art-review').click();
+  await reviewArtwork(page);
   await expect(page.locator('#art-save')).toBeEnabled();
   await expect(page.locator('#art-references')).toContainText('2 saved references');
   await expect(page.locator('#art-scene-after')).toBeVisible();
   const screenshot = info.outputPath('pixel-editor-desktop.png');
   await page.screenshot({ path: screenshot });
-  await page.locator('#art-save').click();
+  await saveArtwork(page);
+  await page.locator('#art-close').click();
   await expect(page.locator('#artwork-dialog')).not.toBeVisible();
   await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
   await expect(page.locator('#undo')).toBeEnabled();
@@ -322,7 +329,7 @@ test('new artwork, duplicate imported pixels, compact UI and recoverable draft c
   const { url } = await setup(page, workspace);
   await page.setViewportSize({ width: 800, height: 900 });
   await page.locator('#show-artwork').click();
-  await page.locator('#art-id').fill('hand_tile');
+  await (await revealArtworkControl(page, 'art-id')).fill('hand_tile');
   await page.locator('#art-name').fill('Hand tile');
   await page.locator('#art-width').fill('8');
   await page.locator('#art-height').fill('8');
@@ -330,21 +337,23 @@ test('new artwork, duplicate imported pixels, compact UI and recoverable draft c
   await expect(page.locator('#art-canvas')).toBeVisible();
   await page.locator('input[name=art-tool][value=fill]').check();
   await draw(page, 0, 0);
-  await page.locator('#art-review').click();
+  await reviewArtwork(page);
   await expect(page.locator('#art-save')).toBeEnabled();
   const screenshot = info.outputPath('pixel-editor-compact.png');
   await page.screenshot({ path: screenshot });
-  await page.locator('#art-save').click();
+  await saveArtwork(page);
+  await page.locator('#art-close').click();
   await expect(page.locator('#artwork-dialog')).not.toBeVisible();
   assert.equal((await opened(page, url, 'hand_tile')).descriptor.name, 'Hand tile');
   // Imported artwork offers only copying, and creation does not replace placements.
   await page.locator('#show-artwork').click();
+  await page.locator('#art-existing-mode').click();
   await page.locator('#art-source').selectOption({ label: 'terrain / earth (copy to edit)' });
   await expect(page.locator('#art-open')).toBeDisabled();
-  await page.locator('#art-source-grid').selectOption('8');
-  await page.locator('#art-id').fill('copied_tile');
+  await (await revealArtworkControl(page, 'art-source-grid')).selectOption('8');
+  await (await revealArtworkControl(page, 'art-id')).fill('copied_tile');
   await page.locator('#art-name').fill('Copied tile');
-  await page.locator('#art-duplicate').click();
+  await (await revealArtworkControl(page, 'art-duplicate')).click();
   await expect(page.locator('#art-canvas')).toBeVisible();
   await page.locator('#art-color').fill('#eeaa44');
   await page.locator('input[name=art-tool][value=pencil]').check();
@@ -354,10 +363,12 @@ test('new artwork, duplicate imported pixels, compact UI and recoverable draft c
   await page.reload();
   await expect(page.locator('#status')).toHaveText('Scene opened.');
   await page.locator('#show-artwork').click();
+  await revealArtworkControl(page, 'art-drafts');
   await page.getByRole('button', { name: 'Recover copy', exact: true }).click();
   await expect(page.locator('#art-message')).toContainText('Recovered a new copy');
-  await page.locator('#art-review').click();
-  await page.locator('#art-save').click();
+  await reviewArtwork(page);
+  await saveArtwork(page);
+  await page.locator('#art-close').click();
   await expect(page.locator('#artwork-dialog')).not.toBeVisible();
   assert.deepEqual(
     new PixelModel(await opened(page, url, 'copied_tile')).color({ x: 1, y: 1 }),
@@ -375,7 +386,7 @@ test('external artwork save rejects reviewed pixels and preserves stale checkpoi
   await openGrass(page);
   await page.locator('#art-color').fill('#ff0000');
   await draw(page, 0, 0);
-  await page.locator('#art-review').click();
+  await reviewArtwork(page);
   await expect(page.locator('#art-save')).toBeEnabled();
   let other = await opened(page, url);
   other = decodeCandidate(
@@ -395,6 +406,7 @@ test('external artwork save rejects reviewed pixels and preserves stale checkpoi
   await page.reload();
   await expect(page.locator('#status')).toHaveText('Scene opened.');
   await page.locator('#show-artwork').click();
+  await revealArtworkControl(page, 'art-drafts');
   await page.getByRole('button', { name: 'Recover copy', exact: true }).click();
   await expect(page.locator('#art-message')).toContainText('retained');
   await expect(page.locator('#art-start')).toBeVisible();
@@ -429,9 +441,10 @@ test('placed sprite editing preserves origin and references; blank sprites previ
   await page.mouse.move(b.x, b.y);
   await page.locator('#art-canvas').dispatchEvent('pointercancel', { pointerId: 1 });
   await page.mouse.up();
-  await page.locator('#art-review').click();
+  await reviewArtwork(page);
   await expect(page.locator('#art-references')).toContainText('1 saved references');
-  await page.locator('#art-save').click();
+  await saveArtwork(page);
+  await page.locator('#art-close').click();
   await expect(page.locator('#artwork-dialog')).not.toBeVisible();
   const saved = await opened(page, url, 'actor');
   assert.deepEqual(saved.descriptor.origin, [4, 8]);
@@ -444,15 +457,16 @@ test('placed sprite editing preserves origin and references; blank sprites previ
   assert.equal(after.revision, before.revision);
   assert.deepEqual(after.scene, before.scene);
   await page.locator('#show-artwork').click();
-  await page.locator('#art-id').fill('new_sprite');
+  await (await revealArtworkControl(page, 'art-id')).fill('new_sprite');
   await page.locator('#art-name').fill('New sprite');
   await page.locator('#art-kind').selectOption('sprite');
   await page.locator('#art-create').click();
   await page.locator('input[name=art-tool][value=rectangle]').check();
   await draw(page, 1, 1, 6, 6);
-  await page.locator('#art-review').click();
+  await reviewArtwork(page);
   await expect(page.locator('#art-scene-after')).toBeVisible();
-  await page.locator('#art-save').click();
+  await saveArtwork(page);
+  await page.locator('#art-close').click();
   await expect(page.locator('#artwork-dialog')).not.toBeVisible();
   assert.equal((await opened(page, url, 'new_sprite')).descriptor.kind, 'sprite');
   const finalScene = record(
@@ -488,7 +502,7 @@ test('clean close removes an older checkpoint; failed checkpoint retains local w
   await expect(page.locator('#art-message')).toContainText('simulated disk full');
   const [download] = await Promise.all([
     page.waitForEvent('download'),
-    page.locator('#art-download').click(),
+    (await revealArtworkControl(page, 'art-download')).click(),
   ]);
   assert.equal(download.suggestedFilename(), 'artwork-work.json');
   await page.unroute('**/api/artwork-draft-write');
@@ -535,11 +549,12 @@ test('Undo to the saved base warns on reload until the recovery checkpoint catch
   await page.reload();
   await expect(page.locator('#status')).toHaveText('Scene opened.');
   await page.locator('#show-artwork').click();
+  await revealArtworkControl(page, 'art-drafts');
   await page.getByRole('button', { name: 'Recover copy', exact: true }).click();
   await expect(page.locator('#art-message')).toContainText('Recovered a new copy');
   const [download] = await Promise.all([
     page.waitForEvent('download'),
-    page.locator('#art-download').click(),
+    (await revealArtworkControl(page, 'art-download')).click(),
   ]);
   const path = await download.path();
   assert.ok(path);
@@ -606,10 +621,10 @@ for (const external of [false, true]) {
     await paint(page, 20, 20);
     await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
     await page.locator('#show-artwork').click();
-    await page.locator('#art-id').fill('scene_guard_tile');
+    await (await revealArtworkControl(page, 'art-id')).fill('scene_guard_tile');
     await page.locator('#art-create').click();
     await expect(page.locator('#art-canvas')).toBeVisible();
-    await page.locator('#art-use-scene').uncheck();
+    await (await revealArtworkControl(page, 'art-use-scene')).uncheck();
     if (external) {
       execFileSync(workspace.python, [
         '-c',
@@ -626,13 +641,15 @@ p.scenes.save(s['id'],s['scene'],s['revision'],p.catalog()['revision'])
         scene,
       ]);
     }
-    await page.locator('#art-review').click();
+    await reviewArtwork(page);
     await expect(page.locator('#art-save')).toBeEnabled();
     await page.locator('#art-save').click();
     if (external) {
       await expect(page.locator('#art-message')).toContainText('reconcile the scene');
-      await page.locator('#art-close').click();
+    } else {
+      await expect(page.locator('#art-message')).toContainText('Artwork saved.');
     }
+    await page.locator('#art-close').click();
     await expect(page.locator('#artwork-dialog')).not.toBeVisible();
     await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
     await expect(page.locator('#undo')).toBeEnabled();
@@ -680,10 +697,12 @@ test('a pending checkpoint excludes a later canceled gesture through recovery', 
   await page.reload();
   await expect(page.locator('#status')).toHaveText('Scene opened.');
   await page.locator('#show-artwork').click();
+  await revealArtworkControl(page, 'art-drafts');
   await page.getByRole('button', { name: 'Recover copy', exact: true }).click();
   await expect(page.locator('#art-message')).toContainText('Recovered a new copy');
-  await page.locator('#art-review').click();
-  await page.locator('#art-save').click();
+  await reviewArtwork(page);
+  await saveArtwork(page);
+  await page.locator('#art-close').click();
   await expect(page.locator('#artwork-dialog')).not.toBeVisible();
   const saved = new PixelModel(await opened(page, url));
   assert.deepEqual(saved.color({ x: 0, y: 0 }), [255, 0, 0, 255]);
@@ -709,13 +728,14 @@ test('dense variation controls scroll while reviewed save actions remain clickab
   await page.mouse.move(points.end, points.y, { steps: 7 });
   await page.mouse.up();
   await page.locator('#edit-placement-artwork').click();
-  await page.locator('#art-id').fill('dense_variation');
-  await page.locator('#art-variation').click();
+  await (await revealArtworkControl(page, 'art-id')).fill('dense_variation');
+  await (await revealArtworkControl(page, 'art-variation')).click();
   await expect(page.locator('#art-shared')).toContainText('7 selected placements');
   await expect(page.locator('#art-swatches button')).toHaveCount(64);
+  await revealArtworkControl(page, 'art-download');
   await page.locator('.art-help summary').click();
   await page.locator('#art-selection-details summary').click();
-  await page.locator('#art-review').click();
+  await reviewArtwork(page);
   await expect(page.locator('#art-save')).toBeEnabled();
   for (const [width, height] of [
     [1440, 900],
@@ -723,7 +743,7 @@ test('dense variation controls scroll while reviewed save actions remain clickab
     [1440, 600],
   ]) {
     await page.setViewportSize({ width, height });
-    for (const id of ['art-save', 'art-download', 'art-discard']) {
+    for (const id of ['art-save']) {
       expect(
         await page.locator('#' + id).evaluate((node) => {
           const r = node.getBoundingClientRect();
@@ -738,7 +758,8 @@ test('dense variation controls scroll while reviewed save actions remain clickab
   const save = await page.locator('#art-save').boundingBox();
   assert.ok(save);
   await page.mouse.click(save.x + save.width / 2, save.y + save.height / 2);
-  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+  await expect(page.locator('#art-message')).toContainText('Artwork saved.');
+  await expect(page.locator('#artwork-dialog')).toBeVisible();
 });
 
 test('transparent drawing restores opacity and preserves partial alpha in saved pixels', async ({
@@ -781,8 +802,9 @@ test('transparent drawing restores opacity and preserves partial alpha in saved 
   await page.getByRole('button', { name: 'RGBA 204, 136, 51, 128', exact: true }).click();
   await expect(transparent).toHaveAttribute('aria-pressed', 'false');
   await expect(transparent).toHaveAccessibleName('Transparent');
-  await page.locator('#art-review').click();
-  await page.locator('#art-save').click();
+  await reviewArtwork(page);
+  await saveArtwork(page);
+  await page.locator('#art-close').click();
   await expect(page.locator('#artwork-dialog')).not.toBeVisible();
   const saved = new PixelModel(await opened(page, url));
   assert.deepEqual(saved.color({ x: 0, y: 0 }), [204, 136, 51, 128]);
@@ -799,19 +821,20 @@ test('native player sheet, animation authoring and document switching retain ind
   await page.locator('[data-asset="grass/artwork"]').first().click();
   await paint(page, 20, 20);
   await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
-  await page.locator('#artwork-new-document').click();
-  await page.locator('#art-id').fill('player_sheet');
+  await page.locator('#show-artwork').click();
+  await (await revealArtworkControl(page, 'art-id')).fill('player_sheet');
   await page.locator('#art-name').fill('Player sheet');
   await page.locator('#art-kind').selectOption('sprite');
   await page.locator('#art-width').fill('32');
   await page.locator('#art-height').fill('16');
+  await page.locator('#art-multiple').check();
   await page.locator('#art-frame-width').fill('8');
   await page.locator('#art-frame-height').fill('16');
-  await page.locator('#art-origin-x').fill('3');
-  await page.locator('#art-origin-y').fill('12');
-  await page.locator('#art-create-sheet').click();
+  await (await revealArtworkControl(page, 'art-origin-x')).fill('3');
+  await (await revealArtworkControl(page, 'art-origin-y')).fill('12');
+  await page.locator('#art-create').click();
   await expect(page.locator('#art-frame option')).toHaveCount(4);
-  await page.locator('#art-edit-frame').check();
+  await page.locator('#art-frame-view').click();
   await page.locator('#art-color').fill('#cc6633');
   await draw(page, 1, 2);
   await page.locator('#art-zoom').selectOption('32');
@@ -829,22 +852,27 @@ test('native player sheet, animation authoring and document switching retain ind
     await draw(page, 3, 4, 3, id === 'duck' ? 8 : 10);
     await draw(page, 1, id === 'jump' ? 5 : 7, 5, 7);
     await draw(page, 3, id === 'duck' ? 8 : 10, id === 'walk' ? 6 : 4, 13);
-    await page.locator('#art-sequence-id').fill(id);
+    await (await revealArtworkControl(page, 'art-sequence-id')).fill(id);
     await page.locator('#art-add-sequence').click();
   }
+  await revealArtworkControl(page, 'art-play');
   await page.locator('#art-sequence').selectOption('walk');
   await page.locator('#art-frame').selectOption('frame_2');
   await page.locator('#art-add-animation-frame').click();
+  await revealArtworkControl(page, 'art-play');
   await page.getByLabel('Frame 1 duration in milliseconds', { exact: true }).fill('180');
+  await revealArtworkControl(page, 'art-play');
   await page.getByLabel('Frame 1 duration in milliseconds', { exact: true }).press('Tab');
   await page.locator('#art-loop').uncheck();
   await page.locator('#art-onion').check();
+  await revealArtworkControl(page, 'art-play');
   await page.locator('#art-play').click();
   await expect(page.locator('#art-play')).toHaveText('Play');
   await page.locator('#art-step').click();
-  await page.locator('#scene-document').click();
+  await page.locator('#art-close').click();
   await expect(page.locator('#artwork-dialog')).not.toBeVisible();
   await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
+  await page.locator('#document-switcher').click();
   await page.locator('#artwork-documents button').filter({ hasText: 'Player sheet' }).click();
   await expect(page.locator('#art-zoom')).toHaveValue('32');
   await expect(page.locator('#art-frame')).toHaveValue('frame_2');
@@ -853,6 +881,7 @@ test('native player sheet, animation authoring and document switching retain ind
   await expect(page.locator('#art-loop')).toBeChecked();
   await page.locator('#art-redo').click();
   await expect(page.locator('#art-loop')).not.toBeChecked();
+  await revealArtworkControl(page, 'art-play');
   await page.locator('#art-animation-review').click();
   await expect(page.locator('#art-animation-image')).toBeVisible();
   const animation = await page.locator('#art-animation-image').getAttribute('src');
@@ -864,14 +893,15 @@ test('native player sheet, animation authoring and document switching retain ind
   );
   await page.screenshot({ path: info.outputPath('unified-player-sheet-desktop.png') });
   await page.locator('#art-zoom').selectOption('16');
-  await page.locator('#art-edit-frame').uncheck();
+  await page.locator('#art-sheet-view').click();
   await page.locator('.art-review').evaluate((node) => {
     node.scrollTop = 0;
   });
   await page.screenshot({ path: info.outputPath('unified-player-sheet-overview.png') });
   await page.setViewportSize({ width: 800, height: 640 });
   await page.screenshot({ path: info.outputPath('unified-player-sheet-compact.png') });
-  await page.locator('#art-save').click();
+  await saveArtwork(page);
+  await page.locator('#art-close').click();
   await expect(page.locator('#artwork-dialog')).not.toBeVisible();
   await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
   const saved = await opened(page, url, 'player_sheet');
@@ -908,22 +938,27 @@ a.save(c,receipt=p.artwork.reviews.animation(c,'walk',scale=1)['receipt'])
   ]);
   const url = await workspace.start(root, true);
   await page.goto(url);
-  await expect(page.getByRole('button', { name: 'Open idle artwork', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Open idle artwork', exact: true }).click();
+  await expect(page.locator('[data-asset="player/idle"]')).toBeVisible();
+  await page.locator('[data-asset="player/idle"]').click();
   await expect(page.locator('#art-canvas')).toBeVisible();
   await expect(page.locator('#art-frame option')).toHaveCount(2);
   await page.locator('#art-color').fill('#ddaa77');
   await draw(page, 9, 2);
-  await page.locator('#scene-document').click();
-  await page.getByRole('button', { name: 'Open idle artwork', exact: true }).click();
+  await page.locator('#art-close').click();
+  await page.locator('[data-asset="player/idle"]').click();
   await expect(page.locator('#artwork-documents button')).toHaveCount(1);
   await expect(page.locator('#art-undo')).toBeEnabled();
   await page.locator('#art-undo').click();
   await page.locator('#art-redo').click();
+  await revealArtworkControl(page, 'art-play');
   await page.getByLabel('Frame 1 duration in milliseconds', { exact: true }).fill('333');
+  await revealArtworkControl(page, 'art-play');
   await page.getByLabel('Frame 1 duration in milliseconds', { exact: true }).press('Tab');
+  await revealArtworkControl(page, 'art-play');
   await page.locator('#art-animation-review').click();
-  await page.locator('#art-save').click();
+  await reviewArtwork(page);
+  await saveArtwork(page);
+  await page.locator('#art-close').click();
   await expect(page.locator('#artwork-dialog')).not.toBeVisible();
   const saved = await opened(page, url, 'player');
   assert.equal(saved.descriptor.version, 2);
@@ -962,7 +997,7 @@ print(json.dumps(c))
   assert.equal(continued.rgba, expected.toString('base64'));
   assert.deepEqual(continued.descriptor, saved.descriptor);
   await page.reload();
-  await page.getByRole('button', { name: 'Open idle artwork', exact: true }).click();
+  await page.locator('[data-asset="player/idle"]').click();
   await expect(page.getByLabel('Frame 1 duration in milliseconds', { exact: true })).toHaveValue(
     '333',
   );
@@ -988,32 +1023,37 @@ p.scenes.save(s['id'],s['scene'],s['revision'],p.catalog()['revision'])
   await page.reload();
   await expect(page.locator('#status')).toHaveText('Scene opened.');
   await page.locator('#show-artwork').click();
-  await page.locator('#art-id').fill('tile_sheet');
+  await (await revealArtworkControl(page, 'art-id')).fill('tile_sheet');
   await page.locator('#art-name').fill('Tile sheet');
   await page.locator('#art-width').fill('16');
   await page.locator('#art-height').fill('8');
-  await page.locator('#art-create-sheet').click();
-  await page.locator('#art-edit-frame').check();
+  await page.locator('#art-multiple').check();
+  await page.locator('#art-create').click();
+  await page.locator('#art-frame-view').click();
   await page.locator('input[name=art-tool][value=fill]').check();
   await draw(page, 0, 0);
+  await revealArtworkControl(page, 'art-repeat-canvas');
   await expect(page.locator('#art-repeat-canvas')).toBeVisible();
-  await page.locator('#art-use-scene').uncheck();
-  await page.locator('#art-review').click();
-  await page.locator('#art-save').click();
+  await (await revealArtworkControl(page, 'art-use-scene')).uncheck();
+  await reviewArtwork(page);
+  await saveArtwork(page);
+  await page.locator('#art-close').click();
   await expect(page.locator('#artwork-dialog')).not.toBeVisible();
   await page.locator('[data-asset="tile_sheet/frame_0"]').first().click();
   await paint(page, 20, 20);
   await clickControl(page, 'save');
   await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   await page.locator('#show-artwork').click();
+  await page.locator('#art-existing-mode').click();
   await page.locator('#art-source').selectOption({ label: 'actor / artwork (editable)' });
-  await page.locator('#art-id').fill('scenery_actor');
+  await (await revealArtworkControl(page, 'art-id')).fill('scenery_actor');
   await page.locator('#art-name').fill('Scenery actor');
   await page.locator('#art-duplicate-sheet').click();
-  await page.locator('#art-tile-representation').click();
-  await page.locator('#art-use-scene').uncheck();
-  await page.locator('#art-review').click();
-  await page.locator('#art-save').click();
+  await (await revealArtworkControl(page, 'art-tile-representation')).click();
+  await (await revealArtworkControl(page, 'art-use-scene')).uncheck();
+  await reviewArtwork(page);
+  await saveArtwork(page);
+  await page.locator('#art-close').click();
   await expect(page.locator('#artwork-dialog')).not.toBeVisible();
   await page.locator('input[name=tool][value=select]').check();
   await page.locator('.layer-choice').filter({ hasText: 'Sprites' }).click();
@@ -1042,4 +1082,39 @@ p.scenes.save(s['id'],s['scene'],s['revision'],p.catalog()['revision'])
       JSON.stringify(layer.cells ?? []).includes('scenery_actor/artwork_tiles'),
     ),
   );
+});
+
+test('saved artwork stays open across saves and undo compares with the latest saved base', async ({
+  page,
+  workspace,
+}) => {
+  const { url } = await setup(page, workspace);
+  await expect(page.locator('#document-switcher')).toBeHidden();
+  expect(await page.locator('#document-tabs').boundingBox()).toBeNull();
+  await page.locator('[data-asset="grass/artwork"]').dblclick();
+  await expect(page.locator('#art-document-state')).toHaveText('Saved');
+  await expect(page.locator('#art-source-panel')).toBeHidden();
+  await expect(page.locator('.art-review')).toBeHidden();
+  await page.locator('#art-color').fill('#cc7744');
+  await draw(page, 0, 0);
+  await expect(page.locator('#art-document-state')).toHaveText('Modified');
+  await reviewArtwork(page);
+  await saveArtwork(page);
+  await expect(page.locator('#art-undo')).toBeEnabled();
+  await page.locator('#art-undo').click();
+  await expect(page.locator('#art-document-state')).toHaveText('Modified');
+  await page.locator('#art-redo').click();
+  await expect(page.locator('#art-document-state')).toHaveText('Saved');
+  await page.locator('#art-color').fill('#4488bb');
+  await draw(page, 1, 0);
+  await reviewArtwork(page);
+  await saveArtwork(page);
+  const model = new PixelModel(await opened(page, url));
+  assert.deepEqual(model.color({ x: 0, y: 0 }), [204, 119, 68, 255]);
+  assert.deepEqual(model.color({ x: 1, y: 0 }), [68, 136, 187, 255]);
+  await page.locator('#art-close').click();
+  await page.locator('#document-switcher').click();
+  await page.locator('#artwork-documents button').click();
+  await expect(page.locator('#art-document-state')).toHaveText('Saved');
+  await expect(page.locator('#art-undo')).toBeEnabled();
 });

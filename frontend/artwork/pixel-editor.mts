@@ -14,6 +14,7 @@ import { ArtworkSession } from './artwork-session.mts';
 import { decodeCandidate, type Candidate, type Placement } from './artwork-contracts.mts';
 import { encoded, type Color, type Point, type PixelTool } from './pixel-model.mts';
 import { createSheetEditor } from './sheet-editor.mts';
+import { createArtworkWorkspace } from './artwork-workspace.mts';
 
 type Source = {
   atlas_id: string;
@@ -58,14 +59,44 @@ export function createPixelEditor({
     string,
     {
       session: ArtworkSession;
-      values: Map<string, { value: string; checked: boolean }>;
+      values: Map<string, { value: string; checked: boolean; open?: boolean }>;
       scroll: [number, number];
     }
   >();
-  element('editor-layout', HTMLElement).append(dialog);
-  dialog.querySelector('.art-review')?.prepend(element('art-sheet-controls', HTMLElement));
+  const presentation = createArtworkWorkspace(lifetime, dialog, () => {
+    controls();
+    tabs();
+  });
+  const { setup, reviewPanel } = presentation;
+  function focusFrame(region: string) {
+    const d = session?.model.descriptor;
+    if (session && d?.version === 2 && d.frames.some((f) => f.id === region)) {
+      session.model.selection = null;
+      select('art-frame').value = region;
+      // Keep the collection visible while highlighting the requested pose.
+      sheetEditor.sync();
+      draw();
+    }
+  }
+  function documentState() {
+    const state = !session
+      ? ''
+      : session.original.operation !== 'edit'
+        ? 'New'
+        : session.changed
+          ? 'Modified'
+          : 'Saved';
+    element('art-document-state', HTMLElement).textContent = state;
+    element('art-draft-status', HTMLElement).textContent =
+      state === 'Saved'
+        ? 'Saved. Changes to this shared artwork update its references.'
+        : state === 'New'
+          ? 'New artwork · not yet in the Library'
+          : 'Modified · local changes';
+  }
   function workspace(active: boolean) {
     document.body.classList.toggle('editing-artwork', active);
+    reflectOpacity();
     button('scene-document').setAttribute('aria-pressed', String(!active));
     if (active && !dialog.open) {
       dialog.show();
@@ -73,20 +104,26 @@ export function createPixelEditor({
     if (!active && dialog.open) {
       dialog.close();
     }
+    element('art-document-state', HTMLElement).hidden = !active;
+    element('palette', HTMLElement).dispatchEvent(new Event('artwork-workspace'));
+    element('document-tabs', HTMLElement).hidePopover();
     sheetEditor.stop();
   }
   function remember() {
     if (!session) {
       return;
     }
-    const values = new Map<string, { value: string; checked: boolean }>();
-    for (const control of dialog.querySelectorAll<HTMLInputElement | HTMLSelectElement>(
-      'input[id],input[name="art-tool"],select[id]',
-    )) {
-      const key = control.id || `input[name="art-tool"][value="${control.value}"]`;
+    const values = new Map<string, { value: string; checked: boolean; open?: boolean }>();
+    for (const control of dialog.querySelectorAll<
+      HTMLInputElement | HTMLSelectElement | HTMLDetailsElement
+    >('input[id],input[name="art-tool"],select[id],details[id]')) {
+      const key =
+        control.id ||
+        `input[name="art-tool"][value="${control instanceof HTMLInputElement ? control.value : ''}"]`;
       values.set(key, {
-        value: control.value,
+        value: control instanceof HTMLDetailsElement ? '' : control.value,
         checked: control instanceof HTMLInputElement && control.checked,
+        open: control instanceof HTMLDetailsElement ? control.open : undefined,
       });
     }
     const scroll = dialog.querySelector('.art-canvas-scroll');
@@ -98,6 +135,12 @@ export function createPixelEditor({
     tabs();
   }
   function tabs() {
+    button('document-switcher').hidden = !dialog.open && documents.size === 0;
+    button('document-switcher').textContent = dialog.open
+      ? (session?.model.descriptor.name ??
+        (presentation.mode === 'new' ? 'New artwork' : 'Open artwork'))
+      : 'Open documents';
+    documentState();
     element('artwork-documents', HTMLElement).replaceChildren(
       ...Array.from(documents.values(), ({ session: current }) => {
         const tab = document.createElement('button');
@@ -128,8 +171,12 @@ export function createPixelEditor({
       if (control instanceof HTMLInputElement) {
         control.checked = value.checked;
       }
+      if (control instanceof HTMLDetailsElement) {
+        control.open = value.open ?? false;
+      }
     }
     workspace(true);
+    presentation.resetPanels();
     describe(current.candidate);
     element('artwork-heading', HTMLElement).textContent = current.model.descriptor.name;
     paletteSignature = '';
@@ -173,6 +220,27 @@ export function createPixelEditor({
         message('Animation review ready. Save commits this exact artwork and timing.');
       });
     },
+  });
+  lifetime.assign(button('art-fit'), 'onclick', () => {
+    const model = session?.model,
+      viewport = dialog.querySelector('.art-canvas-scroll');
+    if (!model || !viewport) {
+      return;
+    }
+    const frame = sheetEditor.view(),
+      width = frame?.width ?? model.width,
+      height = frame?.height ?? model.height;
+    const style = getComputedStyle(viewport);
+    const availableWidth =
+      viewport.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - 4;
+    const availableHeight =
+      viewport.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom) - 4;
+    const scale =
+      [32, 16, 8, 4, 2, 1].find(
+        (value) => width * value <= availableWidth && height * value <= availableHeight,
+      ) ?? 1;
+    select('art-zoom').value = String(scale);
+    draw();
   });
   let conversionPlan: Record<string, unknown> | null = null;
   const conversionDialog = element('conversion-dialog', HTMLDialogElement);
@@ -299,12 +367,28 @@ export function createPixelEditor({
       button('art-duplicate').disabled = busy || !sources.length;
       button('art-variation').disabled = busy || !sources.length;
     }
-    button('art-save').disabled = busy || !session?.receipt;
+    button('art-save').disabled = busy || !session;
+    button('art-save').textContent =
+      session?.receipt && dialog.classList.contains('show-art-review') ? 'Confirm save' : 'Save…';
+    button('art-properties-toggle').hidden = !active || session?.model.descriptor.version !== 2;
+    if (!active && presentation.mode === 'existing') {
+      element('art-source-help', HTMLElement).textContent = sources[
+        Number(select('art-source').value)
+      ]?.target
+        ? 'Edit the shared original, or name an independent copy below.'
+        : 'Imported artwork is preserved. Name an editable copy to begin drawing.';
+    }
+    button('art-discard').textContent = session?.changed ? 'Discard draft…' : 'Close artwork';
+    button('art-discard').classList.toggle('destructive-command', Boolean(session?.changed));
     button('art-undo').disabled = busy || !session?.model.undoStack.length;
     button('art-redo').disabled = busy || !session?.model.redoStack.length;
     button('art-paste').disabled = busy || !session?.model.clipboard;
     input('art-use-scene').disabled = busy || !sceneSession.loaded;
     sheetEditor.controls(busy);
+    button('document-switcher').textContent = dialog.open
+      ? (session?.model.descriptor.name ??
+        (presentation.mode === 'new' ? 'New artwork' : 'Open artwork'))
+      : 'Open documents';
   }
   async function execute(work: () => Promise<void>) {
     if (busy) {
@@ -352,6 +436,10 @@ export function createPixelEditor({
     }
     const transparent = alpha === 0;
     button('art-transparent').setAttribute('aria-pressed', String(transparent));
+    button('art-transparent').setAttribute(
+      'aria-label',
+      transparent ? 'Resume color' : 'Transparent',
+    );
     element('art-transparency-label', HTMLElement).textContent = transparent
       ? 'Resume color'
       : 'Transparent';
@@ -448,8 +536,8 @@ export function createPixelEditor({
       );
     }
     if (!sheetEditor.view() && model.descriptor.version === 2) {
-      context.strokeStyle = '#e5c46a';
       for (const f of model.descriptor.frames) {
+        context.strokeStyle = f.id === sheetEditor.selectedFrame()?.id ? '#e5c46a' : '#ffffff55';
         context.strokeRect(
           f.x * zoom + 0.5,
           f.y * zoom + 0.5,
@@ -545,6 +633,7 @@ export function createPixelEditor({
     swatches();
     draw();
     checkpointSoon();
+    tabs();
   }
   function cancelGesture() {
     if (!gesture) {
@@ -663,8 +752,10 @@ export function createPixelEditor({
     input('art-use-scene').checked = sceneSession.loaded !== null;
     paletteSignature = '';
     describe(candidate);
-    element('art-draft-status', HTMLElement).textContent =
-      'Unsaved artwork. Scene history is separate.';
+    presentation.resetPanels();
+    element('art-timeline', HTMLDetailsElement).open = false;
+    documentState();
+    input('art-edit-frame').checked = false;
     invalidate();
     swatches();
     draw();
@@ -672,6 +763,7 @@ export function createPixelEditor({
     if (candidate.operation !== 'edit' || candidate.rgba !== original.rgba) {
       checkpointSoon();
     }
+    tabs();
     canvas.focus();
   }
   function describe(candidate: Candidate) {
@@ -690,13 +782,18 @@ export function createPixelEditor({
         return item;
       }),
     );
+    element('art-scope-label', HTMLElement).textContent = candidate.placements
+      ? 'Selected variation'
+      : candidate.operation === 'edit'
+        ? 'Shared artwork'
+        : 'New artwork';
     element('art-shared', HTMLElement).textContent = candidate.placements
       ? `Independent variation for ${candidate.placements.length} selected placements. Saving updates artwork and those saved references together; all other placements retain the original.`
       : candidate.operation === 'edit'
-        ? 'Editing reusable artwork: saving updates every placement of this asset. To make a variation, close and choose Duplicate as new artwork first.'
+        ? 'Shared artwork · edits update every placement. Create a copy for an independent variation.'
         : 'New independent artwork. Original artwork and placements remain intact. Save adds it to the Library; place it separately.';
   }
-  async function show() {
+  async function show(mode: 'new' | 'existing' = 'new') {
     if (!workspaceState.project) {
       return;
     }
@@ -708,7 +805,11 @@ export function createPixelEditor({
         );
       }
       session = null;
-      element('artwork-heading', HTMLElement).textContent = 'Pixel artwork';
+      setup(mode);
+      reviewPanel(false);
+      element('artwork-heading', HTMLElement).textContent =
+        mode === 'new' ? 'New artwork' : 'Open artwork';
+      element('art-scope-label', HTMLElement).textContent = '';
       sources = [];
       workspace(true);
       tabs();
@@ -718,9 +819,15 @@ export function createPixelEditor({
       input('art-id').value = `art_${crypto.randomUUID().slice(0, 8)}`;
     });
   }
-  for (const id of ['show-artwork', 'edit-placement-artwork', 'artwork-new-document']) {
+  lifetime.assign(button('show-artwork'), 'onclick', () => {
+    void show('new');
+  });
+  lifetime.assign(button('artwork-new-document'), 'onclick', () => {
+    void show('new');
+  });
+  for (const id of ['edit-placement-artwork', 'art-browse', 'artwork-browse-document']) {
     lifetime.assign(button(id), 'onclick', () => {
-      void show();
+      void show('existing');
     });
   }
   element('palette', HTMLElement).addEventListener(
@@ -737,12 +844,15 @@ export function createPixelEditor({
         );
         if (existing) {
           restore(existing.session);
+          focusFrame(string(detail.region));
           return;
         }
         if (documents.size >= 16) {
           throw Error('Save or discard an open artwork document first (limit 16).');
         }
         session = null;
+        setup('existing');
+        reviewPanel(false);
         workspace(true);
         await inventory();
         const index = sources.findIndex(
@@ -758,7 +868,10 @@ export function createPixelEditor({
               artwork_revision: source.artwork_revision,
             }),
           );
+          focusFrame(string(detail.region));
         } else {
+          input('art-name').value = `${string(detail.region)} copy`;
+          input('art-id').value = `art_${crypto.randomUUID().slice(0, 8)}`;
           message('Imported artwork: copy the selected source to native artwork to edit.');
         }
       });
@@ -766,7 +879,7 @@ export function createPixelEditor({
     { signal: lifetime.signal },
   );
   lifetime.assign(select('art-source'), 'onchange', controls);
-  lifetime.assign(button('art-create'), 'onclick', () => {
+  function createArtwork() {
     void execute(async () => {
       start(
         await api('artwork-create', decodeCandidate, {
@@ -779,8 +892,8 @@ export function createPixelEditor({
         }),
       );
     });
-  });
-  lifetime.assign(button('art-create-sheet'), 'onclick', () => {
+  }
+  function createSheet() {
     void execute(async () => {
       const width = Number(input('art-width').value),
         height = Number(input('art-height').value);
@@ -829,6 +942,13 @@ export function createPixelEditor({
         }),
       );
     });
+  }
+  lifetime.assign(button('art-create'), 'onclick', () => {
+    if (input('art-multiple').checked) {
+      createSheet();
+    } else {
+      createArtwork();
+    }
   });
   lifetime.assign(button('art-duplicate-sheet'), 'onclick', () => {
     void execute(async () => {
@@ -865,6 +985,7 @@ export function createPixelEditor({
           artwork_revision: source.artwork_revision,
         }),
       );
+      focusFrame(source.region);
     });
   });
   function selectedPlacements(source: Source): Placement[] {
@@ -974,10 +1095,9 @@ export function createPixelEditor({
         documents.delete(session.id);
       }
       session = null;
+      workspace(false);
       tabs();
-      await inventory();
-      await recoveries();
-      message('Artwork draft discarded.');
+      message('Artwork document closed.');
     });
   });
   lifetime.assign(button('art-download'), 'onclick', () => {
@@ -1244,125 +1364,131 @@ export function createPixelEditor({
     },
     { signal: lifetime.signal },
   );
-  lifetime.assign(button('art-review'), 'onclick', () => {
-    void execute(async () => {
-      if (!session) {
-        return;
+  async function reviewCurrent() {
+    reviewPanel(true);
+    if (!session) {
+      return;
+    }
+    cancelGesture();
+    lifetime.cancelTimeout(timer);
+    timer = undefined;
+    await session.checkpoint();
+    const candidate = await session.synchronizeCurrent();
+    element('art-draft-status', HTMLElement).textContent =
+      'Unsaved artwork checkpointed in this project.';
+    let scene: Record<string, unknown> | null = null;
+    const loaded = sceneSession.loaded;
+    if (loaded && sceneSession.editor && input('art-use-scene').checked) {
+      const model = structuredClone(sceneSession.serialize());
+      const x = Number(input('art-view-x').value),
+        y = Number(input('art-view-y').value);
+      if (candidate.placements && sceneSession.dirty()) {
+        throw Error('Save or reconcile scene edits before reviewing a placement variation.');
       }
-      cancelGesture();
-      lifetime.cancelTimeout(timer);
-      timer = undefined;
-      await session.checkpoint();
-      const candidate = await session.synchronizeCurrent();
-      element('art-draft-status', HTMLElement).textContent =
-        'Unsaved artwork checkpointed in this project.';
-      let scene: Record<string, unknown> | null = null;
-      const loaded = sceneSession.loaded;
-      if (loaded && sceneSession.editor && input('art-use-scene').checked) {
-        const model = structuredClone(sceneSession.serialize());
-        const x = Number(input('art-view-x').value),
-          y = Number(input('art-view-y').value);
-        if (candidate.placements && sceneSession.dirty()) {
-          throw Error('Save or reconcile scene edits before reviewing a placement variation.');
-        }
-        if (candidate.operation !== 'edit' && !candidate.placements) {
-          const frame = sheetEditor.selectedFrame();
-          const d = frame
-            ? { ...candidate.descriptor, ...frame, region: frame.id }
-            : candidate.descriptor;
-          if (d.kind === 'tile') {
-            if (d.width % model.grid !== 0 || d.height % model.grid !== 0) {
-              throw Error(
-                'This tile is smaller than the scene grid. Uncheck scene preview to review it in isolation.',
-              );
-            }
-            const layer = model.layers.find((l) => l.type === 'tilelayer');
-            if (!layer || !('cells' in layer)) {
-              throw Error('Add a tile layer for the temporary preview.');
-            }
-            const cellX = Math.floor(x / model.grid),
-              cellY = Math.floor(y / model.grid);
-            const rows = layer.cells;
-            if (
-              !Array.isArray(rows) ||
-              !Array.isArray(rows[cellY]) ||
-              cellX >= model.width ||
-              cellY >= model.height
-            ) {
-              throw Error('Preview position must be inside the open scene.');
-            }
-            const columns = d.width / model.grid,
-              rowsCount = d.height / model.grid;
-            if (cellX + columns > model.width || cellY + rowsCount > model.height) {
-              throw Error('The temporary tile placement must fit inside the scene.');
-            }
-            for (let dy = 0; dy < rowsCount; dy++) {
-              for (let dx = 0; dx < columns; dx++) {
-                rows[cellY + dy][cellX + dx] = `${d.atlas_id}/${d.region}/${dx}/${dy}`;
-              }
-            }
-          } else {
-            const layer = model.layers.find((l) => l.type === 'objectgroup');
-            if (!layer || !('objects' in layer)) {
-              throw Error('Add an object layer for the temporary sprite preview.');
-            }
-            layer.objects.push({
-              id: model.next_object_id++,
-              name: 'Artwork preview',
-              class: '',
-              asset: `${d.atlas_id}/${d.region}`,
-              x: x + d.origin[0],
-              y: y + d.origin[1],
-              properties: [],
-            });
+      if (candidate.operation !== 'edit' && !candidate.placements) {
+        const frame = sheetEditor.selectedFrame();
+        const d = frame
+          ? { ...candidate.descriptor, ...frame, region: frame.id }
+          : candidate.descriptor;
+        if (d.kind === 'tile') {
+          if (d.width % model.grid !== 0 || d.height % model.grid !== 0) {
+            throw Error(
+              'This tile is smaller than the scene grid. Uncheck scene preview to review it in isolation.',
+            );
           }
+          const layer = model.layers.find((l) => l.type === 'tilelayer');
+          if (!layer || !('cells' in layer)) {
+            throw Error('Add a tile layer for the temporary preview.');
+          }
+          const cellX = Math.floor(x / model.grid),
+            cellY = Math.floor(y / model.grid);
+          const rows = layer.cells;
+          if (
+            !Array.isArray(rows) ||
+            !Array.isArray(rows[cellY]) ||
+            cellX >= model.width ||
+            cellY >= model.height
+          ) {
+            throw Error('Preview position must be inside the open scene.');
+          }
+          const columns = d.width / model.grid,
+            rowsCount = d.height / model.grid;
+          if (cellX + columns > model.width || cellY + rowsCount > model.height) {
+            throw Error('The temporary tile placement must fit inside the scene.');
+          }
+          for (let dy = 0; dy < rowsCount; dy++) {
+            for (let dx = 0; dx < columns; dx++) {
+              rows[cellY + dy][cellX + dx] = `${d.atlas_id}/${d.region}/${dx}/${dy}`;
+            }
+          }
+        } else {
+          const layer = model.layers.find((l) => l.type === 'objectgroup');
+          if (!layer || !('objects' in layer)) {
+            throw Error('Add an object layer for the temporary sprite preview.');
+          }
+          layer.objects.push({
+            id: model.next_object_id++,
+            name: 'Artwork preview',
+            class: '',
+            asset: `${d.atlas_id}/${d.region}`,
+            x: x + d.origin[0],
+            y: y + d.origin[1],
+            properties: [],
+          });
         }
-        scene = {
-          scene_id: loaded.id,
-          scene_revision: loaded.revision,
-          scene: candidate.placements ? null : model,
-          viewport: { x, y, width: 256, height: 256 },
-        };
       }
-      const result = await api('artwork-review', record, {
-        candidate,
-        scale: Math.min(
-          4,
-          Math.floor(1024 / Math.max(candidate.descriptor.width, candidate.descriptor.height)),
-        ),
-        scene,
-      });
-      session.receipt = record(result.receipt);
-      const before = result.before === null ? null : record(result.before),
-        after = record(result.after);
-      const previews: [string, unknown][] = [
-        ['art-before', before?.enlarged_png],
-        ['art-after', after.enlarged_png],
-        ['art-scene-before', result.scene === null ? undefined : record(result.scene).before_png],
-        ['art-scene-after', result.scene === null ? undefined : record(result.scene).after_png],
-      ];
-      for (const [id, value] of previews) {
-        const image = element(id, HTMLImageElement);
-        image.closest('figure')?.toggleAttribute('hidden', value === undefined);
-        if (value !== undefined) {
-          image.src = `data:image/png;base64,${string(value)}`;
-        }
-      }
-      const references = record(result.references);
-      element('art-references', HTMLElement).textContent = candidate.placements
-        ? `${candidate.placements.length} selected replacements out of ${number(references.total)} saved source references. Only these selections change; other scenes, stamps and definitions retain the original.`
-        : `${number(references.total)} saved references to this asset. Saving a shared edit updates all of them. Preview placements are temporary.`;
-      element('art-comparison', HTMLElement).hidden = false;
-      message(
-        'Review ready. Saving commits exactly these pixels against the reviewed saved bases.',
-      );
+      scene = {
+        scene_id: loaded.id,
+        scene_revision: loaded.revision,
+        scene: candidate.placements ? null : model,
+        viewport: { x, y, width: 256, height: 256 },
+      };
+    }
+    const result = await api('artwork-review', record, {
+      candidate,
+      scale: Math.min(
+        4,
+        Math.floor(1024 / Math.max(candidate.descriptor.width, candidate.descriptor.height)),
+      ),
+      scene,
     });
+    session.receipt = record(result.receipt);
+    const before = result.before === null ? null : record(result.before),
+      after = record(result.after);
+    const previews: [string, unknown][] = [
+      ['art-before', before?.enlarged_png],
+      ['art-after', after.enlarged_png],
+      ['art-scene-before', result.scene === null ? undefined : record(result.scene).before_png],
+      ['art-scene-after', result.scene === null ? undefined : record(result.scene).after_png],
+    ];
+    for (const [id, value] of previews) {
+      const image = element(id, HTMLImageElement);
+      image.closest('figure')?.toggleAttribute('hidden', value === undefined);
+      if (value !== undefined) {
+        image.src = `data:image/png;base64,${string(value)}`;
+      }
+    }
+    const references = record(result.references);
+    element('art-references', HTMLElement).textContent = candidate.placements
+      ? `${candidate.placements.length} selected replacements out of ${number(references.total)} saved source references. Only these selections change; other scenes, stamps and definitions retain the original.`
+      : `${number(references.total)} saved references to this asset. Saving a shared edit updates all of them. Preview placements are temporary.`;
+    element('art-comparison', HTMLElement).hidden = false;
+    reviewPanel(true);
+    message('Review ready. Saving commits exactly these pixels against the reviewed saved bases.');
+  }
+  lifetime.assign(button('art-review'), 'onclick', () => {
+    void execute(reviewCurrent);
   });
   lifetime.assign(button('art-save'), 'onclick', () => {
     void execute(async () => {
       const current = session;
-      if (!current?.receipt) {
-        throw Error('Review current pixels before saving.');
+      if (!current) {
+        return;
+      }
+      if (!current.receipt || !dialog.classList.contains('show-art-review')) {
+        await reviewCurrent();
+        button('art-save').focus();
+        return;
       }
       cancelGesture();
       if (current.candidate.placements && sceneSession.dirty()) {
@@ -1378,17 +1504,40 @@ export function createPixelEditor({
       if (ack.candidate_revision !== current.candidate.revision) {
         throw Error('Save acknowledgment did not match submitted artwork.');
       }
+      // Retire the submitted base before any fallible post-commit work.
+      remember();
+      const retained = documents.get(current.id);
       session = null;
       documents.delete(current.id);
       try {
         await current.removeCheckpoint();
         await ports.saved(ack, reviewedScenes);
-        workspace(false);
+        const saved = await api('artwork-open', decodeCandidate, {
+          target: {
+            atlas_id: current.model.descriptor.atlas_id,
+            document_id: current.model.descriptor.id,
+            region: current.model.descriptor.region,
+          },
+          artwork_revision: ack.artwork_revision,
+          project_revision: ack.project_revision,
+        });
+        current.adoptSaved(saved);
+        session = current;
+        documents.set(
+          current.id,
+          retained ?? { session: current, values: new Map(), scroll: [0, 0] },
+        );
+        reviewPanel(false);
+        invalidate();
+        describe(saved);
+        draw();
         tabs();
+        message('Artwork saved. Continue editing or return to the scene.');
       } catch (error) {
         // The exact save already succeeded. Cleanup/adoption failures must not
         // turn this document back into a stale editable candidate.
         controls();
+        tabs();
         message(
           `Artwork saved. ${error instanceof Error ? error.message : String(error)} Close this dialog and refresh before continuing.`,
           true,
