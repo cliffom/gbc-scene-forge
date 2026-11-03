@@ -174,9 +174,10 @@ class LargeArtworkTests(unittest.TestCase):
         for transport in ("http", "mcp"):
             with self.subTest(transport=transport):
                 if transport == "http":
+                    owner = str(uuid4())
 
                     def call(action, **data):
-                        return artwork_response(self.project, action, data)
+                        return artwork_response(self.project, action, {"owner": owner, **data})
 
                     retain, edit, export, release = (
                         "candidate-retain",
@@ -223,3 +224,56 @@ class LargeArtworkTests(unittest.TestCase):
             editable.patch_pixels(
                 candidate, dict(rectangle=dict(x=0, y=0, width=375, height=525), rgba="")
             )
+
+    def test_browser_candidate_cleanup_preserves_other_sessions_and_mcp(self):
+        candidate = self.create(375, 525)
+        adapter = Adapter(self.project.root, single_project=True)
+
+        def mcp(action, **data):
+            return adapter.call(action, {"project": "project", **data})
+
+        def http(action, **data):
+            return artwork_response(self.project, action, data)
+
+        shared = mcp("retain_artwork_candidate", candidate=candidate)
+        owner, other_owner = str(uuid4()), str(uuid4())
+        first = http("candidate-retain", candidate=candidate, owner=owner)
+        second = http("candidate-retain", candidate=candidate, owner=other_owner)
+        self.assertNotEqual(first, second)
+        self.assertEqual(first["owner"], owner)
+        changed = http(
+            "edit",
+            candidate=first,
+            patch=dict(rectangle=dict(x=0, y=0, width=1, height=1), rgba="AQIDAA=="),
+        )
+        self.assertEqual(changed["owner"], owner)
+        # Every owner's copy counts against the same project quota.
+        with patch("gbc_scene_forge.artwork.candidates.MAX_COUNT", 4):
+            with self.assertRaisesRegex(ValueError, "limit"):
+                http("candidate-retain", candidate=candidate, owner=str(uuid4()))
+        for invalid in (None, "../escape", 42):
+            with self.assertRaisesRegex(ValueError, "owner UUID"):
+                http("candidate-retain", candidate=candidate, owner=invalid)
+        http("candidate-release", candidate=first)
+        self.assertEqual(http("candidate-export", candidate=second), candidate)
+        self.assertEqual(mcp("export_artwork_candidate", candidate=shared), candidate)
+        http("candidate-release", candidate=changed)
+        # Scoped copies remain discoverable/exportable after a server restart,
+        # including abandoned browser transfers that need explicit cleanup.
+        adapter = Adapter(self.project.root, single_project=True)
+        listing = mcp("list_artwork_candidates")["candidates"]
+        self.assertEqual(len(listing), 2)
+        listed = next(c for c in listing if c.get("owner") == other_owner)
+        listed = {k: v for k, v in listed.items() if k != "name"}
+        self.assertEqual(mcp("export_artwork_candidate", candidate=listed), candidate)
+        continued = mcp(
+            "edit_artwork_pixels",
+            candidate=listed,
+            writes=[dict(x=0, y=0, rgba=[4, 5, 6, 0])],
+        )
+        self.assertEqual(continued["owner"], other_owner)
+        mcp("release_artwork_candidate", candidate=shared)
+        self.assertEqual(http("candidate-export", candidate=second), candidate)
+        mcp("release_artwork_candidate", candidate=listed)
+        mcp("release_artwork_candidate", candidate=continued)
+        self.assertEqual(mcp("list_artwork_candidates")["candidates"], [])

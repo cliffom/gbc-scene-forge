@@ -750,6 +750,9 @@ Create/open/duplicate/edit calls accept `compact=true`, returning only
 that exact handle or the full original envelope. Handle-based edits return a new
 handle; old handles remain immutable. `read_artwork_pixels` still returns exact
 bounded RGBA, including hidden RGB under alpha zero.
+Browser transfer handles additionally carry an `owner` UUID. Preserve that field
+when exporting, editing or releasing a listed browser handle: each owner has a
+separate copy, so automatic browser cleanup cannot remove another client's copy.
 
 `review_artwork_frame(candidate, frame_id, scale)` returns isolated native/enlarged
 PNG resources; `review_artwork_animation(candidate, sequence_id, scale)` returns a
@@ -781,7 +784,7 @@ saved = await call("commit_artwork", project=project, candidate=candidate,
 
 Handles are scoped to one declared project root. Canonical full envelopes persist
 in `.forge/artwork-candidates/` through server restarts, bounded to 256 records and
-64 MiB per project, with no expiry or automatic eviction. Quota errors leave old
+64 MiB per project across all owners, with no expiry or automatic eviction. Quota errors leave old
 records intact. `list_artwork_candidates` recovers handles;
 `export_artwork_candidate` returns the full envelope even against a stale saved
 base; `retain_artwork_candidate` restores an exported envelope;

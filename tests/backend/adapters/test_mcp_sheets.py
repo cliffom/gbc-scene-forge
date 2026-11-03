@@ -9,6 +9,7 @@ import unittest
 import zipfile
 from pathlib import Path
 from unittest.mock import patch
+from uuid import uuid4
 
 from backend.artwork.test_sheets import frame, sequence
 from gbc_scene_forge.adapters.mcp.tools import Adapter
@@ -194,8 +195,22 @@ class McpSheets(unittest.TestCase):
                 compact=True,
             )
             self.assertNotIn("rgba", candidate)
+            full = await call("export_artwork_candidate", candidate=candidate)
+            owner = str(uuid4())
+            scoped = ArtworkCandidates(self.project.artwork.documents).retain(full, owner=owner)
+            self.assertEqual(await call("export_artwork_candidate", candidate=scoped), full)
+            changed = await call(
+                "edit_artwork_pixels",
+                candidate=scoped,
+                writes=[dict(x=0, y=0, rgba=[1, 2, 3, 0])],
+            )
+            self.assertEqual(changed["owner"], owner)
+            await call("release_artwork_candidate", candidate=scoped)
+            await call("release_artwork_candidate", candidate=changed)
+            self.assertEqual(await call("export_artwork_candidate", candidate=candidate), full)
             for bad in (
                 {"candidate": {**candidate, "unexpected": True}},
+                {"candidate": {**candidate, "owner": "../escape"}},
                 {"frames": [{**frame("idle"), "x": True}]},
             ):
                 result = await client.call_tool(

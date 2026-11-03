@@ -113,6 +113,7 @@ const routes: string[] = [];
 const api: ProjectApi['json'] = (route, decode, data = {}) => {
   routes.push(route);
   if (route === 'artwork-candidate-retain') {
+    assert.equal(record(data).owner, session.owner);
     return Promise.resolve(decode({ handle: 'old' }));
   }
   if (route === 'artwork-edit') {

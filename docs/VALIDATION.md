@@ -15,6 +15,31 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## PR #183 candidate ownership and detail-review corrections
+
+- **Scope:** Prepared 0.31.0 working tree on `feat/181-large-artwork`, based on
+  `13164c0cef1393a6502964563996f0e7542a8eab`, checked 2026-11-03 on macOS 27.0.1
+  arm64, Python 3.13.13, Node 24.22.1 and Playwright 1.64.1 / Chromium 156.0.8078.4.
+- **Method:** [Candidate regression](../tests/backend/artwork/test_large_artwork.py)
+  interleaves two browser owners and an MCP handle with identical content, checks
+  shared quotas, restart listing/export and independent release. The
+  [MCP sheet checks](../tests/backend/adapters/test_mcp_sheets.py) exercise owned
+  handles through real stdio SDK export/edit/release and reject invalid owners. The
+  [browser regression](../tests/playwright/artwork/large-artwork.spec.ts) switches
+  from a large detail review to a new 16 × 16 tile, reviews/saves valid defaults,
+  then verifies retained large-document settings. Agent inspection covers the
+  small-document detail panel at 1440 × 1000 in the production bundle.
+- **Result:** `make docs-check lint test` passes with 435 Python tests and all
+  TypeScript suites; the production frontend build and all three focused MCP
+  sheet checks pass. The large-artwork and
+  pixel-editor browser run passes 49 cases and exposes one test-helper mistake:
+  revealing a collapsed detail checkbox clicked Confirm save. The corrected test
+  expands the detail section directly and passes its focused rerun.
+- **Limits:** These are local synthetic checks, not a new CI, installed-wheel,
+  non-Chromium or physical-device result. The entire browser suite was not rerun.
+  Scoped candidate copies share the existing project quota; abandoned transfers
+  remain discoverable for explicit export/release rather than expiring.
+
 ## Large illustrations and artwork palette (#181)
 
 - **Scope:** Prepared 0.31.0 working tree on `feat/181-large-artwork`, based on

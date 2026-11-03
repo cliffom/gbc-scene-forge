@@ -6,6 +6,7 @@ from gbc_scene_forge.artwork import editable
 from gbc_scene_forge.artwork.candidates import ArtworkCandidates
 from gbc_scene_forge.artwork.conversion import ArtworkConversion
 from gbc_scene_forge.artwork.drafts import ArtworkDrafts
+from gbc_scene_forge.core.identities import identity
 from gbc_scene_forge.core.validation import require
 
 
@@ -20,7 +21,8 @@ def images(value):
 def artwork_response(project, action, data):
     candidates = ArtworkCandidates(project.artwork.documents)
     if action == "candidate-retain":
-        return candidates.retain(data.get("candidate"))
+        require(identity(data.get("owner")), "Expected a browser candidate owner UUID")
+        return candidates.retain(data.get("candidate"), owner=data["owner"])
     if action == "candidate-release":
         return candidates.release(data.get("candidate"))
     if action == "candidate-export":
@@ -31,7 +33,7 @@ def artwork_response(project, action, data):
         data = {**data, "candidate": candidates.resolve(candidate)}
     result = _response(project, action, data)
     if compact and action in {"edit", "layout"}:
-        return candidates.retain(result)
+        return candidates.retain(result, owner=candidate.get("owner"))
     return result
 
 

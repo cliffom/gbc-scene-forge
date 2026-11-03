@@ -10,10 +10,13 @@ palette. Publication is separate.
   created, edited, reviewed, recovered, saved and exported as one document.
   Tiles and animation sheets retain their grid constraints.
 - Large browser edits use compact candidate handles and rectangular RGBA chunks.
+  Browser handles have session owners so cleanup preserves other clients' copies.
   MCP pixel editing also accepts bounded rectangular patches; reads require
   explicit rectangles for documents larger than 65,536 pixels.
 - Whole-document review images stay within 1,024 pixels per axis. Detail views
   select native pixel regions while review receipts guard the full candidate.
+  New documents reset detail review to whole-image mode with valid local bounds;
+  switching between open documents restores each document's settings.
 - Changed-block undo history retains up to 100 operations under a separate
   64 MiB budget. Canvas backing allocations remain bounded when zooming, and
   Fit includes fractional zoom levels.

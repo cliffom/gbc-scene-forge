@@ -571,7 +571,14 @@ RECEIPT = schema(
     }
 )
 HANDLE = schema(
-    {"handle": REVISION, "project_id": UUID, "project_revision": REVISION, "revision": REVISION}
+    {
+        "handle": REVISION,
+        "project_id": UUID,
+        "project_revision": REVISION,
+        "revision": REVISION,
+        "owner": UUID,
+    },
+    ("owner",),
 )
 ARTWORK_CANDIDATE = {**PROJECT, "candidate": {"oneOf": [CANDIDATE, HANDLE]}}
 TOOLS.extend(

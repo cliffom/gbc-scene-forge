@@ -119,6 +119,7 @@ export class ArtworkSession {
           }
           handle ??= await this.api('artwork-candidate-retain', record, {
             candidate: this.candidate,
+            owner: this.owner,
           });
           const next: Record<string, unknown> = await this.api('artwork-edit', record, {
             candidate: handle,

@@ -66,6 +66,11 @@ Compact candidates retain the separate 256-record / 64 MiB project quota; releas
 superseded handles explicitly. The browser uses compact handles and ≤65,536-pixel
 rectangular patches for larger documents, exporting the full envelope only at
 synchronization boundaries. Quota errors preserve previous candidates.
+Browser handles include a session `owner` UUID and retain separate copies even
+when their content revision matches another session or an unowned MCP handle.
+Edits preserve that owner; release removes only the addressed copy. All copies
+share the project candidate quota and remain listed/exportable through MCP after
+a restart, allowing explicit cleanup of abandoned browser transfers.
 
 Coordinates, dimensions and channels must be integers (booleans are invalid).
 Reject duplicate coordinates, out-of-bounds writes, invalid colors, excess work

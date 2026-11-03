@@ -807,6 +807,11 @@ export function createPixelEditor({
     describe(candidate);
     presentation.resetPanels();
     element('art-timeline', HTMLDetailsElement).open = false;
+    input('art-review-detail').checked = false;
+    input('art-review-x').value = '0';
+    input('art-review-y').value = '0';
+    input('art-review-width').value = String(Math.min(256, candidate.descriptor.width));
+    input('art-review-height').value = String(Math.min(256, candidate.descriptor.height));
     documentState();
     input('art-edit-frame').checked = false;
     invalidate();

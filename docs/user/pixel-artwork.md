@@ -122,6 +122,8 @@ Large artwork uses a bounded whole-image review overview. Expand **Artwork detai
 view**, select **Review detail region**, and enter a rectangle up to 1,024 pixels
 per axis to inspect native pixels. Review additional regions as needed. **Fit**
 includes ½×, ¼× and ⅛× zoom; drawing coordinates continue to use source pixels.
+Newly opened artwork starts with whole-image review and a detail rectangle that
+fits its dimensions. Switching between open documents restores their detail settings.
 
 Each stroke, fill, paste, move or transform is one undo operation. Artwork keeps up
 to 100 operations within a 64 MiB history budget using changed pixel blocks, independently of scene history.

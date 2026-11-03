@@ -191,3 +191,54 @@ a.save(c)
     await expect(page.locator('#art-palette')).toBeHidden();
   }
 });
+
+test('detail review initializes new document bounds and restores retained document settings', async ({
+  page,
+  workspace,
+}, info) => {
+  const root = join(workspace.folder, 'project');
+  execFileSync(workspace.python, [
+    '-I',
+    '-c',
+    'from pathlib import Path; import sys; from gbc_scene_forge.project.application import Project; Project.create(Path(sys.argv[1]), "Detail review")',
+    root,
+  ]);
+  await page.goto(await workspace.start(root));
+  await page.locator('#show-artwork').click();
+  await page.locator('#art-kind').selectOption('sprite');
+  await page.locator('#art-name').fill('Large detail');
+  await page.locator('#art-width').fill('375');
+  await page.locator('#art-height').fill('525');
+  await page.locator('#art-create').click();
+  await reviewArtwork(page);
+  await page.getByText('Artwork detail view', { exact: true }).click();
+  await page.locator('#art-review-detail').check();
+  await page.locator('#art-review-x').fill('10');
+  await page.locator('#art-review-y').fill('20');
+  await reviewArtwork(page);
+  await page.locator('#art-close').click();
+  await page.locator('#show-artwork').click();
+  await page.locator('#art-kind').selectOption('tile');
+  await page.locator('#art-name').fill('Small detail');
+  await page.locator('#art-width').fill('16');
+  await page.locator('#art-height').fill('16');
+  await page.locator('#art-create').click();
+  await expect(page.locator('#art-review-detail')).not.toBeChecked();
+  await expect(page.locator('#art-review-x')).toHaveValue('0');
+  await expect(page.locator('#art-review-y')).toHaveValue('0');
+  await expect(page.locator('#art-review-width')).toHaveValue('16');
+  await expect(page.locator('#art-review-height')).toHaveValue('16');
+  await reviewArtwork(page);
+  await expect(page.locator('#art-review-detail')).toBeVisible();
+  await page.locator('#art-review-detail').check();
+  await reviewArtwork(page);
+  await page.screenshot({ path: info.outputPath('small-artwork-detail-review.png') });
+  await saveArtwork(page);
+  await page.locator('#document-switcher').click();
+  await page.locator('#artwork-documents button').filter({ hasText: 'Large detail' }).click();
+  await expect(page.locator('#art-review-detail')).toBeChecked();
+  await expect(page.locator('#art-review-x')).toHaveValue('10');
+  await expect(page.locator('#art-review-y')).toHaveValue('20');
+  await expect(page.locator('#art-review-width')).toHaveValue('256');
+  await expect(page.locator('#art-review-height')).toHaveValue('256');
+});

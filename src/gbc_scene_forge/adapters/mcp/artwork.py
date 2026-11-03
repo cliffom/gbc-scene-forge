@@ -87,7 +87,7 @@ def call(adapter, project, name, a):
         and "descriptor" in result
         and "rgba" in result
     ):
-        return candidates.retain(result)
+        return candidates.retain(result, owner=value.get("owner") if handle else None)
     return result
 
 
