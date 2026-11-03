@@ -121,7 +121,8 @@ nearest-neighbor pixels; toggle the pixel grid as needed.
 Large artwork uses a bounded whole-image review overview. Expand **Artwork detail
 view**, select **Review detail region**, and enter a rectangle up to 1,024 pixels
 per axis to inspect native pixels. Review additional regions as needed. **Fit**
-includes ½×, ¼× and ⅛× zoom; drawing coordinates continue to use source pixels.
+includes fractional zoom down to ¹⁄₃₂× for large artwork in short windows; drawing
+coordinates continue to use source pixels.
 Newly opened artwork starts with whole-image review and a detail rectangle that
 fits its dimensions. Switching between open documents restores their detail settings.
 

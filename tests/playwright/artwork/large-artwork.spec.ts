@@ -130,6 +130,60 @@ Project.create(Path(sys.argv[1]),'Card artwork')
   });
 }
 
+for (const [width, height] of [
+  [1024, 4096],
+  [4096, 1024],
+]) {
+  test(`Fit keeps maximum-axis ${width}×${height} artwork inside short viewports`, async ({
+    page,
+    workspace,
+  }, info) => {
+    await page.setViewportSize({ width: 1440, height: 800 });
+    const root = join(workspace.folder, 'project');
+    execFileSync(workspace.python, [
+      '-I',
+      '-c',
+      'from pathlib import Path; import sys; from gbc_scene_forge.project.application import Project; Project.create(Path(sys.argv[1]), "Maximum-axis artwork")',
+      root,
+    ]);
+    await page.goto(await workspace.start(root));
+    await page.locator('#show-artwork').click();
+    await page.locator('#art-kind').selectOption('sprite');
+    await page.locator('#art-name').fill('Maximum axis');
+    await page.locator('#art-width').fill(String(width));
+    await page.locator('#art-height').fill(String(height));
+    await page.locator('#art-create').click();
+    await expect(page.locator('#art-fit')).toBeEnabled();
+    const expectFitted = async () => {
+      await expect
+        .poll(() =>
+          page.locator('#art-canvas').evaluate((canvas) => {
+            const viewport = canvas.closest('.art-canvas-scroll');
+            const bounds = canvas.getBoundingClientRect();
+            return (
+              viewport !== null &&
+              bounds.width <= viewport.clientWidth &&
+              bounds.height <= viewport.clientHeight
+            );
+          }),
+        )
+        .toBe(true);
+    };
+    // Opening artwork fits automatically, before the user presses Fit.
+    await expectFitted();
+    for (const viewport of [
+      { width: 1440, height: 800 },
+      { width: 760, height: 600 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await page.locator('#art-zoom').selectOption('32');
+      await page.locator('#art-fit').click();
+      await expectFitted();
+    }
+    await page.screenshot({ path: info.outputPath('maximum-axis-fit.png') });
+  });
+}
+
 test('palette dropdown exposes hue-sorted exact colors, keyboard selection and light dismissal', async ({
   page,
   workspace,

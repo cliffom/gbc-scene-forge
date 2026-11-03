@@ -250,11 +250,13 @@ export function createPixelEditor({
       viewport.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - 4;
     const availableHeight =
       viewport.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom) - 4;
+    const zoom = select('art-zoom');
+    const scales = [...zoom.options].map((option) => Number(option.value)).sort((a, b) => b - a);
     const scale =
-      [32, 16, 8, 4, 2, 1, 0.5, 0.25, 0.125].find(
+      scales.find(
         (value) => width * value <= availableWidth && height * value <= availableHeight,
-      ) ?? 1;
-    select('art-zoom').value = String(scale);
+      ) ?? scales[scales.length - 1];
+    zoom.value = String(scale);
     cancelGesture();
     draw();
     artworkViewport.layout(true);

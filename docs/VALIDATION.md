@@ -15,6 +15,24 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## PR #183 maximum-axis artwork Fit correction
+
+- **Scope:** Prepared 0.31.0 working tree based on
+  `bb0f36c3308cdd2fee1fb37d8347aa5e6bb80b83`, checked 2026-11-03 on macOS 27.0.1
+  arm64, Python 3.13.13, Node 24.22.1 and Playwright 1.64.1 / Chromium 156.0.8078.4.
+- **Method:** [Browser regressions](../tests/playwright/artwork/large-artwork.spec.ts)
+  check automatic and explicit Fit for 1,024 × 4,096 and 4,096 × 1,024 documents
+  at 1440 × 800 and explicit Fit at 760 × 600, including returning from 32× zoom.
+  Agent inspection covers the fitted tall document at 760 × 600 in the production bundle.
+- **Result:** The tall-document regression fails against the previous bundle:
+  automatic Fit falls back to 1×. After adding smaller zoom presets and using the
+  smallest preset as the fallback, the production build and all ten large-artwork
+  browser cases pass. `make docs-check lint test` passes with 435 Python tests
+  and all TypeScript suites.
+- **Limits:** Local Chromium automation and agent inspection do not establish
+  non-Chromium or physical-device usability. These checks cover the artwork suite,
+  not the full browser suite, installed-wheel behavior or new CI results.
+
 ## PR #183 candidate ownership and detail-review corrections
 
 - **Scope:** Prepared 0.31.0 working tree on `feat/181-large-artwork`, based on

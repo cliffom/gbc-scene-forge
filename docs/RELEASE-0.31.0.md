@@ -19,7 +19,7 @@ palette. Publication is separate.
   switching between open documents restores each document's settings.
 - Changed-block undo history retains up to 100 operations under a separate
   64 MiB budget. Canvas backing allocations remain bounded when zooming, and
-  Fit includes fractional zoom levels.
+  Fit includes fractional zoom down to ¹⁄₃₂× for maximum-axis artwork in short windows.
 - The artwork palette opens as a dropdown with a scrollable 12-column grid,
   sorted by hue with neutral colors first. Keyboard navigation and exact RGBA
   selection include partial alpha and hidden RGB. More than 1,024 source colors
