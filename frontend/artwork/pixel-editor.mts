@@ -13,6 +13,7 @@ import { tileParts } from './tile-transform.mts';
 import { ArtworkSession } from './artwork-session.mts';
 import { decodeCandidate, type Candidate, type Placement } from './artwork-contracts.mts';
 import { encoded, type Color, type Point, type PixelTool } from './pixel-model.mts';
+import { createSheetEditor } from './sheet-editor.mts';
 
 type Source = {
   atlas_id: string;
@@ -53,6 +54,228 @@ export function createPixelEditor({
   let timer: ReturnType<typeof setTimeout> | undefined;
   let gesture: { pointer: number; start: Point; last: Point; tool: PixelTool } | null = null;
   let paletteSignature = '';
+  const documents = new Map<
+    string,
+    {
+      session: ArtworkSession;
+      values: Map<string, { value: string; checked: boolean }>;
+      scroll: [number, number];
+    }
+  >();
+  element('editor-layout', HTMLElement).append(dialog);
+  dialog.querySelector('.art-review')?.prepend(element('art-sheet-controls', HTMLElement));
+  function workspace(active: boolean) {
+    document.body.classList.toggle('editing-artwork', active);
+    button('scene-document').setAttribute('aria-pressed', String(!active));
+    if (active && !dialog.open) {
+      dialog.show();
+    }
+    if (!active && dialog.open) {
+      dialog.close();
+    }
+    sheetEditor.stop();
+  }
+  function remember() {
+    if (!session) {
+      return;
+    }
+    const values = new Map<string, { value: string; checked: boolean }>();
+    for (const control of dialog.querySelectorAll<HTMLInputElement | HTMLSelectElement>(
+      'input[id],input[name="art-tool"],select[id]',
+    )) {
+      const key = control.id || `input[name="art-tool"][value="${control.value}"]`;
+      values.set(key, {
+        value: control.value,
+        checked: control instanceof HTMLInputElement && control.checked,
+      });
+    }
+    const scroll = dialog.querySelector('.art-canvas-scroll');
+    documents.set(session.id, {
+      session,
+      values,
+      scroll: [scroll?.scrollLeft ?? 0, scroll?.scrollTop ?? 0],
+    });
+    tabs();
+  }
+  function tabs() {
+    element('artwork-documents', HTMLElement).replaceChildren(
+      ...Array.from(documents.values(), ({ session: current }) => {
+        const tab = document.createElement('button');
+        tab.textContent = `${current.model.descriptor.name}${current.changed ? ' •' : ''}`;
+        tab.setAttribute('aria-pressed', String(dialog.open && session === current));
+        lifetime.assign(tab, 'onclick', () => {
+          void execute(async () => {
+            await suspend();
+            restore(current);
+          });
+        });
+        return tab;
+      }),
+    );
+  }
+  function restore(current: ArtworkSession) {
+    const saved = documents.get(current.id);
+    if (!saved) {
+      return;
+    }
+    session = current;
+    sheetEditor.sync();
+    for (const [id, value] of saved.values) {
+      const control = document.getElementById(id) ?? dialog.querySelector(id);
+      if (control instanceof HTMLInputElement || control instanceof HTMLSelectElement) {
+        control.value = value.value;
+      }
+      if (control instanceof HTMLInputElement) {
+        control.checked = value.checked;
+      }
+    }
+    workspace(true);
+    describe(current.candidate);
+    element('artwork-heading', HTMLElement).textContent = current.model.descriptor.name;
+    paletteSignature = '';
+    draw();
+    swatches();
+    const scroll = dialog.querySelector('.art-canvas-scroll');
+    scroll?.scrollTo(...saved.scroll);
+    tabs();
+  }
+  async function suspend() {
+    cancelGesture();
+    lifetime.cancelTimeout(timer);
+    timer = undefined;
+    sheetEditor.stop();
+    if (session?.changed) {
+      await session.checkpoint();
+    } else {
+      await session?.removeCheckpoint();
+    }
+    remember();
+  }
+  const sheetEditor = createSheetEditor(lifetime, {
+    current: () => session,
+    mutate: (work) => operation(work),
+    draw: () => draw(),
+    review: (sequenceId) => {
+      void execute(async () => {
+        if (!session) {
+          return;
+        }
+        const candidate = await session.synchronizeCurrent();
+        const result = await api('artwork-animation-review', record, {
+          candidate,
+          sequence_id: sequenceId,
+          scale: 4,
+        });
+        element('art-animation-image', HTMLImageElement).src =
+          `data:image/apng;base64,${string(result.animation_png)}`;
+        element('art-animation-result', HTMLElement).hidden = false;
+        session.receipt = record(result.receipt);
+        message('Animation review ready. Save commits this exact artwork and timing.');
+      });
+    },
+  });
+  let conversionPlan: Record<string, unknown> | null = null;
+  const conversionDialog = element('conversion-dialog', HTMLDialogElement);
+  function conversionError(error: unknown) {
+    element('conversion-message', HTMLElement).textContent =
+      error instanceof Error ? error.message : String(error);
+  }
+  lifetime.assign(button('convert-sprites'), 'onclick', () => {
+    void execute(async () => {
+      if (!sceneSession.loaded || sceneSession.dirty()) {
+        throw Error('Save the scene and select sprite objects first.');
+      }
+      await inventory();
+      select('conversion-target').replaceChildren(
+        ...sources
+          .filter((s) => s.kind === 'tile')
+          .map((s) => new Option(`${s.atlas_id} / ${s.region}`, `${s.atlas_id}/${s.region}`)),
+      );
+      conversionPlan = null;
+      button('conversion-save').disabled = true;
+      input('conversion-static').checked = false;
+      element('conversion-images', HTMLElement).hidden = true;
+      element('conversion-message', HTMLElement).textContent = '';
+      conversionDialog.showModal();
+    });
+  });
+  for (const id of ['conversion-target', 'conversion-static']) {
+    const control = id === 'conversion-target' ? select(id) : input(id);
+    lifetime.assign(control, 'onchange', () => {
+      conversionPlan = null;
+      button('conversion-save').disabled = true;
+    });
+  }
+  lifetime.assign(button('conversion-close'), 'onclick', () => conversionDialog.close());
+  lifetime.assign(button('conversion-review'), 'onclick', () => {
+    void execute(async () => {
+      try {
+        const loaded = sceneSession.loaded,
+          layer = sceneSession.editor?.active;
+        if (!loaded || !layer || sceneSession.dirty()) {
+          throw Error('Save the selected scene first.');
+        }
+        const ids = new Set(sceneSelection.selectedObjects);
+        if (sceneSelection.selectedObject) {
+          ids.add(sceneSelection.selectedObject);
+        }
+        const result = await api('artwork-conversion-review', record, {
+          request: {
+            project_revision: workspaceState.revision,
+            scene_id: loaded.id,
+            scene_revision: loaded.revision,
+            layer_id: layer.id,
+            object_ids: Array.from(ids, Number),
+            tile_asset: select('conversion-target').value,
+            acknowledge_static: input('conversion-static').checked,
+          },
+          viewport: {
+            x: 0,
+            y: 0,
+            width: Math.min(256, loaded.width * loaded.grid),
+            height: Math.min(256, loaded.height * loaded.grid),
+          },
+        });
+        conversionPlan = record(result.plan);
+        for (const key of ['before', 'after']) {
+          element(`conversion-${key}`, HTMLImageElement).src =
+            `data:image/png;base64,${string(result[`${key}_png`])}`;
+        }
+        element('conversion-mapping', HTMLElement).replaceChildren(
+          ...array(conversionPlan.mapping, record).map((value) => {
+            const row = document.createElement('li');
+            row.textContent = `Sprite #${number(value.object_id)}: ${string(value.source_asset)} → ${string(value.tile_asset)}; ${number(value.columns)} × ${number(value.rows)} tiles at column ${number(value.x)}, row ${number(value.y)}.`;
+            return row;
+          }),
+        );
+        element('conversion-images', HTMLElement).hidden = false;
+        element('conversion-message', HTMLElement).textContent = string(result.timing);
+        button('conversion-save').disabled = false;
+      } catch (error) {
+        conversionPlan = null;
+        button('conversion-save').disabled = true;
+        conversionError(error);
+      }
+    });
+  });
+  lifetime.assign(button('conversion-save'), 'onclick', () => {
+    void execute(async () => {
+      try {
+        const plan = conversionPlan;
+        if (!plan || sceneSession.dirty()) {
+          throw Error('Review the saved selection before replacing placements.');
+        }
+        conversionPlan = null;
+        button('conversion-save').disabled = true;
+        const ack = await api('artwork-conversion-save', record, { plan });
+        const request = record(plan.request);
+        await ports.saved(ack, { [string(request.scene_id)]: request.scene_revision });
+        conversionDialog.close();
+      } catch (error) {
+        conversionError(error);
+      }
+    });
+  });
   function message(text: string, error = false) {
     element('art-message', HTMLElement).textContent = text;
     element('art-message', HTMLElement).dataset.error = String(error);
@@ -61,7 +284,7 @@ export function createPixelEditor({
     for (const control of dialog.querySelectorAll<
       HTMLButtonElement | HTMLInputElement | HTMLSelectElement
     >('button,input,select')) {
-      control.disabled = busy;
+      control.disabled = busy || control.dataset.unavailable === 'true';
     }
     const active = session !== null;
     element('art-setup', HTMLElement).hidden = active;
@@ -81,6 +304,7 @@ export function createPixelEditor({
     button('art-redo').disabled = busy || !session?.model.redoStack.length;
     button('art-paste').disabled = busy || !session?.model.clipboard;
     input('art-use-scene').disabled = busy || !sceneSession.loaded;
+    sheetEditor.controls(busy);
   }
   async function execute(work: () => Promise<void>) {
     if (busy) {
@@ -148,8 +372,10 @@ export function createPixelEditor({
       return;
     }
     const zoom = Number(select('art-zoom').value);
-    canvas.width = model.width * zoom;
-    canvas.height = model.height * zoom;
+    sheetEditor.sync();
+    const view = sheetEditor.view() ?? { x: 0, y: 0, width: model.width, height: model.height };
+    canvas.width = view.width * zoom;
+    canvas.height = view.height * zoom;
     canvas.style.width = `${canvas.width}px`;
     canvas.style.height = `${canvas.height}px`;
     const small = document.createElement('canvas');
@@ -163,16 +389,47 @@ export function createPixelEditor({
         0,
       );
     context.imageSmoothingEnabled = false;
-    context.drawImage(small, 0, 0, canvas.width, canvas.height);
+    if (sheetEditor.view() && input('art-onion').checked && model.descriptor.version === 2) {
+      const frames = model.descriptor.frames,
+        current = sheetEditor.selectedFrame();
+      const previous =
+        frames[(frames.findIndex((f) => f.id === current?.id) + frames.length - 1) % frames.length];
+      if (previous) {
+        context.globalAlpha = 0.3;
+        context.drawImage(
+          small,
+          previous.x,
+          previous.y,
+          previous.width,
+          previous.height,
+          0,
+          0,
+          canvas.width,
+          canvas.height,
+        );
+        context.globalAlpha = 1;
+      }
+    }
+    context.drawImage(
+      small,
+      view.x,
+      view.y,
+      view.width,
+      view.height,
+      0,
+      0,
+      canvas.width,
+      canvas.height,
+    );
     if (input('art-grid').checked && zoom >= 4) {
       context.strokeStyle = '#0005';
       context.lineWidth = 1;
       context.beginPath();
-      for (let x = 0; x <= model.width; x++) {
+      for (let x = 0; x <= view.width; x++) {
         context.moveTo(x * zoom + 0.5, 0);
         context.lineTo(x * zoom + 0.5, canvas.height);
       }
-      for (let y = 0; y <= model.height; y++) {
+      for (let y = 0; y <= view.height; y++) {
         context.moveTo(0, y * zoom + 0.5);
         context.lineTo(canvas.width, y * zoom + 0.5);
       }
@@ -183,7 +440,41 @@ export function createPixelEditor({
       context.strokeStyle = '#fff';
       context.setLineDash([4, 3]);
       context.lineWidth = 2;
-      context.strokeRect(r.x * zoom + 1, r.y * zoom + 1, r.width * zoom - 2, r.height * zoom - 2);
+      context.strokeRect(
+        (r.x - view.x) * zoom + 1,
+        (r.y - view.y) * zoom + 1,
+        r.width * zoom - 2,
+        r.height * zoom - 2,
+      );
+    }
+    if (!sheetEditor.view() && model.descriptor.version === 2) {
+      context.strokeStyle = '#e5c46a';
+      for (const f of model.descriptor.frames) {
+        context.strokeRect(
+          f.x * zoom + 0.5,
+          f.y * zoom + 0.5,
+          f.width * zoom - 1,
+          f.height * zoom - 1,
+        );
+      }
+    }
+    if (model.descriptor.version === 2) {
+      const frames = sheetEditor.view() ? [sheetEditor.selectedFrame()] : model.descriptor.frames;
+      context.setLineDash([]);
+      context.strokeStyle = '#ff79c6';
+      for (const frame of frames) {
+        if (!frame || frame.kind !== 'sprite') {
+          continue;
+        }
+        const x = (frame.x + frame.origin[0] - view.x + 0.5) * zoom;
+        const y = (frame.y + frame.origin[1] - view.y + 0.5) * zoom;
+        context.beginPath();
+        context.moveTo(x - 5, y);
+        context.lineTo(x + 5, y);
+        context.moveTo(x, y - 5);
+        context.lineTo(x, y + 5);
+        context.stroke();
+      }
     }
     controls();
   }
@@ -217,6 +508,7 @@ export function createPixelEditor({
   function invalidate() {
     session?.invalidate();
     element('art-comparison', HTMLElement).hidden = true;
+    element('art-animation-result', HTMLElement).hidden = true;
   }
   function checkpointSoon() {
     lifetime.cancelTimeout(timer);
@@ -366,8 +658,23 @@ export function createPixelEditor({
   }
   function start(candidate: Candidate, original = candidate) {
     session = new ArtworkSession(candidate, api, original);
+    documents.set(session.id, { session, values: new Map(), scroll: [0, 0] });
+    tabs();
     input('art-use-scene').checked = sceneSession.loaded !== null;
     paletteSignature = '';
+    describe(candidate);
+    element('art-draft-status', HTMLElement).textContent =
+      'Unsaved artwork. Scene history is separate.';
+    invalidate();
+    swatches();
+    draw();
+    controls();
+    if (candidate.operation !== 'edit' || candidate.rgba !== original.rgba) {
+      checkpointSoon();
+    }
+    canvas.focus();
+  }
+  function describe(candidate: Candidate) {
     element('art-recovery', HTMLElement).hidden = true;
     element('artwork-heading', HTMLElement).textContent = candidate.descriptor.name;
     element('art-preview-help', HTMLElement).textContent = candidate.placements
@@ -388,40 +695,76 @@ export function createPixelEditor({
       : candidate.operation === 'edit'
         ? 'Editing reusable artwork: saving updates every placement of this asset. To make a variation, close and choose Duplicate as new artwork first.'
         : 'New independent artwork. Original artwork and placements remain intact. Save adds it to the Library; place it separately.';
-    element('art-draft-status', HTMLElement).textContent =
-      'Unsaved artwork. Scene history is separate.';
-    invalidate();
-    swatches();
-    draw();
-    controls();
-    if (candidate.operation !== 'edit' || candidate.rgba !== original.rgba) {
-      checkpointSoon();
-    }
-    canvas.focus();
   }
   async function show() {
-    if (dialog.open) {
-      return;
-    }
     if (!workspaceState.project) {
       return;
     }
     await execute(async () => {
+      await suspend();
+      if (documents.size >= 16) {
+        throw Error(
+          'Up to 16 artwork documents can be open. Save or discard one before opening another.',
+        );
+      }
       session = null;
       element('artwork-heading', HTMLElement).textContent = 'Pixel artwork';
       sources = [];
-      dialog.showModal();
+      workspace(true);
+      tabs();
       await inventory();
       await recoveries();
       controls();
       input('art-id').value = `art_${crypto.randomUUID().slice(0, 8)}`;
     });
   }
-  for (const id of ['show-artwork', 'edit-placement-artwork']) {
+  for (const id of ['show-artwork', 'edit-placement-artwork', 'artwork-new-document']) {
     lifetime.assign(button(id), 'onclick', () => {
       void show();
     });
   }
+  element('palette', HTMLElement).addEventListener(
+    'open-artwork',
+    (event) => {
+      if (!(event instanceof CustomEvent)) {
+        return;
+      }
+      const detail = record(event.detail);
+      void execute(async () => {
+        await suspend();
+        const existing = Array.from(documents.values()).find(
+          (d) => d.session.model.descriptor.atlas_id === detail.atlas,
+        );
+        if (existing) {
+          restore(existing.session);
+          return;
+        }
+        if (documents.size >= 16) {
+          throw Error('Save or discard an open artwork document first (limit 16).');
+        }
+        session = null;
+        workspace(true);
+        await inventory();
+        const index = sources.findIndex(
+          (source) => source.atlas_id === detail.atlas && source.region === detail.region,
+        );
+        const source = sources[index];
+        select('art-source').value = String(index);
+        if (source?.target) {
+          start(
+            await api('artwork-open', decodeCandidate, {
+              target: source.target,
+              project_revision: workspaceState.revision,
+              artwork_revision: source.artwork_revision,
+            }),
+          );
+        } else {
+          message('Imported artwork: copy the selected source to native artwork to edit.');
+        }
+      });
+    },
+    { signal: lifetime.signal },
+  );
   lifetime.assign(select('art-source'), 'onchange', controls);
   lifetime.assign(button('art-create'), 'onclick', () => {
     void execute(async () => {
@@ -432,6 +775,78 @@ export function createPixelEditor({
           kind: select('art-kind').value,
           width: Number(input('art-width').value),
           height: Number(input('art-height').value),
+          project_revision: workspaceState.revision,
+        }),
+      );
+    });
+  });
+  lifetime.assign(button('art-create-sheet'), 'onclick', () => {
+    void execute(async () => {
+      const width = Number(input('art-width').value),
+        height = Number(input('art-height').value);
+      const fw = Number(input('art-frame-width').value),
+        fh = Number(input('art-frame-height').value);
+      if (
+        !Number.isInteger(fw) ||
+        !Number.isInteger(fh) ||
+        fw < 8 ||
+        fh < 8 ||
+        width % fw ||
+        height % fh ||
+        (width * height) / fw / fh > 128
+      ) {
+        throw Error('Use aligned frame dimensions dividing the sheet exactly, at most 128 frames.');
+      }
+      const kind = select('art-kind').value;
+      const frames = [];
+      for (let y = 0; y < height; y += fh) {
+        for (let x = 0; x < width; x += fw) {
+          frames.push({
+            id: `frame_${frames.length}`,
+            name: `Frame ${frames.length + 1}`,
+            kind,
+            x,
+            y,
+            width: fw,
+            height: fh,
+            origin:
+              kind === 'tile'
+                ? [0, 0]
+                : [Number(input('art-origin-x').value), Number(input('art-origin-y').value)],
+          });
+        }
+      }
+      start(
+        await api('artwork-sheet-create', decodeCandidate, {
+          atlas_id: input('art-id').value,
+          name: input('art-name').value,
+          kind,
+          width,
+          height,
+          frames,
+          sequences: [],
+          project_revision: workspaceState.revision,
+        }),
+      );
+    });
+  });
+  lifetime.assign(button('art-duplicate-sheet'), 'onclick', () => {
+    void execute(async () => {
+      const source = sources[Number(select('art-source').value)];
+      if (!source) {
+        throw Error('Choose a source sheet.');
+      }
+      start(
+        await api('artwork-sheet-duplicate', decodeCandidate, {
+          source: {
+            atlas_id: source.atlas_id,
+            region: source.region,
+            grid: null,
+            cell: null,
+            artwork_revision: source.artwork_revision,
+          },
+          atlas_id: input('art-id').value,
+          name: input('art-name').value,
           project_revision: workspaceState.revision,
         }),
       );
@@ -533,18 +948,13 @@ export function createPixelEditor({
     });
   }
   async function close() {
-    cancelGesture();
-    lifetime.cancelTimeout(timer);
-    timer = undefined;
-    if (session?.changed) {
-      await session.checkpoint();
-    } else {
-      // Undoing back to the saved base must not leave an older dirty checkpoint.
-      await session?.removeCheckpoint();
-    }
-    dialog.close();
-    session = null;
+    await suspend();
+    workspace(false);
+    tabs();
   }
+  lifetime.assign(button('scene-document'), 'onclick', () => {
+    void execute(close);
+  });
   lifetime.assign(button('art-close'), 'onclick', () => {
     void execute(close);
   });
@@ -560,7 +970,11 @@ export function createPixelEditor({
       lifetime.cancelTimeout(timer);
       timer = undefined;
       await session?.removeCheckpoint();
+      if (session) {
+        documents.delete(session.id);
+      }
       session = null;
+      tabs();
       await inventory();
       await recoveries();
       message('Artwork draft discarded.');
@@ -649,21 +1063,23 @@ export function createPixelEditor({
   function point(event: PointerEvent): Point {
     const r = canvas.getBoundingClientRect(),
       model = session?.model;
+    const view = sheetEditor.view() ?? {
+      x: 0,
+      y: 0,
+      width: model?.width ?? 1,
+      height: model?.height ?? 1,
+    };
     return {
-      x: Math.max(
-        0,
-        Math.min(
-          (model?.width ?? 1) - 1,
-          Math.floor(((event.clientX - r.left) / r.width) * (model?.width ?? 1)),
-        ),
-      ),
-      y: Math.max(
-        0,
-        Math.min(
-          (model?.height ?? 1) - 1,
-          Math.floor(((event.clientY - r.top) / r.height) * (model?.height ?? 1)),
-        ),
-      ),
+      x:
+        Math.max(
+          0,
+          Math.min(view.width - 1, Math.floor(((event.clientX - r.left) / r.width) * view.width)),
+        ) + view.x,
+      y:
+        Math.max(
+          0,
+          Math.min(view.height - 1, Math.floor(((event.clientY - r.top) / r.height) * view.height)),
+        ) + view.y,
     };
   }
   function tool(): PixelTool {
@@ -785,6 +1201,12 @@ export function createPixelEditor({
         cancelGesture();
         return;
       }
+      if (event.key === 'Escape' && !busy) {
+        event.preventDefault();
+        event.stopPropagation();
+        void execute(close);
+        return;
+      }
       if (
         busy ||
         !session ||
@@ -844,9 +1266,12 @@ export function createPixelEditor({
           throw Error('Save or reconcile scene edits before reviewing a placement variation.');
         }
         if (candidate.operation !== 'edit' && !candidate.placements) {
-          const d = candidate.descriptor;
+          const frame = sheetEditor.selectedFrame();
+          const d = frame
+            ? { ...candidate.descriptor, ...frame, region: frame.id }
+            : candidate.descriptor;
           if (d.kind === 'tile') {
-            if (d.width % model.grid !== 0) {
+            if (d.width % model.grid !== 0 || d.height % model.grid !== 0) {
               throw Error(
                 'This tile is smaller than the scene grid. Uncheck scene preview to review it in isolation.',
               );
@@ -866,12 +1291,13 @@ export function createPixelEditor({
             ) {
               throw Error('Preview position must be inside the open scene.');
             }
-            const count = d.width / model.grid;
-            if (cellX + count > model.width || cellY + count > model.height) {
+            const columns = d.width / model.grid,
+              rowsCount = d.height / model.grid;
+            if (cellX + columns > model.width || cellY + rowsCount > model.height) {
               throw Error('The temporary tile placement must fit inside the scene.');
             }
-            for (let dy = 0; dy < count; dy++) {
-              for (let dx = 0; dx < count; dx++) {
+            for (let dy = 0; dy < rowsCount; dy++) {
+              for (let dx = 0; dx < columns; dx++) {
                 rows[cellY + dy][cellX + dx] = `${d.atlas_id}/${d.region}/${dx}/${dy}`;
               }
             }
@@ -953,10 +1379,12 @@ export function createPixelEditor({
         throw Error('Save acknowledgment did not match submitted artwork.');
       }
       session = null;
+      documents.delete(current.id);
       try {
         await current.removeCheckpoint();
         await ports.saved(ack, reviewedScenes);
-        dialog.close();
+        workspace(false);
+        tabs();
       } catch (error) {
         // The exact save already succeeded. Cleanup/adoption failures must not
         // turn this document back into a stale editable candidate.
@@ -981,7 +1409,11 @@ export function createPixelEditor({
   window.addEventListener(
     'beforeunload',
     (event) => {
-      if (session?.uncheckpointed || gesture) {
+      if (
+        session?.uncheckpointed ||
+        Array.from(documents.values()).some((d) => d.session.uncheckpointed) ||
+        gesture
+      ) {
         event.preventDefault();
         event.returnValue = '';
       }
@@ -992,6 +1424,8 @@ export function createPixelEditor({
     lifetime.cancelTimeout(timer);
     cancelGesture();
     session = null;
+    documents.clear();
+    document.body.classList.remove('editing-artwork');
   });
   return {
     get open() {

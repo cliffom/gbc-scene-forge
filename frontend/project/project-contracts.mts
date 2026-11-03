@@ -146,7 +146,13 @@ function manifestSchema(regions: unknown) {
   );
   return jsonObject({
     animations: v.nullish(
-      jsonArray(jsonObject({ name: text, frames: jsonArray(frameSchema) })),
+      jsonArray(
+        jsonObject({
+          name: text,
+          loop: v.optional(v.boolean(), true),
+          frames: jsonArray(frameSchema),
+        }),
+      ),
       [],
     ),
     regions: jsonArray(regionSchema),

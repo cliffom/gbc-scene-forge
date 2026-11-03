@@ -374,7 +374,7 @@ TOOLS = [
 
 DEFERRED = [
     "Semantic terrain brushes (use browser or canonical save_scene)",
-    "Animated artwork playback, browser selection/Undo, draft inspection/mutation",
+    "Interactive playback control, browser selection/Undo, browser draft inspection/mutation",
     "Palette profile editing, tile metadata editing and sprite preview preference editing",
     "Generic PNG/Tiled intake, terrain brush commands and profile editing (use browser)",
     "Remote/HTTP MCP, subscriptions, prompts, tasks and game runtime/physics integration",
@@ -458,6 +458,50 @@ DESCRIPTOR = schema(
         },
     }
 )
+FRAME = schema(
+    {
+        "id": ASSET_ID,
+        "name": TEXT,
+        "kind": {"enum": ["tile", "sprite"]},
+        "x": {"type": "integer", "minimum": 0, "maximum": 248, "multipleOf": 8},
+        "y": {"type": "integer", "minimum": 0, "maximum": 248, "multipleOf": 8},
+        "width": DIMENSION,
+        "height": DIMENSION,
+        "origin": ORIGIN,
+    }
+)
+FRAMES = {"type": "array", "minItems": 1, "maxItems": 128, "items": FRAME}
+SEQUENCES = {
+    "type": "array",
+    "maxItems": 64,
+    "items": schema(
+        {
+            "id": ASSET_ID,
+            "name": TEXT,
+            "loop": {"type": "boolean"},
+            "frames": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 256,
+                "items": schema(
+                    {
+                        "frame_id": ASSET_ID,
+                        "duration_ms": {"type": "integer", "minimum": 1, "maximum": 65535},
+                    }
+                ),
+            },
+        }
+    ),
+}
+SHEET_DESCRIPTOR = schema(
+    {
+        **DESCRIPTOR["properties"],
+        "version": {"const": 2},
+        "frames": FRAMES,
+        "sequences": SEQUENCES,
+    }
+)
+DESCRIPTOR = {"oneOf": [DESCRIPTOR, SHEET_DESCRIPTOR]}
 CANDIDATE = schema(
     {
         "version": {"const": 1},
@@ -521,7 +565,52 @@ RECEIPT = schema(
         "revision": REVISION,
     }
 )
-ARTWORK_CANDIDATE = {**PROJECT, "candidate": CANDIDATE}
+HANDLE = schema(
+    {"handle": REVISION, "project_id": UUID, "project_revision": REVISION, "revision": REVISION}
+)
+ARTWORK_CANDIDATE = {**PROJECT, "candidate": {"oneOf": [CANDIDATE, HANDLE]}}
+TOOLS.extend(
+    [
+        tool(
+            "create_artwork_sheet",
+            "Prepare an unsaved exact-RGBA sheet with explicit stable frames and named timed sequences. No inventory writes; use edit/review/commit_artwork to save.",
+            {
+                **GUARD,
+                "atlas_id": ASSET_ID,
+                "name": TEXT,
+                "kind": {"enum": ["tile", "sprite"]},
+                "width": DIMENSION,
+                "height": DIMENSION,
+                "frames": FRAMES,
+                "sequences": SEQUENCES,
+            },
+            read=True,
+        ),
+        tool(
+            "duplicate_artwork_sheet",
+            "Copy a complete declared source atlas into an independent native sheet. Retains exact pixels including hidden RGB, origins and sequence timing. Source grid/cell must be null; no redrawing or quantization.",
+            {**GUARD, "source": SOURCE, "atlas_id": ASSET_ID, "name": TEXT},
+            read=True,
+        ),
+        tool(
+            "edit_artwork_layout",
+            "Return a new unsaved sheet candidate with explicit frame and sequence layout. Saved frame geometry is protected at review/commit; reorder/rename and append are supported. Editing invalidates prior review.",
+            {**ARTWORK_CANDIDATE, "frames": FRAMES, "sequences": SEQUENCES},
+            read=True,
+        ),
+        tool(
+            "review_artwork_animation",
+            "Generate a timing-preserving exact-RGBA APNG resource for an explicit native sequence, bound to candidate/base and a commit review receipt. No browser interaction required. Bounded to 4194304 total output frame pixels.",
+            {
+                **ARTWORK_CANDIDATE,
+                "sequence_id": ASSET_ID,
+                "scale": {"type": "integer", "minimum": 1, "maximum": 16},
+            },
+            ("scale",),
+            read=True,
+        ),
+    ]
+)
 TOOLS.extend(
     [
         tool(
@@ -623,4 +712,107 @@ TOOLS.extend(
             {**ARTWORK_CANDIDATE, "receipt": RECEIPT},
         ),
     ]
+)
+
+# The compact path retains immutable, recoverable project-local sidecars. Full
+# envelopes remain accepted for stateless clients and explicit recovery.
+for definition in TOOLS:
+    if definition["name"] in {
+        "create_artwork",
+        "create_artwork_sheet",
+        "duplicate_artwork",
+        "duplicate_artwork_sheet",
+        "open_artwork",
+        "edit_artwork_pixels",
+        "edit_artwork_layout",
+    }:
+        definition["inputSchema"]["properties"]["compact"] = {"type": "boolean"}
+        # Optional compact output persists a sidecar, even though saved artwork
+        # is unchanged. Advertise the possible write truthfully to clients.
+        definition["annotations"].update(readOnlyHint=False, destructiveHint=False)
+        definition["description"] += (
+            " Optional compact=true returns a restart-safe immutable handle (256 records/64 MiB per project, no expiration); handle inputs retain compact output. Export before explicit release."
+        )
+TOOLS.extend(
+    [
+        tool(
+            "retain_artwork_candidate",
+            "Retain exact candidate pixels as an immutable project-local sidecar and return its compact handle. Idempotent; no saved artwork mutation.",
+            ARTWORK_CANDIDATE,
+        ),
+        tool(
+            "export_artwork_candidate",
+            "Export the complete recoverable envelope, including exact RGBA, even if its saved base is stale. No automatic rebase.",
+            ARTWORK_CANDIDATE,
+            read=True,
+        ),
+        tool(
+            "list_artwork_candidates",
+            "Recover candidate handles after restart. Project-local sidecars do not expire and are excluded from project ZIP exports. Export before release or moving projects.",
+            PROJECT,
+            read=True,
+        ),
+        tool(
+            "release_artwork_candidate",
+            "Explicitly delete one immutable candidate sidecar. Export its envelope first if recovery is needed. Does not change saved artwork.",
+            {**PROJECT, "candidate": HANDLE},
+        ),
+    ]
+)
+
+CONVERSION_REQUEST = schema(
+    {
+        "project_revision": REVISION,
+        "scene_id": UUID,
+        "scene_revision": REVISION,
+        "layer_id": ID,
+        "object_ids": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 64,
+            "uniqueItems": True,
+            "items": ID,
+        },
+        "tile_asset": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}/[a-z][a-z0-9_]{0,63}$"},
+        "acknowledge_static": {"const": True},
+    }
+)
+TOOLS.extend(
+    [
+        tool(
+            "review_sprite_tile_conversion",
+            "Review selected saved sprite poses becoming static tile scenery. Target tile region must have identical exact RGBA/dimensions. Origin-adjusted bounds must align to scene grid. Splits layers to preserve overlap order. Rejects gameplay metadata; source animations and unselected references remain. No implicit crop, shift or timing loss.",
+            {**PROJECT, "request": CONVERSION_REQUEST, "viewport": VIEWPORT},
+            read=True,
+        ),
+        tool(
+            "commit_sprite_tile_conversion",
+            "Atomically apply the exact reviewed conversion plan, retaining saved source artwork and unselected references. Rejects stale project/assets/scene and changed mapping. Do not replay ambiguous commits.",
+            {
+                **PROJECT,
+                "plan": schema(
+                    {
+                        "version": {"const": 1},
+                        "project_id": UUID,
+                        "request": CONVERSION_REQUEST,
+                        "mapping": {"type": "array", "maxItems": 64, "items": NATIVE},
+                        "revision": REVISION,
+                    }
+                ),
+            },
+        ),
+    ]
+)
+TOOLS.append(
+    tool(
+        "review_artwork_frame",
+        "Read exact native/enlarged before/after PNG resources for an explicit sheet frame ID. Bound to the complete candidate and saved bases with a commit review receipt. Scale 1..16; maximum 1024 per output axis.",
+        {
+            **ARTWORK_CANDIDATE,
+            "frame_id": ASSET_ID,
+            "scale": {"type": "integer", "minimum": 1, "maximum": 16},
+        },
+        ("scale",),
+        read=True,
+    )
 )

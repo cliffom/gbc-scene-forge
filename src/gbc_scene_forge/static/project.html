@@ -117,6 +117,7 @@
         </div>
       </div>
     </nav>
+    <nav id="document-tabs" aria-label="Editor documents"><button id="scene-document" aria-pressed="true">Scene</button><button id="artwork-new-document">New / open artwork</button><span id="artwork-documents"></span></nav>
     <main id="editor-layout">
       <div id="library-rail" class="pane-rail library-rail" hidden></div>
       <aside id="library-pane" class="library" aria-label="Authoring library">
@@ -251,7 +252,7 @@
           <p id="selection-name" class="selection-name muted">Nothing selected</p>
           <p id="selection-detail" class="hint">Select an object on the canvas or in the list to edit it, or select tiles on a tile layer.</p>
           <p id="selection-note" class="hint" hidden></p>
-          <div class="selection-actions"><button id="edit-placement-artwork" disabled>Edit artwork…</button>
+          <div class="selection-actions"><button id="edit-placement-artwork" disabled>Edit artwork…</button><button id="convert-sprites">Convert selected sprites to tiles…</button>
           <button id="edit-object" class="selection-remove" disabled>Edit selected object</button>
           <button id="remove-sprite" class="selection-remove" disabled>Remove selected object</button></div>
           <section id="animation-preview" aria-label="Sprite animation preview" hidden>
@@ -361,8 +362,17 @@
       <div class="dialog-actions"><button id="export-cancel" type="button">Cancel</button><button id="export-confirm" class="primary">Download ZIP</button></div>
     </form>
   </dialog>
+  <dialog id="conversion-dialog" aria-labelledby="conversion-heading">
+    <h2 id="conversion-heading">Convert selected sprites to static scenery</h2>
+    <p>Save a tile representation with identical pixels first. Only the selected saved sprite objects change. Source artwork, animation sequences and other placements remain. Origins must map exactly to the scene grid. Gameplay metadata requires an explicit change before conversion.</p>
+    <label class="field">Saved tile region<select id="conversion-target"></select></label>
+    <label><input id="conversion-static" type="checkbox"> Convert these poses to static scenery; retain source animations</label>
+    <p id="conversion-message" role="status"></p>
+    <div id="conversion-images" hidden><figure><figcaption>Before</figcaption><img id="conversion-before" alt="Selected scene before conversion"></figure><figure><figcaption>After</figcaption><img id="conversion-after" alt="Identical scene after conversion"></figure><ul id="conversion-mapping" aria-label="Reviewed replacements; tile coordinates start at zero"></ul></div>
+    <div class="dialog-actions"><button id="conversion-close">Cancel</button><button id="conversion-review">Review mapping</button><button id="conversion-save" disabled>Replace reviewed placements</button></div>
+  </dialog>
   <dialog id="artwork-dialog" aria-labelledby="artwork-heading">
-    <header class="art-heading"><h2 id="artwork-heading">Pixel artwork</h2><button id="art-close">Close</button></header>
+    <header class="art-heading"><h2 id="artwork-heading">Artwork</h2><button id="art-close">Return to scene</button></header>
     <p id="art-message" role="status" aria-live="polite"></p>
     <div id="art-setup">
     <div id="art-recovery" hidden><h3>Recoverable artwork</h3><p>Recover a copy after checking its saved base. The original checkpoint remains available.</p><div id="art-drafts"></div></div>
@@ -373,6 +383,7 @@
           <div class="art-row"><label class="field">Tile column<input id="art-cell-x" type="number" min="0" value="0"></label><label class="field">Tile row<input id="art-cell-y" type="number" min="0" value="0"></label><label class="field">Tile size<select id="art-source-grid"><option>8</option><option>16</option><option>32</option></select></label></div>
           <p class="hint">Native artwork can be edited in place. Imported artwork must be copied first. Tile coordinates start at zero within the region.</p>
           <button id="art-open">Edit shared artwork</button><button id="art-duplicate">Duplicate as new artwork</button>
+          <button id="art-duplicate-sheet">Copy entire sheet to native artwork</button>
           <button id="art-variation">Create variation for selected placements</button>
           <p class="hint">For a variation, save the scene first and select matching tile cells or sprite objects. Review shows the exact replacements; other placements keep the original.</p>
         </section>
@@ -382,6 +393,11 @@
           <div class="art-row"><label class="field">Kind<select id="art-kind"><option value="tile">Tile</option><option value="sprite">Static sprite</option></select></label><label class="field">Width<input id="art-width" type="number" min="8" max="256" step="8" value="16"></label><label class="field">Height<input id="art-height" type="number" min="8" max="256" step="8" value="16"></label></div>
           <p class="hint">Tiles: 8, 16 or 32 square pixels. Sprites: multiples of eight, up to 256 × 256. New sprites use origin 0, 0.</p>
           <button id="art-create">Create blank artwork</button>
+          <h4>Tile or sprite sheet</h4>
+          <div class="art-row"><label class="field">Frame width<input id="art-frame-width" type="number" min="8" max="256" step="8" value="8"></label><label class="field">Frame height<input id="art-frame-height" type="number" min="8" max="256" step="8" value="8"></label></div>
+          <div class="art-row"><label class="field">Sprite origin X<input id="art-origin-x" type="number" min="0" value="0"></label><label class="field">Sprite origin Y<input id="art-origin-y" type="number" min="0" value="0"></label></div>
+          <p class="hint">Width and height above define the whole sheet. Frame dimensions must divide it exactly. All frames share the chosen origin.</p>
+          <button id="art-create-sheet">Create blank sheet</button>
         </section>
       </div>
     </div>
@@ -389,6 +405,19 @@
     <div id="art-editor" hidden>
       <div class="art-controls">
       <p id="art-shared" class="hint"></p><details class="art-help"><summary>Drawing &amp; keyboard help</summary><p class="hint">Drag to draw or select. Move selections by dragging or arrow keys. Escape cancels a gesture. ⌘/Ctrl Z undoes, C/V copies/pastes. Opacity ranges from 0 (transparent) to 255 (opaque). Toggle Transparent again or choose a color to resume painting.</p></details>
+      <details id="art-sheet-controls" hidden open><summary>Sheet frames &amp; animation</summary>
+        <div class="art-row"><label class="field">Frame<select id="art-frame"></select></label><label><input id="art-edit-frame" type="checkbox"> Edit selected frame</label><label><input id="art-onion" type="checkbox"> Onion skin</label></div>
+        <div class="art-row"><label class="field">Frame name<input id="art-frame-name" maxlength="100"></label><button id="art-rename-frame">Rename frame</button><span id="art-frame-geometry"></span></div>
+        <p class="hint">Overview edits the full sheet. Frame editing limits drawing to the selected rectangle. Tile representations share the same pixels.</p>
+        <button id="art-tile-representation">Add tile representation of selected frame</button>
+        <div class="art-row"><label class="field">Animation<select id="art-sequence"></select></label><label><input id="art-loop" type="checkbox" checked> Loop</label></div>
+        <div class="art-row"><label class="field">New sequence ID<input id="art-sequence-id" maxlength="64" placeholder="idle"></label><button id="art-add-sequence">Create sequence</button><button id="art-add-animation-frame">Append selected frame</button></div>
+        <div id="art-sequence-frames" aria-label="Animation frame timing"></div>
+        <div class="art-row"><button id="art-play">Play</button><button id="art-step">Step frame</button><button id="art-animation-review">Generate animation review</button></div>
+        <p id="art-animation-status" role="status"></p><canvas id="art-animation-canvas" aria-label="Animation preview"></canvas>
+        <canvas id="art-repeat-canvas" aria-label="Tile repetition preview" hidden></canvas>
+        <figure id="art-animation-result" hidden><figcaption>Animation review</figcaption><img id="art-animation-image" alt="Timed animation review"></figure>
+      </details>
       <details id="art-selection-details" hidden><summary>Placements this variation will replace</summary><ul id="art-selection-list"></ul></details>
 <div class="pixel-toolbar" aria-label="Pixel editing commands">
 <div class="tool-group" role="group" aria-label="Pixel tools"><label class="tool" title="Pencil"><input type="radio" name="art-tool" value="pencil" checked><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-pencil"/></svg><span class="tool-label">Pencil</span></label><label class="tool" title="Eraser"><input type="radio" name="art-tool" value="erase"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-erase"/></svg><span class="tool-label">Eraser</span></label><label class="tool" title="Flood fill"><input type="radio" name="art-tool" value="fill"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-fill"/></svg><span class="tool-label">Flood fill</span></label><label class="tool" title="Eyedropper"><input type="radio" name="art-tool" value="pick"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-pick"/></svg><span class="tool-label">Eyedropper</span></label><label class="tool" title="Line"><input type="radio" name="art-tool" value="line"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-line"/></svg><span class="tool-label">Line</span></label><label class="tool" title="Rectangle outline"><input type="radio" name="art-tool" value="rectangle"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-rectangle"/></svg><span class="tool-label">Rectangle outline</span></label><label class="tool" title="Select rectangle"><input type="radio" name="art-tool" value="select"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-select"/></svg><span class="tool-label">Select rectangle</span></label><label class="tool" title="Move selection"><input type="radio" name="art-tool" value="move"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-move"/></svg><span class="tool-label">Move selection</span></label></div>

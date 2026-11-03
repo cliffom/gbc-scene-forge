@@ -15,11 +15,17 @@ export function encoded(pixels: Uint8ClampedArray) {
   }
   return btoa(value);
 }
-type PixelSnapshot = { pixels: Uint8ClampedArray; selection: Rectangle | null };
+type PixelSnapshot = {
+  pixels: Uint8ClampedArray;
+  selection: Rectangle | null;
+  descriptor: Candidate['descriptor'];
+};
 export class PixelModel {
   readonly width: number;
   readonly height: number;
   pixels: Uint8ClampedArray;
+  descriptor: Candidate['descriptor'];
+  bounds: Rectangle | null = null;
   selection: Rectangle | null = null;
   clipboard: { width: number; height: number; pixels: Uint8ClampedArray } | null = null;
   readonly undoStack: PixelSnapshot[] = [];
@@ -29,6 +35,7 @@ export class PixelModel {
     this.width = candidate.descriptor.width;
     this.height = candidate.descriptor.height;
     this.pixels = bytes(candidate.rgba);
+    this.descriptor = structuredClone(candidate.descriptor);
   }
   private inside(p: Point) {
     return (
@@ -37,7 +44,12 @@ export class PixelModel {
       p.x >= 0 &&
       p.y >= 0 &&
       p.x < this.width &&
-      p.y < this.height
+      p.y < this.height &&
+      (!this.bounds ||
+        (p.x >= this.bounds.x &&
+          p.y >= this.bounds.y &&
+          p.x < this.bounds.x + this.bounds.width &&
+          p.y < this.bounds.y + this.bounds.height))
     );
   }
   color(p: Point): Color {
@@ -61,6 +73,7 @@ export class PixelModel {
     if (!this.stroke) {
       this.stroke = {
         pixels: this.pixels.slice(),
+        descriptor: structuredClone(this.descriptor),
         selection: this.selection ? { ...this.selection } : null,
       };
     }
@@ -68,6 +81,7 @@ export class PixelModel {
   cancel() {
     if (this.stroke) {
       this.pixels = this.stroke.pixels;
+      this.descriptor = this.stroke.descriptor;
       this.selection = this.stroke.selection;
       this.stroke = null;
     }
@@ -75,7 +89,11 @@ export class PixelModel {
   finish() {
     const before = this.stroke;
     this.stroke = null;
-    if (!before || before.pixels.every((v, i) => v === this.pixels[i])) {
+    if (
+      !before ||
+      (before.pixels.every((v, i) => v === this.pixels[i]) &&
+        JSON.stringify(before.descriptor) === JSON.stringify(this.descriptor))
+    ) {
       return false;
     }
     this.undoStack.push(before);
@@ -103,9 +121,11 @@ export class PixelModel {
     if (value) {
       this.redoStack.push({
         pixels: this.pixels,
+        descriptor: structuredClone(this.descriptor),
         selection: this.selection ? { ...this.selection } : null,
       });
       this.pixels = value.pixels;
+      this.descriptor = value.descriptor;
       this.selection = value.selection;
     }
   }
@@ -115,9 +135,11 @@ export class PixelModel {
     if (value) {
       this.undoStack.push({
         pixels: this.pixels,
+        descriptor: structuredClone(this.descriptor),
         selection: this.selection ? { ...this.selection } : null,
       });
       this.pixels = value.pixels;
+      this.descriptor = value.descriptor;
       this.selection = value.selection;
     }
   }
@@ -189,7 +211,7 @@ export class PixelModel {
     };
   }
   private area() {
-    return this.selection ?? { x: 0, y: 0, width: this.width, height: this.height };
+    return this.selection ?? this.bounds ?? { x: 0, y: 0, width: this.width, height: this.height };
   }
   copy() {
     const r = this.area(),
@@ -202,7 +224,7 @@ export class PixelModel {
     this.clipboard = { width: r.width, height: r.height, pixels };
   }
   private fits(r: Rectangle) {
-    if (r.x < 0 || r.y < 0 || r.x + r.width > this.width || r.y + r.height > this.height) {
+    if (!this.inside(r) || !this.inside({ x: r.x + r.width - 1, y: r.y + r.height - 1 })) {
       throw Error(
         'Selection would leave the artwork. Move it inside first or select a smaller area.',
       );
@@ -215,7 +237,7 @@ export class PixelModel {
       }
     }
   }
-  paste(at = this.selection ?? { x: 0, y: 0 }) {
+  paste(at = this.selection ?? this.bounds ?? { x: 0, y: 0 }) {
     const c = this.clipboard;
     if (!c) {
       return;

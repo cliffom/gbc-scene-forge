@@ -54,7 +54,7 @@
 .standalone .field {min-width:0}
 .standalone .property-grid {grid-template-columns:repeat(2,minmax(0,1fr))}
 .standalone .property-grid input {min-width:0}
-.standalone .viewport {min-height:160px}
+.standalone .viewport {min-height:100px}
 .standalone .library,.standalone .inspector {--pane-padding:14px;min-width:0;padding:var(--pane-padding)}
 .library-tabs {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;padding:3px;border:1px solid var(--line);border-radius:6px;background:#1c1f1a;flex:none}
 .library-tabs button {min-width:0;padding:6px 2px;font-size:12px;border-color:transparent;background:transparent;color:var(--muted)}
@@ -537,7 +537,7 @@
 .art-swatches {display:flex;gap:5px;flex-wrap:wrap;max-height:66px;overflow:auto;padding:3px}
 .art-swatches:empty {display:none}
 .art-swatches button {width:24px;min-height:24px;height:24px;border:1px solid var(--line);padding:0}
-#art-editor>.art-workspace {display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:16px;flex:1;min-height:120px;overflow:hidden}
+#art-editor>.art-workspace {display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:16px;flex:1;min-height:124px;overflow:hidden}
 .art-canvas-scroll {overflow:auto;height:100%;min-height:0;padding:16px;background:#171b16;border:1px solid var(--line);border-radius:5px;scroll-padding:16px}
 #art-canvas {display:block;touch-action:none;image-rendering:pixelated;background-color:#ccc;background-image:conic-gradient(#888 25%,transparent 0 50%,#888 0 75%,transparent 0);background-size:16px 16px}
 #art-canvas:focus-visible {outline:2px solid var(--accent);outline-offset:3px}
@@ -574,3 +574,27 @@
 .scene-view-controls fieldset {display:flex;flex-wrap:wrap;gap:8px 14px;margin:6px 0;padding:6px 10px}
 .scene-view-controls label {display:inline-flex;align-items:center;gap:4px;font-size:12px}
 .scene-view-controls p {font-size:11px;margin:4px 0}
+
+/* Scene and artwork documents share the main workbench and Library. */
+#document-tabs {display:flex;gap:6px;align-items:center;padding:6px 12px;border-bottom:1px solid var(--line);overflow:auto;flex:none}
+#document-tabs button {white-space:nowrap}
+#document-tabs button[aria-pressed=true] {border-color:var(--accent);color:var(--accent)}
+#artwork-documents {display:contents}
+.editing-artwork #editor-layout>.workbench,.editing-artwork #editor-layout>.inspector,.editing-artwork #inspector-rail {display:none!important}
+.standalone #editor-layout>#artwork-dialog[open] {position:static;inset:auto;grid-column:2 / -1;grid-row:1;margin:0;width:100%;max-width:none;height:100%;max-height:none;box-sizing:border-box;border:0;border-left:1px solid var(--line);border-radius:0;background:var(--panel)}
+#art-animation-canvas,#art-repeat-canvas,#art-animation-image {image-rendering:pixelated;max-width:100%;background:repeating-conic-gradient(#888 0% 25%,#ccc 0% 50%) 0/12px 12px}
+#art-repeat-canvas {max-height:180px;object-fit:contain}
+@media (max-width:700px) { .editing-artwork #editor-layout>#artwork-dialog[open] {grid-column:1 / -1} .editing-artwork #library-pane {display:none} }
+.asset-card {display:flex;flex-direction:column;gap:3px;min-width:0}
+.asset-card .asset {width:100%;flex:1}
+.asset-card .asset-open {font-size:10px;padding:4px 2px;white-space:normal;line-height:1.3}
+#art-sheet-controls {border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:12px}
+#art-sheet-controls summary {font-weight:600;cursor:pointer;margin-bottom:10px}
+#art-sheet-controls>.art-row {margin:8px 0}
+#art-sheet-controls button {font-size:11px}
+#art-sequence-frames .art-row {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin:8px 0}
+#art-sequence-frames select {grid-column:span 2}
+#art-sequence-frames input {width:100%;min-width:0;padding:6px 3px}
+#conversion-images {display:flex;flex-wrap:wrap;gap:16px}
+#conversion-images img {image-rendering:pixelated;max-width:100%;background:#888}
+#conversion-mapping {max-height:140px;overflow:auto;flex-basis:100%}

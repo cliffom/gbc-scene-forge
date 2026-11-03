@@ -2,6 +2,7 @@
 
 import base64
 
+from gbc_scene_forge.artwork.conversion import ArtworkConversion
 from gbc_scene_forge.artwork.drafts import ArtworkDrafts
 from gbc_scene_forge.core.validation import require
 
@@ -17,6 +18,12 @@ def images(value):
 def artwork_response(project, action, data):
     documents = project.artwork.documents
     drafts = ArtworkDrafts(documents)
+    if action == "conversion-review":
+        return images(
+            ArtworkConversion(documents).review(data.get("request"), data.get("viewport"))
+        )
+    if action == "conversion-save":
+        return ArtworkConversion(documents).commit(data.get("plan"))
     if action == "list":
         return documents.list(data.get("project_revision"))
     if action == "open":
@@ -31,6 +38,32 @@ def artwork_response(project, action, data):
             data.get("width"),
             data.get("height"),
             data.get("project_revision"),
+        )
+    if action == "sheet-create":
+        return documents.create_sheet(
+            data.get("atlas_id"),
+            data.get("name"),
+            data.get("kind"),
+            data.get("width"),
+            data.get("height"),
+            data.get("project_revision"),
+            frames=data.get("frames"),
+            sequences=data.get("sequences", []),
+        )
+    if action == "sheet-duplicate":
+        return documents.duplicate_sheet(
+            data.get("source"),
+            data.get("atlas_id"),
+            data.get("name"),
+            data.get("project_revision"),
+        )
+    if action == "layout":
+        return documents.layout(data.get("candidate"), data.get("frames"), data.get("sequences"))
+    if action == "animation-review":
+        return images(
+            project.artwork.reviews.animation(
+                data.get("candidate"), data.get("sequence_id"), scale=data.get("scale", 4)
+            )
         )
     if action == "duplicate":
         return documents.duplicate(

@@ -1,7 +1,7 @@
 /** Native hand editing, scene-history isolation, revision conflicts and durable drafts. */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
@@ -789,4 +789,257 @@ test('transparent drawing restores opacity and preserves partial alpha in saved 
   assert.deepEqual(saved.color({ x: 1, y: 0 }), [204, 136, 51, 0]);
   assert.deepEqual(saved.color({ x: 2, y: 0 }), [204, 136, 51, 128]);
   assert.deepEqual(saved.color({ x: 3, y: 0 }), [17, 34, 51, 128]);
+});
+
+test('native player sheet, animation authoring and document switching retain independent work', async ({
+  page,
+  workspace,
+}, info) => {
+  const { url } = await setup(page, workspace);
+  await page.locator('[data-asset="grass/artwork"]').first().click();
+  await paint(page, 20, 20);
+  await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
+  await page.locator('#artwork-new-document').click();
+  await page.locator('#art-id').fill('player_sheet');
+  await page.locator('#art-name').fill('Player sheet');
+  await page.locator('#art-kind').selectOption('sprite');
+  await page.locator('#art-width').fill('32');
+  await page.locator('#art-height').fill('16');
+  await page.locator('#art-frame-width').fill('8');
+  await page.locator('#art-frame-height').fill('16');
+  await page.locator('#art-origin-x').fill('3');
+  await page.locator('#art-origin-y').fill('12');
+  await page.locator('#art-create-sheet').click();
+  await expect(page.locator('#art-frame option')).toHaveCount(4);
+  await page.locator('#art-edit-frame').check();
+  await page.locator('#art-color').fill('#cc6633');
+  await draw(page, 1, 2);
+  await page.locator('#art-zoom').selectOption('32');
+  for (const [id, frame] of [
+    ['idle', 'frame_0'],
+    ['walk', 'frame_1'],
+    ['jump', 'frame_2'],
+    ['duck', 'frame_3'],
+  ]) {
+    await page.locator('#art-frame').selectOption(frame);
+    // Author distinct poses with normal pointer tools, so overview/playback
+    // screenshots contain actual pixels in every frame.
+    await page.locator('#art-color').fill('#cc6633');
+    await draw(page, 2, 3, 5, 3);
+    await draw(page, 3, 4, 3, id === 'duck' ? 8 : 10);
+    await draw(page, 1, id === 'jump' ? 5 : 7, 5, 7);
+    await draw(page, 3, id === 'duck' ? 8 : 10, id === 'walk' ? 6 : 4, 13);
+    await page.locator('#art-sequence-id').fill(id);
+    await page.locator('#art-add-sequence').click();
+  }
+  await page.locator('#art-sequence').selectOption('walk');
+  await page.locator('#art-frame').selectOption('frame_2');
+  await page.locator('#art-add-animation-frame').click();
+  await page.getByLabel('Frame 1 duration in milliseconds', { exact: true }).fill('180');
+  await page.getByLabel('Frame 1 duration in milliseconds', { exact: true }).press('Tab');
+  await page.locator('#art-loop').uncheck();
+  await page.locator('#art-onion').check();
+  await page.locator('#art-play').click();
+  await expect(page.locator('#art-play')).toHaveText('Play');
+  await page.locator('#art-step').click();
+  await page.locator('#scene-document').click();
+  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+  await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
+  await page.locator('#artwork-documents button').filter({ hasText: 'Player sheet' }).click();
+  await expect(page.locator('#art-zoom')).toHaveValue('32');
+  await expect(page.locator('#art-frame')).toHaveValue('frame_2');
+  await expect(page.locator('#art-onion')).toBeChecked();
+  await page.locator('#art-undo').click();
+  await expect(page.locator('#art-loop')).toBeChecked();
+  await page.locator('#art-redo').click();
+  await expect(page.locator('#art-loop')).not.toBeChecked();
+  await page.locator('#art-animation-review').click();
+  await expect(page.locator('#art-animation-image')).toBeVisible();
+  const animation = await page.locator('#art-animation-image').getAttribute('src');
+  assert.ok(animation);
+  assert.ok(animation.startsWith('data:image/apng;base64,'));
+  await writeFile(
+    info.outputPath('player-walk.apng'),
+    Buffer.from(animation.split(',')[1], 'base64'),
+  );
+  await page.screenshot({ path: info.outputPath('unified-player-sheet-desktop.png') });
+  await page.locator('#art-zoom').selectOption('16');
+  await page.locator('#art-edit-frame').uncheck();
+  await page.locator('.art-review').evaluate((node) => {
+    node.scrollTop = 0;
+  });
+  await page.screenshot({ path: info.outputPath('unified-player-sheet-overview.png') });
+  await page.setViewportSize({ width: 800, height: 640 });
+  await page.screenshot({ path: info.outputPath('unified-player-sheet-compact.png') });
+  await page.locator('#art-save').click();
+  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+  await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
+  const saved = await opened(page, url, 'player_sheet');
+  assert.equal(saved.descriptor.version, 2);
+  if (saved.descriptor.version !== 2) {
+    throw Error('Expected sheet');
+  }
+  assert.equal(saved.descriptor.sequences.length, 4);
+  assert.equal(saved.descriptor.sequences[1].frames[0].duration_ms, 180);
+  assert.equal(saved.descriptor.sequences[1].loop, false);
+  assert.deepEqual(new PixelModel(saved).color({ x: 1, y: 2 }), [204, 102, 51, 255]);
+});
+
+test('Library opens agent-authored sheets without any scene, manual corrections are exact agent bases', async ({
+  page,
+  workspace,
+}) => {
+  const root = join(workspace.folder, 'project');
+  execFileSync(workspace.python, [
+    '-c',
+    `
+import sys
+from pathlib import Path
+from gbc_scene_forge.project.application import Project
+p=Project.create(Path(sys.argv[1]),'Agent sheet')
+a=p.artwork.documents
+frames=[dict(id=k,name=k,kind='sprite',x=i*8,y=0,width=8,height=8,origin=[3,5]) for i,k in enumerate(['idle','step'])]
+s=[dict(id='walk',name='Walk',loop=True,frames=[dict(frame_id=k,duration_ms=d) for k,d in [('idle',120),('step',240)]])]
+c=a.create_sheet('player','Agent player','sprite',16,8,p.catalog()['revision'],frames=frames,sequences=s)
+c=a.edit(c,[dict(x=0,y=0,rgba=[41,52,63,0])])
+a.save(c,receipt=p.artwork.reviews.animation(c,'walk',scale=1)['receipt'])
+`,
+    root,
+  ]);
+  const url = await workspace.start(root, true);
+  await page.goto(url);
+  await expect(page.getByRole('button', { name: 'Open idle artwork', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Open idle artwork', exact: true }).click();
+  await expect(page.locator('#art-canvas')).toBeVisible();
+  await expect(page.locator('#art-frame option')).toHaveCount(2);
+  await page.locator('#art-color').fill('#ddaa77');
+  await draw(page, 9, 2);
+  await page.locator('#scene-document').click();
+  await page.getByRole('button', { name: 'Open idle artwork', exact: true }).click();
+  await expect(page.locator('#artwork-documents button')).toHaveCount(1);
+  await expect(page.locator('#art-undo')).toBeEnabled();
+  await page.locator('#art-undo').click();
+  await page.locator('#art-redo').click();
+  await page.getByLabel('Frame 1 duration in milliseconds', { exact: true }).fill('333');
+  await page.getByLabel('Frame 1 duration in milliseconds', { exact: true }).press('Tab');
+  await page.locator('#art-animation-review').click();
+  await page.locator('#art-save').click();
+  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+  const saved = await opened(page, url, 'player');
+  assert.equal(saved.descriptor.version, 2);
+  if (saved.descriptor.version !== 2) {
+    throw Error('Expected sheet');
+  }
+  assert.equal(saved.descriptor.sequences[0].frames[0].duration_ms, 333);
+  assert.deepEqual(new PixelModel(saved).color({ x: 0, y: 0 }), [41, 52, 63, 0]);
+  assert.deepEqual(new PixelModel(saved).color({ x: 9, y: 2 }), [221, 170, 119, 255]);
+  const output = execFileSync(
+    workspace.python,
+    [
+      '-c',
+      `
+import sys,json
+from gbc_scene_forge.adapters.mcp.tools import Adapter
+a=Adapter(sys.argv[1],single_project=True)
+p=a.call('get_project',dict(project='project'))
+l=a.call('list_artwork',dict(project='project',project_revision=p['revision']))
+d=l['documents'][0]
+c=a.call('open_artwork',dict(project='project',target=d['target'],project_revision=p['revision'],artwork_revision=d['artwork_revision'],compact=True))
+c=a.call('edit_artwork_pixels',dict(project='project',candidate=c,writes=[dict(x=10,y=3,rgba=[70,80,90,255])]))
+review=a.call('review_artwork_animation',dict(project='project',candidate=c,sequence_id='walk',scale=1))
+saved=a.call('commit_artwork',dict(project='project',candidate=c,receipt=review['receipt']))
+c=a.call('open_artwork',dict(project='project',target=d['target'],project_revision=saved['project_revision'],artwork_revision=saved['artwork_revision'],compact=True))
+c=a.call('export_artwork_candidate',dict(project='project',candidate=c))
+print(json.dumps(c))
+`,
+      root,
+    ],
+    { encoding: 'utf8' },
+  );
+  const continued = decodeCandidate(JSON.parse(output));
+  const expected = Buffer.from(saved.rgba, 'base64');
+  expected.set([70, 80, 90, 255], (3 * saved.descriptor.width + 10) * 4);
+  assert.equal(continued.rgba, expected.toString('base64'));
+  assert.deepEqual(continued.descriptor, saved.descriptor);
+  await page.reload();
+  await page.getByRole('button', { name: 'Open idle artwork', exact: true }).click();
+  await expect(page.getByLabel('Frame 1 duration in milliseconds', { exact: true })).toHaveValue(
+    '333',
+  );
+  assert.equal((await opened(page, url, 'player')).rgba, continued.rgba);
+});
+
+test('manual tile sheet repetition, scene placement and explicit sprite conversion', async ({
+  page,
+  workspace,
+}, info) => {
+  const { url, root, scene } = await setup(page, workspace);
+  execFileSync(workspace.python, [
+    '-c',
+    `
+import sys
+from gbc_scene_forge.project.application import Project
+p=Project(sys.argv[1]);s=p.scenes.load(sys.argv[2]);s['scene']['objects'][0]['x']=36
+p.scenes.save(s['id'],s['scene'],s['revision'],p.catalog()['revision'])
+`,
+    root,
+    scene,
+  ]);
+  await page.reload();
+  await expect(page.locator('#status')).toHaveText('Scene opened.');
+  await page.locator('#show-artwork').click();
+  await page.locator('#art-id').fill('tile_sheet');
+  await page.locator('#art-name').fill('Tile sheet');
+  await page.locator('#art-width').fill('16');
+  await page.locator('#art-height').fill('8');
+  await page.locator('#art-create-sheet').click();
+  await page.locator('#art-edit-frame').check();
+  await page.locator('input[name=art-tool][value=fill]').check();
+  await draw(page, 0, 0);
+  await expect(page.locator('#art-repeat-canvas')).toBeVisible();
+  await page.locator('#art-use-scene').uncheck();
+  await page.locator('#art-review').click();
+  await page.locator('#art-save').click();
+  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+  await page.locator('[data-asset="tile_sheet/frame_0"]').first().click();
+  await paint(page, 20, 20);
+  await clickControl(page, 'save');
+  await expect(page.locator('#scene-save-state')).toHaveText('Saved');
+  await page.locator('#show-artwork').click();
+  await page.locator('#art-source').selectOption({ label: 'actor / artwork (editable)' });
+  await page.locator('#art-id').fill('scenery_actor');
+  await page.locator('#art-name').fill('Scenery actor');
+  await page.locator('#art-duplicate-sheet').click();
+  await page.locator('#art-tile-representation').click();
+  await page.locator('#art-use-scene').uncheck();
+  await page.locator('#art-review').click();
+  await page.locator('#art-save').click();
+  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+  await page.locator('input[name=tool][value=select]').check();
+  await page.locator('.layer-choice').filter({ hasText: 'Sprites' }).click();
+  await paint(page, 38, 30);
+  await page.locator('#convert-sprites').click();
+  await expect(page.locator('#conversion-dialog')).toBeVisible();
+  await page.locator('#conversion-target').selectOption('scenery_actor/artwork_tiles');
+  await page.locator('#conversion-static').check();
+  await page.locator('#conversion-review').click();
+  await expect(page.locator('#conversion-save')).toBeEnabled();
+  await expect(page.locator('#conversion-mapping')).toContainText('2 × 2 tiles at column 4, row 3');
+  await expect(page.locator('#conversion-before')).toHaveAttribute(
+    'src',
+    (await page.locator('#conversion-after').getAttribute('src')) ?? '',
+  );
+  await page.screenshot({ path: info.outputPath('sprite-tile-conversion-review.png') });
+  await page.locator('#conversion-save').click();
+  await expect(page.locator('#conversion-dialog')).not.toBeVisible();
+  const data = record(
+    await (await page.request.get(new URL(`api/scene/${scene}`, url).href)).json(),
+  );
+  const layers = savedLayers(data);
+  assert.equal(layers.flatMap((layer) => array(layer.objects ?? [], record)).length, 0);
+  assert.ok(
+    layers.some((layer) =>
+      JSON.stringify(layer.cells ?? []).includes('scenery_actor/artwork_tiles'),
+    ),
+  );
 });

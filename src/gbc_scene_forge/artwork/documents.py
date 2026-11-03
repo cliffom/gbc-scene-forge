@@ -4,7 +4,7 @@ import base64
 import copy
 from uuid import uuid4
 
-from gbc_scene_forge.artwork import atlas, editable, placements, png
+from gbc_scene_forge.artwork import atlas, editable, placements, png, sheets
 from gbc_scene_forge.artwork.review import check_receipt
 from gbc_scene_forge.core.errors import Conflict
 from gbc_scene_forge.core.identities import name
@@ -186,6 +186,36 @@ class ArtworkDocuments:
             raise Conflict("Artwork changed. Retain the candidate and reopen the saved artwork.")
         return entry, descriptor
 
+    def create_sheet(
+        self, atlas_id, display_name, kind, width, height, project_revision, *, frames, sequences
+    ):
+        """Prepare a sheet without registering placeholders in saved inventory."""
+        require(isinstance(frames, list) and frames, "Provide at least one frame")
+        descriptor = {
+            "version": 2,
+            "id": str(uuid4()),
+            "atlas_id": atlas_id,
+            "region": frames[0].get("id") if isinstance(frames[0], dict) else None,
+            "name": name(display_name),
+            "kind": kind,
+            "width": width,
+            "height": height,
+            "origin": [0, 0],
+            "pixel_format": "rgba8",
+            "provenance": None,
+            "frames": copy.deepcopy(frames),
+            "sequences": copy.deepcopy(sequences),
+        }
+        editable.check_descriptor(descriptor)
+        require(editable.revision(project_revision), "Expected the exact saved project revision")
+        with self.store.read_session(project_revision, verify_assets=True) as session:
+            self._absence(session.document, descriptor)
+            result = self._envelope(
+                session.document, project_revision, descriptor, bytes(width * height * 4), "create"
+            )
+        self._revalidate(project_revision)
+        return result
+
     def open(self, target, project_revision, artwork_revision):
         require(editable.revision(artwork_revision), "Expected the exact saved artwork revision")
         require(editable.revision(project_revision), "Expected the exact saved project revision")
@@ -240,6 +270,12 @@ class ArtworkDocuments:
         return region["kind"], w, h, origin, raw, group, metadata, entry
 
     def _duplicate_data(self, document, source, descriptor):
+        if descriptor["version"] == 2:
+            original, pixels, metadata = self._sheet_source(
+                document, source, descriptor["atlas_id"], descriptor["name"], descriptor["id"]
+            )
+            sheets.compatible(original, descriptor)
+            return pixels, metadata
         kind, w, h, origin, pixels, group, metadata, entry = self._copy_source(document, source)
         require(
             (descriptor["kind"], descriptor["width"], descriptor["height"], descriptor["origin"])
@@ -303,8 +339,105 @@ class ArtworkDocuments:
         self._revalidate(project_revision)
         return result
 
+    def _sheet_source(self, document, source, atlas_id, display_name, document_id):
+        """Copy a complete declared source, including hidden RGB and sequence timing."""
+        editable.check_source(source)
+        require(source["grid"] is None, "Whole-sheet copies use null grid/cell")
+        entry = document["atlases"].get(source["atlas_id"])
+        require(entry is not None, "Choose an existing source atlas")
+        if editable.artwork_revision(entry, document["files"]) != source["artwork_revision"]:
+            raise Conflict("Source artwork changed. Prepare a fresh sheet copy explicitly.")
+        regions = entry["manifest"]["regions"]
+        primary = next((r for r in regions if r["name"] == source["region"]), None)
+        require(primary is not None, "Choose an existing source region")
+        width, height, pixels = png.decode(self._asset(document, entry["png"]), generic=True)
+        original_sheet = entry["manifest"].get("sheet")
+        frames = (
+            copy.deepcopy(original_sheet["frames"])
+            if original_sheet
+            else [
+                {
+                    "id": r["name"],
+                    "name": r["name"],
+                    **{k: r[k] for k in ("kind", "x", "y", "width", "height")},
+                    "origin": copy.deepcopy(r.get("origin", [0, 0])),
+                }
+                for r in regions
+            ]
+        )
+        indexed = {r["name"]: r for r in regions}
+        sequences = (
+            copy.deepcopy(original_sheet["sequences"])
+            if original_sheet
+            else [
+                {
+                    "id": animation["name"],
+                    "name": animation["name"],
+                    "loop": animation.get("loop", True),
+                    "frames": [
+                        {
+                            "frame_id": item["region"],
+                            "duration_ms": item.get(
+                                "duration_ms", indexed[item["region"]].get("duration_ms")
+                            ),
+                        }
+                        for item in animation["frames"]
+                    ],
+                }
+                for animation in entry["manifest"].get("animations", [])
+            ]
+        )
+        descriptor = {
+            "version": 2,
+            "id": document_id,
+            "atlas_id": atlas_id,
+            "region": source["region"],
+            "name": name(display_name),
+            "kind": primary["kind"],
+            "width": width,
+            "height": height,
+            "origin": [0, 0],
+            "pixel_format": "rgba8",
+            "provenance": {
+                "project_id": document["id"],
+                **copy.deepcopy(source),
+                "source_format": entry["manifest"].get("source_format"),
+            },
+            "frames": frames,
+            "sequences": sequences,
+        }
+        editable.check_descriptor(descriptor)
+        metadata = {
+            group: {
+                atlas_id + key[len(source["atlas_id"]) :]: copy.deepcopy(value)
+                for key, value in values.items()
+            }
+            for group, values in entry.get("metadata", {}).items()
+        }
+        return descriptor, pixels, metadata
+
+    def duplicate_sheet(self, source, atlas_id, display_name, project_revision):
+        require(editable.revision(project_revision), "Expected the exact saved project revision")
+        with self.store.read_session(project_revision, verify_assets=True) as session:
+            descriptor, pixels, metadata = self._sheet_source(
+                session.document, source, atlas_id, display_name, str(uuid4())
+            )
+            self._absence(session.document, descriptor)
+            result = self._envelope(
+                session.document,
+                project_revision,
+                descriptor,
+                pixels,
+                "duplicate",
+                source=source,
+                metadata=metadata,
+            )
+        self._revalidate(project_revision)
+        return result
+
     edit = staticmethod(editable.edit_pixels)
     read = staticmethod(editable.read_pixels)
+    layout = staticmethod(editable.edit_layout)
 
     def placement_scenes(self, candidate, session):
         """Bound selected-scene reads and validate exact bases before review/save/restore."""
@@ -329,10 +462,11 @@ class ArtworkDocuments:
         require(document["id"] == candidate["project_id"], "Candidate belongs to another project")
         if candidate["operation"] == "edit":
             previous, saved = self._native(document, self._target(d), candidate["artwork_revision"])
-            require(
-                saved == d and previous.get("metadata", {}) == candidate["metadata"],
-                "Pixel edits cannot change descriptor or tile metadata",
-            )
+            if saved["version"] == d["version"] == 2:
+                sheets.compatible(saved, d)
+            else:
+                require(saved == d, "Pixel edits cannot change descriptor or tile metadata")
+            require(previous.get("metadata", {}) == candidate["metadata"], "Tile metadata changed")
             return previous
         self._absence(document, d)
         if candidate["operation"] == "create":
@@ -360,13 +494,16 @@ class ArtworkDocuments:
                 "placements" not in candidate or receipt is not None,
                 "Review selected replacements before saving",
             )
-            # Adding an atlas changes Tiled ranges: decode all maps with the OLD catalog.
+            # Saved maps carry their own external tileset ranges. Adding unused
+            # artwork cannot invalidate those ranges; only selected replacements
+            # need encoding against the new catalog. Read all maps to retain the
+            # original conflict guards, including maps which will not be written.
             scenes = (
                 session.scenes(
                     max_bytes=16 * 1024 * 1024,
                     limit_message="Artwork save exceeds 16 MiB saved maps",
                 )
-                if previous is None
+                if previous is None or d["version"] == 2
                 else []
             )
             replacements = placements.replace(candidate, scenes)
@@ -381,13 +518,17 @@ class ArtworkDocuments:
             expected, scene_revisions = dict(reviewed), {}
             for loaded in scenes:
                 path = f"scenes/{loaded['id']}.tmj"
-                encoded = record_bytes(
-                    tiled.encode(replacements.get(loaded["id"], loaded["scene"]), document)
-                )
                 # Guard every saved scene even when its encoding need not change.
                 if path in reviewed and loaded["revision"] != reviewed[path]:
                     raise Conflict("Reviewed scene changed. Retain the candidate and review again.")
                 expected.setdefault(path, loaded["revision"])
+                if loaded["id"] not in replacements and (
+                    previous is None or previous["tiles"] == entry["tiles"]
+                ):
+                    continue
+                encoded = record_bytes(
+                    tiled.encode(replacements.get(loaded["id"], loaded["scene"]), document)
+                )
                 if digest(encoded) != loaded["revision"]:
                     changes[path] = encoded
                     scene_revisions[loaded["id"]] = digest(encoded)

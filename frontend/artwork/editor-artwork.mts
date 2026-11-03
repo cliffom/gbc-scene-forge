@@ -94,6 +94,13 @@ export function createArtworkController({
         (atlas && item.dataset.atlas !== atlas) ||
         (kind && item.dataset.kind !== kind),
       );
+      const open = item.nextElementSibling;
+      if (open instanceof HTMLButtonElement && open.classList.contains('asset-open')) {
+        open.hidden = item.hidden;
+      }
+      if (item.parentElement?.classList.contains('asset-card')) {
+        item.parentElement.hidden = item.hidden;
+      }
       if (!item.hidden) {
         count++;
       }
@@ -364,7 +371,19 @@ export function createArtworkController({
           ports.draw();
         };
         lifetime.assign(item, 'onclick', () => chooseAsset());
-        paletteElement.append(item);
+        const card = document.createElement('div');
+        card.className = 'asset-card';
+        const open = document.createElement('button');
+        open.className = 'asset-open';
+        open.textContent = 'Open artwork';
+        open.setAttribute('aria-label', `Open ${region.name} artwork`);
+        lifetime.assign(open, 'onclick', () => {
+          paletteElement.dispatchEvent(
+            new CustomEvent('open-artwork', { detail: { atlas: id, region: region.name } }),
+          );
+        });
+        card.append(item, open);
+        paletteElement.append(card);
         if (!initialBrush && !item.disabled) {
           initialBrush = () => chooseAsset(false);
         }

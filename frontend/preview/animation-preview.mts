@@ -15,6 +15,7 @@ export interface SpriteRegion {
 }
 export interface SpriteAnimation {
   name: string;
+  loop?: boolean;
   frames: { region: string; duration: number }[];
 }
 
@@ -89,10 +90,18 @@ export class AnimationPlayback {
     }
     const frames = this.animation.frames;
     const cycle = frames.reduce((sum, frame) => sum + frame.duration, 0);
-    this.elapsed += (milliseconds * this.speed) % cycle;
+    this.elapsed +=
+      this.animation.loop === false
+        ? milliseconds * this.speed
+        : (milliseconds * this.speed) % cycle;
     const previous = this.frame;
     while (this.elapsed >= frames[this.frame].duration) {
       this.elapsed -= frames[this.frame].duration;
+      if (this.frame === frames.length - 1 && this.animation.loop === false) {
+        this.playing = false;
+        this.elapsed = 0;
+        break;
+      }
       this.frame = (this.frame + 1) % frames.length;
     }
     return previous !== this.frame;

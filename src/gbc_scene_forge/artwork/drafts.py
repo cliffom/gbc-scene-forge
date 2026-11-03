@@ -3,7 +3,7 @@
 import json
 from datetime import datetime, timezone
 
-from gbc_scene_forge.artwork import editable
+from gbc_scene_forge.artwork import editable, sheets
 from gbc_scene_forge.core.errors import Conflict
 from gbc_scene_forge.core.identities import identity
 from gbc_scene_forge.core.serialization import record_bytes
@@ -48,9 +48,13 @@ class ArtworkDrafts:
         editable.check_candidate(original)
         editable.check_candidate(candidate)
         require(original["project_id"] == project_id, "Draft belongs to another project")
+        excluded = {"rgba", "revision"}
+        if original["descriptor"]["version"] == candidate["descriptor"]["version"] == 2:
+            sheets.compatible(original["descriptor"], candidate["descriptor"])
+            excluded.add("descriptor")
         require(
-            {k: v for k, v in original.items() if k not in {"rgba", "revision"}}
-            == {k: v for k, v in candidate.items() if k not in {"rgba", "revision"}},
+            {k: v for k, v in original.items() if k not in excluded}
+            == {k: v for k, v in candidate.items() if k not in excluded},
             "Artwork draft must retain its original identity, metadata and saved base",
         )
 

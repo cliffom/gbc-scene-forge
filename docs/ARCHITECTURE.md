@@ -111,8 +111,11 @@ canonical scene renderer with temporary catalogs. Review receipts bind candidate
 asset inventory and every scanned scene revision; `documents.save` validates them
 and carries unchanged reviewed map guards into the final transaction. MCP routes
 these use cases through `adapters/mcp/artwork.py`, with strict wire envelopes in
-`adapters/mcp/schemas.py`; candidates and receipts stay client-held and PNGs use
-the existing session artifact cache. MCP commits require a matching review receipt.
+`adapters/mcp/schemas.py`; full candidates and receipts remain supported, with
+optional immutable project-local sidecars in `artwork/candidates.py` for compact
+agent calls. PNG/APNG reviews use the existing session artifact cache.
+The [sheet contract](UNIFIED-EDITOR-DESIGN.md) adds explicit frames/sequences and
+selected static sprite-to-tile conversion in `artwork/conversion.py`. MCP commits require a matching review receipt.
 Browser drawing uses the same services; owned checkpoints live in `artwork/drafts.py`.
 `artwork/placements.py` validates exact saved selections and produces copied scenes
 for review/save. A duplicate candidate's optional selection is immutable, hash-bound

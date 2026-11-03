@@ -15,6 +15,49 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Native sheets and unified artwork workspaces (milestone 15)
+
+- **Scope:** Prepared 0.29.0 working tree on `milestone/15`, based on
+  [`bbdfb8a`](https://github.com/cliffom/gbc-scene-forge/commit/bbdfb8a69c20ceb740fd08977f431cbaf4ef5b44),
+  checked 2026-11-02 local time (2026-11-03 UTC), macOS arm64, Python 3.13.13,
+  Node 24.22.1, Playwright 1.64.1, Chromium and optional MCP SDK 1.30.0.
+  Plain and optional-MCP production wheels were installed separately.
+- **Method:** Ran documentation checks, lint, Python/frontend suites, production
+  distributions and installed-wheel smoke tests; full browser acceptance and
+  installed-wheel artwork/first-use acceptance; installed-MCP tests and actual
+  SDK/browser handoff/recovery acceptance. The
+  [evaluation](evaluations/native-authoring.md) maps scenarios and records scoped
+  byte measurements. Retained [sheet overview](images/unified-player-sheet.png),
+  [frame/timeline](images/unified-player-frame.png),
+  [800×640 workspace](images/unified-player-compact.png),
+  [conversion review](images/sprite-tile-conversion.png) and
+  [generated APNG](images/native-player-walk.apng) come from synthetic pointer
+  authoring; agent inspection covered the screenshots.
+- **Result:** Lint and all frontend suites passed; 429 Python tests and 20
+  documentation-checker tests passed. Production source/wheel metadata checks
+  and seven installed-wheel smoke tests passed. Full browser acceptance passed
+  75 scenarios with two optional scalability profiles skipped. After the final
+  timeline binding fix, all 19 installed-wheel artwork/first-use scenarios passed,
+  including exact saved 333 ms manual timing followed by another agent pixel edit
+  and browser reopening. The three new installed-wheel workspace scenarios also
+  passed after the final readable conversion-mapping presentation. All 81
+  installed-MCP tests and three SDK/browser
+  scenarios passed. Transparent tree/vine/rounded-edge composites, hidden RGB,
+  origins/timing, migration, stable frame IDs, selected conversion and portable
+  export/reopen passed their scoped assertions. A representative 16×32 candidate
+  shrank from 3,339 to 293 structured JSON bytes; one-pixel edit arguments shrank
+  from 3,418 to 372 bytes, with exact commit/reopen pixels.
+- **Limits:** These are local synthetic results, not archived CI evidence, human
+  usability certification or production art-quality claims. Earlier checks exposed
+  canvas-height regressions, an asset-button selector assumption, an unsupported
+  migration fixture and detached timeline callbacks after Undo/Redo; corrections
+  and regression coverage are described in the evaluation. The full 75-scenario
+  run preceded the final timeline fix; the installed-wheel artwork suite exercised
+  that fix. Official Tiled/rasterizer applications, Windows, non-Chromium,
+  screen-reader and physical-device workflows were not assessed. Plain Tiled
+  animation skips and static, grid-aligned conversion limits remain explicit.
+  Tagging and publication are separate.
+
 ## Mixed scene view filters and combined review (#140)
 
 - **Scope:** Prepared 0.28.0 working tree based on
@@ -1159,13 +1202,17 @@ check, retaining actual revision, environment, attribution, failures and limits.
 
 - [ ] Have human participants assess prolonged drawing and novice success with integrated new-tile, sprite-variation and mixed authoring workflows; the bounded agent visual assessment and automated SDK/browser checks for #135 do not establish human usability or broad art quality.
 
+### Unified sheet and animation authoring (milestone 15)
+
+- [ ] Have independent users assess prolonged sheet drawing, timeline editing, animation review and manual/agent handoffs; synthetic acceptance and agent screenshot inspection do not establish drawing comfort or production art quality.
+
 ### Scene scalability (#78, #92, #93)
 
 - [ ] Have a human assess prolonged painting, panning and selection on the current consumer Forest project; automated archived-v4 measurements do not establish physical-device editing comfort (#93).
 
 ### Platform, interoperability and publication gaps
 
-- [ ] Run the optional official Tiled/rasterizer interoperability checks for the prepared 0.28.0 baseline, including native RGBA artwork, scene-transfer, object/definition, mixed-scene classification properties and tile metadata compatibility, when those applications are available (#75, #109, #110, #111, #112, #113, #127, #130, #140).
+- [ ] Run the optional official Tiled/rasterizer interoperability checks for the prepared 0.29.0 baseline, including native RGBA sheets/animations, scene-transfer, object/definition, mixed-scene classification properties and tile metadata compatibility, when those applications are available (#75, #109, #110, #111, #112, #113, #127, #130, #140, #149).
 
 - [ ] Record non-Chromium desktop-browser and Windows runtime results with exact versions and workflows; these are outside the automated browser matrix.
 - [ ] Configure the TestPyPI trusted publisher and verify an upload if that channel is needed; the historical 0.1.4 attempt failed with `invalid-publisher`. Local wheel checks and PyPI publication are separate evidence.

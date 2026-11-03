@@ -45,11 +45,16 @@ class ReadSession:
             entry["tiles"].setdefault("sprites", atlas.sprite_mapping(entry))
         return {"project": self.document, "revision": self.revision}
 
-    def scene(self, scene_id: str) -> SceneRecord:
+    def scene(self, scene_id: str, *, max_bytes: int | None = None) -> SceneRecord:
         """Read within the session lifetime; a retained session cannot bypass locking."""
         if not self._active:
             raise RuntimeError("The saved-read session has ended")
-        return self.store._load_scene(scene_id, self.document)
+        budget = (
+            _SceneReadBudget(max_bytes, "Scene read exceeds its byte limit")
+            if max_bytes is not None
+            else None
+        )
+        return self.store._load_scene(scene_id, self.document, budget=budget)
 
     def scenes(self, *, max_bytes: int, limit_message: str) -> list[SceneRecord]:
         """Bound the captured serialized bytes before decoding each saved map."""

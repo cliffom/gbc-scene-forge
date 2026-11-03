@@ -77,7 +77,7 @@ Each stroke, fill, paste, move or transform is one undo operation. Artwork keeps
 to 100 operations within a 16 MiB history budget, independently of scene history.
 Use Undo/Redo or ⌘/Ctrl Z and Shift Z (Ctrl Y also redoes); ⌘/Ctrl C/V copies/pastes.
 Escape during a stroke, pointer cancellation, lost capture or window blur cancels
-that gesture. Escape otherwise closes the dialog after checkpointing unsaved work.
+that gesture. Escape otherwise returns to Scene after checkpointing unsaved work.
 Keyboard shortcuts in text/color/number inputs retain their native behavior.
 
 ## Review, save and recover
@@ -105,7 +105,7 @@ overwriting newer scene content.
 Completed edits checkpoint after a short debounce into the project's
 `.forge/artwork-drafts/` directory, separately from scene checkpoints. Checkpoints
 capture completed edits; unfinished or canceled gestures are excluded. Close waits
-for the current checkpoint; a failed checkpoint keeps the dialog open and offers
+for the current checkpoint; a failed checkpoint keeps the document open and offers
 **Download work**. Leaving before a checkpoint finishes prompts the browser's
 unsaved-work warning, including after Undo returns to the saved pixels while an
 older checkpoint still needs updating. Disposing an editor preserves completed checkpoints.
@@ -113,7 +113,7 @@ If a checkpoint response is lost, the warning remains active until Forge checks
 the owned checkpoint's stored revision and pixels. A later checkpoint or explicit
 discard performs that check before writing or deleting; failed checks retain local work.
 
-Reopen the artwork dialog to see recoverable records. **Recover copy** checks the
+Choose New / open artwork to see recoverable records. **Recover copy** checks the
 original saved base and opens unsaved pixels under a fresh draft identity; it
 retains the original record. **Delete checkpoint** explicitly removes a listed
 record; **Discard this draft** removes the current working record. Save and discard
@@ -137,3 +137,70 @@ For pixel/service limits and revision semantics, see the
 [MCP authoring loop](../MCP.md#native-artwork-authoring) uses the same candidate and
 save services. See the [mixed workflow evaluation](../evaluations/artwork-workflows.md)
 for the exercised tasks, evidence and limits.
+
+## Sheets, animations and the shared workbench
+
+Use **New / open artwork** in the document bar, or **Open artwork** under a Library
+thumbnail, even before creating a scene. Scene and artwork use the same main
+workspace. **Return to scene** checkpoints artwork and retains its tab; selecting
+that tab restores its history, selection, drawing tool, zoom and viewport.
+A failed checkpoint keeps the current document open. Saving or discarding closes
+its tab. Up to 16 artwork documents can remain open at once.
+
+For a tile sheet or character sheet, set the overall Width/Height, then Frame
+width/height and sprite origin, and choose **Create blank sheet**. Frame dimensions
+must divide the sheet exactly; use at most 128 frames in a raster up to 256 × 256.
+Choose **Copy entire sheet to native artwork** to migrate existing art without
+resampling: complete source pixels, frames, origins and sequence timing are copied.
+Unsupported dimensions/layouts reject the copy rather than changing the artwork.
+
+In the Artwork inspector, expand **Sheet frames & animation**. The canvas initially
+shows the whole sheet with frame boundaries and pink origin crosses. Select a
+frame and check **Edit selected frame** to constrain pixel tools to it. Rename
+frames for recognizable poses. Tile frames show a 3 × 3 repetition preview for
+checking edges. Toggle frame editing off to work across the sheet again.
+
+Create sequence IDs such as `idle`, `walk`, `jump` and `duck`. Choose a frame and
+**Append selected frame**, adjust millisecond durations, reorder with Up/Down, and
+set Loop. Sequence frames must share dimensions, kind and origin. Play toggles
+Pause; Step advances one frame. Onion skin overlays the preceding sheet pose in
+frame mode. **Generate animation review** produces a self-contained timed APNG
+and enables saving the exact reviewed pixels and timing. Layout and pixel edits
+share artwork Undo/Redo; changes require another review.
+
+Saving a new sheet adds every frame to the Library. Paint tile frames onto tile
+layers or place sprite frames on object layers. Existing scene animation preview
+can select the saved sequences. The complete portable project retains all named
+sequences; plain Tiled's one-loop-per-starting-tile limitation is reported during
+export. Non-looping sequences retain their Forge definition without being changed
+into looping Tiled animations.
+
+Current workspace captures: [sheet overview](../images/unified-player-sheet.png),
+[frame editing and timeline](../images/unified-player-frame.png), and
+[800×640 layout](../images/unified-player-compact.png). The small stick-figure
+fixture demonstrates poses and timing, not production artwork quality.
+[Open its generated walk review](../images/native-player-walk.apng) in an
+APNG-capable viewer; this sequence plays once with 180 ms and 120 ms frames.
+
+## Change sprites into tile scenery
+
+For the same pixels to serve both purposes, choose a sprite frame and **Add tile
+representation of selected frame**. Both rectangles share pixels in that document;
+editing either updates both. A copied sheet has independent pixels from its source.
+Review and save the tile representation first.
+
+Save the scene and select sprite objects on one object layer. Choose **Convert
+selected sprites to tiles…**, select the matching saved tile region, explicitly
+acknowledge static scenery, then **Review mapping**. Inspect the origin-adjusted
+cell locations and before/after images. **Replace reviewed placements** updates
+only that selection atomically, retaining unselected references, source artwork
+and source animation sequences. Intervening object drawing order is preserved.
+
+Target pixels and dimensions must match exactly, and origin-adjusted bounds must
+align to the scene grid and fit inside it. Gameplay class/properties or definition
+instances are rejected rather than discarded. This converts the selected pose to
+static scenery; it does not silently convert animation timing into tile playback.
+Stale scenes/assets reject review or commit without partial changes.
+
+[Reviewed placement conversion](../images/sprite-tile-conversion.png) shows the
+before/after scene and the explicit tile coordinates to replace.

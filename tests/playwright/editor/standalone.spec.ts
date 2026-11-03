@@ -468,7 +468,7 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   await set('search', 'idle');
   await evaluate("document.getElementById('search').dispatchEvent(new Event('input'))");
   assert.equal(
-    await evaluate("document.querySelectorAll('#palette button:not([hidden])').length"),
+    await evaluate("document.querySelectorAll('#palette button[data-asset]:not([hidden])').length"),
     1,
   );
   await set('search', '');
@@ -476,7 +476,7 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   await set('kind-filter', 'tile');
   await evaluate("document.getElementById('kind-filter').dispatchEvent(new Event('change'))");
   assert.equal(
-    await evaluate("document.querySelectorAll('#palette button:not([hidden])').length"),
+    await evaluate("document.querySelectorAll('#palette button[data-asset]:not([hidden])').length"),
     2,
   );
   await set('kind-filter', '');

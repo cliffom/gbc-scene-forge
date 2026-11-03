@@ -94,3 +94,11 @@ assert.throws(() =>
   }),
 );
 console.log('Preview preference decoding, mapping restoration and stale-reference pruning pass.');
+
+playback.speed = 1;
+playback.choose({ ...animation, loop: false });
+playback.playing = true;
+playback.advance(1000);
+assert.equal(playback.frame, 1);
+assert.equal(playback.playing, false);
+assert.equal(playback.advance(1000), false);
