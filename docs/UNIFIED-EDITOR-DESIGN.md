@@ -103,6 +103,8 @@ overrides.
 Switching checkpoints outgoing changed artwork and retains its local model,
 Undo/Redo, selection, pixel tool, frame/sequence controls, zoom and scroll.
 Restoration rebuilds timeline callbacks after restoring sequence selection.
+Timeline rebinding stops pending playback before replacing sequence state,
+including Undo/Redo, so timers cannot advance frames from a retired descriptor.
 Comparison images, reference summaries, generated animation reviews and receipts
 are cleared on restoration; saving requires a fresh document-specific review.
 Checkpoint failure blocks switching and retains local work. Scene history remains
@@ -128,6 +130,8 @@ and change review are separate optional surfaces. Saved, Modified and New reflec
 the document's actual state. Save opens exact-change review and requires explicit
 confirmation; an animation receipt alone does not bypass that human confirmation.
 Pixel/layout changes share one document history and invalidate review receipts.
+Scene and Artwork playback distinguish completion from pausing: Play restarts
+completed non-looping sequences at frame zero and resumes paused sequences in place.
 The [user guide](user/pixel-artwork.md) describes the controls.
 
 ## Lossless migration and representation changes

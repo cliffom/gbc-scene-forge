@@ -14,6 +14,7 @@ export function createSheetEditor(
   },
 ) {
   let playing = false;
+  let completed = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let position = 0;
   let signature = '';
@@ -137,6 +138,7 @@ export function createSheetEditor(
     preview();
     timer = lifetime.timeout(() => {
       if (position + 1 >= s.frames.length && !s.loop) {
+        completed = true;
         stop();
         return;
       }
@@ -250,6 +252,9 @@ export function createSheetEditor(
     // Undo/Redo can replace the descriptor with equal content. Rebind row
     // callbacks to that live object rather than editing a detached snapshot.
     if (rebind || next !== signature || d !== boundDescriptor) {
+      // Pending ticks capture the previous sequence. Retire them before history
+      // restoration can replace its frames or change the selected sequence.
+      stop();
       const f = select('art-frame'),
         s = select('art-sequence');
       const oldFrame = f.value,
@@ -264,6 +269,7 @@ export function createSheetEditor(
       }
       input('art-loop').checked = sequence()?.loop ?? true;
       position = 0;
+      completed = false;
       rows(sequence());
       signature = next;
       boundDescriptor = d;
@@ -357,6 +363,7 @@ export function createSheetEditor(
   lifetime.assign(select('art-sequence'), 'onchange', () => {
     stop();
     position = 0;
+    completed = false;
     input('art-loop').checked = sequence()?.loop ?? true;
     rows(sequence());
     preview();
@@ -416,6 +423,10 @@ export function createSheetEditor(
     if (playing) {
       stop();
     } else if (sequence()) {
+      if (completed) {
+        position = 0;
+        completed = false;
+      }
       playing = true;
       button('art-play').textContent = 'Pause';
       tick();
@@ -423,6 +434,7 @@ export function createSheetEditor(
   });
   lifetime.assign(button('art-step'), 'onclick', () => {
     stop();
+    completed = false;
     const s = sequence();
     if (s) {
       position = (position + 1) % s.frames.length;

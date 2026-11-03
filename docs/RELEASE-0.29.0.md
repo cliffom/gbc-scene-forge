@@ -18,6 +18,9 @@ a document rebinds its selected timeline and clears review output from other
 assets. Saved frame identities remain in retained Undo history so earlier pixel
 and animation edits stay checkpointable. Offline work downloads include live
 layout edits, and scene preview controls refresh when non-looping playback ends.
+Artwork Undo/Redo stops pending playback before restoring animation frames.
+Play restarts completed non-looping previews from the first frame in both
+workspaces while preserving paused positions.
 Existing version-1 static artwork remains supported.
 
 Create tile and sprite sheets with stable frames, origins and named timed

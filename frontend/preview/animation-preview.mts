@@ -71,16 +71,30 @@ export class AnimationPlayback {
   playing = false;
   speed = 1;
   private elapsed = 0;
+  private completed = false;
 
   choose(animation: SpriteAnimation | null) {
     this.animation = animation;
     this.frame = 0;
     this.elapsed = 0;
     this.playing = false;
+    this.completed = false;
+  }
+  play() {
+    if (!this.animation) {
+      return;
+    }
+    if (this.completed) {
+      this.frame = 0;
+      this.elapsed = 0;
+      this.completed = false;
+    }
+    this.playing = true;
   }
   step(direction: number) {
     this.playing = false;
     this.elapsed = 0;
+    this.completed = false;
     const count = this.animation?.frames.length || 1;
     this.frame = (this.frame + direction + count) % count;
   }
@@ -100,6 +114,7 @@ export class AnimationPlayback {
       if (this.frame === frames.length - 1 && this.animation.loop === false) {
         this.playing = false;
         this.elapsed = 0;
+        this.completed = true;
         break;
       }
       this.frame = (this.frame + 1) % frames.length;
@@ -362,13 +377,17 @@ export function createAnimationPreview(
     });
   }
   lifetime.assign(play, 'onclick', () => {
-    playback.playing = !playback.playing;
+    if (playback.playing) {
+      playback.playing = false;
+    } else {
+      playback.play();
+    }
     stopTimer();
     lastTime = performance.now();
     if (playback.playing) {
       timer = lifetime.frame(tick);
     }
-    render();
+    refresh();
   });
   lifetime.assign(previous, 'onclick', () => {
     stopTimer();

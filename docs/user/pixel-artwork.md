@@ -9,8 +9,8 @@ options. Scene undo and unsaved scene edits remain intact.
 ## Start a tile or sprite
 
 The **New artwork** flow asks for a name, Tile or Sprite, and dimensions, followed
-by **Create artwork**. Asset IDs follow the name: **Dover’s Quest Sprite** becomes
-`dovers_quest_sprite`. Punctuation is dropped, spaces become underscores and
+by **Create artwork**. Asset IDs follow the name: **Player’s Sprite** becomes
+`players_sprite`. Punctuation is dropped, spaces become underscores and
 accents are simplified. An ID beginning with a digit gets an `art_` prefix; an
 empty normalized name uses `artwork`. Expand **Asset identity** to supply a unique
 ID yourself; that override stays intact when the name changes. Single tiles are
@@ -193,10 +193,14 @@ Expand **Animation** below the frame controls. Name sequences such as Idle, Walk
 Jump and Duck using **New animation**. Choose a source frame and **Append frame**,
 adjust durations in milliseconds, reorder with Up/Down, and set Loop. Sequence
 entries can repeat artwork frames; they must share dimensions, kind and origin.
-Play toggles Pause; Step advances one frame. Onion skin overlays the preceding
+Play resumes a paused preview in place or restarts a completed non-looping
+sequence from its first frame, in both Artwork and Scene. Step advances one frame.
+Onion skin overlays the preceding
 sheet pose in Frame mode. **Generate animation review** produces a self-contained
 timed APNG. Save still opens explicit shared-change review before confirmation.
 Layout and pixel edits share Undo/Redo; changes require another review.
+Undo/Redo stops artwork playback at the first frame of the restored sequence;
+press Play to preview it again.
 
 Saving a new sheet adds every frame to the Library. Paint tile frames onto tile
 layers or place sprite frames on object layers. Existing scene animation preview

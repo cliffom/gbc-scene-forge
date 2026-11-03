@@ -192,9 +192,14 @@ test('review mode expands the canvas and preserves edits, selection and history'
   await expect(page.locator('#layer-name')).toHaveValue('Review keeps my edits');
   await clickControl(page, 'save');
   await expect(page.locator('#scene-save-state')).toHaveText('Saved');
+  const scene = await page.locator('#scenes').inputValue();
+  await expect(page).toHaveURL(`${forge.url}scenes/${encodeURIComponent(scene)}`);
   await page.reload();
-  await editorReady(page);
-  await page.locator('#scenes').selectOption({ index: 1 });
+  // Reload follows the scene route directly; the empty chooser is only transient.
+  await expect(page.locator('#status')).toHaveText('Scene opened.');
+  await expect(page.locator('#scenes')).toBeEnabled();
+  await expect(page.locator('#scenes')).toHaveValue(scene);
+  await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   await expect(page.locator('#layer-name')).toHaveValue('Review keeps my edits');
   await expect(toggle).toHaveAttribute('aria-pressed', 'false');
 });

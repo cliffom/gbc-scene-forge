@@ -15,6 +15,30 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Artwork playback history and replay (PR #158)
+
+- **Scope:** Prepared 0.29.0 source working tree based on
+  [`f9d4608`](https://github.com/cliffom/gbc-scene-forge/commit/f9d4608ec8ffc183df03222c27ddc118b1c1a918),
+  checked 2026-11-02 on macOS with Node 24.22.1 and Playwright 1.64.1/Chromium.
+  Disposable synthetic artwork; no existing project data modified.
+- **Method:** Reproduced the pending-timer failure with the real pixel model and
+  mounted sheet controls. Added browser acceptance for Play → Undo shortening a
+  sequence, Play → Redo restoring it, and resumed playback. Model and browser
+  regressions distinguish completed non-looping replay from pausing on the last
+  frame in Scene and Artwork, including single-frame sequences. Ran `make lint test`,
+  `npm run build`, artwork/polish browser suites and `make docs-check`. Refreshed
+  the [identity capture](images/artwork-name-identity.png) from the source sample
+  fixture at 1280 × 800 with a generic artwork name; agent visually inspected it.
+- **Result:** Before the fix, the timer threw while reading `duration_ms` from a
+  removed frame and left Pause displayed. After the fix, both history directions
+  stopped playback, restored first-frame status and allowed playback to restart.
+  Completed sequences restarted at frame zero; paused sequences resumed their
+  current pose. All 35 artwork/polish scenarios, the refreshed identity scenario,
+  lint, frontend suites, 429 Python tests and 20 documentation-checker tests passed.
+- **Limits:** Source Chromium automation only; installed-wheel packaging, the
+  complete browser/MCP suites and independent human usability checks were not
+  repeated for these playback fixes. Existing Remaining checks still apply.
+
 ## Saved artwork history, offline layout recovery and playback completion (PR #158)
 
 - **Scope:** Prepared 0.29.0 working tree based on
@@ -750,7 +774,7 @@ Dates, revisions and environments missing from the originals remain unknown.
 - **Scope:** Working-tree implementation reported on 2026-10-27 before publication; initial
   standalone scope preceding 0.2.0. Exact tested revision, OS and Chrome version were not recorded.
 - **Method:** `make lint test build check-dist`, disposable-project Chrome acceptance, official
-  Tiled 1.12.2 load/export/rasterization and read-only intake of the owner's Dover atlas. Repository
+  Tiled 1.12.2 load/export/rasterization and read-only intake of the owner's private atlas. Repository
   evidence includes [the Tiled helper](../tests/support/tiled_interop.py), [historical
   plan](ISSUE-13-PLAN.md) and [project capture](screenshots/standalone-project.png).
 - **Result:** Reported 61 Python regressions, TypeScript model/API/deadline/build checks and four
@@ -759,7 +783,7 @@ Dates, revisions and environments missing from the originals remain unknown.
   protection, sprite thumbnails/origins/drag/nudge/delete/save, and tall-canvas focus coordinates
   passed. Modal errors, canceled discard, search/filter, asset drops, pan, selection inspector and
   980×760 no-overflow layout were checked; desktop/compact captures were reported inspected. Tiled
-  round trips and expected tile/transparent/native-sprite pixels passed. All 13 Dover sprite regions
+  round trips and expected tile/transparent/native-sprite pixels passed. All 13 private-atlas sprite regions
   retained placement, native pixels and save/reopen. Recovery regressions included interrupted
   import/initial creation/deletion and preservation of external edits. Later fixes in this record
   covered locked coherent scene/artwork reads and save/create acknowledgements of their own
@@ -770,7 +794,7 @@ Dates, revisions and environments missing from the originals remain unknown.
   Snap/Alt/nudge/clamp browser checks passed. Legacy connector acceptance also reportedly passed at
   that time.
 - **Limits:** These are historical local reports, not retained test logs or current suite counts.
-  Owner product review remained separate. The Dover source is private and is not a reusable public
+  Owner product review remained separate. The owner-provided source is private and is not a reusable public
   fixture. Legacy connector/Apply results do not create a supported compatibility requirement. Later
   object/layer/preview behavior exceeds the initial plan; use current usage and release notes for
   supported behavior.

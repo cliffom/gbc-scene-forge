@@ -187,8 +187,9 @@ using **Documents ▾** when retained documents exist, and allowing the complete
 remain those in the delivered-layout table. Asset identity now follows the name
 with punctuation removed and whitespace normalized; explicit overrides survive
 later name changes. A [1280 × 800 identity capture](../images/artwork-name-identity.png)
-comes from the installed-wheel sample fixture and demonstrates the requested
-Dover’s Quest normalization with advanced identity expanded.
+comes from the source-checkout sample fixture, refreshed on 2026-11-02, and
+demonstrates punctuation normalization using a generic “Player’s Sprite” example
+with advanced identity expanded.
 
 Two reported restoration bugs are addressed by rebuilding timeline controls
 against the restored sequence and clearing shared comparison images, references,

@@ -1235,6 +1235,46 @@ print(s['id'])
   return { url: await workspace.start(root, true), scene };
 }
 
+test('artwork Undo and Redo stop playback before restoring sequence frames', async ({
+  page,
+  workspace,
+}) => {
+  const { url } = await reviewedSheetFixture(workspace);
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto(url);
+  await page.locator('[data-asset="player/idle"]').click();
+  await revealArtworkControl(page, 'art-play');
+  await page.locator('#art-sequence').selectOption('pose');
+  await page.locator('#art-loop').check();
+  await page.locator('#art-add-animation-frame').click();
+  await expect(page.locator('#art-sequence-frames input')).toHaveCount(2);
+  await page.clock.install();
+
+  await page.locator('#art-play').click();
+  await expect(page.locator('#art-play')).toHaveText('Pause');
+  await page.locator('#art-undo').click();
+  await expect(page.locator('#art-sequence-frames input')).toHaveCount(1);
+  await expect(page.locator('#art-play')).toHaveText('Play');
+  await page.clock.runFor(250);
+  await expect(page.locator('#art-animation-status')).toContainText('frame 1/1');
+
+  await page.locator('#art-play').click();
+  await expect(page.locator('#art-play')).toHaveText('Pause');
+  await page.locator('#art-redo').click();
+  await expect(page.locator('#art-sequence-frames input')).toHaveCount(2);
+  await expect(page.locator('#art-play')).toHaveText('Play');
+  await page.clock.runFor(250);
+  await expect(page.locator('#art-animation-status')).toContainText('frame 1/2');
+
+  await page.locator('#art-play').click();
+  await page.clock.runFor(120);
+  await expect(page.locator('#art-animation-status')).toContainText('frame 2/2');
+  await expect(page.locator('#art-play')).toHaveText('Pause');
+  await page.locator('#art-play').click();
+  assert.deepEqual(errors, []);
+});
+
 test('saved representation keeps earlier Undo checkpointable and reviewable', async ({
   page,
   workspace,
@@ -1311,7 +1351,38 @@ test('offline Download work includes live layout after failed synchronization', 
   assert.notDeepEqual(descriptor, record(data.candidate).descriptor);
 });
 
-test('non-looping scene playback refreshes Play on completion for one or multiple frames', async ({
+test('non-looping artwork playback replays completed sequences and resumes paused poses', async ({
+  page,
+  workspace,
+}) => {
+  const { url } = await reviewedSheetFixture(workspace);
+  await page.goto(url);
+  await page.locator('[data-asset="player/idle"]').click();
+  await revealArtworkControl(page, 'art-play');
+  await page.clock.install();
+  for (const name of ['walk', 'pose']) {
+    await page.locator('#art-sequence').selectOption(name);
+    await page.locator('#art-play').click();
+    await page.clock.runFor(250);
+    await expect(page.locator('#art-play')).toHaveText('Play');
+    await page.locator('#art-play').click();
+    await expect(page.locator('#art-animation-status')).toContainText('frame 1/');
+    await page.clock.runFor(name === 'walk' ? 130 : 40);
+    await expect(page.locator('#art-animation-status')).toContainText(
+      name === 'walk' ? 'frame 2/2' : 'frame 1/1',
+    );
+    await page.locator('#art-play').click();
+    const paused = await page.locator('#art-animation-status').textContent();
+    await expect(page.locator('#art-play')).toHaveText('Play');
+    await page.locator('#art-play').click();
+    await expect(page.locator('#art-animation-status')).toHaveText(paused ?? '');
+    await expect(page.locator('#art-play')).toHaveText('Pause');
+    await page.clock.runFor(250);
+    await expect(page.locator('#art-play')).toHaveText('Play');
+  }
+});
+
+test('non-looping scene playback replays completed sequences and resumes paused poses', async ({
   page,
   workspace,
 }, info) => {
@@ -1326,9 +1397,25 @@ test('non-looping scene playback refreshes Play on completion for one or multipl
     .click();
   await page.locator('input[name=tool][value=select]').check();
   await setControl(page, 'object-list', '1');
+  await page.clock.install();
   for (const name of ['walk', 'pose']) {
     await setControl(page, 'preview-animation', name);
     await clickControl(page, 'preview-play');
+    await page.clock.runFor(300);
+    await expect(page.locator('#preview-play')).toHaveText('Play');
+    await clickControl(page, 'preview-play');
+    await expect(page.locator('#preview-frame')).toContainText('Frame 1 /');
+    await page.clock.runFor(name === 'walk' ? 150 : 40);
+    await expect(page.locator('#preview-frame')).toContainText(
+      name === 'walk' ? 'Frame 2 / 2' : 'Frame 1 / 1',
+    );
+    await clickControl(page, 'preview-play');
+    const paused = await page.locator('#preview-frame').textContent();
+    await expect(page.locator('#preview-play')).toHaveText('Play');
+    await clickControl(page, 'preview-play');
+    await expect(page.locator('#preview-frame')).toHaveText(paused ?? '');
+    await expect(page.locator('#preview-play')).toHaveText('Pause');
+    await page.clock.runFor(300);
     await expect(page.locator('#preview-play')).toHaveText('Play');
     await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   }
