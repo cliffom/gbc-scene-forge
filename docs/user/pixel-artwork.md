@@ -61,11 +61,29 @@ Tab reaches the selected tool and arrow keys choose adjacent tools. A pointer
 choice returns focus to the canvas. History, clipboard and transforms use the
 same icon style as scene commands; gold marks the selected drawing tool.
 
-Color, Opacity and the checkerboard **Transparent** button sit together; Zoom and
-Pixel grid form a separate view group. A badge beside the document name distinguishes shared artwork, new artwork and
+The toolbar groups tools, history/transforms, Color/Opacity and Pan/Fit/Zoom on
+one row when space permits. Groups wrap together at smaller widths; the palette
+scrolls within its remaining space. A badge beside the document name distinguishes shared artwork, new artwork and
 selected-placement variations. Save stays beneath the canvas. **Document actions**
 contains download, close/discard and **Drawing & keyboard help**. **Fit** chooses
-the largest available zoom that fits the current sheet or frame in the drawing area.
+the largest available zoom that fits the current sheet or frame and centers it.
+
+A light/dark outlined pixel shows the exact target before drawing, filling or
+sampling with Eyedropper. Select rectangle uses a dashed target; Move selection
+uses a move cursor rather than suggesting a single-pixel write. Targets respect
+zoom, scroll, panning and the selected frame's offset, and disappear outside the
+artwork, during gestures/review requests and when you leave the viewport.
+
+Pan with a **middle-button drag**, or focus the canvas and hold **Space while
+dragging**. The **Pan** button also enables drag navigation; arrow keys then pan
+by 32 screen pixels. Its grab/grabbing cursor distinguishes navigation from
+painting. Choose any drawing tool or press Escape on the canvas to leave Pan.
+Releasing Space, pointer cancellation or window blur ends a temporary pan.
+Space in form controls keeps its normal behavior. Surrounding space lets even
+small artwork move away from the center. Zoom preserves the viewed center;
+**Fit** and changing between Sheet/Frame or selecting another frame in Frame view
+center the new view. Panning never changes pixels, selection, history or dirty
+state. Each document retains its viewport and Pan choice when you switch away.
 
 Drag a rectangular selection, then move it with the Move selection tool or arrow keys
 while the canvas has focus. Copy/Paste uses the artwork's own clipboard and pastes
@@ -167,8 +185,13 @@ for the exercised tasks, evidence and limits.
 ## Sheets, animations and the shared workbench
 
 Artwork shares the main workspace with Scene. The document-name button in the
-existing context bar opens a switcher for retained documents; no extra document
-row is reserved. **Return to scene** checkpoints artwork, and choosing its name
+existing context bar opens the **Open documents** dialog. Its dimmed background
+is inactive until you choose a document or dismiss it. The current artwork and
+Saved/Modified/New state are marked; **Return to scene** is the first action
+(**Return to Scene workspace** when no scene is open). Close, Escape or clicking
+the backdrop dismisses it and restores focus to the document-name button.
+Long names wrap, and the chooser scrolls within compact viewport bounds. No extra
+document row is reserved. Merely opening/dismissing it creates no checkpoint. **Return to scene** checkpoints artwork, and choosing its name
 in the switcher restores history, selection, tools, zoom and viewport. A failed
 checkpoint keeps the current document open. Returning to a document restores its
 selected sequence and rebuilds its timing controls. Previous comparison images,
@@ -219,7 +242,14 @@ into looping Tiled animations. Scene preview returns to **Play** when a
 non-looping sequence finishes, including a one-frame pose
 ([completed preview](../images/non-looping-preview-complete.png)).
 
-Current workspace: [name-derived identity](../images/artwork-name-identity.png),
+Current workspace: [compact toolbar](../screenshots/artwork-polish/desktop.png),
+[pixel target](../screenshots/artwork-polish/target-light.png),
+[Documents chooser](../screenshots/artwork-polish/documents.png),
+[800×640 review](../screenshots/artwork-polish/compact-review.png) and
+[short-window animation](../screenshots/artwork-polish/short-animation.png).
+
+Earlier workflow captures, before the compact toolbar and modal chooser:
+[name-derived identity](../images/artwork-name-identity.png),
 [new artwork](../images/artwork-workspace-new.png),
 [sheet overview](../images/artwork-workspace-sheet.png),
 [animation editing](../images/artwork-workspace-animation.png),

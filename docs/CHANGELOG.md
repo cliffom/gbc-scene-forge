@@ -6,6 +6,12 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.30.0 — Artwork interaction polish
+
+[Release notes](RELEASE-0.30.0.md). Add precise pixel targets and transient artwork
+panning, consolidate drawing controls and make document navigation a focused modal
+chooser. Existing projects need no migration. Publication is separate.
+
 ## 0.29.2 — Editor responsiveness
 
 [Release notes](RELEASE-0.29.2.md). Reuse pixel raster surfaces and affected

@@ -222,3 +222,22 @@ captures JSON at observation, compares that immutable string directly and decode
 only when flushing. A caller cannot mutate an observed or uncertain-retry payload.
 See the [performance evaluation](evaluations/editor-responsiveness.md) for costs
 retained deliberately and the bounds of current measurements.
+
+
+## Artwork viewport and document navigation
+
+`artwork/artwork-viewport.mts` owns padded scrolling, normalized per-document view
+centers, Pan/Space/middle-button input and a coalesced DOM pixel-target overlay.
+Its coordinate conversion is shared by hover and authored pointer gestures;
+only captured drawing clamps at canvas edges. Navigation and hover have no model,
+control-refresh, raster-paint or checkpoint callbacks. Layout writes occur only
+when sheet/frame geometry, zoom or viewport dimensions change. Fit and frame
+scope changes recenter; resize and zoom preserve the viewed center.
+
+`artwork/document-chooser.mts` owns the native modal chooser, dismissal and focus
+restoration. `artwork/pixel-editor.mts` continues to own retained sessions,
+authoring tools, review/save and recovery. Each retained session additionally
+remembers the viewport center and Pan choice. Opening the chooser cancels an
+unfinished authored gesture and suspends transient navigation. Busy requests
+disable its trigger. The mounted lifetime owns listeners, capture, the hover
+frame and ResizeObserver; disposal releases them together.

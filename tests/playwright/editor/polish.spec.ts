@@ -15,8 +15,8 @@ const sizes = [
 async function boundedCommands(page: Page, container: string, controls: string) {
   const failures = await page.locator(container).evaluate((panel, selector) => {
     const bounds = panel.getBoundingClientRect();
-    const nodes = [...panel.querySelectorAll<HTMLElement>(selector)].filter((n) =>
-      n.checkVisibility(),
+    const nodes = [...panel.querySelectorAll<HTMLElement>(selector)].filter(
+      (n) => n.checkVisibility() && !n.closest('.art-swatches'),
     );
     const problems: string[] = [];
     for (const [i, node] of nodes.entries()) {
@@ -481,17 +481,17 @@ test.describe('editor polish', () => {
           }
           node.open = open;
         }, help);
-        await boundedCommands(page, '.pixel-toolbar', '.tool,button');
+        await boundedCommands(page, '.art-toolbar', '.tool,button');
         await boundedCommands(
           page,
-          '.art-tools',
+          '.art-toolbar',
           'input[type=color],input[type=number],select,button,.pixel-view-controls>label:last-child',
         );
         await boundedCommands(page, '#art-editor>.dialog-actions', 'button');
         const bottoms = await page
-          .locator('.art-tools')
+          .locator('.color-controls')
           .evaluate((node) =>
-            ['#art-color', '#art-alpha', '#art-transparent', '#art-zoom'].map(
+            ['#art-color', '#art-alpha', '#art-transparent'].map(
               (id) => node.querySelector(id)?.getBoundingClientRect().bottom ?? 0,
             ),
           );

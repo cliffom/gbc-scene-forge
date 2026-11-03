@@ -41,6 +41,8 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Evaluations
 
+- [Artwork interaction polish (#173–#176)](evaluations/artwork-interaction-polish.md)
+
 - [Unified editor human workflow review](evaluations/unified-editor-ux.md)
 - [Native sheet authoring evidence and payload measurements](evaluations/native-authoring.md)
 
@@ -63,6 +65,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Release notes
 
+- [Scene Forge 0.30.0](RELEASE-0.30.0.md) — prepared; publication is separate.
 - [Scene Forge 0.29.2](RELEASE-0.29.2.md) — prepared; publication is separate.
 
 - [Scene Forge 0.29.1](RELEASE-0.29.1.md) — prepared; publication is separate.
