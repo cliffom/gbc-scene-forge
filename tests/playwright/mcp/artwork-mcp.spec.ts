@@ -1,3 +1,4 @@
+import { revealArtworkControl, reviewArtwork, saveArtwork } from '../support/artwork-controls.ts';
 /** Actual optional-SDK stdio writes alternate with browser artwork edits and conflicts. */
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
@@ -57,6 +58,7 @@ test('mcp: artwork brief, hand edits, agent revision, selected sprite variation 
   };
   const editMoss = async () => {
     await page.locator('#show-artwork').click();
+    await page.locator('#art-existing-mode').click();
     await page.locator('#art-source').selectOption({ label: 'moss / artwork (editable)' });
     await page.locator('#art-open').click();
   };
@@ -78,8 +80,9 @@ test('mcp: artwork brief, hand edits, agent revision, selected sprite variation 
   await dab('#92a15a');
   await page.locator('#art-undo').click();
   await page.locator('#art-redo').click();
-  await page.locator('#art-review').click();
-  await page.locator('#art-save').click();
+  await reviewArtwork(page);
+  await saveArtwork(page);
+  await page.locator('#art-close').click();
   await expect(page.locator('#artwork-dialog')).not.toBeVisible();
   const writes = join(output, 'revision-writes.json');
   await writeFile(writes, JSON.stringify([{ x: 7, y: 7, rgba: [180, 156, 78, 255] }]));
@@ -113,7 +116,7 @@ test('mcp: artwork brief, hand edits, agent revision, selected sprite variation 
   await expect(page.locator('#status')).toHaveText('Scene opened.');
   await editMoss();
   await dab('#aa1133');
-  await page.locator('#art-review').click();
+  await reviewArtwork(page);
   await expect(page.locator('#art-save')).toBeEnabled();
   await writeFile(writes, JSON.stringify([{ x: 6, y: 6, rgba: [90, 130, 80, 255] }]));
   await run(['--asset', 'moss', '--writes', writes]);
@@ -124,6 +127,7 @@ test('mcp: artwork brief, hand edits, agent revision, selected sprite variation 
   await page.reload();
   await expect(page.locator('#status')).toHaveText('Scene opened.');
   await page.locator('#show-artwork').click();
+  await revealArtworkControl(page, 'art-drafts');
   await page.getByRole('button', { name: 'Recover copy', exact: true }).click();
   await expect(page.locator('#art-message')).toContainText('Local pixels are retained');
   const download = page.waitForEvent('download');

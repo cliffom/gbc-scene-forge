@@ -29,33 +29,123 @@ const sourceEntries = {
   cell: v.nullable(v.tuple([bounded(0, 2047), bounded(0, 2047)])),
   artwork_revision: revision,
 };
+const descriptorEntries = {
+  id: identity,
+  atlas_id: identifier,
+  region: identifier,
+  name: v.pipe(text, v.minLength(1), v.maxLength(100)),
+  kind: v.picklist(['tile', 'sprite']),
+  width: bounded(8, 256),
+  height: bounded(8, 256),
+  origin: v.tuple([bounded(0, 255), bounded(0, 255)]),
+  pixel_format: v.literal('rgba8'),
+  provenance: v.nullable(
+    v.strictObject({ ...sourceEntries, project_id: identity, source_format: v.nullable(text) }),
+  ),
+};
+export const frameSchema = v.strictObject({
+  id: identifier,
+  name: v.pipe(text, v.minLength(1), v.maxLength(100)),
+  kind: v.picklist(['tile', 'sprite']),
+  x: bounded(0, 248),
+  y: bounded(0, 248),
+  width: bounded(8, 256),
+  height: bounded(8, 256),
+  origin: v.tuple([bounded(0, 255), bounded(0, 255)]),
+});
+export const sequenceSchema = v.strictObject({
+  id: identifier,
+  name: v.pipe(text, v.minLength(1), v.maxLength(100)),
+  loop: v.boolean(),
+  frames: v.pipe(
+    v.array(v.strictObject({ frame_id: identifier, duration_ms: bounded(1, 65535) })),
+    v.minLength(1),
+    v.maxLength(256),
+  ),
+});
+export type ArtworkFrame = v.InferOutput<typeof frameSchema>;
+export type ArtworkSequence = v.InferOutput<typeof sequenceSchema>;
 const descriptor = v.pipe(
-  v.strictObject({
-    version: v.literal(1),
-    id: identity,
-    atlas_id: identifier,
-    region: identifier,
-    name: v.pipe(text, v.minLength(1), v.maxLength(100)),
-    kind: v.picklist(['tile', 'sprite']),
-    width: bounded(8, 256),
-    height: bounded(8, 256),
-    origin: v.tuple([bounded(0, 255), bounded(0, 255)]),
-    pixel_format: v.literal('rgba8'),
-    provenance: v.nullable(
-      v.strictObject({ ...sourceEntries, project_id: identity, source_format: v.nullable(text) }),
-    ),
-  }),
+  v.union([
+    v.strictObject({ ...descriptorEntries, version: v.literal(1) }),
+    v.strictObject({
+      ...descriptorEntries,
+      version: v.literal(2),
+      frames: v.pipe(v.array(frameSchema), v.minLength(1), v.maxLength(128)),
+      sequences: v.pipe(v.array(sequenceSchema), v.maxLength(64)),
+    }),
+  ]),
   v.check(
     (d) =>
       d.width % 8 === 0 &&
       d.height % 8 === 0 &&
       d.origin[0] < d.width &&
       d.origin[1] < d.height &&
-      (d.kind !== 'tile' ||
+      (d.version === 2 ||
+        d.kind !== 'tile' ||
         (d.width === d.height && [8, 16, 32].includes(d.width) && d.origin.every((n) => n === 0))),
     'Invalid artwork dimensions or origin.',
   ),
+  v.check((d) => {
+    if (d.version !== 2) {
+      return true;
+    }
+    const indexed = new Map(d.frames.map((f) => [f.id, f]));
+    if (
+      indexed.size !== d.frames.length ||
+      indexed.get(d.region)?.kind !== d.kind ||
+      d.origin.some((n) => n !== 0)
+    ) {
+      return false;
+    }
+    if (
+      !d.frames.every(
+        (f) =>
+          f.x % 8 === 0 &&
+          f.y % 8 === 0 &&
+          f.width % 8 === 0 &&
+          f.height % 8 === 0 &&
+          f.x + f.width <= d.width &&
+          f.y + f.height <= d.height &&
+          f.origin[0] < f.width &&
+          f.origin[1] < f.height &&
+          (f.kind !== 'tile' || f.origin.every((n) => n === 0)),
+      )
+    ) {
+      return false;
+    }
+    if (
+      new Set(d.sequences.map((s) => s.id)).size !== d.sequences.length ||
+      d.sequences.reduce((n, s) => n + s.frames.length, 0) > 1024
+    ) {
+      return false;
+    }
+    return d.sequences.every((s) => {
+      const first = indexed.get(s.frames[0].frame_id);
+      return (
+        first &&
+        s.frames.every((item) => {
+          const f = indexed.get(item.frame_id);
+          return (
+            f &&
+            f.kind === first.kind &&
+            f.width === first.width &&
+            f.height === first.height &&
+            f.origin.every((n, i) => n === first.origin[i])
+          );
+        })
+      );
+    });
+  }, 'Invalid sheet frames or sequence geometry.'),
+  // Match core.serialization.record_bytes: two-space JSON, UTF-8 and a final newline.
+  v.check(
+    (d) => new TextEncoder().encode(JSON.stringify(d, null, 2) + '\n').length <= 64 * 1024,
+    'Editable descriptor exceeds 64 KiB. Reduce the layout before adding more artwork or animation.',
+  ),
 );
+export function decodeDescriptor(value: unknown) {
+  return parse(descriptor, value);
+}
 export const candidateSchema = v.pipe(
   v.strictObject({
     version: v.literal(1),

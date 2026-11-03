@@ -564,7 +564,7 @@ class EditableTests(unittest.TestCase):
         self.assertEqual(acknowledgment["artwork_revision"], committed["artwork"])
         self.assertNotEqual(acknowledgment["project_revision"], self.revision())
 
-    def test_new_atlas_reencodes_existing_numeric_ranges_without_changing_content(self):
+    def test_unused_new_atlas_preserves_scene_bytes_and_later_placement_is_local(self):
         path, _ = bundle(self.folder / "tiles")
         self.project.artwork.import_atlas(path, self.revision())
         path, _ = sprite_bundle(self.folder / "actors")
@@ -576,12 +576,30 @@ class EditableTests(unittest.TestCase):
         saved = self.project.scenes.save(
             loaded["id"], loaded["scene"], loaded["revision"], self.revision()
         )
+        other = self.project.scenes.create("Other", 2, 2, 8, self.revision())
+        originals = {
+            item["id"]: (self.project.root / f"scenes/{item['id']}.tmj").read_bytes()
+            for item in (saved, other)
+        }
         candidate = self.art.create("aaa", "First atlas", "tile", 32, 32, self.revision())
-        acknowledgment = self.art.save(candidate)
+        review = self.project.artwork.reviews.review(candidate)
+        acknowledgment = self.art.save(candidate, receipt=review["receipt"])
         reopened = self.project.scenes.load(saved["id"])
         self.assertEqual(reopened["scene"], saved["scene"])
-        self.assertEqual(acknowledgment["scene_revisions"][saved["id"]], reopened["revision"])
-        self.assertNotEqual(reopened["revision"], saved["revision"])
+        self.assertEqual(acknowledgment["scene_revisions"], {})
+        self.assertEqual(reopened["revision"], saved["revision"])
+        for scene_id, data in originals.items():
+            self.assertEqual((self.project.root / f"scenes/{scene_id}.tmj").read_bytes(), data)
+        reopened["scene"]["cells"][1][1] = "aaa/artwork/0/0#7"
+        placed = self.project.scenes.save(
+            reopened["id"], reopened["scene"], reopened["revision"], self.revision()
+        )
+        self.assertEqual(self.project.scenes.load(placed["id"])["scene"], placed["scene"])
+        self.assertEqual(placed["scene"]["cells"][0][0], "terrain/stone/0/0#5")
+        self.assertEqual(placed["scene"]["objects"], saved["scene"]["objects"])
+        self.assertEqual(
+            (self.project.root / f"scenes/{other['id']}.tmj").read_bytes(), originals[other["id"]]
+        )
 
     def test_busy_and_post_read_drift_are_distinct_from_invalid_input(self):
         from gbc_scene_forge.core.errors import TransactionBusy

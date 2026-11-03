@@ -294,6 +294,7 @@ await test('schema catalogs preserve atlas normalization, animation fallback, st
     animations: [
       {
         name: 'idle',
+        loop: true,
         frames: [
           { region: 'idle', duration: 120 },
           { region: 'idle', duration: 80 },

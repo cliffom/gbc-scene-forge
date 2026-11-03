@@ -16,6 +16,11 @@ def decorate(entry, group, document):
         first = regions[animation["frames"][0]["region"]]
         if (first["kind"] == "sprite") != (group == "sprites"):
             continue
+        if animation.get("loop", True) is False:
+            report.append(
+                {"name": animation["name"], "status": "skipped", "reason": "non-looping sequence"}
+            )
+            continue
         size = None if group == "sprites" else int(group)
         if size and (first["width"] % size or first["height"] % size):
             report.append(

@@ -1,3 +1,4 @@
+import { revealArtworkControl, reviewArtwork, saveArtwork } from '../support/artwork-controls.ts';
 /** Bounds and real input acceptance for the shared scene/pixel command hierarchy. */
 import { expect, type Page } from '@playwright/test';
 import { test, clickControl, editorReady, paint } from '../support/browser-fixtures.ts';
@@ -415,6 +416,10 @@ test.describe('editor polish', () => {
     await editorReady(page);
     await page.locator('#scenes').selectOption({ index: 1 });
     await page.locator('#show-artwork').click();
+    await page.locator('#art-existing-mode').click();
+    await expect(page.locator('#artwork-heading')).toHaveText('Open artwork');
+    await expect(page.locator('#document-switcher')).toBeHidden();
+    await expect(page.locator('#art-source-help')).not.toBeEmpty();
     await expect(page.locator('#art-source')).toBeEnabled();
     for (const [width, height] of sizes) {
       await page.setViewportSize({ width, height });
@@ -435,7 +440,10 @@ test.describe('editor polish', () => {
       ).toBe(true);
       await page.screenshot({ path: info.outputPath(`setup-${width}-${height}.png`) });
     }
-    await page.locator('#art-id').fill('toolbar_tile');
+    await page.locator('#art-new-mode').click();
+    await expect(page.locator('#artwork-heading')).toHaveText('New artwork');
+    await expect(page.locator('#document-switcher')).toBeHidden();
+    await (await revealArtworkControl(page, 'art-id')).fill('toolbar_tile');
     await page
       .locator('#art-name')
       .fill('A long artwork name for a reusable terrain variation and recovery checkpoint');
@@ -455,7 +463,7 @@ test.describe('editor polish', () => {
     await pencil.check();
     await page.locator('#art-canvas').click({ position: { x: 8, y: 8 } });
     await expect(page.getByRole('button', { name: 'Undo', exact: true }).last()).toBeEnabled();
-    await page.locator('#art-review').click();
+    await reviewArtwork(page);
     await expect(page.locator('#art-save')).toBeEnabled();
     const density = await page.context().newCDPSession(page);
     for (const [width, height, scale] of [...sizes.map(([w, h]) => [w, h, 1]), [1024, 640, 1.25]]) {
@@ -509,16 +517,73 @@ test.describe('editor polish', () => {
     await density.detach();
     await page.locator('#art-close').click();
     await page.locator('#show-artwork').click();
+    await revealArtworkControl(page, 'art-drafts');
     await expect(page.getByRole('button', { name: 'Recover copy', exact: true })).toBeVisible();
     await page.screenshot({ path: info.outputPath('recovery.png') });
+    await revealArtworkControl(page, 'art-drafts');
     await page.getByRole('button', { name: 'Recover copy', exact: true }).click();
     await expect(page.locator('#art-canvas')).toBeFocused();
-    await page.locator('#art-review').click();
+    await reviewArtwork(page);
     await expect(page.locator('#art-save')).toBeEnabled();
-    await page.locator('#art-save').click();
-    await expect(page.locator('#artwork-dialog')).toBeHidden();
+    await saveArtwork(page);
+    await page.locator('#art-close').click();
+    await expect(page.locator('#artwork-dialog')).not.toBeVisible();
     await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   });
+  test('artwork setup has clear navigation, complete Library labels and name-derived identity', async ({
+    page,
+    forge,
+  }, info) => {
+    await page.goto(forge.url);
+    await editorReady(page);
+    for (const [width, height] of sizes) {
+      await page.setViewportSize({ width, height });
+      const browse = page.locator('#art-browse');
+      await expect(browse).toHaveText('Browse / recover');
+      expect(
+        await browse.evaluate((node) => {
+          const range = document.createRange();
+          range.selectNodeContents(node);
+          const bounds = node.getBoundingClientRect();
+          return (
+            [...range.getClientRects()].every(
+              (rect) =>
+                rect.left >= bounds.left &&
+                rect.right <= bounds.right &&
+                rect.top >= bounds.top &&
+                rect.bottom <= bounds.bottom,
+            ) && node.scrollWidth <= node.clientWidth
+          );
+        }),
+      ).toBe(true);
+    }
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.locator('#show-artwork').click();
+    await expect(page.locator('#document-switcher')).toBeHidden();
+    const name = page.locator('#art-name');
+    const id = await revealArtworkControl(page, 'art-id');
+    await name.fill("Player's Sprite");
+    await expect(id).toHaveValue('players_sprite');
+    await name.fill('Player’s Sprite!');
+    await expect(id).toHaveValue('players_sprite');
+    await name.fill('  Café   Hero  ');
+    await expect(id).toHaveValue('cafe_hero');
+    await name.fill('123 Hero');
+    await expect(id).toHaveValue('art_123_hero');
+    await name.fill('!!!');
+    await expect(id).toHaveValue('artwork');
+    await name.fill("Player's Sprite");
+    await page.screenshot({ path: info.outputPath('name-derived-identity.png') });
+    await id.fill('my_player');
+    await name.fill("Player's Artwork");
+    await expect(id).toHaveValue('my_player');
+    await page.locator('#art-create').click();
+    await expect(page.locator('#document-switcher')).toHaveText("Player's Artwork ▾");
+    await page.locator('#show-artwork').click();
+    await expect(page.locator('#document-switcher')).toHaveText('Documents ▾');
+    await expect(await revealArtworkControl(page, 'art-id')).toHaveValue('new_artwork');
+  });
+
   test('Inspector keyboard traversal keeps controls below the sticky heading', async ({
     page,
     forge,
@@ -576,10 +641,11 @@ test('first-use authoring from visible controls: empty artwork, draw, place, sav
   await page.locator('#art-height').fill('8');
   await page.locator('#art-create').click();
   await page.locator('#art-canvas').click({ position: { x: 8, y: 8 } });
-  await page.locator('#art-review').click();
+  await reviewArtwork(page);
   await expect(page.locator('#art-save')).toBeEnabled();
-  await page.locator('#art-save').click();
-  await expect(page.locator('#artwork-dialog')).toBeHidden();
+  await saveArtwork(page);
+  await page.locator('#art-close').click();
+  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
   await page.locator('#empty-create').click();
   await page.locator('#scene-title').fill('My first scene');
   await page.locator('#scene-form button.primary').click();

@@ -55,31 +55,6 @@ export class TileCache {
     regions: ReadonlyMap<string, Region>,
     retain = true,
   ) {
-    if (!retain) {
-      for (
-        let y = Math.max(0, Math.floor(view.top / size));
-        y < Math.min(layer.cells.length, Math.ceil(view.bottom / size));
-        y++
-      ) {
-        const row = layer.cells[y];
-        for (
-          let x = Math.max(0, Math.floor(view.left / size));
-          x < Math.min(row.length, Math.ceil(view.right / size));
-          x++
-        ) {
-          const [asset, flags] = tileParts(row[x]);
-          const region = regions.get(asset);
-          if (region) {
-            context.save();
-            context.translate(x * size, y * size);
-            tileContext(context, flags, size);
-            context.drawImage(region.image, region.x, region.y, size, size, 0, 0, size, size);
-            context.restore();
-          }
-        }
-      }
-      return;
-    }
     const step = Math.max(1, Math.floor(256 / size));
     const pixels = step * size;
     for (
@@ -97,7 +72,7 @@ export class TileCache {
           .map((row) => row.slice(cx * step, (cx + 1) * step));
         const signature = JSON.stringify(rows);
         const key = `${layer.id}:${size}:${cx}:${cy}`;
-        let chunk = this.chunks.get(key);
+        let chunk = retain ? this.chunks.get(key) : undefined;
         if (
           chunk &&
           (chunk.signature !== signature ||
@@ -134,7 +109,7 @@ export class TileCache {
             }),
           );
           const bytes = canvas.width * canvas.height * 4;
-          while (this.bytes + bytes > this.limit && this.chunks.size) {
+          while (retain && this.bytes + bytes > this.limit && this.chunks.size) {
             const oldest = this.chunks.keys().next().value;
             if (oldest === undefined) {
               break;
@@ -147,12 +122,20 @@ export class TileCache {
             entry.canvas.width = entry.canvas.height = 0;
             this.chunks.delete(oldest);
           }
-          this.bytes += bytes;
+          if (retain) {
+            this.bytes += bytes;
+          }
         }
-        // Touch in LRU order, including entries created above.
-        this.chunks.delete(key);
-        this.chunks.set(key, chunk);
+        // Compose in native pixels before scaling, including non-retained overviews,
+        // so fractional display transforms cannot leave seams between individual tiles.
+        if (retain) {
+          this.chunks.delete(key);
+          this.chunks.set(key, chunk);
+        }
         context.drawImage(chunk.canvas, cx * pixels, cy * pixels);
+        if (!retain) {
+          chunk.canvas.width = chunk.canvas.height = 0;
+        }
       }
     }
   }

@@ -15,6 +15,292 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Saved representation history bounds (PR #158)
+
+- **Scope:** Prepared 0.29.0 working tree based on `355582d`, checked
+  2026-11-02 local time (2026-11-03 UTC), macOS, Node 24.22.1 and
+  Playwright 1.64.1/Chromium at 1440 × 1000 with disposable synthetic artwork.
+- **Method:** Model checks traverse Undo/Redo across valid states on both sides
+  of oversized snapshots after saved-frame reconciliation. Browser automation
+  removes five timing entries from a near-limit sheet, paints pixels, saves a
+  tile representation, traverses retained history, checkpoints, switches documents
+  and saves both earlier and redone work. Ran frontend build, `make lint test`,
+  the complete pixel-artwork browser suite and `make docs-check`.
+- **Result:** Before the fix, Chromium restored a 65,714-byte descriptor after
+  Undo and Return to Scene failed with HTTP 400. The fixed model retains valid
+  older states while removing snapshots that exceed document limits. All 36
+  browser scenarios passed, including pixel Undo/Redo and reviewed saves without
+  failed artwork requests. Lint, all frontend suites and 429 Python tests passed.
+- **Limits:** Invalid history states are removed rather than altering their
+  layout or pixels. Local source Chromium automation only; full browser,
+  installed-wheel, MCP, remote CI and independent human usability checks were
+  not repeated.
+
+## Layout descriptor byte budget (PR #158)
+
+- **Scope:** Prepared 0.29.0 working tree based on `9961110`, checked
+  2026-11-02 local time (2026-11-03 UTC), macOS, Node 24.22.1 and
+  Playwright 1.64.1/Chromium at 1440 × 1000 with disposable synthetic artwork.
+- **Method:** Browser automation opens a saved sheet near the 64 KiB descriptor
+  limit, including a Unicode document name. It attempts oversized animation
+  creation, Unicode frame renaming, tile representation creation and frame
+  appending, then exercises retained Undo/Redo, checkpointing, document switching
+  and reviewed save. Ran frontend build, `make lint test`, the complete
+  pixel-artwork browser suite and `make docs-check`.
+- **Result:** All 35 browser scenarios passed, including rejection before any
+  failed layout request, restoration of the selected sequence, and saving the
+  previous valid layout. Lint, all frontend suites and 429 Python tests passed.
+  The initial regression harness toggled an already-open Properties panel while
+  revealing its nested Representations disclosure; opening that disclosure
+  directly corrected the harness.
+- **Limits:** Local source Chromium automation only; full browser, installed-wheel,
+  MCP, remote CI and independent human usability checks were not repeated.
+
+## Generated representation name bounds (PR #158)
+
+- **Scope:** Prepared 0.29.0 working tree based on `41422ea`, checked
+  2026-11-02 local time (2026-11-03 UTC), macOS, Node 24.22.1 and
+  Playwright 1.64.1/Chromium at 1440 × 1000 with synthetic artwork.
+- **Method:** Browser automation renames a sprite frame to 94, 95 and 100
+  characters and tests a Unicode character at the truncation boundary. Each
+  scenario adds a tile representation, checkpoints, performs Undo/Redo, switches
+  documents, reviews/saves and reopens the exact saved descriptor. Ran frontend
+  build, `make lint test` and `make docs-check`.
+- **Result:** Before the fix, the 95-character scenario failed to checkpoint
+  with HTTP 400. All four corrected scenarios passed, preserving the original
+  frame name and a valid suffixed representation name. Initial test setup had
+  duplicate titles and toggled the already-open Properties panel; unique labels
+  and opening its visible Representations disclosure corrected the harness.
+  Lint, all frontend suites, 429 Python tests and documentation checks passed.
+- **Limits:** Local source Chromium automation only; full browser, installed-wheel,
+  MCP, remote CI and independent human usability checks were not repeated.
+
+## CI playback test timing (PR #158)
+
+- **Scope:** Prepared 0.29.0 working tree based on `84eb2dc`, checked
+  2026-11-02 local time (2026-11-03 UTC), macOS, Node 24.22.1 and
+  Playwright 1.64.1/Chromium. The failed
+  [Ubuntu CI job](https://github.com/cliffom/gbc-scene-forge/actions/runs/41582684705/job/125740894419)
+  tested merge `210a0a8` containing that head.
+- **Method:** Inspected the job log and paused the installed clocks in the
+  scene/artwork replay tests so only explicit clock advances consume frame
+  durations. Built with `FORGE_BUILD_MODE=production` and repeated each replay
+  scenario ten times; ran `make lint test` and `make docs-check`.
+- **Result:** CI reported 82 browser passes, two opt-in skips and one failure:
+  the resumed scene preview had already returned to Play when Pause was asserted.
+  Both corrected playback scenarios passed all 20 local production repetitions.
+  Lint, all frontend suites, 429 Python tests and documentation checks passed.
+- **Limits:** Local Chromium evidence only; the original Ubuntu scheduling race
+  was identified from its log rather than reproduced on the CI runner. The full
+  browser suite, installed-wheel/MCP checks and remote CI were not rerun for this
+  test timing correction.
+
+## Conversion review coverage (PR #158)
+
+- **Scope:** Prepared 0.29.0 source working tree based on `84eb2dc`, checked
+  2026-11-02 local time (2026-11-03 UTC), macOS, Node 24.22.1 and
+  Playwright 1.64.1/Chromium. Disposable synthetic sheets and an 800 × 800 scene.
+- **Method:** Browser acceptance selects two distant sprites beyond pixel 256,
+  using an artwork origin and an object origin override at the scene edge.
+  It samples opposite image corners of both sprites in their review views,
+  compares before/after pixels, fails the second view, retries and commits.
+  Compact checks cover 760 × 640; agent inspected the generic
+  [two-view capture](images/conversion-selected-views.png) at 1440 × 1280.
+  Model checks cover clustered selections, small scenes and every pixel of a
+  sprite larger than one view. Ran frontend build, `make lint test`, the complete
+  pixel-artwork browser suite and `make docs-check`.
+- **Result:** All 30 pixel-artwork browser scenarios, lint, frontend suites,
+  429 Python tests and 20 documentation-checker tests passed. A failed view kept
+  confirmation disabled and hid stale images; retry covered both selected
+  placements before commit. The initial browser attempt missed the second
+  selection because it lay below the canvas viewport; explicit scrolling and a
+  two-object selection assertion corrected the harness. Lint initially rejected
+  test type/non-null assertions; runtime guards corrected those violations.
+- **Limits:** Local source Chromium automation and agent image inspection only;
+  full browser/MCP suites, installed-wheel, other browsers and independent human
+  usability checks were not repeated for this viewport fix.
+
+## Artwork selections across frame history (PR #158)
+
+- **Scope:** Prepared 0.29.0 source working tree based on `84eb2dc`, checked
+  2026-11-02 local time (2026-11-03 UTC), macOS, Node 24.22.1 and
+  Playwright 1.64.1/Chromium at 1440 × 1000. Disposable synthetic sheets.
+- **Method:** Browser pointer/keyboard acceptance reproduces Undo and Redo
+  restoring a selection outside the active frame, then exercises Copy, transform,
+  Paste and reviewed save. Separate scenarios verify retained selections within
+  a frame and across frame boundaries in Sheet view through saved pixel values.
+  Ran `npm run build`, `make lint test`, the complete pixel-artwork browser suite
+  and `make docs-check`.
+- **Result:** Both cross-frame scenarios failed before the fix with an uncaught
+  Copy error and disabled Paste. After reconciliation, all 29 pixel-artwork
+  browser scenarios passed, including four new history scenarios. Lint, all
+  frontend suites, 429 Python tests and 20 documentation-checker tests passed.
+- **Limits:** Local source Chromium automation only; full browser/MCP suites,
+  installed-wheel, other browsers and independent human usability checks were
+  not repeated for this selection fix.
+
+## Artwork playback history and replay (PR #158)
+
+- **Scope:** Prepared 0.29.0 source working tree based on
+  [`f9d4608`](https://github.com/cliffom/gbc-scene-forge/commit/f9d4608ec8ffc183df03222c27ddc118b1c1a918),
+  checked 2026-11-02 on macOS with Node 24.22.1 and Playwright 1.64.1/Chromium.
+  Disposable synthetic artwork; no existing project data modified.
+- **Method:** Reproduced the pending-timer failure with the real pixel model and
+  mounted sheet controls. Added browser acceptance for Play → Undo shortening a
+  sequence, Play → Redo restoring it, and resumed playback. Model and browser
+  regressions distinguish completed non-looping replay from pausing on the last
+  frame in Scene and Artwork, including single-frame sequences. Ran `make lint test`,
+  `npm run build`, artwork/polish browser suites and `make docs-check`. Refreshed
+  the [identity capture](images/artwork-name-identity.png) from the source sample
+  fixture at 1280 × 800 with a generic artwork name; agent visually inspected it.
+- **Result:** Before the fix, the timer threw while reading `duration_ms` from a
+  removed frame and left Pause displayed. After the fix, both history directions
+  stopped playback, restored first-frame status and allowed playback to restart.
+  Completed sequences restarted at frame zero; paused sequences resumed their
+  current pose. All 35 artwork/polish scenarios, the refreshed identity scenario,
+  lint, frontend suites, 429 Python tests and 20 documentation-checker tests passed.
+- **Limits:** Source Chromium automation only; installed-wheel packaging, the
+  complete browser/MCP suites and independent human usability checks were not
+  repeated for these playback fixes. Existing Remaining checks still apply.
+
+## Saved artwork history, offline layout recovery and playback completion (PR #158)
+
+- **Scope:** Prepared 0.29.0 working tree based on
+  [`86efe41`](https://github.com/cliffom/gbc-scene-forge/commit/86efe4165338bae8fca2ee9b8b91001a4a90ac6d),
+  checked 2026-11-02 local time (2026-11-03 UTC), macOS arm64, Python 3.13.13,
+  Node 24.22.1 and Playwright 1.64.1/Chromium. Source and installed production
+  wheel; disposable synthetic sheets and scenes.
+- **Method:** Ran `make lint test`, `make build check-dist`, `make docs-check`,
+  frontend model regressions and installed-wheel artwork/polish browser acceptance.
+  Saved a new tile representation, undid earlier timing, switched documents,
+  saved, redid and saved again. Simulated a layout HTTP 503 and inspected the
+  downloaded live descriptor. Checked one- and two-frame non-looping scene
+  playback completion. Agent visually inspected the
+  [completed preview](images/non-looping-preview-complete.png), captured at
+  1440 × 1000 from the installed-wheel one-frame scenario with transparent
+  synthetic artwork.
+- **Result:** Lint, all frontend suites, 429 Python tests and 20 documentation-
+  checker tests passed. Distribution metadata and seven installed-wheel smoke
+  tests passed. All three new source browser regressions passed. Installed-wheel
+  artwork/polish: 33 passed, including all three new regressions. An initial offline-download test
+  attempt inadvertently closed Properties through its disclosure helper; opening
+  the visible Representations disclosure directly corrected the test setup.
+- **Limits:** Local automated acceptance and agent screenshot inspection only.
+  The complete browser suite, installed MCP suites, independent human usability,
+  Windows/non-Chromium and official Tiled assessments were not repeated for
+  these fixes. Downloaded JSON remains an inspection/reconciliation record, not
+  an automatic import format. No version bump, tag or publication.
+
+## Artwork setup and document restoration feedback (PR #158)
+
+- **Scope:** Prepared 0.29.0 working tree based on
+  [`3a13eb4`](https://github.com/cliffom/gbc-scene-forge/commit/3a13eb471337473c9474eede2abb05f6fd3e23fa),
+  checked 2026-11-02 local time (2026-11-03 UTC), macOS arm64, Python 3.13.13,
+  Node 24.22.1 and Chrome/Playwright 1.64.1. The updated
+  [workflow evaluation](evaluations/unified-editor-ux.md#feedback-refinements)
+  records screenshot scope.
+- **Method:** Ran `make lint test`, `make docs-check`, production
+  `make build check-dist`, installed-wheel artwork/polish browser acceptance and
+  the actual optional-SDK/browser artwork handoff. New regressions use two saved
+  sheets with shared frame/sequence IDs but distinct colors and timings: restore
+  Walk after visiting Idle in the other sheet, change duration, save/reopen and
+  verify only the intended sequence changed. Review checks clear both sheets'
+  comparison/APNG output and regenerate the active sheet's review before saving.
+  Checked complete Library label text at five viewport sizes, setup navigation,
+  name normalization and manual ID overrides; inspected refreshed captures.
+- **Result:** Lint and all frontend suites passed; 429 Python tests and 20
+  documentation-checker tests passed. Production metadata and seven installed-
+  wheel smoke tests passed. All 30 installed-wheel artwork/polish scenarios
+  and the installed optional-SDK/browser artwork handoff passed. The first new restoration test attempted to
+  select a sequence before opening the second document's collapsed animation
+  dock; its next attempt raced the asynchronous document opening. Waiting for
+  that document's heading before revealing its controls fixes the test setup.
+- **Limits:** Scoped local synthetic acceptance and agent screenshot inspection;
+  the complete browser suite was not rerun for this feedback. Its earlier
+  76-scenario result below retains its revision boundary. Independent human,
+  screen-reader, Windows/non-Chromium and official Tiled assessments remain
+  unperformed. No new asset format, release version, tag or publication.
+
+## Human artwork workflow redesign (milestone 15)
+
+- **Scope:** Prepared 0.29.0 working tree on `milestone/15`, based on
+  [`88f25d0`](https://github.com/cliffom/gbc-scene-forge/commit/88f25d0fe771ad66b5e5eb99f818f2125f0309df),
+  checked 2026-11-02 local time (2026-11-03 UTC), macOS arm64, Python 3.13.13,
+  Node 24.22.1 and Chrome/Playwright 1.64.1. The
+  [design review and final captures](evaluations/unified-editor-ux.md) distinguish
+  baseline observations from the delivered interface.
+- **Method:** Ran `make docs-check lint test`, production `make build check-dist`,
+  complete source browser acceptance, installed-wheel artwork/polish acceptance,
+  and actual installed optional-SDK/browser artwork handoff. Inspected fresh
+  Scene/New/Sheet/Frame/Animation/Review captures at 1440 × 900, 1280 × 800 and
+  800 × 640. Exercised keyboard entry, progressive disclosure, recovery,
+  requested-frame targeting, exact review, repeated saves, retained Undo/Redo
+  against the new saved base, and manual/agent continuity. Rechecked resize,
+  pixel equivalence, cache bounds and disposal against the final installed wheel.
+- **Result:** Lint and all frontend suites passed; 429 Python tests and 20
+  documentation-checker tests passed. Distributions/metadata and seven installed-
+  wheel smoke tests passed. All 28 installed-wheel artwork/polish scenarios and
+  the installed optional-SDK/browser artwork handoff passed. The initial full
+  browser run had 75 passes, two optional profile skips and one resize-overview
+  pixel failure caused by individually scaled tiles. Native chunk composition
+  fixed the seams; its first targeted run exposed temporary canvas resources
+  exceeding the retained-resource assertion. Explicitly releasing non-retained
+  chunks fixes that failure, and all three final installed-wheel resize/cache
+  scenarios pass. The complete source browser rerun passed
+  76 scenarios with two optional scalability profiles skipped.
+- **Limits:** Local synthetic acceptance and agent screenshot inspection do not
+  certify human drawing comfort, independent novice success, accessibility,
+  physical-device behavior or production art quality. The complete source browser rerun began before the final New/Existing
+  heading correction; installed-wheel UI and SDK acceptance were rerun with
+  that correction. Three installed-wheel rendering scenarios exercise the
+  chunk-composition/resource fix. Historical
+  milestone evidence below retains its original scope. Windows, non-Chromium,
+  screen-reader and official Tiled/rasterizer assessments remain unperformed.
+  No tag, release publication or independent human study is claimed.
+
+## Native sheets and unified artwork workspaces (milestone 15)
+
+- **Scope:** Prepared 0.29.0 working tree on `milestone/15`, based on
+  [`bbdfb8a`](https://github.com/cliffom/gbc-scene-forge/commit/bbdfb8a69c20ceb740fd08977f431cbaf4ef5b44),
+  checked 2026-11-02 local time (2026-11-03 UTC), macOS arm64, Python 3.13.13,
+  Node 24.22.1, Playwright 1.64.1, Chromium and optional MCP SDK 1.30.0.
+  Plain and optional-MCP production wheels were installed separately.
+- **Method:** Ran documentation checks, lint, Python/frontend suites, production
+  distributions and installed-wheel smoke tests; full browser acceptance and
+  installed-wheel artwork/first-use acceptance; installed-MCP tests and actual
+  SDK/browser handoff/recovery acceptance. The
+  [evaluation](evaluations/native-authoring.md) maps scenarios and records scoped
+  byte measurements. Retained [sheet overview](images/unified-player-sheet.png),
+  [frame/timeline](images/unified-player-frame.png),
+  [800×640 workspace](images/unified-player-compact.png),
+  [conversion review](images/sprite-tile-conversion.png) and
+  [generated APNG](images/native-player-walk.apng) come from synthetic pointer
+  authoring; agent inspection covered the screenshots.
+- **Result:** Lint and all frontend suites passed; 429 Python tests and 20
+  documentation-checker tests passed. Production source/wheel metadata checks
+  and seven installed-wheel smoke tests passed. Full browser acceptance passed
+  75 scenarios with two optional scalability profiles skipped. After the final
+  timeline binding fix, all 19 installed-wheel artwork/first-use scenarios passed,
+  including exact saved 333 ms manual timing followed by another agent pixel edit
+  and browser reopening. The three new installed-wheel workspace scenarios also
+  passed after the final readable conversion-mapping presentation. All 81
+  installed-MCP tests and three SDK/browser
+  scenarios passed. Transparent tree/vine/rounded-edge composites, hidden RGB,
+  origins/timing, migration, stable frame IDs, selected conversion and portable
+  export/reopen passed their scoped assertions. A representative 16×32 candidate
+  shrank from 3,339 to 293 structured JSON bytes; one-pixel edit arguments shrank
+  from 3,418 to 372 bytes, with exact commit/reopen pixels.
+- **Limits:** These are local synthetic results, not archived CI evidence, human
+  usability certification or production art-quality claims. Earlier checks exposed
+  canvas-height regressions, an asset-button selector assumption, an unsupported
+  migration fixture and detached timeline callbacks after Undo/Redo; corrections
+  and regression coverage are described in the evaluation. The full 75-scenario
+  run preceded the final timeline fix; the installed-wheel artwork suite exercised
+  that fix. Official Tiled/rasterizer applications, Windows, non-Chromium,
+  screen-reader and physical-device workflows were not assessed. Plain Tiled
+  animation skips and static, grid-aligned conversion limits remain explicit.
+  Tagging and publication are separate.
+
 ## Mixed scene view filters and combined review (#140)
 
 - **Scope:** Prepared 0.28.0 working tree based on
@@ -612,7 +898,7 @@ Dates, revisions and environments missing from the originals remain unknown.
 - **Scope:** Working-tree implementation reported on 2026-10-27 before publication; initial
   standalone scope preceding 0.2.0. Exact tested revision, OS and Chrome version were not recorded.
 - **Method:** `make lint test build check-dist`, disposable-project Chrome acceptance, official
-  Tiled 1.12.2 load/export/rasterization and read-only intake of the owner's Dover atlas. Repository
+  Tiled 1.12.2 load/export/rasterization and read-only intake of the owner's private atlas. Repository
   evidence includes [the Tiled helper](../tests/support/tiled_interop.py), [historical
   plan](ISSUE-13-PLAN.md) and [project capture](screenshots/standalone-project.png).
 - **Result:** Reported 61 Python regressions, TypeScript model/API/deadline/build checks and four
@@ -621,7 +907,7 @@ Dates, revisions and environments missing from the originals remain unknown.
   protection, sprite thumbnails/origins/drag/nudge/delete/save, and tall-canvas focus coordinates
   passed. Modal errors, canceled discard, search/filter, asset drops, pan, selection inspector and
   980×760 no-overflow layout were checked; desktop/compact captures were reported inspected. Tiled
-  round trips and expected tile/transparent/native-sprite pixels passed. All 13 Dover sprite regions
+  round trips and expected tile/transparent/native-sprite pixels passed. All 13 private-atlas sprite regions
   retained placement, native pixels and save/reopen. Recovery regressions included interrupted
   import/initial creation/deletion and preservation of external edits. Later fixes in this record
   covered locked coherent scene/artwork reads and save/create acknowledgements of their own
@@ -632,7 +918,7 @@ Dates, revisions and environments missing from the originals remain unknown.
   Snap/Alt/nudge/clamp browser checks passed. Legacy connector acceptance also reportedly passed at
   that time.
 - **Limits:** These are historical local reports, not retained test logs or current suite counts.
-  Owner product review remained separate. The Dover source is private and is not a reusable public
+  Owner product review remained separate. The owner-provided source is private and is not a reusable public
   fixture. Legacy connector/Apply results do not create a supported compatibility requirement. Later
   object/layer/preview behavior exceeds the initial plan; use current usage and release notes for
   supported behavior.
@@ -1159,13 +1445,17 @@ check, retaining actual revision, environment, attribution, failures and limits.
 
 - [ ] Have human participants assess prolonged drawing and novice success with integrated new-tile, sprite-variation and mixed authoring workflows; the bounded agent visual assessment and automated SDK/browser checks for #135 do not establish human usability or broad art quality.
 
+### Unified sheet and animation authoring (milestone 15)
+
+- [ ] Have independent users assess prolonged sheet drawing, timeline editing, animation review and manual/agent handoffs; synthetic acceptance and agent screenshot inspection do not establish drawing comfort or production art quality.
+
 ### Scene scalability (#78, #92, #93)
 
 - [ ] Have a human assess prolonged painting, panning and selection on the current consumer Forest project; automated archived-v4 measurements do not establish physical-device editing comfort (#93).
 
 ### Platform, interoperability and publication gaps
 
-- [ ] Run the optional official Tiled/rasterizer interoperability checks for the prepared 0.28.0 baseline, including native RGBA artwork, scene-transfer, object/definition, mixed-scene classification properties and tile metadata compatibility, when those applications are available (#75, #109, #110, #111, #112, #113, #127, #130, #140).
+- [ ] Run the optional official Tiled/rasterizer interoperability checks for the prepared 0.29.0 baseline, including native RGBA sheets/animations, scene-transfer, object/definition, mixed-scene classification properties and tile metadata compatibility, when those applications are available (#75, #109, #110, #111, #112, #113, #127, #130, #140, #149).
 
 - [ ] Record non-Chromium desktop-browser and Windows runtime results with exact versions and workflows; these are outside the automated browser matrix.
 - [ ] Configure the TestPyPI trusted publisher and verify an upload if that channel is needed; the historical 0.1.4 attempt failed with `invalid-publisher`. Local wheel checks and PyPI publication are separate evidence.

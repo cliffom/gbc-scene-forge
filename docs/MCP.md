@@ -76,7 +76,7 @@ and [official Python SDK](https://github.com/modelcontextprotocol/python-sdk/tre
 | Creation | `create_project` (empty or blockout), `create_scene` (cell dimensions), `create_blockout_scene` (pixel/cell settings and camera). | Sample-project creation through MCP. |
 | Scene editing | `edit_scene`: atomic object, tile painting/erasing and layer creation/update/reorder/deletion batches. `place_stamp`: saved composition placement with layer mapping, fresh IDs and dry-run candidates. `save_scene`: validated full canonical layers, tiles, sprites and objects. `rename_scene`, `duplicate_scene`, `delete_scene`: guarded saved lifecycle with deletion consequences. | Semantic terrain brushes; use canonical `save_scene` or browser.  |
 | Project editing | `save_object_definition`, `save_world`, `save_stamp`, `delete_object_definition`, `delete_stamp` reuse native validators and transaction services; deletion previews identify references and retained overrides. | Palette profile/metadata and animation preference editing use browser. No arbitrary import paths. |
-| Artwork | `import_atlas`: bounded upload/preflight/reimport. `list_artwork`, `create_artwork`, `duplicate_artwork`, `open_artwork`, `read_artwork_pixels`, `edit_artwork_pixels`, `review_artwork_candidate`, `commit_artwork`: native static RGBA authoring with explicit candidates and required review receipts. | Arbitrary filesystem paths; layered/animated drawing and automatic approval. |
+| Artwork | `import_atlas`: bounded upload/preflight/reimport. `list_artwork`, `create_artwork`, `duplicate_artwork`, `open_artwork`, `read_artwork_pixels`, `edit_artwork_pixels`, `review_artwork_candidate`, `commit_artwork`: native static/sheet RGBA authoring with explicit candidates and required review receipts. Sheet/layout, frame/APNG review and compact-candidate tools are described below. | Arbitrary filesystem paths; editable document layers and automatic approval. |
 | Review | `review_artwork`: saved/candidate PNG camera and bounded/paged overview. `review_blockout`: full overview and chosen camera frame SVG resources, exact saved/candidate revisions, pixel dimensions and camera intent. | Animated playback and runtime/physics simulation. |
 | Verification | `diagnostics` checks the saved project; `palette_report` checks a guarded saved scene with the existing opt-in profile. | Missing metadata stays unverified; no reachability or hardware-fit certification. |
 | Portability | `export_bundle` returns existing project/scene Tiled ZIP exports as immutable resources. | Arbitrary output paths; exports over 16 MiB use browser. |
@@ -561,12 +561,16 @@ from agent visual inspection and outstanding human/platform work.
 | `review_artwork_candidate` | Project, complete candidate, optional scale/offset/scene context → before/after PNG resource links, paginated references and review receipt. |
 | `commit_artwork` | Project, exact reviewed candidate and required receipt → atomic save acknowledgment with candidate/review, project/artwork revisions, source PNG digest and rewritten scene revisions. |
 
-Only `commit_artwork` writes saved artwork. Other native artwork tools are marked
-read-only: creation, duplication and pixel edits return client-held candidates,
-without saving assets, drafts or placements. Preserve the entire candidate and
-receipt JSON. They carry explicit version, project/document/atlas identity and
-base/content revisions; there is no server candidate cache. Imported artwork
-must be copied to a fresh native identity before pixel editing.
+Only `commit_artwork` writes saved artwork; explicit conversion commits update
+selected scene placements. Creation, duplication and edits produce immutable
+candidates without saving artwork or placements. The default returns a full
+client-held envelope; optional compact output persists a recoverable project-local
+sidecar, so these tools advertise a possible non-destructive write. Preserve the
+entire envelope or compact handle and receipt JSON. They carry explicit
+project/document/atlas identity and base/content revisions. See the
+[sheet and compact workflow](#native-sheets-animation-and-compact-candidates) for
+sidecar limits and recovery. Imported artwork must be copied to a fresh native
+identity before pixel editing.
 
 Pixels are row-major, top-left straight RGBA8 bytes in sRGB, with literal channels
 0..255. Alpha may be partial; exact reads preserve RGB under alpha zero. No GBC
@@ -666,10 +670,10 @@ No automatic rebasing, ambiguous write replay or browser draft mutation occurs.
 For an intentional shared edit, discover/open the native target, inspect the
 review's affected references and commit against its exact base. All placements
 continue referring to that asset. For a variation, duplicate an explicit source
-cell/static sprite and commit the reviewed copy. Duplication replaces no existing
-placements; selected-placement replacement remains separate milestone work.
+cell/static sprite and commit the reviewed copy. Ordinary duplication replaces no existing
+placements; explicit selected-placement variations use the reviewed replacement workflow.
 The [browser pixel editor](user/pixel-artwork.md) adds hand editing and owned drafts
-using the same candidates and guarded services. Layered documents and animation playback are deferred.
+using the same candidates and guarded services. Editable pixel layers remain deferred; native sheet/frame/sequence authoring and timed APNG review use the shared services below.
 The [native MCP regression/SDK workflow](../tests/backend/adapters/test_mcp_native_artwork.py)
 checks the full new-tile loop, strict nested schemas, exact transparency, resources,
 stale receipts, contention, atomic conflict and save/export/reopen. These scripted
@@ -714,3 +718,74 @@ never a silently scaled whole scene. Request another rectangle for larger scenes
 Both resources are produced under the shared verified saved-read service and
 revalidated before returning. A stale candidate base, changed artwork or concurrent
 scene save rejects the review without changing the client-held candidate or project.
+
+## Native sheets, animation and compact candidates
+
+The [sheet contract](UNIFIED-EDITOR-DESIGN.md) defines bounds and portable storage.
+`create_artwork_sheet` takes explicit `frames` and `sequences`; use
+`duplicate_artwork_sheet` with an exact source revision and null grid/cell to copy
+a complete existing sheet. `edit_artwork_layout` replaces frame/sequence arrays
+as a pure immutable candidate edit. Existing frame IDs/geometry/origins cannot
+change; rename/reorder and append are supported. Sequences declare literal frame
+order, duration in milliseconds and looping. All referenced frames share geometry.
+
+Create/open/duplicate/edit calls accept `compact=true`, returning only
+`{handle, project_id, project_revision, revision}`. Candidate arguments accept
+that exact handle or the full original envelope. Handle-based edits return a new
+handle; old handles remain immutable. `read_artwork_pixels` still returns exact
+bounded RGBA, including hidden RGB under alpha zero.
+
+`review_artwork_frame(candidate, frame_id, scale)` returns isolated native/enlarged
+PNG resources; `review_artwork_animation(candidate, sequence_id, scale)` returns a
+self-contained timed `image/apng` resource. Both include a commit review receipt
+for the exact complete candidate and saved bases. APNG scale is 1..16, bounded to
+1,024 pixels per axis and 4,194,304 total output frame pixels. Non-looping review
+plays once; looping review repeats. Editing pixels or timing invalidates review.
+
+```python
+# Continue using the guarded call helper above. No browser interaction is needed.
+frame = lambda key, x: dict(id=key, name=key.title(), kind="sprite", x=x, y=0,
+                            width=8, height=16, origin=[3,12])
+catalog = await call("get_project", project=project)
+candidate = await call("create_artwork_sheet", project=project,
+    project_revision=catalog["revision"], atlas_id="player", name="Player",
+    kind="sprite", width=16, height=16,
+    frames=[frame("idle", 0), frame("step", 8)],
+    sequences=[dict(id="walk", name="Walk", loop=True, frames=[
+        dict(frame_id="idle", duration_ms=120),
+        dict(frame_id="step", duration_ms=240)])], compact=True)
+candidate = await call("edit_artwork_pixels", project=project, candidate=candidate,
+    writes=[dict(x=1,y=2,rgba=[77,160,81,255])])
+review = await call("review_artwork_animation", project=project,
+                    candidate=candidate, sequence_id="walk", scale=4)
+# Inspect review.animation_resource through resources/read before committing.
+saved = await call("commit_artwork", project=project, candidate=candidate,
+                   receipt=review["receipt"])
+```
+
+Handles are scoped to one declared project root. Canonical full envelopes persist
+in `.forge/artwork-candidates/` through server restarts, bounded to 256 records and
+64 MiB per project, with no expiry or automatic eviction. Quota errors leave old
+records intact. `list_artwork_candidates` recovers handles;
+`export_artwork_candidate` returns the full envelope even against a stale saved
+base; `retain_artwork_candidate` restores an exported envelope;
+`release_artwork_candidate` explicitly deletes one sidecar. Missing, corrupt or
+wrong-project handles fail without changing saved artwork. Export before release
+or moving projects: sidecars are excluded from project ZIPs. Artifact resources
+retain the existing session-cache lifetime. Candidate recovery is independent.
+No automatic rebase or replay of an ambiguous save is permitted.
+
+For shared sprite/tile pixels, append an overlapping tile frame with a new ID and
+origin `[0,0]` using layout editing, then review and save it. For explicit placement
+replacement, `review_sprite_tile_conversion` takes `request` with project/scene
+revisions, scene ID, layer ID, 1..64 object IDs, saved target `tile_asset` in
+`atlas/frame` form, and `acknowledge_static=true`, plus a bounded `viewport`.
+It returns exact mapping, before/after PNG resources and a hash-bound `plan`.
+`commit_sprite_tile_conversion(plan)` recomputes the mapping and writes only the
+selected scene atomically. Source pixels/dimensions must match exactly;
+origin-adjusted placement must fit and align to the scene grid. Gameplay metadata
+rejects conversion. Source animation definitions and unselected placements remain;
+selected poses explicitly become static scenery. Layer splitting preserves overlap
+order. Conversion reads at most 16 MiB of map input and produces at most
+1,048,576 tile cells across output layers, within the existing scene limits.
+The browser uses these same services.

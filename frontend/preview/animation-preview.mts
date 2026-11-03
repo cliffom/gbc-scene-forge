@@ -15,6 +15,7 @@ export interface SpriteRegion {
 }
 export interface SpriteAnimation {
   name: string;
+  loop?: boolean;
   frames: { region: string; duration: number }[];
 }
 
@@ -70,16 +71,30 @@ export class AnimationPlayback {
   playing = false;
   speed = 1;
   private elapsed = 0;
+  private completed = false;
 
   choose(animation: SpriteAnimation | null) {
     this.animation = animation;
     this.frame = 0;
     this.elapsed = 0;
     this.playing = false;
+    this.completed = false;
+  }
+  play() {
+    if (!this.animation) {
+      return;
+    }
+    if (this.completed) {
+      this.frame = 0;
+      this.elapsed = 0;
+      this.completed = false;
+    }
+    this.playing = true;
   }
   step(direction: number) {
     this.playing = false;
     this.elapsed = 0;
+    this.completed = false;
     const count = this.animation?.frames.length || 1;
     this.frame = (this.frame + direction + count) % count;
   }
@@ -89,13 +104,22 @@ export class AnimationPlayback {
     }
     const frames = this.animation.frames;
     const cycle = frames.reduce((sum, frame) => sum + frame.duration, 0);
-    this.elapsed += (milliseconds * this.speed) % cycle;
+    this.elapsed +=
+      this.animation.loop === false
+        ? milliseconds * this.speed
+        : (milliseconds * this.speed) % cycle;
     const previous = this.frame;
     while (this.elapsed >= frames[this.frame].duration) {
       this.elapsed -= frames[this.frame].duration;
+      if (this.frame === frames.length - 1 && this.animation.loop === false) {
+        this.playing = false;
+        this.elapsed = 0;
+        this.completed = true;
+        break;
+      }
       this.frame = (this.frame + 1) % frames.length;
     }
-    return previous !== this.frame;
+    return previous !== this.frame || !this.playing;
   }
 }
 
@@ -353,13 +377,17 @@ export function createAnimationPreview(
     });
   }
   lifetime.assign(play, 'onclick', () => {
-    playback.playing = !playback.playing;
+    if (playback.playing) {
+      playback.playing = false;
+    } else {
+      playback.play();
+    }
     stopTimer();
     lastTime = performance.now();
     if (playback.playing) {
       timer = lifetime.frame(tick);
     }
-    render();
+    refresh();
   });
   lifetime.assign(previous, 'onclick', () => {
     stopTimer();

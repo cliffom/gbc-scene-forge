@@ -219,10 +219,10 @@ The message below the tools names the active layer; a hidden layer offers
 
 **Unsaved changes** appears beside the scene selector, and **Save scene** gains
 an accent when edits need saving. The asset library contains **Import…** for
-artwork, Tiled maps and Forge export ZIPs. **Create / edit pixels…** opens the
-[native artwork editor](user/pixel-artwork.md) for blank tiles/static sprites,
-editable copies and shared pixel edits, with separate undo, drafts and guarded
-scene-context review. **Edit artwork…** in the Selection inspector opens the
+artwork, Tiled maps and Forge export ZIPs. **New artwork…** opens the
+[native artwork editor](user/pixel-artwork.md) for creating tiles and sprites, with optional sheet layout. **Edit artwork…** and
+**Browse / recover** open existing artwork, editable copies and recovery. Artwork
+uses separate undo, drafts and guarded scene-context review. **Edit artwork…** in the Selection inspector opens the
 selected placement's source.
 Selecting an object or tiles brings the Selection section to the top of the
 inspector; object edit and remove controls appear before animation settings.

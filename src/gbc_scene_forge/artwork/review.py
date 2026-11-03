@@ -160,6 +160,49 @@ class ArtworkReview:
         self.documents = documents
         self.store = documents.store
 
+    def animation(self, candidate, sequence_id, *, scale=4):
+        from gbc_scene_forge.artwork.animation_review import render
+
+        # Generate against the same dependency validation as a commit review.
+        report = self.review(candidate, scale=1)
+        result = render(candidate, sequence_id, scale)
+        with self.store.read_session(candidate["project_revision"], verify_assets=True) as session:
+            self.documents.validate_base(candidate, session.document)
+            check_receipt(candidate, report["receipt"], session)
+        return {**result, "receipt": report["receipt"]}
+
+    def frame(self, candidate, frame_id, *, scale=4):
+        editable.check_candidate(candidate)
+        require(integer(scale, 1, 16), "Review scale must be within 1..16")
+        d = candidate["descriptor"]
+        require(d["version"] == 2, "Frame reviews require a native sheet")
+        frame = next((f for f in d["frames"] if f["id"] == frame_id), None)
+        require(frame is not None, "Choose an existing frame ID")
+        report = self.review(candidate, scale=1)
+        images = {}
+        for key in ("before", "after"):
+            source = report[key]
+            if source is None:
+                images[key] = None
+                continue
+            width, _, pixels = png.decode(source["native_png"])
+            raw = png.decode(
+                png.crop_rectangle(
+                    width, pixels, frame["x"], frame["y"], frame["width"], frame["height"]
+                )
+            )[2]
+            images[key] = isolated(frame, raw, scale)
+        with self.store.read_session(candidate["project_revision"], verify_assets=True) as session:
+            self.documents.validate_base(candidate, session.document)
+            check_receipt(candidate, report["receipt"], session)
+        return {
+            "candidate_revision": candidate["revision"],
+            "frame": copy.deepcopy(frame),
+            "receipt": report["receipt"],
+            "references": report["references"],
+            **images,
+        }
+
     def review(self, candidate, *, scale=4, scene=None, offset=0):
         """Compare artwork and optionally one explicitly based saved/candidate scene.
 

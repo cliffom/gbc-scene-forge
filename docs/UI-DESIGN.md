@@ -70,20 +70,32 @@ first-use instructions remain usable with this hierarchy.
 
 ## Pixel editor layout
 
-Use the same compact tool/history/clipboard/transform groups as the scene editor.
-Keep Color, Opacity and Transparent aligned at the control baseline, separately
-from zoom/grid. Setup and recovery share one padded scroll surface so dropdowns
-and focus rings stay within their bounds. Explain an empty artwork selector and
-disable its unavailable operations. Keep editing scope and save/conflict feedback
-visible; occasional drawing help and scene-preview coordinates use disclosures.
+Use one active-document switcher in the existing context bar; do not reserve an
+extra navigation row. New artwork is a focused creation flow, separate from
+opening existing assets. Copy setup keeps its name/identity with its source.
+Native artwork opens directly with the requested frame selected. Generate asset
+IDs and disclose advanced overrides and layout/origin options progressively.
 
-The drawing canvas and review column scroll independently between the toolbar
-and save footer. Upper controls scroll when expanded help, placement details and
-swatches exceed the available height. Transparency toggles back to the last
-nonzero opacity and reflects its active state. Test long names, expanded help,
-review comparisons and recoverable drafts in both short and narrow desktop windows. Do not equate bounds assertions
-with human usability testing. See the [polish evaluation](evaluations/editor-polish.md)
-for the checked task flows, screenshots and limits.
+Keep compact tool/history/clipboard/transform groups, color, opacity, transparency,
+zoom and Fit beside the canvas. Show a short shared/new/variation badge beside
+the title. Put frame selection, Sheet/Frame scope and thumbnails below drawing,
+with an optional bounded animation dock containing sequence entries, millisecond
+durations and playback. Hide frame thumbnails in short windows while preserving
+the labeled selector. Properties and exact-change review are separate optional
+panes; narrow windows use an overlay, and compact artwork hides the Library while
+the document switcher retains New/Browse navigation.
+
+Save opens change review and explicit confirmation. Keep its footer reachable
+while the animation dock or comparison scrolls. A successful save retains the
+current document, history and viewport and updates Saved/Modified/New state.
+Return to Scene and Close/discard are separate actions. Document actions contains
+less frequent download/discard/help commands. Preserve revision guards, review
+invalidation, checkpoints and independent scene history. Bounds checks and agent
+inspection do not replace independent human usability testing. The
+[workflow review](evaluations/unified-editor-ux.md) records the motivating findings;
+[current workspace captures](evaluations/unified-editor-ux.md#delivered-interaction-redesign)
+show the delivered layout; the [earlier polish evaluation](evaluations/editor-polish.md) preserves its own
+historical scope and captures.
 
 ## Visual comparison
 

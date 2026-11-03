@@ -16,7 +16,7 @@ Your projects stay on your computer.
 Install the release with Python 3.10 or newer:
 
 ```sh
-python -m pip install gbc-scene-forge==0.28.0
+python -m pip install gbc-scene-forge==0.29.0
 gbc-scene-forge
 ```
 
@@ -146,12 +146,12 @@ make run PROJECT_ROOT="$HOME/Scene Forge Projects"
 
 Use the same location on later launches to see those projects again. Unsupported
 or damaged manifests are reported in the selector so you can identify the folder
-that needs attention. Version 0.28.0 retains manifest version 1. Native editable
+that needs attention. Version 0.29.0 retains manifest version 1. Native editable
 artwork adds an optional field that older versions reject; projects without native
 artwork need no migration. Native pixel operations support browser drawing and optional MCP authoring. See the
 [editable artwork API and limits](docs/EDITABLE-ARTWORK.md#implemented-service-api-130).
 
-### Bring an existing project into 0.28.0
+### Bring an existing project into 0.29.0
 
 Existing 0.2.0 projects keep their artwork, scene IDs and manifest format. To add
 one to the selector, stop Forge and move the whole project folder into your
@@ -331,7 +331,7 @@ at grid 16, within 65,536 cells and 8,192 pixels per axis.
 
 Copy the scene URL to reopen its saved state directly; see [scene links](docs/user/scene-links.md).
 
-See [the 0.28.0 release notes](docs/RELEASE-0.28.0.md) and
+See [the 0.29.0 release notes](docs/RELEASE-0.29.0.md) and
 [building and releasing](docs/RELEASING.md) for release validation and publication.
 
 ## License

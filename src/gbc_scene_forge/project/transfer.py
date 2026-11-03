@@ -131,6 +131,12 @@ def prepare(store, document, encoded, selection, fingerprint):
             )
             descriptor["id"] = new_uuid("document", descriptor["id"])
             descriptor["atlas_id"] = target
+            if descriptor["version"] == 2:
+                # Embedded sheet geometry is part of the native manifest identity.
+                entry["manifest"] = editable.manifest(descriptor)
+                rebuilt, generated = atlas.build_assets(
+                    entry["manifest"], image, width, pixels, entry
+                )
             require(
                 all(
                     e.get("editable", {}).get("id") != descriptor["id"]

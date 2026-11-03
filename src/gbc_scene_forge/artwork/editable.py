@@ -5,7 +5,7 @@ import copy
 import json
 import re
 
-from gbc_scene_forge.artwork import atlas, png
+from gbc_scene_forge.artwork import atlas, png, sheets
 from gbc_scene_forge.artwork import metadata as tile_metadata
 from gbc_scene_forge.core.identities import identity, name
 from gbc_scene_forge.core.serialization import record_bytes
@@ -90,12 +90,18 @@ def check_source(value):
 
 def check_descriptor(value):
     require(
-        isinstance(value, dict) and set(value) == DESCRIPTOR_FIELDS,
+        isinstance(value, dict)
+        and set(value)
+        == (
+            DESCRIPTOR_FIELDS | {"frames", "sequences"}
+            if value.get("version") == 2
+            else DESCRIPTOR_FIELDS
+        ),
         "Unsupported editable descriptor fields",
     )
     require(
         type(value["version"]) is int
-        and value["version"] == 1
+        and value["version"] in (1, 2)
         and identity(value["id"])
         and identifier(value["atlas_id"])
         and identifier(value["region"])
@@ -110,7 +116,7 @@ def check_descriptor(value):
     )
     require(value["kind"] in ("tile", "sprite"), "Choose tile or sprite artwork")
     require(
-        value["kind"] != "tile" or (w == h and w in atlas.GRIDS),
+        value["version"] == 2 or value["kind"] != "tile" or (w == h and w in atlas.GRIDS),
         "Tiles must be one square of 8, 16 or 32 pixels",
     )
     origin = value["origin"]
@@ -138,11 +144,23 @@ def check_descriptor(value):
         check_source(
             {k: v for k, v in provenance.items() if k not in {"project_id", "source_format"}}
         )
+    if value["version"] == 2:
+        sheets.check(value)
     require(len(record_bytes(value)) <= 64 * 1024, "Editable descriptor exceeds 64 KiB")
 
 
 def manifest(descriptor):
     check_descriptor(descriptor)
+    if descriptor["version"] == 2:
+        return {
+            "version": 1,
+            "id": descriptor["atlas_id"],
+            "source_format": "forge-rgba",
+            "png": "atlas.png",
+            "regions": sheets.regions(descriptor),
+            "animations": sheets.animations(descriptor),
+            "sheet": copy.deepcopy(descriptor),
+        }
     return {
         "version": 1,
         "id": descriptor["atlas_id"],
@@ -174,6 +192,26 @@ def check_entry(entry):
         and value["path"] == f"assets/{atlas_id}/editable.json",
         "Invalid editable document pointer",
     )
+    if "sheet" in entry["manifest"]:
+        descriptor = entry["manifest"]["sheet"]
+        check_descriptor(descriptor)
+        require(
+            descriptor["version"] == 2
+            and descriptor["id"] == value["id"]
+            and descriptor["atlas_id"] == atlas_id
+            and manifest(descriptor) == entry["manifest"],
+            "Invalid native sheet manifest",
+        )
+        expected = mappings(descriptor)
+        for group, mapping in expected.items():
+            saved = entry["tiles"].get(group, {})
+            require(
+                set(saved) == set(mapping)
+                and all(type(local) is int for local in saved.values())
+                and set(saved.values()) == set(range(len(mapping))),
+                "Invalid native sheet frame identities",
+            )
+        return
     regions = entry["manifest"].get("regions")
     require(
         isinstance(regions, list) and len(regions) == 1 and isinstance(regions[0], dict),
@@ -309,23 +347,39 @@ def check_candidate(value):
         == digest(canonical_bytes({k: v for k, v in value.items() if k != "revision"})),
         "Artwork candidate digest mismatch",
     )
-    native_manifest = manifest(d)
-    tiles = {
-        str(size): {
-            atlas.tile_key(d["atlas_id"], d["region"], x, y): y * (d["width"] // size) + x
-            for y in range(d["height"] // size)
-            for x in range(d["width"] // size)
-        }
-        if d["kind"] == "tile" and d["width"] % size == d["height"] % size == 0
-        else {}
-        for size in atlas.GRIDS
-    }
-    tiles["sprites"] = {f"{d['atlas_id']}/{d['region']}": 0} if d["kind"] == "sprite" else {}
-    entry = {"manifest": native_manifest, "tiles": tiles}
+    entry = {"manifest": manifest(d), "tiles": mappings(d)}
     require(isinstance(value["metadata"], dict), "Expected candidate tile metadata")
     entry["metadata"] = value["metadata"]
     tile_metadata.check_entry(entry)
     return pixels
+
+
+def mappings(descriptor):
+    """Semantic keys for static or sheet regions, independent of display order."""
+    result = {str(size): {} for size in atlas.GRIDS}
+    result["sprites"] = {}
+    for region in manifest(descriptor)["regions"]:
+        if region["kind"] == "sprite":
+            group = result["sprites"]
+            group[f"{descriptor['atlas_id']}/{region['name']}"] = len(group)
+        else:
+            for size in atlas.GRIDS:
+                if region["width"] % size or region["height"] % size:
+                    continue
+                group = result[str(size)]
+                for y in range(region["height"] // size):
+                    for x in range(region["width"] // size):
+                        group[atlas.tile_key(descriptor["atlas_id"], region["name"], x, y)] = len(
+                            group
+                        )
+    return result
+
+
+def edit_layout(candidate, frames, sequences):
+    check_candidate(candidate)
+    body = {key: copy.deepcopy(value) for key, value in candidate.items() if key != "revision"}
+    body["descriptor"] = sheets.layout(body["descriptor"], frames, sequences)
+    return seal(body)
 
 
 def check_placements(value):

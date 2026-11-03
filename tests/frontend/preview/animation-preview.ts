@@ -32,6 +32,7 @@ assert.equal(playback.frame, 1);
 playback.step(1);
 assert.equal(playback.frame, 0);
 assert.equal(playback.playing, false);
+
 playback.step(-1);
 assert.equal(playback.frame, 1);
 playback.playing = true;
@@ -94,3 +95,60 @@ assert.throws(() =>
   }),
 );
 console.log('Preview preference decoding, mapping restoration and stale-reference pruning pass.');
+
+playback.speed = 1;
+playback.choose({ ...animation, loop: false });
+playback.playing = true;
+playback.advance(1000);
+assert.equal(playback.frame, 1);
+assert.equal(playback.playing, false);
+assert.equal(playback.advance(1000), false);
+
+// Completion must refresh controls even when the displayed frame stays the same.
+playback.speed = 1;
+playback.choose({ ...animation, loop: false });
+playback.playing = true;
+assert.equal(playback.advance(100), true);
+assert.equal(playback.advance(249), false);
+assert.equal(playback.advance(1), true);
+assert.equal(playback.frame, 1);
+assert.equal(playback.playing, false);
+assert.equal(playback.advance(1), false);
+playback.choose({ name: 'pose', loop: false, frames: [{ region: 'left', duration: 100 }] });
+playback.playing = true;
+assert.equal(playback.advance(99), false);
+assert.equal(playback.advance(1), true);
+assert.equal(playback.frame, 0);
+assert.equal(playback.playing, false);
+
+// Completed non-looping runs replay from zero; pausing on the last frame resumes.
+playback.choose({ ...animation, loop: false });
+playback.play();
+playback.advance(350);
+assert.equal(playback.playing, false);
+assert.equal(playback.frame, 1);
+playback.play();
+assert.equal(playback.frame, 0);
+playback.advance(140);
+assert.equal(playback.frame, 1);
+playback.playing = false;
+playback.play();
+assert.equal(playback.frame, 1);
+assert.equal(playback.advance(209), false);
+assert.equal(playback.advance(1), true);
+assert.equal(playback.playing, false);
+playback.play();
+assert.equal(playback.frame, 0);
+playback.choose({ name: 'pose', loop: false, frames: [{ region: 'left', duration: 100 }] });
+playback.play();
+playback.advance(100);
+playback.play();
+assert.equal(playback.playing, true);
+assert.equal(playback.advance(99), false);
+assert.equal(playback.advance(1), true);
+playback.step(0);
+playback.play();
+assert.equal(playback.playing, true);
+playback.choose(null);
+playback.play();
+assert.equal(playback.playing, false);

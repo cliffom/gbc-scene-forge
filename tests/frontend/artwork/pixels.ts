@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { decodeCandidate } from '../../../frontend/artwork/artwork-contracts.mts';
+import { decodeCandidate, decodeDescriptor } from '../../../frontend/artwork/artwork-contracts.mts';
 import { encoded, PixelModel, type Color } from '../../../frontend/artwork/pixel-model.mts';
 import { ArtworkSession } from '../../../frontend/artwork/artwork-session.mts';
 import { record, array, number } from '../../../frontend/shared/decode.mts';
@@ -276,3 +276,184 @@ assert.throws(() =>
 );
 assert.throws(() => decodeCandidate({ ...candidate, operation: 'create' }));
 assert.throws(() => decodeCandidate({ ...candidate, unexpected: true }));
+
+// A successful guarded save advances only this document's base and keeps undo usable.
+const continued = new ArtworkSession(candidate, api);
+continued.model.apply(() => continued.model.put({ x: 2, y: 1 }, hidden));
+assert.equal(continued.changed, true);
+const savedBase = {
+  ...candidate,
+  rgba: encoded(continued.model.pixels),
+  project_revision: 'd'.repeat(64),
+  artwork_revision: 'e'.repeat(64),
+};
+continued.adoptSaved(savedBase);
+assert.equal(continued.changed, false);
+assert.equal(continued.original.artwork_revision, 'e'.repeat(64));
+continued.model.undo();
+assert.equal(continued.changed, true);
+assert.deepEqual(continued.model.color({ x: 2, y: 1 }), [0, 0, 0, 0]);
+continued.model.redo();
+assert.equal(continued.changed, false);
+assert.deepEqual(continued.model.color({ x: 2, y: 1 }), hidden);
+
+const sheet = decodeCandidate({
+  ...candidate,
+  descriptor: {
+    ...candidate.descriptor,
+    version: 2,
+    kind: 'sprite',
+    frames: [
+      {
+        id: 'artwork',
+        name: 'Pose',
+        kind: 'sprite',
+        x: 0,
+        y: 0,
+        width: 8,
+        height: 8,
+        origin: [0, 0],
+      },
+    ],
+    sequences: [
+      { id: 'walk', name: 'Walk', loop: true, frames: [{ frame_id: 'artwork', duration_ms: 120 }] },
+    ],
+  },
+});
+const layoutSession = new ArtworkSession(sheet, () => Promise.reject(Error('Offline layout')));
+layoutSession.model.apply(() => layoutSession.model.put({ x: 1, y: 1 }, hidden));
+layoutSession.model.apply(() => {
+  const d = layoutSession.model.descriptor;
+  if (d.version === 2) {
+    d.frames[0].name = 'Idle';
+    d.sequences[0].frames[0].duration_ms = 277;
+    d.frames.push({ ...d.frames[0], id: 'pose_tiles', kind: 'tile', name: 'Tiles' });
+  }
+});
+const offline = layoutSession.downloadWork();
+await assert.rejects(layoutSession.synchronizeCurrent(), /Offline layout/);
+assert.deepEqual(layoutSession.downloadWork(), offline);
+assert.equal(offline.current_descriptor.version, 2);
+if (offline.current_descriptor.version !== 2) {
+  throw Error('Expected sheet');
+}
+assert.equal(offline.current_descriptor.sequences[0].frames[0].duration_ms, 277);
+assert.equal(offline.current_descriptor.frames[0].name, 'Idle');
+assert.equal(offline.current_descriptor.frames.length, 2);
+assert.equal(offline.candidate.descriptor.version, 2);
+assert.notDeepEqual(offline.current_descriptor, offline.candidate.descriptor);
+assert.deepEqual(
+  new PixelModel({ ...sheet, rgba: offline.current_rgba }).color({ x: 1, y: 1 }),
+  hidden,
+);
+layoutSession.model.undo();
+assert.equal(offline.current_descriptor.frames.length, 2); // Download owns its snapshot.
+layoutSession.model.redo();
+
+// Saving makes frame geometry durable, while earlier pixels, names and timing remain undoable.
+const savedSheet = decodeCandidate({
+  ...sheet,
+  descriptor: structuredClone(layoutSession.model.descriptor),
+  rgba: encoded(layoutSession.model.pixels),
+});
+layoutSession.adoptSaved(savedSheet);
+layoutSession.model.undo();
+const undoLayout = layoutSession.model.descriptor;
+assert.equal(undoLayout.version, 2);
+if (undoLayout.version !== 2) {
+  throw Error('Expected sheet');
+}
+assert.equal(undoLayout.frames.length, 2);
+assert.equal(undoLayout.frames[0].name, 'Pose');
+assert.equal(undoLayout.sequences[0].frames[0].duration_ms, 120);
+layoutSession.model.undo();
+assert.deepEqual(layoutSession.model.color({ x: 1, y: 1 }), [0, 0, 0, 0]);
+layoutSession.model.redo();
+layoutSession.model.redo();
+assert.equal(layoutSession.changed, false);
+
+// Representation-only history becomes a no-op; Undo reaches the earlier pixel edit directly.
+const representationSession = new ArtworkSession(sheet, api);
+representationSession.model.apply(() => representationSession.model.put({ x: 1, y: 1 }, hidden));
+representationSession.model.apply(() => {
+  const d = representationSession.model.descriptor;
+  if (d.version === 2) {
+    d.frames.push({ ...d.frames[0], id: 'pose_tiles', kind: 'tile' });
+  }
+});
+representationSession.adoptSaved({
+  ...sheet,
+  descriptor: structuredClone(representationSession.model.descriptor),
+  rgba: encoded(representationSession.model.pixels),
+});
+assert.equal(representationSession.model.undoStack.length, 1);
+representationSession.model.undo();
+assert.deepEqual(representationSession.model.color({ x: 1, y: 1 }), [0, 0, 0, 0]);
+assert.deepEqual(representationSession.model.descriptor, representationSession.original.descriptor);
+await representationSession.checkpoint();
+assert.equal(representationSession.uncheckpointed, false);
+
+// Rebasing saved frames can invalidate some history without invalidating all of it.
+const bounded = structuredClone(sheet.descriptor);
+if (bounded.version !== 2) {
+  throw Error('Expected sheet');
+}
+for (let total = 1; total <= 1024; total++) {
+  const sequences = Array.from({ length: Math.ceil(total / 256) }, (_, index) => ({
+    id: `seq_${index}`,
+    name: `Sequence ${index}`,
+    loop: true,
+    frames: Array.from({ length: Math.min(256, total - index * 256) }, () => ({
+      frame_id: 'artwork',
+      duration_ms: 120,
+    })),
+  }));
+  if (
+    new TextEncoder().encode(JSON.stringify({ ...bounded, sequences }, null, 2) + '\n').length >
+    65536
+  ) {
+    break;
+  }
+  bounded.sequences = sequences;
+}
+decodeDescriptor(bounded);
+const boundedSession = new ArtworkSession(sheet, api);
+const boundedModel = boundedSession.model;
+boundedModel.apply(() => boundedModel.put({ x: 1, y: 1 }, red));
+boundedModel.apply(() => {
+  boundedModel.descriptor = structuredClone(bounded);
+});
+boundedModel.apply(() => boundedModel.put({ x: 1, y: 1 }, hidden));
+boundedModel.apply(() => {
+  const d = boundedModel.descriptor;
+  if (d.version === 2) {
+    d.sequences.at(-1)?.frames.splice(-5);
+  }
+});
+boundedModel.apply(() => boundedModel.put({ x: 1, y: 1 }, red));
+boundedModel.apply(() => {
+  const d = boundedModel.descriptor;
+  if (d.version === 2) {
+    d.frames.push({ ...d.frames[0], id: 'pose_tiles', kind: 'tile', name: 'Tiles' });
+  }
+});
+boundedSession.adoptSaved(
+  decodeCandidate({
+    ...sheet,
+    descriptor: structuredClone(boundedModel.descriptor),
+    rgba: encoded(boundedModel.pixels),
+  }),
+);
+// Valid older snapshots survive even on the far side of the oversized states.
+assert.equal(boundedModel.undoStack.length, 3);
+while (boundedModel.undoStack.length) {
+  boundedModel.undo();
+  decodeDescriptor(boundedModel.descriptor);
+  assert.equal(boundedModel.descriptor.version === 2 && boundedModel.descriptor.frames.length, 2);
+}
+assert.deepEqual(boundedModel.color({ x: 1, y: 1 }), [0, 0, 0, 0]);
+while (boundedModel.redoStack.length) {
+  boundedModel.redo();
+  decodeDescriptor(boundedModel.descriptor);
+}
+assert.equal(boundedSession.changed, false);

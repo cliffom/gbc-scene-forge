@@ -12,7 +12,8 @@ not product-validation evidence; observed checks belong in [Validation](VALIDATI
 
 ## Ownership and identities
 
-An editable document owns one static tile or sprite and one RGBA image. It uses
+A version-1 editable document owns one static tile or sprite and one RGBA image.
+Version-2 sheets follow the [unified editor contract](UNIFIED-EDITOR-DESIGN.md). It uses
 the existing atlas machinery as a one-region atlas, rather than introducing a
 second scene reference system. The atlas ID, region name, document UUID and
 project UUID are immutable. Display names may change independently. Document IDs
@@ -168,10 +169,12 @@ the original project revision, all declared file digests, all reviewed or rewrit
 and destination absence under its lock. Include unchanged scenes from a review
 receipt in these expectations too. An unrelated cooperating save therefore
 conflicts too; version 1 deliberately uses conservative project-wide guards.
-Scenes are not covered by the manifest digest: adding an atlas can change Tiled
-GID ranges, so read/decode all saved maps against the old catalog, re-encode
-against the new catalog and guard all rewritten maps, as import does today.
-An existing pixel-only edit must not unnecessarily rewrite map/history content.
+Scenes are not covered by the manifest digest. New unused native artwork reads
+and guards saved maps but leaves their bytes/revisions unchanged: each saved map
+already declares its own external tileset GID ranges. Selected replacements encode
+only affected maps. Growing an existing sheet mapping may require range
+re-encoding; guard all maps against their original revisions in that case.
+Pixel-only edits must not unnecessarily rewrite map/history content.
 
 Review is read-only. Return isolated native/enlarged nearest-neighbor PNGs,
 before/after data and bounded scene views through shared rendering. Reuse tile
@@ -339,7 +342,9 @@ The version-1 candidate requires `version`, `project_id`, `document_id`,
 operations. Source is null except for duplication. Metadata carries the original
 saved metadata for edits or selected-source metadata under fresh keys for copies.
 The service validates these policies again at save; recomputing a candidate hash
-cannot bypass saved guards. Candidates are client-held JSON, without a server session.
+cannot bypass saved guards. Full candidates are client-held JSON, without a server session. The optional
+[compact handle extension](UNIFIED-EDITOR-DESIGN.md#compact-candidates-and-animation-reviews)
+persists the same complete envelope in a recoverable project-local sidecar.
 Only duplicate candidates may additionally carry `placements`, described below.
 
 For example, from a current project:

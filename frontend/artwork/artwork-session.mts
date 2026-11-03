@@ -6,13 +6,14 @@ import { decodeCandidate, type Candidate } from './artwork-contracts.mts';
 
 export class ArtworkSession {
   readonly model: PixelModel;
-  readonly original: Candidate;
+  original: Candidate;
   candidate: Candidate;
   receipt: Record<string, unknown> | null = null;
   readonly id = crypto.randomUUID();
   readonly owner = crypto.randomUUID();
   revision: string | null = null;
   checkpointPixels = '';
+  private checkpointLayout = '';
   private checkpointAttempted = false;
   private checkpointUncertain = false;
   private pendingCheckpoints = 0;
@@ -24,15 +25,36 @@ export class ArtworkSession {
     this.original = original;
     this.model = new PixelModel(candidate);
   }
+  adoptSaved(candidate: Candidate) {
+    this.model.retainSavedFrames(candidate.descriptor);
+    this.candidate = candidate;
+    this.original = candidate;
+    this.receipt = null;
+  }
+  downloadWork() {
+    return {
+      original: structuredClone(this.original),
+      candidate: structuredClone(this.candidate),
+      current_descriptor: structuredClone(this.model.descriptor),
+      current_rgba: encoded(this.model.pixels),
+      width: this.model.width,
+      height: this.model.height,
+    };
+  }
   get changed() {
-    return this.original.operation !== 'edit' || encoded(this.model.pixels) !== this.original.rgba;
+    return (
+      this.original.operation !== 'edit' ||
+      encoded(this.model.pixels) !== this.original.rgba ||
+      JSON.stringify(this.model.descriptor) !== JSON.stringify(this.original.descriptor)
+    );
   }
   get uncheckpointed() {
     return (
       this.pendingCheckpoints > 0 ||
       this.checkpointUncertain ||
       ((this.changed || this.checkpointAttempted) &&
-        encoded(this.model.pixels) !== this.checkpointPixels)
+        (encoded(this.model.pixels) !== this.checkpointPixels ||
+          JSON.stringify(this.model.descriptor) !== this.checkpointLayout))
     );
   }
   invalidate() {
@@ -43,7 +65,17 @@ export class ArtworkSession {
     this.queue = next;
     return next;
   }
-  private async synchronize(pixels: Uint8ClampedArray) {
+  private async synchronize(pixels: Uint8ClampedArray, descriptor: Candidate['descriptor']) {
+    if (
+      descriptor.version === 2 &&
+      JSON.stringify(descriptor) !== JSON.stringify(this.candidate.descriptor)
+    ) {
+      this.candidate = await this.api('artwork-layout', decodeCandidate, {
+        candidate: this.candidate,
+        frames: descriptor.frames,
+        sequences: descriptor.sequences,
+      });
+    }
     const previous = bytes(this.candidate.rgba);
     let writes: { x: number; y: number; rgba: number[] }[] = [];
     const send = async () => {
@@ -75,14 +107,18 @@ export class ArtworkSession {
   }
   checkpoint(snapshot = this.model.pixels) {
     const pixels = snapshot.slice();
+    const descriptor = structuredClone(this.model.descriptor);
     // Undo can return to the saved base while an older checkpoint is still queued.
     this.pendingCheckpoints++;
     return this.serialize(async () => {
       if (this.checkpointUncertain) {
         await this.inspectCheckpoint();
       }
-      const candidate = await this.synchronize(pixels);
-      if (encoded(pixels) === this.checkpointPixels) {
+      const candidate = await this.synchronize(pixels, descriptor);
+      if (
+        encoded(pixels) === this.checkpointPixels &&
+        JSON.stringify(descriptor) === this.checkpointLayout
+      ) {
         return;
       }
       this.checkpointAttempted = true;
@@ -99,6 +135,7 @@ export class ArtworkSession {
       });
       this.revision = string(ack.revision);
       this.checkpointPixels = encoded(pixels);
+      this.checkpointLayout = JSON.stringify(descriptor);
       this.checkpointUncertain = false;
     }).finally(() => {
       this.pendingCheckpoints--;
@@ -106,7 +143,8 @@ export class ArtworkSession {
   }
   synchronizeCurrent() {
     const pixels = this.model.pixels.slice();
-    return this.serialize(() => this.synchronize(pixels));
+    const descriptor = structuredClone(this.model.descriptor);
+    return this.serialize(() => this.synchronize(pixels, descriptor));
   }
   private async inspectCheckpoint() {
     // Any checkpoint may have committed without a response. Inspect our exact
@@ -119,11 +157,14 @@ export class ArtworkSession {
       }
       const revision = string(own.revision);
       const draft = await this.api('artwork-draft-download', record, { id: this.id, revision });
-      this.checkpointPixels = decodeCandidate(draft.candidate).rgba;
+      const candidate = decodeCandidate(draft.candidate);
+      this.checkpointPixels = candidate.rgba;
+      this.checkpointLayout = JSON.stringify(candidate.descriptor);
       this.revision = revision;
     } else {
       this.revision = null;
       this.checkpointPixels = '';
+      this.checkpointLayout = '';
     }
     this.checkpointUncertain = false;
   }
@@ -141,6 +182,7 @@ export class ArtworkSession {
     }
     this.revision = null;
     this.checkpointPixels = '';
+    this.checkpointLayout = '';
     this.checkpointAttempted = false;
     this.checkpointUncertain = false;
   }
