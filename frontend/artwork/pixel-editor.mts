@@ -120,6 +120,18 @@ export function createPixelEditor({
       alpha,
     ];
   }
+  let drawingAlpha = 255;
+  function reflectOpacity() {
+    const alpha = Number(input('art-alpha').value);
+    if (Number.isInteger(alpha) && alpha > 0 && alpha <= 255) {
+      drawingAlpha = alpha;
+    }
+    const transparent = alpha === 0;
+    button('art-transparent').setAttribute('aria-pressed', String(transparent));
+    element('art-transparency-label', HTMLElement).textContent = transparent
+      ? 'Resume color'
+      : 'Transparent';
+  }
   function chooseColor(c: Color) {
     input('art-color').value =
       '#' +
@@ -128,6 +140,7 @@ export function createPixelEditor({
         .map((v) => v.toString(16).padStart(2, '0'))
         .join('');
     input('art-alpha').value = String(c[3]);
+    reflectOpacity();
   }
   function draw() {
     const model = session?.model;
@@ -608,8 +621,21 @@ export function createPixelEditor({
     }
   });
   lifetime.assign(button('art-transparent'), 'onclick', () => {
-    input('art-alpha').value = '0';
+    input('art-alpha').value = Number(input('art-alpha').value) === 0 ? String(drawingAlpha) : '0';
+    reflectOpacity();
   });
+  input('art-alpha').addEventListener('input', reflectOpacity, { signal: lifetime.signal });
+  input('art-color').addEventListener(
+    'input',
+    () => {
+      if (Number(input('art-alpha').value) === 0) {
+        input('art-alpha').value = String(drawingAlpha);
+      }
+      reflectOpacity();
+    },
+    { signal: lifetime.signal },
+  );
+  reflectOpacity();
   for (const id of ['art-zoom', 'art-grid']) {
     element(id, HTMLElement).addEventListener(
       'change',

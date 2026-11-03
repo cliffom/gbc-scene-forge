@@ -15,6 +15,29 @@ export function createEditorLayout(
   changeLayout: (apply: () => void) => void = (apply) => apply(),
 ) {
   const main = element('editor-layout', HTMLElement);
+  const inspector = element('inspector-pane', HTMLElement);
+  const inspectorHeading = element('inspector-heading', HTMLElement);
+  function inspectorScrollOffset() {
+    inspector.style.scrollPaddingTop = `${inspectorHeading.offsetHeight + 8}px`;
+  }
+  lifetime.observe(new ResizeObserver(inspectorScrollOffset)).observe(inspectorHeading);
+  inspector.addEventListener(
+    'focusin',
+    (event) => {
+      if (!(event.target instanceof HTMLElement) || inspectorHeading.contains(event.target)) {
+        return;
+      }
+      // Layer radios use their visible row as the focus indicator. Nested layer
+      // scrolling can still leave that row under the outer sticky heading.
+      const target = event.target.closest('.layer-row') ?? event.target;
+      const top = target.getBoundingClientRect().top;
+      const visibleTop = inspectorHeading.getBoundingClientRect().bottom + 4;
+      if (top < visibleTop) {
+        inspector.scrollTop -= visibleTop - top;
+      }
+    },
+    { signal: lifetime.signal },
+  );
   const toolbar = document.querySelector<HTMLElement>('.canvas-toolbar');
   const expandTools = element('expand-scene-tools', HTMLButtonElement);
   function reflectToolbar(expanded: boolean) {

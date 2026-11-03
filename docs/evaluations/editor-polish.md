@@ -188,3 +188,37 @@ Inspector with an active tile selection:
 
 These captures are from the working tree, not the previously installed wheel.
 Earlier captures retain their original revision scope.
+
+
+## Dense pixel controls, Inspector focus and transparency
+
+The prepared 0.27.1 working tree based on
+[`ca90a5a`](https://github.com/cliffom/gbc-scene-forge/commit/ca90a5a9bf674656e3338f4b11457c49cf23c050),
+checked on 2026-11-02, bounds the pixel editor's upper controls in a shrinking
+scroll surface. Expanded help, placement details and multiple palette rows share
+that surface; the drawing workspace retains a minimum height and the save footer
+stays outside the scroller. A synthetic seven-placement variation with 64 colors
+checks physical Save activation and hit tests all three footer actions at
+1440×900, 760×640 and 1440×600.
+
+The Inspector measures its sticky header for native scroll padding. A focus
+handler corrects any remaining header overlap, including visible layer rows whose
+radio inputs are visually hidden and whose list has its own scrolling surface.
+Forward and reverse keyboard traversal at 760×640 checks visible control bounds
+and pointer hit testing after each focus change.
+
+Opacity retains the exact 0..255 RGBA contract. Transparent drawing has a pressed
+state and changes its visible action to Resume color. Toggling again or choosing
+an RGB color restores the last nonzero opacity. Swatches and eyedropper retain
+exact alpha and synchronize the toggle. Saved-pixel assertions verify alpha 128,
+transparent pixels and restored color after a save/reopen cycle.
+
+Source-checkout Chromium captures:
+
+- [Dense variation at 1440×900](../screenshots/editor-polish/dense-pixels-1440-900.png)
+- [Dense variation at 760×640](../screenshots/editor-polish/dense-pixels-760-640.png)
+- [Dense variation at 1440×600](../screenshots/editor-polish/dense-pixels-1440-600.png)
+- [Active transparency at 1440×1000](../screenshots/editor-polish/transparent-active.png)
+
+The agent inspected the desktop and compact dense captures and active transparency.
+Automated results and limitations are scoped in [validation](../VALIDATION.md).

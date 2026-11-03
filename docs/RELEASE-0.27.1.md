@@ -20,11 +20,15 @@ Copy icons beside the project folder and its popover path provide direct copying
 success feedback and a selectable fallback when clipboard access is unavailable.
 
 The pixel editor exposes all eight drawing/selection tools directly, keeps
-Color/Alpha/Transparent aligned, and groups zoom/grid separately. Setup/recovery
+Color/Opacity/Transparent aligned, and groups zoom/grid separately. Setup/recovery
 share a padded scroll surface, an empty source selector explains its unavailable
 state, and the drawing canvas/review column scroll independently above the save
 footer. Drawing help and preview-position settings use contextual disclosures;
-shared-edit scope, review and save feedback remain visible.
+upper controls scroll under height pressure so expanded help, placement details
+and dense palettes leave save actions accessible. Transparent drawing visibly
+toggles back to the previous opacity; choosing a color resumes painting, while
+exact partial alpha remains supported. Inspector keyboard focus stays below its
+sticky header, including layer controls.
 
 This compatible patch changes presentation and input wiring, with no project,
 Tiled, MCP or artwork schema migration and no new runtime dependencies. Scene and

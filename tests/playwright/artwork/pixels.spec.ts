@@ -55,6 +55,7 @@ async function setup(
     python: string;
     start: (root: string, fixture?: boolean) => Promise<string>;
   },
+  dense = false,
 ) {
   const root = join(workspace.folder, 'project');
   const scene = execFileSync(
@@ -72,12 +73,14 @@ r=lambda:p.catalog()['revision']
 a=p.artwork.documents
 for atlas,kind,w,h in [('grass','tile',8,8),('actor','sprite',16,16)]:
     c=a.create(atlas,atlas.title(),kind,w,h,r(),origin=[4,8] if kind=='sprite' else None)
-    c=a.edit(c,[{'x':x,'y':y,'rgba':[76,112,53,255] if (x+y)%3 else [116,151,73,255]} for y in range(h) for x in range(w)])
+    c=a.edit(c,[{'x':x,'y':y,'rgba':([x*32,y*32,(x+y)*16,255] if ${dense ? 'True' : 'False'} and kind=='tile' else ([76,112,53,255] if (x+y)%3 else [116,151,73,255]))} for y in range(h) for x in range(w)])
     a.save(c)
 path,_=bundle(Path(sys.argv[1]).parent/'imported')
 p.artwork.import_atlas(path,r())
 s=p.scenes.create('Workshop',12,10,8,r())
 s['scene']['cells'][0][0]='grass/artwork/0/0'
+if ${dense ? 'True' : 'False'}:
+    s['scene']['cells'][1]=['grass/artwork/0/0']*12
 s['scene']['cells'][1][1]='grass/artwork/0/0#1'
 s['scene']['objects']=[{'id':1,'asset':'actor/artwork','x':32,'y':32,'origin':[4,8]}]
 s['scene']['next_object_id']=2
@@ -685,4 +688,97 @@ test('a pending checkpoint excludes a later canceled gesture through recovery', 
   const saved = new PixelModel(await opened(page, url));
   assert.deepEqual(saved.color({ x: 0, y: 0 }), [255, 0, 0, 255]);
   assert.deepEqual(saved.color({ x: 1, y: 0 }), new PixelModel(original).color({ x: 1, y: 0 }));
+});
+
+test('dense variation controls scroll while reviewed save actions remain clickable', async ({
+  page,
+  workspace,
+}, info) => {
+  await setup(page, workspace, true);
+  await page.locator('input[name=tool][value=select]').check();
+  const points = await page.locator('#scene').evaluate((canvas: HTMLCanvasElement) => {
+    const r = canvas.getBoundingClientRect();
+    return {
+      x: r.x + (4 * r.width) / canvas.width,
+      end: r.x + (52 * r.width) / canvas.width,
+      y: r.y + (12 * r.height) / canvas.height,
+    };
+  });
+  await page.mouse.move(points.x, points.y);
+  await page.mouse.down();
+  await page.mouse.move(points.end, points.y, { steps: 7 });
+  await page.mouse.up();
+  await page.locator('#edit-placement-artwork').click();
+  await page.locator('#art-id').fill('dense_variation');
+  await page.locator('#art-variation').click();
+  await expect(page.locator('#art-shared')).toContainText('7 selected placements');
+  await expect(page.locator('#art-swatches button')).toHaveCount(64);
+  await page.locator('.art-help summary').click();
+  await page.locator('#art-selection-details summary').click();
+  await page.locator('#art-review').click();
+  await expect(page.locator('#art-save')).toBeEnabled();
+  for (const [width, height] of [
+    [1440, 900],
+    [760, 640],
+    [1440, 600],
+  ]) {
+    await page.setViewportSize({ width, height });
+    for (const id of ['art-save', 'art-download', 'art-discard']) {
+      expect(
+        await page.locator('#' + id).evaluate((node) => {
+          const r = node.getBoundingClientRect();
+          const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+          return r.bottom <= innerHeight && !!hit && node.contains(hit);
+        }),
+      ).toBe(true);
+    }
+    await page.screenshot({ path: info.outputPath(`dense-${width}-${height}.png`) });
+  }
+  // Physical click avoids Playwright scrolling a clipped Save into view.
+  const save = await page.locator('#art-save').boundingBox();
+  assert.ok(save);
+  await page.mouse.click(save.x + save.width / 2, save.y + save.height / 2);
+  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+});
+
+test('transparent drawing restores opacity and preserves partial alpha in saved pixels', async ({
+  page,
+  workspace,
+}, info) => {
+  const { url } = await setup(page, workspace);
+  await openGrass(page);
+  await page.locator('#art-color').fill('#cc8833');
+  await page.locator('#art-alpha').fill('128');
+  await draw(page, 0, 0);
+  const transparent = page.locator('#art-transparent');
+  await transparent.click();
+  await expect(transparent).toHaveAttribute('aria-pressed', 'true');
+  await expect(transparent).toContainText('Resume color');
+  await draw(page, 1, 0);
+  await page.screenshot({ path: info.outputPath('transparent-active.png') });
+  await transparent.click();
+  await expect(page.locator('#art-alpha')).toHaveValue('128');
+  await draw(page, 2, 0);
+  await transparent.click();
+  await page.locator('#art-color').fill('#112233');
+  await expect(transparent).toHaveAttribute('aria-pressed', 'false');
+  await draw(page, 3, 0);
+  await page.locator('#art-alpha').fill('0');
+  await expect(transparent).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('radio', { name: 'Eyedropper', exact: true }).check();
+  await draw(page, 0, 0);
+  await expect(page.locator('#art-alpha')).toHaveValue('128');
+  await expect(transparent).toHaveAttribute('aria-pressed', 'false');
+  await page.getByRole('button', { name: 'RGBA 204, 136, 51, 0', exact: true }).click();
+  await expect(transparent).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'RGBA 204, 136, 51, 128', exact: true }).click();
+  await expect(transparent).toHaveAttribute('aria-pressed', 'false');
+  await page.locator('#art-review').click();
+  await page.locator('#art-save').click();
+  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+  const saved = new PixelModel(await opened(page, url));
+  assert.deepEqual(saved.color({ x: 0, y: 0 }), [204, 136, 51, 128]);
+  assert.deepEqual(saved.color({ x: 1, y: 0 }), [204, 136, 51, 0]);
+  assert.deepEqual(saved.color({ x: 2, y: 0 }), [204, 136, 51, 128]);
+  assert.deepEqual(saved.color({ x: 3, y: 0 }), [17, 34, 51, 128]);
 });

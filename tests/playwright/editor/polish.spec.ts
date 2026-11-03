@@ -519,6 +519,43 @@ test.describe('editor polish', () => {
     await expect(page.locator('#artwork-dialog')).toBeHidden();
     await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   });
+  test('Inspector keyboard traversal keeps controls below the sticky heading', async ({
+    page,
+    forge,
+  }) => {
+    await page.setViewportSize({ width: 760, height: 640 });
+    await page.goto(forge.url);
+    await editorReady(page);
+    await page.locator('#scenes').selectOption({ label: 'Riverside' });
+    await expect(page.locator('#scene-save-state')).toHaveText('Saved');
+    await page.locator('#show-recovery').focus();
+    for (const key of ['Shift+Tab', 'Tab']) {
+      for (let i = 0; i < 18; i++) {
+        await page.keyboard.press(key);
+        expect(
+          await page.evaluate(() => {
+            const active = document.activeElement;
+            if (
+              !(active instanceof HTMLElement) ||
+              !active.closest('#inspector-pane') ||
+              active.closest('#inspector-heading')
+            ) {
+              return true;
+            }
+            const target = active.closest('.layer-row') ?? active;
+            const r = target.getBoundingClientRect();
+            const heading = document.getElementById('inspector-heading');
+            if (!heading) {
+              throw Error('Missing Inspector heading');
+            }
+            const header = heading.getBoundingClientRect();
+            const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+            return r.top >= header.bottom && !!hit && target.contains(hit);
+          }),
+        ).toBe(true);
+      }
+    }
+  });
 });
 
 test('first-use authoring from visible controls: empty artwork, draw, place, save, reopen and export', async ({

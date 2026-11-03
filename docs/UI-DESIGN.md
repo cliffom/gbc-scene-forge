@@ -13,8 +13,9 @@ system; hierarchy comes from grouping, spacing and clear labels.
   headers, leaving no extra column between pane and canvas. Closing a pane replaces
   it with a 24px edge handle; the arrow reverses, with Show/Hide tooltips and
   accessible names. The Inspector header stays above its scrolling sections,
-  including when Selection rises to the top. Handles avoid covering canvas
-  controls; Review scene hides them.
+  including when Selection rises to the top. Focused controls scroll below it,
+  including nested layer rows. Handles avoid covering canvas controls; Review
+  scene hides them.
 - **Project path:** copy icons beside the header folder name and the full path in
   its popover copy directly, confirm success with a checkmark and announce status.
   If clipboard access fails, show the selectable path and manual-copy guidance.
@@ -70,15 +71,17 @@ first-use instructions remain usable with this hierarchy.
 ## Pixel editor layout
 
 Use the same compact tool/history/clipboard/transform groups as the scene editor.
-Keep Color, Alpha and Transparent aligned at the control baseline, separately
+Keep Color, Opacity and Transparent aligned at the control baseline, separately
 from zoom/grid. Setup and recovery share one padded scroll surface so dropdowns
 and focus rings stay within their bounds. Explain an empty artwork selector and
 disable its unavailable operations. Keep editing scope and save/conflict feedback
 visible; occasional drawing help and scene-preview coordinates use disclosures.
 
 The drawing canvas and review column scroll independently between the toolbar
-and save footer. Test long names, expanded help, review comparisons and recoverable
-drafts in both short and narrow desktop windows. Do not equate bounds assertions
+and save footer. Upper controls scroll when expanded help, placement details and
+swatches exceed the available height. Transparency toggles back to the last
+nonzero opacity and reflects its active state. Test long names, expanded help,
+review comparisons and recoverable drafts in both short and narrow desktop windows. Do not equate bounds assertions
 with human usability testing. See the [polish evaluation](evaluations/editor-polish.md)
 for the checked task flows, screenshots and limits.
 

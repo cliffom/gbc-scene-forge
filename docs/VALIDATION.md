@@ -15,6 +15,55 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Layer pointer focus after sticky-header scrolling (PR #145 CI)
+
+- **Scope:** Prepared 0.27.1 working tree based on
+  [`ca90a5a`](https://github.com/cliffom/gbc-scene-forge/commit/ca90a5a9bf674656e3338f4b11457c49cf23c050),
+  checked on 2026-11-02 in local Darwin/Python/Node/Chromium. Original Linux CI
+  failure: [checks job](https://github.com/cliffom/gbc-scene-forge/actions/runs/41555546329/job/125653432137).
+- **Method:** Inspected the failed job and its retained browser trace. The test
+  scrolled the selected layer label to the Inspector's top and clicked its center
+  at y=135, inside the sticky header. Checked the full standalone history,
+  metadata, export, navigation and moved-project workflow locally. Added a pointer
+  hit-test assertion before physical clicks so covered targets fail explicitly.
+  Ran the complete `make test-browser` suite, targeted ESLint/format checks,
+  `make docs-check` and `git diff --check`.
+- **Result:** Original CI reported 67 passes, two skips and one failure: clicking
+  the covered layer label did not return focus to the scene. The working tree's
+  measured Inspector scroll padding and nested focus correction address that
+  overlap; the previously failing standalone workflow passes locally. The complete
+  browser run passed 71 scenarios with two optional scalability-profile skips.
+  Targeted lint/format, documentation and whitespace checks passed.
+- **Limits:** Local source-checkout result; no successful remote rerun is claimed.
+  Installed-wheel checks were not repeated. The original CI failure remains
+  linked above and is not superseded by a remote pass.
+
+## Dense pixel controls, keyboard focus and opacity (PR #145 feedback)
+
+- **Scope:** Prepared 0.27.1 working tree based on
+  [`ca90a5a`](https://github.com/cliffom/gbc-scene-forge/commit/ca90a5a9bf674656e3338f4b11457c49cf23c050),
+  checked on 2026-11-02 in local Darwin/Python/Node/Chromium.
+  [Design and source-checkout captures](evaluations/editor-polish.md#dense-pixel-controls-inspector-focus-and-transparency).
+- **Method:** Ran `make lint test`, frontend build and 24 pixel/polish browser
+  scenarios, plus nine pane/layout/Review/editor-lifetime scenarios. Repeated the
+  opacity scenario after adding exact-alpha swatch assertions and numeric-zero
+  normalization. Checked a seven-placement, 64-color variation with expanded help
+  and placement details at 1440×900, 760×640 and 1440×600; used physical Save
+  activation and footer hit tests. Checked Inspector Tab/Shift+Tab visibility and
+  hit testing at 760×640. Inspected dense desktop/compact and active transparency
+  captures; saved/reopened pixels verify alpha 0 and 128 and restored drawing.
+- **Result:** Lint, 413 Python tests, frontend checks, all 33 browser scenarios
+  and the final extended opacity scenario passed. Upper controls scroll without
+  clipping save actions; Inspector focus stays below its sticky header;
+  transparency visibly toggles back to the previous nonzero opacity. Initial
+  test setup placed the Inspector check outside the sample fixture group; it
+  timed out before reaching the scenario. The corrected group and final run pass.
+- **Limits:** Source-checkout Chromium only; full browser, distribution and
+  installed-wheel checks were not repeated. Historical wheel evidence keeps its
+  original scope. No independent human or other-browser usability check is
+  claimed. Exact partial alpha remains supported; no artwork schema change or
+  additional version bump was needed.
+
 ## Responsive focus and persistent Inspector header (PR #145 review)
 
 - **Scope:** Prepared 0.27.1 working tree based on

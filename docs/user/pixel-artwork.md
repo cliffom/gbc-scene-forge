@@ -51,9 +51,11 @@ Tab reaches the selected tool and arrow keys choose adjacent tools. A pointer
 choice returns focus to the canvas. History, clipboard and transforms use the
 same icon style as scene commands; gold marks the selected drawing tool.
 
-Color, Alpha and the checkerboard **Transparent** button sit together; Zoom and
+Color, Opacity and the checkerboard **Transparent** button sit together; Zoom and
 Pixel grid form a separate view group. Shared-edit and selected-variation scope
-remain visible. Expand **Drawing & keyboard help** for occasional instructions.
+remain available in a scrolling controls area when space is limited; save actions
+stay beneath the canvas. Expand **Drawing & keyboard help** for occasional
+instructions.
 
 Drag a rectangular selection, then move it with the Move selection tool or arrow keys
 while the canvas has focus. Copy/Paste uses the artwork's own clipboard and pastes
@@ -62,9 +64,12 @@ quarter-turn rotation affect the selection, or the whole artwork when deselected
 A rotated rectangle must fit without resizing the document; otherwise select a
 smaller area or move it inside the bounds first.
 
-Color and Alpha support generic RGBA, including partial transparency. **Transparent**
-sets alpha to zero; Eraser writes transparent black. The eyedropper and the first
-64 distinct artwork palette swatches preserve exact RGBA, including hidden RGB
+Opacity supports exact alpha values from 0 (transparent) to 255 (opaque), including
+partial transparency for PNG compositing. **Transparent** toggles alpha to zero
+and changes to **Resume color**; click again to restore the previous nonzero
+opacity. Choosing a color also resumes painting at that opacity. Eraser writes
+transparent black. The eyedropper and the first 64 distinct artwork palette
+swatches preserve exact RGBA, including hidden RGB
 beneath transparency. GBC target profiles do not restrict these colors. Zoom uses
 nearest-neighbor pixels; toggle the pixel grid as needed.
 
