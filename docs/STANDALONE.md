@@ -113,7 +113,9 @@ Tab moves between its buttons and Escape dismisses it.
 The left library separates **Artwork**, **Objects** and **Stamps**, with a
 **Blockout** tab when planning presets are available. Arrow keys move
 between tabs; Home/End choose the first/last tab. Artwork contains import, search,
-filters and tile metadata. Objects contains markers and reusable definitions.
+filters and tile metadata. Search matches displayed names and raw asset IDs,
+case-insensitively: both `hero idle` and `sample/hero_idle` find the same sprite.
+Search combines with atlas/kind filters; clearing it restores the filtered inventory. Objects contains markers and reusable definitions.
 Stamps provides a full-width selector, placement and deletion; long names are
 ellipsized with the complete name available on hover. Saving a stamp opens this
 panel. Click the canvas repeatedly to place it; Escape leaves stamp placement.
@@ -177,7 +179,7 @@ camera intent, limits, the opening-forest example and shared services for MCP #5
 
 ## Import and edit
 
-1. Choose **Import… → gbc-atlas bundle**, then **Browse folder…** to select an
+1. Choose **Import artwork or map… → gbc-atlas bundle**, then **Browse folder…** to select an
    atlas folder.
    Choose a manifest if the folder contains several, then confirm with **Import
    atlas**. Its declared PNG is included automatically.
@@ -218,7 +220,7 @@ The message below the tools names the active layer; a hidden layer offers
 **Show layer** there. View changes do not mark the scene as unsaved.
 
 **Unsaved changes** appears beside the scene selector, and **Save scene** gains
-an accent when edits need saving. The asset library contains **Import…** for
+an accent when edits need saving. The asset library contains **Import artwork or map…** for
 artwork, Tiled maps and Forge export ZIPs. **New artwork…** opens the
 [native artwork editor](user/pixel-artwork.md) for creating tiles and sprites, with optional sheet layout. **Edit artwork…** and
 **Browse / recover** open existing artwork, editable copies and recovery. Artwork

@@ -15,6 +15,39 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Library search and import usability (#123, #124, #125)
+
+- **Scope:** Prepared 0.29.1 working tree on `milestone-13-usability`, based on
+  `9c23b5f781f3ad175ffcdfaa97ed85fdb1746343`, checked 2026-11-03 on macOS 27.0.1,
+  Python 3.13.13, Node 24.22.1 and Playwright 1.64.1/Chromium 156.0.8078.4.
+  New Library flows run at 1440 × 900 and 760 × 640 with disposable sample/PNG/Tiled inputs.
+- **Method:** Real pointer/keyboard controls exercise displayed/raw/case-varied
+  names, atlas/kind filters, no-match/clear, selection, brush, layer, Undo/Redo and
+  checkpoint preservation. Import checks cover missing PNG correction, Tiled
+  incompatibility correction, explicit import, input/mode invalidation, delayed
+  successful/failed responses and close/reopen confirmation invalidation.
+  Agent visual inspection covers search ([desktop](screenshots/library-usability/search-1440.png),
+  [compact](screenshots/library-usability/search-760.png)), entry/empty state
+  ([desktop](screenshots/library-usability/entry-1440.png),
+  [compact](screenshots/library-usability/entry-760.png)) and corrected PNG feedback
+  ([desktop](screenshots/library-usability/corrected-1440.png),
+  [compact](screenshots/library-usability/corrected-760.png)).
+- **Result:** `make lint test` passed: 429 Python tests and all 21 TypeScript suites;
+  documentation checks passed. Production build/metadata and all seven installed-wheel
+  smoke checks passed. The initial broad browser run had 96 passes, two optional
+  profiles skipped and two build-identity failures because production assets were
+  tested with development expectations. With the production setting corrected,
+  all 16 affected browser cases passed on the final implementation, as did installed-wheel
+  first use and all three optional MCP/browser workflows. Initial compact test
+  attempts targeted collapsed tools; opening the existing Tools menu resolved those
+  test failures. Both visible-name and raw-ID queries find the same sprite; corrected
+  previews agree with confirmation/footer feedback and changed inputs clear readiness.
+- **Limits:** Synthetic local automation and bounded agent screenshot inspection;
+  compact results/dialogs require their existing scrolling. The final browser rerun
+  covered affected cases; the other broad-run cases preceded the final copy/feedback
+  adjustments. No independent human, Windows, non-Chromium or official Tiled application
+  checks were repeated. Existing remaining checks below still apply. Publication is separate.
+
 ## Saved representation history bounds (PR #158)
 
 - **Scope:** Prepared 0.29.0 working tree based on `355582d`, checked

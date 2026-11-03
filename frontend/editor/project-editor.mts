@@ -797,7 +797,7 @@ export function mountProjectEditor() {
       select('zoom').value = String(number(preview.zoom));
     }
     status.textContent = workspaceState.project
-      ? 'Choose a scene, or import an atlas and create one.'
+      ? 'Choose a scene, or import artwork or a map to get started.'
       : workspaceState.choosingProject
         ? 'Choose a project or create a new one.'
         : 'Name your project to get started.';

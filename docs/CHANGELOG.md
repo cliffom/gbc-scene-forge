@@ -6,6 +6,12 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.29.1 — Library search and import feedback
+
+[Release notes](RELEASE-0.29.1.md). Match displayed artwork names and raw IDs,
+replace corrected preflight errors and clarify artwork/map import guidance.
+Publication is separate.
+
 ## 0.29.0 — Unified editor and native animated artwork
 
 [Release notes](RELEASE-0.29.0.md). Prepared native tile/sprite sheets, timed animation

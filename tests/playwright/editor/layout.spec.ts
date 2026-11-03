@@ -31,7 +31,7 @@ print(p.catalog()['project']['scenes'][0]['id'])
   await page.goto(url);
   await waitForUI(
     page,
-    "document.getElementById('status')?.textContent === 'Choose a scene, or import an atlas and create one.' && document.getElementById('scenes')?.disabled === false",
+    "document.getElementById('status')?.textContent === 'Choose a scene, or import artwork or a map to get started.' && document.getElementById('scenes')?.disabled === false",
   );
   await page.evaluate(
     `document.getElementById('scenes').value=${JSON.stringify(scene)}; document.getElementById('scenes').dispatchEvent(new Event('change'));`,

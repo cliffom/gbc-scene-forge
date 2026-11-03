@@ -50,11 +50,20 @@ test('imports: Generic PNG slicing and bounded external Tiled intake through the
   await click('library-import');
   await set('import-kind', 'png');
   await set('generic-id', 'plain');
+  await click('generic-preflight');
+  await expect(page.locator('#import-form .form-error')).toHaveText('Choose a PNG tilesheet.');
+  await expect(page.locator('#status')).toHaveText('Choose a PNG tilesheet.');
+  await expect(page.locator('#generic-apply')).toBeDisabled();
   await set('sheet-margin', '1');
   await set('sheet-spacing', '1');
   await files('sheet-file', [{ path: 'sheet.png', data: png, binary: true }]);
   await click('generic-preflight');
   await wait("document.getElementById('generic-apply').disabled === false");
+  await expect(page.locator('#import-form .form-error')).toBeEmpty();
+  await expect(page.locator('#status')).toHaveText(
+    'Preview checked. Choose Import checked content to confirm.',
+  );
+  await expect(page.locator('#status')).toHaveAttribute('data-state', '');
   assert.equal(
     await evaluate("document.getElementById('sheet-preview').dataset.sourceWidth"),
     '19',
@@ -130,9 +139,16 @@ test('imports: Generic PNG slicing and bounded external Tiled intake through the
   await click('generic-preflight');
   await wait("document.getElementById('generic-report').textContent.includes('backgroundcolor')");
   await expect(page.locator('#generic-apply')).toBeDisabled();
+  await expect(page.locator('#status')).toContainText('backgroundcolor');
+  await expect(page.locator('#status')).toHaveAttribute('data-state', 'error');
   await bundle(false);
   await click('generic-preflight');
   await wait("document.getElementById('generic-apply').disabled === false");
+  await expect(page.locator('#import-form .form-error')).toBeEmpty();
+  await expect(page.locator('#status')).toHaveText(
+    'Preview checked. Choose Import checked content to confirm.',
+  );
+  await expect(page.locator('#status')).toHaveAttribute('data-state', '');
   assert.ok(
     string(await evaluate("document.getElementById('generic-report').textContent")).includes(
       'art/sheet.png',

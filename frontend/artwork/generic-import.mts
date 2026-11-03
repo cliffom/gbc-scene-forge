@@ -40,6 +40,7 @@ export function createGenericImport({
   const apply = button('generic-apply');
   const report = element('generic-report', HTMLElement);
   const canvas = element('sheet-preview', HTMLCanvasElement);
+  const checkedStatus = 'Preview checked. Choose Import checked content to confirm.';
   let generation = 0;
   const invalidate = () => {
     generation++;
@@ -48,8 +49,18 @@ export function createGenericImport({
     apply.disabled = true;
     report.textContent = '';
     canvas.hidden = true;
+    if (
+      !lifetime.disposed &&
+      status.textContent === checkedStatus &&
+      status.dataset.state !== 'error'
+    ) {
+      status.textContent =
+        'Preview confirmation cleared. Check the current source before importing.';
+    }
   };
   lifetime.cleanup(invalidate);
+  const dialog = element('import-atlas-dialog', HTMLDialogElement);
+  dialog.addEventListener('close', invalidate, { signal: lifetime.signal });
   const mode = select('import-kind');
   lifetime.assign(mode, 'onchange', () => {
     invalidate();
@@ -80,117 +91,132 @@ export function createGenericImport({
     invalidate();
     const request = generation;
     void ports.run(async () => {
-      const kind = mode.value;
-      const id = input('generic-id').value.trim();
-      let data: Record<string, unknown>;
-      let image: string | null = null;
-      if (kind === 'png') {
-        const file = input('sheet-file').files?.[0];
-        if (!file) {
-          throw Error('Choose a PNG tilesheet.');
+      const initialStatus = status.textContent;
+      const current = () => request === generation && !lifetime.disposed && dialog.open;
+      // Only replace feedback still owned by this check. Input changes, closing the
+      // dialog and newer operations make both successful and failed replies stale.
+      const canReport = () => current() && status.textContent === initialStatus;
+      try {
+        const kind = mode.value;
+        const id = input('generic-id').value.trim();
+        let data: Record<string, unknown>;
+        let image: string | null = null;
+        if (kind === 'png') {
+          const file = input('sheet-file').files?.[0];
+          if (!file) {
+            throw Error('Choose a PNG tilesheet.');
+          }
+          image = await encodeFile(file);
+          data = {
+            sheet: {
+              id,
+              png: image,
+              grid: Number(select('sheet-grid').value),
+              margin: Number(input('sheet-margin').value),
+              spacing: Number(input('sheet-spacing').value),
+            },
+            reimport: input('sheet-reimport').checked,
+            project_revision: revision(),
+          };
+        } else {
+          const files: Record<string, string> = {};
+          for (const file of Array.from(input('tiled-files').files ?? [])) {
+            const path = file.webkitRelativePath.split('/').slice(1).join('/');
+            relativeParts(path);
+            if (!/\.(png|json|tmj|tsj)$/i.test(path)) {
+              continue;
+            }
+            if (Object.keys(files).length >= 65 || file.size > 4 * 1024 * 1024) {
+              throw Error('Select at most 65 PNG/JSON files, each at most 4 MiB.');
+            }
+            if (!/\.png$/i.test(path) && file.size > 1024 * 1024) {
+              throw Error(`JSON exceeds 1 MiB: ${path}`);
+            }
+            files[path] = /\.png$/i.test(path) ? await encodeFile(file) : await file.text();
+            if (
+              Object.values(files).reduce((total, value) => total + value.length, 0) >
+              7 * 1024 * 1024
+            ) {
+              throw Error('Selected dependencies exceed 7 MiB encoded.');
+            }
+          }
+          data = {
+            bundle: {
+              map: select('tiled-map').value,
+              files,
+              id,
+              name: input('tiled-title').value.trim(),
+            },
+            project_revision: revision(),
+          };
         }
-        image = await encodeFile(file);
-        data = {
-          sheet: {
-            id,
-            png: image,
-            grid: Number(select('sheet-grid').value),
-            margin: Number(input('sheet-margin').value),
-            spacing: Number(input('sheet-spacing').value),
-          },
-          reimport: input('sheet-reimport').checked,
-          project_revision: revision(),
-        };
-      } else {
-        const files: Record<string, string> = {};
-        for (const file of Array.from(input('tiled-files').files ?? [])) {
-          const path = file.webkitRelativePath.split('/').slice(1).join('/');
-          relativeParts(path);
-          if (!/\.(png|json|tmj|tsj)$/i.test(path)) {
-            continue;
-          }
-          if (Object.keys(files).length >= 65 || file.size > 4 * 1024 * 1024) {
-            throw Error('Select at most 65 PNG/JSON files, each at most 4 MiB.');
-          }
-          if (!/\.png$/i.test(path) && file.size > 1024 * 1024) {
-            throw Error(`JSON exceeds 1 MiB: ${path}`);
-          }
-          files[path] = /\.png$/i.test(path) ? await encodeFile(file) : await file.text();
-          if (
-            Object.values(files).reduce((total, value) => total + value.length, 0) >
-            7 * 1024 * 1024
-          ) {
-            throw Error('Selected dependencies exceed 7 MiB encoded.');
-          }
-        }
-        data = {
-          bundle: {
-            map: select('tiled-map').value,
-            files,
-            id,
-            name: input('tiled-title').value.trim(),
-          },
-          project_revision: revision(),
-        };
-      }
-      lifetime.signal.throwIfAborted();
-      const result = await api(`import-${kind === 'png' ? 'tilesheet' : 'tiled'}`, record, {
-        ...data,
-        dry_run: true,
-      });
-      lifetime.signal.throwIfAborted();
-      if (request !== generation) {
-        return;
-      }
-      if (kind === 'tiled') {
-        report.textContent =
-          result.compatible === true
-            ? `${number(result.layers)} layers · ${number(result.tiles)} tiles\nDependencies: ${array(result.dependencies, string).join(', ')}\n${array(result.notes, string).join('\n')}`
-            : array(result.errors, string).join('\n');
-        if (result.compatible !== true) {
-          return;
-        }
-        data.confirmation = string(result.confirmation);
-      } else {
-        report.textContent = `${array(result.regions, record).length} tiles · ${array(result.added, string).length} added · ${array(result.changed, string).length} changed\n${result.artwork_changed === true ? 'Artwork updated. ' : ''}GBC palette requirements are unverified. Source files stay unchanged.`;
-        const img = new Image();
-        img.src = `data:image/png;base64,${image}`;
-        await img.decode();
         lifetime.signal.throwIfAborted();
-        if (request !== generation) {
+        const result = await api(`import-${kind === 'png' ? 'tilesheet' : 'tiled'}`, record, {
+          ...data,
+          dry_run: true,
+        });
+        lifetime.signal.throwIfAborted();
+        if (!current()) {
           return;
         }
-        const zoom = Math.max(
-          1,
-          Math.min(16, Math.floor(512 / Math.max(number(result.width), number(result.height)))),
-        );
-        canvas.dataset.sourceWidth = String(result.width);
-        canvas.width = number(result.width) * zoom;
-        canvas.height = number(result.height) * zoom;
-        const context = canvas.getContext('2d');
-        if (!context) {
-          throw Error('Canvas unavailable');
-        }
-        context.imageSmoothingEnabled = false;
-        context.drawImage(img, 0, 0, canvas.width, canvas.height);
-        context.strokeStyle = '#ff56e0';
-        context.lineWidth = 1;
-        for (const region of array(result.regions, record)) {
-          context.strokeRect(
-            number(region.x) * zoom + 0.5,
-            number(region.y) * zoom + 0.5,
-            number(region.width) * zoom - 1,
-            number(region.height) * zoom - 1,
+        if (kind === 'tiled') {
+          report.textContent =
+            result.compatible === true
+              ? `${number(result.layers)} layers · ${number(result.tiles)} tiles\nDependencies: ${array(result.dependencies, string).join(', ')}\n${array(result.notes, string).join('\n')}`
+              : array(result.errors, string).join('\n');
+          if (result.compatible !== true) {
+            throw Error(report.textContent);
+          }
+          data.confirmation = string(result.confirmation);
+        } else {
+          report.textContent = `${array(result.regions, record).length} tiles · ${array(result.added, string).length} added · ${array(result.changed, string).length} changed\n${result.artwork_changed === true ? 'Artwork updated. ' : ''}GBC palette requirements are unverified. Source files stay unchanged.`;
+          const img = new Image();
+          img.src = `data:image/png;base64,${image}`;
+          await img.decode();
+          lifetime.signal.throwIfAborted();
+          if (!current()) {
+            return;
+          }
+          const zoom = Math.max(
+            1,
+            Math.min(16, Math.floor(512 / Math.max(number(result.width), number(result.height)))),
           );
+          canvas.dataset.sourceWidth = String(result.width);
+          canvas.width = number(result.width) * zoom;
+          canvas.height = number(result.height) * zoom;
+          const context = canvas.getContext('2d');
+          if (!context) {
+            throw Error('Canvas unavailable');
+          }
+          context.imageSmoothingEnabled = false;
+          context.drawImage(img, 0, 0, canvas.width, canvas.height);
+          context.strokeStyle = '#ff56e0';
+          context.lineWidth = 1;
+          for (const region of array(result.regions, record)) {
+            context.strokeRect(
+              number(region.x) * zoom + 0.5,
+              number(region.y) * zoom + 0.5,
+              number(region.width) * zoom - 1,
+              number(region.height) * zoom - 1,
+            );
+          }
+          canvas.hidden = false;
         }
-        canvas.hidden = false;
+        if (!current()) {
+          return;
+        }
+        prepared = { kind, data };
+        apply.dataset.ready = 'true';
+        apply.disabled = false;
+        if (canReport()) {
+          status.textContent = checkedStatus;
+          status.dataset.state = '';
+        }
+      } catch (error) {
+        if (canReport()) {
+          throw error;
+        }
       }
-      if (request !== generation) {
-        return;
-      }
-      prepared = { kind, data };
-      apply.dataset.ready = 'true';
-      apply.disabled = false;
     });
   });
   lifetime.assign(apply, 'onclick', async () => {

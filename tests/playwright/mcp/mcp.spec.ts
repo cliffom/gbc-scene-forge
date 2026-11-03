@@ -44,7 +44,7 @@ test('mcp: Real stdio-authored plan, browser edits, stale saves and independent 
   const set = async (name: string, value: string) => setControl(page, name, value);
   await page.goto(url);
   await wait(
-    "document.getElementById('status')?.textContent==='Choose a scene, or import an atlas and create one.' && !document.getElementById('scenes').disabled",
+    "document.getElementById('status')?.textContent==='Choose a scene, or import artwork or a map to get started.' && !document.getElementById('scenes').disabled",
   );
   await set('scenes', id);
   await wait("document.getElementById('scene-save-state').textContent==='Saved'");

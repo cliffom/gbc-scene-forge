@@ -1,6 +1,6 @@
 # Import artwork, Tiled maps and Forge scenes
 
-Open **Library → Import…**, then choose **PNG tilesheet** or **Tiled JSON
+Open **Library → Import artwork or map…**, then choose **PNG tilesheet** or **Tiled JSON
 map** in Source type. The existing gbc-atlas bundle workflow remains available.
 These generic inputs need no gbc-atlas installation, manifest or GBC palette setup.
 
@@ -33,6 +33,10 @@ terrain/collision metadata and saved placements survive compatible updates.
 Generic artwork has no RGB5/index metadata. If GBC palette checks are enabled,
 placed generic tiles produce **unverified** requirements rather than a claim of
 hardware compatibility. Ordinary editing/export remains available.
+
+A successful **Preview and check** replaces prior check errors in the dialog and
+footer with confirmation guidance. Changing checked inputs disables import until
+you check again. Replies for changed inputs or a closed dialog are ignored.
 
 ## Tiled JSON maps
 
@@ -90,7 +94,7 @@ The supported JSON fields and tile IDs follow the official
 
 1. In the source project, choose **Export…** and download either **Whole project**
    or **Open scene**. Canvas exports include the chosen canvas snapshot.
-2. In the destination project, open **Library → Import…**,
+2. In the destination project, open **Library → Import artwork or map…**,
    choose **Forge export ZIP**, select the ZIP, then click **Check selection**.
    Intake accepts ZIP files directly; extracted folders use the separate project
    reopening workflow.
@@ -143,6 +147,9 @@ artwork sheets and a transfer manifest as well as their Tiled dependencies.
 Source ZIPs/files remain unchanged and are not needed after import.
 
 ## Preview examples
+
+[Library import entry at 760 × 640](../screenshots/library-usability/entry-760.png)
+and [corrected PNG check feedback](../screenshots/library-usability/corrected-760.png).
 
 ![PNG slicing preview](../screenshots/imports/png-preview.png)
 

@@ -104,7 +104,7 @@ export function createSceneActionsController({
       } else {
         await ports.clearDraft();
         closeScene();
-        status.textContent = 'Choose a scene, or import an atlas and create one.';
+        status.textContent = 'Choose a scene, or import artwork or a map to get started.';
         opened = true;
       }
     });
