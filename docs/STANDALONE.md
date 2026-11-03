@@ -53,7 +53,9 @@ changes must provide explicit migrations; transaction history is not a schema
 version or a migration mechanism.
 
 The folder button beside the GitHub link shows the current directory name.
-Open it to see the full, selectable path and **Copy path**. It is labeled
+Use the adjacent copy icon to copy the path directly, or open the folder button
+to see the full, selectable path with its own copy icon. A checkmark confirms
+copying; if clipboard access is unavailable, the popover offers manual copying. It is labeled
 **Projects folder** in the chooser and **Project folder** inside a project.
 Long names are truncated in the header; full paths wrap inside the popover.
 
@@ -129,13 +131,21 @@ retain text labels; secondary commands use native popovers.
 The desktop layout is checked from 760px wide, including short windows; the
 canvas scrolls independently of the library and inspector.
 
-**Hide Library** and **Hide Inspector**, beside the scene selector, collapse the
-panes independently. The Inspector toggle hides the entire right pane: scene,
-layers, selection, preview and recovery controls. **Show Library** and **Show
-Inspector** remain visible even when both panes are hidden. Use Tab to reach each
+Arrow controls in slim rails at the canvas edges collapse the Library and
+Inspector independently. Their direction reverses when collapsed. The Inspector
+toggle hides the entire right pane: scene, layers, selection, preview and recovery
+controls. Both arrows remain visible when the panes are hidden, with Show/Hide
+tooltips and accessible names. Use Tab to reach each
 button and Enter or Space to activate it; expanded state is exposed to assistive
 technology. Hidden pane controls leave the Tab order. Focus inside a pane moves
 to its toggle when that pane is hidden.
+
+Zoom, Review scene and Fit scene stay on the toolbar's first row. At narrower
+canvas widths, the expand arrow reveals history, clipboard and selection commands.
+At the smallest widths it also reveals drawing tools; its label shows the current
+tool. Press Escape within the expanded toolbar to collapse it. Shortcuts continue
+to work while their controls are collapsed. Review uses an eye icon with a named
+tooltip when space is limited.
 
 The canvas uses the freed width while ordinary authoring remains enabled. Tools,
 brushes, Library category, active layer, selection and unsaved content stay intact;

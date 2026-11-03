@@ -15,13 +15,77 @@ export function createEditorLayout(
   changeLayout: (apply: () => void) => void = (apply) => apply(),
 ) {
   const main = element('editor-layout', HTMLElement);
+  const toolbar = document.querySelector<HTMLElement>('.canvas-toolbar');
+  const expandTools = element('expand-scene-tools', HTMLButtonElement);
+  function reflectToolbar(expanded: boolean) {
+    toolbar?.classList.toggle('toolbar-expanded', expanded);
+    expandTools.setAttribute('aria-expanded', String(expanded));
+    const tool = document.querySelector<HTMLInputElement>('input[name=tool]:checked');
+    const name =
+      tool?.closest('.tool')?.querySelector('.tool-label')?.textContent?.trim() || 'Paint';
+    const label = `${expanded ? 'Collapse' : 'Expand'} tools (${name})`;
+    expandTools.setAttribute('aria-label', label);
+    expandTools.title = label;
+    const text = expandTools.querySelector('.toolbar-tool-name');
+    if (text) {
+      text.textContent = `Tools · ${name}`;
+    }
+  }
+  lifetime.assign(expandTools, 'onclick', () => {
+    changeLayout(() => reflectToolbar(expandTools.getAttribute('aria-expanded') !== 'true'));
+  });
+  toolbar?.addEventListener(
+    'change',
+    () => reflectToolbar(expandTools.getAttribute('aria-expanded') === 'true'),
+    { capture: true, signal: lifetime.signal },
+  );
+  toolbar?.addEventListener(
+    'keydown',
+    (event) => {
+      if (
+        event.key === 'Escape' &&
+        expandTools.checkVisibility() &&
+        expandTools.getAttribute('aria-expanded') === 'true' &&
+        !document.querySelector('[popover]:popover-open')
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        expandTools.focus({ preventScroll: true });
+        changeLayout(() => reflectToolbar(false));
+      }
+    },
+    { signal: lifetime.signal },
+  );
+  if (toolbar) {
+    lifetime
+      .observe(
+        new ResizeObserver(() => {
+          const focused = document.activeElement;
+          if (
+            focused instanceof HTMLElement &&
+            toolbar.contains(focused) &&
+            !focused.checkVisibility()
+          ) {
+            const target = expandTools.checkVisibility()
+              ? expandTools
+              : element('review-mode', HTMLButtonElement);
+            target.focus({ preventScroll: true });
+          }
+        }),
+      )
+      .observe(toolbar);
+  }
+  lifetime.cleanup(() => reflectToolbar(false));
+  reflectToolbar(false);
   function reflectPane(name: 'library' | 'inspector', expanded: boolean) {
     element(`${name}-pane`, HTMLElement).hidden = !expanded;
     main.classList.toggle(`${name}-collapsed`, !expanded);
     const toggle = element(`toggle-${name}`, HTMLButtonElement);
     toggle.setAttribute('aria-expanded', String(expanded));
     const label = name === 'library' ? 'Library' : 'Inspector';
-    toggle.textContent = `${expanded ? 'Hide' : 'Show'} ${label}`;
+    const action = `${expanded ? 'Hide' : 'Show'} ${label}`;
+    toggle.setAttribute('aria-label', action);
+    toggle.title = action;
   }
   function showPane(name: 'library' | 'inspector', expanded: boolean) {
     const pane = element(`${name}-pane`, HTMLElement);
@@ -145,6 +209,9 @@ export function createEditorLayout(
   reflectPaletteState();
   return {
     showLibrary,
+    syncToolbar() {
+      reflectToolbar(expandTools.getAttribute('aria-expanded') === 'true');
+    },
     enableBlockout(enabled: boolean) {
       const tab = element('blockout-tab', HTMLButtonElement);
       tab.hidden = !enabled;

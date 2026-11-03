@@ -74,6 +74,50 @@ test.describe('editor polish', () => {
             '.tool, button, .zoom-controls>label, .selection-scope',
           );
           expect(
+            await page.locator('.canvas-toolbar').evaluate((n) => n.clientHeight),
+          ).toBeLessThanOrEqual(50);
+          const expand = page.locator('#expand-scene-tools');
+          if (await expand.isVisible()) {
+            const zoomTop = await page
+              .locator('#zoom')
+              .evaluate((n) => n.getBoundingClientRect().top);
+            await expand.focus();
+            await page.keyboard.press('Enter');
+            await expect(page.locator('#scene-secondary-tools')).toBeVisible();
+            await expect(page.locator('#scene-drawing-tools')).toBeVisible();
+            await boundedCommands(
+              page,
+              '.canvas-toolbar',
+              '.tool, button, .zoom-controls>label, .selection-scope',
+            );
+            expect(await page.locator('#zoom').evaluate((n) => n.getBoundingClientRect().top)).toBe(
+              zoomTop,
+            );
+            expect(
+              await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight),
+            ).toBe(true);
+            await page.keyboard.press('Escape');
+            await expect(expand).toHaveAttribute('aria-expanded', 'false');
+            await expect(expand).toBeFocused();
+          }
+          // Edge anchors remain reachable without covering commands or the canvas.
+          for (const name of ['library', 'inspector']) {
+            expect(
+              await page.locator(`#toggle-${name}`).evaluate((node, side) => {
+                const r = node.getBoundingClientRect();
+                const workbench = document.querySelector('.workbench')?.getBoundingClientRect();
+                const target = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+                return (
+                  workbench &&
+                  node.contains(target) &&
+                  r.left >= 0 &&
+                  r.right <= innerWidth &&
+                  (side === 'library' ? r.right <= workbench.left : r.left >= workbench.right)
+                );
+              }, name),
+            ).toBe(true);
+          }
+          expect(
             await page.locator('#viewport').evaluate((n) => n.clientHeight),
           ).toBeGreaterThanOrEqual(160);
           if (library && inspector) {
@@ -102,6 +146,81 @@ test.describe('editor polish', () => {
     );
     await page.screenshot({ path: info.outputPath('scene-scaled.png') });
     await density.detach();
+  });
+
+  test('project path icons copy from the header and popover, with a selectable fallback', async ({
+    page,
+    context,
+    forge,
+  }, info) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.goto(forge.url);
+    await editorReady(page);
+    const path = await page.locator('#folder-path').textContent();
+    expect(path).toBeTruthy();
+    const headerCopy = page.locator('#copy-project-folder');
+    await expect(headerCopy).toHaveAccessibleName('Copy project folder path');
+    await headerCopy.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#project-copy-status')).toHaveText('Path copied.');
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(path);
+    await expect(page.locator('#folder-popover')).toBeHidden();
+    await expect(headerCopy).toBeFocused();
+
+    await page.locator('#project-folder').click();
+    await page.locator('#copy-folder').click();
+    await expect(page.locator('#folder-copy-status')).toHaveText('Path copied.');
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(path);
+    await page.screenshot({ path: info.outputPath('folder-copy-success.png') });
+    await page.keyboard.press('Escape');
+    // Permission failures expose a manual path without requiring an extra search.
+    await page.evaluate(() => {
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: {
+          writeText: () => Promise.reject(new Error('Clipboard unavailable')),
+        },
+      });
+    });
+    await headerCopy.click();
+    await expect(page.locator('#folder-popover')).toBeVisible();
+    await expect(page.locator('#folder-copy-status')).toContainText('Select the path');
+    await expect(page.locator('#copy-folder')).toBeEnabled();
+    await expect(headerCopy).toHaveAttribute('title', 'Copy project folder path');
+    await page.setViewportSize({ width: 760, height: 640 });
+    await page.locator('#folder-path').evaluate((node) => {
+      node.textContent = '/long-project-name/'.repeat(20);
+    });
+    await boundedCommands(page, '#folder-popover', '#folder-path, #copy-folder');
+    await boundedCommands(page, '.masthead', '#project-folder, #copy-project-folder, .github-link');
+    await page.screenshot({ path: info.outputPath('folder-copy-compact.png') });
+  });
+
+  test('collapsed tools reflect shortcuts and library choices without hiding viewing controls', async ({
+    page,
+    forge,
+  }, info) => {
+    await page.goto(forge.url);
+    await editorReady(page);
+    await page.locator('#scenes').selectOption({ index: 1 });
+    await page.setViewportSize({ width: 760, height: 640 });
+    const expand = page.locator('#expand-scene-tools');
+    await page.locator('#scene').focus();
+    await page.keyboard.press('e');
+    await expect(expand).toHaveAccessibleName('Expand tools (Erase)');
+    await page.locator('[data-asset="sample/grass"]').first().click();
+    await expect(expand).toHaveAccessibleName('Expand tools (Paint)');
+    await expand.click();
+    await page.getByRole('radio', { name: 'Select', exact: true }).check();
+    await expect(expand).toHaveAccessibleName('Collapse tools (Select)');
+    await page.screenshot({ path: info.outputPath('toolbar-expanded-compact.png') });
+    await expand.click();
+    await expect(page.getByRole('radio', { name: 'Select', exact: true })).toBeHidden();
+    await page.locator('#review-mode').click();
+    await expect(expand).toBeHidden();
+    await page.locator('#review-mode').press('Escape');
+    await expect(expand).toHaveAccessibleName('Expand tools (Select)');
+    await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   });
 
   test('artwork setup, tools, review and recovery fit short/narrow windows and retain keyboard input', async ({

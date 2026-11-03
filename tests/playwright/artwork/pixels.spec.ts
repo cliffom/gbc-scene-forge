@@ -155,6 +155,7 @@ test('selected tile variation recovers, reviews exact replacements and preserves
     [204, 136, 51, 255],
   );
   // A later normal scene save must retain the adopted replacement.
+  await page.locator('#expand-scene-tools').click();
   await page.locator('input[name=tool][value=paint]').check();
   await page.locator('[data-asset="grass/artwork"]').first().click();
   await paint(page, 20, 20);

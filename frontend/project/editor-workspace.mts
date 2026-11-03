@@ -89,7 +89,9 @@ export function createWorkspaceController({
   folderPopover.addEventListener(
     'toggle',
     () => {
-      element('folder-copy-status', HTMLElement).textContent = '';
+      if (!folderPopover.matches(':popover-open')) {
+        element('folder-copy-status', HTMLElement).textContent = '';
+      }
       positionFolderPopover();
     },
     { signal: lifetime.signal },
@@ -97,20 +99,67 @@ export function createWorkspaceController({
 
   window.addEventListener('resize', positionFolderPopover, { signal: lifetime.signal });
 
-  lifetime.assign(button('copy-folder'), 'onclick', async () => {
-    const copy = button('copy-folder');
-    const feedback = element('folder-copy-status', HTMLElement);
-    copy.disabled = true;
-    try {
-      await navigator.clipboard.writeText(element('folder-path', HTMLElement).textContent || '');
-      feedback.textContent = 'Path copied.';
-    } catch {
-      feedback.textContent = 'Copy unavailable. Select the path above to copy it.';
-    } finally {
-      copy.disabled = false;
-      positionFolderPopover();
+  const copyButtons = [button('copy-project-folder'), button('copy-folder')];
+  let copyFeedbackTimer: ReturnType<typeof setTimeout> | undefined;
+  let copyingFolder = false;
+  function reflectCopyFeedback(copied: boolean) {
+    for (const control of copyButtons) {
+      control.title = copied ? 'Path copied' : 'Copy project folder path';
+      control.querySelector('use')?.setAttribute('href', copied ? '#icon-check' : '#icon-copy');
     }
+  }
+  lifetime.cleanup(() => {
+    reflectCopyFeedback(false);
+    for (const control of copyButtons) {
+      control.removeAttribute('aria-busy');
+    }
+    element('project-copy-status', HTMLElement).textContent = '';
+    element('folder-copy-status', HTMLElement).textContent = '';
   });
+  for (const copy of copyButtons) {
+    lifetime.assign(copy, 'onclick', async () => {
+      if (copyingFolder) {
+        return;
+      }
+      copyingFolder = true;
+      lifetime.cancelTimeout(copyFeedbackTimer);
+      reflectCopyFeedback(false);
+      const feedback = element(
+        copy.id === 'copy-folder' ? 'folder-copy-status' : 'project-copy-status',
+        HTMLElement,
+      );
+      feedback.textContent = '';
+      for (const control of copyButtons) {
+        control.setAttribute('aria-busy', 'true');
+      }
+      try {
+        await navigator.clipboard.writeText(element('folder-path', HTMLElement).textContent || '');
+        if (lifetime.disposed) {
+          return;
+        }
+        feedback.textContent = 'Path copied.';
+        reflectCopyFeedback(true);
+        copyFeedbackTimer = lifetime.timeout(() => reflectCopyFeedback(false), 2000);
+      } catch {
+        if (lifetime.disposed) {
+          return;
+        }
+        if (!folderPopover.matches(':popover-open')) {
+          folderPopover.showPopover();
+        }
+        element('folder-copy-status', HTMLElement).textContent =
+          'Copy unavailable. Select the path above to copy it.';
+      } finally {
+        copyingFolder = false;
+        if (!lifetime.disposed) {
+          for (const control of copyButtons) {
+            control.removeAttribute('aria-busy');
+          }
+          positionFolderPopover();
+        }
+      }
+    });
+  }
 
   lifetime.assign(button('show-new-project'), 'onclick', () => {
     projectFormTouched = true;
@@ -286,6 +335,9 @@ export function createWorkspaceController({
       folderPath.split(/[\\/]/).filter(Boolean).at(-1) || folderPath;
     element('folder-heading', HTMLElement).textContent = folderLabel;
     button('project-folder').disabled = false;
+    for (const copy of copyButtons) {
+      copy.disabled = false;
+    }
     button('project-folder').setAttribute('aria-label', `${folderLabel}: ${folderPath}`);
     button('project-folder').title = folderLabel;
     element('folder-copy-status', HTMLElement).textContent = '';

@@ -21,6 +21,8 @@
       <symbol id="icon-undo" viewBox="0 0 24 24"><path d="M8 4 3 9l5 5 M3 9h11a6 6 0 0 1 0 12h-3"/></symbol>
       <symbol id="icon-redo" viewBox="0 0 24 24"><path d="m16 4 5 5-5 5 M21 9H10a6 6 0 0 0 0 12h3"/></symbol>
       <symbol id="icon-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V3H3v13h5"/></symbol>
+      <symbol id="icon-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+      <symbol id="icon-review" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
       <symbol id="icon-cut" viewBox="0 0 24 24"><circle cx="5" cy="6" r="3"/><circle cx="5" cy="18" r="3"/><path d="m8 8 13 13 M8 16 21 3"/></symbol>
       <symbol id="icon-paste" viewBox="0 0 24 24"><path d="M8 5H4v16h16V5h-4"/><rect x="8" y="2" width="8" height="6" rx="1"/></symbol>
       <symbol id="icon-duplicate" viewBox="0 0 24 24"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V3H3v13h5 M11 15h7 M15 11v7"/></symbol>
@@ -44,10 +46,11 @@
     <div class="connection">
       <div class="folder-control">
         <button id="project-folder" class="folder-button" popovertarget="folder-popover" aria-label="Project folder" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h6l2 3h10v12H3Z"/></svg><span id="folder-name">Project folder</span></button>
+        <button id="copy-project-folder" class="icon-button" aria-label="Copy project folder path" title="Copy project folder path" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-copy"/></svg></button>
+        <span id="project-copy-status" class="sr-only" role="status"></span>
         <div id="folder-popover" class="folder-popover" popover aria-labelledby="folder-heading">
           <h2 id="folder-heading">Project folder</h2>
-          <p id="folder-path" class="folder-path"></p>
-          <button id="copy-folder" class="small">Copy path</button>
+          <div class="folder-path-row"><p id="folder-path" class="folder-path"></p><button id="copy-folder" class="icon-button" aria-label="Copy project folder path" title="Copy project folder path" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-copy"/></svg></button></div>
           <p id="folder-copy-status" class="hint" role="status"></p>
         </div>
       </div>
@@ -84,10 +87,6 @@
       <div class="document-context" role="group" aria-label="Current document">
         <label>Project <select id="switch-project" aria-label="Current project" disabled></select></label>
         <label>Scene <select id="scenes" aria-label="Saved scenes"><option value="">Choose a scene…</option></select></label>
-        <div class="pane-controls" role="group" aria-label="Editor panes">
-          <button id="toggle-library" aria-controls="library-pane" aria-expanded="true">Hide Library</button>
-          <button id="toggle-inspector" aria-controls="inspector-pane" aria-expanded="true" title="Scene properties, layers and selection properties">Hide Inspector</button>
-        </div>
         <span id="scene-save-state" role="status" aria-live="polite"></span>
       </div>
       <div class="document-actions" role="group" aria-label="Document actions">
@@ -118,6 +117,7 @@
       </div>
     </nav>
     <main id="editor-layout">
+      <div class="pane-rail library-rail"><button id="toggle-library" class="pane-toggle" aria-label="Hide Library" title="Hide Library" aria-controls="library-pane" aria-expanded="true"><svg class="command-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button></div>
       <aside id="library-pane" class="library" aria-label="Authoring library">
         <div class="panel-heading"><h2>Library</h2></div>
         <div class="library-tabs" role="tablist" aria-label="Library categories">
@@ -174,14 +174,15 @@
       <section class="workbench" aria-label="Scene canvas">
         <div class="canvas-toolbar">
           <span class="review-mode-label">Review · Pan</span>
-          <div class="tool-group authoring-tools" role="group" aria-label="Editing tools">
+          <div id="scene-drawing-tools" class="tool-group authoring-tools" role="group" aria-label="Editing tools">
             <label class="tool" title="Select (S)"><input type="radio" name="tool" value="select" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-select"/></svg><span class="tool-label">Select</span></label>
             <label class="tool" title="Paint (P)"><input type="radio" name="tool" value="paint" checked disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-pencil"/></svg><span id="paint-label" class="tool-label">Paint</span></label>
             <label class="tool" title="Fill (F)"><input type="radio" name="tool" value="fill" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-fill"/></svg><span class="tool-label">Fill</span></label>
             <label class="tool" title="Erase (E)"><input type="radio" name="tool" value="erase" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-erase"/></svg><span class="tool-label">Erase</span></label>
             <label class="tool" title="Pan (H)"><input type="radio" name="tool" value="pan" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-pan"/></svg><span class="tool-label">Pan</span></label>
           </div>
-          <div class="tool-group authoring-tools" role="group" aria-label="History"><button id="undo" class="icon-button" aria-label="Undo" title="Undo (⌘/Ctrl Z)" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-undo"/></svg></button><button id="redo" class="icon-button" aria-label="Redo" title="Redo (⌘/Ctrl Shift Z)" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-redo"/></svg></button></div>
+          <div id="scene-secondary-tools" class="toolbar-secondary authoring-tools">
+          <div class="tool-group" role="group" aria-label="History"><button id="undo" class="icon-button" aria-label="Undo" title="Undo (⌘/Ctrl Z)" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-undo"/></svg></button><button id="redo" class="icon-button" aria-label="Redo" title="Redo (⌘/Ctrl Shift Z)" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-redo"/></svg></button></div>
           <div class="composition-tools" role="group" aria-label="Selection and clipboard">
           <div class="command-group" role="group" aria-label="Clipboard and selection">
             <button id="copy-selection" class="icon-button" aria-label="Copy" title="Copy (⌘/Ctrl C)" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-copy"/></svg></button><button id="cut-selection" class="icon-button" aria-label="Cut" title="Cut (⌘/Ctrl X)" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-cut"/></svg></button>
@@ -198,7 +199,9 @@
           </div>
           <label class="selection-scope" title="Include tiles and objects across all visible layers when selecting"><input type="checkbox" id="select-all-layers"> Across layers</label>
         </div>
-          <span class="spacer"></span><div class="zoom-controls"><label>Zoom <select id="zoom"><option value="fit" id="fit-zoom-option">Fit</option><option value="1">1×</option><option value="2">2×</option><option value="3" selected>3×</option><option value="4">4×</option><option value="6">6×</option><option value="8">8×</option></select></label><button id="review-mode" aria-pressed="false" disabled>Review scene</button><button id="fit-scene" class="icon-button" aria-label="Fit scene" title="Center and fit the entire scene in the workspace" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-fit"/></svg></button></div>
+          </div>
+          <div class="zoom-controls"><label><span class="zoom-label">Zoom</span> <select id="zoom" aria-label="Zoom"><option value="fit" id="fit-zoom-option">Fit</option><option value="1">1×</option><option value="2">2×</option><option value="3" selected>3×</option><option value="4">4×</option><option value="6">6×</option><option value="8">8×</option></select></label><button id="review-mode" aria-label="Review scene" title="Review scene" aria-pressed="false" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-review"/></svg><span class="review-action-label">Review scene</span></button><button id="fit-scene" class="icon-button" aria-label="Fit scene" title="Center and fit the entire scene in the workspace" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-fit"/></svg></button></div>
+          <button id="expand-scene-tools" class="toolbar-expand authoring-tools" aria-label="Expand tools (Paint)" title="Expand tools" aria-expanded="false" aria-controls="scene-drawing-tools scene-secondary-tools"><span class="toolbar-tool-name">Paint</span><svg class="command-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
         </div>
         <div id="layer-context" class="layer-context" hidden><span id="layer-context-text"></span><button id="context-show-layer" class="small" hidden>Show layer</button></div>
         <div id="viewport" class="viewport" tabindex="0" aria-label="Scene workspace">
@@ -208,6 +211,7 @@
         <div class="canvas-footer"><span id="coordinates" title="Cell column and row, followed by pixel X and Y. All coordinates start at zero.">Cell —, — · Pixel —, —</span><span id="scene-name">No scene open</span><span id="selected-brush">Select a brush</span></div>
         <div class="review-bar"><span class="eyebrow">VIEW</span><label><input id="grid" type="checkbox" checked> Grid</label><label class="snap-control" title="Snap sprite origins to grid intersections. Hold Alt to bypass; arrow keys nudge one pixel."><input id="snap" type="checkbox" checked> Snap to grid</label><label><input id="terrain-overlay" type="checkbox"> Terrain</label><label><input id="collision-overlay" type="checkbox"> Collision</label><span class="hint">Middle drag / Space: pan · Wheel: zoom · Alt: free placement · Arrow keys: 1 px</span></div>
       </section>
+      <div class="pane-rail inspector-rail"><button id="toggle-inspector" class="pane-toggle" aria-label="Hide Inspector" title="Hide Inspector" aria-controls="inspector-pane" aria-expanded="true"><svg class="command-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div>
       <aside id="inspector-pane" class="inspector" aria-label="Scene inspector">
         <section id="scene-panel" class="inspector-panel" aria-label="Scene properties">
           <div class="panel-heading"><h2>Scene properties</h2><span id="dirty" class="tag">NO SCENE</span></div>

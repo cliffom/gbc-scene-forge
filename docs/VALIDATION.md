@@ -15,6 +15,32 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Pane controls, path copy and responsive toolbar (#144 follow-up)
+
+- **Scope:** Prepared 0.27.1 working tree based on
+  [`6e8b7dd`](https://github.com/cliffom/gbc-scene-forge/commit/6e8b7ddf1a470ca89bbb4c6c068a7042dfb1cddd),
+  checked on 2026-11-02 with Darwin 27.0.0, Python 3.13.13, Node 24.22.1 and
+  Chromium 156.0.8078.4. [Decisions and archived captures](evaluations/editor-polish.md#pane-path-and-responsive-toolbar-refinements).
+- **Method:** Agent code/screenshot inspection and synthetic browser input in
+  disposable projects. Ran `make lint test`, production `make build check-dist test-browser`,
+  focused toolbar/pane/review/layout scenarios, and all five polish/first-use
+  scenarios against the installed wheel. Bounds checks include all five desktop
+  sizes and pane combinations, collapsed/expanded toolbar states, fixed viewing
+  controls, keyboard disclosure and current-tool synchronization. Clipboard
+  success uses Chromium permissions; fallback injects a clipboard rejection.
+- **Result:** Lint/docs, 413 Python tests and frontend checks passed. Production
+  metadata/build and seven installed-wheel smoke tests passed. Full browser
+  acceptance passed 65 scenarios; two opt-in scalability profiles were skipped.
+  All five final focused scenarios and all five installed-wheel scenarios passed. Inspection
+  caught stale copy-success feedback after failure, now reset per request. An
+  older compact variation test initially clicked a newly hidden tool; its
+  corrected flow explicitly opens the disclosure and passes.
+- **Limits:** Local source and installed-wheel Chromium evidence, not independent
+  human usability or non-Chrome certification. DPR emulation is not actual OS or
+  browser zoom validation. The injected clipboard failure covers the fallback,
+  not every platform's permission prompt. Original captures/results below retain
+  their earlier working-tree scope. No tag or publication was performed.
+
 ## Editor toolbar and layout polish (#144)
 
 - **Scope:** Prepared 0.27.1 working tree based on

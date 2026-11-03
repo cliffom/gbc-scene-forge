@@ -20,16 +20,19 @@ remain user reports, not a fully reproduced browser/environment combination.
 
 | Task | Prior friction | Implemented behavior and retained tradeoff |
 | --- | --- | --- |
-| Paint, fill, erase, select and pan | Labeled tools plus a separate textual clipboard/action row consume canvas space | Consistent icon tools, history and selection groups share a wrapping toolbar. Familiar commands have names/tooltips; save, review, management and destructive commands retain text. Native radio navigation and scene shortcuts remain. |
-| Copy, transform and reuse a selection | Large Copy/Cut/Paste/Duplicate/Deselect/Save stamp buttons compete with drawing | Grouped 32px commands stay close to the canvas. Transform retains its named popover; Across layers remains visible. Stamps still use the existing placement library. |
+| Paint, fill, erase, select and pan | Labeled tools plus a separate textual clipboard/action row consume canvas space | Consistent icon tools, history and selection groups share a responsive toolbar. Familiar commands have names/tooltips; save, management and destructive commands retain text, while compact review uses a named eye icon. Native radio navigation and scene shortcuts remain. |
+| Copy, transform and reuse a selection | Large Copy/Cut/Paste/Duplicate/Deselect/Save stamp buttons compete with drawing | Grouped 32px commands stay close to the canvas. Transform retains its named popover; Across layers stays with the selection commands, including in the expanded toolbar. Stamps still use the existing placement library. |
+| Copy the project root | Copying requires opening the folder popover and finding a text button | Copy icons beside the header folder and full popover path copy directly. Success uses a checkmark and announced status; clipboard failures expose the selectable path. |
+| Hide/reopen authoring panes | Text buttons occupy the document bar rather than the pane boundary | Independent chevrons stay in narrow edge rails when panes collapse; native keyboard activation, Show/Hide names and focus recovery remain. Rails reserve layout space rather than covering the canvas. |
+| Keep zoom and review available | Automatic toolbar wrapping places viewing controls on another row | A canvas-width disclosure reserves the first row for zoom/review/fit. Secondary commands expand explicitly; very narrow canvases also disclose drawing tools and name the current tool. Shortcuts remain active; Escape collapses the toolbar. |
 | Choose a pixel tool repeatedly | Each change requires opening the Tool dropdown and choosing an item | Eight native radio tools are directly available in one pointer choice. Keyboard arrow navigation retains focus; pointer choice returns to the drawing canvas. No second mutable tool state is introduced. |
 | Choose RGBA and view scale | Transparent is centered against labeled fields rather than their controls | Color, Alpha and Transparent align at the bottom of their controls. Zoom and Pixel grid form a separate view group. |
 | Open/create/copy artwork | Two overflowing grid columns and unpadded scroll edges risk clipped focus treatment; an empty source selector has no explanation | Setup/recovery share a padded scroll surface, columns use bounded minimums and stack at narrow widths. Empty source controls are disabled with an explanatory option; blank creation stays available. |
 | Review and save pixels | Instructions/settings compete with drawing and review actions, particularly in short windows | Scope stays visible, occasional drawing help and scene coordinates use disclosures. Review is above its coordinate settings. Canvas/review scroll independently above the save footer. Review receipts and recovery semantics remain unchanged. |
 | Layer/property editing, imports, blockouts, objects, sprite preview, save/reopen, recovery and export | Established domain workflows must remain usable while commands move | Retain their owners and labeled management entry points; use shared dialog wrapping/viewport bounds. Existing browser acceptance exercises these flows rather than inventing unrelated features. Search/import issues #123–#125 remain separate. |
 
-Retain independent pane collapse and Review scene. At narrow widths groups wrap
-instead of shrinking their hit targets or overflowing into the inspector. During
+Retain independent pane collapse and Review scene. Within the expanded toolbar,
+groups wrap instead of shrinking their hit targets or overflowing into the inspector. During
 visual inspection an intermediate layout clipped Across layers at 760px; the
 final implementation bounds the composition group and checks every visible
 command rectangle for containment and pairwise overlap.
@@ -74,3 +77,33 @@ HTML reports under ignored build outputs are not archived CI evidence. Independe
 human discoverability, non-Chrome browsers and actual OS/browser scaling remain
 outside the claims here; outstanding validation belongs only in the maintained
 [Remaining checks](../VALIDATION.md#remaining-checks) list.
+
+## Pane, path and responsive-toolbar refinements
+
+Follow-up user feedback requested direct path-copy icons, pane-edge chevrons and
+an alternative to zoom/review wrapping onto another row. The refinements use a
+0.27.1 working tree based on
+[`6e8b7dd`](https://github.com/cliffom/gbc-scene-forge/commit/6e8b7ddf1a470ca89bbb4c6c068a7042dfb1cddd),
+checked on 2026-11-02 in the same local environment. The original captures above
+remain evidence of the first implementation; these captures show the refined
+production frontend:
+
+- [Responsive desktop toolbar and pane edges](../screenshots/editor-polish/scene-responsive.png)
+- [Collapsed toolbar at 760×640](../screenshots/editor-polish/scene-responsive-compact.png)
+- [Expanded tools at 760×640](../screenshots/editor-polish/toolbar-expanded-compact.png)
+- [Direct path-copy success](../screenshots/editor-polish/folder-copy.png)
+- [Clipboard failure and long selectable path](../screenshots/editor-polish/folder-copy-fallback.png)
+
+Agent inspection and synthetic browser checks verify a single default toolbar row
+at all five sizes and pane combinations, explicit keyboard expansion/collapse,
+fixed zoom position during expansion, page/footer bounds with tools expanded,
+current-tool labels after shortcuts/library choices, and review transitions.
+Copy checks use Chromium clipboard read/write permissions for success and an
+injected clipboard failure for fallback. They cover direct header activation,
+popover activation, retained keyboard focus and long-path bounds.
+
+Inspection caught a stale success checkmark after a failed copy; a new request
+now resets it. An existing variation scenario initially tried clicking a hidden
+drawing radio after switching to 800px; it now opens the disclosure before
+continuing the scene edit. This was an outdated interaction expectation. Final
+results and limits belong in the [validation record](../VALIDATION.md).

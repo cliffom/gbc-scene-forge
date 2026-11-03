@@ -7,13 +7,23 @@ system; hierarchy comes from grouping, spacing and clear labels.
 
 - **Document context:** project and scene selection, save state, Save and Export.
   Scene actions groups scene lifecycle commands; Project tools groups world and
-  diagnostic work. Independent Library and Inspector toggles stay in this visible
-  bar so both panes can always be reopened. Separate destructive commands from ordinary actions.
+  diagnostic work. Separate destructive commands from ordinary actions.
+- **Pane edges:** independent Library and Inspector chevrons occupy slim rails
+  beside the canvas. They point toward the pane when expanded and toward the
+  canvas when collapsed, with Show/Hide tooltips and accessible names. Rails stay
+  available when panes close, without covering canvas controls; Review scene hides them.
+- **Project path:** copy icons beside the header folder name and the full path in
+  its popover copy directly, confirm success with a checkmark and announce status.
+  If clipboard access fails, show the selectable path and manual-copy guidance.
 - **Library:** Artwork, Objects and Stamps are separate authoring categories.
   Keep search and filters with artwork, definitions with objects, and stamp
   selection/placement together. Ordinary refreshes preserve the chosen category.
 - **Canvas:** group drawing tools, history, clipboard and selection commands in one
-  compact, wrapping toolbar. Put less frequent transforms in a labeled
+  compact toolbar. Keep zoom, review and fit on the first row; use a container-width
+  disclosure for secondary commands instead of automatically adding rows. At the
+  narrowest widths drawing tools share the disclosure and its trigger names the
+  current tool. Keyboard shortcuts remain available; Escape collapses the disclosure.
+  Put less frequent transforms in a labeled
   command popover. Keep view overlays and coordinate feedback beside the canvas.
 - **Inspector:** scene, layers and contextual selection properties belong here.
   Maintain independent scrolling so a long inspector does not move the canvas.

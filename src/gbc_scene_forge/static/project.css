@@ -23,11 +23,17 @@
 .document-actions {margin-left:auto}
 .document-context label {flex:none}
 #scenes,#switch-project {min-width:120px;width:clamp(120px,13vw,200px);max-width:200px}
-.standalone main {--library-width:260px;--inspector-width:270px;grid-template-columns:var(--library-width) minmax(280px,1fr) var(--inspector-width)}
+.standalone main {--library-width:260px;--inspector-width:270px;grid-template-columns:var(--library-width) 24px minmax(280px,1fr) 24px var(--inspector-width)}
 .standalone .library {grid-column:1;grid-row:1}
-.standalone .workbench {grid-column:2;grid-row:1}
-.standalone .inspector {grid-column:3;grid-row:1}
-.pane-controls {display:flex;gap:6px;flex:none}
+.standalone .workbench {grid-column:3;grid-row:1}
+.standalone .inspector {grid-column:5;grid-row:1}
+.pane-rail {grid-row:1;display:flex;justify-content:center;align-items:flex-start;border-inline:1px solid var(--line);background:var(--panel)}
+.library-rail {grid-column:2}
+.inspector-rail {grid-column:4}
+.standalone .pane-toggle {display:flex;align-items:center;justify-content:center;width:22px;min-height:36px;margin-top:12px;padding:0;border-color:transparent;border-radius:3px;background:transparent;color:var(--muted)}
+.pane-toggle:hover {color:var(--text);background:#373b30}
+.pane-toggle:focus-visible {outline:2px solid var(--accent);outline-offset:-2px}
+.pane-toggle[aria-expanded=false] svg {transform:rotate(180deg)}
 .standalone .masthead {padding:10px 16px;gap:16px;min-height:64px}
 .standalone .mark {width:40px;height:40px}
 .standalone h1 {font-size:18px}
@@ -252,12 +258,17 @@
 .github-link:hover {color:var(--accent);border-color:var(--line);background:#2b2e28}
 .github-link:focus-visible {outline:2px solid var(--accent);outline-offset:2px}
 
+.folder-control {display:flex;align-items:center;gap:2px}
+.sr-only {position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
 .folder-button {display:flex;align-items:center;gap:7px;max-width:min(220px,25vw);padding:6px 8px;font-size:12px;letter-spacing:0;background:transparent;color:var(--muted);border-color:transparent}
 .folder-button svg {flex:none}
 #folder-name {min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .folder-button:hover {color:var(--text);border-color:var(--line)}
 .folder-popover {position:fixed;inset:auto;margin:0;width:min(360px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;padding:16px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--text);box-shadow:0 8px 30px #0006;font-size:12px;letter-spacing:0}
 .folder-path {margin:12px 0;white-space:pre-wrap;overflow-wrap:anywhere;user-select:text;font:12px/1.7 ui-monospace,SFMono-Regular,monospace}
+.folder-path-row {display:flex;align-items:flex-start;gap:8px;margin:12px 0}
+.folder-path-row .folder-path {flex:1;min-width:0;margin:0}
+.folder-path-row .icon-button {flex:none}
 #folder-copy-status:not(:empty) {margin-top:10px}
 
 /* Keep clipboard commands near the canvas; library management lives in its own panel. */
@@ -393,7 +404,7 @@
 .standalone.reviewing {min-width:360px}
 .standalone.reviewing main {grid-template-columns:minmax(0,1fr)}
 .standalone.reviewing .workbench {grid-column:1}
-.reviewing .masthead,.reviewing .document-bar,.reviewing .library,.reviewing .inspector,
+.reviewing .masthead,.reviewing .document-bar,.reviewing .library,.reviewing .inspector,.reviewing .pane-rail,
 .reviewing .authoring-tools,.reviewing .composition-tools,.reviewing #layer-context,
 .reviewing #coordinates,.reviewing #selected-brush,.reviewing .snap-control,
 .reviewing .review-bar .hint {display:none}
@@ -434,6 +445,41 @@
 .standalone dialog button {max-width:100%;white-space:normal}
 .standalone dialog .dialog-actions {flex-wrap:wrap}
 .standalone dialog .field input {min-width:0}
+
+/* Reserve the first row for viewing; reveal overflow explicitly instead of wrapping it. */
+.standalone .workbench {container-type:inline-size;container-name:scene-workbench}
+.standalone .canvas-toolbar {display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center}
+#scene-drawing-tools {grid-column:1;grid-row:1}
+.toolbar-secondary {grid-column:2;grid-row:1;display:flex;align-items:center;gap:6px;min-width:0}
+.standalone .canvas-toolbar .zoom-controls {grid-column:3;grid-row:1;margin-left:0;justify-self:end;flex-wrap:nowrap}
+.standalone #review-mode {display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.toolbar-expand {display:none;align-items:center;justify-content:center;gap:6px;grid-row:1;grid-column:3;padding:6px;min-width:0;max-width:100%}
+.toolbar-tool-name {display:none;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toolbar-expand[aria-expanded=true] svg {transform:rotate(180deg)}
+@container scene-workbench (max-width:1100px) {
+  .standalone #review-mode {width:32px;height:32px;padding:6px}
+  .review-action-label,.zoom-label {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+}
+@container scene-workbench (max-width:840px) {
+  .standalone .canvas-toolbar {grid-template-columns:minmax(0,1fr) auto auto}
+  .standalone .canvas-toolbar .zoom-controls {grid-column:2}
+  .toolbar-expand {display:inline-flex}
+  .toolbar-secondary {display:none;grid-column:1/-1;grid-row:2;flex-wrap:wrap}
+  .toolbar-expanded .toolbar-secondary {display:flex}
+}
+@container scene-workbench (max-width:460px) {
+  .standalone .canvas-toolbar {grid-template-columns:minmax(0,1fr) auto}
+  .standalone #scene-drawing-tools {display:none;grid-column:1/-1;grid-row:2}
+  .standalone .toolbar-expanded #scene-drawing-tools {display:flex}
+  .toolbar-secondary {grid-row:3}
+  .toolbar-expand {grid-column:1;justify-self:start}
+  .toolbar-tool-name {display:inline;font-size:12px}
+}
+.standalone.reviewing .canvas-toolbar {grid-template-columns:minmax(0,1fr) auto}
+.standalone.reviewing .canvas-toolbar .zoom-controls {grid-column:2}
+.standalone.reviewing #review-mode {width:auto}
+.standalone.reviewing #scene-drawing-tools,.standalone.reviewing .toolbar-secondary,.standalone.reviewing #expand-scene-tools {display:none}
+.reviewing .review-action-label {position:static;width:auto;height:auto;clip-path:none}
 
 /* Native artwork is a separate document/history within the mounted editor.
    Setup scrolls as one surface; editor controls and save actions surround a bounded workspace. */

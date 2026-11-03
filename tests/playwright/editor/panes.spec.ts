@@ -23,7 +23,7 @@ async function panes(page: Page, library: boolean, inspector: boolean) {
       await page.keyboard.press('Enter');
     }
     await expect(toggle).toHaveAttribute('aria-expanded', String(expanded));
-    await expect(toggle).toHaveText(
+    await expect(toggle).toHaveAccessibleName(
       `${expanded ? 'Hide' : 'Show'} ${name === 'library' ? 'Library' : 'Inspector'}`,
     );
     await expect(page.locator(`#${name}-pane`)).toBeVisible({ visible: expanded });
