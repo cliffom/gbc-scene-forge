@@ -15,6 +15,27 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## PR #193 release-gate fixture contention
+
+- **Scope:** Prepared 0.32.0 working tree based on
+  `96b50aeace964511d2ce71f795e1a7ba902d5f80`, checked 2026-11-03 locally on
+  macOS/Python 3.13/Chromium. The failed CI run used Ubuntu and Python 3.13.
+- **Method:** Inspect the
+  [failed release gate](https://github.com/cliffom/gbc-scene-forge/actions/runs/41761741620).
+  The [refresh fixture](../tests/playwright/mcp/refresh.spec.ts) now uses the
+  existing bounded busy-retry helper for project opening, catalog reads and its
+  spare-atlas import, retaining the exact revision across import retries.
+  Run the focused browser refresh case against the production bundle.
+- **Result:** CI passed 129 browser cases, installed-wheel first use and 94 MCP
+  tests, then passed five MCP/browser cases and failed the refresh fixture when
+  browser polling held the project lock during a direct spare-atlas import.
+  The corrected local refresh case passes, including brush preservation,
+  unused-atlas deletion, animation refresh and scene deletion.
+- **Limits:** The failure was a fixture setup contention error. The focused
+  local pass does not establish a new Linux CI pass; Python compatibility jobs
+  were skipped in that failed run. Existing independent acceptance gaps remain
+  in the single list below.
+
 ## PR #193 first-source discovery controls
 
 - **Scope:** Prepared 0.32.0 working tree based on

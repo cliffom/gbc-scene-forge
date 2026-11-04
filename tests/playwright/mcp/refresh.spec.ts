@@ -423,7 +423,7 @@ test('refresh: Saved-file refresh with a real stdio MCP writer and protected bro
   // Delete an unused atlas while its brush is active. Never select a substitute.
   await promisify(execFile)('.venv/bin/python', [
     '-c',
-    "import sys;from pathlib import Path;sys.path.insert(0,'tests');from support.atlas_fixture import bundle;from gbc_scene_forge.project.application import Project;p,_=bundle(Path(sys.argv[2]),'spare');w=Project(sys.argv[1]);w.artwork.import_atlas(p,w.catalog()['revision'])",
+    "import sys;from pathlib import Path;sys.path.insert(0,'tests');from support.atlas_fixture import bundle;from support.project_busy import retry_busy;from gbc_scene_forge.project.application import Project;p,_=bundle(Path(sys.argv[2]),'spare');w=retry_busy(lambda:Project(sys.argv[1]));revision=retry_busy(w.catalog)['revision'];retry_busy(lambda:w.artwork.import_atlas(p,revision))",
     root,
     join(folder, 'spare-art'),
   ]);
