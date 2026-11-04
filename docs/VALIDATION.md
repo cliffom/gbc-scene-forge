@@ -15,6 +15,30 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Library source actions and layer controls (PR #203)
+
+- **Scope:** Prepared 0.33.1 working tree based on `a8d1c2e`, checked
+  2026-11-03 local time (2026-11-04 UTC), macOS arm64, Python 3.13.13,
+  Node 24.22.1 and Playwright Chromium; disposable projects.
+- **Method:** Build production distributions, install the plain and optional-MCP
+  wheels in fresh environments, run package smoke and installed-wheel first-use
+  acceptance. Exercise layer flags, independent Undo/Redo, checkpoints, save/reopen,
+  pending name/opacity entries and context changes. Inspect the committed
+  [Library](screenshots/library-layer-controls/source-actions.png) and
+  [layer](screenshots/library-layer-controls/hidden-layer.png) captures at 1440px.
+- **Result:** Documentation, lint, 448 Python tests and frontend suites passed.
+  Production build and strict distribution metadata checks passed; both installed
+  wheels passed seven package smoke tests. Installed plain-wheel first use and
+  all five production artwork-iteration browser cases passed. The optional-MCP
+  installation passed all 94 protocol/service tests. The pending-field regression
+  covers both flag paths without applying staged values, Apply normalization,
+  Undo, and switching between layers and documents with identical layer IDs.
+- **Limits:** Scoped local evidence, without a full-browser or CI-pass claim in
+  this entry. Official Tiled/rasterizer applications are unavailable. Windows,
+  non-Chromium browsers, physical-device drawing and independent-user evaluation
+  were not assessed. The large-layer visibility delay remains open in
+  [#202](https://github.com/cliffom/gbc-scene-forge/issues/202).
+
 ## Single-tile repetition preview cache (PR #200)
 
 - **Scope:** Prepared 0.33.0 working tree based on `1e6dfab`, checked

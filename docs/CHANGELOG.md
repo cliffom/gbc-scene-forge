@@ -6,6 +6,13 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.33.1 — Library source actions and layer controls
+
+[Release notes](RELEASE-0.33.1.md). Wrap long source names in Library rows and
+move source update/delete actions from Inspector into Library. Layer visibility
+and locking apply immediately with independent Undo steps, while pending name
+and opacity entries survive flag changes. Publication is separate.
+
 ## 0.33.0 — Unified scene and artwork editor
 
 One document control now navigates scenes and retained artwork, preserving local
