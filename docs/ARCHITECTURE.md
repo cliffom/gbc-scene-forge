@@ -48,8 +48,14 @@ Within artwork, `raster.py` owns bounded literal drawing/transforms/counts;
 `deletion.py` owns guarded reference-aware saved deletion and exact acknowledgments.
 Illustration preparation, intake, atomic candidate batches and native-envelope bundle
 views belong to `artwork/workshop.py`; coordinate contact sheets belong to
-`artwork/inspection.py`. `artwork/candidates.py` owns quota visibility, exact current
-saved-content evidence and durable archive-before-release recovery. These operations
+`artwork/inspection.py`, with dependency-free bitmap PNG cells/labels in
+`artwork/contact_raster.py`. SVG and PNG share comparison, budgets and receipt
+semantics; explicit before-candidates affect only the composite view.
+`artwork/candidates.py` owns quota visibility, exact current saved-content evidence,
+read-only owner/document archive plans and durable archive-before-release recovery.
+Inventory/resolve helpers consume an already-held read session. Plan revalidation,
+selected identity resolution and durable archive writing share one lock; later
+candidate releases report failures per record. These operations
 reuse native candidates and layer sources. MCP adapters only map arguments and
 session resources; publication still uses reviewed document saves.
 Document services persist sources and derived scene assets in one transaction.

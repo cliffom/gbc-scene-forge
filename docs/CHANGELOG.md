@@ -6,6 +6,13 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.35.0 — MCP illustration iteration and review
+
+[Release notes](RELEASE-0.35.0.md). Compare explicit artwork drafts, request
+coordinate-labelled PNG inspection sheets, and plan deliberate candidate archives
+using exact saved-content evidence. Preserve saved-base review receipts, existing
+SVG defaults and durable export-before-release. Publication is separate.
+
 ## 0.34.0 — MCP illustration preparation and lifecycle
 
 [Release notes](RELEASE-0.34.0.md). Add storage visibility and durable explicit

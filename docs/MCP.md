@@ -931,6 +931,24 @@ a candidate handle. Retain the owner when continuing or cleaning up browser work
 Quota errors include requested bytes, existing usage and cleanup instructions;
 no draft is silently evicted and quotas remain 256 records/64 MiB per project.
 
+`plan_artwork_candidate_archive` is read-only. Its groups use owner, document UUID
+and atlas ID, never display name alone. Each entry includes an exact `candidate`
+handle, owner through the group/handle, native saved-match evidence, retained
+`bytes`, estimated reclaimable bytes, recommendation and reason. Only exact saved
+matches receive `archive_saved_match`; other records say `retain_or_review`.
+Content hashes do not establish age or ancestry: possible supersession is only a
+manual-review hint, including when another revision matches saved content.
+Unpublished branches and hidden-layer differences remain distinguishable. Errors
+appear in `unavailable` without being recommended. Reclaim estimates count retained
+JSON bytes after explicit release, excluding the new archive's disk usage.
+
+Explicitly select up to 32 entry handles and pass the unchanged response as optional
+`plan` to `archive_artwork_candidates`. The service revalidates the entire plan and
+selected identities under the archive read lock before writing anything. Project,
+retention, saved evidence or capacity changes reject a stale plan; regenerate it
+and select again. A plan selects nothing automatically. Calls without `plan` keep
+the existing explicit archive behavior and still resolve exact selected handles.
+
 `archive_artwork_candidates(candidates:[handles],release:false)` explicitly
 archives 1..32 selected records, at most 64 MiB input, into
 `.forge/artwork-archives/<sha256>.zip`. Each entry is an unchanged full native
@@ -1071,18 +1089,36 @@ lifetime and project scoping remain unchanged.
 ### Contact-sheet inspection
 
 `inspect_artwork_candidate` takes 1..8 explicit in-bounds `rectangles`, optional
-`scale:1..8` and `changed_overlay:true|false`. It returns a contact SVG resource,
+`scale:1..8`, `changed_overlay:true|false`, `format:"svg"|"png"` (SVG default),
+and `before_candidate` as a full envelope or retained handle. It returns a resource,
 exact candidate/project/artwork revisions, the ordinary complete commit review
 receipt, and per-rectangle sampling/scale information. Cells label top-left pixel
 coordinates, dimensions, scale and before/after meaning. Output embeds integer
-nearest-neighbor PNGs: no view is silently rescaled. Each cell caps at 512 pixels
+nearest-neighbor artwork: no view is silently rescaled. PNG sheets use built-in
+bitmap labels without a font or rasterizer dependency. Both artifacts embed exact
+revision, rectangle, scale, receipt and completeness metadata (SVG metadata or PNG
+Description text); revisions are also visibly labelled. PNG resources participate
+in the existing server inline ImageContent policy: at most two PNGs and 4 MiB of
+encoded PNG data per response. Larger PNGs remain resource links. Each artifact
+caps at 16 MiB within the 24 MiB session cache; failure publishes no partial sheet. Each cell caps at 512 pixels
 per axis; total image pixels cap at 4,194,304 and total layout at 8,388,608.
 `complete` reports whether the union of native rectangles covers the full canvas;
 overlapping rectangles do not inflate coverage. Before is the saved original or
 selected replacement source, and transparent for a new independent document.
+An explicit before-candidate overrides only that visual baseline. Its project must
+match and its width/height must equal the after-candidate; stale before-candidates
+can still be viewed without rebasing. Owner-bearing handles resolve exactly; no
+ownership is transferred. `before_candidate_revision` identifies the explicit
+baseline, or is null for the default saved/transparent baseline. The receipt always
+binds the after-candidate to its authoritative saved base, independently of this
+visual comparison. Neither candidate nor saved artwork is mutated. The existing
+26 MiB aggregate tool-input cap remains; retain one or both envelopes and pass
+handles when a pair would exceed it.
 
 The optional overlay paints exact RGBA changes magenta over the after image,
-including hidden RGB differences; changed counts are local to each rectangle.
+including hidden transparent RGB differences; changed counts are local to each
+rectangle. This compares composite RGBA, so edits confined to invisible layer
+sources do not highlight pixels; inspect native sources for those differences.
 Magenta is an inspection marker, not a pixel mutation. The contact artifact is
 bound to the same exact receipt as ordinary review; stale bases/receipts reject.
 Isolated-pixel, fragmented-cluster and near-color heuristics remain deferred;

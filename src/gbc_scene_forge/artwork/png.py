@@ -8,7 +8,7 @@ from gbc_scene_forge.artwork import dimensions
 SIGNATURE = b"\x89PNG\r\n\x1a\n"
 
 
-def encode(width, height, pixels):
+def encode(width, height, pixels, *, text=None):
     def chunk(kind, data):
         return (
             struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data))
@@ -18,6 +18,7 @@ def encode(width, height, pixels):
     return (
         SIGNATURE
         + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0))
+        + (chunk(b"tEXt", b"Description\0" + text.encode("ascii")) if text else b"")
         + chunk(b"IDAT", zlib.compress(rows))
         + chunk(b"IEND", b"")
     )

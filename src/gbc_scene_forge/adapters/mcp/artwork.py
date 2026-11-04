@@ -15,6 +15,7 @@ from gbc_scene_forge.core.validation import require
 
 NAMES = {
     "archive_artwork_candidates",
+    "plan_artwork_candidate_archive",
     "read_artwork_archive",
     "prepare_artwork_document",
     "convert_artwork_palette",
@@ -105,8 +106,8 @@ def capabilities():
             "preparation": "Independent static sprite; nearest-floor scaling or anchored crop/pad. Explicit sheet flattening; original saved references stay untouched.",
             "palette": "Opt-in RGB palette or 1..256 exact RGBA budget, weighted median cut, no dithering. Literal alpha and transparent hidden RGB retained.",
             "batch": "1..128 operations, 1 MiB JSON, 16777216 pixel work; caller-supplied layer UUIDs refer to new layers. Only final compact candidate retained.",
-            "archives": "Explicit durable selected export before release; 1..32 handles/64 MiB input. Read restart-safe archive in 1 MiB chunks; not included in project exports.",
-            "contact_sheets": "1..8 native rectangles, 1..8 scale, 512 pixels per cell axis, 4194304 image pixels. Exact receipt, coordinates and optional RGBA change overlay.",
+            "archives": "Read-only plan_artwork_candidate_archive groups exact identities by owner/document; indeterminate alternatives need manual review. Optional exact plan revalidation before explicit durable selected export and release; 1..32 handles/64 MiB input. Read restart-safe archive in 1 MiB chunks; not included in project exports.",
+            "contact_sheets": "SVG (default) or directly viewable PNG, optional explicit before_candidate; composite overlay, after-only saved-base receipt. 1..8 native rectangles, 1..8 scale, 512 pixels per cell axis, 4194304 image pixels. Exact receipt, coordinates and optional RGBA change overlay.",
         },
     }
 
@@ -134,8 +135,12 @@ def call(adapter, project, name, a):
     candidates = ArtworkCandidates(project.artwork.documents)
     if name == "list_artwork_candidates":
         return candidates.list()
+    if name == "plan_artwork_candidate_archive":
+        return candidates.archive_plan()
     if name == "archive_artwork_candidates":
-        return candidates.archive(a["candidates"], release=a.get("release", False))
+        return candidates.archive(
+            a["candidates"], release=a.get("release", False), plan=a.get("plan")
+        )
     if name == "read_artwork_archive":
         return candidates.read_archive(a["archive"], a.get("offset", 0))
     a = dict(a)
@@ -151,6 +156,9 @@ def call(adapter, project, name, a):
         return candidates.retain(
             a["candidate"], owner=a.get("owner", value.get("owner") if handle else None)
         )
+    before = a.get("before_candidate")
+    if isinstance(before, dict) and "handle" in before:
+        a["before_candidate"] = candidates.resolve(before)
     result = _call(adapter, project, name, a)
     if name in {"prepare_artwork_document", "convert_artwork_palette"}:
         if handle or a.get("compact", False):
@@ -239,8 +247,12 @@ def _call(adapter, project, name, a):
             a["rectangles"],
             scale=a.get("scale", 4),
             changed_overlay=a.get("changed_overlay", False),
+            before_candidate=a.get("before_candidate"),
+            format=a.get("format", "svg"),
         )
-        resource = adapter.artifact(result.pop("contact_svg"), "image/svg+xml", "contact.svg")
+        format = result["format"]
+        mime = "image/png" if format == "png" else "image/svg+xml"
+        resource = adapter.artifact(result.pop(f"contact_{format}"), mime, f"contact.{format}")
         return {**result, "resource": resource, "resources": [resource]}
     if name in (
         "read_artwork_pixels",

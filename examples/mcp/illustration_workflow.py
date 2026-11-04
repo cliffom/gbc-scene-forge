@@ -45,6 +45,10 @@ async def run(output):
             result = await client.call_tool(tool_name, dict(project="project", **args))
             if result.isError:
                 raise RuntimeError(result.content)
+            if tool_name == "inspect_artwork_candidate" and args.get("format") == "png":
+                assert any(
+                    item.type == "image" and item.mimeType == "image/png" for item in result.content
+                )
             calls.append(tool_name)
             return result.structuredContent
 
@@ -128,6 +132,17 @@ async def run(output):
             changed_overlay=True,
         )
         await resource(report["resource"], "contact.svg")
+        png_report = await call(
+            "inspect_artwork_candidate",
+            candidate=candidate,
+            before_candidate=converted["candidate"],
+            format="png",
+            rectangles=[dict(x=0, y=0, width=32, height=32)],
+            scale=8,
+            changed_overlay=True,
+        )
+        await resource(png_report["resource"], "contact.png")
+        assert png_report["receipt"] == report["receipt"]
         exported = await call("export_artwork_bundle", candidate=candidate)
         data = await resource(exported["resource"], "artwork.zip")
         with zipfile.ZipFile(io.BytesIO(data)) as archive:
@@ -144,12 +159,12 @@ async def run(output):
         assert opened["layer_rgba"] == full["layer_rgba"]
         assert opened["descriptor"] == full["descriptor"]
         assert opened["rgba"] == full["rgba"]
-        listed = await call("list_artwork_candidates")
-        selected = [
-            {k: i[k] for k in ("handle", "project_id", "project_revision", "revision")}
-            for i in listed["candidates"]
-        ]
-        archived = await call("archive_artwork_candidates", candidates=selected, release=True)
+        plan = await call("plan_artwork_candidate_archive")
+        # This disposable fixture explicitly archives every revision, including unpublished ones.
+        selected = [entry["candidate"] for group in plan["groups"] for entry in group["candidates"]]
+        archived = await call(
+            "archive_artwork_candidates", candidates=selected, plan=plan, release=True
+        )
         assert all(item["released"] for item in archived["results"])
         archive_data, offset = bytearray(), 0
         while True:
@@ -167,6 +182,10 @@ async def run(output):
             preparation=prepared["report"],
             conversion=converted["report"],
             inspection={k: v for k, v in report.items() if k not in {"resource", "resources"}},
+            png_inspection={
+                k: v for k, v in png_report.items() if k not in {"resource", "resources"}
+            },
+            archive_plan=plan,
             committed=ack,
             archive=archived,
             final_storage=final,
