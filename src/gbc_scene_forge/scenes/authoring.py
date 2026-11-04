@@ -7,10 +7,11 @@ import json
 from gbc_scene_forge.core.validation import integer, require
 from gbc_scene_forge.formats import tiled
 from gbc_scene_forge.planning import blockout
+from gbc_scene_forge.scenes import dimensions
 
-MAX_OPERATIONS = 128
-MAX_INPUT = 4 * 1024 * 1024
-MAX_TILE_EDITS = 4096
+MAX_OPERATIONS = 128  # Operations per atomic scene edit, independent of layer count.
+MAX_INPUT = 4 * 1024 * 1024  # JSON bytes, measured before scene validation.
+MAX_TILE_EDITS = 4096  # Cell writes summed across all operations, including repeats.
 
 
 def snapshot(scene):
@@ -243,7 +244,7 @@ def edit_layer(scene, operation):
             "Invalid layer creation",
         )
         require(operation["type"] in ("tilelayer", "objectgroup"), "Unsupported layer type")
-        require(len(layers) < 128, "Use at most 128 layers")
+        require(len(layers) < dimensions.MAX_LAYERS, "Use at most 128 layers")
         index = operation.get("index", len(layers))
         require(integer(index, 0, len(layers)), "Invalid layer insertion index")
         layer = dict(

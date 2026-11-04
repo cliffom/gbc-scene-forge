@@ -13,7 +13,12 @@ from gbc_scene_forge.core.validation import identifier, integer, require
 from gbc_scene_forge.storage.files import digest
 
 MAX_CANDIDATE = dimensions.MAX_CANDIDATE_BYTES
-MAX_BATCH = 1024 * 1024
+MAX_BATCH = 1024 * 1024  # JSON bytes; each operation retains its existing serialization rule.
+MAX_PIXEL_WRITES = 65_536  # Unique pixel writes per call; empty writes remain accepted.
+MAX_DESCRIPTOR_BYTES = 64 * 1024  # UTF-8 two-space JSON with a final newline.
+MAX_PLACEMENTS = 256  # Explicit saved locations in one atomic variation.
+MAX_SOURCE_CELL = 2047  # Inclusive wire coordinate; actual source/scene fit is checked later.
+MAX_PLACEMENT_ID = 2_147_483_646  # Leave room for the next native object/layer ID.
 DESCRIPTOR_FIELDS = {
     "version",
     "id",
@@ -84,7 +89,7 @@ def check_source(value):
             and value["grid"] in atlas.GRIDS
             and isinstance(value["cell"], list)
             and len(value["cell"]) == 2
-            and all(integer(v, 0, 2047) for v in value["cell"])
+            and all(integer(v, 0, MAX_SOURCE_CELL) for v in value["cell"])
         ),
         "Tiles require an explicit grid and cell; sprites use null grid/cell",
     )
@@ -149,7 +154,7 @@ def check_descriptor(value):
         layers.check(value)
     if value["version"] == 2:
         sheets.check(value)
-    require(len(record_bytes(value)) <= 64 * 1024, "Editable descriptor exceeds 64 KiB")
+    require(len(record_bytes(value)) <= MAX_DESCRIPTOR_BYTES, "Editable descriptor exceeds 64 KiB")
 
 
 def manifest(descriptor):
@@ -284,7 +289,7 @@ def declared_paths(entry):
 
 
 def read_descriptor(entry, data):
-    require(len(data) <= 64 * 1024, "Editable descriptor exceeds 64 KiB")
+    require(len(data) <= MAX_DESCRIPTOR_BYTES, "Editable descriptor exceeds 64 KiB")
     value = json.loads(data)
     check_descriptor(value)
     require(
@@ -413,7 +418,9 @@ def edit_layout(candidate, frames, sequences):
 
 def check_placements(value):
     """Explicit saved locations; scene revisions guard both content and selection."""
-    require(isinstance(value, list) and 1 <= len(value) <= 256, "Select 1..256 placements")
+    require(
+        isinstance(value, list) and 1 <= len(value) <= MAX_PLACEMENTS, "Select 1..256 placements"
+    )
     seen = set()
     for location in value:
         require(
@@ -425,15 +432,16 @@ def check_placements(value):
             )
             and identity(location["scene_id"])
             and revision(location["scene_revision"])
-            and integer(location["layer_id"], 1, 2147483646),
+            and integer(location["layer_id"], 1, MAX_PLACEMENT_ID),
             "Expected explicit saved scene/revision, layer and tile cell or sprite object",
         )
         if "object_id" in location:
-            require(integer(location["object_id"], 1, 2147483646), "Invalid sprite object ID")
+            require(integer(location["object_id"], 1, MAX_PLACEMENT_ID), "Invalid sprite object ID")
             key = (location["scene_id"], location["layer_id"], "object", location["object_id"])
         else:
             require(
-                integer(location["x"], 0, 2047) and integer(location["y"], 0, 2047),
+                integer(location["x"], 0, MAX_SOURCE_CELL)
+                and integer(location["y"], 0, MAX_SOURCE_CELL),
                 "Invalid tile placement coordinates",
             )
             key = (location["scene_id"], location["layer_id"], location["x"], location["y"])
@@ -444,7 +452,10 @@ def check_placements(value):
 def edit_pixels(candidate, writes):
     pixels = bytearray(check_candidate(candidate))
     require("layers" not in candidate["descriptor"], "Pixel edits require an explicit layer target")
-    require(isinstance(writes, list) and len(writes) <= 65536, "Use at most 65536 pixel writes")
+    require(
+        isinstance(writes, list) and len(writes) <= MAX_PIXEL_WRITES,
+        "Use at most 65536 pixel writes",
+    )
     # Compact decoded JSON is the request work budget, independent of pretty formatting.
     try:
         batch_bytes = json.dumps(

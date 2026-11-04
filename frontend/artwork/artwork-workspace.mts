@@ -1,5 +1,5 @@
 /** Presentation for artwork creation, contextual properties and focused change review. */
-import { MAX_ARTWORK_AXIS } from './artwork-limits.mts';
+import { MAX_ARTWORK_AXIS, GRID_UNIT, MAX_GRID_AXIS } from './artwork-limits.mts';
 import { button, element, input, select } from '../editor/editor-dom.mts';
 import type { EditorLifetime } from '../editor/editor-lifetime.mts';
 
@@ -32,6 +32,11 @@ export function createArtworkWorkspace(
   const help = surface.querySelector('.art-help');
   if (help) {
     surface.querySelector('.art-document-actions>div')?.append(help);
+  }
+  for (const id of ['art-frame-width', 'art-frame-height']) {
+    input(id).min = String(GRID_UNIT);
+    input(id).max = String(MAX_GRID_AXIS);
+    input(id).step = String(GRID_UNIT);
   }
   let automaticIdentity = true;
   function identityFromName() {
@@ -105,9 +110,9 @@ export function createArtworkWorkspace(
     const multiple = input('art-multiple').checked;
     const grid = multiple || select('art-kind').value === 'tile';
     for (const id of ['art-width', 'art-height']) {
-      input(id).min = grid ? '8' : '1';
-      input(id).max = grid ? '256' : String(MAX_ARTWORK_AXIS);
-      input(id).step = grid ? '8' : '1';
+      input(id).min = grid ? String(GRID_UNIT) : '1';
+      input(id).max = String(grid ? MAX_GRID_AXIS : MAX_ARTWORK_AXIS);
+      input(id).step = grid ? String(GRID_UNIT) : '1';
     }
     element('art-sheet-layout', HTMLElement).hidden = !multiple;
     const w = Number(input('art-width').value),

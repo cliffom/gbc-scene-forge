@@ -1,0 +1,801 @@
+{
+  "descriptor": {
+    "version": 2,
+    "id": "33333333-3333-4333-8333-333333333333",
+    "atlas_id": "sheet",
+    "region": "f0",
+    "name": "Sheet",
+    "kind": "sprite",
+    "width": 256,
+    "height": 256,
+    "origin": [
+      0,
+      0
+    ],
+    "pixel_format": "rgba8",
+    "provenance": null
+  },
+  "frame": {
+    "id": "f0",
+    "name": "F",
+    "kind": "sprite",
+    "x": 0,
+    "y": 0,
+    "width": 8,
+    "height": 8,
+    "origin": [
+      0,
+      0
+    ]
+  },
+  "descriptor_cases": [
+    {
+      "name": "frame count 0",
+      "valid": false,
+      "frame_count": 0
+    },
+    {
+      "name": "frame count 1",
+      "valid": true,
+      "frame_count": 1
+    },
+    {
+      "name": "frame count 128",
+      "valid": true,
+      "frame_count": 128
+    },
+    {
+      "name": "frame count 129",
+      "valid": false,
+      "frame_count": 129
+    },
+    {
+      "name": "sequence count 0",
+      "valid": true,
+      "sequence_lengths": []
+    },
+    {
+      "name": "sequence count 1",
+      "valid": true,
+      "sequence_lengths": [
+        1
+      ]
+    },
+    {
+      "name": "sequence count 64",
+      "valid": true,
+      "sequence_lengths": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "name": "sequence count 65",
+      "valid": false,
+      "sequence_lengths": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "name": "timed entry count 0",
+      "valid": false,
+      "sequence_lengths": [
+        0
+      ]
+    },
+    {
+      "name": "timed entry count 1",
+      "valid": true,
+      "sequence_lengths": [
+        1
+      ]
+    },
+    {
+      "name": "timed entry count 256",
+      "valid": true,
+      "sequence_lengths": [
+        256
+      ]
+    },
+    {
+      "name": "timed entry count 257",
+      "valid": false,
+      "sequence_lengths": [
+        257
+      ]
+    },
+    {
+      "name": "duration 0",
+      "valid": false,
+      "sequence_lengths": [
+        1
+      ],
+      "duration": 0
+    },
+    {
+      "name": "duration 1",
+      "valid": true,
+      "sequence_lengths": [
+        1
+      ],
+      "duration": 1
+    },
+    {
+      "name": "duration 65535",
+      "valid": true,
+      "sequence_lengths": [
+        1
+      ],
+      "duration": 65535
+    },
+    {
+      "name": "duration 65536",
+      "valid": false,
+      "sequence_lengths": [
+        1
+      ],
+      "duration": 65536
+    },
+    {
+      "name": "duration 1.5",
+      "valid": false,
+      "sequence_lengths": [
+        1
+      ],
+      "duration": 1.5
+    },
+    {
+      "name": "duration True",
+      "valid": false,
+      "sequence_lengths": [
+        1
+      ],
+      "duration": true
+    },
+    {
+      "name": "total timed entries at budget",
+      "valid": false,
+      "sequence_lengths": [
+        256,
+        256,
+        256,
+        256
+      ],
+      "sheet_valid": true
+    },
+    {
+      "name": "total timed entries over budget",
+      "valid": false,
+      "sequence_lengths": [
+        256,
+        256,
+        256,
+        256,
+        1
+      ]
+    },
+    {
+      "name": "sheet axis 0",
+      "valid": false,
+      "descriptor": {
+        "width": 0
+      }
+    },
+    {
+      "name": "sheet axis 7",
+      "valid": false,
+      "descriptor": {
+        "width": 7
+      }
+    },
+    {
+      "name": "sheet axis 8",
+      "valid": true,
+      "descriptor": {
+        "width": 8
+      }
+    },
+    {
+      "name": "sheet axis 9",
+      "valid": false,
+      "descriptor": {
+        "width": 9
+      }
+    },
+    {
+      "name": "sheet axis 256",
+      "valid": true,
+      "descriptor": {
+        "width": 256
+      }
+    },
+    {
+      "name": "sheet axis 264",
+      "valid": false,
+      "descriptor": {
+        "width": 264
+      }
+    },
+    {
+      "name": "frame axis 7",
+      "valid": false,
+      "frame": {
+        "width": 7
+      }
+    },
+    {
+      "name": "frame axis 8",
+      "valid": true,
+      "frame": {
+        "width": 8
+      }
+    },
+    {
+      "name": "frame axis 9",
+      "valid": false,
+      "frame": {
+        "width": 9
+      }
+    },
+    {
+      "name": "frame axis 256",
+      "valid": true,
+      "frame": {
+        "width": 256
+      }
+    },
+    {
+      "name": "frame axis 264",
+      "valid": false,
+      "frame": {
+        "width": 264
+      }
+    },
+    {
+      "name": "frame x 0",
+      "valid": true,
+      "frame": {
+        "x": 0
+      }
+    },
+    {
+      "name": "frame x 1",
+      "valid": false,
+      "frame": {
+        "x": 1
+      }
+    },
+    {
+      "name": "frame x 248",
+      "valid": true,
+      "frame": {
+        "x": 248
+      }
+    },
+    {
+      "name": "frame x 256",
+      "valid": false,
+      "frame": {
+        "x": 256
+      }
+    },
+    {
+      "name": "frame origin 0",
+      "valid": true,
+      "frame": {
+        "origin": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "name": "frame origin 7",
+      "valid": true,
+      "frame": {
+        "origin": [
+          7,
+          0
+        ]
+      }
+    },
+    {
+      "name": "frame origin 8",
+      "valid": false,
+      "frame": {
+        "origin": [
+          8,
+          0
+        ]
+      }
+    },
+    {
+      "name": "static 1x1",
+      "valid": true,
+      "descriptor": {
+        "version": 1,
+        "region": "artwork",
+        "width": 1,
+        "height": 1
+      }
+    },
+    {
+      "name": "static 4096x1",
+      "valid": true,
+      "descriptor": {
+        "version": 1,
+        "region": "artwork",
+        "width": 4096,
+        "height": 1
+      }
+    },
+    {
+      "name": "static 4097x1",
+      "valid": false,
+      "descriptor": {
+        "version": 1,
+        "region": "artwork",
+        "width": 4097,
+        "height": 1
+      }
+    },
+    {
+      "name": "static 2048x2048",
+      "valid": true,
+      "descriptor": {
+        "version": 1,
+        "region": "artwork",
+        "width": 2048,
+        "height": 2048
+      }
+    },
+    {
+      "name": "static 2048x2049",
+      "valid": false,
+      "descriptor": {
+        "version": 1,
+        "region": "artwork",
+        "width": 2048,
+        "height": 2049
+      }
+    },
+    {
+      "name": "static 0x1",
+      "valid": false,
+      "descriptor": {
+        "version": 1,
+        "region": "artwork",
+        "width": 0,
+        "height": 1
+      }
+    },
+    {
+      "name": "descriptor UTF-8 bytes 65535",
+      "valid": true,
+      "descriptor": {
+        "version": 1,
+        "region": "artwork",
+        "name": "Caf\u00e9"
+      },
+      "descriptor_bytes": 65535
+    },
+    {
+      "name": "descriptor UTF-8 bytes 65536",
+      "valid": true,
+      "descriptor": {
+        "version": 1,
+        "region": "artwork",
+        "name": "Caf\u00e9"
+      },
+      "descriptor_bytes": 65536
+    },
+    {
+      "name": "descriptor UTF-8 bytes 65537",
+      "valid": false,
+      "descriptor": {
+        "version": 1,
+        "region": "artwork",
+        "name": "Caf\u00e9"
+      },
+      "descriptor_bytes": 65537
+    },
+    {
+      "name": "layer count 0",
+      "valid": false,
+      "layer_count": 0
+    },
+    {
+      "name": "layer count 1",
+      "valid": true,
+      "layer_count": 1
+    },
+    {
+      "name": "layer count 8",
+      "valid": true,
+      "layer_count": 8
+    },
+    {
+      "name": "layer count 9",
+      "valid": false,
+      "layer_count": 9
+    }
+  ],
+  "placement_cases": [
+    {
+      "name": "placements 0",
+      "count": 0,
+      "valid": false
+    },
+    {
+      "name": "placements 1",
+      "count": 1,
+      "valid": true
+    },
+    {
+      "name": "placements 256",
+      "count": 256,
+      "valid": true
+    },
+    {
+      "name": "placements 257",
+      "count": 257,
+      "valid": false
+    },
+    {
+      "name": "x -1",
+      "field": "x",
+      "value": -1,
+      "valid": false
+    },
+    {
+      "name": "x 0",
+      "field": "x",
+      "value": 0,
+      "valid": true
+    },
+    {
+      "name": "x 2047",
+      "field": "x",
+      "value": 2047,
+      "valid": true
+    },
+    {
+      "name": "x 2048",
+      "field": "x",
+      "value": 2048,
+      "valid": false
+    },
+    {
+      "name": "layer_id 0",
+      "field": "layer_id",
+      "value": 0,
+      "valid": false
+    },
+    {
+      "name": "layer_id 1",
+      "field": "layer_id",
+      "value": 1,
+      "valid": true
+    },
+    {
+      "name": "layer_id 2147483646",
+      "field": "layer_id",
+      "value": 2147483646,
+      "valid": true
+    },
+    {
+      "name": "layer_id 2147483647",
+      "field": "layer_id",
+      "value": 2147483647,
+      "valid": false
+    },
+    {
+      "name": "object_id 0",
+      "field": "object_id",
+      "value": 0,
+      "valid": false
+    },
+    {
+      "name": "object_id 1",
+      "field": "object_id",
+      "value": 1,
+      "valid": true
+    },
+    {
+      "name": "object_id 2147483646",
+      "field": "object_id",
+      "value": 2147483646,
+      "valid": true
+    },
+    {
+      "name": "object_id 2147483647",
+      "field": "object_id",
+      "value": 2147483647,
+      "valid": false
+    }
+  ],
+  "scene_cases": [
+    {
+      "width": 1,
+      "height": 1,
+      "grid": 8,
+      "valid": true
+    },
+    {
+      "width": 1024,
+      "height": 1,
+      "grid": 8,
+      "valid": true
+    },
+    {
+      "width": 1025,
+      "height": 1,
+      "grid": 8,
+      "valid": false
+    },
+    {
+      "width": 256,
+      "height": 256,
+      "grid": 8,
+      "valid": true
+    },
+    {
+      "width": 256,
+      "height": 257,
+      "grid": 8,
+      "valid": false
+    },
+    {
+      "width": 0,
+      "height": 1,
+      "grid": 8,
+      "valid": false
+    },
+    {
+      "width": 1,
+      "height": 1,
+      "grid": 16,
+      "valid": true
+    },
+    {
+      "width": 512,
+      "height": 1,
+      "grid": 16,
+      "valid": true
+    },
+    {
+      "width": 513,
+      "height": 1,
+      "grid": 16,
+      "valid": false
+    },
+    {
+      "width": 256,
+      "height": 256,
+      "grid": 16,
+      "valid": true
+    },
+    {
+      "width": 256,
+      "height": 257,
+      "grid": 16,
+      "valid": false
+    },
+    {
+      "width": 0,
+      "height": 1,
+      "grid": 16,
+      "valid": false
+    },
+    {
+      "width": 1,
+      "height": 1,
+      "grid": 32,
+      "valid": true
+    },
+    {
+      "width": 256,
+      "height": 1,
+      "grid": 32,
+      "valid": true
+    },
+    {
+      "width": 257,
+      "height": 1,
+      "grid": 32,
+      "valid": false
+    },
+    {
+      "width": 256,
+      "height": 256,
+      "grid": 32,
+      "valid": true
+    },
+    {
+      "width": 256,
+      "height": 257,
+      "grid": 32,
+      "valid": false
+    },
+    {
+      "width": 0,
+      "height": 1,
+      "grid": 32,
+      "valid": false
+    },
+    {
+      "width": 1,
+      "height": 1,
+      "grid": 7,
+      "valid": false
+    }
+  ],
+  "policy": {
+    "artwork": {
+      "MAX_ARTWORK_AXIS": 4096,
+      "MAX_ARTWORK_PIXELS": 4194304,
+      "MAX_RGBA_BASE64": 22369624,
+      "GRID_UNIT": 8,
+      "MAX_GRID_AXIS": 256,
+      "MAX_DESCRIPTOR_BYTES": 65536,
+      "MAX_LAYERS": 8,
+      "MAX_PIXEL_PATCH_PIXELS": 65536
+    },
+    "sheets": {
+      "MAX_FRAMES": 128,
+      "MAX_SEQUENCES": 64,
+      "MAX_SEQUENCE_FRAMES": 256,
+      "MAX_TOTAL_SEQUENCE_FRAMES": 1024,
+      "MIN_DURATION_MS": 1,
+      "MAX_DURATION_MS": 65535
+    },
+    "placements": {
+      "MAX_PLACEMENTS": 256,
+      "MAX_SOURCE_CELL": 2047,
+      "MAX_PLACEMENT_ID": 2147483646
+    },
+    "scene": {
+      "MAX_SCENE_CELLS": 65536,
+      "MAX_SCENE_PIXELS": 8192,
+      "MAX_SCENE_LAYERS": 128,
+      "MAX_OBJECTS_PER_LAYER": 4096
+    },
+    "operations": {
+      "scene_operations": 128,
+      "scene_tile_edits": 4096,
+      "scene_json_bytes": 4194304,
+      "raster_operations": 128,
+      "raster_work_pixels": 16777216,
+      "candidate_operations": 128,
+      "candidate_work_pixels": 16777216,
+      "artwork_json_bytes": 1048576,
+      "pixel_writes": 65536
+    }
+  }
+}

@@ -10,7 +10,10 @@ from gbc_scene_forge.artwork import dimensions, editable, layers, png, raster
 from gbc_scene_forge.core.serialization import record_bytes
 from gbc_scene_forge.core.validation import integer, require
 
-MAX_BATCH_WORK = 16_777_216
+MAX_PALETTE_COLORS = 256  # Explicit conversion output colors (RGB palette or exact RGBA budget).
+MAX_SOURCE_COLORS = 65_536  # Bound conversion histogram and portable bundle palette work.
+MAX_BATCH_OPERATIONS = 128  # Candidate operations per atomic batch.
+MAX_BATCH_WORK = 16_777_216  # Pixel visits, including layer recomposition and nested rasters.
 
 
 def sources(candidate):
@@ -123,16 +126,21 @@ def convert_palette(candidate, *, palette=None, budget=None):
     original_colors = set()
     for raw in rasters.values():
         for color, count in counts(raw).items():
-            if len(original_colors) <= 256:
+            if len(original_colors) <= MAX_PALETTE_COLORS:
                 original_colors.add(color)
             if color[3]:
                 histogram[color[:3]] += count
                 alphas.add(color[3])
             else:
                 transparent.add(color)
-    require(len(histogram) <= 65536, "Conversion supports at most 65536 source RGB colors")
+    require(
+        len(histogram) <= MAX_SOURCE_COLORS, "Conversion supports at most 65536 source RGB colors"
+    )
     if palette is not None:
-        require(isinstance(palette, list) and 1 <= len(palette) <= 256, "Use 1..256 RGB colors")
+        require(
+            isinstance(palette, list) and 1 <= len(palette) <= MAX_PALETTE_COLORS,
+            "Use 1..256 RGB colors",
+        )
         require(
             all(
                 isinstance(c, list) and len(c) == 3 and all(integer(v, 0, 255) for v in c)
@@ -146,7 +154,7 @@ def convert_palette(candidate, *, palette=None, budget=None):
         )
         algorithm = "nearest squared sRGB distance; lexicographic ties"
     else:
-        require(integer(budget, 1, 256), "Use an exact RGBA budget within 1..256")
+        require(integer(budget, 1, MAX_PALETTE_COLORS), "Use an exact RGBA budget within 1..256")
         require(
             len(transparent) <= budget,
             "Budget cannot preserve hidden transparent RGB; increase budget",
@@ -237,7 +245,7 @@ def batch(candidate, operations):
     """Retain only the final candidate; UUIDs supplied in layer operations are batch references."""
     editable.check_candidate(candidate)
     require(
-        isinstance(operations, list) and 1 <= len(operations) <= 128,
+        isinstance(operations, list) and 1 <= len(operations) <= MAX_BATCH_OPERATIONS,
         "Provide 1..128 candidate operations",
     )
     require(len(record_bytes(operations)) <= editable.MAX_BATCH, "Candidate batch exceeds 1 MiB")
@@ -254,7 +262,8 @@ def batch(candidate, operations):
         require(kind in fields and set(op) == fields[kind] | {"op"}, "Unexpected batch fields")
         if kind == "raster":
             require(
-                isinstance(op["operations"], list) and 1 <= len(op["operations"]) <= 128,
+                isinstance(op["operations"], list)
+                and 1 <= len(op["operations"]) <= raster.MAX_OPERATIONS,
                 "Provide 1..128 raster operations",
             )
         d = result["descriptor"]
@@ -287,7 +296,9 @@ def batch(candidate, operations):
 
 def intake_layers(documents, atlas_id, name, width, height, project_revision, items):
     dimensions.check(width, height)
-    require(isinstance(items, list) and 1 <= len(items) <= 8, "Import 1..8 PNG layers")
+    require(
+        isinstance(items, list) and 1 <= len(items) <= layers.MAX_LAYERS, "Import 1..8 PNG layers"
+    )
     require(
         width * height * (len(items) + 1) <= layers.MAX_AGGREGATE_PIXELS,
         "Layer intake exceeds aggregate pixel budget",
@@ -338,7 +349,7 @@ def bundle(candidate):
     rasters = sources(candidate)
     d = candidate["descriptor"]
     palette = counts(base64.b64decode(candidate["rgba"]))
-    require(len(palette) <= 65536, "Bundle palette exceeds 65536 colors")
+    require(len(palette) <= MAX_SOURCE_COLORS, "Bundle palette exceeds 65536 colors")
     output = io.BytesIO()
     with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as archive:
         archive.writestr("candidate.json", record_bytes(candidate))

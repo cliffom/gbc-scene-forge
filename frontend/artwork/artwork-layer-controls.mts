@@ -1,3 +1,4 @@
+import { MAX_LAYERS } from './artwork-limits.mts';
 /** Mounted illustration-layer controls; model owns source pixels and history. */
 import type { EditorLifetime } from '../editor/editor-lifetime.mts';
 import { button, element, input, select } from '../editor/editor-dom.mts';
@@ -168,7 +169,7 @@ export function createArtworkLayerControls(
       for (const id of ['art-layer-remove', 'art-layer-up', 'art-layer-down', 'art-layer-update']) {
         button(id).disabled = ports.busy() || !item || item.locked;
       }
-      button('art-layer-add').disabled = ports.busy() || !model || items.length >= 8;
+      button('art-layer-add').disabled = ports.busy() || !model || items.length >= MAX_LAYERS;
     },
   };
 }

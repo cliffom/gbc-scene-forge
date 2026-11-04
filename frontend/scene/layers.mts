@@ -1,3 +1,4 @@
+import { MAX_SCENE_LAYERS, MAX_OBJECTS_PER_LAYER } from './dimensions.mts';
 /** Standalone layer and object editing, with shared scene history. */
 import { Editor } from './model.mts';
 import type { NewObject, ObjectRegion, SceneObject } from '../objects/objects.mts';
@@ -77,7 +78,7 @@ export class LayerEditor extends Editor<LayerScene> {
   }
   createObject(value: NewObject) {
     this.editable('objectgroup');
-    if (this.objects.length >= 4096) {
+    if (this.objects.length >= MAX_OBJECTS_PER_LAYER) {
       throw Error('Use at most 4096 objects per layer.');
     }
     const item: SceneObject = { ...structuredClone(value), id: String(this.scene.next_object_id) };
@@ -100,7 +101,7 @@ export class LayerEditor extends Editor<LayerScene> {
     });
   }
   add(type: SceneLayer['type']) {
-    if (this.layers.length >= 128) {
+    if (this.layers.length >= MAX_SCENE_LAYERS) {
       throw Error('Use at most 128 layers.');
     }
     this.change((scene) => {

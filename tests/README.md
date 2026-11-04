@@ -27,6 +27,11 @@ also describe optional normal Courtyard loading and
 `node tests/support/measure_contracts.ts BASE_REF STEP_REF ... WORKTREE` for fixed-label
 production bundle/source measurements. Neither tool changes tracked demo assets.
 
+`make test-frontend-domain-limits` and `backend/artwork/test_domain_limits.py`
+consume the shared `fixtures/domain-limits.json` boundary corpus. See the
+[limit ownership inventory](../docs/DOMAIN-LIMITS.md) for units, validator ownership,
+MCP advertising and intentionally distinct cross-field/serialization rules.
+
 Python discovery remains `python -m unittest discover -s tests -p 'test_*.py'`
 (`make test-python`). Empty `__init__.py` markers in `backend/` and each domain
 allow discovery to recurse on supported Python versions. Imports use

@@ -74,7 +74,7 @@ class Adapter:
                 "transport": "stdio",
                 "tools": [t["name"] for t in TOOLS],
                 "deferred": DEFERRED,
-                "max_operations": 128,
+                "max_operations": authoring.MAX_OPERATIONS,
                 "max_tile_edits": authoring.MAX_TILE_EDITS,
                 "max_input_bytes": authoring.MAX_INPUT,
                 "max_artifact_bytes": MAX_ARTIFACT,

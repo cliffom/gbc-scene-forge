@@ -8,11 +8,12 @@ import base64
 import copy
 from uuid import uuid4
 
+from gbc_scene_forge.artwork import dimensions
 from gbc_scene_forge.core.identities import identity, name
 from gbc_scene_forge.core.validation import integer, require
 
 MAX_LAYERS = 8
-MAX_AGGREGATE_PIXELS = 4_194_304  # Composite plus every layer; <=16 MiB decoded.
+MAX_AGGREGATE_PIXELS = dimensions.MAX_PIXELS  # Composite plus every layer; <=16 MiB decoded.
 
 
 def check(descriptor):

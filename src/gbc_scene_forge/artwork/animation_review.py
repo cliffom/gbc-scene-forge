@@ -3,7 +3,7 @@
 import struct
 import zlib
 
-from gbc_scene_forge.artwork import editable, png
+from gbc_scene_forge.artwork import editable, png, review
 from gbc_scene_forge.artwork.review import isolated
 from gbc_scene_forge.core.validation import integer, require
 
@@ -16,7 +16,7 @@ def render(candidate, sequence_id, scale):
     pixels = editable.check_candidate(candidate)
     descriptor = candidate["descriptor"]
     require(descriptor["version"] == 2, "Animation reviews require a native sheet")
-    require(integer(scale, 1, 16), "Review scale must be within 1..16")
+    require(integer(scale, 1, review.MAX_SCALE), "Review scale must be within 1..16")
     require(isinstance(sequence_id, str), "Choose an explicit sequence ID")
     sequence = next((s for s in descriptor["sequences"] if s["id"] == sequence_id), None)
     require(sequence is not None, "Choose an existing sequence")
@@ -24,7 +24,9 @@ def render(candidate, sequence_id, scale):
     first = indexed[sequence["frames"][0]["frame_id"]]
     width, height = first["width"] * scale, first["height"] * scale
     require(
-        width <= 1024 and height <= 1024 and width * height * len(sequence["frames"]) <= 4194304,
+        width <= review.MAX_VIEW_AXIS
+        and height <= review.MAX_VIEW_AXIS
+        and width * height * len(sequence["frames"]) <= 4194304,
         "Animation review exceeds 1024 per axis or 4194304 total frame pixels; reduce scale/frames",
     )
     result = bytearray(png.SIGNATURE)

@@ -1,12 +1,14 @@
 """Thin native-artwork routing for full candidates and recoverable compact handles."""
 
 from gbc_scene_forge.artwork import (
+    atlas,
     dimensions,
     editable,
     inspection,
     layers,
     raster,
     review,
+    sheets,
     workshop,
 )
 from gbc_scene_forge.artwork.candidates import ArtworkCandidates
@@ -54,14 +56,14 @@ def capabilities():
     return {
         "pixel_format": "rgba8",
         "pixel_order": "Row-major, top-left; base64 straight RGBA8 bytes (sRGB).",
-        "tile_sizes": [8, 16, 32],
+        "tile_sizes": list(atlas.GRIDS),
         "sprite_dimension": {"minimum": 1, "maximum": dimensions.MAX_AXIS},
         "max_document_pixels": dimensions.MAX_PIXELS,
         "max_pixel_read_pixels": dimensions.MAX_READ_PIXELS,
         "max_input_bytes": dimensions.MAX_CANDIDATE_BYTES + 2 * 1024 * 1024,
         "max_image_bytes": dimensions.MAX_IMAGE_BYTES,
         "review_views": "Default: whole-document overview <=1024 per axis. Explicit rectangle: native detail, with scale fitting <=1024 per axis.",
-        "max_pixel_writes": 65536,
+        "max_pixel_writes": editable.MAX_PIXEL_WRITES,
         "max_pixel_batch_bytes": editable.MAX_BATCH,
         "max_candidate_bytes": editable.MAX_CANDIDATE,
         "max_review_scenes": review.MAX_SCENES,
@@ -71,7 +73,11 @@ def capabilities():
         "candidates": "Client-held envelopes or immutable project-scoped handles. compact=true retains a recoverable sidecar. List/export/release handles explicitly; 256 records/64 MiB, no expiration, restart-safe. Export before release or moving projects. Saved project export excludes sidecars.",
         "imported_artwork": "Read-only; duplicate an explicit tile cell or static sprite to edit.",
         "placement_variations": "Duplicate with 1..256 explicit saved scene/layer/cell or object locations. Review and commit artwork plus selected replacements atomically.",
-        "sheets": {"max_frames": 128, "max_sequences": 64, "animation_review": "image/apng"},
+        "sheets": {
+            "max_frames": sheets.MAX_FRAMES,
+            "max_sequences": sheets.MAX_SEQUENCES,
+            "animation_review": "image/apng",
+        },
         "png_intake": "import_artwork_png: uploaded canonical base64 PNG <=17 MiB, non-interlaced RGB/RGBA8 or indexed 1/2/4/8-bit. New unpublished native sprite; no quantization or resize.",
         "raster_operations": {
             "operations": [
@@ -86,15 +92,15 @@ def capabilities():
                 "replace",
                 "remap",
             ],
-            "max_batch_operations": 128,
-            "max_batch_pixel_work": 16777216,
+            "max_batch_operations": raster.MAX_OPERATIONS,
+            "max_batch_pixel_work": raster.MAX_WORK,
             "coordinates": "top-left integer points; rectangles in bounds, resize transforms a region, not canvas; sequential batch, simultaneous remap",
         },
         "literal_colors": "artwork_colors: exact RGBA including hidden RGB; 256/page; at most 65536 distinct colors, narrow rectangle if exceeded. No automatic cleanup or hardware profile conversion.",
         "layers": {
             "version": 1,
-            "max_layers": 8,
-            "aggregate_pixels_including_composite": 4194304,
+            "max_layers": layers.MAX_LAYERS,
+            "aggregate_pixels_including_composite": layers.MAX_AGGREGATE_PIXELS,
             "order": "bottom-to-top",
             "opacity": "0..255",
             "target": "Explicit layer_id for reads/edits/counts; unlock before writes or structural changes",

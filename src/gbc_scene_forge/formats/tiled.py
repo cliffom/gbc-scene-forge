@@ -5,6 +5,7 @@ from pathlib import PurePosixPath
 from gbc_scene_forge.artwork.model import GRIDS, sprite_mapping
 from gbc_scene_forge.core.validation import integer, require
 from gbc_scene_forge.scene_objects.model import check_object, decode_object, encode_object
+from gbc_scene_forge.scenes import dimensions
 from gbc_scene_forge.scenes.dimensions import check_dimensions
 
 EMPTY = ""
@@ -84,7 +85,10 @@ def _check_flat(scene, project):
         "Invalid scene cells or unknown asset reference",
     )
     objects = scene.get("objects", [])
-    require(isinstance(objects, list) and len(objects) <= 4096, "Invalid objects")
+    require(
+        isinstance(objects, list) and len(objects) <= dimensions.MAX_OBJECTS_PER_LAYER,
+        "Invalid objects",
+    )
     seen = set()
     for item in objects:
         check_object(item, scene["width"] * scene["grid"], scene["height"] * scene["grid"], sprites)
@@ -341,7 +345,9 @@ def check_scene(scene, project):
     check_dimensions(scene["width"], scene["height"], scene["grid"])
     require(type(scene["grid"]) is int and scene["grid"] in GRIDS, "Unsupported grid")
     layers = scene["layers"]
-    require(isinstance(layers, list) and 1 <= len(layers) <= 128, "Use 1..128 layers")
+    require(
+        isinstance(layers, list) and 1 <= len(layers) <= dimensions.MAX_LAYERS, "Use 1..128 layers"
+    )
     ids, object_ids = set(), set()
     for layer in layers:
         require(
@@ -416,7 +422,9 @@ def decode(document, project):
     require(isinstance(document, dict), "Expected a Tiled map")
     check_dimensions(document.get("width"), document.get("height"), document.get("tilewidth"))
     layers = document.get("layers")
-    require(isinstance(layers, list) and 1 <= len(layers) <= 128, "Use 1..128 layers")
+    require(
+        isinstance(layers, list) and 1 <= len(layers) <= dimensions.MAX_LAYERS, "Use 1..128 layers"
+    )
     decoded = []
     for layer in layers:
         require(

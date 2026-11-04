@@ -1,9 +1,13 @@
 /** Native scene budgets; mirrored in scenes/dimensions.py. */
+import { TILE_SIZES as SCENE_GRIDS } from '../artwork/artwork-limits.mts';
+export { SCENE_GRIDS };
 export const MAX_SCENE_CELLS = 65_536;
 export const MAX_SCENE_PIXELS = 8192;
+export const MAX_SCENE_LAYERS = 128;
+export const MAX_OBJECTS_PER_LAYER = 4096;
 
 export function checkDimensions(width: number, height: number, grid: number) {
-  if (![8, 16, 32].includes(grid)) {
+  if (!SCENE_GRIDS.some((size) => size === grid)) {
     throw Error('Choose an 8, 16 or 32 pixel grid.');
   }
   if (

@@ -1,6 +1,24 @@
 /** Native candidate wire boundary. Saved policy and digest validation stay in artwork services. */
 import * as v from 'valibot';
-import { MAX_ARTWORK_AXIS, MAX_ARTWORK_PIXELS, MAX_RGBA_BASE64 } from './artwork-limits.mts';
+import {
+  MAX_ARTWORK_AXIS,
+  MAX_ARTWORK_PIXELS,
+  MAX_RGBA_BASE64,
+  GRID_UNIT,
+  MAX_GRID_AXIS,
+  TILE_SIZES,
+  MAX_DESCRIPTOR_BYTES,
+  MAX_LAYERS,
+} from './artwork-limits.mts';
+import {
+  MAX_FRAMES,
+  MAX_SEQUENCES,
+  MAX_SEQUENCE_FRAMES,
+  MAX_TOTAL_SEQUENCE_FRAMES,
+  MIN_DURATION_MS,
+  MAX_DURATION_MS,
+} from './sheet-limits.mts';
+import { MAX_PLACEMENTS, MAX_SOURCE_CELL, MAX_PLACEMENT_ID } from './placement-limits.mts';
 import { parse, text } from '../shared/schema.mts';
 const bounded = (min: number, max: number) =>
   v.pipe(v.number(), v.integer(), v.minValue(min), v.maxValue(max));
@@ -10,24 +28,28 @@ const identity = v.pipe(text, v.uuid());
 const placementBase = {
   scene_id: identity,
   scene_revision: revision,
-  layer_id: bounded(1, 2147483646),
+  layer_id: bounded(1, MAX_PLACEMENT_ID),
 };
 export const placementsSchema = v.pipe(
   v.array(
     v.union([
-      v.strictObject({ ...placementBase, x: bounded(0, 2047), y: bounded(0, 2047) }),
-      v.strictObject({ ...placementBase, object_id: bounded(1, 2147483646) }),
+      v.strictObject({
+        ...placementBase,
+        x: bounded(0, MAX_SOURCE_CELL),
+        y: bounded(0, MAX_SOURCE_CELL),
+      }),
+      v.strictObject({ ...placementBase, object_id: bounded(1, MAX_PLACEMENT_ID) }),
     ]),
   ),
   v.minLength(1),
-  v.maxLength(256),
+  v.maxLength(MAX_PLACEMENTS),
 );
 export type Placement = v.InferOutput<typeof placementsSchema>[number];
 const sourceEntries = {
   atlas_id: identifier,
   region: identifier,
-  grid: v.nullable(v.picklist([8, 16, 32])),
-  cell: v.nullable(v.tuple([bounded(0, 2047), bounded(0, 2047)])),
+  grid: v.nullable(v.picklist(TILE_SIZES)),
+  cell: v.nullable(v.tuple([bounded(0, MAX_SOURCE_CELL), bounded(0, MAX_SOURCE_CELL)])),
   artwork_revision: revision,
 };
 export const layerSchema = v.strictObject({
@@ -42,7 +64,7 @@ const descriptorEntries = {
   layers: v.optional(
     v.strictObject({
       version: v.literal(1),
-      items: v.pipe(v.array(layerSchema), v.minLength(1), v.maxLength(8)),
+      items: v.pipe(v.array(layerSchema), v.minLength(1), v.maxLength(MAX_LAYERS)),
     }),
   ),
   id: identity,
@@ -62,20 +84,25 @@ export const frameSchema = v.strictObject({
   id: identifier,
   name: v.pipe(text, v.minLength(1), v.maxLength(100)),
   kind: v.picklist(['tile', 'sprite']),
-  x: bounded(0, 248),
-  y: bounded(0, 248),
-  width: bounded(8, 256),
-  height: bounded(8, 256),
-  origin: v.tuple([bounded(0, 255), bounded(0, 255)]),
+  x: bounded(0, MAX_GRID_AXIS - GRID_UNIT),
+  y: bounded(0, MAX_GRID_AXIS - GRID_UNIT),
+  width: bounded(GRID_UNIT, MAX_GRID_AXIS),
+  height: bounded(GRID_UNIT, MAX_GRID_AXIS),
+  origin: v.tuple([bounded(0, MAX_GRID_AXIS - 1), bounded(0, MAX_GRID_AXIS - 1)]),
 });
 export const sequenceSchema = v.strictObject({
   id: identifier,
   name: v.pipe(text, v.minLength(1), v.maxLength(100)),
   loop: v.boolean(),
   frames: v.pipe(
-    v.array(v.strictObject({ frame_id: identifier, duration_ms: bounded(1, 65535) })),
+    v.array(
+      v.strictObject({
+        frame_id: identifier,
+        duration_ms: bounded(MIN_DURATION_MS, MAX_DURATION_MS),
+      }),
+    ),
     v.minLength(1),
-    v.maxLength(256),
+    v.maxLength(MAX_SEQUENCE_FRAMES),
   ),
 });
 export type ArtworkFrame = v.InferOutput<typeof frameSchema>;
@@ -86,8 +113,8 @@ const descriptor = v.pipe(
     v.strictObject({
       ...descriptorEntries,
       version: v.literal(2),
-      frames: v.pipe(v.array(frameSchema), v.minLength(1), v.maxLength(128)),
-      sequences: v.pipe(v.array(sequenceSchema), v.maxLength(64)),
+      frames: v.pipe(v.array(frameSchema), v.minLength(1), v.maxLength(MAX_FRAMES)),
+      sequences: v.pipe(v.array(sequenceSchema), v.maxLength(MAX_SEQUENCES)),
     }),
   ]),
   v.check(
@@ -96,17 +123,19 @@ const descriptor = v.pipe(
       (!d.layers ||
         new Set(d.layers.items.map((item) => item.id)).size === d.layers.items.length) &&
       ((d.version === 1 && d.kind === 'sprite') ||
-        (d.width >= 8 &&
-          d.height >= 8 &&
-          d.width <= 256 &&
-          d.height <= 256 &&
-          d.width % 8 === 0 &&
-          d.height % 8 === 0)) &&
+        (d.width >= GRID_UNIT &&
+          d.height >= GRID_UNIT &&
+          d.width <= MAX_GRID_AXIS &&
+          d.height <= MAX_GRID_AXIS &&
+          d.width % GRID_UNIT === 0 &&
+          d.height % GRID_UNIT === 0)) &&
       d.origin[0] < d.width &&
       d.origin[1] < d.height &&
       (d.version === 2 ||
         d.kind !== 'tile' ||
-        (d.width === d.height && [8, 16, 32].includes(d.width) && d.origin.every((n) => n === 0))),
+        (d.width === d.height &&
+          TILE_SIZES.some((size) => size === d.width) &&
+          d.origin.every((n) => n === 0))),
     'Invalid artwork dimensions or origin.',
   ),
   v.check((d) => {
@@ -124,10 +153,10 @@ const descriptor = v.pipe(
     if (
       !d.frames.every(
         (f) =>
-          f.x % 8 === 0 &&
-          f.y % 8 === 0 &&
-          f.width % 8 === 0 &&
-          f.height % 8 === 0 &&
+          f.x % GRID_UNIT === 0 &&
+          f.y % GRID_UNIT === 0 &&
+          f.width % GRID_UNIT === 0 &&
+          f.height % GRID_UNIT === 0 &&
           f.x + f.width <= d.width &&
           f.y + f.height <= d.height &&
           f.origin[0] < f.width &&
@@ -139,7 +168,7 @@ const descriptor = v.pipe(
     }
     if (
       new Set(d.sequences.map((s) => s.id)).size !== d.sequences.length ||
-      d.sequences.reduce((n, s) => n + s.frames.length, 0) > 1024
+      d.sequences.reduce((n, s) => n + s.frames.length, 0) > MAX_TOTAL_SEQUENCE_FRAMES
     ) {
       return false;
     }
@@ -162,7 +191,8 @@ const descriptor = v.pipe(
   }, 'Invalid sheet frames or sequence geometry.'),
   // Match core.serialization.record_bytes: two-space JSON, UTF-8 and a final newline.
   v.check(
-    (d) => new TextEncoder().encode(JSON.stringify(d, null, 2) + '\n').length <= 64 * 1024,
+    (d) =>
+      new TextEncoder().encode(JSON.stringify(d, null, 2) + '\n').length <= MAX_DESCRIPTOR_BYTES,
     'Editable descriptor exceeds 64 KiB. Reduce the layout before adding more artwork or animation.',
   ),
 );

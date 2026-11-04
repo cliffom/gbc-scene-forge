@@ -1,3 +1,4 @@
+import { MAX_SCENE_PIXELS } from '../scene/dimensions.mts';
 import { EditorLifetime } from '../editor/editor-lifetime.mts';
 /** Blockout controls and revision-matched, read-only SVG review. */
 import { blockoutDefinitions, cameraAxis, definitionRole } from './blockout.mts';
@@ -102,7 +103,7 @@ export function createBlockoutView(
     const width = Number(input('blockout-width').value) * factor,
       height = Number(input('blockout-height').value) * factor;
     for (const id of ['blockout-width', 'blockout-height']) {
-      input(id).max = factor === 1 ? '8192' : String(8192 / grid);
+      input(id).max = String(factor === 1 ? MAX_SCENE_PIXELS : MAX_SCENE_PIXELS / grid);
     }
     const cw = Number(input('blockout-camera-width').value),
       ch = Number(input('blockout-camera-height').value);

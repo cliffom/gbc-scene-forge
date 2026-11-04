@@ -17,6 +17,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 - [Python backend ownership](ARCHITECTURE.md)
 - [Frontend architecture](FRONTEND-ARCHITECTURE.md)
+- [Authoring limit ownership and boundary contracts (#171)](DOMAIN-LIMITS.md)
 - [Editable artwork implementation contract (#129)](EDITABLE-ARTWORK.md) — native artwork, browser/MCP contracts and selected-placement variations.
 - [Editor layout guidelines](UI-DESIGN.md)
 - [Documentation policy](DOCUMENTATION.md)
