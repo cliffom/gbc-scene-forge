@@ -1,12 +1,8 @@
 import assert from 'node:assert/strict';
 import { decodeCandidate, decodeDescriptor } from '../../../frontend/artwork/artwork-contracts.mts';
-import {
-  MAX_ARTWORK_AXIS,
-  MAX_ARTWORK_PIXELS,
-  MAX_HISTORY_BYTES,
-} from '../../../frontend/artwork/artwork-limits.mts';
+import { MAX_ARTWORK_AXIS, MAX_ARTWORK_PIXELS } from '../../../frontend/artwork/artwork-limits.mts';
 import { paletteColors, MAX_PALETTE_COLORS } from '../../../frontend/artwork/artwork-palette.mts';
-import { PixelModel } from '../../../frontend/artwork/pixel-model.mts';
+import { PixelModel, MAX_HISTORY_BYTES } from '../../../frontend/artwork/pixel-model.mts';
 import { ArtworkSession } from '../../../frontend/artwork/artwork-session.mts';
 import type { ProjectApi } from '../../../frontend/project/project-api.mts';
 import { record } from '../../../frontend/shared/decode.mts';
@@ -142,3 +138,55 @@ assert.deepEqual(routes, [
 console.log(
   'Large artwork limits, sparse history, exact hue palette and bounded compact synchronization passed.',
 );
+
+// Crossing a sparse history block boundary retains two independent reversible chunks.
+{
+  const blocks = new PixelModel(
+    decodeCandidate({
+      ...candidate,
+      descriptor: { ...candidate.descriptor, width: 2048, height: 1 },
+      rgba: Buffer.alloc(2048 * 4).toString('base64'),
+    }),
+  );
+  blocks.apply(() => {
+    blocks.put({ x: 1023, y: 0 }, [1, 2, 3, 0]);
+    blocks.put({ x: 1024, y: 0 }, [4, 5, 6, 0]);
+  });
+  assert.deepEqual(
+    blocks.undoStack[0].chunks.map((chunk) => [chunk.offset, chunk.bytes.length]),
+    [
+      [0, 4096],
+      [4096, 4096],
+    ],
+  );
+  blocks.undo();
+  assert.equal(blocks.pixels.some(Boolean), false);
+  blocks.redo();
+  assert.deepEqual(blocks.color({ x: 1024, y: 0 }), [4, 5, 6, 0]);
+}
+
+// Dense edits hit the byte budget well before the count budget. Evicted records
+// cannot be undone, but every retained record remains exact in both directions.
+{
+  const dense = new PixelModel(
+    decodeCandidate({
+      ...candidate,
+      descriptor: { ...candidate.descriptor, width: 2048, height: 2048 },
+      rgba: Buffer.alloc(2048 * 2048 * 4).toString('base64'),
+    }),
+  );
+  for (let value = 1; value <= 4; value++) {
+    dense.apply(() => dense.pixels.fill(value));
+  }
+  assert.equal(dense.undoStack.length, 3, 'Four full rasters plus bookkeeping exceed 64 MiB');
+  for (let value = 3; value >= 1; value--) {
+    dense.undo();
+    assert.ok(dense.pixels.every((byte) => byte === value));
+  }
+  dense.undo();
+  assert.ok(dense.pixels.every((byte) => byte === 1));
+  for (let value = 2; value <= 4; value++) {
+    dense.redo();
+    assert.ok(dense.pixels.every((byte) => byte === value));
+  }
+}

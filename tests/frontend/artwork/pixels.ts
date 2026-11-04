@@ -650,3 +650,63 @@ try {
   globalThis.atob = decodeBefore;
   three.model.composite = compareComposite;
 }
+
+// A full small-document synchronization crosses the individual-write chunk boundary.
+// Acknowledgements advance each next request's candidate without dropping the final remainder.
+{
+  const width = 256,
+    height = 64;
+  const base = decodeCandidate({
+    ...candidate,
+    descriptor: { ...candidate.descriptor, kind: 'sprite', width, height },
+    rgba: encoded(new Uint8ClampedArray(width * height * 4)),
+  });
+  let remote = base;
+  const sizes: number[] = [];
+  const synchronize: ProjectApi['json'] = (route, decode, data) => {
+    assert.equal(route, 'artwork-edit');
+    const request = record(data);
+    assert.deepEqual(request.candidate, remote);
+    const writes = array(request.writes, record);
+    sizes.push(writes.length);
+    assert.ok(Buffer.byteLength(JSON.stringify(writes)) <= 1024 * 1024);
+    const changed = new PixelModel(remote);
+    for (const write of writes) {
+      const color = array(write.rgba, number);
+      changed.put({ x: number(write.x), y: number(write.y) }, [
+        color[0],
+        color[1],
+        color[2],
+        color[3],
+      ]);
+    }
+    remote = decodeCandidate({ ...remote, rgba: encoded(changed.pixels) });
+    return Promise.resolve(decode(remote));
+  };
+  const batched = new ArtworkSession(base, synchronize);
+  batched.model.pixels.fill(255);
+  await batched.synchronizeCurrent();
+  assert.deepEqual(sizes, [8000, 8000, width * height - 16000]);
+  assert.equal(remote.rgba, encoded(batched.model.pixels));
+  await batched.synchronizeCurrent();
+  assert.equal(sizes.length, 3, 'Unchanged pixels send no new batch');
+}
+
+// Count eviction preserves the newest operations, no-ops and the earliest retained baseline.
+{
+  const bounded = new PixelModel(candidate);
+  for (let i = 1; i <= 101; i++) {
+    bounded.apply(() => bounded.put({ x: 0, y: 0 }, [i, 0, 0, 0]));
+  }
+  assert.equal(bounded.undoStack.length, 100);
+  for (let i = 0; i < 100; i++) {
+    bounded.undo();
+  }
+  assert.deepEqual(bounded.color({ x: 0, y: 0 }), [1, 0, 0, 0]);
+  bounded.apply(() => {});
+  assert.equal(bounded.redoStack.length, 100);
+  for (let i = 0; i < 100; i++) {
+    bounded.redo();
+  }
+  assert.deepEqual(bounded.color({ x: 0, y: 0 }), [101, 0, 0, 0]);
+}

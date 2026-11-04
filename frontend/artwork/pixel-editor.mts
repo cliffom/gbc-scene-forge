@@ -24,7 +24,7 @@ import { createSheetEditor } from './sheet-editor.mts';
 import { createArtworkWorkspace } from './artwork-workspace.mts';
 import { conversionViews } from './conversion-views.mts';
 import { createArtworkViewport } from './artwork-viewport.mts';
-import { createArtworkDocuments } from './artwork-documents.mts';
+import { createArtworkDocuments, MAX_OPEN_ARTWORK_DOCUMENTS } from './artwork-documents.mts';
 import {
   createDocumentBar,
   documentCaption,
@@ -42,6 +42,11 @@ type Source = {
   artwork_revision: string;
   target: Record<string, unknown> | null;
 };
+/** Quiet time after a completed artwork edit; each scheduled write owns its captured snapshot. */
+export const ARTWORK_CHECKPOINT_DEBOUNCE_MS = 350;
+/** Saved artwork inventory discovery; adoption still checks activity and revision fences. */
+export const ARTWORK_DISCOVERY_INTERVAL_MS = 2000;
+
 export function createPixelEditor({
   notifications,
   lifetime,
@@ -859,7 +864,7 @@ export function createPixelEditor({
             );
           }
         });
-    }, 350);
+    }, ARTWORK_CHECKPOINT_DEBOUNCE_MS);
   }
   function changed() {
     feedback.clear('message');
@@ -1073,7 +1078,7 @@ export function createPixelEditor({
     }
     await execute(async () => {
       await suspend();
-      if (documents.size >= 16) {
+      if (documents.size >= MAX_OPEN_ARTWORK_DOCUMENTS) {
         throw Error(
           'Up to 16 artwork documents can be open. Save or discard one before opening another.',
         );
@@ -1165,7 +1170,7 @@ export function createPixelEditor({
             focusFrame(string(detail.region));
             return;
           }
-          if (documents.size >= 16) {
+          if (documents.size >= MAX_OPEN_ARTWORK_DOCUMENTS) {
             throw Error('Save or discard an open artwork document first (limit 16).');
           }
           session = null;
@@ -1579,7 +1584,7 @@ export function createPixelEditor({
             });
           adopt.onclick = () =>
             void execute(async () => {
-              if (documents.size >= 16) {
+              if (documents.size >= MAX_OPEN_ARTWORK_DOCUMENTS) {
                 throw Error('Close an artwork document first (limit 16).');
               }
               await suspend();
@@ -2015,7 +2020,7 @@ export function createPixelEditor({
       discovering = false;
     }
   }
-  lifetime.interval(() => void discover(), 2000);
+  lifetime.interval(() => void discover(), ARTWORK_DISCOVERY_INTERVAL_MS);
   window.addEventListener('focus', () => void discover(), { signal: lifetime.signal });
   button('check-external').addEventListener(
     'click',

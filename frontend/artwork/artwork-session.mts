@@ -5,6 +5,11 @@ import { record, string, array } from '../shared/decode.mts';
 import { bytes, encoded, PixelModel } from './pixel-model.mts';
 import { decodeCandidate, type Candidate } from './artwork-contracts.mts';
 
+/** Individual-write chunks stay below the service's 1 MiB decoded-write JSON budget.
+ * Candidate envelopes and rectangular patch synchronization have separate bounds.
+ */
+export const MAX_PIXEL_WRITES_PER_REQUEST = 8000;
+
 // Two aggregate document baselines (saved and checkpoint), <=16 MiB each.
 // This bounds decoded bytes, independently of document count or raster count.
 const MAX_BASELINE_BYTES = 32 * 1024 * 1024;
@@ -252,7 +257,7 @@ export class ArtworkSession {
         rgba: [pixels[i], pixels[i + 1], pixels[i + 2], pixels[i + 3]],
       });
       // A full maximum document fits within the shared 1 MiB batch bound in chunks.
-      if (writes.length === 8000) {
+      if (writes.length === MAX_PIXEL_WRITES_PER_REQUEST) {
         await send();
       }
     }

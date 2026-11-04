@@ -67,5 +67,6 @@ JSON, raster batches use canonical JSON, candidate batches use record JSON, and
 scene authoring uses its existing JSON encoding. Do not equate equal numeric
 byte budgets with identical serialization. No limit, accepted input,
 normalization, saved/native format or transport contract changes in this work.
-Cache/history budgets, polling and checkpoint timing are separate policies under
-#172; this inventory does not make runtime capacity claims about them.
+Cache/history budgets, polling and checkpoint timing have separate
+[runtime policy owners](FRONTEND-ARCHITECTURE.md#runtime-policy-ownership); this
+inventory does not make runtime capacity claims about them.

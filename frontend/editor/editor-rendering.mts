@@ -21,7 +21,7 @@ import { objectBounds } from '../objects/objects.mts';
 import type { Region } from '../project/project-contracts.mts';
 import type { TileMetadata } from '../artwork/tile-metadata.mts';
 import { drawCollision, terrainColor } from '../artwork/tile-metadata.mts';
-import { TileCache, visibleBounds, type ViewBounds } from './tile-cache.mts';
+import { TileCache, tileViewBytes, visibleBounds, type ViewBounds } from './tile-cache.mts';
 
 /** One transient paint belongs to the current mounted scene, never a captured snapshot. */
 export function createHoverPaint(
@@ -264,15 +264,10 @@ export function createRenderingController({
       return;
     }
     // Avoid LRU thrashing when a fit view cannot retain all visible layer chunks.
-    const chunkPixels = Math.max(1, Math.floor(256 / size)) * size;
-    const visibleChunks =
-      Math.max(0, Math.ceil(view.right / chunkPixels) - Math.floor(view.left / chunkPixels)) *
-      Math.max(0, Math.ceil(view.bottom / chunkPixels) - Math.floor(view.top / chunkPixels));
     const tileLayers = sceneSession.editor.layers.filter(
       (layer) => layer.visible && layer.type === 'tilelayer',
     ).length;
-    const retain =
-      !overview && visibleChunks * chunkPixels * chunkPixels * 4 * tileLayers <= tileCache.limit;
+    const retain = !overview && tileViewBytes(size, view, tileLayers) <= tileCache.limit;
     for (const layer of sceneSession.editor.layers) {
       if (!layer.visible || (layer.type === 'tilelayer' && !filters.tiles)) {
         continue;

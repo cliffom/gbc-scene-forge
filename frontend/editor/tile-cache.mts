@@ -1,6 +1,24 @@
 import type { SceneLayer } from '../scene/layers.mts';
 import { tileContext, tileParts } from '../artwork/tile-transform.mts';
 
+/** Target chunk edge in native pixels; whole cells round down, with at least one cell. */
+export const TILE_CHUNK_EDGE_PIXELS = 256;
+/** Retained RGBA canvas bytes per mounted renderer; excludes keys, signatures and source images. */
+export const TILE_CACHE_BYTES = 16 * 1024 * 1024;
+
+export function tileChunkPixels(cellPixels: number) {
+  return Math.max(1, Math.floor(TILE_CHUNK_EDGE_PIXELS / cellPixels)) * cellPixels;
+}
+
+/** Conservative full-chunk estimate, including edge chunks, for all visible tile layers. */
+export function tileViewBytes(cellPixels: number, view: ViewBounds, layerCount: number) {
+  const pixels = tileChunkPixels(cellPixels);
+  const chunks =
+    Math.max(0, Math.ceil(view.right / pixels) - Math.floor(view.left / pixels)) *
+    Math.max(0, Math.ceil(view.bottom / pixels) - Math.floor(view.top / pixels));
+  return chunks * pixels * pixels * 4 * layerCount;
+}
+
 type Region = { image: HTMLImageElement; x: number; y: number };
 export interface ViewBounds {
   left: number;
@@ -39,7 +57,7 @@ type Chunk = {
 export class TileCache {
   private chunks = new Map<string, Chunk>();
   private bytes = 0;
-  readonly limit = 16 * 1024 * 1024;
+  readonly limit = TILE_CACHE_BYTES;
   clear() {
     for (const chunk of this.chunks.values()) {
       chunk.canvas.width = chunk.canvas.height = 0;
@@ -55,8 +73,8 @@ export class TileCache {
     regions: ReadonlyMap<string, Region>,
     retain = true,
   ) {
-    const step = Math.max(1, Math.floor(256 / size));
-    const pixels = step * size;
+    const pixels = tileChunkPixels(size);
+    const step = pixels / size;
     for (
       let cy = Math.max(0, Math.floor(view.top / pixels));
       cy < Math.ceil(view.bottom / pixels);

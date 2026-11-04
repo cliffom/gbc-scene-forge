@@ -1,4 +1,4 @@
-import { TileCache } from '../../../frontend/editor/tile-cache.mts';
+import { TileCache, tileViewBytes } from '../../../frontend/editor/tile-cache.mts';
 import { tileContext, tileParts } from '../../../frontend/artwork/tile-transform.mts';
 import type { SceneLayer } from '../../../frontend/scene/layers.mts';
 
@@ -140,6 +140,26 @@ export async function checkTileCache() {
     cache.clear();
     const releasedBytes = bitmapBytes();
     paint(0, 0);
+    // Full native chunks at the byte ceiling must agree with the renderer's
+    // retention estimate for every supported grid. Crossing it must release
+    // temporary canvases instead of retaining a thrashing fit view.
+    for (const size of [8, 16, 32]) {
+      cache.clear();
+      const cells = 2048 / size;
+      const layer = {
+        ...layers[0],
+        cells: Array.from({ length: cells }, () => Array<string>(cells).fill('tile')),
+      };
+      const view = { left: 0, top: 0, right: 2048, bottom: 2048 };
+      const estimate = tileViewBytes(size, view, 1);
+      cache.draw(ctx, layer, size, view, regions, estimate <= cache.limit);
+      checks.push(estimate === cache.limit && bitmapBytes() === estimate);
+      cache.clear();
+      const wider = { ...view, right: view.right + 1 };
+      const over = tileViewBytes(size, wider, 1);
+      cache.draw(ctx, layer, size, wider, regions, over <= cache.limit);
+      checks.push(over > cache.limit && bitmapBytes() === 0);
+    }
     return { checks, cold, warm, retainedBytes, releasedBytes, limit: cache.limit };
   } finally {
     CanvasRenderingContext2D.prototype.drawImage = native;

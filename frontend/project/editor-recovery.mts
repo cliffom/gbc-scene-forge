@@ -1,7 +1,7 @@
 import type { Feedback } from '../editor/editor-notifications.mts';
 import type { EditorLifetime } from '../editor/editor-lifetime.mts';
 import { array, record, string } from '../shared/decode.mts';
-import { DraftWriter } from './drafts.mts';
+import { DraftWriter, SCENE_CHECKPOINT_FLUSH_INTERVAL_MS } from './drafts.mts';
 import { button, element, select } from '../editor/editor-dom.mts';
 import type {
   EditorActivity,
@@ -125,7 +125,7 @@ export function createRecoveryController({
     if (!activity.busy && !gestures.anchor) {
       void draftWriter?.flush();
     }
-  }, 5000);
+  }, SCENE_CHECKPOINT_FLUSH_INTERVAL_MS);
 
   document.addEventListener(
     'visibilitychange',

@@ -526,3 +526,43 @@ test('artwork layout keeps commands and drawing reachable across window sizes', 
     ) + '\n',
   );
 });
+
+test('retained artwork count rejects the next document, permits revisiting and frees a closed slot', async ({
+  page,
+  workspace,
+}) => {
+  const root = join(workspace.folder, 'capacity');
+  execFileSync(workspace.python, [
+    '-I',
+    '-c',
+    `
+import sys
+from pathlib import Path
+from gbc_scene_forge.project.application import Project
+p=Project.create(Path(sys.argv[1]),'Retained artwork capacity')
+for i in range(17):
+    c=p.artwork.documents.create(f'art{i}',f'Artwork {i}','sprite',8,8,p.catalog()['revision'])
+    p.artwork.documents.save(c)
+`,
+    root,
+  ]);
+  await page.goto(await workspace.start(root));
+  for (let i = 0; i < 16; i++) {
+    await page.locator(`[data-asset="art${i}/artwork"]`).click();
+    await expect(page.locator('#artwork-heading')).toHaveText(`Artwork ${i}`);
+    await expect(page.locator('#art-document-state')).toHaveText('Saved');
+  }
+  await expect(page.locator('#artwork-documents button')).toHaveCount(16);
+  await page.locator('[data-asset="art16/artwork"]').click();
+  await expect(page.locator('#art-message')).toContainText('limit 16');
+  await expect(page.locator('#artwork-documents button')).toHaveCount(16);
+  await page.locator('[data-asset="art0/artwork"]').click();
+  await expect(page.locator('#artwork-heading')).toHaveText('Artwork 0');
+  await expect(page.locator('#art-document-state')).toHaveText('Saved');
+  await (await revealArtworkControl(page, 'art-discard')).click();
+  await expect(page.locator('#artwork-documents button')).toHaveCount(15);
+  await page.locator('[data-asset="art16/artwork"]').click();
+  await expect(page.locator('#artwork-heading')).toHaveText('Artwork 16');
+  await expect(page.locator('#art-document-state')).toHaveText('Saved');
+  await expect(page.locator('#artwork-documents button')).toHaveCount(16);
+});

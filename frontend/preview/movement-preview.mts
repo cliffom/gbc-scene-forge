@@ -153,6 +153,9 @@ export function parsePreviewPath(text: string): PreviewPoint[] {
     return { x: Number(parts[0]), y: Number(parts[1]) };
   });
 }
+/** Limit simulated catch-up after a delayed frame; this is not the render frame cadence. */
+export const MAX_MOVEMENT_STEP_MS = 100;
+
 export class MovementPreview {
   position: PreviewPoint = { x: 0, y: 0 };
   footprint: PreviewRect = { x: -4, y: -4, width: 8, height: 8 };
@@ -184,7 +187,7 @@ export class MovementPreview {
       return;
     }
     this.moving = false;
-    let budget = (this.speed * Math.max(0, Math.min(milliseconds, 100))) / 1000;
+    let budget = (this.speed * Math.max(0, Math.min(milliseconds, MAX_MOVEMENT_STEP_MS))) / 1000;
     const keyboard = vector.x !== 0 || vector.y !== 0;
     if (keyboard) {
       this.path = [];

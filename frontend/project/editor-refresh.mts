@@ -16,6 +16,9 @@ import type { ProjectApi } from './project-api.mts';
 import type { Loaded } from './project-contracts.mts';
 import { decodeLoaded } from './project-contracts.mts';
 
+/** Probe cadence for saved scene/project revisions and navigation choices, not a save delay. */
+export const SAVED_REFRESH_INTERVAL_MS = 2000;
+
 export interface Ports {
   refreshChoices: (eligible: () => boolean) => Promise<void>;
   captureBrush: () => {
@@ -355,6 +358,6 @@ export function createRefreshController({
     { signal: lifetime.signal },
   );
 
-  lifetime.interval(() => void checkExternalChanges(), 2000);
+  lifetime.interval(() => void checkExternalChanges(), SAVED_REFRESH_INTERVAL_MS);
   return { checkExternalChanges };
 }

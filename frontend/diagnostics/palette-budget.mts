@@ -4,6 +4,10 @@ import * as v from 'valibot';
 import { array, number, record, string } from '../shared/decode.mts';
 import { finite, jsonObject, parse } from '../shared/schema.mts';
 
+/** Coalesce local report changes independently of saved-revision freshness polling. */
+export const PALETTE_REPORT_DEBOUNCE_MS = 300;
+export const PALETTE_FRESHNESS_INTERVAL_MS = 5000;
+
 // Keep version/layout preflight ahead of reservations, as in the wire decoder.
 function reservedSchema(limit = 8) {
   return v.nullable(
@@ -340,7 +344,7 @@ export function createPalettePanel(
       if (!blocked && value && !draftChanged && context) {
         timer = lifetime.timeout(() => {
           void check();
-        }, 300);
+        }, PALETTE_REPORT_DEBOUNCE_MS);
       }
     }
   }
@@ -365,7 +369,7 @@ export function createPalettePanel(
     if (activeRequests === 0) {
       void check();
     }
-  }, 5000);
+  }, PALETTE_FRESHNESS_INTERVAL_MS);
   return {
     sync,
     saved() {

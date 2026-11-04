@@ -1,6 +1,11 @@
 import { record } from '../shared/decode.mts';
 import { HttpError } from '../shared/errors.mts';
 
+/** Quiet time after an observed scene edit; explicit flushes bypass this delay. */
+export const SCENE_CHECKPOINT_DEBOUNCE_MS = 750;
+/** Retry/flush cadence while mounted; busy and gesture gates remain in the controller. */
+export const SCENE_CHECKPOINT_FLUSH_INTERVAL_MS = 5000;
+
 /** Serializes checkpoint writes and cleanup, including edits made during a request. */
 export class DraftWriter {
   private draftId = crypto.randomUUID();
@@ -80,7 +85,7 @@ export class DraftWriter {
     this.timer = setTimeout(() => {
       this.timer = undefined;
       void this.flush();
-    }, 750);
+    }, SCENE_CHECKPOINT_DEBOUNCE_MS);
   }
   flush(): Promise<void> {
     clearTimeout(this.timer);
