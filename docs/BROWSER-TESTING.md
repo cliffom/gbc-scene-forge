@@ -65,8 +65,11 @@ same versioned Playwright Chromium. Linux installation can use
 `npx playwright install --with-deps chromium`.
 
 The runner retains zero retries and schedules individual tests in parallel,
-including tests within a file. Locally and on CI, the default is the smaller of
-four and Node's available CPU parallelism. Set
+including tests within a file. Locally and on CI, the default is half of Node's
+available CPU parallelism, rounded down, with at least one and at most four
+workers. Each test drives Chromium and Python processes, so the policy leaves
+CPU headroom: two workers on the measured four-CPU CI runner and four on an
+eight-or-more-CPU development machine. Set
 `FORGE_BROWSER_WORKERS` to a positive integer to override the count for any
 Make/npm entry point, including installed-wheel and optional MCP checks:
 
@@ -119,6 +122,39 @@ retry/preview behavior, and stale-revision download/discard. Each has its own
 purpose-specific project setup. Review-mode acceptance covers viewport expansion,
 pan/zoom/Fit, blocked authoring input, retained selection/history and camera position,
 narrow layouts, installed-wheel use, disposal/remount and external deletion. See [the coverage inventory](BROWSER-COVERAGE.md).
+
+## Worker comparison (#206)
+
+The [CI comparison](https://github.com/cliffom/gbc-scene-forge/actions/runs/41859847523)
+ran the same production bundle and original 163-case regular suite at revision
+`430598b`, sequentially with one, two and four workers on one Ubuntu 24.04 x86_64
+runner. Its AMD EPYC 9V74 exposed four logical CPUs (two cores, two threads each),
+15,983 MiB RAM, 3,071 MiB swap and 7.9 GiB shared memory. Open-file and process
+limits were 65,536 and 58,121; stack was 16,384 KiB, with CPU, data and virtual
+memory unlimited. Cgroup CPU/memory/process limit files were unavailable.
+
+| Workers | Wall time | Passed / skipped / failed | Maximum RSS (KiB) |
+| ---: | ---: | --- | ---: |
+| 1 | 10:38.36 | 152 / 11 / 0 | 932,708 |
+| 2 | 6:25.95 | 152 / 11 / 0 | 817,872 |
+| 4 | 4:59.51 | 150 / 11 / 2 | 824,104 |
+
+Two workers reduced wall time by 39.5% and establish the default on this runner.
+Four workers failed Library navigation assertions in artwork pixels (Undo stayed
+disabled) and contextual panels (the expected animation frame remained absent).
+Their root cause was not established; assertions and zero retries remain intact.
+The half-CPU policy permits up to four workers locally: the final 165-case suite
+passed on a 16-CPU macOS development machine with 154 passes and 11 profile skips.
+
+The run's `browser-diagnostics` artifact retains per-count JSON/HTML reports,
+failure traces/logs, GNU time output and runner resource observations. Wall time
+includes npm/report overhead. GNU maximum RSS is not aggregate peak memory across
+all browser/server processes. This was one sequential sweep, without repeated
+sampling or control for warm-cache/order effects. The benchmark predates the final
+fixture isolation changes and two server-ownership tests. Final local acceptance
+also passed installed-wheel first use and all six optional MCP cases; these were
+skipped in the benchmark CI run. Ordinary acceptance timings do not establish
+editor performance baselines.
 
 ## Failure evidence
 

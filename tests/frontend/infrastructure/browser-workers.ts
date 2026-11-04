@@ -4,9 +4,10 @@ import { browserWorkers } from '../../playwright/support/worker-policy.ts';
 
 await test('browser concurrency uses bounded CPU capacity and explicit overrides everywhere', () => {
   assert.equal(browserWorkers({}, 16), 4);
-  assert.equal(browserWorkers({}, 2), 2);
+  assert.equal(browserWorkers({}, 4), 2);
+  assert.equal(browserWorkers({}, 2), 1);
   assert.equal(browserWorkers({}, 1), 1);
-  assert.equal(browserWorkers({ CI: 'true' }, 2), 2);
+  assert.equal(browserWorkers({ CI: 'true' }, 4), 2);
   assert.equal(browserWorkers({ CI: 'true' }, 8), 4);
   assert.equal(browserWorkers({ CI: 'true', FORGE_BROWSER_WORKERS: '1' }, 8), 1);
   assert.equal(browserWorkers({ FORGE_BROWSER_WORKERS: '3' }, 8), 3);

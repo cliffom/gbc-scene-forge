@@ -24,5 +24,6 @@ export function browserWorkers(
   if (profiling && requested !== undefined && requested !== 1) {
     throw Error('Profiling requires FORGE_BROWSER_WORKERS=1 on an otherwise idle runner');
   }
-  return profiling ? 1 : (requested ?? Math.min(4, capacity));
+  // Each test drives Chromium and Python processes; leave CPU headroom for both.
+  return profiling ? 1 : (requested ?? Math.max(1, Math.min(4, Math.floor(capacity / 2))));
 }

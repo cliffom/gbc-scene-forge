@@ -15,6 +15,37 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Browser worker concurrency (#206)
+
+- **Scope:** Test infrastructure based on production 0.33.2 at `3b0cc3f`, checked
+  on 2026-11-04 with local macOS arm64, Node 24.22.1, Python 3.13 and Chromium;
+  the CI comparison used `430598b` on one four-CPU Ubuntu 24.04 runner.
+- **Method:** Audit test-owned projects, input artwork, server logs, bundles and
+  report paths; deliberately fail two parallel scenarios to inspect evidence and
+  cleanup. Run required lint/Python/TypeScript/documentation checks, production
+  build/package smoke checks, regular browser acceptance, installed-wheel first
+  use and installed optional-MCP service/browser suites. Compare the identical
+  original suite at one, two and four workers in the
+  [CI run](https://github.com/cliffom/gbc-scene-forge/actions/runs/41859847523), with
+  [measurements and resource limits](BROWSER-TESTING.md#worker-comparison-206).
+- **Result:** Two CI workers passed 152 cases with 11 profile skips in 6:25.95,
+  versus 10:38.36 at one worker; four workers had two navigation assertion failures.
+  The selected policy uses half the available CPUs, capped at four. Final local
+  four-worker acceptance passed 154 cases with 11 profile skips; all six MCP
+  browser cases, installed-wheel first use, 94 MCP service tests, seven package
+  smoke checks and required source checks passed. All 151 regular server scratch
+  directories were distinct and removed, with 154 activity-log attachments retained.
+  An intermediate fixture layout caused five project-creation failures; keeping
+  the creation directory empty inside an owned scratch parent resolved them.
+  Optional refresh status failures reproduced at both one and four workers before
+  replacing obsolete direct status access with locator assertions/dismissal.
+- **Limits:** The benchmark precedes final fixture isolation and the two added
+  ownership tests; its installed-wheel/MCP steps were skipped. Final local reports
+  are ignored build outputs, not archived CI evidence. The single CI sweep does
+  not establish repeated-run variance or aggregate peak process memory. The two
+  four-worker CI failures remain unexplained, so four is not the selected default
+  for that runner. No Windows/non-Chromium or editor-performance claim is made.
+
 ## Notification acceptance timing (PR #205)
 
 - **Scope:** Acceptance-test fixes based on `261a990`, checked locally on
