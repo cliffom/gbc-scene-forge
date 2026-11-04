@@ -1,4 +1,11 @@
 /** Sheet/frame navigation and sequence authoring, owned by the artwork lifetime. */
+import {
+  MAX_FRAMES,
+  MAX_SEQUENCES,
+  MAX_SEQUENCE_FRAMES,
+  MIN_DURATION_MS,
+  MAX_DURATION_MS,
+} from './sheet-limits.mts';
 import type { ArtworkRaster } from './artwork-raster.mts';
 import { button, element, input, select } from '../editor/editor-dom.mts';
 import type { EditorLifetime } from '../editor/editor-lifetime.mts';
@@ -53,10 +60,10 @@ export function createSheetEditor(
     }
     input('art-onion').disabled = busy || !view() || f?.kind !== 'sprite';
     button('art-add-animation-frame').disabled =
-      busy || !s || !f || !first || !compatible(f, first) || s.frames.length >= 256;
-    button('art-add-sequence').disabled = busy || !d || d.sequences.length >= 64;
+      busy || !s || !f || !first || !compatible(f, first) || s.frames.length >= MAX_SEQUENCE_FRAMES;
+    button('art-add-sequence').disabled = busy || !d || d.sequences.length >= MAX_SEQUENCES;
     button('art-tile-representation').disabled =
-      busy || !d || d.frames.length >= 128 || f?.kind !== 'sprite';
+      busy || !d || d.frames.length >= MAX_FRAMES || f?.kind !== 'sprite';
   }
   function stop() {
     playing = false;
@@ -198,13 +205,13 @@ export function createSheetEditor(
       );
       const duration = document.createElement('input');
       duration.type = 'number';
-      duration.min = '1';
-      duration.max = '65535';
+      duration.min = String(MIN_DURATION_MS);
+      duration.max = String(MAX_DURATION_MS);
       duration.value = String(item.duration_ms);
       duration.setAttribute('aria-label', `Frame ${index + 1} duration in milliseconds`);
       lifetime.assign(duration, 'onchange', () => {
         const n = Number(duration.value);
-        if (Number.isInteger(n) && n >= 1 && n <= 65535) {
+        if (Number.isInteger(n) && n >= MIN_DURATION_MS && n <= MAX_DURATION_MS) {
           edit(() => {
             item.duration_ms = n;
           });
@@ -454,7 +461,7 @@ export function createSheetEditor(
     edit(() => {
       const s = sequence(),
         f = selectedFrame();
-      if (s && f && s.frames.length < 256) {
+      if (s && f && s.frames.length < MAX_SEQUENCE_FRAMES) {
         s.frames.push({ frame_id: f.id, duration_ms: 120 });
       }
     }),

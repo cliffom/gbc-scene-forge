@@ -9,6 +9,8 @@ from gbc_scene_forge.formats import tiled
 from gbc_scene_forge.scenes import authoring, rendering
 from gbc_scene_forge.storage.files import digest
 
+MAX_SCALE = 16  # Integer enlargement requested by the caller; output still has an axis cap.
+MAX_VIEW_AXIS = 1024  # Fit whole-document views before enlargement.
 MAX_SCENES = 64
 MAX_MAP_BYTES = 16 * 1024 * 1024
 PAGE_SIZE = 256
@@ -164,7 +166,7 @@ def isolated(descriptor, pixels, scale, rectangle=None):
         rectangle = {"x": 0, "y": 0, "width": width, "height": height}
     # Integer nearest-neighbor sampling covers the entire image without allocating
     # an enlarged source. Exact source pixels remain available via bounded reads.
-    step = max(1, (max(width, height) + 1023) // 1024)
+    step = max(1, (max(width, height) + MAX_VIEW_AXIS - 1) // MAX_VIEW_AXIS)
     if step > 1:
         pixels = b"".join(
             pixels[(y * width + x) * 4 : (y * width + x + 1) * 4]
@@ -172,7 +174,7 @@ def isolated(descriptor, pixels, scale, rectangle=None):
             for x in range(0, width, step)
         )
         width, height = (width + step - 1) // step, (height + step - 1) // step
-    scale = min(scale, 1024 // max(width, height))
+    scale = min(scale, MAX_VIEW_AXIS // max(width, height))
     rows = []
     for y in range(height):
         row = b"".join(
@@ -206,7 +208,7 @@ class ArtworkReview:
 
     def frame(self, candidate, frame_id, *, scale=4):
         editable.check_candidate(candidate)
-        require(integer(scale, 1, 16), "Review scale must be within 1..16")
+        require(integer(scale, 1, MAX_SCALE), "Review scale must be within 1..16")
         d = candidate["descriptor"]
         require(d["version"] == 2, "Frame reviews require a native sheet")
         frame = next((f for f in d["frames"] if f["id"] == frame_id), None)
@@ -233,7 +235,7 @@ class ArtworkReview:
         Images are PNG bytes; receipts and reference data are transport-neutral JSON.
         """
         pixels = editable.check_candidate(candidate)
-        require(integer(scale, 1, 16), "Review scale must be an integer within 1..16")
+        require(integer(scale, 1, MAX_SCALE), "Review scale must be an integer within 1..16")
         require(integer(offset, 0, 2147483647), "Invalid reference page offset")
         if scene is not None:
             authoring.bounded(scene)

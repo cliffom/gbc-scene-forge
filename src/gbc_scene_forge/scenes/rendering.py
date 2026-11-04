@@ -7,6 +7,7 @@ origins and ordered visible layers. Output stays transparent outside artwork.
 from gbc_scene_forge.artwork import png
 from gbc_scene_forge.core.validation import integer, require
 from gbc_scene_forge.formats import tiled
+from gbc_scene_forge.scenes import dimensions
 
 MAX_DIMENSION = 1024
 MAX_PIXELS = 1024 * 1024
@@ -19,7 +20,10 @@ def viewport(value):
         isinstance(value, dict) and set(value) == {"x", "y", "width", "height"},
         "Expected a pixel viewport: x, y, width, height",
     )
-    require(all(integer(value[k], 0, 8192) for k in ("x", "y")), "Invalid viewport origin")
+    require(
+        all(integer(value[k], 0, dimensions.MAX_PIXELS) for k in ("x", "y")),
+        "Invalid viewport origin",
+    )
     require(
         all(integer(value[k], 1, MAX_DIMENSION) for k in ("width", "height"))
         and value["width"] * value["height"] <= MAX_PIXELS,

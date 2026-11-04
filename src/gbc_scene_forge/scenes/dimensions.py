@@ -1,13 +1,16 @@
 """Native scene allocation limits, checked before constructing cell arrays."""
 
+from gbc_scene_forge.artwork.model import GRIDS
 from gbc_scene_forge.core.validation import integer, require
 
 MAX_CELLS = 65_536
 MAX_PIXELS = 8192
+MAX_LAYERS = 128  # Ordered native layers per scene.
+MAX_OBJECTS_PER_LAYER = 4096  # Objects allocated in one object layer.
 
 
 def check_dimensions(width, height, grid):
-    require(type(grid) is int and grid in (8, 16, 32), "Choose an 8, 16 or 32 pixel grid")
+    require(type(grid) is int and grid in GRIDS, "Choose an 8, 16 or 32 pixel grid")
     require(
         integer(width, 1, MAX_PIXELS // grid) and integer(height, 1, MAX_PIXELS // grid),
         "Scene dimensions must be positive whole cells and at most 8192 pixels per axis",

@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path
 
 from gbc_scene_forge.artwork import metadata as tile_metadata
-from gbc_scene_forge.artwork import png
+from gbc_scene_forge.artwork import png, sheets
 from gbc_scene_forge.core.serialization import json_text
 from gbc_scene_forge.core.validation import identifier, integer, require
 from gbc_scene_forge.storage.paths import reject_symlinks
@@ -105,7 +105,8 @@ def load_bundle(path):
             "Invalid region origin",
         )
         require(
-            "duration_ms" not in region or integer(region["duration_ms"], 1, 65535),
+            "duration_ms" not in region
+            or integer(region["duration_ms"], sheets.MIN_DURATION_MS, sheets.MAX_DURATION_MS),
             "Invalid region duration",
         )
         names[name] = region
@@ -159,7 +160,11 @@ def load_bundle(path):
             )
             region = names[frame["region"]]
             require(
-                integer(frame.get("duration_ms", region.get("duration_ms")), 1, 65535),
+                integer(
+                    frame.get("duration_ms", region.get("duration_ms")),
+                    sheets.MIN_DURATION_MS,
+                    sheets.MAX_DURATION_MS,
+                ),
                 "Animation frame needs duration_ms",
             )
             shapes.append(

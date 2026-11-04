@@ -5,6 +5,7 @@ import copy
 from gbc_scene_forge.core.validation import integer, require
 from gbc_scene_forge.formats import tiled
 from gbc_scene_forge.project.schema import check_stamp_slots
+from gbc_scene_forge.scenes import dimensions
 
 
 def place(scene, document, stamp_id, x, y):
@@ -53,7 +54,7 @@ def place(scene, document, stamp_id, x, y):
             mapping["tile_write_count"] = count
         else:
             require(
-                len(target["objects"]) + len(layer["objects"]) <= 4096,
+                len(target["objects"]) + len(layer["objects"]) <= dimensions.MAX_OBJECTS_PER_LAYER,
                 "Use at most 4096 objects per layer",
             )
             mapping["object_ids"] = []

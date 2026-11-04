@@ -1,10 +1,21 @@
 """MCP capability inventory and wire input schemas; no SDK import required."""
 
-from gbc_scene_forge.artwork import dimensions
+from gbc_scene_forge.artwork import (
+    atlas,
+    dimensions,
+    editable,
+    layers,
+    raster,
+    review,
+    sheets,
+    workshop,
+)
+from gbc_scene_forge.scenes import authoring, rendering
+from gbc_scene_forge.scenes import dimensions as scene_dimensions
 
 TEXT = {"type": "string", "minLength": 1, "maxLength": 100}
 REVISION = {"type": "string", "pattern": "^[0-9a-f]{64}$"}
-ID = {"type": "integer", "minimum": 1, "maximum": 2147483646}
+ID = {"type": "integer", "minimum": 1, "maximum": editable.MAX_PLACEMENT_ID}
 NATIVE = {
     "type": "object",
     "description": "Canonical Forge JSON; inspect get_scene/get_project first.",
@@ -83,7 +94,11 @@ EDIT = {
                 "name": TEXT,
                 "type": {"enum": ["tilelayer", "objectgroup"]},
                 "visible": {"type": "boolean"},
-                "index": {"type": "integer", "minimum": 0, "maximum": 127},
+                "index": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": scene_dimensions.MAX_LAYERS - 1,
+                },
             },
             ("visible", "index"),
         ),
@@ -101,7 +116,11 @@ EDIT = {
             {
                 "op": {"const": "move_layer"},
                 "layer_id": ID,
-                "index": {"type": "integer", "minimum": 0, "maximum": 127},
+                "index": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": scene_dimensions.MAX_LAYERS - 1,
+                },
             }
         ),
         schema({"op": {"const": "delete_layer"}, "layer_id": ID}),
@@ -113,7 +132,7 @@ EDIT = {
                     "cells": {
                         "type": "array",
                         "minItems": 1,
-                        "maxItems": 4096,
+                        "maxItems": authoring.MAX_TILE_EDITS,
                         "items": schema(
                             {
                                 "x": {"type": "integer", "minimum": 0, "maximum": 65535},
@@ -163,7 +182,13 @@ TOOLS = [
     tool(
         "create_scene",
         "Create an empty scene; width/height are cells, grid is pixels. At most 65536 cells and 8192 pixels per axis.",
-        {**GUARD, "name": TEXT, "width": ID, "height": ID, "grid": {"enum": [8, 16, 32]}},
+        {
+            **GUARD,
+            "name": TEXT,
+            "width": ID,
+            "height": ID,
+            "grid": {"enum": list(scene_dimensions.GRIDS)},
+        },
     ),
     tool(
         "rename_scene",
@@ -192,7 +217,12 @@ TOOLS = [
         "properties replaces all explicit overrides; omitted fields are retained. No browser Undo.",
         {
             **SCENE,
-            "operations": {"type": "array", "minItems": 1, "maxItems": 128, "items": EDIT},
+            "operations": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": authoring.MAX_OPERATIONS,
+                "items": EDIT,
+            },
             "dry_run": {"type": "boolean"},
         },
         ("dry_run",),
@@ -264,10 +294,10 @@ TOOLS = [
             "scene": NATIVE,
             "overview": schema(
                 {
-                    "x": {"type": "integer", "minimum": 0, "maximum": 8192},
-                    "y": {"type": "integer", "minimum": 0, "maximum": 8192},
-                    "width": {"type": "integer", "minimum": 1, "maximum": 1024},
-                    "height": {"type": "integer", "minimum": 1, "maximum": 1024},
+                    "x": {"type": "integer", "minimum": 0, "maximum": scene_dimensions.MAX_PIXELS},
+                    "y": {"type": "integer", "minimum": 0, "maximum": scene_dimensions.MAX_PIXELS},
+                    "width": {"type": "integer", "minimum": 1, "maximum": rendering.MAX_DIMENSION},
+                    "height": {"type": "integer", "minimum": 1, "maximum": rendering.MAX_DIMENSION},
                 }
             ),
         },
@@ -294,10 +324,10 @@ TOOLS = [
             "scene": NATIVE,
             "overview": schema(
                 {
-                    "x": {"type": "integer", "minimum": 0, "maximum": 8192},
-                    "y": {"type": "integer", "minimum": 0, "maximum": 8192},
-                    "width": {"type": "integer", "minimum": 1, "maximum": 1024},
-                    "height": {"type": "integer", "minimum": 1, "maximum": 1024},
+                    "x": {"type": "integer", "minimum": 0, "maximum": scene_dimensions.MAX_PIXELS},
+                    "y": {"type": "integer", "minimum": 0, "maximum": scene_dimensions.MAX_PIXELS},
+                    "width": {"type": "integer", "minimum": 1, "maximum": rendering.MAX_DIMENSION},
+                    "height": {"type": "integer", "minimum": 1, "maximum": rendering.MAX_DIMENSION},
                 }
             ),
         },
@@ -368,7 +398,11 @@ TOOLS = [
             "slots": {
                 "type": "array",
                 "maxItems": 128,
-                "items": {"type": "integer", "minimum": 0, "maximum": 127},
+                "items": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": scene_dimensions.MAX_LAYERS - 1,
+                },
             },
         },
     ),
@@ -396,12 +430,17 @@ ORIGIN = {
     "maxItems": 2,
     "items": {"type": "integer", "minimum": 0, "maximum": dimensions.MAX_AXIS - 1},
 }
-GRID_DIMENSION = {"type": "integer", "minimum": 8, "maximum": 256, "multipleOf": 8}
+GRID_DIMENSION = {
+    "type": "integer",
+    "minimum": dimensions.GRID_UNIT,
+    "maximum": dimensions.MAX_GRID_AXIS,
+    "multipleOf": dimensions.GRID_UNIT,
+}
 DIMENSION = {"type": "integer", "minimum": 1, "maximum": dimensions.MAX_AXIS}
 SOURCE_PROPERTIES = {
     "atlas_id": ASSET_ID,
     "region": ASSET_ID,
-    "grid": {"enum": [None, 8, 16, 32]},
+    "grid": {"enum": [None, *atlas.GRIDS]},
     "cell": {
         "anyOf": [
             NULL,
@@ -409,7 +448,7 @@ SOURCE_PROPERTIES = {
                 "type": "array",
                 "minItems": 2,
                 "maxItems": 2,
-                "items": {"type": "integer", "minimum": 0, "maximum": 2047},
+                "items": {"type": "integer", "minimum": 0, "maximum": editable.MAX_SOURCE_CELL},
             },
         ]
     },
@@ -421,14 +460,14 @@ PLACEMENT_BASE = {"scene_id": UUID, "scene_revision": REVISION, "layer_id": ID}
 PLACEMENTS = {
     "type": "array",
     "minItems": 1,
-    "maxItems": 256,
+    "maxItems": editable.MAX_PLACEMENTS,
     "items": {
         "oneOf": [
             schema(
                 {
                     **PLACEMENT_BASE,
-                    "x": {"type": "integer", "minimum": 0, "maximum": 2047},
-                    "y": {"type": "integer", "minimum": 0, "maximum": 2047},
+                    "x": {"type": "integer", "minimum": 0, "maximum": editable.MAX_SOURCE_CELL},
+                    "y": {"type": "integer", "minimum": 0, "maximum": editable.MAX_SOURCE_CELL},
                 }
             ),
             schema({**PLACEMENT_BASE, "object_id": ID}),
@@ -466,17 +505,27 @@ FRAME = schema(
         "id": ASSET_ID,
         "name": TEXT,
         "kind": {"enum": ["tile", "sprite"]},
-        "x": {"type": "integer", "minimum": 0, "maximum": 248, "multipleOf": 8},
-        "y": {"type": "integer", "minimum": 0, "maximum": 248, "multipleOf": 8},
+        "x": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": dimensions.MAX_GRID_AXIS - dimensions.GRID_UNIT,
+            "multipleOf": dimensions.GRID_UNIT,
+        },
+        "y": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": dimensions.MAX_GRID_AXIS - dimensions.GRID_UNIT,
+            "multipleOf": dimensions.GRID_UNIT,
+        },
         "width": GRID_DIMENSION,
         "height": GRID_DIMENSION,
         "origin": ORIGIN,
     }
 )
-FRAMES = {"type": "array", "minItems": 1, "maxItems": 128, "items": FRAME}
+FRAMES = {"type": "array", "minItems": 1, "maxItems": sheets.MAX_FRAMES, "items": FRAME}
 SEQUENCES = {
     "type": "array",
-    "maxItems": 64,
+    "maxItems": sheets.MAX_SEQUENCES,
     "items": schema(
         {
             "id": ASSET_ID,
@@ -485,11 +534,15 @@ SEQUENCES = {
             "frames": {
                 "type": "array",
                 "minItems": 1,
-                "maxItems": 256,
+                "maxItems": sheets.MAX_SEQUENCE_FRAMES,
                 "items": schema(
                     {
                         "frame_id": ASSET_ID,
-                        "duration_ms": {"type": "integer", "minimum": 1, "maximum": 65535},
+                        "duration_ms": {
+                            "type": "integer",
+                            "minimum": sheets.MIN_DURATION_MS,
+                            "maximum": sheets.MAX_DURATION_MS,
+                        },
                     }
                 ),
             },
@@ -515,7 +568,7 @@ LAYER = schema(
         "opacity": {"type": "integer", "minimum": 0, "maximum": 255},
     }
 )
-LAYERS = {"type": "array", "minItems": 1, "maxItems": 8, "items": LAYER}
+LAYERS = {"type": "array", "minItems": 1, "maxItems": layers.MAX_LAYERS, "items": LAYER}
 for shape in (DESCRIPTOR, SHEET_DESCRIPTOR):
     shape["properties"]["layers"] = schema({"version": {"const": 1}, "items": LAYERS})
 DESCRIPTOR = {"oneOf": [DESCRIPTOR, SHEET_DESCRIPTOR]}
@@ -606,7 +659,7 @@ RASTER_OPERATION = {
                 "colors": {
                     "type": "array",
                     "minItems": 1,
-                    "maxItems": 1024,
+                    "maxItems": raster.MAX_REMAP_PAIRS,
                     "items": {"type": "array", "minItems": 2, "maxItems": 2, "items": RGBA},
                 },
             },
@@ -616,10 +669,10 @@ RASTER_OPERATION = {
 }
 VIEWPORT = schema(
     {
-        "x": {"type": "integer", "minimum": 0, "maximum": 8192},
-        "y": {"type": "integer", "minimum": 0, "maximum": 8192},
-        "width": {"type": "integer", "minimum": 1, "maximum": 1024},
-        "height": {"type": "integer", "minimum": 1, "maximum": 1024},
+        "x": {"type": "integer", "minimum": 0, "maximum": scene_dimensions.MAX_PIXELS},
+        "y": {"type": "integer", "minimum": 0, "maximum": scene_dimensions.MAX_PIXELS},
+        "width": {"type": "integer", "minimum": 1, "maximum": rendering.MAX_DIMENSION},
+        "height": {"type": "integer", "minimum": 1, "maximum": rendering.MAX_DIMENSION},
     }
 )
 RECEIPT = schema(
@@ -689,7 +742,7 @@ TOOLS.extend(
                 "operations": {
                     "type": "array",
                     "minItems": 1,
-                    "maxItems": 128,
+                    "maxItems": raster.MAX_OPERATIONS,
                     "items": RASTER_OPERATION,
                 },
             },
@@ -743,7 +796,7 @@ TOOLS.extend(
             {
                 **ARTWORK_CANDIDATE,
                 "sequence_id": ASSET_ID,
-                "scale": {"type": "integer", "minimum": 1, "maximum": 16},
+                "scale": {"type": "integer", "minimum": 1, "maximum": review.MAX_SCALE},
             },
             ("scale",),
             read=True,
@@ -812,7 +865,7 @@ TOOLS.extend(
                 "writes": {
                     "type": "array",
                     "minItems": 1,
-                    "maxItems": 65536,
+                    "maxItems": editable.MAX_PIXEL_WRITES,
                     "items": schema(
                         {
                             "x": {
@@ -843,7 +896,7 @@ TOOLS.extend(
             "Read-only native/enlarged before/after PNG resources, saved references and commit receipt for exact candidate/base. Optional explicit saved or temporary scene context. Default whole-document overview; optional rectangle selects native detail. Scale 1..16 is fitted to output <=1024 per axis; 64 scenes/16 MiB map scan; 256 locations per offset page.",
             {
                 **ARTWORK_CANDIDATE,
-                "scale": {"type": "integer", "minimum": 1, "maximum": 16},
+                "scale": {"type": "integer", "minimum": 1, "maximum": review.MAX_SCALE},
                 "rectangle": RECTANGLE,
                 "offset": {"type": "integer", "minimum": 0, "maximum": 2147483647},
                 "scene": schema(
@@ -965,7 +1018,7 @@ TOOLS.append(
         {
             **ARTWORK_CANDIDATE,
             "frame_id": ASSET_ID,
-            "scale": {"type": "integer", "minimum": 1, "maximum": 16},
+            "scale": {"type": "integer", "minimum": 1, "maximum": review.MAX_SCALE},
         },
         ("scale",),
         read=True,
@@ -1005,7 +1058,12 @@ BATCH_OPERATION = {
                 (
                     "raster",
                     "operations",
-                    {"type": "array", "minItems": 1, "maxItems": 128, "items": RASTER_OPERATION},
+                    {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": raster.MAX_OPERATIONS,
+                        "items": RASTER_OPERATION,
+                    },
                 ),
             )
         ],
@@ -1028,7 +1086,7 @@ TOOLS.extend(
                 "operations": {
                     "type": "array",
                     "minItems": 1,
-                    "maxItems": 128,
+                    "maxItems": workshop.MAX_BATCH_OPERATIONS,
                     "items": BATCH_OPERATION,
                 },
             },
@@ -1055,8 +1113,13 @@ TOOLS.extend(
             "Opt-in no-dither palette conversion on unlocked sources. Choose RGB palette or exact RGBA budget 1..256. Weighted median cut then nearest squared sRGB, lexicographic ties. Alpha and hidden transparent RGB unchanged; impossible budgets reject. Returns candidate and counts/choices report. Review again.",
             {
                 **ARTWORK_CANDIDATE,
-                "palette": {"type": "array", "minItems": 1, "maxItems": 256, "items": _RGB},
-                "budget": {"type": "integer", "minimum": 1, "maximum": 256},
+                "palette": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": workshop.MAX_PALETTE_COLORS,
+                    "items": _RGB,
+                },
+                "budget": {"type": "integer", "minimum": 1, "maximum": workshop.MAX_PALETTE_COLORS},
             },
             ("palette", "budget"),
             read=True,
@@ -1073,7 +1136,7 @@ TOOLS.extend(
                 "layers": {
                     "type": "array",
                     "minItems": 1,
-                    "maxItems": 8,
+                    "maxItems": layers.MAX_LAYERS,
                     "items": schema(
                         {
                             "layer": LAYER,

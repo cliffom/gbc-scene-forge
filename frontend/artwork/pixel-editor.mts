@@ -1,4 +1,5 @@
 /** Artwork composition: document transitions, review/save and recovery with typed ports. */
+import { MAX_PLACEMENTS } from './placement-limits.mts';
 import { createArtworkLayerControls } from './artwork-layer-controls.mts';
 import { paletteColors } from './artwork-palette.mts';
 import { button, element, input, select } from '../editor/editor-dom.mts';
@@ -1422,7 +1423,7 @@ export function createPixelEditor({
             throw Error('Every selected cell must match the chosen source tile.');
           }
           result.push({ ...base, x, y });
-          if (result.length > 256) {
+          if (result.length > MAX_PLACEMENTS) {
             throw Error('Select at most 256 placements.');
           }
         }
@@ -1440,7 +1441,7 @@ export function createPixelEditor({
         result.push({ ...base, object_id: Number(id) });
       }
     }
-    if (!result.length || result.length > 256) {
+    if (!result.length || result.length > MAX_PLACEMENTS) {
       throw Error('Select 1..256 matching tile cells or sprite objects in the saved scene first.');
     }
     return result;

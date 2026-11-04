@@ -30,6 +30,9 @@ The sample copier belongs to project lifecycle; its CLI belongs to adapters.
 Existing native JSON payloads are intentionally retained at format boundaries. Typed saved-read records describe identity and revision contracts;
 this change does not replace the wire format with a parallel class hierarchy.
 
+See [authoring limit ownership](DOMAIN-LIMITS.md) for domain policy definitions,
+wire/browser representations, units and shared boundary fixtures.
+
 ## HTTP dispatch ownership
 
 `adapters/http/routes.py` lists fixed project endpoints in `PROJECT_ROUTES`, keyed

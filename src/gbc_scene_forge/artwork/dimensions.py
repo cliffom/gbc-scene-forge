@@ -2,6 +2,9 @@
 
 from gbc_scene_forge.core.validation import integer, require
 
+# Tile and animation-sheet geometry uses eight-pixel alignment, unlike static sprites.
+GRID_UNIT = 8
+MAX_GRID_AXIS = 256
 MAX_AXIS = 4096
 MAX_PIXELS = 4_194_304
 MAX_RGBA_BYTES = MAX_PIXELS * 4  # 16 MiB decoded RGBA8.
@@ -23,6 +26,8 @@ def check(width, height):
 
 def grid_canvas(width, height):
     require(
-        integer(width, 8, 256) and integer(height, 8, 256) and width % 8 == height % 8 == 0,
+        integer(width, GRID_UNIT, MAX_GRID_AXIS)
+        and integer(height, GRID_UNIT, MAX_GRID_AXIS)
+        and width % GRID_UNIT == height % GRID_UNIT == 0,
         "Tile/sheet dimensions must be multiples of eight within 8..256",
     )

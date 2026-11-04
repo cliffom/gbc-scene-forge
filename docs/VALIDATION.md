@@ -15,6 +15,32 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Shared authoring limit contracts (#171)
+
+- **Scope:** Behavior-preserving working tree based on `6830fbe`, checked locally
+  on 2026-11-04 with macOS 27.0.1 arm64, Python 3.13.13, Node 24.22.1 and installed
+  Chromium. Package/runtime version remains 0.35.0; no release was published.
+- **Method:** Run `make lint test`, production `make build check-dist test-browser`,
+  and installed-wheel domain-limit/import-boundary discovery. Exercise the
+  [shared corpus](../tests/fixtures/domain-limits.json) in Python and TypeScript;
+  compare complete MCP tool schemas/artwork capabilities against the pre-refactor
+  payload. See [policy ownership and units](DOMAIN-LIMITS.md).
+- **Result:** Lint/docs checks, 473 Python tests and frontend suites pass. All 86
+  shared lower/upper boundary cases pass in both languages; real scene/raster/
+  candidate batches retain their bounds, atomic rejection and first-error order.
+  Complete MCP schema/capability JSON remains identical. Production source/wheel
+  builds, metadata checks, seven wheel smoke cases, four installed-wheel limit
+  cases and six installed-wheel architecture cases pass. Regular Chromium
+  acceptance passes 158 cases, including animation, near-limit layouts, large
+  artwork, selected variations, scene dimensions, layers and recovery. The new
+  scene-batch fixture initially assumed explicit layers; using the canonical layer
+  accessor corrected that test failure before the successful full run.
+- **Limits:** Twelve opt-in browser profile cases were skipped. These are synthetic
+  contract/acceptance checks, not new capacity measurements or independent-user
+  evaluation. Optional Tiled interoperability and Python 3.14 were not run locally.
+  Broader schema bounds, service-only cross-field checks and distinct JSON byte
+  measurement rules intentionally remain as documented in the inventory.
+
 ## MCP draft comparison, PNG inspection and archive plans (#211–#213)
 
 - **Scope:** Prepared 0.35.0 working tree based on `12cf3fa`, checked on

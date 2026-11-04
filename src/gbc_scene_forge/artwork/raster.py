@@ -11,6 +11,7 @@ from gbc_scene_forge.core.validation import integer, require
 MAX_OPERATIONS = 128
 MAX_WORK = 16_777_216  # Sum of visited rectangle pixels, including fill/copy/transform work.
 COLOR_PAGE = 256
+MAX_REMAP_PAIRS = 1024  # Explicit simultaneous color substitutions per remap operation.
 MAX_COLORS = 65_536
 
 
@@ -119,7 +120,7 @@ def edit(candidate, operations):
         if kind in {"replace", "remap"}:
             pairs = [[op["from"], op["rgba"]]] if kind == "replace" else op["colors"]
             require(
-                isinstance(pairs, list) and 1 <= len(pairs) <= 1024,
+                isinstance(pairs, list) and 1 <= len(pairs) <= MAX_REMAP_PAIRS,
                 "Use 1..1024 explicit color pairs",
             )
             mapping = {}

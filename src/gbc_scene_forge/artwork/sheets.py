@@ -2,12 +2,17 @@
 
 import copy
 
+from gbc_scene_forge.artwork import dimensions
 from gbc_scene_forge.core.identities import name
 from gbc_scene_forge.core.validation import identifier, integer, require
 
+# Counts bound descriptor size and animation review work; durations are APNG uint16 ms.
 MAX_FRAMES = 128
 MAX_SEQUENCES = 64
 MAX_SEQUENCE_FRAMES = 256
+MAX_TOTAL_SEQUENCE_FRAMES = 1024
+MIN_DURATION_MS = 1
+MAX_DURATION_MS = 65_535
 
 
 def check(descriptor):
@@ -30,12 +35,12 @@ def check(descriptor):
         w, h = frame["width"], frame["height"]
         require(
             frame["kind"] in ("tile", "sprite")
-            and integer(w, 8, 256)
-            and integer(h, 8, 256)
-            and w % 8 == h % 8 == 0
+            and integer(w, dimensions.GRID_UNIT, dimensions.MAX_GRID_AXIS)
+            and integer(h, dimensions.GRID_UNIT, dimensions.MAX_GRID_AXIS)
+            and w % dimensions.GRID_UNIT == h % dimensions.GRID_UNIT == 0
             and integer(frame["x"], 0, descriptor["width"] - w)
             and integer(frame["y"], 0, descriptor["height"] - h)
-            and frame["x"] % 8 == frame["y"] % 8 == 0,
+            and frame["x"] % dimensions.GRID_UNIT == frame["y"] % dimensions.GRID_UNIT == 0,
             "Frame rectangles must be aligned multiples of eight inside the sheet",
         )
         origin = frame["origin"]
@@ -75,7 +80,7 @@ def check(descriptor):
             "Use 1..256 timed frames per sequence",
         )
         total += len(items)
-        require(total <= 1024, "Use at most 1024 total sequence frames")
+        require(total <= MAX_TOTAL_SEQUENCE_FRAMES, "Use at most 1024 total sequence frames")
         geometry = None
         for item in items:
             require(
@@ -83,7 +88,7 @@ def check(descriptor):
                 and set(item) == {"frame_id", "duration_ms"}
                 and isinstance(item["frame_id"], str)
                 and item["frame_id"] in indexed
-                and integer(item["duration_ms"], 1, 65535),
+                and integer(item["duration_ms"], MIN_DURATION_MS, MAX_DURATION_MS),
                 "Sequence frames require an existing frame ID and duration within 1..65535 ms",
             )
             frame = indexed[item["frame_id"]]

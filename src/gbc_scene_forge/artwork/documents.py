@@ -72,7 +72,7 @@ class ArtworkDocuments:
 
     def _descriptor(self, document, entry):
         return editable.read_descriptor(
-            entry, self._asset(document, entry["editable"]["path"], 64 * 1024)
+            entry, self._asset(document, entry["editable"]["path"], editable.MAX_DESCRIPTOR_BYTES)
         )
 
     def _revalidate(self, project_revision):

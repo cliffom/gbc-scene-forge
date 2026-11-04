@@ -1,4 +1,5 @@
 /** One artwork document, its serial checkpoint writer, and exact saved-base ownership. */
+import { MAX_PIXEL_PATCH_PIXELS } from './artwork-limits.mts';
 import type { ProjectApi } from '../project/project-api.mts';
 import { record, string, array } from '../shared/decode.mts';
 import { bytes, encoded, PixelModel } from './pixel-model.mts';
@@ -182,10 +183,10 @@ export class ArtworkSession {
       return this.candidate;
     }
     const previous = bytes(this.candidate.rgba);
-    if (pixels.length > 256 * 256 * 4) {
+    if (pixels.length > MAX_PIXEL_PATCH_PIXELS * 4) {
       let handle: Record<string, unknown> | null = null;
       try {
-        const rowsPerChunk = Math.floor(65536 / this.model.width);
+        const rowsPerChunk = Math.floor(MAX_PIXEL_PATCH_PIXELS / this.model.width);
         for (let y = 0; y < this.model.height; y += rowsPerChunk) {
           const height = Math.min(rowsPerChunk, this.model.height - y);
           const start = y * this.model.width * 4,
