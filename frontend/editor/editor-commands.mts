@@ -1,3 +1,4 @@
+import type { Feedback } from '../editor/editor-notifications.mts';
 import type { EditorLifetime } from './editor-lifetime.mts';
 import type { createAnimationPreview } from '../preview/animation-preview.mts';
 import type { CompositionSelection } from '../compositions/compositions.mts';
@@ -44,7 +45,7 @@ export function createCommandsController({
   sceneSession: Pick<SceneSession, 'dirty' | 'editor' | 'loaded' | 'serialize'>;
   activity: EditorActivity;
   gestures: Pick<GestureState, 'anchor'>;
-  status: HTMLElement;
+  status: Feedback;
   request: ProjectApi['request'];
   sceneSelection: Pick<SceneSelection, 'selectedObject' | 'selectedObjects' | 'selection'>;
   brushes: Pick<BrushState, 'definitionBrush' | 'stampBrush'>;
@@ -114,12 +115,14 @@ export function createCommandsController({
       ...(includeCanvas ? { scene: sceneSession.serialize() } : {}),
     };
     void ports.run(async () => {
-      status.textContent = 'Preparing portable export…';
+      status.show('Preparing portable export…');
       await downloadArchive(await request('export', payload, 120000), lifetime);
       element('export-dialog', HTMLDialogElement).close();
-      status.textContent = includeCanvas
-        ? 'Export downloaded with open scene edits. Those edits are still unsaved in this project.'
-        : 'Portable export downloaded.';
+      status.show(
+        includeCanvas
+          ? 'Export downloaded with open scene edits. Those edits are still unsaved in this project.'
+          : 'Portable export downloaded.',
+      );
     });
   });
 
@@ -190,7 +193,7 @@ export function createCommandsController({
       if (
         sceneSession.editor &&
         !activity.busy &&
-        !document.querySelector('dialog[open], [popover]:popover-open') &&
+        !document.querySelector('dialog[open], [popover]:popover-open:not(.notifications)') &&
         event.target instanceof HTMLInputElement &&
         ['layer-name', 'search'].includes(event.target.id) &&
         ['Enter', 'Escape'].includes(event.key) &&
@@ -214,7 +217,7 @@ export function createCommandsController({
         (event.target instanceof Element &&
           Boolean(event.target.closest('a, [contenteditable]:not([contenteditable="false"])'))) ||
         (event.target instanceof HTMLButtonElement && !event.ctrlKey && !event.metaKey) ||
-        document.querySelector('dialog[open], [popover]:popover-open') ||
+        document.querySelector('dialog[open], [popover]:popover-open:not(.notifications)') ||
         activity.busy
       ) {
         return;
@@ -227,7 +230,7 @@ export function createCommandsController({
         if (event.key === 'Escape' && brushes.stampBrush) {
           event.preventDefault();
           brushes.stampBrush = null;
-          status.textContent = 'Stamp placement stopped.';
+          status.show('Stamp placement stopped.');
           return;
         }
         if (
@@ -372,7 +375,7 @@ export function createCommandsController({
           ports.draw();
         }
       } catch (error) {
-        status.textContent = error instanceof Error ? error.message : String(error);
+        status.warning(error);
       }
     },
     { signal: lifetime.signal },

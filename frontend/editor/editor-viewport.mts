@@ -116,7 +116,7 @@ export function createViewportController({
       if (
         !sceneSession.editor ||
         activity.busy ||
-        document.querySelector('dialog[open], [popover]:popover-open') ||
+        document.querySelector('dialog[open], [popover]:popover-open:not(.notifications)') ||
         event.ctrlKey ||
         event.metaKey ||
         event.deltaY === 0 ||

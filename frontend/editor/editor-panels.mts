@@ -1,3 +1,4 @@
+import type { Feedback } from '../editor/editor-notifications.mts';
 import type { EditorLifetime } from './editor-lifetime.mts';
 import { createBlockoutView } from '../blockout/blockout-view.mts';
 import { blockoutAppearance, blockoutLayer, definitionRole } from '../blockout/blockout.mts';
@@ -69,7 +70,7 @@ export function createPanelsController({
   sceneSession: Pick<SceneSession, 'editor' | 'loaded' | 'serialize'>;
   workspaceState: Pick<WorkspaceState, 'project' | 'revision'>;
   api: ProjectApi['json'];
-  status: HTMLElement;
+  status: Feedback;
   activity: EditorActivity;
   gestures: Pick<GestureState, 'anchor'>;
   sceneSelection: Pick<SceneSelection, 'selectedObject' | 'selectedObjects' | 'selection'>;
@@ -106,7 +107,7 @@ export function createPanelsController({
           workspaceState.revision = string(result.revision);
           workspaceState.project = decodeProject(result.project);
           palettePanel.saved();
-          status.textContent = 'GBC palette profile saved. Scene content is unchanged.';
+          status.show('GBC palette profile saved. Scene content is unchanged.');
         });
       },
       navigate: (source) => {
@@ -147,9 +148,11 @@ export function createPanelsController({
           number(source.y) * multiplier * ports.sceneZoom() -
           viewRect.top -
           viewport.clientHeight / 2;
-        status.textContent = layer.visible
-          ? `Palette contributor: ${layer.name} · ${string(source.asset)}`
-          : `Palette contributor is on hidden layer “${layer.name}”. Show that layer to inspect it on the canvas.`;
+        status.show(
+          layer.visible
+            ? `Palette contributor: ${layer.name} · ${string(source.asset)}`
+            : `Palette contributor is on hidden layer “${layer.name}”. Show that layer to inspect it on the canvas.`,
+        );
         canvas.focus({ preventScroll: true });
       },
     },
@@ -175,8 +178,7 @@ export function createPanelsController({
         workspaceState.project = decodeProject(result.project);
         workspaceState.revision = string(result.revision);
         ports.draw();
-        status.textContent =
-          'Tile metadata saved. Shared instances use the new terrain and collision.';
+        status.show('Tile metadata saved. Shared instances use the new terrain and collision.');
       } finally {
         activity.busy = false;
         ports.update();
@@ -250,7 +252,7 @@ export function createPanelsController({
               (layer) => layer.visible && layer.type === 'objectgroup',
             );
       if (!layer) {
-        status.textContent = 'Add an object layer before placing objects.';
+        status.show('Add an object layer before placing objects.');
         return;
       }
       ports.layerAction((editor) => editor.activate(layer.id));
@@ -269,8 +271,9 @@ export function createPanelsController({
       element('paint-label', HTMLElement).textContent = 'Place object';
       element('selected-brush', HTMLElement).textContent =
         kind === 'point' ? 'Spawn point' : 'Trigger area';
-      status.textContent =
-        'Click to place an object. Select it to edit its name, class, dimensions and properties.';
+      status.show(
+        'Click to place an object. Select it to edit its name, class, dimensions and properties.',
+      );
       ports.draw();
     });
   }
@@ -289,8 +292,9 @@ export function createPanelsController({
       workspaceState.project = decodeProject(result.project);
       workspaceState.revision = string(result.revision);
       brushes.definitionBrush = null;
-      status.textContent =
-        'Object definition library saved. Scene history and unsaved edits are preserved.';
+      status.show(
+        'Object definition library saved. Scene history and unsaved edits are preserved.',
+      );
       ports.draw();
     } finally {
       activity.busy = false;
@@ -351,8 +355,7 @@ export function createPanelsController({
       (l) => l.type === 'objectgroup' && l.objects.some((o) => Number(o.id) === endpoint.object),
     );
     if (!layer) {
-      status.textContent =
-        'Connection endpoint object is missing. Choose a replacement in World view.';
+      status.show('Connection endpoint object is missing. Choose a replacement in World view.');
       return;
     }
     sceneSession.editor.activate(layer.id);
@@ -361,9 +364,11 @@ export function createPanelsController({
     sceneSelection.selection = null;
     ports.draw();
     editorLayout.reveal(element('selection-panel', HTMLElement));
-    status.textContent = layer.visible
-      ? 'Connection endpoint selected.'
-      : 'Connection endpoint selected on a hidden layer. Show its layer to edit it.';
+    status.show(
+      layer.visible
+        ? 'Connection endpoint selected.'
+        : 'Connection endpoint selected on a hidden layer. Show its layer to edit it.',
+    );
   }
 
   const worldView = createWorldView(
@@ -397,7 +402,7 @@ export function createPanelsController({
         });
         workspaceState.project = decodeProject(result.project);
         workspaceState.revision = string(result.revision);
-        status.textContent = 'World saved. Open scene edits and history are preserved.';
+        status.show('World saved. Open scene edits and history are preserved.');
       } finally {
         activity.busy = false;
         ports.update();
@@ -411,7 +416,7 @@ export function createPanelsController({
       }
       if (!workspaceState.project?.scenes.some((s) => s.id === endpoint.scene)) {
         pendingWorldEndpoint = null;
-        status.textContent = 'Connection destination scene is missing.';
+        status.show('Connection destination scene is missing.');
         return;
       }
       ports.requestSceneOpen(endpoint.scene);
@@ -450,7 +455,9 @@ export function createPanelsController({
         void ports.run(() => worldView.open());
       } else if (location.asset) {
         editorLayout.showLibrary('artwork');
-        status.textContent = `Unused asset ${location.asset}. Select it in the palette to inspect its artwork and metadata.`;
+        status.show(
+          `Unused asset ${location.asset}. Select it in the palette to inspect its artwork and metadata.`,
+        );
         input('search').value = '';
         select('atlas-filter').value = '';
         select('kind-filter').value = '';
@@ -495,7 +502,7 @@ export function createPanelsController({
         ? sceneSession.editor.active
         : sceneSession.editor.layers.find((l) => l.visible && l.type === 'objectgroup');
     if (!layer) {
-      status.textContent = 'Add an object layer before placing instances.';
+      status.show('Add an object layer before placing instances.');
       return;
     }
     sceneSession.editor.activate(layer.id);
@@ -510,8 +517,7 @@ export function createPanelsController({
     }
     element('paint-label', HTMLElement).textContent = 'Place instance';
     element('selected-brush', HTMLElement).textContent = definition.name;
-    status.textContent =
-      'Click to place an instance. Select it to set overrides or reset shared defaults.';
+    status.show('Click to place an instance. Select it to set overrides or reset shared defaults.');
     ports.draw();
   });
 
@@ -572,7 +578,7 @@ export function createPanelsController({
             sceneSelection.selectedObjects.clear();
             sceneSelection.selection = null;
             if (!layer.visible) {
-              status.textContent = 'Show this layer to edit its object.';
+              status.show('Show this layer to edit its object.');
             }
             ports.draw();
           });
@@ -641,8 +647,9 @@ export function createPanelsController({
         Math.max(0, found.item.y * zoom - 32),
       );
       canvas.focus({ preventScroll: true });
-      status.textContent =
-        'Drag the camera to move it. Resize its bottom-right handle or use Settings for dimensions and scrolling axes.';
+      status.show(
+        'Drag the camera to move it. Resize its bottom-right handle or use Settings for dimensions and scrolling axes.',
+      );
     }
   }
 
@@ -675,8 +682,7 @@ export function createPanelsController({
           editorLayout.showLibrary('blockout');
           blockoutView.closeCreate();
           ports.fitScene();
-          status.textContent =
-            'Blockout created. Choose a preset and draw geometry or place markers.';
+          status.show('Blockout created. Choose a preset and draw geometry or place markers.');
         });
       })(),
     (definition) => {
@@ -692,7 +698,7 @@ export function createPanelsController({
           ? sceneSession.editor.active
           : sceneSession.editor.layers.find((l) => l.visible && l.type === 'objectgroup'));
       if (!layer) {
-        status.textContent = 'Show or add an object layer before placing a preset.';
+        status.show('Show or add an object layer before placing a preset.');
         return;
       }
       sceneSession.editor.activate(layer.id);
@@ -708,10 +714,11 @@ export function createPanelsController({
       element('paint-label', HTMLElement).textContent =
         definition.kind === 'rectangle' ? 'Draw region' : 'Place marker';
       element('selected-brush', HTMLElement).textContent = definition.name;
-      status.textContent =
+      status.show(
         definition.kind === 'rectangle'
           ? 'Drag to draw a region. Select to move or resize; use Edit selected object for properties.'
-          : 'Click to place a marker. Use Edit selected object to name it or change typed properties.';
+          : 'Click to place a marker. Use Edit selected object to name it or change typed properties.',
+      );
       ports.draw();
     },
     focusBlockoutCamera,

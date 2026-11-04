@@ -69,7 +69,7 @@ export function createEditorLayout(
         event.key === 'Escape' &&
         expandTools.checkVisibility() &&
         expandTools.getAttribute('aria-expanded') === 'true' &&
-        !document.querySelector('[popover]:popover-open')
+        !document.querySelector('[popover]:popover-open:not(.notifications)')
       ) {
         event.preventDefault();
         event.stopPropagation();

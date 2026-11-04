@@ -553,6 +553,8 @@ test('Undo to the saved base warns on reload until the recovery checkpoint catch
   const checkpoint = await post(page, url, 'draft-download', updated[0]);
   assert.equal(decodeCandidate(checkpoint.candidate).rgba, original.rgba);
   // With the Undo durably stored, reload must proceed without an unload dialog.
+  // Resume frames before checking live notification announcements after reload.
+  await page.clock.resume();
   await page.reload();
   await expect(page.locator('#status')).toHaveText('Scene opened.');
   await page.locator('#show-artwork').click();
@@ -592,6 +594,8 @@ test('a lost checkpoint update acknowledgment keeps Undo protected until guarded
   });
   await draw(page, 1, 0);
   await page.clock.runFor(400);
+  await expect(page.locator('#art-message[role="alert"]')).toBeAttached();
+  await page.clock.runFor(20);
   await expect(page.locator('#art-message')).toContainText('Checkpoint failed');
   await page.unroute('**/api/artwork-draft-write');
   await page.locator('#undo').click();
@@ -614,6 +618,7 @@ test('a lost checkpoint update acknowledgment keeps Undo protected until guarded
   const current = decodeCandidate((await post(page, url, 'draft-download', reconciled)).candidate);
   assert.equal(current.rgba, first.rgba);
   assert.notEqual(reconciled.revision, uncertain.revision);
+  await page.clock.resume();
   await page.reload();
   await expect(page.locator('#status')).toHaveText('Scene opened.');
 });

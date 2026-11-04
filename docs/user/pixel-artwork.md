@@ -10,6 +10,16 @@ more references. Imported originals require an editable copy before drawing.
 
 For agent handoffs, see the [browser/MCP outcome matrix](../AUTHORING-OUTCOMES.md).
 
+Routine feedback appears in dismissible cards at the top-right of the canvas.
+For example, drawing on a locked layer shows “Layer is locked. Unlock it to edit.”
+The warning disappears after five seconds or when you unlock the layer; repeated
+attempts refresh the same card. Hovering or focusing a card pauses its timer.
+Save and recovery failures stay visible until dismissed or resolved. Closing a
+card only acknowledges the message: protect your local work and resolve the
+reported problem before leaving the document.
+Artwork review and save retries share their feedback across keyboard shortcuts
+and buttons: repeated failures keep one card, and a successful retry clears it.
+
 ## Shared editor workspace
 
 Artwork opens in the same central workbench as scenes. Its name appears in the

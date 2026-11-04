@@ -1,3 +1,4 @@
+import type { Feedback } from '../editor/editor-notifications.mts';
 import type { EditorLifetime } from './editor-lifetime.mts';
 import type { createAnimationPreview } from '../preview/animation-preview.mts';
 import { blockoutAppearance } from '../blockout/blockout.mts';
@@ -38,7 +39,7 @@ export function createLayersController({
   sceneSession: Pick<SceneSession, 'editor' | 'loaded'>;
   gestures: Pick<GestureState, 'anchor' | 'objectDrag' | 'spacePan'>;
   sceneSelection: Pick<SceneSelection, 'selectedObject' | 'selectedObjects' | 'selection'>;
-  status: HTMLElement;
+  status: Feedback;
   brushes: Pick<BrushState, 'objectBrush' | 'spriteBrush'>;
   workspaceState: Pick<WorkspaceState, 'project'>;
   animationPreview: ReturnType<typeof createAnimationPreview>;
@@ -141,7 +142,7 @@ export function createLayersController({
       input('layer-name').value = sceneSession.editor.active.name;
       ports.draw();
     } catch (error) {
-      status.textContent = error instanceof Error ? error.message : String(error);
+      status.warning(error);
     }
   }
 

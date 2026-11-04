@@ -1,4 +1,5 @@
 import { allViewFilters, objectViewCategory, viewCategories } from '../scene/view-filters.mts';
+import type { Feedback } from './editor-notifications.mts';
 import type { EditorLifetime } from './editor-lifetime.mts';
 import type { createAnimationPreview } from '../preview/animation-preview.mts';
 import type { createBlockoutLabels } from '../blockout/blockout-labels.mts';
@@ -80,6 +81,7 @@ export function createRenderingController({
   animationPreview,
   workspaceState,
   blockoutLabels,
+  status,
   gestures,
   ports,
 }: {
@@ -93,6 +95,7 @@ export function createRenderingController({
   animationPreview: ReturnType<typeof createAnimationPreview>;
   workspaceState: Pick<WorkspaceState, 'project'>;
   blockoutLabels: ReturnType<typeof createBlockoutLabels>;
+  status: Feedback;
   gestures: Pick<GestureState, 'hover' | 'pan' | 'spacePan'>;
   ports: Ports;
 }) {
@@ -116,7 +119,7 @@ export function createRenderingController({
       filters[key] = control.checked;
       element('scene-view-summary', HTMLElement).textContent =
         `Scene view filters · ${viewCategories.filter((key) => filters[key]).length} of 5 shown`;
-      element('status', HTMLElement).textContent = 'Scene view updated.';
+      status.show('Scene view updated.');
       // A filter never schedules a recovery checkpoint or changes authored history.
       draw(false);
       ports.update(false);

@@ -70,7 +70,7 @@ export function createReviewController({
       if (
         activity.reviewing &&
         event.key === 'Escape' &&
-        !document.querySelector('dialog[open], [popover]:popover-open') &&
+        !document.querySelector('dialog[open], [popover]:popover-open:not(.notifications)') &&
         (event.target === canvas || event.target === viewport || event.target === toggle)
       ) {
         event.preventDefault();

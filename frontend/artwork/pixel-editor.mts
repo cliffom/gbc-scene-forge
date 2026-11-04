@@ -3,6 +3,7 @@ import { createArtworkLayerControls } from './artwork-layer-controls.mts';
 import { paletteColors } from './artwork-palette.mts';
 import { button, element, input, select } from '../editor/editor-dom.mts';
 import type { EditorLifetime } from '../editor/editor-lifetime.mts';
+import { feedbackText, type createNotifications } from '../editor/editor-notifications.mts';
 import type {
   BrushState,
   SceneSelection,
@@ -41,6 +42,7 @@ type Source = {
   target: Record<string, unknown> | null;
 };
 export function createPixelEditor({
+  notifications,
   lifetime,
   api,
   workspaceState,
@@ -49,6 +51,7 @@ export function createPixelEditor({
   brushes,
   ports,
 }: {
+  notifications: ReturnType<typeof createNotifications>;
   lifetime: EditorLifetime;
   api: ProjectApi['json'];
   workspaceState: WorkspaceState;
@@ -76,6 +79,11 @@ export function createPixelEditor({
   const surface = element('artwork-surface', HTMLElement),
     canvas = element('art-canvas', HTMLCanvasElement);
   let session: ArtworkSession | null = null;
+  const feedback = notifications.channel(
+    'art-message',
+    () => session,
+    () => presentationSlot.active,
+  );
   let busy = false;
   let sources: Source[] = [];
   let unavailableSource: Source | null = null;
@@ -309,7 +317,7 @@ export function createPixelEditor({
     paint: (gestureOnly) => draw(gestureOnly),
     mutate: (work) => operation(work),
     changed,
-    error: (error) => message(String(error), true),
+    error: blocked,
   });
   const rendering = createArtworkRendering(lifetime, canvas, raster, {
     current: () => session?.model ?? null,
@@ -491,10 +499,18 @@ export function createPixelEditor({
     });
   });
   function message(text: string, error = false) {
-    element('art-message', HTMLElement).textContent = text;
-    element('art-message', HTMLElement).dataset.error = String(error);
+    if (error) {
+      feedback.error(text);
+    } else {
+      feedback.show(text);
+    }
+  }
+  function blocked(error: unknown) {
+    const text = feedbackText(error);
+    feedback.warning(text === 'Layer is locked.' ? 'Layer is locked. Unlock it to edit.' : text);
   }
   function controls() {
+    feedback.sync();
     if (busy) {
       element('art-palette', HTMLElement).hidePopover();
       artworkViewport.suspend();
@@ -573,7 +589,7 @@ export function createPixelEditor({
     }
     discard.classList.toggle('destructive-command', modified);
   }
-  async function execute(work: () => Promise<void>) {
+  async function execute(work: () => Promise<void>, key?: string) {
     if (busy || ports.presentation.unavailable() || lifetime.disposed) {
       return;
     }
@@ -581,14 +597,18 @@ export function createPixelEditor({
     busy = true;
     controls();
     message('');
+    const operationKey =
+      key ?? (work.name ? work : (document.activeElement?.closest('button') ?? work));
+    const previousFeedback = feedback.capture();
     await ports.run(async () => {
       try {
         await work();
+        previousFeedback.clear(operationKey);
       } catch (error) {
         if (!lifetime.disposed) {
-          message(
+          feedback.error(
             `${error instanceof Error ? error.message : String(error)} Local pixels are retained; download work or keep a checkpoint before reconciling.`,
-            true,
+            operationKey,
           );
         }
       } finally {
@@ -804,6 +824,7 @@ export function createPixelEditor({
         .checkpoint(pixels, checkpointDescriptor, checkpointLayers)
         .then(() => {
           if (session === current && !lifetime.disposed) {
+            feedback.clear('checkpoint');
             element('art-draft-status', HTMLElement).textContent = current.uncheckpointed
               ? 'New edits await checkpoint.'
               : current.changed
@@ -812,16 +833,17 @@ export function createPixelEditor({
           }
         })
         .catch((error) => {
-          if (!lifetime.disposed) {
-            message(
+          if (session === current && !lifetime.disposed) {
+            feedback.error(
               `Checkpoint failed: ${error instanceof Error ? error.message : String(error)}. Download work before closing.`,
-              true,
+              'checkpoint',
             );
           }
         });
     }, 350);
   }
   function changed() {
+    feedback.clear('message');
     invalidate();
     swatches();
     draw();
@@ -1337,6 +1359,7 @@ export function createPixelEditor({
       timer = undefined;
       await session?.removeCheckpoint();
       if (session) {
+        feedback.clear();
         documents.remove(session);
       }
       session = null;
@@ -1360,7 +1383,7 @@ export function createPixelEditor({
       session.model.apply(work);
       changed();
     } catch (error) {
-      message(error instanceof Error ? error.message : String(error), true);
+      blocked(error);
       draw();
     }
   }
@@ -1705,10 +1728,11 @@ export function createPixelEditor({
     message('Review ready. Saving commits exactly these pixels against the reviewed saved bases.');
   }
   lifetime.assign(button('art-review'), 'onclick', () => {
-    void execute(reviewCurrent);
+    void execute(reviewCurrent, 'review');
   });
   function save() {
-    void execute(async () => {
+    const reviewing = !session?.receipt || !surface.classList.contains('show-art-review');
+    const work = async () => {
       const current = session;
       if (!current) {
         return;
@@ -1735,6 +1759,7 @@ export function createPixelEditor({
       // Retire the submitted base before any fallible post-commit work.
       remember();
       const retained = documents.get(current);
+      feedback.clear();
       session = null;
       documents.remove(current);
       try {
@@ -1768,7 +1793,8 @@ export function createPixelEditor({
           true,
         );
       }
-    });
+    };
+    void execute(work, reviewing ? 'review' : 'save');
   }
   for (const id of ['art-view-x', 'art-view-y', 'art-use-scene']) {
     input(id).addEventListener(
@@ -1824,7 +1850,7 @@ export function createPixelEditor({
       !gestures.active &&
       (manual || input('auto-refresh').checked) &&
       document.visibilityState === 'visible' &&
-      !document.querySelector('dialog:modal, [popover]:popover-open') &&
+      !document.querySelector('dialog:modal, [popover]:popover-open:not(.notifications)') &&
       !document.activeElement?.matches('input, select, textarea, [contenteditable="true"]');
     if (discovering || !eligible()) {
       return;

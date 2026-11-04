@@ -323,7 +323,7 @@
       </aside>
     </main>
   </div>
-  <footer class="status-bar"><span id="status" role="status" aria-live="polite">Opening local workspace…</span><span id="inventory-status" role="status" hidden></span><span id="sync-status" role="status" hidden></span><span class="build-identity"><span id="app-version" aria-label="App version"></span></span></footer>
+  <footer class="status-bar"><span id="inventory-status" role="status" hidden></span><span id="sync-status" role="status" hidden></span><span class="build-identity"><span id="app-version" aria-label="App version"></span></span></footer>
   <dialog id="recovery-dialog" aria-labelledby="recovery-heading">
     <h2 id="recovery-heading">Recover unsaved work</h2>
     <p>Drafts may belong to another open tab. Restoring opens unsaved edits; the saved scene stays unchanged until you save.</p>
@@ -382,7 +382,6 @@
   </dialog>
   <section id="artwork-surface" class="editor-surface" aria-labelledby="artwork-heading" hidden>
     <header id="art-inspector-actions" class="art-heading"><span id="art-scope-label" class="muted"></span><div class="art-heading-actions"><button id="art-layers-toggle" aria-expanded="false" aria-controls="art-layer-panel">Layers</button><button id="art-properties-toggle" aria-expanded="false" aria-controls="art-properties">Properties</button></div></header>
-    <p id="art-message" role="status" aria-live="polite"></p>
     <div id="art-setup">
     <details id="art-handoff"><summary>Agent candidates</summary><p>Inspect unpublished snapshots, then adopt a separate editable copy. Saved artwork is unchanged. Existing documents and their Undo histories are retained.</p><button id="art-handoff-list" type="button">Refresh candidates</button><div id="art-handoff-candidates"></div></details>
     <details id="art-recovery" hidden><summary>Recoverable artwork</summary><p>Recover a copy after checking its saved base. The original checkpoint remains available.</p><div id="art-drafts"></div></details>

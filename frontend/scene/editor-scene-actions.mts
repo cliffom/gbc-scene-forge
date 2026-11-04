@@ -1,3 +1,4 @@
+import type { Feedback } from '../editor/editor-notifications.mts';
 import { MAX_SCENE_PIXELS, checkDimensions } from './dimensions.mts';
 import { createSceneNavigation, sceneFromPath } from './scene-navigation.mts';
 import type { EditorLifetime } from '../editor/editor-lifetime.mts';
@@ -70,7 +71,7 @@ export function createSceneActionsController({
     WorkspaceState,
     'navigating' | 'pendingProject' | 'project' | 'revision' | 'sceneChoices'
   >;
-  status: HTMLElement;
+  status: Feedback;
   sceneSession: Pick<
     SceneSession,
     | 'baseline'
@@ -118,7 +119,7 @@ export function createSceneActionsController({
       } else {
         await ports.clearDraft();
         closeScene();
-        status.textContent = 'Choose a scene, or import artwork or a map to get started.';
+        status.show('Choose a scene, or import artwork or a map to get started.');
         opened = true;
       }
     });
@@ -237,7 +238,7 @@ export function createSceneActionsController({
       }
       open(data);
       element('create-scene-dialog', HTMLDialogElement).close();
-      status.textContent = 'Scene created. Choose a region and paint.';
+      status.show('Scene created. Choose a region and paint.');
     });
   });
 
@@ -251,7 +252,7 @@ export function createSceneActionsController({
       return;
     }
     open(data);
-    status.textContent = 'Scene opened.';
+    status.show('Scene opened.');
     await ports.showRecovery(id);
     if (lifetime.disposed) {
       return;
@@ -377,7 +378,7 @@ export function createSceneActionsController({
     ports.newDraftWriter();
     // A later writer's manifest must not be acknowledged without adopting it.
     workspaceState.revision = string(result.project_revision);
-    status.textContent = 'Scene saved.';
+    status.show('Scene saved.');
   }
 
   async function navigateProject() {
@@ -509,10 +510,11 @@ export function createSceneActionsController({
       }
       select('scenes').value = current.id;
       ports.draw();
-      status.textContent =
+      status.show(
         action === 'rename'
           ? `Renamed scene to “${title}”.`
-          : `Created “${title}”. Choose it from the scene list to open it.`;
+          : `Created “${title}”. Choose it from the scene list to open it.`,
+      );
     });
   });
 
@@ -640,7 +642,7 @@ export function createSceneActionsController({
       animationPreview.reset();
       element('resize-scene-dialog', HTMLDialogElement).close();
       ports.draw();
-      status.textContent = 'Scene resized. Undo restores it; Save commits it to disk.';
+      status.show('Scene resized. Undo restores it; Save commits it to disk.');
     });
   });
 
@@ -707,7 +709,7 @@ export function createSceneActionsController({
         select('scenes').value = sceneSession.loaded.id;
         ports.draw();
       }
-      status.textContent = `Deleted “${candidate.name}”.`;
+      status.show(`Deleted “${candidate.name}”.`);
     });
   });
 
