@@ -84,7 +84,7 @@ export function createArtworkLayerControls(
             }
             items[index] = {
               ...item,
-              name: input('art-layer-name').value,
+              name: input('art-layer-name').value.trim(),
               visible: input('art-layer-visible').checked,
               opacity: Number(input('art-layer-opacity').value),
               locked: input('art-layer-locked').checked,

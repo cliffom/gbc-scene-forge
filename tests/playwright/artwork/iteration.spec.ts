@@ -61,9 +61,15 @@ p.artwork.documents.save(c)
   await page.locator('#art-zoom').selectOption('2');
   await (await revealArtworkControl(page, 'art-layer-add')).click();
   await expect(page.locator('#art-layer option')).toHaveCount(2);
-  await page.locator('#art-layer-name').fill('Glow');
+  await page.locator('#art-layer-name').fill(' Glow ');
   await page.locator('#art-layer-opacity').fill('128');
   await page.locator('#art-layer-update').click();
+  await expect(page.locator('#art-layer-name')).toHaveValue('Glow');
+  await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
+  await page.locator('#art-layer-name').fill('   ');
+  await page.locator('#art-layer-update').click();
+  await expect(page.locator('#art-message')).toHaveAttribute('data-error', 'true');
+  await expect(page.locator('#art-layer-name')).toHaveValue('Glow');
   await page.locator('#art-color').fill('#ff0000');
   await page.locator('#art-canvas').click({ position: { x: 12, y: 12 } });
   await expect(page.locator('#art-document-state')).toHaveText('Modified');
@@ -98,4 +104,68 @@ p.artwork.documents.save(c)
     true,
   );
   await page.screenshot({ path: info.outputPath('layers-compact.png') });
+});
+
+test('interrupted saved discovery retries the source inventory without another save', async ({
+  page,
+  workspace,
+}) => {
+  const root = join(workspace.folder, 'project');
+  const update = (code: string) => execFileSync(workspace.python, ['-I', '-c', code, root]);
+  update(`
+import sys
+from pathlib import Path
+from gbc_scene_forge.project.application import Project
+p=Project.create(Path(sys.argv[1]),'Discovery')
+c=p.artwork.documents.create('local','Local','sprite',16,16,p.catalog()['revision'])
+p.artwork.documents.save(c)
+`);
+  await page.goto(await workspace.start(root));
+  await page.locator('#show-artwork').click();
+  await page.locator('#art-existing-mode').click();
+  await expect(page.locator('#art-source option')).toHaveCount(1);
+  await expect(page.locator('#art-open')).toBeEnabled();
+  await page.locator('#artwork-heading').click();
+  let releaseInventory = () => {};
+  const responseGate = new Promise<void>((resolve) => {
+    releaseInventory = resolve;
+  });
+  let inventoryRequested = () => {};
+  const requested = new Promise<void>((resolve) => {
+    inventoryRequested = resolve;
+  });
+  await page.route(
+    '**/api/artwork-list',
+    async (route) => {
+      const response = await route.fetch();
+      inventoryRequested();
+      await responseGate;
+      await route.fulfill({ response });
+    },
+    { times: 1 },
+  );
+  update(`
+import sys
+from pathlib import Path
+from gbc_scene_forge.project.application import Project
+p=Project(Path(sys.argv[1]))
+c=p.artwork.documents.create('agent','Agent','sprite',16,16,p.catalog()['revision'])
+p.artwork.documents.save(c)
+`);
+  try {
+    await requested;
+    await expect(page.locator('[data-asset="agent/artwork"]')).toBeVisible();
+    // Invalidate the in-flight response, then leave the editor eligible to retry.
+    await page.keyboard.press('Shift');
+  } finally {
+    releaseInventory();
+  }
+  await expect(page.locator('#art-source option')).toHaveText([
+    'local / artwork (editable)',
+    'agent / artwork (editable)',
+  ]);
+  await page.locator('#art-source').selectOption({ label: 'agent / artwork (editable)' });
+  await page.locator('#art-open').click();
+  await expect(page.locator('#artwork-heading')).toHaveText('Agent');
+  await expect(page.locator('#art-document-state')).toHaveText('Saved');
 });

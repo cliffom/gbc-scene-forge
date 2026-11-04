@@ -15,6 +15,54 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## PR #193 MCP refresh harness correction
+
+- **Scope:** Prepared 0.32.0 working tree based on
+  `f000a63b9b3533f7f65f1c04a1897190eb8a7ee6`, checked 2026-11-03 in the local
+  milestone 21 environment below. The linked CI run used Ubuntu 24.04.5 and
+  merge revision `9739112dcb1929899253309fead75a73c8e69bf8`.
+- **Method:** Inspect the
+  [failed job](https://github.com/cliffom/gbc-scene-forge/actions/runs/41753764245/job/126324863546).
+  The [refresh acceptance test](../tests/playwright/mcp/refresh.spec.ts) now
+  separates JSON stdout from diagnostic stderr and waits for stream closure.
+  It holds a real project lock until the MCP startup diagnostic arrives, then
+  checks the successful JSON result. Rerun the five MCP/browser cases against
+  the rebuilt production bundle and run `make lint` locally.
+- **Result:** The CI job passed 127 production browser cases, installed-wheel
+  first use and 93 optional MCP tests, then passed four MCP/browser cases and
+  failed refresh because its helper parsed the combined diagnostic and JSON as
+  JSON. The correction retains stderr for failure diagnostics while parsing only
+  stdout. All five local production MCP/browser cases pass, including the forced
+  startup-contention assertion; production build, lint and documentation checks
+  also pass.
+- **Limits:** The original CI failure is a harness parsing failure, not evidence
+  of a failed MCP mutation. Local checks do not establish a new Linux CI pass or
+  independently verify the remaining acceptance gaps below.
+
+## PR #193 review corrections
+
+- **Scope:** Prepared 0.32.0 working tree based on
+  `f000a63b9b3533f7f65f1c04a1897190eb8a7ee6`, checked 2026-11-03 on the local
+  macOS/Python/Node/Chromium environment recorded under milestone 21 below.
+- **Method:** [Browser regressions](../tests/playwright/artwork/iteration.spec.ts)
+  delay a real inventory response across a key interaction, then check discovery
+  retries without another save; they also exercise trimmed and empty layer names,
+  checkpoints, Undo/Redo, save and reopen. The
+  [adoption regression](../tests/backend/adapters/test_mcp_iteration.py) changes a
+  selected scene without changing the manifest revision and checks rejection
+  before retaining a copy. Agent screenshot inspection covers desktop layers at
+  1440×1000 and saved/reopened compact layers at 760×800.
+- **Result:** All three regressions failed against the original implementation
+  and pass after correction. `make lint test` passes with 448 Python tests and all
+  TypeScript suites. Eleven focused artwork/navigation browser cases and the
+  [real MCP/browser handoff case](../tests/playwright/mcp/iteration-mcp.spec.ts)
+  pass against the rebuilt development bundle. Normalized layer names persist;
+  rejected empty names leave the previous layer intact.
+- **Limits:** These are local automated checks and agent inspection, not a full
+  production browser rerun, installed-wheel verification or a new CI result.
+  Existing physical-device, independent-human and external-tool gaps remain in
+  the single Remaining checks list below.
+
 ## Unchanged artwork discovery after mounting (PR #193 CI)
 
 - **Scope:** Prepared 0.32.0 correction based on `26290d4faedd072c0d603cba54b58c7b5f9f1f6e`,

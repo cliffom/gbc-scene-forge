@@ -16,6 +16,8 @@ Open **Layers** above the drawing viewport to add a layer, choose the
 active layer, rename, reorder, hide, set opacity (0..255) or lock it. First **Add
 layer** retains flat artwork as **Base** and adds a transparent layer. Draw tools
 edit the selected source; the canvas and scenes show the visible composite.
+Updating a layer trims its name; an empty name is rejected before changing the
+document.
 Unlock a layer before changing its pixels or structure. Layer changes and pixels
 share this document's Undo/Redo; checkpoints retain exact source pixels but do not
 contain the local Undo stack. Save → review → Confirm save publishes all sources
@@ -26,8 +28,9 @@ when it cannot appear in the composite.
 
 **New artwork → Agent candidates → Refresh candidates** lists retained unpublished
 MCP snapshots. **Inspect snapshot** shows/downloads the selected revision without
-saving. **Adopt a copy** checks its saved base and opens separately owned local
-work with a new Undo history; other open documents keep their history/checkpoints.
+saving. **Adopt a copy** checks its artwork and selected-scene bases and opens
+separately owned local work with a new Undo history; other open documents keep
+their history/checkpoints.
 **Document actions → Return candidate to agent** checkpoints and downloads an immutable handle that
 the agent can list/export and edit against its actual saved base. It does not
 publish. A later browser/MCP save still needs fresh review and guards. Stale work
@@ -40,6 +43,7 @@ With **Auto-refresh** enabled, the Library and source choices discover MCP saves
 and deletion while Artwork remains open. This updates discovery, preserving the
 open document's pixels, saved base, selection, view and Undo. Real modal dialogs,
 active gestures, pending writes, editing a form or hidden windows pause discovery.
+Interrupted discovery retries once the editor is idle, including source choices.
 Use **Project tools → Check for external changes** when automatic refresh is off.
 To adopt another saved revision of an already-open document, retain/download its
 local work, explicitly close it and reopen the saved artwork; discovery never

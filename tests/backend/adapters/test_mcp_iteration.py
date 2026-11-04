@@ -220,6 +220,49 @@ class IterationTests(unittest.TestCase):
             )
         self.assertEqual(self.export(source)["atlas_id"], "picture")
 
+    def test_adoption_checks_selected_scene_bases_before_retaining_copy(self):
+        documents = self.project.artwork.documents
+        saved = documents.save(documents.create("tile", "Tile", "tile", 8, 8, self.revision()))
+        scene = self.project.scenes.create("Selected", 4, 4, 8, self.revision())
+        scene["scene"]["cells"][0][0] = "tile/artwork/0/0"
+        scene = self.project.scenes.save(
+            scene["id"], scene["scene"], scene["revision"], self.revision()
+        )
+        candidate = self.call(
+            "duplicate_artwork",
+            source=dict(
+                atlas_id="tile",
+                region="artwork",
+                grid=8,
+                cell=[0, 0],
+                artwork_revision=saved["artwork_revision"],
+            ),
+            atlas_id="variation",
+            name="Variation",
+            project_revision=self.revision(),
+            placements=[
+                dict(scene_id=scene["id"], scene_revision=scene["revision"], layer_id=1, x=0, y=0)
+            ],
+            compact=True,
+        )
+        adopted = artwork_response(
+            self.project, "candidate-adopt", dict(candidate=candidate, owner=str(uuid4()))
+        )
+        self.assertEqual(self.export(adopted), self.export(candidate))
+        project_revision = self.revision()
+        scene["scene"]["cells"][0][0] = ""
+        self.project.scenes.save(scene["id"], scene["scene"], scene["revision"], project_revision)
+        self.assertEqual(self.revision(), project_revision)
+        retained = self.call("list_artwork_candidates")
+        with self.assertRaisesRegex(Conflict, "Selected scene changed"):
+            artwork_response(
+                self.project, "candidate-adopt", dict(candidate=candidate, owner=str(uuid4()))
+            )
+        self.assertEqual(self.call("list_artwork_candidates"), retained)
+        self.assertEqual(
+            self.export(candidate)["placements"][0]["scene_revision"], scene["revision"]
+        )
+
     def test_deletion_preview_guards_and_recoverable_stale_candidates(self):
         candidate = self.intake(compact=True)
         saved = self.commit(candidate)

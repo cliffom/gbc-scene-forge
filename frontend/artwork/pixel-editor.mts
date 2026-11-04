@@ -1722,6 +1722,9 @@ export function createPixelEditor({
         return;
       }
       await inventory(true, eligible);
+      if (!eligible()) {
+        return;
+      }
       discoveredRevision = string(data.revision);
     } catch (error) {
       if (!lifetime.disposed) {

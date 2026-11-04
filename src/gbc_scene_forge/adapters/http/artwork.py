@@ -27,6 +27,7 @@ def artwork_response(project, action, data):
         value = candidates.resolve(data.get("candidate"))
         with project.store.read_session(value["project_revision"], verify_assets=True) as session:
             project.artwork.documents.validate_base(value, session.document)
+            project.artwork.documents.placement_scenes(value, session)
         return candidates.retain(value, owner=data["owner"])
     if action == "candidate-retain":
         require(identity(data.get("owner")), "Expected a browser candidate owner UUID")

@@ -62,21 +62,58 @@ test('refresh: Saved-file refresh with a real stdio MCP writer and protected bro
     assert.equal(result.status, 200, await result.clone().text());
     return record(await result.json());
   };
-  async function agent(name: string, args: Record<string, unknown>) {
+  async function agent(
+    name: string,
+    args: Record<string, unknown>,
+    onDiagnostic?: (diagnostics: string) => void,
+  ) {
     const child = spawn(python, ['tests/support/mcp_call.py', root, name], {
       stdio: ['pipe', 'pipe', 'pipe'],
     });
-    let logs = '';
+    let output = '';
+    let diagnostics = '';
     child.stdout.on('data', (data: Buffer) => {
-      logs += data.toString();
+      output += data.toString();
     });
     child.stderr.on('data', (data: Buffer) => {
-      logs += data.toString();
+      diagnostics += data.toString();
+      onDiagnostic?.(diagnostics);
     });
     child.stdin.end(JSON.stringify({ project: 'project', ...args }));
-    await once(child, 'exit');
-    assert.equal(child.exitCode, 0, logs);
-    return record(JSON.parse(logs));
+    await once(child, 'close');
+    assert.equal(child.exitCode, 0, diagnostics + output);
+    return record(JSON.parse(output));
+  }
+  // A successful startup may report contention on stderr before returning JSON.
+  const holder = spawn(python, ['tests/support/hold_project_lock.py', root], {
+    stdio: ['pipe', 'pipe', 'pipe'],
+  });
+  const held = once(holder.stdout, 'data');
+  const holderExit = once(holder, 'exit');
+  try {
+    const readiness = await Promise.race([
+      held,
+      holderExit.then(() => {
+        throw Error('Lock holder exited before acquiring the lock');
+      }),
+    ]);
+    assert.equal(String(readiness[0]).trim(), 'locked');
+    let startupBusy = false;
+    const result = await agent('get_project', {}, (diagnostics) => {
+      if (!startupBusy && diagnostics.includes('Project busy during MCP startup; retrying')) {
+        startupBusy = true;
+        holder.stdin.end('release\n');
+      }
+    });
+    assert.equal(startupBusy, true);
+    assert.equal(result.revision, (await catalog()).revision);
+    await holderExit;
+    assert.equal(holder.exitCode, 0);
+  } finally {
+    if (holder.exitCode === null) {
+      holder.kill('SIGKILL');
+    }
+    await holderExit;
   }
   async function moveCamera(x: number) {
     await evaluate("document.getElementById('status').textContent=''");
