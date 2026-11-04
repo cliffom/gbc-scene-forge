@@ -135,7 +135,14 @@
         <section id="artwork-panel" class="library-panel" role="tabpanel" aria-labelledby="artwork-tab">
           <div class="panel-heading"><h3>Tiles &amp; sprites</h3><span id="asset-count" class="muted">0</span></div>
           <div class="library-art-actions"><button id="show-artwork" disabled>New artwork…</button><button id="library-import">Import</button></div>
-          <div class="library-art-actions"><button id="library-edit-artwork" disabled title="Edit the selected artwork">Edit artwork…</button><button id="library-source-actions" disabled title="Shared editing, independent copies and selected-placement variations">Source actions…</button></div><div class="library-art-actions"><button id="art-browse" title="Browse artwork and recover drafts">Browse / recover</button></div>
+          <div class="library-art-actions"><button id="library-edit-artwork" disabled title="Edit the selected artwork">Edit artwork…</button><button id="library-source-actions" disabled popovertarget="source-command-panel" title="Actions for the selected artwork source">Source actions…</button></div>
+          <div id="source-command-panel" class="command-panel" popover aria-label="Artwork source actions">
+            <p id="library-source-name" class="command-heading"></p>
+            <button id="library-copy-source" disabled>Shared editing / copies…</button>
+            <button id="library-update-source" disabled>Update source…</button>
+            <button id="library-delete-source" class="destructive-command" disabled>Delete source…</button>
+          </div>
+          <div class="library-art-actions"><button id="art-browse" title="Browse artwork and recover drafts">Browse / recover</button></div>
           <input id="search" type="search" placeholder="Search artwork…" aria-label="Search assets">
           <div class="filters">
             <select id="atlas-filter" aria-label="Filter atlas"><option value="">All atlases</option></select>
@@ -148,6 +155,7 @@
             <p id="terrain-report" class="hint" role="status"></p>
           </details>
           <p id="library-hint" class="hint">Choose a tile to paint or a sprite to place. Imported artwork keeps its native size.</p>
+          <details id="import-results" hidden><summary id="import-result-summary">Last import</summary><p id="import-report" class="hint"></p></details>
           <div id="palette" class="assets" tabindex="-1" aria-label="Available assets"></div>
         </section>
         <section id="objects-panel" class="library-panel" role="tabpanel" aria-labelledby="objects-tab" hidden>
@@ -312,12 +320,6 @@
           <p id="draft-status" class="hint" role="status" aria-live="polite"></p>
           <button id="show-recovery" type="button">Recover unsaved work…</button>
         </section>
-        <section class="inspector-panel" aria-label="Project assets">
-          <h3>Project assets</h3>
-          <div id="atlas-list" class="atlas-list"><p class="hint">No atlases imported yet.</p></div>
-          <details id="import-results" hidden><summary id="import-result-summary">Last import</summary><p id="import-report" class="hint"></p></details>
-          <p class="hint">Imports copy artwork into this project. Source atlas files stay unchanged.</p>
-        </section>
       </aside>
     </main>
   </div>
@@ -441,7 +443,7 @@
         <label><input id="art-layer-visible" type="checkbox" checked>Visible</label>
         <label>Opacity <input id="art-layer-opacity" type="number" min="0" max="255" value="255"></label>
         <label><input id="art-layer-locked" type="checkbox">Locked</label>
-        <button id="art-layer-update" type="button">Update layer</button>
+        <button id="art-layer-update" type="button">Apply name / opacity</button>
       </aside>
 <aside id="art-properties" class="inspector-panel" hidden><h3>Document &amp; frame properties</h3><p id="art-document-geometry" class="hint"></p><div id="art-frame-properties"><label class="field">Frame name<input id="art-frame-name" maxlength="100"></label><button id="art-rename-frame">Rename frame</button><p id="art-frame-geometry"></p><details><summary>Representations</summary><p class="hint">Tile representations share pixels with this sprite. Adding one does not replace placements.</p><button id="art-tile-representation">Add tile representation</button></details></div><canvas id="art-repeat-canvas" aria-label="Tile repetition preview" hidden></canvas></aside><aside id="art-review-panel" class="art-review inspector-panel" hidden><div class="art-review-heading"><h3>Review changes</h3><button id="art-review-close">Close review</button></div>
         <label><input id="art-use-scene" type="checkbox" checked> Preview in the open scene</label>

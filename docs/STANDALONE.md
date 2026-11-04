@@ -409,7 +409,8 @@ changed since review produces a conflict instead of silently deleting newer data
 Scene deletion cannot be undone with the editor's Undo button; interrupted
 deletion uses the same conflict-aware transaction recovery as other project writes.
 
-Each atlas under **Project assets** has **Update** and **Delete** actions.
+Choose artwork in Library, then use **Source actions… → Update source…** or
+**Delete source…** to manage its atlas. The menu names the source being managed.
 Deleting confirms the atlas ID and removes only its managed project copies;
 original source files and undeclared files in its asset folder stay untouched.
 Saved scenes using its tiles or sprites block deletion and are named in the error.

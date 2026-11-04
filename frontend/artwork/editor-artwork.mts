@@ -62,12 +62,20 @@ export function createArtworkController({
   let atlasFolder: AtlasFolder | null = null;
   let editAsset = '';
   function syncSourceActions() {
-    for (const id of ['library-edit-artwork', 'library-source-actions']) {
+    for (const id of [
+      'library-edit-artwork',
+      'library-source-actions',
+      'library-copy-source',
+      'library-update-source',
+      'library-delete-source',
+    ]) {
       button(id).disabled = activity.busy || !editAsset;
-      button(id).title = editAsset
-        ? `${editAsset} · ${id === 'library-edit-artwork' ? 'Edit artwork' : 'Shared editing, independent copies and selected-placement variations'}`
-        : 'Choose artwork first';
     }
+    button('library-edit-artwork').title = editAsset ? `Edit ${editAsset}` : 'Choose artwork first';
+    button('library-source-actions').title = editAsset
+      ? `Actions for ${editAsset}`
+      : 'Choose artwork first';
+    element('library-source-name', HTMLElement).textContent = editAsset.split('/')[0] || '';
   }
   function editArtwork(asset = editAsset, action: 'edit' | 'source-actions' = 'edit') {
     const [atlas, region] = asset.split('/');
@@ -78,9 +86,21 @@ export function createArtworkController({
     }
   }
   lifetime.assign(button('library-edit-artwork'), 'onclick', () => editArtwork());
-  lifetime.assign(button('library-source-actions'), 'onclick', () =>
+  lifetime.assign(button('library-copy-source'), 'onclick', () =>
     editArtwork(editAsset, 'source-actions'),
   );
+  lifetime.assign(button('library-update-source'), 'onclick', () => {
+    if (activity.busy || !editAsset) {
+      return;
+    }
+    input('generic-id').value = editAsset.split('/')[0];
+    input('generic-id').dispatchEvent(new Event('input'));
+    input('sheet-reimport').checked = true;
+    showImport(true);
+  });
+  lifetime.assign(button('library-delete-source'), 'onclick', () => {
+    showDeleteAtlas(editAsset.split('/')[0]);
+  });
   element('palette', HTMLElement).addEventListener('artwork-workspace', filterPalette, {
     signal: lifetime.signal,
   });
@@ -116,7 +136,7 @@ export function createArtworkController({
       item.hidden = Boolean(
         (query &&
           !item.dataset.asset?.toLowerCase().includes(query) &&
-          !item.querySelector('.asset-name')?.textContent?.toLowerCase().includes(query)) ||
+          !item.textContent?.toLowerCase().includes(query)) ||
         (atlas && item.dataset.atlas !== atlas) ||
         (kind && item.dataset.kind !== kind),
       );
@@ -131,15 +151,8 @@ export function createArtworkController({
         count++;
       }
     }
-    for (const title of element('palette', HTMLElement).querySelectorAll<HTMLElement>(
-      '.asset-group-title',
-    )) {
-      title.hidden = !Array.from(items).some(
-        (item) => !item.hidden && item.dataset.atlas === title.dataset.atlas,
-      );
-    }
-    if (!Array.from(items).some((item) => item.dataset.asset === editAsset)) {
-      editAsset = items[0]?.dataset.asset ?? '';
+    if (!Array.from(items).some((item) => !item.hidden && item.dataset.asset === editAsset)) {
+      editAsset = Array.from(items).find((item) => !item.hidden)?.dataset.asset ?? '';
     }
     syncSourceActions();
     element('asset-count', HTMLElement).textContent = `${count} / ${items.length}`;
@@ -303,11 +316,6 @@ export function createArtworkController({
       if (!image) {
         continue;
       }
-      const title = document.createElement('h3');
-      title.className = 'asset-group-title';
-      title.dataset.atlas = id;
-      title.textContent = id.replaceAll('_', ' ');
-      paletteElement.append(title);
       for (const region of atlas.regions) {
         const asset = `${id}/${region.name}`;
         const sprite = region.kind === 'sprite';
@@ -381,11 +389,14 @@ export function createArtworkController({
           );
         const label = document.createElement('span');
         label.className = 'asset-name';
-        label.textContent = region.name.replaceAll('_', ' ');
-        const type = document.createElement('span');
-        type.className = 'type';
-        type.textContent = `${id} · ${region.kind}`;
-        item.append(thumb, label, type);
+        label.textContent = id.replaceAll('_', ' ');
+        item.append(thumb, label);
+        if (region.name !== 'artwork' && region.name !== id) {
+          const detail = document.createElement('span');
+          detail.className = 'asset-region';
+          detail.textContent = region.name.replaceAll('_', ' ');
+          item.append(detail);
+        }
         const selectBrush = () => {
           select('terrain-brush').value = '';
           brushes.stampBrush = null;

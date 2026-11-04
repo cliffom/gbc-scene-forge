@@ -12,8 +12,6 @@ import { decodeProject } from './project-contracts.mts';
 export interface Ports {
   image: (id: string) => HTMLImageElement | undefined;
   replaceImages: (images: ReadonlyMap<string, HTMLImageElement>) => void;
-  showImport: (reimport?: boolean) => void;
-  showDeleteAtlas: (id: string) => void;
   palette: (chooseInitial?: boolean) => void;
   run: (work: () => Promise<void> | void) => Promise<void>;
   blockoutView: {
@@ -435,35 +433,6 @@ export function createWorkspaceController({
       ...Object.keys(workspaceState.project?.atlases || {}).map((id) => new Option(id, id)),
     );
     filter.value = workspaceState.project?.atlases[previousAtlas] ? previousAtlas : '';
-    const atlasList = element('atlas-list', HTMLElement);
-    atlasList.replaceChildren();
-    for (const [id, atlas] of Object.entries(workspaceState.project?.atlases || {})) {
-      const row = document.createElement('div');
-      row.className = 'atlas-row';
-      const label = document.createElement('span');
-      label.textContent = `${id} · ${atlas.regions.length} ${atlas.regions.length === 1 ? 'region' : 'regions'}`;
-      label.title = id;
-      const update = document.createElement('button');
-      update.type = 'button';
-      update.className = 'small';
-      update.textContent = 'Update';
-      lifetime.assign(update, 'onclick', () => ports.showImport(true));
-      const remove = document.createElement('button');
-      remove.type = 'button';
-      remove.className = 'small';
-      remove.textContent = 'Delete';
-      remove.setAttribute('aria-label', `Delete atlas ${id}`);
-      remove.dataset.deleteAtlas = id;
-      lifetime.assign(remove, 'onclick', () => ports.showDeleteAtlas(id));
-      const actions = document.createElement('div');
-      actions.className = 'atlas-actions';
-      actions.append(update, remove);
-      row.append(label, actions);
-      atlasList.append(row);
-    }
-    if (!atlasList.children.length) {
-      atlasList.textContent = 'No atlases imported yet.';
-    }
     ports.palette(!supplied);
     return true;
   }

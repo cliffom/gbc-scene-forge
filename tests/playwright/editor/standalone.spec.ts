@@ -1,4 +1,5 @@
 import { expect } from '@playwright/test';
+import type { Page } from '@playwright/test';
 /** Full standalone workflow across server restarts and a moved project directory. */
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
@@ -13,6 +14,14 @@ import {
   test,
   waitForUI,
 } from '../support/browser-fixtures.ts';
+
+async function deleteSource(page: Page, id: string) {
+  await page.locator('#artwork-tab').click();
+  await page.locator('#search').fill('');
+  await page.locator('#kind-filter').selectOption('');
+  await page.locator('#atlas-filter').selectOption(id);
+  await clickControl(page, 'library-delete-source');
+}
 
 test('project launcher, switching, save conflicts and restart', async ({
   page,
@@ -821,7 +830,7 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
     ),
     [255, 255, 255, 255],
   );
-  await page.locator('[data-delete-atlas="actors"]').first().click();
+  await deleteSource(page, 'actors');
   await wait("document.getElementById('delete-atlas-dialog').open");
   await expect(page.locator('#delete-atlas-confirm')).toBeDisabled();
   assert.equal(
@@ -836,6 +845,7 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   await submit('import-form');
   await wait("document.getElementById('import-report')?.textContent.includes('Imported spare')");
   await click('artwork-tab');
+  await set('atlas-filter', '');
   await page.locator('[data-asset="spare/earth"]').first().click();
   await (async () => {
     const point = await scenePoint(page, 28, 12);
@@ -860,13 +870,13 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
     await page.mouse.up();
   })();
   await set('atlas-filter', 'spare');
-  await page.locator('[data-delete-atlas="spare"]').first().click();
+  await deleteSource(page, 'spare');
   await wait("document.getElementById('delete-atlas-dialog').open");
   await expect(page.locator('#delete-atlas-history')).toHaveJSProperty('hidden', false);
   await click('delete-atlas-cancel');
   await expect(page.locator('#undo')).toBeEnabled();
   assert.equal(Object.keys(record(record((await catalog()).project).atlases)).length, 3);
-  await page.locator('[data-delete-atlas="spare"]').first().click();
+  await deleteSource(page, 'spare');
   await wait("document.getElementById('delete-atlas-dialog').open");
   await page.screenshot({ path: testInfo.outputPath('standalone-delete-atlas' + '.png') });
   await click('delete-atlas-confirm');
@@ -2134,7 +2144,7 @@ p.scenes.save(loaded['id'], s, loaded['revision'], p.catalog()['revision'])
   await expect(page.locator('#dirty')).toHaveText('UNSAVED');
   await click('undo');
   await expect(page.locator('#dirty')).toHaveText('SAVED');
-  await page.locator('[data-delete-atlas="terrain"]').first().click();
+  await deleteSource(page, 'terrain');
   await wait("document.getElementById('delete-atlas-dialog').open");
   await expect(page.locator('#delete-atlas-confirm')).toBeDisabled();
   assert.equal(
@@ -2567,7 +2577,7 @@ p.scenes.save(loaded['id'], s, loaded['revision'], p.catalog()['revision'])
   assert.equal(Object.keys(record(record((await catalog()).project).atlases)).length, 2);
   await assert.rejects(readFile(mapPath), { code: 'ENOENT' });
   for (const id of ['actors', 'terrain']) {
-    await page.locator(`[data-delete-atlas="${id}"]`).first().click();
+    await deleteSource(page, id);
     await wait("document.getElementById('delete-atlas-dialog').open");
     await click('delete-atlas-confirm');
     await wait(`document.getElementById('status').textContent.includes('Deleted atlas “${id}”')`);

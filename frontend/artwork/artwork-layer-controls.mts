@@ -15,6 +15,12 @@ export function createArtworkLayerControls(
   },
 ) {
   const panel = element('art-layer-panel', HTMLElement);
+  let displayedFields: {
+    model: PixelModel | null;
+    layer: string | null;
+    name: string;
+    opacity: number;
+  } | null = null;
   button('art-layers-toggle').addEventListener(
     'click',
     () => {
@@ -55,6 +61,27 @@ export function createArtworkLayerControls(
       }),
     { signal: lifetime.signal },
   );
+  for (const field of ['visible', 'locked'] as const) {
+    input(`art-layer-${field}`).addEventListener(
+      'change',
+      () => {
+        const checked = input(`art-layer-${field}`).checked;
+        ports.cancelGesture();
+        ports.operation(() => {
+          const model = ports.current();
+          if (!model?.descriptor.layers) {
+            return;
+          }
+          model.setLayers(
+            model.descriptor.layers.items.map((item) =>
+              item.id === model.activeLayer ? { ...item, [field]: checked } : item,
+            ),
+          );
+        });
+      },
+      { signal: lifetime.signal },
+    );
+  }
   for (const action of ['up', 'down', 'remove', 'update'] as const) {
     button(`art-layer-${action}`).addEventListener(
       'click',
@@ -76,10 +103,11 @@ export function createArtworkLayerControls(
           if (action === 'remove') {
             items.splice(index, 1);
           } else if (action === 'update') {
+            // Explicit Apply also normalizes unchanged values and resets invalid input.
+            displayedFields = null;
             if (
               item.locked &&
               (input('art-layer-name').value !== item.name ||
-                input('art-layer-visible').checked !== item.visible ||
                 Number(input('art-layer-opacity').value) !== item.opacity)
             ) {
               throw Error('Unlock the layer first.');
@@ -87,9 +115,7 @@ export function createArtworkLayerControls(
             items[index] = {
               ...item,
               name: input('art-layer-name').value.trim(),
-              visible: input('art-layer-visible').checked,
               opacity: Number(input('art-layer-opacity').value),
-              locked: input('art-layer-locked').checked,
             };
           } else {
             const next = Math.max(
@@ -109,7 +135,7 @@ export function createArtworkLayerControls(
       const model = ports.current();
       const items = model?.descriptor.layers?.items ?? [];
       const layerSelect = select('art-layer');
-      const current = model?.activeLayer;
+      const current = model?.activeLayer ?? null;
       if (
         JSON.stringify([...layerSelect.options].map((o) => [o.value, o.text])) !==
         JSON.stringify(items.map((i) => [i.id, i.name]))
@@ -118,12 +144,29 @@ export function createArtworkLayerControls(
       }
       layerSelect.value = current ?? '';
       const item = items.find((i) => i.id === current);
-      input('art-layer-name').value = item?.name ?? '';
+      const name = item?.name ?? '';
+      const opacity = item?.opacity ?? 255;
+      const sameLayer = displayedFields?.model === model && displayedFields?.layer === current;
+      // Flag-only redraws must not replace pending edits in the native fields.
+      if (!sameLayer || displayedFields?.name !== name) {
+        input('art-layer-name').value = name;
+      }
+      if (!sameLayer || displayedFields?.opacity !== opacity) {
+        input('art-layer-opacity').value = String(opacity);
+      }
+      displayedFields = { model, layer: current, name, opacity };
       input('art-layer-visible').checked = item?.visible ?? true;
       input('art-layer-locked').checked = item?.locked ?? false;
-      input('art-layer-opacity').value = String(item?.opacity ?? 255);
+      layerSelect.disabled = ports.busy() || !items.length;
+      for (const id of ['art-layer-name', 'art-layer-visible', 'art-layer-opacity']) {
+        input(id).disabled = ports.busy() || !item || item.locked;
+      }
+      input('art-layer-visible').title = item?.locked
+        ? 'Unlock the layer to change visibility'
+        : 'Show or hide this layer immediately';
+      input('art-layer-locked').disabled = ports.busy() || !item;
       for (const id of ['art-layer-remove', 'art-layer-up', 'art-layer-down', 'art-layer-update']) {
-        button(id).disabled = ports.busy() || !item;
+        button(id).disabled = ports.busy() || !item || item.locked;
       }
       button('art-layer-add').disabled = ports.busy() || !model || items.length >= 8;
     },
