@@ -15,6 +15,34 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Runtime policy ownership and boundaries (#172)
+
+- **Scope:** Behavior-preserving working tree based on `9fd65ef`, checked locally
+  on 2026-11-04 with macOS 27.0.1 arm64, Python 3.13.13, Node 24.22.1 and bundled
+  Chromium. Package/runtime versions remain 0.35.0; no release was published.
+- **Method:** Run `make lint test`, production `make build check-dist test-browser`,
+  and `make docs-check`. Exercise fake-clock checkpoint debounce/cancellation,
+  exact multi-request pixel synchronization, sparse-block and dense/count history
+  eviction, actual cache canvas backing bytes, and retained-document slot reuse.
+  See [runtime policy ownership](FRONTEND-ARCHITECTURE.md#runtime-policy-ownership)
+  for units and memory-accounting boundaries.
+- **Result:** Lint, 473 Python tests and all frontend suites pass. Scene debounce
+  resets on later edits, explicit flush cancels its pending timer, and stopped or
+  disposed owners cannot schedule writes. Synchronization sends two 8,000-write
+  requests and the exact remainder using successive acknowledgments. Dense undo
+  records evict before the count ceiling; retained undo/redo remains exact. All
+  159 regular browser cases pass: cache estimates match full-chunk RGBA backing
+  bytes at 16 MiB for grids 8/16/32, over-budget temporary canvases release, and
+  the seventeenth artwork document is rejected until an existing slot is closed.
+  Production source/wheel builds, metadata checks, seven installed-wheel smoke
+  cases and documentation checks pass.
+- **Limits:** Twelve opt-in browser profile cases were skipped; no new performance
+  measurements, total-process memory bound or independent-user evaluation is
+  claimed. Optional MCP browser acceptance, Tiled interoperability and Python 3.14
+  were not run locally. Existing memory estimates exclude the additional buffers
+  and runtime overhead documented by their owners; policy values, intervals,
+  request/native formats and transport behavior remain unchanged.
+
 ## Shared authoring limit contracts (#171)
 
 - **Scope:** Behavior-preserving working tree based on `6830fbe`, checked locally

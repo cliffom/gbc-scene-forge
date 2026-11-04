@@ -148,6 +148,32 @@ server checks use metadata caches. Scene replacement resets the existing preview
 it does not mount a second editor. An embedding host replacing the whole editor must call
 `dispose()` before mounting the next instance.
 
+## Runtime policy ownership
+
+These are existing interaction and retention policies, independent of the shared
+[authoring limits](DOMAIN-LIMITS.md). Values remain unchanged by #172. Keep each
+policy in its owner; matching numbers do not imply matching semantics.
+
+| Owner | Named policy and units | Scope and rationale |
+| --- | --- | --- |
+| [`tile-cache.mts`](../frontend/editor/tile-cache.mts) | `TILE_CHUNK_EDGE_PIXELS` = 256 native pixels; `TILE_CACHE_BYTES` = 16 MiB | `tileChunkPixels` rounds down to whole cells, with at least one cell. Cache allocation and the renderer's `tileViewBytes` retention estimate use that geometry. The conservative estimate charges full edge chunks and all visible tile layers; views above budget use temporary chunks. The byte cap covers retained RGBA canvases, not signatures, source images, browser/GPU overhead or total process memory. Eviction/disposal zero canvas dimensions. |
+| [`scene/model.mts`](../frontend/scene/model.mts) | `MAX_SCENE_HISTORY_OPERATIONS` = 100 | Per-scene undo count; variable-sized deltas and the active transaction copy have no byte cap. No-ops retain redo; cancellation restores the transaction. |
+| [`pixel-model.mts`](../frontend/artwork/pixel-model.mts) | `MAX_PIXEL_HISTORY_OPERATIONS` = 100; `MAX_HISTORY_BYTES` = 64 MiB; `PIXEL_HISTORY_CHUNK_BYTES` = 4 KiB | Completed edits trim the oldest undo records by count and payload estimate. The estimate includes flat XOR blocks, layer snapshots, encoded descriptors and bookkeeping charges (16 bytes/block, 64 bytes/entry), not exact JavaScript allocations. Live buffers, clipboard and active edit snapshots are additional. Undo/redo reuse flat blocks; layer travel captures the opposite source state and does not reapply the byte trim. These are not total-document/process memory guarantees. |
+| [`artwork-session.mts`](../frontend/artwork/artwork-session.mts) | `MAX_BASELINE_BYTES` = 32 MiB; `MAX_BASELINE_ENTRIES` = 18 | Per-session decoded saved/checkpoint LRU: two aggregate 16 MiB baselines, with two sets of eight sources plus a composite. Encoded candidate strings and other session state are additional. Direct source mutations remain observable; this caches decoded bytes, never dirty equality. |
+| [`artwork-documents.mts`](../frontend/artwork/artwork-documents.mts) | `MAX_OPEN_ARTWORK_DOCUMENTS` = 16 | New-artwork setup, saved Library opening and candidate adoption share this retained-session guard. The scene is separate; count does not bound aggregate browser memory. |
+| [`artwork-session.mts`](../frontend/artwork/artwork-session.mts) | `MAX_PIXEL_WRITES_PER_REQUEST` = 8,000 unique writes | Individual-write synchronization stays below the service's 1 MiB decoded-write JSON budget. Candidate envelopes and large-document rectangular patches retain their separate bounds. Each acknowledgment advances the next request's candidate. |
+| [`drafts.mts`](../frontend/project/drafts.mts), [`editor-recovery.mts`](../frontend/project/editor-recovery.mts) | `SCENE_CHECKPOINT_DEBOUNCE_MS` = 750 ms; `SCENE_CHECKPOINT_FLUSH_INTERVAL_MS` = 5,000 ms | Quiet time coalesces observed scene edits; explicit/visibility flushes bypass it. Periodic flush retries subject to busy/gesture gates. Immutable observations, serial writes, exact uncertain retries and stop-without-delete semantics remain with the writer. |
+| [`pixel-editor.mts`](../frontend/artwork/pixel-editor.mts) | `ARTWORK_CHECKPOINT_DEBOUNCE_MS` = 350 ms; `ARTWORK_DISCOVERY_INTERVAL_MS` = 2,000 ms | Completed artwork edits capture pixels/layout/sources before scheduling. Inventory discovery is separate from checkpointing and remains fenced by document identity, activity and revision. |
+| [`editor-refresh.mts`](../frontend/project/editor-refresh.mts) | `SAVED_REFRESH_INTERVAL_MS` = 2,000 ms | Saved scene/project revision probes and navigation discovery; eligibility and adoption fences remain authoritative. |
+| [`palette-budget.mts`](../frontend/diagnostics/palette-budget.mts) | `PALETTE_REPORT_DEBOUNCE_MS` = 300 ms; `PALETTE_FRESHNESS_INTERVAL_MS` = 5,000 ms | Local report coalescing and idle saved-revision freshness are distinct policies. Stale replies cannot render. |
+| [`movement-preview.mts`](../frontend/preview/movement-preview.mts) | `MAX_MOVEMENT_STEP_MS` = 100 ms | Clamp simulated catch-up after a delayed frame. Animation and hover paints still use owned animation frames; sheet playback uses authored frame durations, with no fixed polling cadence. |
+
+Timers and animation frames retain their mounted lifetime and cancellation gates.
+The [scene scalability decision](evaluations/scene-scalability.md#rendering-results-and-decision),
+[large-artwork evidence](evaluations/large-artwork.md) and
+[opening measurements](evaluations/artwork-opening.md) explain the existing
+performance choices; naming policies adds no new capacity or latency claim.
+
 ## Hover feedback and dirty state
 
 Pointer coordinates update immediately. Cell changes and pointer leave request

@@ -1,7 +1,18 @@
 /** Exact RGBA authoring/history. No DOM, transport or scene state. */
 import { composite } from './artwork-layers.mts';
-import { MAX_HISTORY_BYTES } from './artwork-limits.mts';
 import { decodeDescriptor, type Candidate } from './artwork-contracts.mts';
+/** Per-document retained undo payload estimate, including source rasters and descriptors.
+ * Excludes live pixels, clipboard, active-stroke snapshots and JavaScript object overhead.
+ * Redo reuses reversible chunks; layer travel captures the opposite source snapshot.
+ */
+export const MAX_HISTORY_BYTES = 64 * 1024 * 1024;
+export const MAX_PIXEL_HISTORY_OPERATIONS = 100;
+/** Sparse flat-image edits retain reversible blocks rather than full image copies. */
+export const PIXEL_HISTORY_CHUNK_BYTES = 4096;
+// Approximate bookkeeping charges, not measurements of engine allocations.
+const HISTORY_CHUNK_OVERHEAD_BYTES = 16;
+const HISTORY_ENTRY_OVERHEAD_BYTES = 64;
+
 export type Color = [number, number, number, number];
 export type Point = { x: number; y: number };
 export type Rectangle = Point & { width: number; height: number };
@@ -274,8 +285,8 @@ export class PixelModel {
     // XOR chunks are reversible and retain only changed 4 KiB blocks. A
     // single-pixel stroke on a large illustration no longer stores a full image.
     const chunks: PixelHistory['chunks'] = [];
-    for (let offset = 0; offset < this.pixels.length; offset += 4096) {
-      const end = Math.min(offset + 4096, this.pixels.length);
+    for (let offset = 0; offset < this.pixels.length; offset += PIXEL_HISTORY_CHUNK_BYTES) {
+      const end = Math.min(offset + PIXEL_HISTORY_CHUNK_BYTES, this.pixels.length);
       let changed = false;
       for (let i = offset; i < end; i++) {
         if (this.pixels[i] !== before.pixels[i]) {
@@ -302,7 +313,7 @@ export class PixelModel {
     });
     this.redoStack.length = 0;
     let total = this.undoStack.reduce((sum, item) => sum + this.historyBytes(item), 0);
-    while (this.undoStack.length > 100 || total > MAX_HISTORY_BYTES) {
+    while (this.undoStack.length > MAX_PIXEL_HISTORY_OPERATIONS || total > MAX_HISTORY_BYTES) {
       const removed = this.undoStack.shift();
       if (removed) {
         total -= this.historyBytes(removed);
@@ -324,9 +335,12 @@ export class PixelModel {
     return (
       (value.layerState?.flat?.byteLength ?? 0) +
       [...(value.layerState?.rasters.values() ?? [])].reduce((n, p) => n + p.byteLength, 0) +
-      value.chunks.reduce((sum, chunk) => sum + chunk.bytes.byteLength + 16, 0) +
+      value.chunks.reduce(
+        (sum, chunk) => sum + chunk.bytes.byteLength + HISTORY_CHUNK_OVERHEAD_BYTES,
+        0,
+      ) +
       new TextEncoder().encode(JSON.stringify(value.descriptor)).length +
-      64
+      HISTORY_ENTRY_OVERHEAD_BYTES
     );
   }
   private travel(from: PixelHistory[], to: PixelHistory[]) {

@@ -32,6 +32,13 @@ consume the shared `fixtures/domain-limits.json` boundary corpus. See the
 [limit ownership inventory](../docs/DOMAIN-LIMITS.md) for units, validator ownership,
 MCP advertising and intentionally distinct cross-field/serialization rules.
 
+`make test-frontend-checkpoint-scheduling` exercises debounce boundaries, explicit
+flushes and mounted cancellation with a fake clock. Pixel/large-artwork suites
+cover write chunk acknowledgments and history count/byte eviction. The tile-cache
+browser check compares actual Canvas2D backing bytes with the renderer estimate
+at and above the cache ceiling for all supported grids. See
+[runtime policy ownership](../docs/FRONTEND-ARCHITECTURE.md#runtime-policy-ownership).
+
 Python discovery remains `python -m unittest discover -s tests -p 'test_*.py'`
 (`make test-python`). Empty `__init__.py` markers in `backend/` and each domain
 allow discovery to recurse on supported Python versions. Imports use

@@ -3,6 +3,9 @@ import type { EditorLifetime } from '../editor/editor-lifetime.mts';
 import type { ArtworkSession } from './artwork-session.mts';
 import type { ArtworkViewState } from './artwork-viewport.mts';
 
+/** Retained artwork sessions per editor, independent of the scene; not a total-memory cap. */
+export const MAX_OPEN_ARTWORK_DOCUMENTS = 16;
+
 type RetainedDocument = {
   session: ArtworkSession;
   values: Map<string, { value: string; checked: boolean; open?: boolean }>;

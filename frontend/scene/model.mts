@@ -20,6 +20,9 @@ export function canvasPoint(
   };
 }
 
+/** Per-scene undo count; variable-sized deltas and active transaction copies have no byte cap. */
+export const MAX_SCENE_HISTORY_OPERATIONS = 100;
+
 export class Editor<T extends { width: number; height: number; cells?: string[][] } = TileScene> {
   descriptor: EditorDescriptor;
   reasons: Map<string, string>;
@@ -62,7 +65,7 @@ export class Editor<T extends { width: number; height: number; cells?: string[][
         captureHistoryContext(changes, this.stroke, this.historyContextKeys, 'before');
         captureHistoryContext(changes, this.scene, this.historyContextKeys, 'after');
         this.undoStack.push(changes);
-        if (this.undoStack.length > 100) {
+        if (this.undoStack.length > MAX_SCENE_HISTORY_OPERATIONS) {
           this.undoStack.shift();
         }
         this.redoStack = [];
