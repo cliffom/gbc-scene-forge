@@ -16,6 +16,8 @@ export function createArtworkWorkspace(
     element('art-selection-details', HTMLElement),
     element('art-layer-panel', HTMLElement),
     element('art-properties', HTMLElement),
+    button('art-palette-toggle'),
+    element('art-palette', HTMLElement),
     element('art-review-panel', HTMLElement),
   ]) {
     const marker = document.createComment('artwork panel');
@@ -93,8 +95,6 @@ export function createArtworkWorkspace(
     const panel = element('art-properties', HTMLElement);
     panel.hidden = !panel.hidden;
     if (!panel.hidden) {
-      element('art-layer-panel', HTMLElement).hidden = true;
-      button('art-layers-toggle').setAttribute('aria-expanded', 'false');
       reviewPanel(false);
     }
     button('art-properties-toggle').setAttribute('aria-expanded', String(!panel.hidden));

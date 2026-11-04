@@ -23,7 +23,23 @@ separate atomic save and scene-history behavior described below.
 
 The document bar has one Save location for either document. The shared command
 strip above the contextual drawing tools contains history, clipboard, deselection
-and transforms. The bounded frame/animation dock remains below the canvas.
+and transforms. The bounded frame/animation dock sits below the canvas. Collapse
+**Frames & animation** to reclaim drawing space; reopen it for the frame selector,
+thumbnails, Sheet/Frame scope, onion skin and animation controls. The dock scrolls
+independently in short windows. **Properties** shows document dimensions and, for
+sheets, frame names, geometry and representations. **Layers** remains independently
+collapsible in the same Inspector. These pane changes do not enter Undo history.
+
+Use **Library → Source actions…** for the selected source's shared-edit and
+copy choices. **Edit artwork…** opens native artwork directly; clicking a named
+pose while editing artwork opens that sheet with the requested frame selected.
+Scene Library clicks keep their placement behavior. Source actions lets you name
+an independent whole-sheet or region copy; selected-placement variations require
+1–256 matching placements in a saved, unmodified scene on one active layer.
+Review explains affected saved references before publishing shared edits, and a
+variation commits its new source and replacements together. Imported sources need
+an explicit editable copy. A deleted source remains unavailable in copy setup;
+your entered name and identity are retained until you explicitly choose another.
 
 ## Layers, agent exchange and navigation
 
@@ -146,8 +162,8 @@ same icon style as scene commands; gold marks the selected drawing tool.
 
 The shared strip holds history, clipboard and transforms. The contextual toolbar
 groups drawing tools, Color/Opacity and Pan/Fit/Zoom beside the canvas. Groups wrap
-together at smaller widths; the **Palette ▾**
-dropdown opens a scrollable 12-column swatch grid. The Inspector identifies shared
+together at smaller widths; the **Colors ▾**
+button in the Inspector opens a scrollable 12-column swatch grid. The Inspector identifies shared
 artwork, new artwork and selected-placement variations; the document bar shows
 local Saved/Modified/New state. Save stays in the document bar. **Document actions**
 contains download, close/discard and **Drawing & keyboard help**. **Fit** chooses

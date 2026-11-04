@@ -579,7 +579,7 @@
 #art-pan[aria-pressed=true] {border-color:var(--accent);color:var(--accent)}
 #art-canvas {display:block;touch-action:none;image-rendering:pixelated;background-color:#ccc;background-image:conic-gradient(#888 25%,transparent 0 50%,#888 0 75%,transparent 0);background-size:16px 16px}
 #art-canvas:focus-visible {outline:2px solid var(--accent);outline-offset:3px}
-#art-properties,#art-layer-panel,.art-review {flex:none;width:280px;height:100%;overflow:auto;box-sizing:border-box;padding:8px;background:var(--panel);min-width:0;scroll-padding:6px}
+#art-properties,#art-layer-panel,.art-review {box-sizing:border-box;background:var(--panel);min-width:0;scroll-padding:6px}
 #art-properties h3,.art-review h3 {margin-top:0;font-size:13px}
 #art-properties p {font-size:12px}
 #art-properties button {max-width:100%;white-space:normal}
@@ -662,9 +662,6 @@
 #artwork-panel {overflow:auto}
 #art-browse {font-size:11px}
 
-@media (max-width:1200px) {
-  #art-properties,#art-layer-panel,.art-review {position:absolute;inset:0 0 0 auto;z-index:2;max-width:100%;box-shadow:-8px 0 20px #0007;border-left:1px solid var(--line)}
-}
 @media (max-width:850px) {
   .art-frame-bar {gap:6px;flex-wrap:wrap}
   .art-tools {gap:4px}
@@ -728,3 +725,17 @@
 .document-context #document-switcher {min-width:0;flex:0 1 360px}
 .document-context #document-state {flex:none}
 .document-actions {flex:none}
+
+/* Contextual artwork controls use the shared Inspector; the optional dock owns
+   its own scrolling and gives drawing space back when collapsed. */
+#art-inspector-content #art-palette-toggle {margin:12px 0;width:100%;text-align:left}
+#art-inspector-content .inspector-panel {border-top:1px solid var(--line);margin-top:8px}
+#art-inspector-content #art-properties,#art-inspector-content #art-layer-panel,#art-inspector-content .art-review {border-top:1px solid var(--line)}
+#art-editor>#art-sheet-controls {max-height:min(230px,32vh);flex:0 1 auto;min-height:28px;overflow:auto}
+#art-dock>summary {cursor:pointer;font-size:12px;padding:4px 0;color:var(--muted)}
+#art-sheet-controls:has(#art-dock:not([open])) {max-height:32px}
+#artwork-surface .art-controls {flex-shrink:0}
+@media (max-height:700px) {
+  #art-editor>#art-sheet-controls {max-height:160px}
+  #art-sheet-controls #art-frame-strip {display:flex}
+}

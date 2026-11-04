@@ -81,9 +81,10 @@ One Documents button shows the active name and kind, with Saved/Modified/New
 beside it and a separate detected-external-change warning. Its chooser offers the
 active scene, other saved scenes and retained artwork. Switching preserves local
 context and independent history; failed checkpoints block departure. The artwork
-frame/animation dock remains. Save occupies the document bar and shared history,
+frame/animation dock can be collapsed using its Frames & animation disclosure. Save occupies the document bar and shared history,
 clipboard, deselection and transform commands occupy a stable strip above contextual
-tools. Subsequent milestone 22 issues refine panel controls. Setup is a focused
+tools. Raster layers and document/frame properties use shared Inspector sections;
+color assistance is launched from the Inspector. Setup is a focused
 surface in the workbench; dialogs remain appropriate for modal confirmations and document choice.
 
 ## Pixel editor layout
@@ -98,8 +99,8 @@ Keep compact tool/history/clipboard/transform groups, color, opacity, transparen
 zoom and Fit beside the canvas. Show a short shared/new/variation badge beside
 the title. Put frame selection, Sheet/Frame scope and thumbnails below drawing,
 with an optional bounded animation dock containing sequence entries, millisecond
-durations and playback. Hide frame thumbnails in short windows while preserving
-the labeled selector. Properties and exact-change review are optional content in the shared Inspector.
+durations and playback. The dock has its own bounded scrolling at short heights;
+collapse Frames & animation to return that space to drawing. Properties and exact-change review are optional content in the shared Inspector.
 Library and Inspector retain their common collapse handles at compact sizes; the
 document switcher retains New/Browse navigation.
 

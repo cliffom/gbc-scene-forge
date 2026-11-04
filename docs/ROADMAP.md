@@ -20,11 +20,9 @@ consistent navigation, contextual commands, Library, Inspector and optional
 frame/animation dock. Preserve domain-owned history, exact artwork review,
 revision guards, recoverable local work and browser/MCP coexistence.
 
-Complete shared-command and Save acceptance (#196), then integrate contextual
-panels (#197).
-Library/source/variation workflows (#198) integrate those
-pieces. Finish with integrated workflow and layout validation (#199). Each
-implementation issue includes its own regression coverage and documentation.
+Complete combined user acceptance of contextual panels, Library/source actions
+and the integrated workflow assessment (#197–#199). The implementation and scoped
+validation remain on the prepared release branch until that verification gate.
 Independent-user evaluation remains owned by #165/#166 rather than gating this
 user-requested consolidation.
 

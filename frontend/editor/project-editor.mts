@@ -66,10 +66,12 @@ export function mountProjectEditor() {
   const activity = new EditorActivity();
   const commandView: { current?: ReturnType<typeof createDocumentCommands> } = {};
   let sceneModified = false;
+  const layoutView: { current?: ReturnType<typeof createEditorLayout> } = {};
   const shell = createEditorShell(
     lifetime,
     (kind) => {
       activity.document = kind;
+      layoutView.current?.document(kind);
       commandView.current?.render();
     },
     () => editorLayout.showInspector(),
@@ -90,6 +92,7 @@ export function mountProjectEditor() {
   const editorLayout = createEditorLayout(lifetime, (apply) =>
     viewportController.changeLayout(apply),
   );
+  layoutView.current = editorLayout;
   const canvas = element('scene', HTMLCanvasElement);
   const blockoutLabels = createBlockoutLabels(canvas, element('viewport', HTMLElement), lifetime);
   const ctx = canvas.getContext('2d');
@@ -132,6 +135,7 @@ export function mountProjectEditor() {
     sceneModified = unsaved;
     reviewController.sync();
     artworkController.updateTerrain();
+    artworkController.syncSourceActions();
     panelsController.renderObjectValidation();
     editorLayout.enableBlockout(
       blockoutDefinitions(workspaceState.project?.definitions ?? []).length > 0,

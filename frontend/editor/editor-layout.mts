@@ -164,7 +164,11 @@ export function createEditorLayout(
     lifetime.cleanup(() => reflectPane(name, true));
   }
   const categories: LibraryCategory[] = ['artwork', 'objects', 'blockout', 'stamps'];
+  let selectedCategory: LibraryCategory = 'artwork';
+  let sceneCategory: LibraryCategory = 'artwork';
+  let artworkContext = false;
   function selectLibrary(category: LibraryCategory, focus = false) {
+    selectedCategory = category;
     for (const name of categories) {
       const selected = name === category;
       const tab = element(`${name}-tab`, HTMLButtonElement);
@@ -267,6 +271,17 @@ export function createEditorLayout(
   reflectPaletteState();
   return {
     showLibrary,
+    document(kind: 'scene' | 'artwork') {
+      const next = kind === 'artwork';
+      if (next === artworkContext) {
+        return;
+      }
+      if (next) {
+        sceneCategory = selectedCategory;
+      }
+      artworkContext = next;
+      selectLibrary(next ? 'artwork' : sceneCategory);
+    },
     showInspector() {
       showPane('inspector', true);
     },

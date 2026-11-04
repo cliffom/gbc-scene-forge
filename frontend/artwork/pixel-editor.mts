@@ -78,6 +78,7 @@ export function createPixelEditor({
   let session: ArtworkSession | null = null;
   let busy = false;
   let sources: Source[] = [];
+  let unavailableSource: Source | null = null;
   let inventoryRevision = workspaceState.revision;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let paletteSignature = '';
@@ -510,19 +511,37 @@ export function createPixelEditor({
       }
     }
     const active = session !== null;
+    inspector.hidden = !active;
     element('art-setup', HTMLElement).hidden = active;
     element('art-editor', HTMLElement).hidden = !active;
     if (!active) {
+      const source = sources[Number(select('art-source').value)];
       select('art-source').disabled = busy || !sources.length;
       select('art-source-grid').disabled = busy || !sources.length;
       for (const id of ['art-cell-x', 'art-cell-y']) {
         input(id).disabled = busy || !sources.length;
       }
       button('art-open').disabled = busy || !sources[Number(select('art-source').value)]?.target;
-      button('art-duplicate').disabled = busy || !sources.length;
-      button('art-variation').disabled = busy || !sources.length;
+      button('art-duplicate-sheet').disabled = busy || !source;
+      button('art-duplicate').disabled = busy || !source;
+      button('art-variation').disabled = busy || !source;
+      let variation = 'Choose a source first.';
+      if (source) {
+        try {
+          variation = `${selectedPlacements(source).length} matching placements ready to capture. Review and Save commit the new source and replacements together.`;
+        } catch (error) {
+          variation = error instanceof Error ? error.message : String(error);
+        }
+      }
+      element('art-variation-help', HTMLElement).textContent = variation;
+      button('art-variation').title = variation;
     }
-    button('art-properties-toggle').hidden = !active || session?.model.descriptor.version !== 2;
+    button('art-properties-toggle').hidden = !active;
+    button('art-palette-toggle').hidden = !active;
+    element('art-document-geometry', HTMLElement).textContent = session
+      ? `${session.model.descriptor.width} × ${session.model.descriptor.height} pixels · ${session.model.descriptor.name}`
+      : '';
+    element('art-frame-properties', HTMLElement).hidden = session?.model.descriptor.version !== 2;
     button('art-layers-toggle').hidden = !active;
     if (!active && presentation.mode === 'existing') {
       element('art-source-help', HTMLElement).textContent = sources[
@@ -530,6 +549,10 @@ export function createPixelEditor({
       ]?.target
         ? 'Edit the shared original, or name an independent copy below.'
         : 'Imported artwork is preserved. Name an editable copy to begin drawing.';
+      if (unavailableSource) {
+        element('art-source-help', HTMLElement).textContent =
+          'This source is no longer available. Entered copy fields are retained; choose another source explicitly.';
+      }
       button('art-open').title = button('art-open').disabled
         ? 'Imported artwork requires an editable copy. Name a copy below.'
         : 'Edit the shared original; saving updates its references.';
@@ -848,7 +871,7 @@ export function createPixelEditor({
     return brushes.spriteBrush ?? tileParts(brushes.brush?.[0]?.[0] ?? '')[0];
   }
   async function inventory(preserve = false, eligible = () => true) {
-    const previous = sources[Number(select('art-source').value)];
+    const previous = sources[Number(select('art-source').value)] ?? unavailableSource;
     const project = await api('project', record);
     const revision = string(project.revision);
     const result = await api('artwork-list', record, { project_revision: revision });
@@ -898,6 +921,13 @@ export function createPixelEditor({
     );
     if (index >= 0) {
       select('art-source').value = String(index);
+      unavailableSource = null;
+    } else if (preserve && previous) {
+      unavailableSource = previous;
+      select('art-source').add(
+        new Option(`${previous.atlas_id} / ${previous.region} (no longer available)`, '-1'),
+      );
+      select('art-source').value = '-1';
     }
     if (!preserve) {
       input('art-cell-x').value = parts[2] ?? '0';
@@ -987,6 +1017,7 @@ export function createPixelEditor({
         mode === 'new' ? 'New artwork' : 'Open artwork';
       element('art-scope-label', HTMLElement).textContent = '';
       sources = [];
+      unavailableSource = null;
       workspace(true);
       tabs();
       await inventory();
@@ -1018,7 +1049,7 @@ export function createPixelEditor({
         const existing = documents
           .sessions()
           .find((current) => current.model.descriptor.atlas_id === detail.atlas);
-        if (existing) {
+        if (existing && detail.action !== 'source-actions') {
           restore(existing);
           focusFrame(string(detail.region));
           return;
@@ -1035,8 +1066,19 @@ export function createPixelEditor({
           (source) => source.atlas_id === detail.atlas && source.region === detail.region,
         );
         const source = sources[index];
+        if (!source) {
+          throw Error('This source is no longer available. Choose another Library source.');
+        }
+        unavailableSource = null;
         select('art-source').value = String(index);
-        if (source?.target) {
+        if (source && detail.action === 'source-actions') {
+          presentation.prepareIdentity(`${source.region} copy`);
+          message(
+            'Choose shared editing or name an independent copy. Variations require matching selections in a saved scene.',
+          );
+          controls();
+          select('art-source').focus();
+        } else if (source?.target) {
           start(
             await api('artwork-open', decodeCandidate, {
               target: source.target,
@@ -1048,12 +1090,17 @@ export function createPixelEditor({
         } else {
           presentation.prepareIdentity(`${string(detail.region)} copy`);
           message('Imported artwork: copy the selected source to native artwork to edit.');
+          controls();
+          input('art-name').focus();
         }
       });
     },
     { signal: lifetime.signal },
   );
-  lifetime.assign(select('art-source'), 'onchange', controls);
+  lifetime.assign(select('art-source'), 'onchange', () => {
+    unavailableSource = null;
+    controls();
+  });
   function createArtwork() {
     void execute(async () => {
       start(
@@ -1153,13 +1200,20 @@ export function createPixelEditor({
       if (!source?.target) {
         throw Error('Imported artwork must be duplicated before editing.');
       }
-      start(
-        await api('artwork-open', decodeCandidate, {
-          target: source.target,
-          project_revision: inventoryRevision,
-          artwork_revision: source.artwork_revision,
-        }),
-      );
+      const retained = documents
+        .sessions()
+        .find((current) => current.model.descriptor.atlas_id === source.atlas_id);
+      if (retained) {
+        restore(retained);
+      } else {
+        start(
+          await api('artwork-open', decodeCandidate, {
+            target: source.target,
+            project_revision: inventoryRevision,
+            artwork_revision: source.artwork_revision,
+          }),
+        );
+      }
       focusFrame(source.region);
     });
   });
@@ -1290,8 +1344,6 @@ export function createPixelEditor({
   const layerControls = createArtworkLayerControls(lifetime, {
     opening: () => {
       reviewPanel(false);
-      element('art-properties', HTMLElement).hidden = true;
-      button('art-properties-toggle').setAttribute('aria-expanded', 'false');
     },
     current: () => session?.model ?? null,
     busy: () => busy,

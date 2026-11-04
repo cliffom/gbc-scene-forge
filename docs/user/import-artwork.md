@@ -4,6 +4,18 @@ Open **Library → Import**, then choose **PNG tilesheet** or **Tiled JSON
 map** in Source type. The existing gbc-atlas bundle workflow remains available.
 These generic inputs need no gbc-atlas installation, manifest or GBC palette setup.
 
+## Editing imported sources
+
+Select a Library source and choose **Source actions…** for shared editing or
+independent copies. Native artwork can open directly with **Edit artwork…**;
+imported artwork keeps its explicit copy flow. A sheet copy preserves compatible
+frames/timing and native layers; imported sheets must fit the editable sheet
+limits (8–256 pixels per axis in multiples of eight, at most 128 frames). A region
+copy takes one sprite pose or selected tile cell, without its animation sequence.
+Copies preserve exact RGBA, including RGB under transparent pixels; no palette
+conversion is implied. See the [artwork guide](pixel-artwork.md) for reviewed saves
+and atomic selected-placement variations. Creation/copy setup works without a scene.
+
 ## PNG tilesheets
 
 1. Choose a PNG and give it a project asset ID, such as `forest` (lowercase letters,

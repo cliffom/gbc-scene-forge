@@ -27,7 +27,7 @@ start polling, or acquire canvas resources. No frontend framework is required.
 | `editor/editor-rendering.mts` | Canvas drawing, coordinate conversion, object hit bounds and preview collision queries. `draw(false)` updates transient display without authored checkpoints or rebuilding controls. Backing and CSS dimensions change only when needed; each synchronous repaint isolates drawing styles and starts a fresh path. Owns a 16 MiB LRU of transparent tile chunks with content/region invalidation and viewport clipping; scroll/resize redraw through the mounted lifetime. `drawOverview` renders full authored layers directly to the resize preview without display clipping or transient feedback. See [rendering/history contracts and measurements](evaluations/scene-scalability.md). |
 | `editor/editor-gestures.mts`, `editor/editor-viewport.mts`, `editor/editor-commands.mts` | Pointer authoring/cancellation and pan capture; zoom/fit/wheel and resize; keyboard/toolbar/export commands. The scene/pixel tool radio groups and zoom selectors are the single current tool/zoom values; do not add a second mutable copy. |
 | `editor/editor-layers.mts`, `editor/editor-compositions.mts` | Layer/selection inspectors and layer actions; copy/cut/paste/transforms/stamp controls. |
-| `editor/editor-layout.mts` | Mounted Library/Inspector visibility, accessible pane toggles, Library categories, guided reveal, responsive toolbar disclosure and command popovers. Pane/toolbar preferences are transient UI state; viewport transitions redraw without authored checkpoints. Disposal resets visibility. |
+| `editor/editor-layout.mts` | Mounted Library/Inspector visibility, accessible pane toggles, Library categories, guided reveal, responsive toolbar disclosure and command popovers. The active document selects artwork Library content while retaining the scene category. Pane/toolbar preferences are transient UI state; viewport transitions redraw without authored checkpoints. Disposal resets visibility. |
 | `editor/editor-review.mts` | Transient review mode in `EditorActivity.reviewing`, layout/focus and camera transition; gestures enforce Pan and commands block authoring shortcuts. The existing tool/brush/selection remain owned by their usual controllers. |
 | `editor/editor-panels.mts` | Wire existing tile/object inspectors, definitions, world, diagnostics, palette and blockout views to scene/project operations. Each feature view continues to own its dialog and validation state. Pending cross-scene navigation is owned here. |
 | `preview/animation-preview.mts`, `preview/movement-preview.mts` | Playback, input state and preview positions/preferences. They receive preview contracts and redraw callbacks, never scene writers. |
@@ -40,6 +40,15 @@ never eagerly resolves a controller that has not been constructed. Getters are
 used for current resources/state, not captured copies of mutable primitives.
 Keep ports limited to each consumer's needs; do not replace these owners with a
 shared miscellaneous state object or global event bus.
+
+`artwork/artwork-workspace.mts` contributes layer/property/review sections and
+color assistance to the one Inspector. `artwork/sheet-editor.mts` owns the bounded
+bottom frame/animation dock, stops playback on collapse and reuses raster stamps
+for unchanged thumbnails. Panel/dock disclosure is transient UI state, outside
+pixel history. Source setup in `pixel-editor.mts` preserves entered fields during
+discovery; a missing selected source stays an explicit unavailable choice instead
+of adopting an unrelated source. Shared source edits and captured-placement copies
+continue to use the existing guarded domain operations.
 
 Illustration-layer UI belongs to `artwork/artwork-layer-controls.mts`; exact sources,
 active layer and history belong to `PixelModel`, and `artwork/artwork-layers.mts`

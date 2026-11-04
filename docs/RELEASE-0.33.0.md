@@ -1,8 +1,8 @@
 # Scene Forge 0.33.0
 
 Prepared feature release for [milestone 22](https://github.com/cliffom/gbc-scene-forge/milestone/22).
-Publication is separate. This draft currently describes the shell, navigation and command increments;
-later milestone issues extend the release before final publication.
+Publication is separate. This prepared release consolidates scene and artwork
+authoring within one editor experience.
 
 ## Changes
 
@@ -13,7 +13,8 @@ later milestone issues extend the release before final publication.
   the active document. Artwork retains its existing models, history, pixel targeting,
   guarded review/save, recoverable drafts and browser/MCP discovery.
 - Returning to a scene restores its canvas focus and contextual Inspector. Artwork
-  creation also works without a scene. The bounded frame/animation dock remains.
+  creation also works without a scene. The bounded frame/animation dock can be
+  collapsed to restore drawing space; playback stops when it closes.
 - One Documents control navigates between the active scene, other saved scenes and
   retained artwork. The bar shows the active name, document kind and local state,
   with detected external saved-base changes shown separately. Switching preserves
@@ -25,6 +26,18 @@ later milestone issues extend the release before final publication.
   Artwork Save opens exact-change review and requires confirmation in that same
   location. Pixel Cut/Paste preserves exact RGBA; text editing and modal focus
   retain native keyboard behavior. Scene and artwork histories remain independent.
+
+- Raster layers and document/frame properties use shared Inspector sections.
+  Color assistance lives in the Inspector, and tile repetition remains contextual.
+  The frame dock groups sheet/frame selection, thumbnails, sequences, timing,
+  ordering, looping, playback, stepping and onion skinning, with bounded scrolling.
+- Library Source actions distinguish shared editing, independent sheet/region
+  copies and selected-placement variations. Native sources open at the requested
+  pose; imports keep explicit editable-copy limits. Artwork mode shows artwork
+  Library content and returning restores the scene Library category and filters.
+- If a source disappears while copy setup is open, it stays explicitly unavailable
+  through repeated discovery. Entered name/identity fields remain intact; choosing
+  another source is explicit.
 
 ## Upgrade and compatibility
 
