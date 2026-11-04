@@ -1097,14 +1097,25 @@ TOOLS.extend(
             read=True,
         ),
         tool(
+            "plan_artwork_candidate_archive",
+            "Read-only archive recommendations grouped by owner and exact document identity. Reports exact saved matches, uncertain alternatives, bytes and reclaim estimates; no eviction, rebasing or saved changes. Select handles explicitly and optionally pass the unchanged plan to archive_artwork_candidates for stale-plan rejection.",
+            PROJECT,
+            read=True,
+        ),
+        tool(
             "archive_artwork_candidates",
             "Explicitly archive 1..32 selected handles (64 MiB total) as unchanged full envelopes in a durable project-local ZIP before optional release=true. Reports per-candidate partial release failures. Archives survive restart, retain owner in filenames and are excluded from project exports. Download using read_artwork_archive; restore envelopes with retain_artwork_candidate and original owner.",
             {
                 **PROJECT,
                 "candidates": {"type": "array", "minItems": 1, "maxItems": 32, "items": HANDLE},
                 "release": {"type": "boolean"},
+                "plan": {
+                    "type": "object",
+                    "description": "Unchanged plan_artwork_candidate_archive response; "
+                    "revalidate all evidence before archiving explicitly selected handles.",
+                },
             },
-            ("release",),
+            ("release", "plan"),
         ),
         tool(
             "read_artwork_archive",
@@ -1115,14 +1126,16 @@ TOOLS.extend(
         ),
         tool(
             "inspect_artwork_candidate",
-            "Review coordinate-labelled before/after contact SVG with optional magenta exact-RGBA changed-pixel overlay. 1..8 rectangles, explicit nearest-neighbor scale 1..8, <=512 per cell axis/4194304 image pixels/8388608 layout pixels. Exact candidate/base receipt, rectangles and completeness; no automatic cleanup.",
+            "Review coordinate-labelled before/after SVG (default) or PNG, with optional explicit before_candidate and magenta composite RGBA change overlay. PNGs support bounded inline images. The receipt always guards the after candidate against its saved base. 1..8 rectangles, explicit nearest-neighbor scale 1..8, <=512 per cell axis/4194304 image pixels/8388608 layout pixels. Exact candidate/base receipt, rectangles and completeness; no automatic cleanup.",
             {
                 **ARTWORK_CANDIDATE,
                 "rectangles": {"type": "array", "minItems": 1, "maxItems": 8, "items": RECTANGLE},
                 "scale": {"type": "integer", "minimum": 1, "maximum": 8},
                 "changed_overlay": {"type": "boolean"},
+                "before_candidate": {"oneOf": [CANDIDATE, HANDLE]},
+                "format": {"type": "string", "enum": ["svg", "png"]},
             },
-            ("scale", "changed_overlay"),
+            ("scale", "changed_overlay", "before_candidate", "format"),
             read=True,
         ),
     ]

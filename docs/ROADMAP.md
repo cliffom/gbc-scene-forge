@@ -5,25 +5,24 @@ editable tile and sprite sheets, native animation, scene/artwork documents,
 artwork-free blockouts, optional MCP and conflict-aware recovery. See
 [usage](STANDALONE.md) and the [changelog](CHANGELOG.md) for supported behavior.
 
-Open milestone state was checked on 2026-11-03. The user selected
-[milestone 22](https://github.com/cliffom/gbc-scene-forge/milestone/22), a single
-editor experience for scenes and artwork, as the next priority. The priority
-order is **22 → 17 → 18 → 19**; these outcomes have no promised release versions
-or dates. Validation gaps live in the
-[single remaining-check list](VALIDATION.md#remaining-checks).
+Open milestone state was checked on 2026-11-04. The next requested release groups
+[#211](https://github.com/cliffom/gbc-scene-forge/issues/211),
+[#212](https://github.com/cliffom/gbc-scene-forge/issues/212) and
+[#213](https://github.com/cliffom/gbc-scene-forge/issues/213) from
+[milestone 23](https://github.com/cliffom/gbc-scene-forge/milestone/23).
+Validation gaps live in the [single remaining-check list](VALIDATION.md#remaining-checks).
 
-## Single editor experience for scenes and artwork (milestone 22)
+## MCP illustration iteration and review (milestone 23)
 
-[Milestone 22](https://github.com/cliffom/gbc-scene-forge/milestone/22): use the
-scene editor's layout as the shared host for scene and artwork documents, with
-consistent navigation, contextual commands, Library, Inspector and optional
-frame/animation dock. Preserve domain-owned history, exact artwork review,
-revision guards, recoverable local work and browser/MCP coexistence.
+Prepare 0.35.0 with explicit draft comparison, directly viewable PNG inspection and
+read-only archive recommendations. Complete review and release checks before
+publication. Constrained palette reduction (#214) remains separate design work.
 
-Complete PR review, CI checks and release readiness for the prepared 0.33.0
-consolidation on `milestone/22`.
-Independent-user evaluation remains owned by #165/#166 rather than gating this
-user-requested consolidation.
+## Stabilization priorities
+
+Milestone 17 retains independent-user work; milestone 19 owns policy/limit cleanup.
+Milestone 18 remains open in GitHub with all three issues closed; no implementation
+work remains assigned to it. These milestones have no promised release dates.
 
 ## Existing workflow usability and manual–MCP parity (milestone 17)
 
@@ -33,12 +32,6 @@ using the [evaluation protocol](evaluations/workflow-usability.md) and maintaine
 [browser/MCP outcome matrix](AUTHORING-OUTCOMES.md). Participant-dependent
 acceptance remains open until observations exist. Preserve browser-only, agent-only
 and mixed authoring workflows; publication does not close the milestone.
-
-## Authoring maintainability and correctness (milestone 18)
-
-[Milestone 18](https://github.com/cliffom/gbc-scene-forge/milestone/18), #168–#170:
-clarify ownership, simplify code organization and strengthen correctness around
-existing authoring and persistence contracts.
 
 ## Explicit limits and policy constants (milestone 19)
 

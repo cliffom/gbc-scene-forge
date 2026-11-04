@@ -62,6 +62,309 @@ class IllustrationTests(unittest.TestCase):
             resource["text"].encode() if "text" in resource else base64.b64decode(resource["blob"])
         )
 
+    def test_explicit_comparison_handles_full_envelopes_and_after_only_receipt(self):
+        before = self.create()
+        after = editable.edit_pixels(before, [dict(x=2, y=1, rgba=[8, 9, 10, 255])])
+        owned_before = self.store.retain(before, owner=str(uuid4()))
+        owned_after = self.store.retain(after, owner=str(uuid4()))
+        inventory = self.store.list()
+        for left, right in (
+            (before, after),
+            (owned_before, owned_after),
+            (before, owned_after),
+            (owned_before, after),
+        ):
+            with self.subTest(left=left.keys(), right=right.keys()):
+                result = self.call(
+                    "inspect_artwork_candidate",
+                    candidate=right,
+                    before_candidate=left,
+                    rectangles=[dict(x=1, y=1, width=2, height=2)],
+                    changed_overlay=True,
+                )
+                self.assertEqual(result["before_candidate_revision"], before["revision"])
+                self.assertEqual(result["candidate_revision"], after["revision"])
+                self.assertEqual(result["rectangles"][0]["changed_pixels"], 1)
+                self.assertFalse(result["complete"])
+                self.assertIn(before["revision"].encode(), self.artifact(result))
+                self.assertIn(after["revision"].encode(), self.artifact(result))
+                self.assertEqual(
+                    result["receipt"],
+                    self.call("review_artwork_candidate", candidate=after)["receipt"],
+                )
+        identical = self.call(
+            "inspect_artwork_candidate",
+            candidate=after,
+            before_candidate=after,
+            rectangles=[dict(x=0, y=0, width=4, height=4)],
+            changed_overlay=True,
+        )
+        self.assertEqual(identical["rectangles"][0]["changed_pixels"], 0)
+        self.assertEqual(self.store.list(), inventory)
+        with self.assertRaises(Conflict):
+            self.call("commit_artwork", candidate=before, receipt=result["receipt"])
+        ack = self.call("commit_artwork", candidate=after, receipt=result["receipt"])
+        with self.assertRaises(Conflict):
+            self.call("commit_artwork", candidate=after, receipt=result["receipt"])
+        current = self.call(
+            "open_artwork",
+            target=dict(document_id=after["document_id"], atlas_id="picture", region="artwork"),
+            project_revision=ack["project_revision"],
+            artwork_revision=ack["artwork_revision"],
+        )
+        stale_baseline = self.call(
+            "inspect_artwork_candidate",
+            candidate=current,
+            before_candidate=before,
+            rectangles=[dict(x=0, y=0, width=4, height=4)],
+            changed_overlay=True,
+        )
+        self.assertEqual(stale_baseline["before_candidate_revision"], before["revision"])
+        self.assertEqual(stale_baseline["receipt"]["project_revision"], ack["project_revision"])
+
+    def test_explicit_baseline_geometry_project_and_owner_validation(self):
+        after = self.create()
+        mismatched = self.project.artwork.documents.create(
+            "small", "Small", "sprite", 2, 2, self.revision()
+        )
+        other = Project.create(self.root / "other", "Other")
+        foreign = other.artwork.documents.create(
+            "picture", "Picture", "sprite", 4, 4, other.catalog()["revision"]
+        )
+        owned = self.store.retain(after, owner=str(uuid4()))
+        invalid_owner = {**owned, "owner": str(uuid4())}
+        for before in (mismatched, foreign, invalid_owner):
+            with self.subTest(before=before), self.assertRaises(ValueError):
+                self.call(
+                    "inspect_artwork_candidate",
+                    candidate=after,
+                    before_candidate=before,
+                    rectangles=[dict(x=0, y=0, width=4, height=4)],
+                )
+        self.assertFalse(self.adapter.artifacts)
+
+    def test_png_crops_exact_rgba_scaling_labels_and_overlay_alignment(self):
+        before = self.create()
+        before = editable.edit_pixels(before, [dict(x=1, y=2, rgba=[8, 9, 10, 0])])
+        after = editable.edit_pixels(before, [dict(x=2, y=2, rgba=[90, 80, 70, 127])])
+        result = self.call(
+            "inspect_artwork_candidate",
+            candidate=after,
+            before_candidate=before,
+            format="png",
+            rectangles=[dict(x=1, y=2, width=2, height=1)],
+            scale=3,
+            changed_overlay=True,
+        )
+        self.assertEqual(result["resource"]["mimeType"], "image/png")
+        data = self.artifact(result)
+        w, h, raw = png.decode(data, generic=True)
+        self.assertEqual((w, h), (780, 91))
+        self.assertIn(before["revision"].encode(), data)
+        self.assertIn(after["revision"].encode(), data)
+        self.assertIn(b'"complete": false', data)
+
+        def pixel(x, y):
+            offset = (y * w + x) * 4
+            return raw[offset : offset + 4]
+
+        for dx in range(3):
+            for dy in range(3):
+                self.assertEqual(pixel(dx, 80 + dy), bytes([8, 9, 10, 0]))
+                self.assertEqual(pixel(260 + dx, 80 + dy), bytes([8, 9, 10, 0]))
+                self.assertEqual(pixel(263 + dx, 80 + dy), bytes([90, 80, 70, 127]))
+                self.assertEqual(pixel(523 + dx, 80 + dy), bytes([255, 0, 255, 255]))
+        # Real bitmap labels exist in each coordinate row and the revision header.
+        for x, y, width, height in (
+            (4, 4, 432, 7),
+            (4, 60, 170, 7),
+            (264, 60, 170, 7),
+            (524, 60, 170, 7),
+        ):
+            self.assertTrue(
+                any(
+                    pixel(xx, yy) == bytes([255] * 4)
+                    for xx in range(x, x + width)
+                    for yy in range(y, y + height)
+                )
+            )
+        svg = self.call(
+            "inspect_artwork_candidate",
+            candidate=after,
+            before_candidate=before,
+            rectangles=[dict(x=1, y=2, width=2, height=1)],
+            scale=3,
+            changed_overlay=True,
+        )
+        self.assertEqual(svg["rectangles"], result["rectangles"])
+        self.assertEqual(svg["receipt"], result["receipt"])
+        self.assertEqual(svg["resource"]["mimeType"], "image/svg+xml")
+
+    def test_hidden_layer_changes_do_not_claim_composite_differences(self):
+        hidden = {**layers.item("Hidden"), "visible": False}
+        before = layers.edit(self.create(), [hidden])
+        after = layers.apply(
+            before,
+            hidden["id"],
+            lambda flat: editable.edit_pixels(flat, [dict(x=0, y=0, rgba=[90, 10, 20, 255])]),
+        )
+        self.assertNotEqual(before["revision"], after["revision"])
+        self.assertEqual(before["rgba"], after["rgba"])
+        result = self.call(
+            "inspect_artwork_candidate",
+            candidate=after,
+            before_candidate=before,
+            format="png",
+            rectangles=[dict(x=0, y=0, width=4, height=4)],
+            changed_overlay=True,
+        )
+        self.assertEqual(result["rectangles"][0]["changed_pixels"], 0)
+        self.assertIn("hidden layer-only", result["overlay"])
+        self.assertTrue(result["complete"])
+        flat = self.create()
+        hidden_rgb = editable.edit_pixels(flat, [dict(x=0, y=0, rgba=[5, 6, 7, 0])])
+        transparent = self.call(
+            "inspect_artwork_candidate",
+            candidate=hidden_rgb,
+            before_candidate=flat,
+            format="png",
+            rectangles=[dict(x=0, y=0, width=1, height=1)],
+            scale=1,
+            changed_overlay=True,
+        )
+        self.assertEqual(transparent["rectangles"][0]["changed_pixels"], 1)
+        width, _, pixels = png.decode(self.artifact(transparent), generic=True)
+        offset = (80 * width + 520) * 4
+        self.assertEqual(pixels[offset : offset + 4], bytes([255, 0, 255, 255]))
+
+    def test_inspection_bounds_reject_before_publishing_artifacts(self):
+        full = self.project.artwork.documents.create(
+            "large", "Large", "sprite", 512, 512, self.revision()
+        )
+        cell = dict(x=0, y=0, width=512, height=512)
+        for format in ("png", "svg"):
+            for options in (
+                dict(scale=2, rectangles=[cell]),
+                dict(scale=1, rectangles=[cell] * 6, changed_overlay=True),
+                dict(scale=1, rectangles=[dict(x=512, y=0, width=1, height=1)]),
+            ):
+                with self.subTest(format=format, options=options), self.assertRaises(ValueError):
+                    self.call("inspect_artwork_candidate", candidate=full, format=format, **options)
+            self.assertFalse(self.adapter.artifacts)
+        # Largest cell axis and explicit scale are accepted without silently shrinking.
+        result = self.call(
+            "inspect_artwork_candidate",
+            candidate=full,
+            format="png",
+            rectangles=[dict(x=0, y=0, width=64, height=64)],
+            scale=8,
+        )
+        self.assertEqual(result["rectangles"][0]["scale"], 8)
+        cached = copy.copy(self.adapter.artifacts)
+        with (
+            patch("gbc_scene_forge.adapters.mcp.tools.MAX_ARTIFACT", 1),
+            self.assertRaises(ValueError),
+        ):
+            self.call(
+                "inspect_artwork_candidate",
+                candidate=full,
+                format="png",
+                rectangles=[cell],
+                scale=1,
+            )
+        self.assertEqual(self.adapter.artifacts, cached)
+
+    def test_archive_plan_groups_identity_and_owner_with_exact_saved_evidence(self):
+        full = layers.edit(self.create(), [{**layers.item("Hidden"), "visible": False}])
+        hidden_id = full["descriptor"]["layers"]["items"][0]["id"]
+        same = self.store.retain(full)
+        branch = self.store.retain(
+            layers.apply(
+                full,
+                hidden_id,
+                lambda flat: editable.edit_pixels(flat, [dict(x=0, y=0, rgba=[2, 3, 4, 255])]),
+            )
+        )
+        owner = str(uuid4())
+        owned = self.store.retain(full, owner=owner)
+        unrelated = self.project.artwork.documents.create(
+            "other", "Picture", "sprite", 4, 4, self.revision()
+        )
+        other = self.store.retain(unrelated)
+        self.commit(full)
+        before = self.store.list()
+        files = {
+            p.relative_to(self.project.root): p.read_bytes()
+            for p in self.project.root.rglob("*")
+            if p.is_file()
+        }
+        plan = self.call("plan_artwork_candidate_archive")
+        self.assertEqual(self.store.list(), before)
+        self.assertEqual(
+            files,
+            {
+                p.relative_to(self.project.root): p.read_bytes()
+                for p in self.project.root.rglob("*")
+                if p.is_file()
+            },
+        )
+        self.assertEqual(len(plan["groups"]), 3)
+        group = next(g for g in plan["groups"] if len(g["candidates"]) == 2)
+        entries = {e["candidate"]["handle"]: e for e in group["candidates"]}
+        self.assertTrue(entries[same["handle"]]["saved_content"]["matches"])
+        self.assertFalse(entries[branch["handle"]]["saved_content"]["matches"])
+        self.assertEqual(entries[branch["handle"]]["recommendation"], "retain_or_review")
+        self.assertIn("possibility", entries[branch["handle"]]["reason"])
+        self.assertIn("indeterminate", group["ordering"])
+        self.assertTrue(entries[same["handle"]]["stale_project_base"])
+        self.assertEqual(plan["estimated_reclaimable_bytes"], before["used_bytes"])
+        self.assertEqual(
+            plan["recommended_reclaimable_bytes"],
+            self.store.path(full["revision"]).stat().st_size * 2,
+        )
+        archive = self.call(
+            "archive_artwork_candidates", candidates=[same, owned], plan=plan, release=True
+        )
+        self.assertTrue(all(i["released"] for i in archive["results"]))
+        self.assertEqual(self.store.resolve(branch)["revision"], branch["revision"])
+        self.assertEqual(self.store.resolve(other)["revision"], other["revision"])
+        data = base64.b64decode(self.store.read_archive(archive["archive"])["data"])
+        self.assertEqual(digest(data), archive["sha256"])
+        with zipfile.ZipFile(io.BytesIO(data)) as recovery:
+            for filename in recovery.namelist():
+                restored = json.loads(recovery.read(filename))
+                self.assertEqual(restored, full)
+                self.store.retain(restored, owner=owner if filename.startswith(owner) else None)
+        self.assertEqual(self.store.list()["used_count"], 4)
+
+    def test_archive_plan_staleness_quota_and_invalid_selections(self):
+        full = self.create()
+        first = self.store.retain(full)
+        plan = self.store.archive_plan()
+        with (
+            patch.object(candidates, "MAX_COUNT", 1),
+            patch.object(candidates, "MAX_TOTAL", self.store.path(first["handle"]).stat().st_size),
+        ):
+            at_capacity = self.store.archive_plan()
+            self.assertEqual(at_capacity["remaining_bytes"], 0)
+            self.assertEqual(at_capacity["remaining_count"], 0)
+            self.assertEqual(at_capacity["recommended_reclaimable_bytes"], 0)
+        second = self.store.retain(
+            editable.edit_pixels(full, [dict(x=0, y=0, rgba=[1, 2, 3, 255])])
+        )
+        with self.assertRaisesRegex(ValueError, "stale"):
+            self.store.archive([first], release=True, plan=plan)
+        current = self.store.archive_plan()
+        with self.assertRaisesRegex(ValueError, "not in archive plan"):
+            self.store.archive([{**first, "owner": str(uuid4())}], release=True, plan=current)
+        with self.assertRaises(ValueError):
+            self.store.archive([first, first], release=True, plan=current)
+        self.assertEqual(self.store.list()["used_count"], 2)
+        self.assertFalse(self.store.list()["archives"])
+        self.commit(full)
+        with self.assertRaisesRegex(ValueError, "stale"):
+            self.store.archive([second], release=True, plan=current)
+
     def test_complete_static_workflow_and_exact_portable_recovery(self):
         original, overlay = layers.item("Night"), layers.item("Stars")
         raw = bytes([12, 24, 48, 255, 7, 8, 9, 0]) * 8

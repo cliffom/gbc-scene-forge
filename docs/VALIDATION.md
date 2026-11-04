@@ -15,6 +15,38 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## MCP draft comparison, PNG inspection and archive plans (#211–#213)
+
+- **Scope:** Prepared 0.35.0 working tree based on `12cf3fa`, checked on
+  2026-11-04 with macOS 27.0.1 arm64, Python 3.13.13 and Node 24.22.1.
+  This is local agent evidence using the installed Chromium browser.
+- **Method:** Exercise full/owned candidate comparisons, identical and one-pixel
+  edits, stale visual baselines, hidden-layer and hidden-transparent-RGB cases;
+  decode PNG crops to check literal RGBA, nearest scaling and overlay alignment.
+  Verify read-only archive grouping/evidence, stale-plan rejection, quota boundaries,
+  explicit selection and exact archive recovery. Run the official SDK example
+  from checkout and an isolated optional-MCP wheel install; inspect the generated
+  [816×344 PNG sheet](evaluations/assets/illustration-draft-contact.png).
+- **Result:** Required lint/docs checks, 469 Python tests and the TypeScript suites
+  pass; the final focused illustration suite passes all 19 cases. Production
+  wheel/source build, metadata and seven installed-wheel smoke cases pass.
+  A fresh optional-MCP install passes 113 service/SDK tests and the 13-call
+  illustration example, including inline PNG content, resource download,
+  saved-layer fidelity, plan validation and archive SHA-256 verification.
+  Regular Chromium acceptance passes 158 cases with 12 opt-in profile skips;
+  all six MCP/browser coexistence cases pass; installed-wheel first-use acceptance
+  passes one case. Initial archive integration
+  exposed nested lock acquisition; session-based helpers removed that failure
+  before successful regression checks. PNG labels, revisions and comparison cells
+  were visually inspected at their native 816×344 output size.
+- **Limits:** Synthetic technical fixtures and agent inspection do not establish
+  artistic quality or independent-user usability. Hashes provide no ancestry or
+  reliable supersession order; only exact saved matches receive archive
+  recommendations. Estimates exclude the durable archive's disk usage. Composite
+  overlays do not expose hidden layer-only edits. Official Tiled/rasterizer tools
+  were unavailable; no non-Chromium or Windows check was performed. Publication
+  remains separate; existing outstanding checks are retained below.
+
 ## MCP illustration production (#201)
 
 - **Scope:** Prepared 0.34.0 working tree based on `a7721a8`, local agent checks

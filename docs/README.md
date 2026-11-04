@@ -75,6 +75,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Release notes
 
+- [Scene Forge 0.35.0](RELEASE-0.35.0.md) — MCP draft comparison, PNG inspection and archive plans.
 - [Scene Forge 0.34.0](RELEASE-0.34.0.md) — MCP illustration preparation and lifecycle.
 
 - [Scene Forge 0.33.3](RELEASE-0.33.3.md) — artwork opening and layer responsiveness.
