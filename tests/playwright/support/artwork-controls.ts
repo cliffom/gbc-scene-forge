@@ -4,6 +4,11 @@ import { expect } from '@playwright/test';
 
 export async function revealArtworkControl(page: Page, id: string) {
   const control = page.locator('#' + id);
+  if (await control.locator('xpath=ancestor::*[@id="art-layer-panel"]').count()) {
+    if (!(await control.isVisible())) {
+      await page.locator('#art-layers-toggle').click();
+    }
+  }
   if (await control.locator('xpath=ancestor::aside[contains(@class,"art-review")]').count()) {
     if (!(await control.isVisible())) {
       await page.locator('#art-save').click();

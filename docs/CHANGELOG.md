@@ -6,6 +6,13 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.32.0 — Human–agent artwork iteration
+
+[Release notes](RELEASE-0.32.0.md). Add direct editable PNG intake, bounded inline
+MCP previews, structured raster edits and exact recoloring, named raster layers,
+explicit unpublished browser/MCP handoff, saved artwork deletion, Library discovery
+while Artwork is open, and pointer-anchored wheel zoom. Publication is separate.
+
 ## 0.31.0 — Bounded illustration canvases and artwork palette
 
 [Release notes](RELEASE-0.31.0.md). Support arbitrary static artwork dimensions

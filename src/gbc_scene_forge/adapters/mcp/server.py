@@ -70,6 +70,23 @@ def create_server(adapter):
                     content.append(types.ResourceLink(type="resource_link", **result[key]))
             for resource in result.get("resources", []):
                 content.append(types.ResourceLink(type="resource_link", **resource))
+            # At most two inline PNGs / 4 MiB decoded per response. Resource links
+            # remain available when images exceed this separate transport budget.
+            previews = result.get("resources", []) or [
+                result[k] for k in ("overview_resource", "camera_resource") if k in result
+            ]
+            preferred = [r for r in previews if "enlarged" in r["name"]] or previews
+            inline_bytes = 0
+            inline_count = 0
+            for resource in preferred:
+                if resource["mimeType"] != "image/png" or inline_count == 2:
+                    continue
+                if inline_bytes + resource["size"] > 4 * 1024 * 1024:
+                    continue
+                blob = adapter.read_artifact(resource["uri"])["blob"]
+                content.append(types.ImageContent(type="image", data=blob, mimeType="image/png"))
+                inline_bytes += resource["size"]
+                inline_count += 1
             return types.CallToolResult(content=content, structuredContent=result)
         except (ValueError, OSError, KeyError, TypeError, RecursionError) as error:
             busy = name in ARTWORK_TOOLS and (

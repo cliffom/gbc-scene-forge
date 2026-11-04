@@ -9,7 +9,7 @@ import zipfile
 import zlib
 from pathlib import PurePosixPath
 
-from gbc_scene_forge.artwork import animations, atlas, dimensions, editable, png, tilesheet
+from gbc_scene_forge.artwork import animations, atlas, dimensions, editable, layers, png, tilesheet
 from gbc_scene_forge.core.validation import require
 from gbc_scene_forge.formats import exporting, tiled
 from gbc_scene_forge.storage.files import digest
@@ -146,6 +146,7 @@ def authoring_assets(entry, files):
         require(path in files, f"Missing editable descriptor: {path}")
         descriptor = editable.read_descriptor(entry, files[path])
         pixels = editable.decode_image(descriptor, image)
+        layers.verify(descriptor, pixels, lambda path: files[path])
         width = descriptor["width"]
     elif manifest.get("source_format") == "png-tilesheet":
         checked, _, width, pixels = tilesheet.bundle(

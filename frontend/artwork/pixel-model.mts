@@ -1,4 +1,5 @@
 /** Exact RGBA authoring/history. No DOM, transport or scene state. */
+import { composite } from './artwork-layers.mts';
 import { MAX_HISTORY_BYTES } from './artwork-limits.mts';
 import { decodeDescriptor, type Candidate } from './artwork-contracts.mts';
 export type Color = [number, number, number, number];
@@ -20,6 +21,11 @@ type PixelSnapshot = {
   pixels: Uint8ClampedArray;
   selection: Rectangle | null;
   descriptor: Candidate['descriptor'];
+  layerState?: {
+    active: string | null;
+    rasters: Map<string, Uint8ClampedArray>;
+    flat?: Uint8ClampedArray;
+  };
 };
 type PixelHistory = Omit<PixelSnapshot, 'pixels'> & {
   chunks: { offset: number; bytes: Uint8ClampedArray }[];
@@ -35,11 +41,87 @@ export class PixelModel {
   readonly undoStack: PixelHistory[] = [];
   readonly redoStack: PixelHistory[] = [];
   private stroke: PixelSnapshot | null = null;
+  activeLayer: string | null = null;
+  private layerPixels = new Map<string, Uint8ClampedArray>();
   constructor(candidate: Candidate) {
     this.width = candidate.descriptor.width;
     this.height = candidate.descriptor.height;
     this.pixels = bytes(candidate.rgba);
     this.descriptor = structuredClone(candidate.descriptor);
+    if (candidate.layer_rgba) {
+      this.layerPixels = new Map(
+        Object.entries(candidate.layer_rgba).map(([id, raw]) => [id, bytes(raw)]),
+      );
+      this.selectLayer(this.descriptor.layers?.items[0].id ?? '');
+    }
+  }
+  layerData() {
+    if (this.activeLayer) {
+      this.layerPixels.set(this.activeLayer, this.pixels);
+    }
+    return new Map([...this.layerPixels].map(([id, pixels]) => [id, pixels.slice()]));
+  }
+  layerEncoding() {
+    return Object.fromEntries([...this.layerData()].map(([id, pixels]) => [id, encoded(pixels)]));
+  }
+  composite() {
+    return this.descriptor.layers ? composite(this.descriptor, this.layerData()) : this.pixels;
+  }
+  selectLayer(id: string) {
+    if (this.activeLayer) {
+      this.layerPixels.set(this.activeLayer, this.pixels);
+    }
+    const pixels = this.layerPixels.get(id);
+    if (!pixels) {
+      throw Error('Choose an existing layer.');
+    }
+    this.activeLayer = id;
+    this.pixels = pixels;
+  }
+  setLayers(items: NonNullable<Candidate['descriptor']['layers']>['items']) {
+    const d = decodeDescriptor({ ...this.descriptor, layers: { version: 1, items } });
+    for (const [index, item] of (this.descriptor.layers?.items ?? []).entries()) {
+      const proposed = items[index];
+      if (
+        item.locked &&
+        (!proposed ||
+          proposed.id !== item.id ||
+          proposed.name !== item.name ||
+          proposed.visible !== item.visible ||
+          proposed.opacity !== item.opacity)
+      ) {
+        throw Error('Unlock a layer before removing, reordering or changing it.');
+      }
+    }
+    if (!this.descriptor.layers) {
+      this.layerPixels.set(items[0].id, this.pixels.slice());
+    } else if (this.activeLayer) {
+      this.layerPixels.set(this.activeLayer, this.pixels);
+    }
+    this.layerPixels = new Map(
+      items.map((item) => [
+        item.id,
+        this.layerPixels.get(item.id) ?? new Uint8ClampedArray(this.pixels.length),
+      ]),
+    );
+    this.descriptor = d;
+    const previous = this.activeLayer;
+    this.activeLayer = null;
+    this.selectLayer(items.find((item) => item.id === previous)?.id ?? items[items.length - 1].id);
+  }
+  private restoreLayerState(state: PixelSnapshot['layerState']) {
+    if (state) {
+      this.layerPixels = new Map([...state.rasters].map(([id, p]) => [id, p.slice()]));
+      this.activeLayer = null;
+      if (state.active) {
+        this.selectLayer(state.active);
+      } else if (state.flat) {
+        this.pixels = state.flat.slice();
+      }
+    } else {
+      this.layerPixels.clear();
+      this.activeLayer = null;
+    }
   }
   retainSavedFrames(saved: Candidate['descriptor']) {
     if (saved.version !== 2) {
@@ -95,6 +177,7 @@ export class PixelModel {
         const snapshot = stack[index];
         if (
           snapshot.chunks.length === 0 &&
+          !snapshot.layerState &&
           JSON.stringify(snapshot.descriptor) === JSON.stringify(next.descriptor)
         ) {
           stack.splice(index, 1);
@@ -132,6 +215,9 @@ export class PixelModel {
     ];
   }
   put(p: Point, color: Color) {
+    if (this.descriptor.layers?.items.find((i) => i.id === this.activeLayer)?.locked) {
+      throw Error('Layer is locked.');
+    }
     if (this.inside(p)) {
       this.pixels.set(color, (p.y * this.width + p.x) * 4);
     }
@@ -140,6 +226,9 @@ export class PixelModel {
     if (!this.stroke) {
       this.stroke = {
         pixels: this.pixels.slice(),
+        layerState: this.activeLayer
+          ? { active: this.activeLayer, rasters: this.layerData() }
+          : undefined,
         descriptor: structuredClone(this.descriptor),
         selection: this.selection ? { ...this.selection } : null,
       };
@@ -148,6 +237,7 @@ export class PixelModel {
   cancel() {
     if (this.stroke) {
       this.pixels = this.stroke.pixels;
+      this.restoreLayerState(this.stroke.layerState);
       this.descriptor = this.stroke.descriptor;
       this.selection = this.stroke.selection;
       this.stroke = null;
@@ -184,7 +274,14 @@ export class PixelModel {
       }
       chunks.push({ offset, bytes });
     }
-    this.undoStack.push({ chunks, descriptor: before.descriptor, selection: before.selection });
+    this.undoStack.push({
+      chunks: before.layerState?.active || this.activeLayer ? [] : chunks,
+      layerState:
+        before.layerState ??
+        (this.activeLayer ? { active: null, rasters: new Map(), flat: before.pixels } : undefined),
+      descriptor: before.descriptor,
+      selection: before.selection,
+    });
     this.redoStack.length = 0;
     let total = this.undoStack.reduce((sum, item) => sum + this.historyBytes(item), 0);
     while (this.undoStack.length > 100 || total > MAX_HISTORY_BYTES) {
@@ -207,6 +304,8 @@ export class PixelModel {
   }
   private historyBytes(value: PixelHistory) {
     return (
+      (value.layerState?.flat?.byteLength ?? 0) +
+      [...(value.layerState?.rasters.values() ?? [])].reduce((n, p) => n + p.byteLength, 0) +
       value.chunks.reduce((sum, chunk) => sum + chunk.bytes.byteLength + 16, 0) +
       new TextEncoder().encode(JSON.stringify(value.descriptor)).length +
       64
@@ -220,6 +319,13 @@ export class PixelModel {
     }
     to.push({
       chunks: value.chunks,
+      layerState: value.layerState
+        ? {
+            active: this.activeLayer,
+            rasters: this.layerData(),
+            flat: this.activeLayer ? undefined : this.pixels.slice(),
+          }
+        : undefined,
       descriptor: structuredClone(this.descriptor),
       selection: this.selection ? { ...this.selection } : null,
     });
@@ -229,6 +335,7 @@ export class PixelModel {
       }
     }
     this.descriptor = value.descriptor;
+    this.restoreLayerState(value.layerState);
     this.selection = value.selection;
   }
   undo() {

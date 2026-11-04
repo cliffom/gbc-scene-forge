@@ -721,6 +721,20 @@ export function mountProjectEditor() {
     sceneSelection,
     brushes,
     ports: {
+      discovered: async (data, eligible) => {
+        const snapshot = decodeProject(data.project);
+        const discoveredImages = new Map<string, HTMLImageElement>();
+        for (const [id, atlas] of Object.entries(snapshot.atlases)) {
+          const image = new Image();
+          image.src = `${projectBase}/${atlas.png}?revision=${encodeURIComponent(string(data.revision))}`;
+          await image.decode();
+          discoveredImages.set(id, image);
+        }
+        const latest = await api('project', record);
+        if (eligible() && latest.revision === data.revision) {
+          artworkController.palette(false, snapshot, discoveredImages, true);
+        }
+      },
       run,
       saved: async (ack, reviewedScenes) => {
         const replaced = Array.isArray(ack.replaced_scenes) ? ack.replaced_scenes : [];

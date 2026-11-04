@@ -2,7 +2,7 @@
 
 import base64
 
-from gbc_scene_forge.artwork import editable
+from gbc_scene_forge.artwork import editable, layers
 from gbc_scene_forge.artwork.candidates import ArtworkCandidates
 from gbc_scene_forge.artwork.conversion import ArtworkConversion
 from gbc_scene_forge.artwork.drafts import ArtworkDrafts
@@ -20,6 +20,15 @@ def images(value):
 
 def artwork_response(project, action, data):
     candidates = ArtworkCandidates(project.artwork.documents)
+    if action == "candidate-list":
+        return candidates.list()
+    if action == "candidate-adopt":
+        require(identity(data.get("owner")), "Expected browser owner UUID")
+        value = candidates.resolve(data.get("candidate"))
+        with project.store.read_session(value["project_revision"], verify_assets=True) as session:
+            project.artwork.documents.validate_base(value, session.document)
+            project.artwork.documents.placement_scenes(value, session)
+        return candidates.retain(value, owner=data["owner"])
     if action == "candidate-retain":
         require(identity(data.get("owner")), "Expected a browser candidate owner UUID")
         return candidates.retain(data.get("candidate"), owner=data["owner"])
@@ -32,7 +41,7 @@ def artwork_response(project, action, data):
     if compact:
         data = {**data, "candidate": candidates.resolve(candidate)}
     result = _response(project, action, data)
-    if compact and action in {"edit", "layout"}:
+    if compact and action in {"edit", "layout", "layers", "layer-sync"}:
         return candidates.retain(result, owner=candidate.get("owner"))
     return result
 
@@ -79,6 +88,21 @@ def _response(project, action, data):
             data.get("name"),
             data.get("project_revision"),
         )
+    if action == "layers":
+        return layers.edit(data.get("candidate"), data.get("layers"))
+    if action == "layer-sync":
+        candidate = data.get("candidate")
+        editable.check_candidate(candidate)
+        raw = layers.decoded(candidate["descriptor"], data.get("layer_rgba"))
+        previous = layers.decoded(candidate["descriptor"], candidate["layer_rgba"])
+        require(
+            all(
+                not i["locked"] or raw[i["id"]] == previous[i["id"]]
+                for i in candidate["descriptor"]["layers"]["items"]
+            ),
+            "Locked layer pixels changed",
+        )
+        return layers.reseal(candidate, raw)
     if action == "layout":
         return documents.layout(data.get("candidate"), data.get("frames"), data.get("sequences"))
     if action == "animation-review":
@@ -94,6 +118,16 @@ def _response(project, action, data):
             data.get("name"),
             data.get("project_revision"),
             placements=data.get("placements"),
+        )
+    if action == "edit" and "layers" in data["candidate"]["descriptor"]:
+        return layers.apply(
+            data["candidate"],
+            data.get("layer_id"),
+            lambda flat: (
+                editable.patch_pixels(flat, data["patch"])
+                if "patch" in data
+                else editable.edit_pixels(flat, data.get("writes"))
+            ),
         )
     if action == "edit":
         if "patch" in data:

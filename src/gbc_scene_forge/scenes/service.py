@@ -320,8 +320,17 @@ class SceneService:
             scene = loaded["scene"] if scene is None else scene
             tiled.check_scene(scene, document)
             scene = tiled.decode(tiled.encode(scene, document), document)
-            camera = blockout.select_camera(scene, document, camera_id)
-            camera_view = rendering.viewport({k: camera[k] for k in ("x", "y", "width", "height")})
+            try:
+                camera = blockout.select_camera(scene, document, camera_id)
+            except ValueError:
+                if camera_id is not None or choices is not None:
+                    raise
+                camera = None
+            camera_view = (
+                rendering.viewport({k: camera[k] for k in ("x", "y", "width", "height")})
+                if camera
+                else None
+            )
             width, height = scene["width"] * scene["grid"], scene["height"] * scene["grid"]
             overview = rendering.viewport(
                 overview
@@ -363,7 +372,11 @@ class SceneService:
                     and overview["width"] >= width
                     and overview["height"] >= height
                 ),
-                camera_png=rendering.render(visible, document, read_image, camera_view),
+                **(
+                    {"camera_png": rendering.render(visible, document, read_image, camera_view)}
+                    if camera_view
+                    else {}
+                ),
                 overview_png=rendering.render(visible, document, read_image, overview),
             )
             if choices is not None:

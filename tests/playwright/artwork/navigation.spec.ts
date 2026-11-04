@@ -88,6 +88,8 @@ test('hover and pan target exact sheet/frame pixels without raster, control or c
       requests.push(r.url());
     }
   });
+  // Cross a discovery interval even on fast machines: unchanged inventory stays quiet.
+  await page.waitForTimeout(2300);
   for (const zoom of ['4', '16', '32']) {
     await page.locator('#art-zoom').selectOption(zoom);
     await hover(page, 4, 3);

@@ -5,7 +5,7 @@ import copy
 import json
 import re
 
-from gbc_scene_forge.artwork import atlas, dimensions, png, sheets
+from gbc_scene_forge.artwork import atlas, dimensions, layers, png, sheets
 from gbc_scene_forge.artwork import metadata as tile_metadata
 from gbc_scene_forge.core.identities import identity, name
 from gbc_scene_forge.core.serialization import record_bytes
@@ -93,7 +93,7 @@ def check_source(value):
 def check_descriptor(value):
     require(
         isinstance(value, dict)
-        and set(value)
+        and set(value) - {"layers"}
         == (
             DESCRIPTOR_FIELDS | {"frames", "sequences"}
             if value.get("version") == 2
@@ -145,6 +145,8 @@ def check_descriptor(value):
         check_source(
             {k: v for k, v in provenance.items() if k not in {"project_id", "source_format"}}
         )
+    if "layers" in value:
+        layers.check(value)
     if value["version"] == 2:
         sheets.check(value)
     require(len(record_bytes(value)) <= 64 * 1024, "Editable descriptor exceeds 64 KiB")
@@ -160,7 +162,7 @@ def manifest(descriptor):
             "png": "atlas.png",
             "regions": sheets.regions(descriptor),
             "animations": sheets.animations(descriptor),
-            "sheet": copy.deepcopy(descriptor),
+            "sheet": {k: copy.deepcopy(v) for k, v in descriptor.items() if k != "layers"},
         }
     return {
         "version": 1,
@@ -188,11 +190,19 @@ def check_entry(entry):
     atlas_id = entry["manifest"]["id"]
     require(
         isinstance(value, dict)
-        and set(value) == {"id", "path"}
+        and set(value) in ({"id", "path"}, {"id", "path", "layers"})
         and identity(value["id"])
         and value["path"] == f"assets/{atlas_id}/editable.json",
         "Invalid editable document pointer",
     )
+    if "layers" in value:
+        require(
+            isinstance(value["layers"], list)
+            and 1 <= len(value["layers"]) <= layers.MAX_LAYERS
+            and len(set(value["layers"])) == len(value["layers"])
+            and all(identity(i) for i in value["layers"]),
+            "Invalid layer source identities",
+        )
     if "sheet" in entry["manifest"]:
         descriptor = entry["manifest"]["sheet"]
         check_descriptor(descriptor)
@@ -269,6 +279,7 @@ def declared_paths(entry):
         stem = "sprites" if group == "sprites" else f"grid-{group}"
         paths.add(f"{base}/{stem}.tsj")
         paths.update(f"{base}/{stem}/{local}.png" for local in mapping.values())
+    paths.update(f"{base}/layers/{i}.png" for i in entry["editable"].get("layers", []))
     return paths
 
 
@@ -279,6 +290,11 @@ def read_descriptor(entry, data):
     require(
         value["id"] == entry["editable"]["id"] and manifest(value) == entry["manifest"],
         "Editable descriptor differs from atlas identity or geometry",
+    )
+    require(
+        [i["id"] for i in value.get("layers", {}).get("items", [])]
+        == entry["editable"].get("layers", []),
+        "Layer source identities differ from descriptor",
     )
     return value
 
@@ -302,7 +318,7 @@ def seal(envelope):
 def check_candidate(value):
     require(
         isinstance(value, dict)
-        and set(value)
+        and set(value) - {"layer_rgba"}
         in (CANDIDATE_FIELDS | {"revision"}, CANDIDATE_FIELDS | {"revision", "placements"}),
         "Unsupported artwork candidate fields",
     )
@@ -357,6 +373,13 @@ def check_candidate(value):
     require(isinstance(value["metadata"], dict), "Expected candidate tile metadata")
     entry["metadata"] = value["metadata"]
     tile_metadata.check_entry(entry)
+    if "layers" in d:
+        rasters = layers.decoded(d, value.get("layer_rgba"))
+        require(
+            layers.composite(d, rasters) == pixels, "Composite differs from exact layer sources"
+        )
+    else:
+        require("layer_rgba" not in value, "Unexpected layer pixels on flat artwork")
     return pixels
 
 
@@ -420,6 +443,7 @@ def check_placements(value):
 
 def edit_pixels(candidate, writes):
     pixels = bytearray(check_candidate(candidate))
+    require("layers" not in candidate["descriptor"], "Pixel edits require an explicit layer target")
     require(isinstance(writes, list) and len(writes) <= 65536, "Use at most 65536 pixel writes")
     # Compact decoded JSON is the request work budget, independent of pretty formatting.
     try:
@@ -458,6 +482,7 @@ def edit_pixels(candidate, writes):
 def patch_pixels(candidate, patch):
     """Replace a bounded rectangular chunk with exact straight RGBA bytes."""
     pixels = bytearray(check_candidate(candidate))
+    require("layers" not in candidate["descriptor"], "Pixel edits require an explicit layer target")
     require(
         isinstance(patch, dict) and set(patch) == {"rectangle", "rgba"},
         "Expected a rectangle and base64 RGBA patch",

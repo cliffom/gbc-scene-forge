@@ -84,12 +84,12 @@ content and fresh revision reads.
 | Creation | `create_project` (empty or blockout), `create_scene` (cell dimensions), `create_blockout_scene` (pixel/cell settings and camera). | Sample-project creation through MCP. |
 | Scene editing | `edit_scene`: atomic object, tile painting/erasing and layer creation/update/reorder/deletion batches. `place_stamp`: saved composition placement with layer mapping, fresh IDs and dry-run candidates. `save_scene`: validated full canonical layers, tiles, sprites and objects. `rename_scene`, `duplicate_scene`, `delete_scene`: guarded saved lifecycle with deletion consequences. | Semantic terrain brushes; use canonical `save_scene` or browser.  |
 | Project editing | `save_object_definition`, `save_world`, `save_stamp`, `delete_object_definition`, `delete_stamp` reuse native validators and transaction services; deletion previews identify references and retained overrides. | Palette profile/metadata and animation preference editing use browser. No arbitrary import paths. |
-| Artwork | `import_atlas`: bounded upload/preflight/reimport. `list_artwork`, `create_artwork`, `duplicate_artwork`, `open_artwork`, `read_artwork_pixels`, `edit_artwork_pixels`, `review_artwork_candidate`, `commit_artwork`: native static/sheet RGBA authoring with explicit candidates and required review receipts. Sheet/layout, frame/APNG review and compact-candidate tools are described below. | Arbitrary filesystem paths; editable document layers and automatic approval. |
+| Artwork | Atlas/PNG intake; native static/sheet and layered candidates; exact writes, raster operations and color counts; reviewed commits; guarded whole-atlas deletion. Tools and limits are described below. | Arbitrary filesystem paths and automatic approval. |
 | Review | `review_artwork`: saved/candidate PNG camera and bounded/paged overview. `review_blockout`: full overview and chosen camera frame SVG resources, exact saved/candidate revisions, pixel dimensions and camera intent. | Animated playback and runtime/physics simulation. |
 | Verification | `diagnostics` checks the saved project; `palette_report` checks a guarded saved scene with the existing opt-in profile. | Missing metadata stays unverified; no reachability or hardware-fit certification. |
 | Portability | `export_bundle` returns existing project/scene Tiled ZIP exports as immutable resources. | Arbitrary output paths; exports over 16 MiB use browser. |
 
-Generic PNG/Tiled intake, terrain brush commands and profile editing remain
+Tiled intake, terrain brush commands and profile editing remain
 browser operations. Browser selection, playback and Undo are browser interactions,
 not claimed MCP capabilities. The initial agent workflow is inspect/create/edit/
 review/diagnostics/export; the project tools extend that surface through existing
@@ -370,8 +370,9 @@ retained overrides, actual stamp placements, strict schemas and concurrent write
 5. Call `review_artwork` with exact `project_revision`, `scene_revision` and
    `scene_id`, plus optional visible typed `camera_id` and canonical candidate
    `scene`. Candidates retain the original saved guards and are validated and
-   round-tripped before rendering; review never saves them. Read `camera_resource`
-   and `overview_resource` as PNG blobs. Each output is native scale (one pixel
+   round-tripped before rendering; review never saves them. `overview_resource`
+   works without a camera. `camera_resource` is present when a valid camera is
+   selected or available; an explicit camera ID must still be valid. Each output is native scale (one pixel
    per authored pixel), transparent, with ordered visible artwork layers,
    canonical grid slicing, tile transforms and static sprite origins. Planning
    geometry/labels, selections, background and playback are excluded; use
@@ -512,6 +513,93 @@ the MCP-edited plan. CI also tests the optional protocol against installed wheel
 on Python 3.13/3.14 after verifying the plain offline installation.
 
 ## Native artwork authoring
+
+### Direct PNG intake and structured iteration
+
+`import_artwork_png(project,project_revision,atlas_id,name,png,compact=true)` accepts
+uploaded canonical base64 PNG bytes, at most 17 MiB decoded. Supported variants
+are non-interlaced RGB/RGBA8 and indexed 1/2/4/8-bit with transparency. It rejects
+unsupported/corrupt input, dimensions and collisions. Axes are 1..4,096 and area
+≤4,194,304 pixels. It allocates a new static sprite/document UUID with origin
+`[0,0]`, no project-atlas provenance relationship (`provenance:null`), and exact
+decoded straight RGBA including hidden RGB. PNG container metadata is not retained.
+It does not resize, quantize, publish, overwrite an atlas or accept arbitrary paths
+or output-artifact URIs as input. Use `review_artwork_candidate` then `commit_artwork`.
+
+`edit_artwork_raster(candidate,operations,layer_id?)` replaces custom per-pixel
+orchestration with an atomic sequential batch. The tool schema enumerates fields:
+
+| `op` | Fields and semantics |
+| --- | --- |
+| `fill` | `at:[x,y]`, `rgba`, optional `rectangle`; four-connected exact RGBA match, clipped by the explicit in-bounds region |
+| `line` | `from:[x,y]`, `to:[x,y]`, `rgba`; inclusive integer Bresenham endpoints |
+| `rectangle`, `ellipse` | `rectangle:{x,y,width,height}`, `rgba`, optional `filled` (default false); ellipse tests pixel centers, outline excludes interior with four inside neighbors |
+| `copy`, `move` | Source `rectangle`, destination `to:[x,y]`; snapshot source makes overlap safe; move clears source to transparent black before replacement |
+| `flip` | `rectangle`, `axis:"horizontal"` or `"vertical"` |
+| `resize` | Source `rectangle`, destination `to`, `width`, `height`; nearest-neighbor region resampling; canvas geometry stays fixed |
+| `replace` | Exact source `from:[r,g,b,a]`, target `rgba`, optional `rectangle` |
+| `remap` | `colors:[[[source RGBA],[target RGBA]],…]`, optional `rectangle`; simultaneous within this operation, unmatched colors unchanged |
+
+Coordinates are top-left integers. Explicit rectangles must fit; omitted regions
+for fill/replace/remap cover the whole canvas. Drawing replaces straight RGBA,
+including alpha, without blending. Each batch allows 1..128 operations, ≤1 MiB
+operation JSON and ≤16,777,216 visited pixels (source and destination both count
+for transforms). A failure returns no retained prefix. A new immutable candidate
+keeps its original saved base; every changed revision requires a fresh review.
+
+`artwork_colors(candidate,rectangle?,offset?,layer_id?)` returns exact counts,
+ordered by decreasing use then RGBA, 256/page with `next_offset`. Up to 65,536
+distinct colors are counted; narrow the rectangle if exceeded. Matching includes
+alpha and hidden RGB. Remaps allow 1..1,024 unique source-color pairs; targets may
+collide. These literal operations do not impose a palette profile. Near-duplicate,
+isolated-pixel and texture diagnostics are deferred: no thresholds are shipped,
+and intentional stars/glints are never automatically removed.
+
+`edit_artwork_layers(candidate,layers)` sets an explicit bottom-to-top list of
+`{id:<UUID>,name,visible,opacity:0..255,locked}`. First migration preserves flat
+pixels in the first item; new IDs are transparent. Target a layer explicitly for
+reads/writes/raster/counts. Unlock before changing its pixels or structure. An empty
+list explicitly flattens unlocked sources. Eight layers and 4,194,304 aggregate
+pixels including the composite are the maximum. Exact source data, deterministic
+compositing, saving and compatibility follow the [native contract](EDITABLE-ARTWORK.md#named-raster-layer-extension-version-1).
+
+Reviews return text/structured receipts, resource links and at most **two PNG
+ImageContent blocks / 4 MiB decoded total** (base64 ≤5,592,408 characters). Enlarged
+views are preferred; oversized images remain resource-only. Resource limits and
+session expiration still apply; regenerate review with the retained candidate
+after reconnecting. Native candidate overview/crops and before/after resources
+already existed; inline transport is additional. Changed-pixel overlays are deferred;
+exact reads/counts reveal hidden RGB that visible previews cannot.
+
+### Unpublished exchange and saved cleanup
+
+Use the browser's **New artwork → Agent candidates → Refresh candidates** to
+inspect/download a specific retained revision or **Adopt a copy**. Adoption requires
+a current saved base and creates a separate owner UUID and local Undo history.
+Existing documents/history/checkpoints remain retained. **Return candidate to agent**
+checkpoints and retains an immutable handle with project/document identity, candidate
+revision, true saved base and browser owner. Use `list_artwork_candidates` and
+`export_artwork_candidate` to resume that exact revision. Editing invalidates old
+review; publishing remains a separate reviewed commit. No live synchronization or
+Undo transfer occurs. Saved handoff still uses fresh `list_artwork`/`open_artwork`.
+
+Stale candidates remain inspectable/exportable but cannot be adopted or committed
+against newer saved content. Failed transfers/checkpoints retain local work and
+report errors; uncertain acknowledgments must be inspected before retrying. Candidate
+copies have no expiration and share the 256-record/64 MiB quota; drafts share their
+separate 64-record/128 MiB quota. Owners must export/release superseded handles and
+explicitly clean abandoned copies. Saved project export excludes these sidecars.
+
+`delete_artwork(project,project_revision,atlas_id,dry_run=true)` previews whole-atlas
+deletion: document/files, artwork base, blockers, affected saved scene revisions
+and retained-work policy. Submit the same exact `plan` with `dry_run=false` to bind
+that preview. Saved tile/sprite, definition or stamp references block deletion;
+there is no cascade or individual-frame deletion. The shared artwork service
+removes declared sources/derived files and re-encodes other scene GID ranges
+atomically, returning exact committed project/scene revisions. Stale bases, drift
+and failed writes do not authorize a partial deletion. Candidates/checkpoints are
+retained with original bases; inspection/export remains available and stale saves
+fail. `release_artwork_candidate` only removes the addressed retained copy.
 
 Native artwork tools use the shared [native artwork services](EDITABLE-ARTWORK.md).
 Install the optional extra described above and reconnect clients that cache tool
@@ -689,7 +777,9 @@ continue referring to that asset. For a variation, duplicate an explicit source
 cell/static sprite and commit the reviewed copy. Ordinary duplication replaces no existing
 placements; explicit selected-placement variations use the reviewed replacement workflow.
 The [browser pixel editor](user/pixel-artwork.md) adds hand editing and owned drafts
-using the same candidates and guarded services. Editable pixel layers remain deferred; native sheet/frame/sequence authoring and timed APNG review use the shared services below.
+using the same candidates and guarded services. Named raster layers and explicit
+unpublished exchange are supported as described below; native sheet/frame/sequence
+authoring and timed APNG review retain their existing shared services.
 The [native MCP regression/SDK workflow](../tests/backend/adapters/test_mcp_native_artwork.py)
 checks the full new-tile loop, strict nested schemas, exact transparency, resources,
 stale receipts, contention, atomic conflict and save/export/reopen. These scripted

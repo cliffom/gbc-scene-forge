@@ -1,0 +1,27 @@
+{
+  "node": "v24.22.1",
+  "platform": "darwin",
+  "arch": "arm64",
+  "cases": [
+    {
+      "width": 256,
+      "height": 256,
+      "layers": 3,
+      "attempted_operations": 13,
+      "retained_operations": 13,
+      "retained_history_bytes": 9707104,
+      "milliseconds": 17.63,
+      "process_peak_rss_bytes": 131104768
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "layers": 3,
+      "attempted_operations": 13,
+      "retained_operations": 7,
+      "retained_history_bytes": 66064670,
+      "milliseconds": 124.91,
+      "process_peak_rss_bytes": 368017408
+    }
+  ]
+}

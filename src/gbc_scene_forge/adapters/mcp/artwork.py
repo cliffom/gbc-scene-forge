@@ -1,11 +1,16 @@
 """Thin native-artwork routing for full candidates and recoverable compact handles."""
 
-from gbc_scene_forge.artwork import dimensions, editable, review
+from gbc_scene_forge.artwork import dimensions, editable, layers, raster, review
 from gbc_scene_forge.artwork.candidates import ArtworkCandidates
 from gbc_scene_forge.artwork.conversion import ArtworkConversion
 from gbc_scene_forge.core.validation import require
 
 NAMES = {
+    "delete_artwork",
+    "edit_artwork_layers",
+    "import_artwork_png",
+    "edit_artwork_raster",
+    "artwork_colors",
     "list_artwork",
     "create_artwork",
     "duplicate_artwork",
@@ -50,11 +55,48 @@ def capabilities():
         "imported_artwork": "Read-only; duplicate an explicit tile cell or static sprite to edit.",
         "placement_variations": "Duplicate with 1..256 explicit saved scene/layer/cell or object locations. Review and commit artwork plus selected replacements atomically.",
         "sheets": {"max_frames": 128, "max_sequences": 64, "animation_review": "image/apng"},
+        "png_intake": "import_artwork_png: uploaded canonical base64 PNG <=17 MiB, non-interlaced RGB/RGBA8 or indexed 1/2/4/8-bit. New unpublished native sprite; no quantization or resize.",
+        "raster_operations": {
+            "operations": [
+                "fill",
+                "line",
+                "rectangle",
+                "ellipse",
+                "copy",
+                "move",
+                "flip",
+                "resize",
+                "replace",
+                "remap",
+            ],
+            "max_batch_operations": 128,
+            "max_batch_pixel_work": 16777216,
+            "coordinates": "top-left integer points; rectangles in bounds, resize transforms a region, not canvas; sequential batch, simultaneous remap",
+        },
+        "literal_colors": "artwork_colors: exact RGBA including hidden RGB; 256/page; at most 65536 distinct colors, narrow rectangle if exceeded. No automatic cleanup or hardware profile conversion.",
+        "layers": {
+            "version": 1,
+            "max_layers": 8,
+            "aggregate_pixels_including_composite": 4194304,
+            "order": "bottom-to-top",
+            "opacity": "0..255",
+            "target": "Explicit layer_id for reads/edits/counts; unlock before writes or structural changes",
+        },
+        "inline_previews": "At most 2 PNG ImageContent blocks / 4 MiB decoded per response; resource links retained with existing session lifetime. Scene artwork overview does not require a camera.",
+        "handoff": "Browser Agent candidates: inspect/download, explicitly adopt separately owned copy, return immutable candidate. No saved publication or Undo transfer; original saved bases remain fixed.",
+        "saved_deletion": "delete_artwork: whole atlas/document, required current project revision, optional dry_run then exact plan. Blocks saved scene/definition/stamp references, retains independent candidates/checkpoints with original bases.",
     }
 
 
 def call(adapter, project, name, a):
     require("compact" not in a or type(a["compact"]) is bool, "compact must be a boolean")
+    if name == "delete_artwork":
+        return project.artwork.delete_atlas(
+            a["atlas_id"],
+            a["project_revision"],
+            dry_run=a.get("dry_run", False),
+            plan=a.get("plan"),
+        )
     conversion = ArtworkConversion(project.artwork.documents)
     if name == "commit_sprite_tile_conversion":
         return conversion.commit(a["plan"])
@@ -93,6 +135,8 @@ def call(adapter, project, name, a):
 
 def _call(adapter, project, name, a):
     documents = project.artwork.documents
+    if name == "import_artwork_png":
+        return documents.intake(a["atlas_id"], a["name"], a["png"], a["project_revision"])
     if name == "list_artwork":
         return documents.list(a["project_revision"])
     if name == "create_artwork":
@@ -134,12 +178,50 @@ def _call(adapter, project, name, a):
         return documents.open(a["target"], a["project_revision"], a["artwork_revision"])
     candidate = a["candidate"]
     editable.check_candidate(candidate)
-    if name in ("read_artwork_pixels", "edit_artwork_pixels", "edit_artwork_layout"):
+    if name in (
+        "read_artwork_pixels",
+        "edit_artwork_pixels",
+        "edit_artwork_layout",
+        "edit_artwork_raster",
+        "artwork_colors",
+        "edit_artwork_layers",
+    ):
         # Pure candidate operations retain their original base; never silently rebase.
         with project.store.read_session(
             candidate["project_revision"], verify_assets=True
         ) as session:
             documents.validate_base(candidate, session.document)
+        if name == "edit_artwork_layers":
+            return layers.edit(candidate, a["layers"])
+        if "layers" in candidate["descriptor"] and name != "edit_artwork_layout":
+            if name in {"artwork_colors", "read_artwork_pixels"}:
+                _, source = layers.target(candidate, a.get("layer_id"))
+                result = (
+                    raster.colors(source, a.get("rectangle"), a.get("offset", 0))
+                    if name == "artwork_colors"
+                    else documents.read(source, a.get("rectangle"))
+                )
+                return {
+                    **result,
+                    "candidate_revision": candidate["revision"],
+                    "layer_id": a["layer_id"],
+                }
+            else:
+                return layers.apply(
+                    candidate,
+                    a.get("layer_id"),
+                    lambda flat: (
+                        raster.edit(flat, a["operations"])
+                        if name == "edit_artwork_raster"
+                        else editable.patch_pixels(flat, a["patch"])
+                        if "patch" in a
+                        else editable.edit_pixels(flat, a["writes"])
+                    ),
+                )
+        if name == "edit_artwork_raster":
+            return raster.edit(candidate, a["operations"])
+        if name == "artwork_colors":
+            return raster.colors(candidate, a.get("rectangle"), a.get("offset", 0))
         if name == "read_artwork_pixels":
             return documents.read(candidate, a.get("rectangle"))
         if name == "edit_artwork_layout":

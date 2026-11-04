@@ -145,6 +145,13 @@ def prepare(store, document, encoded, selection, fingerprint):
                 "Generated document identity exists",
             )
             rebuilt["editable"] = {"id": descriptor["id"], "path": f"assets/{target}/editable.json"}
+            if "layers" in descriptor:
+                ids = [i["id"] for i in descriptor["layers"]["items"]]
+                rebuilt["editable"]["layers"] = ids
+                for layer_id in ids:
+                    generated[f"assets/{target}/layers/{layer_id}.png"] = files[
+                        f"assets/{key}/layers/{layer_id}.png"
+                    ]
             generated[rebuilt["editable"]["path"]] = json_text(descriptor).encode()
         document["atlases"][target] = rebuilt
         changes.update(generated)

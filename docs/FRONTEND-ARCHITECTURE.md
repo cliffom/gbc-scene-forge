@@ -40,6 +40,16 @@ used for current resources/state, not captured copies of mutable primitives.
 Keep ports limited to each consumer's needs; do not replace these owners with a
 shared miscellaneous state object or global event bus.
 
+Illustration-layer UI belongs to `artwork/artwork-layer-controls.mts`; exact sources,
+active layer and history belong to `PixelModel`, and `artwork/artwork-layers.mts`
+owns integer compositing. Layer snapshots share the existing history budget.
+`ArtworkSession` serializes metadata/source synchronization and checkpoints before
+review or exchange. Candidate adoption is an explicit new session with a distinct
+owner and Undo history; other sessions remain retained. Artwork discovery stages
+a separate saved catalog/images through the composition without advancing scene
+or artwork saved bases. Interaction generation, session identity, focus/modal,
+gesture and busy gates fence every asynchronous discovery adoption.
+
 Selected artwork variations capture at most 256 explicit locations from a clean
 saved scene. Pixel candidates/checkpoints retain that selection. After an exact
 atomic artwork/reference acknowledgment, the composition reloads matching saved

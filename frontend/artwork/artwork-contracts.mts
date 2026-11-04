@@ -30,7 +30,21 @@ const sourceEntries = {
   cell: v.nullable(v.tuple([bounded(0, 2047), bounded(0, 2047)])),
   artwork_revision: revision,
 };
+export const layerSchema = v.strictObject({
+  id: identity,
+  name: v.pipe(text, v.minLength(1), v.maxLength(100)),
+  visible: v.boolean(),
+  locked: v.boolean(),
+  opacity: bounded(0, 255),
+});
+export type ArtworkLayer = v.InferOutput<typeof layerSchema>;
 const descriptorEntries = {
+  layers: v.optional(
+    v.strictObject({
+      version: v.literal(1),
+      items: v.pipe(v.array(layerSchema), v.minLength(1), v.maxLength(8)),
+    }),
+  ),
   id: identity,
   atlas_id: identifier,
   region: identifier,
@@ -78,7 +92,9 @@ const descriptor = v.pipe(
   ]),
   v.check(
     (d) =>
-      d.width * d.height <= MAX_ARTWORK_PIXELS &&
+      d.width * d.height * ((d.layers?.items.length ?? 0) + 1) <= MAX_ARTWORK_PIXELS &&
+      (!d.layers ||
+        new Set(d.layers.items.map((item) => item.id)).size === d.layers.items.length) &&
       ((d.version === 1 && d.kind === 'sprite') ||
         (d.width >= 8 &&
           d.height >= 8 &&
@@ -168,6 +184,7 @@ export const candidateSchema = v.pipe(
     source: v.nullable(v.strictObject(sourceEntries)),
     metadata: v.record(text, v.unknown()),
     placements: v.optional(placementsSchema),
+    layer_rgba: v.optional(v.record(identity, v.pipe(text, v.maxLength(MAX_RGBA_BASE64)))),
   }),
   v.check(
     (c) =>
@@ -184,6 +201,22 @@ export const candidateSchema = v.pipe(
         return false;
       }
       const raw = atob(c.rgba);
+      const ids = c.descriptor.layers?.items.map((item) => item.id) ?? [];
+      const sources = Object.entries(c.layer_rgba ?? {});
+      if (sources.length !== ids.length || !!c.layer_rgba !== !!c.descriptor.layers) {
+        return false;
+      }
+      if (
+        !sources.every(
+          ([id, value]) =>
+            ids.includes(id) &&
+            value.length === c.rgba.length &&
+            atob(value).length === raw.length &&
+            btoa(atob(value)) === value,
+        )
+      ) {
+        return false;
+      }
       return btoa(raw) === c.rgba && raw.length === c.descriptor.width * c.descriptor.height * 4;
     } catch {
       return false;

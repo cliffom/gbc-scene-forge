@@ -47,6 +47,15 @@ the installed optional-MCP wheel through `make test-mcp`.
 `backend/adapters/test_mcp_artwork_workshop.py` runs the example over the actual SDK,
 checking normal placement and conflicts with a competing saved scene or external map edit.
 
+Milestone 21 adds `backend/adapters/test_mcp_iteration.py` for PNG intake, bounded
+raster/color operations, layered persistence/recovery, previews and saved deletion.
+`playwright/artwork/iteration.spec.ts` owns layer controls and wheel navigation;
+`playwright/mcp/iteration-mcp.spec.ts` owns unpublished exchange and saved discovery
+while preserving another dirty document. The optional
+`support/measure_artwork_iteration.py` and `support/measure_artwork_history.ts`
+harnesses record transport, layer, recovery and history costs; their boundaries
+and archived observations are in the [artwork evaluation](../docs/evaluations/artwork-iteration.md).
+
 `make test-frontend` discovers the TypeScript suite files one domain level
 under `frontend/`; their basenames retain the public `make test-frontend-<suite>`
 selectors. For example, `make test-frontend-model test-frontend-contracts` runs

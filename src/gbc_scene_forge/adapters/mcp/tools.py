@@ -181,6 +181,8 @@ class Adapter:
                 **({"filters": a.get("filters")} if name == "review_scene" else {}),
             )
             for view in ("overview", "camera"):
+                if f"{view}_png" not in result and f"{view}_svg" not in result:
+                    continue
                 if name == "review_scene":
                     result[f"{view}_resource"] = self.artifact(
                         result.pop(f"{view}_svg").encode(), "image/svg+xml", f"{view}.svg"

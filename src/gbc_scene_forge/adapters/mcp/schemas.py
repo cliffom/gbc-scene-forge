@@ -378,7 +378,7 @@ DEFERRED = [
     "Semantic terrain brushes (use browser or canonical save_scene)",
     "Interactive playback control, browser selection/Undo, browser draft inspection/mutation",
     "Palette profile editing, tile metadata editing and sprite preview preference editing",
-    "Generic PNG/Tiled intake, terrain brush commands and profile editing (use browser)",
+    "Tiled intake, terrain brush commands and profile editing (use browser)",
     "Remote/HTTP MCP, subscriptions, prompts, tasks and game runtime/physics integration",
 ]
 
@@ -506,6 +506,18 @@ SHEET_DESCRIPTOR = schema(
         "sequences": SEQUENCES,
     }
 )
+LAYER = schema(
+    {
+        "id": UUID,
+        "name": TEXT,
+        "visible": {"type": "boolean"},
+        "locked": {"type": "boolean"},
+        "opacity": {"type": "integer", "minimum": 0, "maximum": 255},
+    }
+)
+LAYERS = {"type": "array", "minItems": 1, "maxItems": 8, "items": LAYER}
+for shape in (DESCRIPTOR, SHEET_DESCRIPTOR):
+    shape["properties"]["layers"] = schema({"version": {"const": 1}, "items": LAYERS})
 DESCRIPTOR = {"oneOf": [DESCRIPTOR, SHEET_DESCRIPTOR]}
 CANDIDATE = schema(
     {
@@ -522,8 +534,13 @@ CANDIDATE = schema(
         "metadata": {"type": "object", "maxProperties": 4},
         "revision": REVISION,
         "placements": PLACEMENTS,
+        "layer_rgba": {
+            "type": "object",
+            "maxProperties": 8,
+            "additionalProperties": {"type": "string", "maxLength": dimensions.MAX_RGBA_BASE64},
+        },
     },
-    ("placements",),
+    ("placements", "layer_rgba"),
 )
 RECTANGLE = schema(
     {
@@ -533,6 +550,70 @@ RECTANGLE = schema(
         "height": {"type": "integer", "minimum": 1, "maximum": dimensions.MAX_AXIS},
     }
 )
+POINT = {
+    "type": "array",
+    "minItems": 2,
+    "maxItems": 2,
+    "items": {"type": "integer", "minimum": 0, "maximum": dimensions.MAX_AXIS - 1},
+}
+RGBA = {
+    "type": "array",
+    "minItems": 4,
+    "maxItems": 4,
+    "items": {"type": "integer", "minimum": 0, "maximum": 255},
+}
+RASTER_OPERATION = {
+    "oneOf": [
+        schema(
+            {"op": {"const": "fill"}, "at": POINT, "rgba": RGBA, "rectangle": RECTANGLE},
+            ("rectangle",),
+        ),
+        schema({"op": {"const": "line"}, "from": POINT, "to": POINT, "rgba": RGBA}),
+        schema(
+            {
+                "op": {"enum": ["rectangle", "ellipse"]},
+                "rectangle": RECTANGLE,
+                "rgba": RGBA,
+                "filled": {"type": "boolean"},
+            },
+            ("filled",),
+        ),
+        schema({"op": {"enum": ["copy", "move"]}, "rectangle": RECTANGLE, "to": POINT}),
+        schema(
+            {
+                "op": {"const": "flip"},
+                "rectangle": RECTANGLE,
+                "axis": {"enum": ["horizontal", "vertical"]},
+            }
+        ),
+        schema(
+            {
+                "op": {"const": "resize"},
+                "rectangle": RECTANGLE,
+                "to": POINT,
+                "width": DIMENSION,
+                "height": DIMENSION,
+            }
+        ),
+        schema(
+            {"op": {"const": "replace"}, "from": RGBA, "rgba": RGBA, "rectangle": RECTANGLE},
+            ("rectangle",),
+        ),
+        schema(
+            {
+                "op": {"const": "remap"},
+                "rectangle": RECTANGLE,
+                "colors": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 1024,
+                    "items": {"type": "array", "minItems": 2, "maxItems": 2, "items": RGBA},
+                },
+            },
+            ("rectangle",),
+        ),
+    ]
+}
 VIEWPORT = schema(
     {
         "x": {"type": "integer", "minimum": 0, "maximum": 8192},
@@ -581,6 +662,52 @@ HANDLE = schema(
     ("owner",),
 )
 ARTWORK_CANDIDATE = {**PROJECT, "candidate": {"oneOf": [CANDIDATE, HANDLE]}}
+TOOLS.extend(
+    [
+        tool(
+            "edit_artwork_layers",
+            "Set the explicit bottom-to-top layer list (1..8); [] explicitly flattens unlocked layers. First migration preserves flat pixels in the first item. Stable UUIDs, names, visibility, opacity 0..255 and locks. New IDs allocate transparent rasters. Review again.",
+            {**ARTWORK_CANDIDATE, "layers": {**LAYERS, "minItems": 0}},
+            read=True,
+        ),
+        tool(
+            "import_artwork_png",
+            "Upload a non-interlaced RGB/RGBA8 or indexed PNG as an unpublished independent editable sprite. Exact pixels; no resize/quantization. Use compact=true, then review/commit.",
+            {
+                **GUARD,
+                "atlas_id": ASSET_ID,
+                "name": TEXT,
+                "png": {"type": "string", "maxLength": 4 * ((dimensions.MAX_IMAGE_BYTES + 2) // 3)},
+            },
+            read=True,
+        ),
+        tool(
+            "edit_artwork_raster",
+            "Atomic sequential exact-RGBA raster operations. Explicit rectangles/points; no active selection. Supports fill, line, rectangle/ellipse, copy/move, flip, region resize, replace/remap. Returns a new candidate; review again.",
+            {
+                **ARTWORK_CANDIDATE,
+                "operations": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 128,
+                    "items": RASTER_OPERATION,
+                },
+            },
+            read=True,
+        ),
+        tool(
+            "artwork_colors",
+            "Exact RGBA counts including hidden RGB, ordered by count then RGBA; pages of 256. Does not edit or quantize.",
+            {
+                **ARTWORK_CANDIDATE,
+                "rectangle": RECTANGLE,
+                "offset": {"type": "integer", "minimum": 0},
+            },
+            ("rectangle", "offset"),
+            read=True,
+        ),
+    ]
+)
 TOOLS.extend(
     [
         tool(
@@ -743,6 +870,9 @@ TOOLS.extend(
 # envelopes remain accepted for stateless clients and explicit recovery.
 for definition in TOOLS:
     if definition["name"] in {
+        "import_artwork_png",
+        "edit_artwork_raster",
+        "edit_artwork_layers",
         "create_artwork",
         "create_artwork_sheet",
         "duplicate_artwork",
@@ -839,5 +969,23 @@ TOOLS.append(
         },
         ("scale",),
         read=True,
+    )
+)
+
+for definition in TOOLS:
+    if definition["name"] in {
+        "edit_artwork_pixels",
+        "read_artwork_pixels",
+        "edit_artwork_raster",
+        "artwork_colors",
+    }:
+        definition["inputSchema"]["properties"]["layer_id"] = UUID
+
+TOOLS.append(
+    tool(
+        "delete_artwork",
+        "Delete one complete saved artwork document/atlas and its declared files. dry_run=true reports reference blockers and guarded consequences. No cascade; retained drafts/candidates stay available with stale bases. Candidate cleanup uses release_artwork_candidate.",
+        {**GUARD, "atlas_id": ASSET_ID, "dry_run": {"type": "boolean"}, "plan": NATIVE},
+        ("dry_run", "plan"),
     )
 )

@@ -4,7 +4,7 @@ import base64
 import copy
 from uuid import uuid4
 
-from gbc_scene_forge.artwork import atlas, dimensions, editable, placements, png, sheets
+from gbc_scene_forge.artwork import atlas, dimensions, editable, layers, placements, png, sheets
 from gbc_scene_forge.artwork.review import check_receipt
 from gbc_scene_forge.core.errors import Conflict
 from gbc_scene_forge.core.identities import name
@@ -186,6 +186,24 @@ class ArtworkDocuments:
             raise Conflict("Artwork changed. Retain the candidate and reopen the saved artwork.")
         return entry, descriptor
 
+    def intake(self, atlas_id, display_name, encoded, project_revision):
+        """Decode an explicit bounded PNG upload into an unpublished independent sprite."""
+        require(
+            isinstance(encoded, str)
+            and len(encoded) <= 4 * ((dimensions.MAX_IMAGE_BYTES + 2) // 3),
+            "PNG upload exceeds 17 MiB",
+        )
+        try:
+            data = base64.b64decode(encoded, validate=True)
+        except ValueError as error:
+            raise ValueError("Expected canonical base64 PNG upload") from error
+        require(base64.b64encode(data).decode() == encoded, "Expected canonical base64 PNG upload")
+        width, height, pixels = png.decode(data, generic=True)
+        candidate = self.create(atlas_id, display_name, "sprite", width, height, project_revision)
+        body = {k: v for k, v in candidate.items() if k != "revision"}
+        body["rgba"] = base64.b64encode(pixels).decode()
+        return editable.seal(body)
+
     def create_sheet(
         self, atlas_id, display_name, kind, width, height, project_revision, *, frames, sequences
     ):
@@ -225,12 +243,25 @@ class ArtworkDocuments:
             result = self._envelope(
                 session.document,
                 project_revision,
-                descriptor,
+                {k: v for k, v in descriptor.items() if k != "layers"},
                 pixels,
                 "edit",
                 artwork_revision=artwork_revision,
                 metadata=entry.get("metadata", {}),
             )
+            if "layers" in descriptor:
+                result["descriptor"] = descriptor
+                rasters = {
+                    i["id"]: editable.decode_image(
+                        descriptor,
+                        self._asset(
+                            session.document,
+                            f"assets/{descriptor['atlas_id']}/layers/{i['id']}.png",
+                        ),
+                    )
+                    for i in descriptor["layers"]["items"]
+                }
+                result = layers.reseal(result, rasters)
         self._revalidate(project_revision)
         return result
 
@@ -274,7 +305,10 @@ class ArtworkDocuments:
             original, pixels, metadata = self._sheet_source(
                 document, source, descriptor["atlas_id"], descriptor["name"], descriptor["id"]
             )
-            sheets.compatible(original, descriptor)
+            sheets.compatible(
+                {k: v for k, v in original.items() if k != "layers"},
+                {k: v for k, v in descriptor.items() if k != "layers"},
+            )
             return pixels, metadata
         kind, w, h, origin, pixels, group, metadata, entry = self._copy_source(document, source)
         require(
@@ -406,6 +440,10 @@ class ArtworkDocuments:
             "frames": frames,
             "sequences": sequences,
         }
+        if entry.get("editable"):
+            saved = self._descriptor(document, entry)
+            if "layers" in saved:
+                descriptor["layers"] = copy.deepcopy(saved["layers"])
         editable.check_descriptor(descriptor)
         metadata = {
             group: {
@@ -426,12 +464,21 @@ class ArtworkDocuments:
             result = self._envelope(
                 session.document,
                 project_revision,
-                descriptor,
+                {k: v for k, v in descriptor.items() if k != "layers"},
                 pixels,
                 "duplicate",
                 source=source,
                 metadata=metadata,
             )
+            if "layers" in descriptor:
+                source_descriptor = self._descriptor(
+                    session.document, session.document["atlases"][source["atlas_id"]]
+                )
+                rasters = layers.read_sources(
+                    source_descriptor, lambda path: self._asset(session.document, path)
+                )
+                result["descriptor"] = descriptor
+                result = layers.reseal(result, rasters)
         self._revalidate(project_revision)
         return result
 
@@ -462,10 +509,14 @@ class ArtworkDocuments:
         require(document["id"] == candidate["project_id"], "Candidate belongs to another project")
         if candidate["operation"] == "edit":
             previous, saved = self._native(document, self._target(d), candidate["artwork_revision"])
+            flat_saved = {k: v for k, v in saved.items() if k != "layers"}
+            flat_d = {k: v for k, v in d.items() if k != "layers"}
             if saved["version"] == d["version"] == 2:
-                sheets.compatible(saved, d)
+                sheets.compatible(flat_saved, flat_d)
             else:
-                require(saved == d, "Pixel edits cannot change descriptor or tile metadata")
+                require(
+                    flat_saved == flat_d, "Pixel edits cannot change descriptor or tile metadata"
+                )
             require(previous.get("metadata", {}) == candidate["metadata"], "Tile metadata changed")
             return previous
         self._absence(document, d)
@@ -513,6 +564,16 @@ class ArtworkDocuments:
                 editable.manifest(d), image, d["width"], pixels, seed
             )
             entry["editable"] = {"id": d["id"], "path": f"assets/{d['atlas_id']}/editable.json"}
+            if "layers" in d:
+                entry["editable"]["layers"] = [i["id"] for i in d["layers"]["items"]]
+                for key, raw in layers.decoded(d, candidate["layer_rgba"]).items():
+                    changes[f"assets/{d['atlas_id']}/layers/{key}.png"] = png.encode(
+                        d["width"], d["height"], raw
+                    )
+            if previous:
+                for key in previous["editable"].get("layers", []):
+                    if key not in entry["editable"].get("layers", []):
+                        changes[f"assets/{d['atlas_id']}/layers/{key}.png"] = None
             changes[entry["editable"]["path"]] = record_bytes(d)
             document["atlases"][d["atlas_id"]] = entry
             expected, scene_revisions = dict(reviewed), {}

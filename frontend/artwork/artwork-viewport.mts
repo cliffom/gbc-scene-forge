@@ -16,6 +16,7 @@ export function createArtworkViewport(
     drawing: () => boolean;
     tool: () => PixelTool;
     view: () => View | null;
+    zoom?: (direction: number) => void;
   },
 ) {
   const viewport = element('art-viewport', HTMLElement);
@@ -208,6 +209,46 @@ export function createArtworkViewport(
   }
   viewport.addEventListener('pointerleave', hideTarget, { signal: lifetime.signal });
   viewport.addEventListener('scroll', scheduleTarget, { signal: lifetime.signal });
+  let wheelDelta = 0;
+  let wheelTime = 0;
+  viewport.addEventListener(
+    'wheel',
+    (event) => {
+      // Ctrl-wheel is also how browsers report trackpad pinch. Leave page zoom to the browser.
+      if (!ports.available() || !ports.zoom || event.ctrlKey || event.metaKey) {
+        return;
+      }
+      event.preventDefault();
+      if (ports.drawing() || pan) {
+        return;
+      }
+      const now = performance.now();
+      if (now - wheelTime > 200) {
+        wheelDelta = 0;
+      }
+      wheelTime = now;
+      wheelDelta +=
+        event.deltaY *
+        (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? viewport.clientHeight : 1);
+      if (Math.abs(wheelDelta) < 40) {
+        return;
+      }
+      const direction = Math.sign(wheelDelta);
+      wheelDelta = 0;
+      const before = canvas.getBoundingClientRect();
+      const x = (event.clientX - before.left) / before.width;
+      const y = (event.clientY - before.top) / before.height;
+      ports.zoom(direction);
+      layout();
+      const after = canvas.getBoundingClientRect();
+      viewport.scrollBy(
+        after.left + x * after.width - event.clientX,
+        after.top + y * after.height - event.clientY,
+      );
+      hideTarget();
+    },
+    { passive: false, signal: lifetime.signal },
+  );
   viewport.addEventListener(
     'keydown',
     (event) => {

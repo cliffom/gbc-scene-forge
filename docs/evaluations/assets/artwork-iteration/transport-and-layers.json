@@ -1,0 +1,351 @@
+{
+  "version": "0.32.0",
+  "python": "3.13.13",
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "cases": [
+    {
+      "route": "patch",
+      "width": 128,
+      "height": 128,
+      "input_png_sha256": "7da018e4e40fe9f95b2d0a426ff0f7cb08cf867977b883b23cc2b8d5513bb949",
+      "output_rgba_sha256": "a8a3d0000499175532e3be4840855f721a0f35876adbdf5e22626d571c66a9d5",
+      "input_png_bytes": 56413,
+      "calls": 8,
+      "tool_calls": 6,
+      "request_bytes": 178181,
+      "response_bytes": 595697,
+      "milliseconds": 159.91,
+      "measurements": [
+        {
+          "method": "tools/call",
+          "tool": "create_artwork",
+          "request_bytes": 343,
+          "response_bytes": 157961,
+          "milliseconds": 17.66
+        },
+        {
+          "method": "tools/call",
+          "tool": "edit_artwork_pixels",
+          "request_bytes": 87882,
+          "response_bytes": 720,
+          "milliseconds": 28.18
+        },
+        {
+          "method": "tools/call",
+          "tool": "edit_artwork_pixels",
+          "request_bytes": 87882,
+          "response_bytes": 720,
+          "milliseconds": 28.0
+        },
+        {
+          "method": "tools/call",
+          "tool": "review_artwork_candidate",
+          "request_bytes": 432,
+          "response_bytes": 93910,
+          "milliseconds": 33.44
+        },
+        {
+          "method": "resources/read",
+          "tool": null,
+          "request_bytes": 178,
+          "response_bytes": 74896,
+          "milliseconds": 1.33
+        },
+        {
+          "method": "resources/read",
+          "tool": null,
+          "request_bytes": 180,
+          "response_bytes": 89842,
+          "milliseconds": 1.04
+        },
+        {
+          "method": "tools/call",
+          "tool": "commit_artwork",
+          "request_bytes": 894,
+          "response_bytes": 1308,
+          "milliseconds": 40.49
+        },
+        {
+          "method": "tools/call",
+          "tool": "open_artwork",
+          "request_bytes": 390,
+          "response_bytes": 176340,
+          "milliseconds": 9.77
+        }
+      ],
+      "server_peak_rss_bytes": 73302016
+    },
+    {
+      "route": "structured",
+      "width": 128,
+      "height": 128,
+      "input_png_sha256": "7da018e4e40fe9f95b2d0a426ff0f7cb08cf867977b883b23cc2b8d5513bb949",
+      "output_rgba_sha256": "a8a3d0000499175532e3be4840855f721a0f35876adbdf5e22626d571c66a9d5",
+      "input_png_bytes": 56413,
+      "calls": 7,
+      "tool_calls": 5,
+      "request_bytes": 78286,
+      "response_bytes": 594977,
+      "milliseconds": 138.58,
+      "measurements": [
+        {
+          "method": "tools/call",
+          "tool": "import_artwork_png",
+          "request_bytes": 75535,
+          "response_bytes": 157961,
+          "milliseconds": 18.25
+        },
+        {
+          "method": "tools/call",
+          "tool": "edit_artwork_raster",
+          "request_bytes": 677,
+          "response_bytes": 720,
+          "milliseconds": 38.92
+        },
+        {
+          "method": "tools/call",
+          "tool": "review_artwork_candidate",
+          "request_bytes": 432,
+          "response_bytes": 93910,
+          "milliseconds": 31.54
+        },
+        {
+          "method": "resources/read",
+          "tool": null,
+          "request_bytes": 178,
+          "response_bytes": 74896,
+          "milliseconds": 1.25
+        },
+        {
+          "method": "resources/read",
+          "tool": null,
+          "request_bytes": 180,
+          "response_bytes": 89842,
+          "milliseconds": 0.98
+        },
+        {
+          "method": "tools/call",
+          "tool": "commit_artwork",
+          "request_bytes": 894,
+          "response_bytes": 1308,
+          "milliseconds": 38.75
+        },
+        {
+          "method": "tools/call",
+          "tool": "open_artwork",
+          "request_bytes": 390,
+          "response_bytes": 176340,
+          "milliseconds": 8.89
+        }
+      ],
+      "server_peak_rss_bytes": 72253440
+    },
+    {
+      "route": "patch",
+      "width": 375,
+      "height": 525,
+      "input_png_sha256": "a4431a1983985aadaa8f5ebabc8519d0b855680410a12d98adbfccd59db7c443",
+      "output_rgba_sha256": "ef8ee36aaaf095255a384f4aa090776312fcfcb58dd20bc7a37df1a3d8fa96db",
+      "input_png_bytes": 676065,
+      "calls": 14,
+      "tool_calls": 12,
+      "request_bytes": 2106415,
+      "response_bytes": 4973929,
+      "milliseconds": 813.44,
+      "measurements": [
+        {
+          "method": "tools/call",
+          "tool": "create_artwork",
+          "request_bytes": 343,
+          "response_bytes": 157961,
+          "milliseconds": 32.49
+        },
+        {
+          "method": "tools/call",
+          "tool": "edit_artwork_pixels",
+          "request_bytes": 348498,
+          "response_bytes": 720,
+          "milliseconds": 58.3
+        },
+        {
+          "method": "tools/call",
+          "tool": "edit_artwork_pixels",
+          "request_bytes": 348500,
+          "response_bytes": 720,
+          "milliseconds": 57.27
+        },
+        {
+          "method": "tools/call",
+          "tool": "edit_artwork_pixels",
+          "request_bytes": 348500,
+          "response_bytes": 720,
+          "milliseconds": 58.39
+        },
+        {
+          "method": "tools/call",
+          "tool": "edit_artwork_pixels",
+          "request_bytes": 6498,
+          "response_bytes": 720,
+          "milliseconds": 57.22
+        },
+        {
+          "method": "tools/call",
+          "tool": "edit_artwork_pixels",
+          "request_bytes": 348498,
+          "response_bytes": 720,
+          "milliseconds": 59.47
+        },
+        {
+          "method": "tools/call",
+          "tool": "edit_artwork_pixels",
+          "request_bytes": 348500,
+          "response_bytes": 720,
+          "milliseconds": 56.42
+        },
+        {
+          "method": "tools/call",
+          "tool": "edit_artwork_pixels",
+          "request_bytes": 348500,
+          "response_bytes": 720,
+          "milliseconds": 58.68
+        },
+        {
+          "method": "tools/call",
+          "tool": "edit_artwork_pixels",
+          "request_bytes": 6499,
+          "response_bytes": 721,
+          "milliseconds": 53.07
+        },
+        {
+          "method": "tools/call",
+          "tool": "review_artwork_candidate",
+          "request_bytes": 433,
+          "response_bytes": 905161,
+          "milliseconds": 114.27
+        },
+        {
+          "method": "resources/read",
+          "tool": null,
+          "request_bytes": 179,
+          "response_bytes": 901081,
+          "milliseconds": 6.14
+        },
+        {
+          "method": "resources/read",
+          "tool": null,
+          "request_bytes": 181,
+          "response_bytes": 901083,
+          "milliseconds": 6.23
+        },
+        {
+          "method": "tools/call",
+          "tool": "commit_artwork",
+          "request_bytes": 895,
+          "response_bytes": 1309,
+          "milliseconds": 154.46
+        },
+        {
+          "method": "tools/call",
+          "tool": "open_artwork",
+          "request_bytes": 391,
+          "response_bytes": 2101573,
+          "milliseconds": 41.03
+        }
+      ],
+      "server_peak_rss_bytes": 95485952
+    },
+    {
+      "route": "structured",
+      "width": 375,
+      "height": 525,
+      "input_png_sha256": "a4431a1983985aadaa8f5ebabc8519d0b855680410a12d98adbfccd59db7c443",
+      "output_rgba_sha256": "ef8ee36aaaf095255a384f4aa090776312fcfcb58dd20bc7a37df1a3d8fa96db",
+      "input_png_bytes": 676065,
+      "calls": 7,
+      "tool_calls": 5,
+      "request_bytes": 904486,
+      "response_bytes": 4968883,
+      "milliseconds": 457.87,
+      "measurements": [
+        {
+          "method": "tools/call",
+          "tool": "import_artwork_png",
+          "request_bytes": 901735,
+          "response_bytes": 157961,
+          "milliseconds": 45.3
+        },
+        {
+          "method": "tools/call",
+          "tool": "edit_artwork_raster",
+          "request_bytes": 677,
+          "response_bytes": 720,
+          "milliseconds": 106.25
+        },
+        {
+          "method": "tools/call",
+          "tool": "review_artwork_candidate",
+          "request_bytes": 432,
+          "response_bytes": 905160,
+          "milliseconds": 111.44
+        },
+        {
+          "method": "resources/read",
+          "tool": null,
+          "request_bytes": 178,
+          "response_bytes": 901080,
+          "milliseconds": 5.49
+        },
+        {
+          "method": "resources/read",
+          "tool": null,
+          "request_bytes": 180,
+          "response_bytes": 901082,
+          "milliseconds": 5.6
+        },
+        {
+          "method": "tools/call",
+          "tool": "commit_artwork",
+          "request_bytes": 894,
+          "response_bytes": 1308,
+          "milliseconds": 145.25
+        },
+        {
+          "method": "tools/call",
+          "tool": "open_artwork",
+          "request_bytes": 390,
+          "response_bytes": 2101572,
+          "milliseconds": 38.54
+        }
+      ],
+      "server_peak_rss_bytes": 94896128
+    },
+    {
+      "width": 256,
+      "height": 256,
+      "layers": 3,
+      "aggregate_rgba_bytes": 1048576,
+      "candidate_bytes": 1399644,
+      "handle_bytes": 300,
+      "draft_bytes": 4199954,
+      "three_layers_ms": 61.31,
+      "retain_ms": 38.54,
+      "checkpoint_ms": 74.47,
+      "restore_ms": 67.07,
+      "process_peak_rss_bytes": 54329344
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "layers": 3,
+      "aggregate_rgba_bytes": 12582912,
+      "candidate_bytes": 16778749,
+      "handle_bytes": 300,
+      "draft_bytes": 50337269,
+      "three_layers_ms": 724.56,
+      "retain_ms": 430.54,
+      "checkpoint_ms": 840.93,
+      "restore_ms": 785.45,
+      "process_peak_rss_bytes": 582467584
+    }
+  ]
+}

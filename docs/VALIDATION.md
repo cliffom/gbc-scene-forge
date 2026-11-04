@@ -15,6 +15,179 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## PR #193 release-gate fixture contention
+
+- **Scope:** Prepared 0.32.0 working tree based on
+  `96b50aeace964511d2ce71f795e1a7ba902d5f80`, checked 2026-11-03 locally on
+  macOS/Python 3.13/Chromium. The failed CI run used Ubuntu and Python 3.13.
+- **Method:** Inspect the
+  [failed release gate](https://github.com/cliffom/gbc-scene-forge/actions/runs/41761741620).
+  The [refresh fixture](../tests/playwright/mcp/refresh.spec.ts) now uses the
+  existing bounded busy-retry helper for project opening, catalog reads and its
+  spare-atlas import, retaining the exact revision across import retries.
+  Run the focused browser refresh case against the production bundle.
+- **Result:** CI passed 129 browser cases, installed-wheel first use and 94 MCP
+  tests, then passed five MCP/browser cases and failed the refresh fixture when
+  browser polling held the project lock during a direct spare-atlas import.
+  The corrected local refresh case passes, including brush preservation,
+  unused-atlas deletion, animation refresh and scene deletion.
+- **Limits:** The failure was a fixture setup contention error. The focused
+  local pass does not establish a new Linux CI pass; Python compatibility jobs
+  were skipped in that failed run. Existing independent acceptance gaps remain
+  in the single list below.
+
+## PR #193 first-source discovery controls
+
+- **Scope:** Prepared 0.32.0 working tree based on
+  `5bf80a5a94a3fe6da413ef08df6e7784d39c34e2`, checked 2026-11-03 in the local
+  macOS/Python/Node/Chromium environment recorded under milestone 21 below.
+- **Method:** The [discovery regression](../tests/playwright/artwork/iteration.spec.ts)
+  opens Existing artwork in an empty project, saves the first artwork externally,
+  checks enabled source/open/copy controls and preserved copy identity fields,
+  then opens the saved source. It also deletes that source externally with
+  auto-refresh disabled and checks manual refresh disables unavailable controls.
+  Agent screenshot inspection covers the enabled source controls and retained
+  copy name/asset ID at 1440×1000.
+- **Result:** The regression fails before correction because the discovered
+  source selector remains disabled. It passes after setup controls refresh when
+  the eligible inventory is applied. All twelve focused production
+  artwork/navigation browser cases pass. `make lint test` passes with 448 Python
+  tests and all TypeScript suites; production build and documentation checks pass.
+- **Limits:** These are local automated checks and agent desktop inspection,
+  not a new CI result or a full browser suite rerun. Existing independent-human,
+  physical-device and external-tool gaps remain in the single list below.
+
+## PR #193 adopted-edit recovery and layer palette corrections
+
+- **Scope:** Prepared 0.32.0 working tree based on
+  `37ede339ed741df35af10cb558694032b98cc4c6`, checked 2026-11-03 in the local
+  macOS/Python/Node/Chromium environment recorded under milestone 21 below.
+- **Method:** The [real MCP/browser regressions](../tests/playwright/mcp/iteration-mcp.spec.ts)
+  adopt new artwork and edits to saved layered artwork. The saved-edit case checks
+  Modified state, separate saved and edited checkpoint sources after returning to
+  Scene, recovery after reload, and exact saved layer pixels. Palette assertions
+  switch sources in both directions without Undo or checkpoint writes; the
+  [artwork regression](../tests/playwright/artwork/iteration.spec.ts) also switches
+  sources after saving and reopening. Agent screenshot inspection covers the
+  adopted Modified document, selected Red layer and its palette at 1440×1000.
+- **Result:** Both production MCP/browser cases and all eleven focused
+  artwork/navigation cases pass. `make lint test` passes with 448 Python tests
+  and all TypeScript suites; final ESLint, formatting and documentation checks
+  pass. The initial new test fixture
+  supplied an inline candidate without retaining it, so it could not appear in
+  candidate discovery; retaining it with compact mode corrected the fixture.
+  Adopted saved edits retain their actual saved original and survive recovery;
+  switching layers immediately shows the selected source's colors.
+- **Limits:** These are local automated checks and agent desktop inspection;
+  they do not establish a new CI result or complete the independent-human,
+  physical-device and external-tool checks below.
+
+## PR #193 MCP refresh harness correction
+
+- **Scope:** Prepared 0.32.0 working tree based on
+  `f000a63b9b3533f7f65f1c04a1897190eb8a7ee6`, checked 2026-11-03 in the local
+  milestone 21 environment below. The linked CI run used Ubuntu 24.04.5 and
+  merge revision `9739112dcb1929899253309fead75a73c8e69bf8`.
+- **Method:** Inspect the
+  [failed job](https://github.com/cliffom/gbc-scene-forge/actions/runs/41753764245/job/126324863546).
+  The [refresh acceptance test](../tests/playwright/mcp/refresh.spec.ts) now
+  separates JSON stdout from diagnostic stderr and waits for stream closure.
+  It holds a real project lock until the MCP startup diagnostic arrives, then
+  checks the successful JSON result. Rerun the five MCP/browser cases against
+  the rebuilt production bundle and run `make lint` locally.
+- **Result:** The CI job passed 127 production browser cases, installed-wheel
+  first use and 93 optional MCP tests, then passed four MCP/browser cases and
+  failed refresh because its helper parsed the combined diagnostic and JSON as
+  JSON. The correction retains stderr for failure diagnostics while parsing only
+  stdout. All five local production MCP/browser cases pass, including the forced
+  startup-contention assertion; production build, lint and documentation checks
+  also pass.
+- **Limits:** The original CI failure is a harness parsing failure, not evidence
+  of a failed MCP mutation. Local checks do not establish a new Linux CI pass or
+  independently verify the remaining acceptance gaps below.
+
+## PR #193 review corrections
+
+- **Scope:** Prepared 0.32.0 working tree based on
+  `f000a63b9b3533f7f65f1c04a1897190eb8a7ee6`, checked 2026-11-03 on the local
+  macOS/Python/Node/Chromium environment recorded under milestone 21 below.
+- **Method:** [Browser regressions](../tests/playwright/artwork/iteration.spec.ts)
+  delay a real inventory response across a key interaction, then check discovery
+  retries without another save; they also exercise trimmed and empty layer names,
+  checkpoints, Undo/Redo, save and reopen. The
+  [adoption regression](../tests/backend/adapters/test_mcp_iteration.py) changes a
+  selected scene without changing the manifest revision and checks rejection
+  before retaining a copy. Agent screenshot inspection covers desktop layers at
+  1440×1000 and saved/reopened compact layers at 760×800.
+- **Result:** All three regressions failed against the original implementation
+  and pass after correction. `make lint test` passes with 448 Python tests and all
+  TypeScript suites. Eleven focused artwork/navigation browser cases and the
+  [real MCP/browser handoff case](../tests/playwright/mcp/iteration-mcp.spec.ts)
+  pass against the rebuilt development bundle. Normalized layer names persist;
+  rejected empty names leave the previous layer intact.
+- **Limits:** These are local automated checks and agent inspection, not a full
+  production browser rerun, installed-wheel verification or a new CI result.
+  Existing physical-device, independent-human and external-tool gaps remain in
+  the single Remaining checks list below.
+
+## Unchanged artwork discovery after mounting (PR #193 CI)
+
+- **Scope:** Prepared 0.32.0 correction based on `26290d4faedd072c0d603cba54b58c7b5f9f1f6e`,
+  checked 2026-11-03 on the local macOS/Python/Node environment recorded below and
+  an Ubuntu 24.04 GitHub runner in the linked CI run.
+- **Method:** [Initial Linux CI](https://github.com/cliffom/gbc-scene-forge/actions/runs/41751708249)
+  exercised the full production browser suite. The
+  [navigation regression](../tests/playwright/artwork/navigation.spec.ts)
+  now deliberately crosses a discovery interval before checking that unchanged
+  navigation makes no artwork requests. Local focused production checks also
+  exercise wheel/layer history and scene navigation; installed-wheel SDK/browser
+  coverage distinguishes unchanged discovery from actual external saved changes.
+- **Result:** The initial CI run passed 126 cases, skipped 11 opt-in profiles and
+  failed one no-request assertion because the first discovery poll reloaded an
+  unchanged inventory. Discovery now compares against the composition's loaded
+  project revision until its first external adoption; it continues preserving
+  original authoring bases. The ten focused production browser cases and seven
+  rebuilt-wheel smoke checks pass.
+- **Limits:** The focused local rerun does not itself replace a full Linux CI
+  result. Independent human/physical-device, non-Chromium and external-tool
+  boundaries remain those recorded below.
+
+## Human–agent artwork iteration (milestone 21)
+
+- **Scope:** Prepared 0.32.0 working tree on `milestone/21-artwork-iteration`,
+  based on `c55fc8df32f3434438436f10f2a1e7d122bea00e`, checked 2026-11-03 on
+  macOS 27.0.1 arm64 / Apple M4 Max, Python 3.13.13, Node 24.22.1,
+  MCP SDK 1.30.0 and Playwright 1.64.1 / Chromium 156.0.8078.4.
+- **Method:** Domain/SDK regressions exercise exact PNG/raster/layer bytes, source
+  targeting, ownership, stale review/base guards, interrupted layered-save recovery,
+  portable transfers and deletion. Browser automation covers layer history/save,
+  anchored wheel zoom, separately owned unpublished exchange, saved continuation
+  and discovery/deletion while another document stays dirty. Installed plain and
+  optional-MCP wheels supply smoke, first-use and SDK/browser checks. Agent
+  screenshot inspection covers desktop layers and unpublished return at 1440×1000
+  and compact layers at 760×800. The [evaluation](evaluations/artwork-iteration.md)
+  archives captures, deterministic equivalent-task methods and raw transport,
+  latency, peak memory, retention, recovery and history observations.
+- **Result:** `make docs-check lint test` passes with 447 Python tests and all
+  TypeScript suites. Production build/distribution checks and seven installed-wheel
+  smoke tests pass. Production browser acceptance passes 127 cases with 11 opt-in
+  profiling cases skipped; installed-wheel first use, 93 optional MCP tests and
+  five SDK/browser cases pass. The initial broad run exposed a dense short-window
+  Confirm save obstruction; bounded layer sidebars and document actions correct
+  it. An intermediate run mixed development expectations with rebuilt production
+  assets and failed two version-label assertions; that run is excluded from product
+  evidence. The final explicit production run passes both assertions. Review also
+  corrected layer reads/counts to identify the original candidate revision and source
+  layer, with regression assertions. In the fixed 375×525 task, tool calls drop
+  from 12 to 5; large layered snapshots still have substantial working memory costs.
+- **Limits:** These are local synthetic observations and agent inspection, not a
+  new independent-human or CI result. The single measurement run does not establish
+  general speed, artistic-quality parity, maximum-layer/low-memory suitability,
+  physical wheel/trackpad comfort or non-Chromium behavior. Official Tiled and
+  rasterizer applications were unavailable. Near-color/noise diagnostics and
+  changed-pixel overlays remain explicitly deferred; existing participant-dependent
+  acceptance remains open in the single Remaining checks list below.
+
 ## PR #183 maximum-axis artwork Fit correction
 
 - **Scope:** Prepared 0.31.0 working tree based on
@@ -1689,6 +1862,10 @@ Dates, revisions and environments missing from the originals remain unknown.
   claim is made by this local record.
 
 ## Remaining checks
+
+### Human–agent artwork iteration (milestone 21)
+
+- [ ] Assess prolonged layered drawing, wheel/trackpad comfort and unpublished handoff discovery with independent users on physical devices, including lower-memory hardware. The [synthetic workflow and resource evaluation](evaluations/artwork-iteration.md) establishes bounded automated outcomes, not human usability or external-tool art-quality parity.
 
 ### Existing workflow usability (milestone 17, #165–#167)
 
