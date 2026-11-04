@@ -29,7 +29,10 @@ Dates, revisions and environments missing from the originals remain unknown.
   exposed an ambiguous test name selector, which was corrected. The final pixel
   and contextual-panel run passed all 44 cases; both direct raster cases passed.
   The production frontend build and `make lint test` passed (448 Python tests
-  and all TypeScript suites).
+  and all TypeScript suites), but formatting ran before the final selector edit.
+  [CI at `75b4225`](https://github.com/cliffom/gbc-scene-forge/actions/runs/41783329047)
+  then rejected that selector's formatting before compilation, tests or packaging;
+  the selector was subsequently formatted with Prettier.
 - **Limits:** Scoped local automation; no full-browser, installed-wheel, MCP or
   CI rerun is claimed for this follow-up. Earlier broader checks retain their
   revision boundary below; human verification of this fix remains unreported.

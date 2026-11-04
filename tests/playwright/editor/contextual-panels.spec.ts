@@ -212,7 +212,10 @@ a.save(a.edit(c,[dict(x=0,y=0,rgba=[68,85,102,255])]))
   await page.locator('#art-properties-toggle').click();
   await expectRepeated([68, 85, 102, 255]);
   await page.locator('#document-switcher').click();
-  await page.locator('#artwork-documents button').filter({ hasText: /^Tile · Artwork/ }).click();
+  await page
+    .locator('#artwork-documents button')
+    .filter({ hasText: /^Tile · Artwork/ })
+    .click();
   await page.locator('#art-properties-toggle').click();
   await expectRepeated([204, 119, 51, 255]);
 });
