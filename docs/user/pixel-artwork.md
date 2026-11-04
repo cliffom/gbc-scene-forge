@@ -53,6 +53,8 @@ without adding an Undo step or changing the document.
 Locked layers disable visibility and other editing controls; uncheck **Locked**
 to enable them. Name and opacity use **Apply name / opacity**; applying trims the
 name and rejects an empty name before changing the document.
+Toggling visibility or locking keeps pending name and opacity entries without
+applying them; use **Apply name / opacity** when those entries are ready.
 Unlock a layer before changing its pixels or structure. Layer changes and pixels
 share this document's Undo/Redo; checkpoints retain exact source pixels but do not
 contain the local Undo stack. Save → review → Confirm save publishes all sources

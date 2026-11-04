@@ -4,6 +4,78 @@ import { join } from 'node:path';
 import { test, expect, activateScene } from '../support/browser-fixtures.ts';
 import { revealArtworkControl, saveArtwork } from '../support/artwork-controls.ts';
 
+test('layer flags preserve pending fields without applying them or leaking between layers and documents', async ({
+  page,
+  workspace,
+}, info) => {
+  const root = join(workspace.folder, 'project');
+  execFileSync(workspace.python, [
+    '-I',
+    '-c',
+    `
+import sys
+from pathlib import Path
+from gbc_scene_forge.project.application import Project
+from gbc_scene_forge.artwork import layers
+p=Project.create(Path(sys.argv[1]),'Layer fields')
+a=p.artwork.documents
+items=[layers.item('Base'),layers.item('Overlay')]
+for key in ['picture','other']:
+    c=a.create(key,key,'sprite',16,16,p.catalog()['revision'])
+    a.save(layers.edit(c,items))
+`,
+    root,
+  ]);
+  await page.goto(await workspace.start(root));
+  await page.locator('[data-asset="picture/artwork"]').click();
+  await revealArtworkControl(page, 'art-layer');
+  const name = page.locator('#art-layer-name');
+  const opacity = page.locator('#art-layer-opacity');
+  const layer = page.locator('#art-layer');
+  const expectPending = async () => {
+    await expect(name).toHaveValue(' Renamed ');
+    await expect(opacity).toHaveValue('128');
+    await expect(layer.locator('option:checked')).toHaveText('Base');
+  };
+  await name.fill(' Renamed ');
+  await opacity.fill('128');
+  await page.locator('#art-layer-visible').uncheck();
+  await expectPending();
+  await page.locator('#art-layer-locked').check();
+  await expect(name).toBeDisabled();
+  await expectPending();
+  await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
+  await page.screenshot({ path: info.outputPath('pending-fields-locked.png') });
+  await page.locator('#art-layer-locked').uncheck();
+  await expect(name).toBeEnabled();
+  await expectPending();
+  await page.locator('#art-layer-visible').check();
+  await expectPending();
+  await page.locator('#art-layer-update').click();
+  await expect(name).toHaveValue('Renamed');
+  await expect(opacity).toHaveValue('128');
+  await expect(layer.locator('option:checked')).toHaveText('Renamed');
+  await page.locator('#undo').click();
+  await expect(name).toHaveValue('Base');
+  await expect(opacity).toHaveValue('255');
+  // An explicit Apply normalizes input even when metadata remains unchanged.
+  await name.fill(' Base ');
+  await page.locator('#art-layer-update').click();
+  await expect(name).toHaveValue('Base');
+  await name.fill(' Renamed ');
+  await opacity.fill('128');
+  await layer.selectOption({ label: 'Overlay' });
+  await expect(name).toHaveValue('Overlay');
+  await expect(opacity).toHaveValue('255');
+  await layer.selectOption({ label: 'Base' });
+  await name.fill(' Renamed ');
+  await opacity.fill('128');
+  // Both documents intentionally have identical layer IDs and metadata.
+  await page.locator('[data-asset="other/artwork"]').click();
+  await expect(name).toHaveValue('Base');
+  await expect(opacity).toHaveValue('255');
+});
+
 test('layer visibility and locking apply immediately, undo independently, and survive saving', async ({
   page,
   workspace,
