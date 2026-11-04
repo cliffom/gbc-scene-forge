@@ -244,6 +244,23 @@ a.save(c)
     await page.locator('#project-name').click();
     await expect(page.locator('#art-palette')).toBeHidden();
   }
+  await trigger.click();
+  await page.setViewportSize({ width: 800, height: 640 });
+  await expect(page.locator('#art-palette')).toBeVisible();
+  await expect
+    .poll(async () => {
+      const bounds = await page.locator('#art-palette').boundingBox();
+      return (
+        !!bounds &&
+        bounds.x >= 0 &&
+        bounds.y >= 0 &&
+        bounds.x + bounds.width <= 800 &&
+        bounds.y + bounds.height <= 640
+      );
+    })
+    .toBe(true);
+  await page.locator('#project-name').click();
+  await expect(page.locator('#art-palette')).toBeHidden();
 });
 
 test('detail review initializes new document bounds and restores retained document settings', async ({

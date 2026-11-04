@@ -58,6 +58,20 @@ a.save(c)
       if (state === 'review') {
         await reviewArtwork(page);
       }
+      await page.locator('#art-sheet-controls').evaluate((n) => {
+        n.scrollTop = 0;
+      });
+      if (state === 'animation') {
+        await page.locator('#art-play').scrollIntoViewIfNeeded();
+        await expect(page.locator('#art-play')).toBeInViewport();
+        await page.locator('#art-play').focus();
+        await page.keyboard.press('Tab');
+        await expect(page.locator('#art-step')).toBeFocused();
+        const duration = page.getByRole('spinbutton', { name: 'Frame 1 duration in milliseconds' });
+        await duration.focus();
+        await expect(duration).toBeInViewport();
+      }
+
       await expect(page.locator('#save')).toBeInViewport();
       await expect(page.locator('.art-document-actions > summary')).toBeInViewport();
       await expect(page.locator('#undo')).toBeDisabled();

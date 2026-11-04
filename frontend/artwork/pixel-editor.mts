@@ -729,14 +729,37 @@ export function createPixelEditor({
     },
     { signal: lifetime.signal },
   );
+  function positionPalette(height = palettePanel.offsetHeight) {
+    const trigger = button('art-palette-toggle').getBoundingClientRect();
+    palettePanel.style.left = `${Math.max(8, Math.min(trigger.left, window.innerWidth - 350))}px`;
+    palettePanel.style.top = `${Math.max(8, Math.min(trigger.bottom + 5, window.innerHeight - Math.min(380, height) - 8))}px`;
+  }
+  palettePanel.addEventListener(
+    'beforetoggle',
+    (event) => {
+      if (event.newState === 'open') {
+        // Native toggle fires after visibility changes. Bound the first visible
+        // frame too, including after a viewport resize while the popover was closed.
+        positionPalette(380);
+      }
+    },
+    { signal: lifetime.signal },
+  );
   palettePanel.addEventListener(
     'toggle',
     () => {
       if (palettePanel.matches(':popover-open')) {
-        const trigger = button('art-palette-toggle').getBoundingClientRect();
-        palettePanel.style.left = `${Math.max(8, Math.min(trigger.left, window.innerWidth - 350))}px`;
-        palettePanel.style.top = `${Math.max(8, Math.min(trigger.bottom + 5, window.innerHeight - Math.min(380, palettePanel.offsetHeight) - 8))}px`;
+        positionPalette();
         palettePanel.querySelector('button')?.focus();
+      }
+    },
+    { signal: lifetime.signal },
+  );
+  window.addEventListener(
+    'resize',
+    () => {
+      if (palettePanel.matches(':popover-open')) {
+        positionPalette();
       }
     },
     { signal: lifetime.signal },
