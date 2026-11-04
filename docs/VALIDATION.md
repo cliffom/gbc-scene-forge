@@ -15,6 +15,22 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Notification acceptance timing (PR #205)
+
+- **Scope:** Acceptance-test fixes based on `261a990`, checked locally on
+  2026-11-04 in Chromium against production 0.33.2 assets.
+- **Method:** Reproduced the paused-clock recovery and absent-status failures,
+  then reran all four affected browser cases with explicit frame advancement
+  and null-safe status polling. Also ran the complete standalone/notification
+  suites, `make lint test` and `make docs-check`.
+- **Result:** The local baseline had three failures and one pass; all four cases
+  passed after the fixes, as did all nine standalone/notification cases and the
+  general checks. The [original PR CI run](https://github.com/cliffom/gbc-scene-forge/actions/runs/41850248983)
+  recorded all four failures, 148 passes and 11 optional skips, including a
+  timing-dependent preview-settings failure that passed locally.
+- **Limits:** Synthetic local Chromium checks. This focused result does not
+  establish a passing full CI matrix or independent accessibility assessment.
+
 ## Artwork keyboard retry feedback (PR #205)
 
 - **Scope:** Review fix based on `aecf539`, checked locally on 2026-11-04 in

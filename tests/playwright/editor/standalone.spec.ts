@@ -880,7 +880,7 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   await wait("document.getElementById('delete-atlas-dialog').open");
   await page.screenshot({ path: testInfo.outputPath('standalone-delete-atlas' + '.png') });
   await click('delete-atlas-confirm');
-  await wait("document.getElementById('status').textContent.includes('Deleted atlas “spare”')");
+  await wait("document.getElementById('status')?.textContent.includes('Deleted atlas “spare”')");
   assert.equal(
     await evaluate("document.getElementById('atlas-filter').selectedOptions[0].textContent"),
     'All atlases',
@@ -905,7 +905,7 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
     await page.mouse.up();
   })();
   await click('save');
-  await wait("document.getElementById('status').textContent === 'Scene saved.'");
+  await wait("document.getElementById('status')?.textContent === 'Scene saved.'");
   assert.equal(
     array(record((await scene(first)).scene).cells, (row) => array(row, string))[1][3],
     'terrain/earth/0/0',
@@ -984,7 +984,7 @@ path.write_bytes(png.encode(32, height, b''.join(rows)))
   await chooseScene(second);
   await renameLayer('Ground');
   await click('save');
-  await wait("document.getElementById('status').textContent === 'Scene saved.'");
+  await wait("document.getElementById('status')?.textContent === 'Scene saved.'");
   // Focusing a canvas taller than the viewport must not scroll it and offset
   // the placement away from the pointer's original scene coordinate.
   await click('artwork-tab');
@@ -1085,7 +1085,7 @@ p.scenes.save(loaded['id'], s, loaded['revision'], p.catalog()['revision'])
   const position = await scenePoint(page, 32, 24);
   await page.mouse.click(position.x, position.y);
   await click('save');
-  await wait("document.getElementById('status').textContent === 'Scene saved.'");
+  await wait("document.getElementById('status')?.textContent === 'Scene saved.'");
   // Playback controls never dirty a saved scene, move its origin, or add history.
   const savedSprite = await scene(second);
   const selectionBeforePlayback = await evaluate(
@@ -1268,7 +1268,9 @@ p.scenes.save(loaded['id'], s, loaded['revision'], p.catalog()['revision'])
   await set('preview-move-speed', '64');
   await set('preview-footprint-width', '6');
   await click('save-preview-settings');
-  await wait("document.getElementById('status').textContent.startsWith('Preview settings saved.')");
+  await wait(
+    "document.getElementById('status')?.textContent.startsWith('Preview settings saved.')",
+  );
   const savedPreview = record(record(record((await catalog()).project).preview).sprite);
   assert.equal(savedPreview.playback_speed, 2);
   assert.equal(savedPreview.movement_speed, 64);
@@ -1483,7 +1485,7 @@ p.scenes.save(loaded['id'], s, loaded['revision'], p.catalog()['revision'])
   const position = await scenePoint(page, 32, 24);
   await page.mouse.click(position.x, position.y);
   await click('save');
-  await wait("document.getElementById('status').textContent === 'Scene saved.'");
+  await wait("document.getElementById('status')?.textContent === 'Scene saved.'");
   // Named layers render in order, edit independently, and retain history through Save.
   const spritePixel = await evaluate(
     "Array.from(document.getElementById('scene').getContext('2d').getImageData(30,9,1,1).data)",
@@ -1558,7 +1560,7 @@ p.scenes.save(loaded['id'], s, loaded['revision'], p.catalog()['revision'])
   await click('undo');
   await expect(page.locator('#layer-name')).toHaveValue('Foreground actors');
   await click('save');
-  await wait("document.getElementById('status').textContent === 'Scene saved.'");
+  await wait("document.getElementById('status')?.textContent === 'Scene saved.'");
   let layeredScene = record((await scene(second)).scene);
   const savedLayers = array(layeredScene.layers, record);
   assert.deepEqual(
@@ -1886,7 +1888,7 @@ p.scenes.save(loaded['id'], s, loaded['revision'], p.catalog()['revision'])
     true,
   );
   await click('save');
-  await wait("document.getElementById('status').textContent === 'Scene saved.'");
+  await wait("document.getElementById('status')?.textContent === 'Scene saved.'");
   layeredScene = record((await scene(second)).scene);
   const authored = array(array(layeredScene.layers, record)[3].objects, record);
   assert.deepEqual(authored[0], {
@@ -2428,7 +2430,7 @@ p.scenes.save(loaded['id'], s, loaded['revision'], p.catalog()['revision'])
   );
   assert.deepEqual(record((await scene(second)).scene), layeredScene);
   await chooseScene(second);
-  await wait("document.getElementById('status').textContent === 'Scene opened.'");
+  await wait("document.getElementById('status')?.textContent === 'Scene opened.'");
   assert.equal(await evaluate("document.querySelectorAll('#layers input[type=radio]').length"), 4);
   assert.equal(
     await evaluate(
@@ -2494,7 +2496,7 @@ p.scenes.save(loaded['id'], s, loaded['revision'], p.catalog()['revision'])
   await writeFile(previewManifest, beforePreviewConflict + '\n');
   await set('preview-speed', '0.5');
   await click('save-preview-settings');
-  await wait("document.getElementById('status').textContent.includes('Project changed on disk')");
+  await wait("document.getElementById('status')?.textContent.includes('Project changed on disk')");
   await expect(page.locator('#preview-speed')).toHaveValue('0.5');
   await expect(page.locator('#dirty')).toHaveText('SAVED');
   assert.equal(await readFile(previewManifest, 'utf8'), beforePreviewConflict + '\n');
@@ -2561,7 +2563,7 @@ p.scenes.save(loaded['id'], s, loaded['revision'], p.catalog()['revision'])
   await wait("document.getElementById('delete-scene-dialog').open");
   await page.screenshot({ path: testInfo.outputPath('standalone-delete-scene' + '.png') });
   await click('delete-scene-confirm');
-  await wait("document.getElementById('status').textContent.includes('Deleted “Village”')");
+  await wait("document.getElementById('status')?.textContent.includes('Deleted “Village”')");
   await expect(page.locator('#dirty')).toHaveText('NO SCENE');
   await expect(page.locator('#scene')).toHaveJSProperty('hidden', true);
   await expect(page.locator('#undo')).toBeDisabled();
@@ -2570,7 +2572,7 @@ p.scenes.save(loaded['id'], s, loaded['revision'], p.catalog()['revision'])
   await click('show-delete');
   await wait("document.getElementById('delete-scene-dialog').open");
   await click('delete-scene-confirm');
-  await wait("document.getElementById('status').textContent.includes('Deleted “River”')");
+  await wait("document.getElementById('status')?.textContent.includes('Deleted “River”')");
   await expect(page.locator('#dirty')).toHaveText('NO SCENE');
   await expect(page.locator('#scene')).toHaveJSProperty('hidden', true);
   assert.equal(array(record((await catalog()).project).scenes, record).length, 0);
@@ -2580,7 +2582,7 @@ p.scenes.save(loaded['id'], s, loaded['revision'], p.catalog()['revision'])
     await deleteSource(page, id);
     await wait("document.getElementById('delete-atlas-dialog').open");
     await click('delete-atlas-confirm');
-    await wait(`document.getElementById('status').textContent.includes('Deleted atlas “${id}”')`);
+    await wait(`document.getElementById('status')?.textContent.includes('Deleted atlas “${id}”')`);
   }
   assert.deepEqual(record(record((await catalog()).project).atlases), {});
   await expect(page.locator('#asset-count')).toHaveText('0 / 0');
@@ -2787,7 +2789,7 @@ test('palette and hardware budgets, stale reports and profile saves', async ({
   await wait("!document.getElementById('palette-dialog').open");
   assert.equal(
     await evaluate(
-      "document.getElementById('status').textContent.startsWith('Palette contributor:')",
+      "document.getElementById('status')?.textContent.startsWith('Palette contributor:')",
     ),
     true,
   );
@@ -2857,7 +2859,7 @@ test('palette and hardware budgets, stale reports and profile saves', async ({
   );
   await evaluate("document.getElementById('reimport').checked = true");
   await submit('import-form');
-  await wait("document.getElementById('status').textContent.includes('Atlas imported')");
+  await wait("document.getElementById('status')?.textContent.includes('Atlas imported')");
   await wait("document.getElementById('show-palettes').dataset.state === 'fail'");
   await wait(
     "document.getElementById('show-create').disabled === false && document.getElementById('dirty').textContent === 'SAVED'",
