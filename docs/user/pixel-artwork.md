@@ -347,8 +347,10 @@ highlights that pose, including when its sheet is already open. **Sheet** shows
 the collection with frame boundaries and origin crosses; **Frame** constrains
 drawing to the selected rectangle. **Properties** contains frame names, geometry,
 origin and tile repetition preview. Rename poses there. Switch back to Sheet to
-work across the collection. Short windows use the frame selector instead of the
-thumbnail strip; the animation dock scrolls independently of drawing and Save.
+work across the collection. Short windows retain the frame selector and thumbnails
+inside the bounded dock. Scroll the dock to reach animation/timing controls, or
+collapse **Frames & animation** to restore drawing height. The dock scrolls
+independently of drawing and Save.
 
 Expand **Animation** below the frame controls. Name sequences such as Idle, Walk,
 Jump and Duck using **New animation**. Choose a source frame and **Append frame**,

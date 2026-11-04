@@ -96,8 +96,8 @@ Native artwork opens directly with the requested frame selected. Generate asset
 IDs and disclose advanced overrides and layout/origin options progressively.
 
 Keep compact tool/history/clipboard/transform groups, color, opacity, transparency,
-zoom and Fit beside the canvas. Show a short shared/new/variation badge beside
-the title. Put frame selection, Sheet/Frame scope and thumbnails below drawing,
+zoom and Fit beside the canvas. Show shared/new/variation scope in the Inspector;
+keep the active name and local state in the document bar. Put frame selection, Sheet/Frame scope and thumbnails below drawing,
 with an optional bounded animation dock containing sequence entries, millisecond
 durations and playback. The dock has its own bounded scrolling at short heights;
 collapse Frames & animation to return that space to drawing. Properties and exact-change review are optional content in the shared Inspector.
@@ -112,7 +112,7 @@ less frequent download/discard/help commands. Preserve revision guards, review
 invalidation, checkpoints and independent scene history. Bounds checks and agent
 inspection do not replace independent human usability testing. The
 [workflow review](evaluations/unified-editor-ux.md) records the motivating findings;
-[current workspace captures](evaluations/unified-editor-ux.md#delivered-interaction-redesign)
+[current workspace captures](evaluations/unified-editor-ux.md#consolidated-editor-assessment-milestone-22)
 show the delivered layout; the [earlier polish evaluation](evaluations/editor-polish.md) preserves its own
 historical scope and captures.
 

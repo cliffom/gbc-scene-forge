@@ -198,3 +198,73 @@ saving. Automated acceptance uses two sheets with matching sequence IDs and
 contrasting pixels/timings, then verifies a saved Walk edit leaves Idle and the
 other sheet unchanged. Results and test-setup failures remain in the
 [validation record](../VALIDATION.md#artwork-setup-and-document-restoration-feedback-pr-158).
+
+
+## Consolidated editor assessment (milestone 22)
+
+Prepared 0.33.0, source content committed as `0269aae`, checked 2026-11-03 local
+(2026-11-04 UTC), macOS arm64, Python 3.13.13, Node 24.22.1 and Playwright Chromium.
+This assessment uses the consolidated shell and command work from #194–#196,
+contextual panels (#197), Library source actions (#198), and integrated checks
+(#199). Earlier findings and measurements above retain their original scope.
+
+The reproducible [panel fixture](../../tests/playwright/editor/contextual-panels.spec.ts)
+creates a 32 × 16 native sheet with two 16 × 16 poses, origins [4, 8], and a two-entry
+120 ms looping animation. The [Library fixture](../../tests/playwright/editor/library-sources.spec.ts)
+adds static sources, no-scene illustration creation, explicit copy actions, named
+pose targeting and [source deletion during copy setup](../screenshots/consolidated-editor/deleted-source-fields.png). Other supported workflows
+use their existing pixel, layer, command, recovery, lifecycle and browser/MCP cases;
+[layered illustration](../screenshots/consolidated-editor/layers-and-wheel.png) and
+[compact layer controls](../screenshots/consolidated-editor/layers-compact.png) come
+from the committed illustration/wheel regression at 1440 × 1000 and 760 × 800.
+Current execution results belong in
+[Validation](../VALIDATION.md#consolidated-editor-workflows-milestone-22), which owns
+the single remaining-check list.
+
+These are actual drawing-viewport dimensions in CSS pixels, with both side panes
+expanded. Each value links its captured state. Normal has the dock collapsed;
+Animation expands both dock and sequence controls and focuses a duration field
+after keyboard navigation from Play to Step; Properties and Review use an
+expanded frame dock with the animation disclosure closed. Review-ready feedback
+can persist across states, making later captures slightly shorter than the initial
+state. Dimensions describe the scrollable drawing viewport, not the zoomed artwork.
+
+| Window | Normal / dock closed | Animation dock | Properties | Exact review |
+| --- | --- | --- | --- | --- |
+| 1440 × 900 | [910 × 535.5](../screenshots/consolidated-editor/1440x900-normal.png) | [910 × 337.5](../screenshots/consolidated-editor/1440x900-animation.png) | [910 × 407.5](../screenshots/consolidated-editor/1440x900-properties.png) | [910 × 383.5](../screenshots/consolidated-editor/1440x900-review.png) |
+| 1280 × 800 | [750 × 375.5](../screenshots/consolidated-editor/1280x800-normal.png) | [750 × 177.5](../screenshots/consolidated-editor/1280x800-animation.png) | [750 × 247.5](../screenshots/consolidated-editor/1280x800-properties.png) | [750 × 247.5](../screenshots/consolidated-editor/1280x800-review.png) |
+| 800 × 640 | [392 × 204](../screenshots/consolidated-editor/800x640-normal.png) | [392 × 150](../screenshots/consolidated-editor/800x640-animation.png) | [392 × 150](../screenshots/consolidated-editor/800x640-properties.png) | [392 × 150](../screenshots/consolidated-editor/800x640-review.png) |
+| 1280 × 600 | [750 × 214](../screenshots/consolidated-editor/1280x600-normal.png) | [750 × 150](../screenshots/consolidated-editor/1280x600-animation.png) | [750 × 150](../screenshots/consolidated-editor/1280x600-properties.png) | [750 × 150](../screenshots/consolidated-editor/1280x600-review.png) |
+
+[Raw canvas measurements](../screenshots/consolidated-editor/canvas-space.json)
+retain viewport positions and unrounded dimensions. At 800 × 640 and short desktop
+heights, an expanded dock leaves a shallow 150px drawing region with both side
+panes present. The dock scrolls internally; sequence/timing controls may require
+scrolling. Collapsing Frames & animation restores drawing height, and common
+Library/Inspector collapse handles restore horizontal space. Document-bar Save
+and the bottom Document actions remain reachable in every measured state. This is
+an explicit compact-size tradeoff, not evidence of prolonged drawing comfort.
+
+The same fixture instruments 32 frame-navigation changes after thumbnails have
+been rendered: zero thumbnail raster paints, zero thumbnail subtree rebuilds,
+zero additional dock listeners and zero growth in DOM canvas count.
+[Work counts](../screenshots/consolidated-editor/navigation-work.json) extend the
+[existing rendering foundation](artwork-interaction-polish.md); the existing hover
+regression separately requires zero raster/control work. Source review caught a
+new dock listener placed in redraw; it was moved to mount scope before the final
+runs. The new work-count test then exposed unchanged frame-label text-node writes;
+those are now skipped. Source-action testing also exposed a rapid-click race during
+pending native open, corrected by disabling those actions through the shared busy
+gate. Retained shared sources are reused instead of opening a second local session.
+The first completed broad run exposed a Colors popover opening-position race after
+a window resize (145 cases passed, one failed, eleven optional profiles skipped).
+Palette position is now bounded before its first visible frame and updated during
+resize while open; five focused repetitions passed before the final full run.
+
+The checks measure bounded work in these fixtures, not process heap, physical GPU
+memory, all document sizes or all sixteen retained documents at maximum history.
+Synthetic acceptance and agent screenshot inspection do not complete independent
+participant evaluation (#165) or findings-based remediation (#166). Existing
+revision/token/path guards, exact review, atomic variation adoption, independent
+histories and portable saved content remain domain-owned; there are no new storage
+formats or MCP authoring operations.

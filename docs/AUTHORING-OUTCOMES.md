@@ -1,8 +1,7 @@
 # Browser and MCP authoring outcomes (#167)
 
 This inventory describes the supported surface for prepared 0.33.0, including
-milestone 22 consolidation based on `2c58995` plus the contextual-panel/Library
-working changes, reviewed 2026-11-03. It is an outcome inventory, not a tool-count
+milestone 22 consolidation at `0269aae`, reviewed 2026-11-03. It is an outcome inventory, not a tool-count
 claim. See [MCP guidance](MCP.md) for wire schemas and detailed limits and
 [standalone usage](STANDALONE.md) for browser operations.
 
@@ -34,7 +33,7 @@ Classifications below mean:
 
 Evidence links identify source acceptance, not proof that every row ran on every
 release. Current execution evidence belongs in
-[Validation](VALIDATION.md#workflow-usability-and-browsermcp-outcomes-milestone-17);
+[Validation](VALIDATION.md#consolidated-editor-workflows-milestone-22);
 the table also retains inherited source coverage.
 
 | Outcome | Browser route | MCP route | Saved/candidate boundary and relevant limits | Difference / workaround | Existing acceptance evidence |

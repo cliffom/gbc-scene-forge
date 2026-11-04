@@ -15,6 +15,52 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Consolidated editor workflows (milestone 22)
+
+- **Scope:** Prepared 0.33.0 product source at `0269aae` on `milestone/22`,
+  #197–#199, checked 2026-11-03 local time (2026-11-04 UTC), macOS arm64,
+  Python 3.13.13, Node 24.22.1 and Playwright Chromium. Disposable projects,
+  production source bundle and separately installed production wheel.
+- **Method:** Four new browser cases cover contextual Inspector/dock states,
+  exact single-tile repetition, no-scene creation, named poses, explicit source
+  actions and deletion during copy setup. Sixteen panel captures at 1440×900,
+  1280×800, 800×640 and 1280×600 include real canvas dimensions, keyboard scrolling
+  from playback into timing, document-action bounds and transient history checks.
+  Agent inspection of the full capture grid and representative originals includes
+  layered illustration and retained copy fields. The
+  [integrated assessment](evaluations/unified-editor-ux.md#consolidated-editor-assessment-milestone-22)
+  archives fixture provenance, captures, measurements and navigation work counts.
+  Existing acceptance covers dirty scene/artwork round trips, shared references,
+  imports, variations, exact RGBA/hidden RGB, origins/timing, guards, failed writes,
+  recovery, remount/disposal and portable save/reopen/export. Real MCP/browser
+  scenarios exercise saved discovery and unpublished handoff with independent owners.
+- **Result:** `make lint test` passed (448 Python tests and all TypeScript suites).
+  An early broad run was stopped during source review to move a new dock listener
+  from redraw to mount scope. Focused checks then exposed unchanged frame-label
+  text-node rebuilds and a rapid source-action click during pending native open;
+  equal label writes are now skipped and source actions respect the shared busy gate.
+  The first completed broad run passed 145 cases, failed one palette-position case
+  and skipped 11 optional profiles. Palette position is now bounded before its
+  first visible frame and updated while resizing an open popover; five focused
+  repetitions passed. The final consistent production-mode `make test-browser`
+  run passed all 146 regular cases and skipped the 11 optional profiles. All six
+  real MCP/browser scenarios passed again. Production build/strict metadata,
+  seven installed-wheel smoke tests and installed-wheel first-use authoring passed.
+  Thirty-two frame switches produced zero thumbnail paints, subtree rebuilds,
+  additional dock handlers or DOM canvas growth; the existing hover and remount
+  cases passed. Documentation checks passed. The user accepted #196 at `d494519`;
+  combined acceptance of #197–#199 remains in the single checklist below.
+- **Limits:** These synthetic checks and agent inspection do not complete #165's
+  independent-user study or #166's findings-based remediation. Both panes plus an
+  expanded dock leave only 150px drawing height in the compact/short captures;
+  controls scroll inside the dock and collapsing it restores height. Work counts
+  do not measure heap/GPU memory or sixteen maximum-size documents with full
+  histories. Optional profiles, prolonged physical-device drawing, Windows,
+  non-Chromium browsers and official Tiled interoperability were not tested.
+  The integrated Electron review page stalled during image loading; the same
+  review URL opened successfully in separate Chromium. No CI-pass claim is made
+  for these local commits, which await combined verification before pushing.
+
 ## Active document commands and Save (#196, milestone 22)
 
 - **Scope:** Prepared 0.33.0 working tree on `milestone/22`, based on
@@ -44,7 +90,7 @@ Dates, revisions and environments missing from the originals remain unknown.
   distribution metadata, seven installed-wheel smoke tests and installed-wheel
   first-use authoring passed. Documentation checks passed. The user reported
   “Verified” for the shared-command and Save walkthrough at local revision
-  `d494519`; this records acceptance of that increment. 
+  `d494519`; this records acceptance of that increment.
 - **Limits:** Synthetic automation and agent screenshot inspection do not establish
   independent usability, prolonged drawing
   comfort, physical-device scaling, Windows/non-Chromium support or official Tiled
