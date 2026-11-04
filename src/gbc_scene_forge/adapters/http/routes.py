@@ -60,6 +60,10 @@ PROJECT_ROUTES = {
 
 
 for _action in (
+    "layers",
+    "layer-sync",
+    "candidate-list",
+    "candidate-adopt",
     "list",
     "candidate-retain",
     "candidate-release",

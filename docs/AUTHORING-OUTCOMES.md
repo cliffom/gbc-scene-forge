@@ -1,7 +1,7 @@
 # Browser and MCP authoring outcomes (#167)
 
-This inventory describes the supported surface in the milestone 17 working tree
-based on `0d3ab3c`, reviewed 2026-11-03. It is an outcome inventory, not a tool-count
+This inventory describes the supported surface for prepared 0.32.0, including
+milestone 21 additions based on `c55fc8d`, reviewed 2026-11-03. It is an outcome inventory, not a tool-count
 claim. See [MCP guidance](MCP.md) for wire schemas and detailed limits and
 [standalone usage](STANDALONE.md) for browser operations.
 
@@ -16,7 +16,7 @@ MCP reads saved content. Scene dry runs return canonical unpublished JSON withou
 reserving IDs; `save_scene` or a non-dry-run operation commits using the inspected
 project/scene revisions. Artwork envelopes and compact handles are unpublished;
 `commit_artwork` requires an exact review receipt. Retained handles survive server
-restart but do not appear in the browser Library. Each save requires fresh bases
+restart and appear in the explicit Agent candidates inbox, separately from saved Library assets. Each save requires fresh bases
 before further writes. Review resources and exports are snapshots, not live views.
 
 Classifications below mean:
@@ -50,10 +50,21 @@ the table also retains inherited source coverage.
 | World layout and connections | World controls | `save_world` with native world and all scene revisions | Guarded saved project write; all scene bases required; dangling endpoint diagnostics | Intentional: visual layout vs canonical positions/endpoints | [MCP project edits](../tests/backend/adapters/test_mcp.py), [world browser](../tests/playwright/planning/world.spec.ts) |
 | Tile metadata, palette profiles and preview preferences | Terrain & collision / profile / preview controls | Saved inspection where exposed; `palette_report` consumes existing profile | Browser-owned guarded metadata/preferences writes; report reads saved scene/profile | Missing MCP authoring capability; configure in browser then inspect/report. Raw `save_scene` is not a generic project-settings API | [Terrain browser](../tests/playwright/artwork/terrain.spec.ts), [palette tests](../tests/backend/analysis/test_palette_budget.py) |
 | Import external atlas | Import artwork → atlas ZIP/preflight/reimport | `import_atlas` bounded upload/preflight/reimport | Upload is not a filesystem grant; preflight does not save; commit requires current project base and compatibility | Intentional: file chooser vs bounded uploaded data; 4 MiB MCP request including base64, 1 MiB manifest, 4 MiB decoded PNG, at most 256 8px cells | [Atlas MCP](../tests/backend/adapters/test_mcp_artwork.py), [imports browser](../tests/playwright/artwork/imports.spec.ts) |
-| Import generic PNG, Tiled map or Forge scene | Import controls and portable scene transfer | No generic intake tools | Browser preflight then guarded save; assets copied into declared project; format/geometry checks remain | Missing MCP authoring capability; import in browser, then `get_project`/`get_scene` on saved content | [Imports browser](../tests/playwright/artwork/imports.spec.ts), [Forge transfer](../tests/playwright/artwork/forge-imports.spec.ts) |
+| Import generic PNG, Tiled map or Forge scene | Import controls and portable scene transfer; Agent candidates adoption | `import_artwork_png` creates unpublished native sprites; Tiled/Forge intake still browser-only | Browser preflight then guarded save; assets copied into declared project; format/geometry checks remain | PNG editable intake supported through uploaded bytes; other formats use browser, then saved inspection | [Imports browser](../tests/playwright/artwork/imports.spec.ts), [Forge transfer](../tests/playwright/artwork/forge-imports.spec.ts) |
 | Export portable project/scene | Export controls | `export_bundle` immutable ZIP resource | Saved snapshot; browser drafts/candidates excluded; MCP artifact ≤16 MiB, session cache 24 MiB | Intentional size/transport difference; larger exports use browser | [MCP export](../tests/backend/adapters/test_mcp.py), [mixed export/reopen](../tests/playwright/mcp/artwork-mcp.spec.ts) |
 | Diagnostics, scene/artwork review and budgets | Diagnostics/review/preview panels | `diagnostics`, `palette_report`, `review_artwork`, `review_blockout`, artwork candidate/frame/animation reviews | Saved diagnostics; explicit candidates for preview; review does not save; artwork receipts required to commit, scene review is advisory; reference pages ≤256 locations | Intentional: PNG/SVG/APNG snapshots vs interactive viewing; absent metadata stays unverified; no runtime/physics certification | [MCP review](../tests/backend/adapters/test_mcp_artwork.py), [browser review](../tests/playwright/editor/review.spec.ts), [diagnostics](../tests/playwright/planning/diagnostics.spec.ts) |
-| Recovery, external refresh and conflicts | Browser checkpoint/recovery/download, explicit refresh/reconcile; Undo/Redo | Retain/list/export immutable artwork candidates; fresh saved reads; stale revisions reject | Browser checkpoints and MCP candidate store are separate; 256 retained records/64 MiB with no eviction; candidate recovery does not publish; conflicts preserve local work | Intentional: no MCP access to browser drafts/Undo and no browser inbox for unpublished handles. Handoff through reviewed saved content; rebase explicitly | [Candidate SDK](../tests/backend/adapters/test_mcp_sheets.py), [refresh SDK/browser](../tests/playwright/mcp/refresh.spec.ts), [mixed conflict recovery](../tests/playwright/mcp/artwork-mcp.spec.ts) |
+| Recovery, external refresh and conflicts | Browser checkpoint/recovery/download, explicit refresh/reconcile; Undo/Redo | Retain/list/export immutable artwork candidates; fresh saved reads; stale revisions reject | Browser checkpoints and MCP candidate store are separate; 256 retained records/64 MiB with no eviction; candidate recovery does not publish; conflicts preserve local work | Intentional: no MCP access to browser drafts/Undo. Explicit Agent candidates adoption/return exchanges unpublished snapshots with separate owners; saved handoff uses fresh open. Discovery never rebases local work | [Candidate SDK](../tests/backend/adapters/test_mcp_sheets.py), [refresh SDK/browser](../tests/playwright/mcp/refresh.spec.ts), [mixed conflict recovery](../tests/playwright/mcp/artwork-mcp.spec.ts) |
+
+## Milestone 21 additions
+
+| Outcome | Browser route | MCP route | Boundary / evidence |
+| --- | --- | --- | --- |
+| Literal raster editing and recoloring | Draw tools, selections, exact RGBA | `edit_artwork_raster`, `artwork_colors`; existing exact writes/patches retained | Atomic batches, explicit rectangles and layer targets; simultaneous remaps. [Equivalent measurements](evaluations/artwork-iteration.md); optional noise/near-color diagnostics deferred |
+| Named illustration layers | Artwork layers controls and per-document Undo | `edit_artwork_layers` and explicit `layer_id` | Eight sources, aggregate pixel limit including composite; exact source preservation across recovery/export. [Domain/SDK](../tests/backend/adapters/test_mcp_iteration.py), [browser](../tests/playwright/artwork/iteration.spec.ts) |
+| Immediately visible bounded review | Existing comparison and detail panels | Inline PNG blocks plus resource links; scene overview without camera | Two inline images / 4 MiB decoded; resources/session lifetime retained. [SDK checks](../tests/backend/adapters/test_mcp_iteration.py); changed-pixel overlay deferred |
+| Unpublished handoff | Agent candidates inspect/adopt, Return candidate to agent | Retain/list/export immutable candidates | Separate owner/local history; original saved base remains fixed; review before commit. [Real SDK/browser exchange](../tests/playwright/mcp/iteration-mcp.spec.ts) |
+| Saved artwork discovery and deletion | Library/source choices update while Artwork stays open; existing atlas deletion | `delete_artwork` dry-run/exact plan/current revision | Whole atlas; references block; independent work retained, stale saves reject. [SDK/browser discovery/deletion](../tests/playwright/mcp/iteration-mcp.spec.ts) |
+| Pointer wheel navigation | Ordinary wheel zoom, existing panning controls | Interactive navigation intentionally browser-only | Preserves pixels/dirty/history, scoped to viewport. [Browser coverage](../tests/playwright/artwork/iteration.spec.ts) |
 
 ## Representative equivalence method
 

@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import cast
 
-from gbc_scene_forge.artwork import atlas, editable, png
+from gbc_scene_forge.artwork import atlas, editable, layers, png
 from gbc_scene_forge.core.errors import Conflict, InvalidRequest
 from gbc_scene_forge.core.records import NativeDocument, ProjectCatalog, SceneRecord
 from gbc_scene_forge.core.serialization import json_text
@@ -124,7 +124,12 @@ class ProjectStore:
                 descriptor = editable.read_descriptor(
                     entry, safe_path(self.root, entry["editable"]["path"]).read_bytes()
                 )
-                editable.decode_image(descriptor, safe_path(self.root, entry["png"]).read_bytes())
+                pixels = editable.decode_image(
+                    descriptor, safe_path(self.root, entry["png"]).read_bytes()
+                )
+                layers.verify(
+                    descriptor, pixels, lambda path: safe_path(self.root, path).read_bytes()
+                )
         return document
 
     def commit(

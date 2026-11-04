@@ -135,13 +135,15 @@ def make_handler(root, token):
                     56 * 1024 * 1024
                     if artwork_action == "import-forge"
                     else dimensions.MAX_REQUEST_BYTES
-                    if artwork_action == "artwork-draft-write"
+                    if artwork_action in {"artwork-draft-write", "artwork-layer-sync"}
                     else dimensions.MAX_CANDIDATE_BYTES + 2 * 1024 * 1024
                     if artwork_action
                     in {
                         "artwork-candidate-retain",
                         "artwork-edit",
                         "artwork-layout",
+                        "artwork-layers",
+                        "artwork-candidate-adopt",
                         "artwork-review",
                         "artwork-save",
                         "artwork-animation-review",

@@ -13,6 +13,7 @@ export class ArtworkSession {
   readonly owner = crypto.randomUUID();
   revision: string | null = null;
   checkpointPixels = '';
+  private checkpointLayers: Record<string, string> | undefined;
   private checkpointLayout = '';
   private checkpointAttempted = false;
   private checkpointUncertain = false;
@@ -58,15 +59,30 @@ export class ArtworkSession {
       original: structuredClone(this.original),
       candidate: structuredClone(this.candidate),
       current_descriptor: structuredClone(this.model.descriptor),
-      current_rgba: encoded(this.model.pixels),
+      current_rgba: encoded(this.model.composite()),
+      layer_rgba: this.model.descriptor.layers ? this.model.layerEncoding() : undefined,
       width: this.model.width,
       height: this.model.height,
     };
   }
+  private layersMatch(value: Record<string, string> | undefined) {
+    if (!this.model.descriptor.layers) {
+      return !value;
+    }
+    if (!value) {
+      return false;
+    }
+    const rasters = this.model.layerData();
+    return (
+      rasters.size === Object.keys(value).length &&
+      [...rasters].every(([id, pixels]) => value[id] && this.matches(pixels, value[id]))
+    );
+  }
   get changed() {
     return (
       this.original.operation !== 'edit' ||
-      !this.matches(this.model.pixels, this.original.rgba) ||
+      !this.layersMatch(this.original.layer_rgba) ||
+      !this.matches(this.model.composite(), this.original.rgba) ||
       JSON.stringify(this.model.descriptor) !== JSON.stringify(this.original.descriptor)
     );
   }
@@ -75,7 +91,8 @@ export class ArtworkSession {
       this.pendingCheckpoints > 0 ||
       this.checkpointUncertain ||
       ((this.changed || this.checkpointAttempted) &&
-        (!this.matches(this.model.pixels, this.checkpointPixels) ||
+        (!this.layersMatch(this.checkpointLayers) ||
+          !this.matches(this.model.composite(), this.checkpointPixels) ||
           JSON.stringify(this.model.descriptor) !== this.checkpointLayout))
     );
   }
@@ -87,7 +104,32 @@ export class ArtworkSession {
     this.queue = next;
     return next;
   }
-  private async synchronize(pixels: Uint8ClampedArray, descriptor: Candidate['descriptor']) {
+  private async synchronize(
+    pixels: Uint8ClampedArray,
+    descriptor: Candidate['descriptor'],
+    layerPixels?: Record<string, string>,
+  ) {
+    const sourcesChanged =
+      JSON.stringify(layerPixels) !== JSON.stringify(this.candidate.layer_rgba);
+    const structureChanged =
+      JSON.stringify(descriptor.layers) !== JSON.stringify(this.candidate.descriptor.layers);
+    if (
+      (sourcesChanged || structureChanged) &&
+      this.candidate.descriptor.layers?.items.some((item) => item.locked)
+    ) {
+      // Local Undo may coalesce unlock plus older edits before the next checkpoint.
+      // Stage the explicit unlock before replaying that owned immutable snapshot.
+      this.candidate = await this.api('artwork-layers', decodeCandidate, {
+        candidate: this.candidate,
+        layers: this.candidate.descriptor.layers.items.map((item) => ({ ...item, locked: false })),
+      });
+    }
+    if (!descriptor.layers && this.candidate.descriptor.layers) {
+      this.candidate = await this.api('artwork-layers', decodeCandidate, {
+        candidate: this.candidate,
+        layers: [],
+      });
+    }
     if (
       descriptor.version === 2 &&
       JSON.stringify(descriptor) !== JSON.stringify(this.candidate.descriptor)
@@ -97,6 +139,29 @@ export class ArtworkSession {
         frames: descriptor.frames,
         sequences: descriptor.sequences,
       });
+    }
+    if (descriptor.layers && layerPixels) {
+      if (!sourcesChanged && !structureChanged) {
+        return this.candidate;
+      }
+      const unlocked = descriptor.layers.items.map((item) => ({ ...item, locked: false }));
+      if (JSON.stringify(unlocked) !== JSON.stringify(this.candidate.descriptor.layers?.items)) {
+        this.candidate = await this.api('artwork-layers', decodeCandidate, {
+          candidate: this.candidate,
+          layers: unlocked,
+        });
+      }
+      this.candidate = await this.api('artwork-layer-sync', decodeCandidate, {
+        candidate: this.candidate,
+        layer_rgba: layerPixels,
+      });
+      if (descriptor.layers.items.some((item) => item.locked)) {
+        this.candidate = await this.api('artwork-layers', decodeCandidate, {
+          candidate: this.candidate,
+          layers: descriptor.layers.items,
+        });
+      }
+      return this.candidate;
     }
     const previous = bytes(this.candidate.rgba);
     if (pixels.length > 256 * 256 * 4) {
@@ -175,18 +240,24 @@ export class ArtworkSession {
     await send();
     return this.candidate;
   }
-  checkpoint(snapshot = this.model.pixels) {
+  checkpoint(
+    snapshot = this.model.composite(),
+    layout = this.model.descriptor,
+    layerSnapshot = layout.layers ? this.model.layerEncoding() : undefined,
+  ) {
     const pixels = snapshot.slice();
-    const descriptor = structuredClone(this.model.descriptor);
+    const descriptor = structuredClone(layout);
+    const layerPixels = layerSnapshot;
     // Undo can return to the saved base while an older checkpoint is still queued.
     this.pendingCheckpoints++;
     return this.serialize(async () => {
       if (this.checkpointUncertain) {
         await this.inspectCheckpoint();
       }
-      const candidate = await this.synchronize(pixels, descriptor);
+      const candidate = await this.synchronize(pixels, descriptor, layerPixels);
       if (
         this.matches(pixels, this.checkpointPixels) &&
+        JSON.stringify(layerPixels) === JSON.stringify(this.checkpointLayers) &&
         JSON.stringify(descriptor) === this.checkpointLayout
       ) {
         return;
@@ -205,6 +276,7 @@ export class ArtworkSession {
       });
       this.revision = string(ack.revision);
       this.checkpointPixels = encoded(pixels);
+      this.checkpointLayers = layerPixels;
       this.checkpointLayout = JSON.stringify(descriptor);
       this.checkpointUncertain = false;
     }).finally(() => {
@@ -212,9 +284,10 @@ export class ArtworkSession {
     });
   }
   synchronizeCurrent() {
-    const pixels = this.model.pixels.slice();
+    const pixels = this.model.composite().slice();
     const descriptor = structuredClone(this.model.descriptor);
-    return this.serialize(() => this.synchronize(pixels, descriptor));
+    const layerPixels = descriptor.layers ? this.model.layerEncoding() : undefined;
+    return this.serialize(() => this.synchronize(pixels, descriptor, layerPixels));
   }
   private async inspectCheckpoint() {
     // Any checkpoint may have committed without a response. Inspect our exact
@@ -229,6 +302,7 @@ export class ArtworkSession {
       const draft = await this.api('artwork-draft-download', record, { id: this.id, revision });
       const candidate = decodeCandidate(draft.candidate);
       this.checkpointPixels = candidate.rgba;
+      this.checkpointLayers = candidate.layer_rgba;
       this.checkpointLayout = JSON.stringify(candidate.descriptor);
       this.revision = revision;
     } else {

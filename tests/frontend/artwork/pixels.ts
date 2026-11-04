@@ -490,3 +490,92 @@ try {
 } finally {
   globalThis.btoa = encodeBefore;
 }
+
+// Layer migration, hidden source bytes, locks and history are independent of the composite.
+const baseLayer = {
+  id: '44444444-4444-4444-8444-444444444444',
+  name: 'Base',
+  visible: true,
+  opacity: 255,
+  locked: false,
+};
+const effectLayer = {
+  id: '55555555-5555-4555-8555-555555555555',
+  name: 'Effect',
+  visible: true,
+  opacity: 128,
+  locked: false,
+};
+const layered = new PixelModel(candidate);
+layered.apply(() => layered.put({ x: 0, y: 0 }, red));
+layered.apply(() => layered.setLayers([baseLayer, effectLayer]));
+assert.equal(layered.activeLayer, effectLayer.id);
+layered.apply(() => layered.put({ x: 0, y: 0 }, [0, 0, 255, 255]));
+assert.deepEqual([...layered.composite().slice(0, 4)], [110, 20, 143, 255]);
+layered.undo();
+assert.deepEqual([...layered.composite().slice(0, 4)], red);
+layered.undo();
+assert.equal(layered.activeLayer, null);
+assert.equal(layered.descriptor.layers, undefined);
+assert.deepEqual(layered.color({ x: 0, y: 0 }), red);
+layered.undo();
+assert.deepEqual(layered.color({ x: 0, y: 0 }), [0, 0, 0, 0]);
+layered.redo();
+layered.redo();
+layered.redo();
+assert.deepEqual([...layered.composite().slice(0, 4)], [110, 20, 143, 255]);
+layered.apply(() => layered.setLayers([baseLayer, { ...effectLayer, visible: false }]));
+const hiddenLayerCandidate = decodeCandidate({
+  ...candidate,
+  descriptor: layered.descriptor,
+  rgba: encoded(layered.composite()),
+  layer_rgba: layered.layerEncoding(),
+});
+const hiddenSession = new ArtworkSession(hiddenLayerCandidate, api);
+hiddenSession.model.selectLayer(effectLayer.id);
+hiddenSession.model.apply(() => hiddenSession.model.put({ x: 1, y: 0 }, hidden));
+assert.equal(hiddenSession.changed, true);
+assert.equal(encoded(hiddenSession.model.composite()), hiddenLayerCandidate.rgba);
+hiddenSession.model.undo();
+assert.equal(hiddenSession.changed, false);
+layered.apply(() => layered.setLayers([baseLayer, { ...effectLayer, locked: true }]));
+assert.throws(() => layered.apply(() => layered.put({ x: 0, y: 0 }, red)), /locked/);
+assert.throws(
+  () => layered.apply(() => layered.setLayers([{ ...effectLayer, locked: true }, baseLayer])),
+  /Unlock/,
+);
+assert.throws(() =>
+  decodeDescriptor({
+    ...candidate.descriptor,
+    layers: { version: 1, items: [baseLayer, baseLayer] },
+  }),
+);
+assert.throws(() => decodeCandidate({ ...hiddenLayerCandidate, layer_rgba: {} }));
+console.log('Layer migration, exact composite, hidden RGB, locks and Undo/Redo passed.');
+
+// Sheet geometry adoption must retain layer raster history even with no flat XOR chunks.
+const sheetLayers = new PixelModel(sheet);
+sheetLayers.apply(() => sheetLayers.setLayers([baseLayer, effectLayer]));
+const savedLayeredSheet = decodeCandidate({
+  ...sheet,
+  descriptor: sheetLayers.descriptor,
+  rgba: encoded(sheetLayers.composite()),
+  layer_rgba: sheetLayers.layerEncoding(),
+});
+const layerSheetSession = new ArtworkSession(savedLayeredSheet, api);
+layerSheetSession.model.selectLayer(effectLayer.id);
+layerSheetSession.model.apply(() => layerSheetSession.model.put({ x: 1, y: 1 }, hidden));
+layerSheetSession.adoptSaved(
+  decodeCandidate({
+    ...savedLayeredSheet,
+    rgba: encoded(layerSheetSession.model.composite()),
+    layer_rgba: layerSheetSession.model.layerEncoding(),
+  }),
+);
+assert.equal(layerSheetSession.changed, false);
+assert.equal(layerSheetSession.model.undoStack.length, 1);
+layerSheetSession.model.undo();
+assert.deepEqual(layerSheetSession.model.color({ x: 1, y: 1 }), [0, 0, 0, 0]);
+assert.equal(layerSheetSession.changed, true);
+layerSheetSession.model.redo();
+assert.equal(layerSheetSession.changed, false);

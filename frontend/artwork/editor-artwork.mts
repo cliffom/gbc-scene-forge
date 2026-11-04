@@ -261,24 +261,33 @@ export function createArtworkController({
     }
   }
 
-  function palette(chooseInitial = true) {
+  function palette(
+    chooseInitial = true,
+    snapshot = workspaceState.project,
+    snapshotImages = images,
+    discovery = false,
+  ) {
     const paletteElement = element('palette', HTMLElement);
     paletteElement.replaceChildren();
-    regions.clear();
-    sprites.clear();
-    artworkBrushes.clear();
-    brushes.brush = null;
-    brushes.spriteBrush = null;
-    brushes.definitionBrush = null;
-    brushes.objectBrush = null;
-    if (!workspaceState.project) {
+    if (!discovery) {
+      regions.clear();
+      sprites.clear();
+      artworkBrushes.clear();
+      brushes.brush = null;
+      brushes.spriteBrush = null;
+      brushes.definitionBrush = null;
+      brushes.objectBrush = null;
+    }
+    if (!snapshot) {
       return;
     }
-    select('terrain-brush').value = '';
+    if (!discovery) {
+      select('terrain-brush').value = '';
+    }
     const size = sceneSession.loaded?.grid ?? 8;
     let initialBrush: (() => void) | null = null;
-    for (const [id, atlas] of Object.entries(workspaceState.project.atlases)) {
-      const image = images.get(id);
+    for (const [id, atlas] of Object.entries(snapshot.atlases)) {
+      const image = snapshotImages.get(id);
       if (!image) {
         continue;
       }
@@ -291,7 +300,7 @@ export function createArtworkController({
         const asset = `${id}/${region.name}`;
         const sprite = region.kind === 'sprite';
         const compatible = region.width % size === 0 && region.height % size === 0;
-        if (sprite) {
+        if (sprite && !discovery) {
           sprites.set(asset, { image, region });
         }
         const cells: string[][] = [];
@@ -302,7 +311,9 @@ export function createArtworkController({
             if (atlas.mappings[String(size)]?.[key] === undefined) {
               throw Error(`Missing atlas cell identity: ${key}`);
             }
-            regions.set(key, { image, x: region.x + x * size, y: region.y + y * size });
+            if (!discovery) {
+              regions.set(key, { image, x: region.x + x * size, y: region.y + y * size });
+            }
             row.push(key);
           }
           cells.push(row);
@@ -377,7 +388,7 @@ export function createArtworkController({
           element('paint-label', HTMLElement).textContent = sprite ? 'Place sprite' : 'Paint';
           element('selected-brush', HTMLElement).textContent = `${id} / ${region.name}`;
         };
-        if (!item.disabled) {
+        if (!item.disabled && !discovery) {
           artworkBrushes.set(asset, selectBrush);
         }
         const chooseAsset = (reveal = true) => {

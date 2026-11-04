@@ -27,8 +27,8 @@ to the region. Saved tiles remain `atlas/region/x/y`, resolved with the scene gr
 sprites remain `atlas/region`. Never infer the target from an active window,
 selection, list position, display name or an unqualified local Tiled ID. An
 imported copy operation supplies a source atlas/region and, for tiles, an explicit
-grid/cell. Documents have one implicit raster, with no layer/frame selectors in
-version 1; future layered formats must introduce explicit selectors.
+grid/cell. Flat documents have one implicit raster. The optional layered extension
+below introduces explicit layer selectors without changing static/sheet geometry.
 
 Editing a native document changes every reference to it, including other grid
 views of the tile. Creating a variation allocates a new document UUID and atlas
@@ -83,6 +83,58 @@ work bounds; quarter-turn rotation of a nonsquare selection must fit the fixed
 document. A stroke/compound operation is one undo item and cancels as a unit.
 
 ## Saved format and derived assets
+
+Flat documents retain the representation below. Layered documents add declared
+source assets and a derived flattened image under the following extension.
+
+## Named raster layer extension (version 1)
+
+Static descriptor version 1 and sheet descriptor version 2 may add
+`layers:{version:1,items:[{id,name,visible,opacity,locked}]}`. IDs are stable UUIDs
+scoped to the document, unique within the bottom-to-top list. Names are nonempty
+display names; visibility and locking are booleans; opacity is integer 0..255.
+Frame and scene layers remain separate concepts: illustration layers cover the
+whole document canvas, including all frames in a sheet.
+
+Layered candidates additionally carry `layer_rgba:{"<layer UUID>":"<base64 RGBA>"}`
+with exactly one full-canvas straight RGBA raster per item. These sources preserve
+hidden RGB even when invisible. Candidate `rgba` must equal the deterministic
+visible composite. Composite starts transparent black and processes bottom to top:
+effective alpha is `floor((source_alpha * opacity + 127)/255)`; source-over uses
+integer premultiplied numerators with half-up division, then returns straight RGB.
+Transparent source pixels do not contribute RGB to the composite. Revisions and
+review receipts include every source byte and metadata field, even when invisible.
+
+Native editable pointers add `layers:["<UUID>",…]`, matching descriptor order.
+Authoritative source PNGs live at `assets/<atlas>/layers/<UUID>.png`; the descriptor,
+source PNGs, derived flattened `atlas.png`, scene-facing assets and map rewrites
+commit atomically. Save/reopen, recovery and project/scene export/transfer retain
+the sources. Whole-sheet duplication preserves layer IDs in its new document
+scope; copying a single region/cell takes flattened visible pixels. Existing
+flat files stay valid. Older releases reject the extension rather than opening a
+silently flattened editable document.
+
+Explicit migration supplies the base item first, receiving all existing flat bytes;
+additional new IDs start transparent. Metadata replacement retains pixels by ID.
+MCP reads, counts and pixel/raster writes require `layer_id` on layered candidates.
+A locked layer rejects pixel writes, removal, reorder, visibility/name/opacity
+changes; only an explicit unlock is allowed. Moving other items across a locked
+position also requires unlocking it. `edit_artwork_layers` with `[]` explicitly
+flattens unlocked sources to the current composite. Browser migration Undo can
+restore the prior flat raster; local Undo is never transferred in a checkpoint.
+
+Layer count is 1..8, with **4,194,304 aggregate pixels including the composite**
+(≤16 MiB decoded), rather than that maximum for every layer. Per-layer pixels
+are ≤half that budget even for one layer. Candidate ≤24 MiB, draft ≤49 MiB,
+retained candidates ≤64 MiB/project and drafts ≤128 MiB/project remain independent
+serialized limits. HTTP full layer synchronization uses the 50 MiB artwork limit;
+MCP input remains 26 MiB. Browser history stores exact layer snapshots under the
+same 100-operation/64 MiB per-document budget; its active edit/copies are additional.
+Rendering, validation, serialization and recovery allocate working copies beyond
+these raw limits; [measurements](evaluations/artwork-iteration.md) describe observed
+process costs, not total-memory guarantees.
+
+## Flat saved representation
 
 Retain project manifest version 1 and introduce an optional atlas-entry field:
 `"editable": {"id": "<document UUID>", "path": "assets/<atlas_id>/editable.json"}`.

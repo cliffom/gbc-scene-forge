@@ -43,6 +43,12 @@ to native document/review services and `artwork/drafts.py`. That adapter encodes
 review PNG bytes as base64 and requires a review receipt for browser saves;
 owned checkpoints remain outside committed project inventory.
 
+Within artwork, `raster.py` owns bounded literal drawing/transforms/counts;
+`layers.py` owns the optional source-layer contract and integer compositing;
+`deletion.py` owns guarded reference-aware saved deletion and exact acknowledgments.
+Document services persist sources and derived scene assets in one transaction.
+Both transports use those rules; adapters do not implement a second raster model.
+
 `adapters/http/server.py` owns HTTP framing, host/token checks, request limits,
 error translation and request serialization. Its small `WORKSPACE_ROUTES`
 registry handles workspace catalog/creation; scoped project dispatch preserves

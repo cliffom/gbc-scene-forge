@@ -15,6 +15,42 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Human–agent artwork iteration (milestone 21)
+
+- **Scope:** Prepared 0.32.0 working tree on `milestone/21-artwork-iteration`,
+  based on `c55fc8df32f3434438436f10f2a1e7d122bea00e`, checked 2026-11-03 on
+  macOS 27.0.1 arm64 / Apple M4 Max, Python 3.13.13, Node 24.22.1,
+  MCP SDK 1.30.0 and Playwright 1.64.1 / Chromium 156.0.8078.4.
+- **Method:** Domain/SDK regressions exercise exact PNG/raster/layer bytes, source
+  targeting, ownership, stale review/base guards, interrupted layered-save recovery,
+  portable transfers and deletion. Browser automation covers layer history/save,
+  anchored wheel zoom, separately owned unpublished exchange, saved continuation
+  and discovery/deletion while another document stays dirty. Installed plain and
+  optional-MCP wheels supply smoke, first-use and SDK/browser checks. Agent
+  screenshot inspection covers desktop layers and unpublished return at 1440×1000
+  and compact layers at 760×800. The [evaluation](evaluations/artwork-iteration.md)
+  archives captures, deterministic equivalent-task methods and raw transport,
+  latency, peak memory, retention, recovery and history observations.
+- **Result:** `make docs-check lint test` passes with 447 Python tests and all
+  TypeScript suites. Production build/distribution checks and seven installed-wheel
+  smoke tests pass. Production browser acceptance passes 127 cases with 11 opt-in
+  profiling cases skipped; installed-wheel first use, 93 optional MCP tests and
+  five SDK/browser cases pass. The initial broad run exposed a dense short-window
+  Confirm save obstruction; bounded layer sidebars and document actions correct
+  it. An intermediate run mixed development expectations with rebuilt production
+  assets and failed two version-label assertions; that run is excluded from product
+  evidence. The final explicit production run passes both assertions. Review also
+  corrected layer reads/counts to identify the original candidate revision and source
+  layer, with regression assertions. In the fixed 375×525 task, tool calls drop
+  from 12 to 5; large layered snapshots still have substantial working memory costs.
+- **Limits:** These are local synthetic observations and agent inspection, not a
+  new independent-human or CI result. The single measurement run does not establish
+  general speed, artistic-quality parity, maximum-layer/low-memory suitability,
+  physical wheel/trackpad comfort or non-Chromium behavior. Official Tiled and
+  rasterizer applications were unavailable. Near-color/noise diagnostics and
+  changed-pixel overlays remain explicitly deferred; existing participant-dependent
+  acceptance remains open in the single Remaining checks list below.
+
 ## PR #183 maximum-axis artwork Fit correction
 
 - **Scope:** Prepared 0.31.0 working tree based on
@@ -1689,6 +1725,10 @@ Dates, revisions and environments missing from the originals remain unknown.
   claim is made by this local record.
 
 ## Remaining checks
+
+### Human–agent artwork iteration (milestone 21)
+
+- [ ] Assess prolonged layered drawing, wheel/trackpad comfort and unpublished handoff discovery with independent users on physical devices, including lower-memory hardware. The [synthetic workflow and resource evaluation](evaluations/artwork-iteration.md) establishes bounded automated outcomes, not human usability or external-tool art-quality parity.
 
 ### Existing workflow usability (milestone 17, #165–#167)
 

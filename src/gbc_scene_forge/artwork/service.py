@@ -10,7 +10,7 @@ from gbc_scene_forge.artwork.review import ArtworkReview
 from gbc_scene_forge.core.errors import Conflict
 from gbc_scene_forge.core.records import NativeDocument
 from gbc_scene_forge.core.serialization import json_text
-from gbc_scene_forge.core.validation import identifier, require
+from gbc_scene_forge.core.validation import require
 from gbc_scene_forge.formats import tiled
 from gbc_scene_forge.project.store import ProjectStore
 from gbc_scene_forge.storage.files import digest
@@ -75,87 +75,12 @@ class ArtworkService:
         """Validate an explicit atlas path before preparing its guarded import."""
         return self._import_bundle(atlas.load_bundle(path), revision, reimport=reimport)
 
-    def delete_atlas(
-        self, atlas_id: str, revision: str, *, scene_guard: NativeDocument | None = None
-    ) -> NativeDocument:
-        """Delete unreferenced artwork while guarding every affected scene."""
-        document = self.store.current(revision)
-        require(
-            identifier(atlas_id) and atlas_id in document["atlases"],
-            "Choose an imported atlas",
+    def delete_atlas(self, atlas_id, revision, *, scene_guard=None, dry_run=False, plan=None):
+        from gbc_scene_forge.artwork.deletion import delete
+
+        return delete(
+            self.store, atlas_id, revision, scene_guard=scene_guard, dry_run=dry_run, plan=plan
         )
-        prefix = atlas_id + "/"
-        scenes = [self.store.load_scene(item["id"], document) for item in document["scenes"]]
-        if scene_guard is not None:
-            require(
-                isinstance(scene_guard, dict) and set(scene_guard) == {"id", "revision"},
-                "Expected the open scene's ID and revision",
-            )
-            current = next((item for item in scenes if item["id"] == scene_guard["id"]), None)
-            if current is None or current["revision"] != scene_guard["revision"]:
-                raise Conflict(
-                    "The open scene changed on disk. Reopen it before deleting an atlas."
-                )
-        used = [
-            item["name"]
-            for item in scenes
-            if any(
-                cell.startswith(prefix)
-                for layer in tiled.scene_layers(item["scene"])
-                for row in layer.get("cells", [])
-                for cell in row
-            )
-            or any(
-                obj.get("asset", "").startswith(prefix)
-                for layer in tiled.scene_layers(item["scene"])
-                for obj in layer.get("objects", [])
-            )
-        ]
-        used += [
-            "definition " + d["name"]
-            for d in document.get("object_definitions", {}).get("definitions", [])
-            if d.get("asset", "").startswith(prefix)
-        ]
-        used += [
-            "stamp " + stamp["name"]
-            for stamp in document.get("stamps", [])
-            if any(
-                cell.startswith(prefix)
-                for layer in tiled.scene_layers(stamp["scene"])
-                for row in layer.get("cells", [])
-                for cell in row
-            )
-            or any(
-                obj.get("asset", "").startswith(prefix)
-                for layer in tiled.scene_layers(stamp["scene"])
-                for obj in layer.get("objects", [])
-            )
-        ]
-        require(
-            not used,
-            "Atlas is used by saved scenes: "
-            + ", ".join(used)
-            + ". Remove its placements and save those scenes before deleting it.",
-        )
-        changes = {
-            path: None for path in document["files"] if path.startswith(f"assets/{atlas_id}/")
-        }
-        del document["atlases"][atlas_id]
-        expected = {}
-        # Maps list shared tilesets even when empty. Rewrite GID ranges using the
-        # old semantic snapshots so remaining assets keep their identities.
-        for item in scenes:
-            path = f"scenes/{item['id']}.tmj"
-            changes[path] = json_text(tiled.encode(item["scene"], document)).encode()
-            expected[path] = item["revision"]
-        self.store.commit(document, revision, changes, expected, "Delete atlas")
-        return {
-            "deleted": atlas_id,
-            "scene_revisions": {
-                item["id"]: digest(changes[f"scenes/{item['id']}.tmj"]) for item in scenes
-            },
-            **self.store.catalog(),
-        }
 
     def import_bundle(
         self,

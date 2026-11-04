@@ -374,9 +374,10 @@
     <div class="dialog-actions"><button id="conversion-close">Cancel</button><button id="conversion-review">Review mapping</button><button id="conversion-save" disabled>Replace reviewed placements</button></div>
   </dialog>
   <dialog id="artwork-dialog" aria-labelledby="artwork-heading">
-    <header class="art-heading"><h2 id="artwork-heading">Artwork</h2><span id="art-scope-label" class="muted"></span><div class="art-heading-actions"><button id="art-properties-toggle" aria-expanded="false">Properties</button><button id="art-close">Return to scene</button></div></header>
+    <header class="art-heading"><h2 id="artwork-heading">Artwork</h2><span id="art-scope-label" class="muted"></span><div class="art-heading-actions"><button id="art-layers-toggle" aria-expanded="false" aria-controls="art-layer-panel">Layers</button><button id="art-properties-toggle" aria-expanded="false">Properties</button><button id="art-close">Return to scene</button></div></header>
     <p id="art-message" role="status" aria-live="polite"></p>
     <div id="art-setup">
+    <details id="art-handoff"><summary>Agent candidates</summary><p>Inspect unpublished snapshots, then adopt a separate editable copy. Saved artwork is unchanged. Existing documents and their Undo histories are retained.</p><button id="art-handoff-list" type="button">Refresh candidates</button><div id="art-handoff-candidates"></div></details>
     <details id="art-recovery" hidden><summary>Recoverable artwork</summary><p>Recover a copy after checking its saved base. The original checkpoint remains available.</p><div id="art-drafts"></div></details>
     <div id="art-start">
       <div class="art-start-tabs"><button id="art-new-mode" aria-pressed="true">New artwork</button><button id="art-existing-mode" aria-pressed="false">Existing artwork</button></div>
@@ -429,7 +430,18 @@
 <div id="art-palette" popover="auto" aria-label="Artwork palette"><p id="art-palette-count" class="hint"></p><div id="art-swatches" class="art-swatches" aria-label="Artwork colors sorted by hue"></div></div>
 </div>
       </div>
-      <div class="art-workspace"><div id="art-viewport" class="art-canvas-scroll"><div id="art-stage"><canvas id="art-canvas" tabindex="0" aria-label="Pixel artwork canvas" aria-describedby="art-navigation-help"></canvas><div id="art-pixel-grid" aria-hidden="true" hidden></div><div id="art-target" aria-hidden="true" hidden></div></div></div><aside id="art-properties" hidden><h3>Frame properties</h3><label class="field">Frame name<input id="art-frame-name" maxlength="100"></label><button id="art-rename-frame">Rename frame</button><p id="art-frame-geometry"></p><details><summary>Representations</summary><p class="hint">Tile representations share pixels with this sprite. Adding one does not replace placements.</p><button id="art-tile-representation">Add tile representation</button></details><canvas id="art-repeat-canvas" aria-label="Tile repetition preview" hidden></canvas></aside><aside class="art-review" hidden><div class="art-review-heading"><h3>Review changes</h3><button id="art-review-close">Close review</button></div>
+      <div class="art-workspace"><div id="art-viewport" class="art-canvas-scroll"><div id="art-stage"><canvas id="art-canvas" tabindex="0" aria-label="Pixel artwork canvas" aria-describedby="art-navigation-help"></canvas><div id="art-pixel-grid" aria-hidden="true" hidden></div><div id="art-target" aria-hidden="true" hidden></div></div></div>      <aside id="art-layer-panel" hidden><h3>Artwork layers</h3>
+        <label>Layer <select id="art-layer"></select></label>
+        <button id="art-layer-add" type="button">Add layer</button>
+        <button id="art-layer-up" type="button">Move up</button><button id="art-layer-down" type="button">Move down</button>
+        <button id="art-layer-remove" type="button">Remove layer</button>
+        <label>Name <input id="art-layer-name" maxlength="100"></label>
+        <label><input id="art-layer-visible" type="checkbox" checked>Visible</label>
+        <label>Opacity <input id="art-layer-opacity" type="number" min="0" max="255" value="255"></label>
+        <label><input id="art-layer-locked" type="checkbox">Locked</label>
+        <button id="art-layer-update" type="button">Update layer</button>
+      </aside>
+<aside id="art-properties" hidden><h3>Frame properties</h3><label class="field">Frame name<input id="art-frame-name" maxlength="100"></label><button id="art-rename-frame">Rename frame</button><p id="art-frame-geometry"></p><details><summary>Representations</summary><p class="hint">Tile representations share pixels with this sprite. Adding one does not replace placements.</p><button id="art-tile-representation">Add tile representation</button></details><canvas id="art-repeat-canvas" aria-label="Tile repetition preview" hidden></canvas></aside><aside class="art-review" hidden><div class="art-review-heading"><h3>Review changes</h3><button id="art-review-close">Close review</button></div>
         <label><input id="art-use-scene" type="checkbox" checked> Preview in the open scene</label>
         <button id="art-review">Update review</button>
         <details><summary>Artwork detail view</summary><p class="hint">The default review shows the whole artwork. Review any region at native resolution.</p><label><input id="art-review-detail" type="checkbox"> Review detail region</label><div class="property-grid"><label class="field">X<input id="art-review-x" type="number" min="0" value="0"></label><label class="field">Y<input id="art-review-y" type="number" min="0" value="0"></label><label class="field">Width<input id="art-review-width" type="number" min="1" max="1024" value="256"></label><label class="field">Height<input id="art-review-height" type="number" min="1" max="1024" value="256"></label></div></details><p id="art-review-view" class="hint"></p>
@@ -440,7 +452,9 @@
         <div id="art-comparison" hidden><p id="art-references"></p><details id="art-reference-details" hidden><summary id="art-reference-summary">Saved source references</summary><p id="art-reference-scenes"></p><ul id="art-reference-locations"></ul><p id="art-reference-limit" class="hint"></p></details><figure><figcaption>Saved artwork</figcaption><img id="art-before" alt="Saved artwork before pixel edits"></figure><figure><figcaption>Candidate artwork</figcaption><img id="art-after" alt="Candidate artwork after pixel edits"></figure><figure><figcaption>Scene before</figcaption><img id="art-scene-before" alt="Scene with saved artwork"></figure><figure><figcaption>Scene after</figcaption><img id="art-scene-after" alt="Scene with candidate artwork"></figure></div>
       </aside></div>
       <p id="art-draft-status" role="status"></p>
-      <div class="dialog-actions"><details class="art-document-actions"><summary>Document actions</summary><div><button id="art-download">Download work</button><button id="art-discard" class="destructive-command">Close / discard draft</button></div></details><button id="art-save" class="primary" disabled>Save…</button></div>
+      <div class="dialog-actions"><details class="art-document-actions"><summary>Document actions</summary><div>      <button id="art-handoff-return" type="button">Return candidate to agent</button>
+      <pre id="art-handoff-result" hidden></pre>
+<button id="art-download">Download work</button><button id="art-discard" class="destructive-command">Close / discard draft</button></div></details><button id="art-save" class="primary" disabled>Save…</button></div>
     </div>
   </dialog>
   <dialog id="tile-dialog" aria-labelledby="tile-heading">

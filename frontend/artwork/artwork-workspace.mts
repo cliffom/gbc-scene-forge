@@ -67,6 +67,8 @@ export function createArtworkWorkspace(
       button('art-save').textContent = 'Save…';
     }
     if (open) {
+      element('art-layer-panel', HTMLElement).hidden = true;
+      button('art-layers-toggle').setAttribute('aria-expanded', 'false');
       element('art-properties', HTMLElement).hidden = true;
       button('art-properties-toggle').setAttribute('aria-expanded', 'false');
     }
@@ -79,6 +81,8 @@ export function createArtworkWorkspace(
     const panel = element('art-properties', HTMLElement);
     panel.hidden = !panel.hidden;
     if (!panel.hidden) {
+      element('art-layer-panel', HTMLElement).hidden = true;
+      button('art-layers-toggle').setAttribute('aria-expanded', 'false');
       reviewPanel(false);
     }
     button('art-properties-toggle').setAttribute('aria-expanded', String(!panel.hidden));

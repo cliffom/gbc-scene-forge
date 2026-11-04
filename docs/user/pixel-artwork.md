@@ -9,6 +9,50 @@ A selected variation changes only its captured placements, even when the source 
 more references. Imported originals require an editable copy before drawing.
 
 For agent handoffs, see the [browser/MCP outcome matrix](../AUTHORING-OUTCOMES.md).
+
+## Layers, agent exchange and navigation
+
+Open **Layers** above the drawing viewport to add a layer, choose the
+active layer, rename, reorder, hide, set opacity (0..255) or lock it. First **Add
+layer** retains flat artwork as **Base** and adds a transparent layer. Draw tools
+edit the selected source; the canvas and scenes show the visible composite.
+Unlock a layer before changing its pixels or structure. Layer changes and pixels
+share this document's Undo/Redo; checkpoints retain exact source pixels but do not
+contain the local Undo stack. Save → review → Confirm save publishes all sources
+and their derived composite together. Whole-sheet copies retain layers; individual
+region/cell copies use visible flattened pixels. The [native contract](../EDITABLE-ARTWORK.md#named-raster-layer-extension-version-1)
+defines limits and older-version rejection. Hidden source RGB is preserved even
+when it cannot appear in the composite.
+
+**New artwork → Agent candidates → Refresh candidates** lists retained unpublished
+MCP snapshots. **Inspect snapshot** shows/downloads the selected revision without
+saving. **Adopt a copy** checks its saved base and opens separately owned local
+work with a new Undo history; other open documents keep their history/checkpoints.
+**Document actions → Return candidate to agent** checkpoints and downloads an immutable handle that
+the agent can list/export and edit against its actual saved base. It does not
+publish. A later browser/MCP save still needs fresh review and guards. Stale work
+can be inspected/downloaded but must be reconciled explicitly before adoption or
+save. Candidate copies persist until explicit export/release; closing a local
+draft does not remove another owner's candidate. Recovery survives restart;
+in-memory Undo does not.
+
+With **Auto-refresh** enabled, the Library and source choices discover MCP saves
+and deletion while Artwork remains open. This updates discovery, preserving the
+open document's pixels, saved base, selection, view and Undo. Real modal dialogs,
+active gestures, pending writes, editing a form or hidden windows pause discovery.
+Use **Project tools → Check for external changes** when automatic refresh is off.
+To adopt another saved revision of an already-open document, retain/download its
+local work, explicitly close it and reopen the saved artwork; discovery never
+silently rebases that document.
+
+Ordinary wheel input over the drawing viewport zooms in (up) or out (down), keeping
+the artwork point under the pointer stable where scrolling permits. Surrounding
+viewport space uses the same canvas-relative anchor. Small trackpad deltas
+accumulate to a bounded zoom step; a large event still changes one preset. Wheel
+input at limits stays in the viewport without scrolling the page. Other panels
+retain ordinary scrolling. Ctrl/Meta-wheel and pinch retain browser page zoom.
+Wheel navigation pauses during drawing/panning and never paints or adds history.
+Pan-tool dragging, Space-drag and middle-button panning remain available.
 Saved artwork appears in both interfaces; an unpublished agent candidate is separate
 from browser local documents and recovery checkpoints.
 

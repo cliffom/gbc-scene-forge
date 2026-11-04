@@ -10,6 +10,7 @@ export class ArtworkRaster {
   private frames = new Map<string, number>();
 
   refresh(model: PixelModel) {
+    const pixels = model.composite();
     const replaced = this.model !== model;
     if (replaced) {
       this.frames.clear();
@@ -29,12 +30,12 @@ export class ArtworkRaster {
     }
     // Models expose mutable bytes, and history can replace them. Comparing the
     // owned snapshot catches both without trusting a persistent mutation flag.
-    for (let i = 0; i < model.pixels.length; i += 4) {
+    for (let i = 0; i < pixels.length; i += 4) {
       let changed = false;
       for (let channel = 0; channel < 4; channel++) {
-        if (this.data.data[i + channel] !== model.pixels[i + channel]) {
+        if (this.data.data[i + channel] !== pixels[i + channel]) {
           changed = true;
-          this.data.data[i + channel] = model.pixels[i + channel];
+          this.data.data[i + channel] = pixels[i + channel];
         }
       }
       if (changed) {

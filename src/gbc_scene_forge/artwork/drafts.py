@@ -48,10 +48,15 @@ class ArtworkDrafts:
         editable.check_candidate(original)
         editable.check_candidate(candidate)
         require(original["project_id"] == project_id, "Draft belongs to another project")
-        excluded = {"rgba", "revision"}
+        excluded = {"rgba", "layer_rgba", "revision", "descriptor"}
+        original_flat = {k: v for k, v in original["descriptor"].items() if k != "layers"}
+        candidate_flat = {k: v for k, v in candidate["descriptor"].items() if k != "layers"}
+        if original_flat["version"] != 2 or candidate_flat["version"] != 2:
+            require(
+                original_flat == candidate_flat, "Draft geometry and identity must remain unchanged"
+            )
         if original["descriptor"]["version"] == candidate["descriptor"]["version"] == 2:
-            sheets.compatible(original["descriptor"], candidate["descriptor"])
-            excluded.add("descriptor")
+            sheets.compatible(original_flat, candidate_flat)
         require(
             {k: v for k, v in original.items() if k not in excluded}
             == {k: v for k, v in candidate.items() if k not in excluded},

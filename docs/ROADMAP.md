@@ -5,8 +5,10 @@ editable tile and sprite sheets, native animation, scene/artwork documents,
 artwork-free blockouts, optional MCP and conflict-aware recovery. See
 [usage](STANDALONE.md) and the [changelog](CHANGELOG.md) for supported behavior.
 
-Open milestone state was checked on 2026-11-03. Stabilization of existing workflows
-precedes new authoring features. Open priority order is **17 → 18 → 19**;
+Open milestone state was checked on 2026-11-03. The user selected
+[milestone 21](https://github.com/cliffom/gbc-scene-forge/milestone/21), human–agent
+artwork iteration, for the next release. Its scoped implementation/evaluation
+precedes the remaining priority order **17 → 18 → 19**;
 these outcomes have no promised dates. Validation gaps live in the
 [single remaining-check list](VALIDATION.md#remaining-checks).
 
