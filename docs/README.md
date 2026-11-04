@@ -42,6 +42,8 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Evaluations
 
+- [MCP illustration preparation, lifecycle and batch measurements (#201)](evaluations/illustration-production.md)
+
 - [Human–agent artwork iteration (#189)](evaluations/artwork-iteration.md)
 - [Large illustrations and hue-sorted palette (#181)](evaluations/large-artwork.md)
 
@@ -72,6 +74,8 @@ Test ownership and commands are in [test organization](../tests/README.md).
 - [Artwork opening and layered visibility (#202, #207)](evaluations/artwork-opening.md)
 
 ## Release notes
+
+- [Scene Forge 0.34.0](RELEASE-0.34.0.md) — MCP illustration preparation and lifecycle.
 
 - [Scene Forge 0.33.3](RELEASE-0.33.3.md) — artwork opening and layer responsiveness.
 

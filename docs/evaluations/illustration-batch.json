@@ -1,0 +1,251 @@
+{
+  "environment": {
+    "python": "3.13.13",
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O"
+  },
+  "samples": [
+    {
+      "route": "full",
+      "size": 64,
+      "calls": 4,
+      "request_bytes": 223167,
+      "response_bytes": 533138,
+      "milliseconds": 106.91,
+      "retained_records": 0,
+      "retained_bytes": 0
+    },
+    {
+      "route": "full",
+      "size": 64,
+      "calls": 4,
+      "request_bytes": 223167,
+      "response_bytes": 533138,
+      "milliseconds": 109.11,
+      "retained_records": 0,
+      "retained_bytes": 0
+    },
+    {
+      "route": "full",
+      "size": 64,
+      "calls": 4,
+      "request_bytes": 223167,
+      "response_bytes": 533138,
+      "milliseconds": 107.32,
+      "retained_records": 0,
+      "retained_bytes": 0
+    },
+    {
+      "route": "compact",
+      "size": 64,
+      "calls": 4,
+      "request_bytes": 2406,
+      "response_bytes": 2880,
+      "milliseconds": 117.25,
+      "retained_records": 4,
+      "retained_bytes": 267355
+    },
+    {
+      "route": "compact",
+      "size": 64,
+      "calls": 4,
+      "request_bytes": 2406,
+      "response_bytes": 2880,
+      "milliseconds": 121.64,
+      "retained_records": 4,
+      "retained_bytes": 267355
+    },
+    {
+      "route": "compact",
+      "size": 64,
+      "calls": 4,
+      "request_bytes": 2406,
+      "response_bytes": 2880,
+      "milliseconds": 126.78,
+      "retained_records": 4,
+      "retained_bytes": 267355
+    },
+    {
+      "route": "batch",
+      "size": 64,
+      "calls": 1,
+      "request_bytes": 1203,
+      "response_bytes": 720,
+      "milliseconds": 47.81,
+      "retained_records": 1,
+      "retained_bytes": 66838
+    },
+    {
+      "route": "batch",
+      "size": 64,
+      "calls": 1,
+      "request_bytes": 1203,
+      "response_bytes": 720,
+      "milliseconds": 46.54,
+      "retained_records": 1,
+      "retained_bytes": 66838
+    },
+    {
+      "route": "batch",
+      "size": 64,
+      "calls": 1,
+      "request_bytes": 1203,
+      "response_bytes": 720,
+      "milliseconds": 47.09,
+      "retained_records": 1,
+      "retained_bytes": 66838
+    },
+    {
+      "route": "full",
+      "size": 256,
+      "calls": 4,
+      "request_bytes": 3499975,
+      "response_bytes": 8397474,
+      "milliseconds": 346.7,
+      "retained_records": 0,
+      "retained_bytes": 0
+    },
+    {
+      "route": "full",
+      "size": 256,
+      "calls": 4,
+      "request_bytes": 3499975,
+      "response_bytes": 8397474,
+      "milliseconds": 345.74,
+      "retained_records": 0,
+      "retained_bytes": 0
+    },
+    {
+      "route": "full",
+      "size": 256,
+      "calls": 4,
+      "request_bytes": 3499975,
+      "response_bytes": 8397474,
+      "milliseconds": 341.3,
+      "retained_records": 0,
+      "retained_bytes": 0
+    },
+    {
+      "route": "compact",
+      "size": 256,
+      "calls": 4,
+      "request_bytes": 2406,
+      "response_bytes": 2880,
+      "milliseconds": 351.99,
+      "retained_records": 4,
+      "retained_bytes": 4199523
+    },
+    {
+      "route": "compact",
+      "size": 256,
+      "calls": 4,
+      "request_bytes": 2406,
+      "response_bytes": 2880,
+      "milliseconds": 350.02,
+      "retained_records": 4,
+      "retained_bytes": 4199523
+    },
+    {
+      "route": "compact",
+      "size": 256,
+      "calls": 4,
+      "request_bytes": 2406,
+      "response_bytes": 2880,
+      "milliseconds": 345.2,
+      "retained_records": 4,
+      "retained_bytes": 4199523
+    },
+    {
+      "route": "batch",
+      "size": 256,
+      "calls": 1,
+      "request_bytes": 1203,
+      "response_bytes": 720,
+      "milliseconds": 182.13,
+      "retained_records": 1,
+      "retained_bytes": 1049880
+    },
+    {
+      "route": "batch",
+      "size": 256,
+      "calls": 1,
+      "request_bytes": 1203,
+      "response_bytes": 720,
+      "milliseconds": 191.26,
+      "retained_records": 1,
+      "retained_bytes": 1049880
+    },
+    {
+      "route": "batch",
+      "size": 256,
+      "calls": 1,
+      "request_bytes": 1203,
+      "response_bytes": 720,
+      "milliseconds": 182.24,
+      "retained_records": 1,
+      "retained_bytes": 1049880
+    }
+  ],
+  "medians": [
+    {
+      "size": 64,
+      "route": "full",
+      "calls": 4,
+      "request_bytes": 223167,
+      "response_bytes": 533138,
+      "milliseconds": 107.32,
+      "retained_records": 0,
+      "retained_bytes": 0
+    },
+    {
+      "size": 64,
+      "route": "compact",
+      "calls": 4,
+      "request_bytes": 2406,
+      "response_bytes": 2880,
+      "milliseconds": 121.64,
+      "retained_records": 4,
+      "retained_bytes": 267355
+    },
+    {
+      "size": 64,
+      "route": "batch",
+      "calls": 1,
+      "request_bytes": 1203,
+      "response_bytes": 720,
+      "milliseconds": 47.09,
+      "retained_records": 1,
+      "retained_bytes": 66838
+    },
+    {
+      "size": 256,
+      "route": "full",
+      "calls": 4,
+      "request_bytes": 3499975,
+      "response_bytes": 8397474,
+      "milliseconds": 345.74,
+      "retained_records": 0,
+      "retained_bytes": 0
+    },
+    {
+      "size": 256,
+      "route": "compact",
+      "calls": 4,
+      "request_bytes": 2406,
+      "response_bytes": 2880,
+      "milliseconds": 350.02,
+      "retained_records": 4,
+      "retained_bytes": 4199523
+    },
+    {
+      "size": 256,
+      "route": "batch",
+      "calls": 1,
+      "request_bytes": 1203,
+      "response_bytes": 720,
+      "milliseconds": 182.24,
+      "retained_records": 1,
+      "retained_bytes": 1049880
+    }
+  ],
+  "exact_sources_equal": true
+}

@@ -15,6 +15,35 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## MCP illustration production (#201)
+
+- **Scope:** Prepared 0.34.0 working tree based on `a7721a8`, local agent checks
+  on 2026-11-04, macOS 27.0.1 arm64 / Apple M4 Max, Python 3.13.13 and
+  Chromium 156.0.8078.4. No independent-user observation is claimed.
+- **Method:** Run the official-SDK static illustration example and identical-edit
+  stdio measurements with three repetitions per route/size. Compare exact native
+  sources and inspect the generated 900×520 contact-sheet capture. Exercise
+  bounded input, stale receipt, archive interruption and partial release cases;
+  run repository checks and installed-wheel verification. See the
+  [evaluation, raw samples and screenshot](evaluations/illustration-production.md).
+- **Result:** Lint/docs checks, 462 Python tests and the TypeScript suites pass.
+  Production wheel/source build, metadata and seven installed-wheel smoke cases
+  pass; regular Chrome acceptance passes 158 cases with 12 opt-in profile skips,
+  and all six browser/MCP coexistence cases pass. The static fixture completes layered intake, resize, palette
+  conversion, drawing, review, export, guarded publication, exact reopen and
+  archive cleanup in 12 tool calls without an external image editor. Batched
+  edits retain one result instead of four intermediates; at 256×256 local median
+  edit latency was 182.24 ms versus 350.02 ms for compact steps. Compact payloads
+  alone did not improve measured latency. Initial checks exposed a listing test
+  that assumed name was its only descriptive field; it now extracts the explicit
+  handle keys. The SDK example initially had a helper argument/name collision,
+  corrected before the successful measured run.
+- **Limits:** Synthetic technical fidelity only; no artistic or human-usability
+  conclusion. Independent copies preserve original references; sheet preparation
+  explicitly discards frame slicing/timing. Some alpha/layer budgets reject.
+  Archive files are separate recovery copies outside the retained quota and project
+  exports. Measurements exclude setup/export and do not profile CPU or memory.
+
 ## Artwork opening and layered visibility (#202, #207)
 
 - **Scope:** Prepared 0.33.3 working tree based on `4058c30`, checked on

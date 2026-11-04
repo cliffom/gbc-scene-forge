@@ -264,7 +264,9 @@ class LargeArtworkTests(unittest.TestCase):
         listing = mcp("list_artwork_candidates")["candidates"]
         self.assertEqual(len(listing), 2)
         listed = next(c for c in listing if c.get("owner") == other_owner)
-        listed = {k: v for k, v in listed.items() if k != "name"}
+        listed = {
+            k: listed[k] for k in ("handle", "project_id", "project_revision", "revision", "owner")
+        }
         self.assertEqual(mcp("export_artwork_candidate", candidate=listed), candidate)
         continued = mcp(
             "edit_artwork_pixels",

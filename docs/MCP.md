@@ -898,3 +898,191 @@ selected poses explicitly become static scenery. Layer splitting preserves overl
 order. Conversion reads at most 16 MiB of map input and produces at most
 1,048,576 tile cells across output layers, within the existing scene limits.
 The browser uses these same services.
+
+## Static illustration production
+
+The optional MCP tools support native preparation and delivery without an external
+image editor. See the executable [SDK example](../examples/mcp/illustration_workflow.py)
+and [technical evaluation](evaluations/illustration-production.md). The example
+creates a fresh disposable project under its output, publishes its deterministic
+fixture, exports artwork and verifies exact saved layers; an interactive client
+should inspect the review artifacts before choosing to commit.
+
+```sh
+python examples/mcp/illustration_workflow.py --output /tmp/forge-illustration
+```
+
+### Storage and explicit cleanup
+
+`list_artwork_candidates` reports `used_count`, `used_bytes`, `remaining_count`,
+`remaining_bytes`, limits and each candidate's `bytes`, original project revision,
+owner and `stale_project_base`. `saved_content.matches` means the current saved
+native document has the same document ID, descriptor, tile metadata, composite
+and every exact layer source. Its evidence names the candidate, current project
+and artwork revisions. It is current-content evidence, not a historical commit
+receipt or proof that selected placements were committed. Same-looking flattened
+artwork with different editable layers does not match. Evidence read failures are
+reported instead of implying a match. Stale project bases cannot be edited or
+committed; full-envelope/bundle export and archive remain available for recovery.
+
+A listing item contains descriptive fields as well as a handle. Pass only
+`handle`, `project_id`, `project_revision`, `revision`, and `owner` if present as
+a candidate handle. Retain the owner when continuing or cleaning up browser work.
+Quota errors include requested bytes, existing usage and cleanup instructions;
+no draft is silently evicted and quotas remain 256 records/64 MiB per project.
+
+`archive_artwork_candidates(candidates:[handles],release:false)` explicitly
+archives 1..32 selected records, at most 64 MiB input, into
+`.forge/artwork-archives/<sha256>.zip`. Each entry is an unchanged full native
+candidate envelope, with its original sidecar filename identifying any owner.
+Set `release:true` to release those exact records only after the archive is
+atomically written and verified. Invalid selections reject before any release;
+a later release failure appears in that record's `error` and leaves the archive
+recoverable. Interruption can leave extra retained records, never an intentionally
+released record without a verified archive. Saved artwork and unrelated candidates
+remain untouched.
+
+Archives survive process restart and appear in `list_artwork_candidates.archives`.
+Download using `read_artwork_archive(archive,offset:0)`, concatenate decoded `data`
+chunks in offset order until `next_offset:null`, then verify the assembled
+`sha256`. Chunks cap at 1 MiB. Extract an envelope and call
+`retain_artwork_candidate(candidate:<full envelope>,owner:<original owner>)`;
+omit owner for shared records. Restored stale bases stay stale and retain the same
+identity; no automatic rebase or commit replay occurs. Archives are independent
+recovery files outside candidate quotas, accumulate only on explicit requests,
+and are excluded from project ZIPs. Copy/download them before moving a project;
+remove an archive manually only after preserving any desired recovery copies.
+
+### Document geometry and palette preparation
+
+`prepare_artwork_document` accepts a candidate, fresh `atlas_id`/`name`, output
+`width`/`height`, `mode:"nearest"|"canvas"` and
+`anchor:"top-left"|"center"|"bottom-right"`. It returns `{candidate,report}`.
+The output is a new independent static sprite, with the original project base,
+new document/atlas identity and no copied saved placement replacements. Original
+saved artwork, references and scenes are preserved. Native axis/area and layer
+aggregate bounds still apply. All source layers must be explicitly unlocked.
+
+- `nearest` scales the complete document and every layer using
+  `source_x=floor(x*old_width/new_width)` and the corresponding y rule. The
+  origin uses the same floor scaling. Anchor has no effect in this mode.
+- `canvas` translates unchanged pixels by `[0,0]`, floor-half the dimension
+  difference, or the full difference for the selected anchor. With an odd center
+  difference the extra pad/crop falls on the right/bottom. Pixels outside the new
+  extent are cropped; exposed pixels are transparent black. The origin translates
+  by the same offset; a crop removing it rejects instead of silently clamping it.
+- Layer UUIDs, order, names, visibility, opacity and locks are retained. Source
+  RGBA is exact except for explicitly selected crop/resampling; transparent RGB
+  survives retained pixels. Frame/sequence and tile metadata do not carry to a
+  static sprite. Sheet candidates require `flatten_sheet:true`, explicitly
+  discarding frame slicing and timing while retaining the complete sheet canvas
+  and source layers. The original sheet remains unchanged.
+
+`convert_artwork_palette` returns `{candidate,report}` and requires exactly one
+of `palette:[[r,g,b],...]` (1..256 RGB8 colors) or `budget:N` (1..256 exact RGBA
+colors). Conversion applies to all unlocked sources. Target palettes use nearest
+squared distance in encoded sRGB, with lexicographic ties. Quantization uses a
+weighted median-cut RGB histogram (up to 65,536 distinct nontransparent source RGB
+colors), stable axis/tie order, weighted RGB means and the same nearest mapping.
+It never dithers. An already-satisfied budget leaves the candidate unchanged.
+Alpha and RGB under alpha zero remain exact. Alpha variants and
+transparent colors consume budget slots; incompatible budgets reject. Layer
+compositing can create additional colors; budget mode rejects if the composite
+exceeds the declared budget. A supplied RGB palette does not imply a bound on
+RGBA colors in the layered composite. Use explicit flattening if that is desired.
+These are literal source conversions; no hardware palette profile is inferred.
+Reports disclose before/after dimensions and source/composite color counts,
+selected palette, method and transparency/loss boundaries. Quantization is never
+implicit in import, resize, review or save. Both preparation calls accept compact
+output and invalidate earlier receipts when the resulting content changes.
+
+### Layer intake, atomic editing and artwork output
+
+`import_artwork_layers` creates one unpublished sprite from 1..8 PNG entries in
+bottom-to-top order. Declare output dimensions and for each entry
+`{layer:{id,name,visible,opacity,locked},png:<base64>,offset:[x,y]}`. Layer UUIDs
+must be unique. Offsets are nonnegative; images must fit completely, with
+transparent black padding and no clipping. PNG uploads retain exact RGBA,
+including hidden RGB. Offsets are baked into full-canvas source pixels rather
+than becoming a new metadata format. Existing 26 MiB input, native layer aggregate
+and candidate limits apply; invalid intake publishes/retains nothing.
+
+`edit_artwork_batch` takes 1..128 sequential operations, at most 1 MiB JSON and
+16,777,216 estimated pixel work. Declare stable layer UUIDs in a `layers`
+operation; later operations target those exact IDs without a name lookup or an
+intermediate response. A minimal shape is:
+
+```json
+[
+  {
+    "op": "layers",
+    "layers": [
+      {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "name": "Ink",
+        "visible": true,
+        "opacity": 255,
+        "locked": false
+      }
+    ]
+  },
+  {
+    "op": "pixels",
+    "layer_id": "00000000-0000-0000-0000-000000000001",
+    "writes": [{ "x": 1, "y": 1, "rgba": [240, 224, 160, 255] }]
+  },
+  {
+    "op": "layers",
+    "layers": [
+      {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "name": "Ink",
+        "visible": true,
+        "opacity": 255,
+        "locked": true
+      }
+    ]
+  }
+]
+```
+
+Also supported: `{op:"patch",layer_id,patch}` and
+`{op:"raster",layer_id,operations}` using the existing pixel-patch/raster shapes.
+Flat documents use `layer_id:null`. Existing locks and bounds apply at each step;
+unlock explicitly before writes. The first layer migration retains flat pixels
+in the first layer. Invalid operations discard the whole result, including a
+successful prefix. One resulting candidate is returned; handle input or
+`compact:true` retains only that final result. Original handles stay immutable.
+A new review and separate receipt-guarded commit still control publication.
+
+`export_artwork_bundle` returns an artwork ZIP resource containing the unchanged
+`candidate.json`, `document.json`, `composite.png`, individual full-canvas
+`layers/<uuid>.png` files (or `layers/composite.png` for flat artwork), and
+`palette.json` with exact composite RGBA counts. The envelope is the authoritative
+lossless round trip: extract and retain it to recover descriptor, layers, timing,
+metadata, ownership context from the original handle and stale bases. PNG-only
+reimport creates a new document and cannot reconstruct those identities. The
+bundle is a view of the existing native format, not a competing document format.
+It caps at the 16 MiB session-artifact limit and 65,536 composite palette entries;
+use durable candidate archives for larger recoverable transfers. Resource cache
+lifetime and project scoping remain unchanged.
+
+### Contact-sheet inspection
+
+`inspect_artwork_candidate` takes 1..8 explicit in-bounds `rectangles`, optional
+`scale:1..8` and `changed_overlay:true|false`. It returns a contact SVG resource,
+exact candidate/project/artwork revisions, the ordinary complete commit review
+receipt, and per-rectangle sampling/scale information. Cells label top-left pixel
+coordinates, dimensions, scale and before/after meaning. Output embeds integer
+nearest-neighbor PNGs: no view is silently rescaled. Each cell caps at 512 pixels
+per axis; total image pixels cap at 4,194,304 and total layout at 8,388,608.
+`complete` reports whether the union of native rectangles covers the full canvas;
+overlapping rectangles do not inflate coverage. Before is the saved original or
+selected replacement source, and transparent for a new independent document.
+
+The optional overlay paints exact RGBA changes magenta over the after image,
+including hidden RGB differences; changed counts are local to each rectangle.
+Magenta is an inspection marker, not a pixel mutation. The contact artifact is
+bound to the same exact receipt as ordinary review; stale bases/receipts reject.
+Isolated-pixel, fragmented-cluster and near-color heuristics remain deferred;
+intentional stars, glints or highlights are never removed automatically.
