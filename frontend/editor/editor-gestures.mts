@@ -300,7 +300,7 @@ export function createGesturesController({
   editorFocus(
     element('workspace', HTMLElement),
     canvas,
-    () => Boolean(sceneSession.editor),
+    () => Boolean(sceneSession.editor) && activity.document === 'scene',
     lifetime,
   );
 
@@ -387,7 +387,7 @@ export function createGesturesController({
   document.addEventListener(
     'keydown',
     (event) => {
-      if (event.code !== 'Space' && event.key !== ' ') {
+      if (activity.document !== 'scene' || (event.code !== 'Space' && event.key !== ' ')) {
         return;
       }
       if (gestures.spacePan) {

@@ -7,6 +7,23 @@ exact pixels, review receipts and conflict-aware checkpoints. This document adds
 sheets, sequences, document navigation, compact candidates and conversion.
 Observed results belong in [Validation](VALIDATION.md).
 
+## Shared editor shell consolidation
+
+[Milestone 22](https://github.com/cliffom/gbc-scene-forge/milestone/22) consolidates
+the delivered document contexts around the scene editor layout. The initial
+[#194](https://github.com/cliffom/gbc-scene-forge/issues/194) increment contributes
+both canvases to one workbench and their contextual panels to one collapsible
+Inspector. The artwork title lives in the document bar; opening artwork no longer
+replaces the workbench with a nonmodal dialog. Setup remains a focused creation/
+source surface inside the shared workbench.
+
+Controllers keep distinct scene/pixel models and histories. Shell contributions
+supply presentation nodes and a focus callback; active-document state fences
+scene commands, focus and refresh. Leaving artwork retains its existing guarded
+checkpoint and scene-return behavior. Shared command placement, document navigation
+and richer contextual panel interaction are subsequent milestone issues; the
+initial increment keeps artwork's Save/review footer and frame/animation dock.
+
 ## Foundation and ownership
 
 A project is one world: scenes reference a shared library of tiles and sprites.

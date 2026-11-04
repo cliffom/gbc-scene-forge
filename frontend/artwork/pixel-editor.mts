@@ -24,6 +24,7 @@ import { conversionViews } from './conversion-views.mts';
 import { createArtworkViewport } from './artwork-viewport.mts';
 import { createArtworkDocuments } from './artwork-documents.mts';
 import { createDocumentChooser } from './document-chooser.mts';
+import type { DocumentContribution } from '../editor/editor-shell.mts';
 
 type Source = {
   atlas_id: string;
@@ -48,12 +49,20 @@ export function createPixelEditor({
   sceneSelection: SceneSelection;
   brushes: BrushState;
   ports: {
+    presentation: {
+      contribute: (contribution: DocumentContribution) => {
+        readonly active: boolean;
+        activate: (focus?: boolean) => void;
+      };
+      scene: () => void;
+      revealInspector: () => void;
+    };
     discovered: (data: Record<string, unknown>, eligible: () => boolean) => Promise<void>;
     run: (work: () => Promise<void>) => Promise<void>;
     saved: (ack: Record<string, unknown>, reviewedScenes: Record<string, unknown>) => Promise<void>;
   };
 }) {
-  const dialog = element('artwork-dialog', HTMLDialogElement),
+  const surface = element('artwork-surface', HTMLElement),
     canvas = element('art-canvas', HTMLCanvasElement);
   let session: ArtworkSession | null = null;
   let busy = false;
@@ -61,16 +70,34 @@ export function createPixelEditor({
   let inventoryRevision = workspaceState.revision;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let paletteSignature = '';
-  const documents = createArtworkDocuments(lifetime, dialog);
+  const inspector = element('art-inspector-content', HTMLElement);
+  const presentationSlot = ports.presentation.contribute({
+    surface,
+    inspector: [inspector],
+    focus: () => canvas.focus({ preventScroll: true }),
+  });
+  inspector.hidden = false;
+  const documents = createArtworkDocuments(lifetime, surface, inspector);
   const chooser = createDocumentChooser(lifetime, () => {
     cancelGesture();
     artworkViewport.suspend();
   });
-  const presentation = createArtworkWorkspace(lifetime, dialog, () => {
+  const presentation = createArtworkWorkspace(lifetime, surface, () => {
     controls();
     tabs();
   });
-  const { setup, reviewPanel } = presentation;
+  const { setup } = presentation;
+  function reviewPanel(open: boolean) {
+    presentation.reviewPanel(open);
+    if (open) {
+      ports.presentation.revealInspector();
+    }
+  }
+  for (const id of ['art-properties-toggle', 'art-layers-toggle']) {
+    button(id).addEventListener('click', () => ports.presentation.revealInspector(), {
+      signal: lifetime.signal,
+    });
+  }
   function focusFrame(region: string) {
     const d = session?.model.descriptor;
     if (session && d?.version === 2 && d.frames.some((f) => f.id === region)) {
@@ -99,15 +126,13 @@ export function createPixelEditor({
   }
   function workspace(active: boolean) {
     artworkViewport.suspend();
-    document.body.classList.toggle('editing-artwork', active);
+    if (active) {
+      presentationSlot.activate();
+    } else {
+      ports.presentation.scene();
+    }
     reflectOpacity();
     button('scene-document').setAttribute('aria-pressed', String(!active));
-    if (active && !dialog.open) {
-      dialog.show();
-    }
-    if (!active && dialog.open) {
-      dialog.close();
-    }
     element('art-document-state', HTMLElement).hidden = !active;
     element('palette', HTMLElement).dispatchEvent(new Event('artwork-workspace'));
     chooser.close();
@@ -122,7 +147,7 @@ export function createPixelEditor({
   function tabs() {
     button('document-switcher').hidden = !session && documents.size === 0;
     button('document-switcher').textContent =
-      dialog.open && session ? `${session.model.descriptor.name} ▾` : 'Documents ▾';
+      presentationSlot.active && session ? `${session.model.descriptor.name} ▾` : 'Documents ▾';
     button('document-switcher').disabled = busy;
     documentState();
     button('scene-document').textContent = sceneSession.loaded
@@ -131,9 +156,9 @@ export function createPixelEditor({
     element('artwork-documents', HTMLElement).replaceChildren(
       ...documents.sessions().map((current) => {
         const tab = document.createElement('button');
-        const active = dialog.open && session === current;
+        const active = presentationSlot.active && session === current;
         tab.textContent = `${active ? 'Current · ' : ''}${current.model.descriptor.name} · ${current.original.operation !== 'edit' ? 'New' : current.changed ? 'Modified' : 'Saved'}`;
-        tab.setAttribute('aria-pressed', String(dialog.open && session === current));
+        tab.setAttribute('aria-pressed', String(presentationSlot.active && session === current));
         lifetime.assign(tab, 'onclick', () => {
           void execute(async () => {
             await suspend();
@@ -212,7 +237,7 @@ export function createPixelEditor({
       zoom.value = String(values[Math.max(0, Math.min(values.length - 1, index - direction))]);
       draw();
     },
-    available: () => dialog.open && !!session && !busy && !chooser.open,
+    available: () => presentationSlot.active && !!session && !busy && !chooser.open,
     drawing: () => gestures.active,
     tool: () => gestures.tool(),
     view: () =>
@@ -225,7 +250,7 @@ export function createPixelEditor({
           })
         : null,
   });
-  const gestures = createArtworkGestures(lifetime, dialog, canvas, {
+  const gestures = createArtworkGestures(lifetime, surface, canvas, {
     current: () => session?.model ?? null,
     available: () => !busy,
     point: (client) => artworkViewport.point(client, true),
@@ -248,7 +273,7 @@ export function createPixelEditor({
   });
   function fitArtwork() {
     const model = session?.model,
-      viewport = dialog.querySelector('.art-canvas-scroll');
+      viewport = surface.querySelector('.art-canvas-scroll');
     if (!model || !viewport) {
       return;
     }
@@ -426,9 +451,12 @@ export function createPixelEditor({
       element('art-palette', HTMLElement).hidePopover();
       artworkViewport.suspend();
     }
-    for (const control of dialog.querySelectorAll<
-      HTMLButtonElement | HTMLInputElement | HTMLSelectElement
-    >('button,input,select')) {
+    const controls = [surface, inspector].flatMap((root) => [
+      ...root.querySelectorAll<HTMLButtonElement | HTMLInputElement | HTMLSelectElement>(
+        'button,input,select',
+      ),
+    ]);
+    for (const control of controls) {
       const disabled = busy || control.dataset.unavailable === 'true';
       if (control.disabled !== disabled) {
         control.disabled = disabled;
@@ -449,7 +477,7 @@ export function createPixelEditor({
     }
     button('art-save').disabled = busy || !session;
     button('art-save').textContent =
-      session?.receipt && dialog.classList.contains('show-art-review') ? 'Confirm save' : 'Save…';
+      session?.receipt && surface.classList.contains('show-art-review') ? 'Confirm save' : 'Save…';
     button('art-properties-toggle').hidden = !active || session?.model.descriptor.version !== 2;
     button('art-layers-toggle').hidden = !active;
     if (!active && presentation.mode === 'existing') {
@@ -472,7 +500,7 @@ export function createPixelEditor({
 
     button('document-switcher').disabled = busy;
     button('document-switcher').textContent =
-      dialog.open && session ? `${session.model.descriptor.name} ▾` : 'Documents ▾';
+      presentationSlot.active && session ? `${session.model.descriptor.name} ▾` : 'Documents ▾';
   }
   function dirtyControls() {
     const modified = session?.changed ?? false;
@@ -1175,12 +1203,6 @@ export function createPixelEditor({
   lifetime.assign(button('art-close'), 'onclick', () => {
     void execute(close);
   });
-  lifetime.assign(dialog, 'oncancel', (event) => {
-    event.preventDefault();
-    if (!busy) {
-      void execute(close);
-    }
-  });
   lifetime.assign(button('art-discard'), 'onclick', () => {
     void execute(async () => {
       cancelGesture();
@@ -1389,7 +1411,7 @@ export function createPixelEditor({
       { signal: lifetime.signal },
     );
   }
-  dialog.addEventListener(
+  surface.addEventListener(
     'keydown',
     (event) => {
       if (element('art-palette', HTMLElement).matches(':popover-open')) {
@@ -1607,7 +1629,7 @@ export function createPixelEditor({
       if (!current) {
         return;
       }
-      if (!current.receipt || !dialog.classList.contains('show-art-review')) {
+      if (!current.receipt || !surface.classList.contains('show-art-review')) {
         await reviewCurrent();
         button('art-save').focus();
         return;
@@ -1658,7 +1680,7 @@ export function createPixelEditor({
         controls();
         tabs();
         message(
-          `Artwork saved. ${error instanceof Error ? error.message : String(error)} Close this dialog and refresh before continuing.`,
+          `Artwork saved. ${error instanceof Error ? error.message : String(error)} Close this surface and refresh before continuing.`,
           true,
         );
       }
@@ -1713,7 +1735,7 @@ export function createPixelEditor({
       interaction === generation &&
       session === current &&
       !lifetime.disposed &&
-      dialog.open &&
+      presentationSlot.active &&
       !busy &&
       !gestures.active &&
       (manual || input('auto-refresh').checked) &&
@@ -1764,7 +1786,7 @@ export function createPixelEditor({
   );
   return {
     get open() {
-      return dialog.open;
+      return presentationSlot.active;
     },
   };
 }

@@ -76,6 +76,7 @@ export function createRefreshController({
 
   function liveReady() {
     return Boolean(
+      activity.document === 'scene' &&
       !lifetime.disposed &&
       workspaceState.project &&
       !activity.busy &&
@@ -108,6 +109,7 @@ export function createRefreshController({
       return;
     }
     const eligible = () =>
+      activity.document === 'scene' &&
       !lifetime.disposed &&
       !activity.busy &&
       !workspaceState.navigating &&

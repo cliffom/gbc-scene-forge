@@ -500,7 +500,7 @@ test.describe('editor polish', () => {
           await page.locator('.art-canvas-scroll').evaluate((node) => node.clientHeight),
         ).toBeGreaterThanOrEqual(120);
         expect(
-          await page.locator('#artwork-dialog').evaluate((node) => {
+          await page.locator('#artwork-surface').evaluate((node) => {
             const r = node.getBoundingClientRect();
             return (
               r.left >= 0 &&
@@ -527,7 +527,7 @@ test.describe('editor polish', () => {
     await expect(page.locator('#art-save')).toBeEnabled();
     await saveArtwork(page);
     await page.locator('#art-close').click();
-    await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+    await expect(page.locator('#artwork-surface')).not.toBeVisible();
     await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   });
   test('artwork setup has clear navigation, complete Library labels and name-derived identity', async ({
@@ -645,7 +645,7 @@ test('first-use authoring from visible controls: empty artwork, draw, place, sav
   await expect(page.locator('#art-save')).toBeEnabled();
   await saveArtwork(page);
   await page.locator('#art-close').click();
-  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+  await expect(page.locator('#artwork-surface')).not.toBeVisible();
   await page.locator('#empty-create').click();
   await page.locator('#scene-title').fill('My first scene');
   await page.locator('#scene-form button.primary').click();

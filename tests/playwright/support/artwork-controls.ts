@@ -44,5 +44,5 @@ export async function saveArtwork(page: Page) {
   await page.locator('#art-save').click();
   await expect(page.locator('#art-message')).toContainText('Artwork saved.');
   await expect(page.locator('#art-document-state')).toHaveText('Saved');
-  await expect(page.locator('#artwork-dialog')).toBeVisible();
+  await expect(page.locator('#artwork-surface')).toBeVisible();
 }

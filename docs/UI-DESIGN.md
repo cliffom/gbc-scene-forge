@@ -68,6 +68,20 @@ Screenshots are written to `build/reports/playwright/`. The broader browser
 suite verifies that editing, stamps, recovery, definitions, world links and
 first-use instructions remain usable with this hierarchy.
 
+## Shared document shell
+
+Scenes and artwork use one workbench between the same Library and Inspector.
+The artwork name appears in the document bar. Pixel tools and the pixel viewport
+are contextual contributions to the workbench; raster layers, frame properties
+and review use the existing Inspector. Its collapse handle works in both contexts;
+opening artwork review reveals the Inspector if needed. Returning to the scene
+restores its canvas focus and existing Inspector content.
+
+This first shell increment preserves the artwork document chooser, Save footer
+and frame/animation dock. Subsequent milestone 22 issues refine common command
+placement, navigation and panel controls. Setup is a focused surface in the
+workbench; dialogs remain appropriate for modal confirmations and document choice.
+
 ## Pixel editor layout
 
 Use one active-document switcher in the existing context bar; do not reserve an
@@ -81,9 +95,9 @@ zoom and Fit beside the canvas. Show a short shared/new/variation badge beside
 the title. Put frame selection, Sheet/Frame scope and thumbnails below drawing,
 with an optional bounded animation dock containing sequence entries, millisecond
 durations and playback. Hide frame thumbnails in short windows while preserving
-the labeled selector. Properties and exact-change review are separate optional
-panes; narrow windows use an overlay, and compact artwork hides the Library while
-the document switcher retains New/Browse navigation.
+the labeled selector. Properties and exact-change review are optional content in the shared Inspector.
+Library and Inspector retain their common collapse handles at compact sizes; the
+document switcher retains New/Browse navigation.
 
 Save opens change review and explicit confirmation. Keep its footer reachable
 while the animation dock or comparison scrolls. A successful save retains the

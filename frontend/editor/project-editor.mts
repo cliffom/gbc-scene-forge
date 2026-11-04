@@ -29,6 +29,7 @@ import { blockoutDefinitions } from '../blockout/blockout.mts';
 import { boolean, number, record, string } from '../shared/decode.mts';
 import { createReviewController } from './editor-review.mts';
 import { createEditorLayout } from './editor-layout.mts';
+import { createEditorShell } from './editor-shell.mts';
 import { createFirstSceneGuide } from '../project/first-scene-guide.mts';
 import { prunePreviewSettings } from '../preview/preview-settings.mts';
 
@@ -62,6 +63,26 @@ export function mountProjectEditor() {
   const brushes = new BrushState();
   const gestures = new GestureState();
   const activity = new EditorActivity();
+  const shell = createEditorShell(
+    lifetime,
+    (kind) => {
+      activity.document = kind;
+    },
+    () => editorLayout.showInspector(),
+  );
+  const scenePresentation = shell.contribute('scene', {
+    surface: element('scene-surface', HTMLElement),
+    inspector: [
+      ...element('inspector-pane', HTMLElement).querySelectorAll<HTMLElement>(
+        ':scope > .inspector-panel',
+      ),
+    ],
+    focus: () =>
+      (sceneSession.loaded
+        ? element('scene', HTMLElement)
+        : element('viewport', HTMLElement)
+      ).focus({ preventScroll: true }),
+  });
   const editorLayout = createEditorLayout(lifetime, (apply) =>
     viewportController.changeLayout(apply),
   );
@@ -721,6 +742,11 @@ export function mountProjectEditor() {
     sceneSelection,
     brushes,
     ports: {
+      presentation: {
+        contribute: (contribution) => shell.contribute('artwork', contribution),
+        scene: () => scenePresentation.activate(true),
+        revealInspector: () => shell.revealInspector(),
+      },
       discovered: async (data, eligible) => {
         const snapshot = decodeProject(data.project);
         const discoveredImages = new Map<string, HTMLImageElement>();

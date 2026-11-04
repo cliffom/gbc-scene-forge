@@ -10,9 +10,23 @@ more references. Imported originals require an editable copy before drawing.
 
 For agent handoffs, see the [browser/MCP outcome matrix](../AUTHORING-OUTCOMES.md).
 
+## Shared editor workspace
+
+Artwork opens in the same central workbench as scenes. Its name appears in the
+document bar. The Library and collapsible Inspector remain in their usual places;
+Layers, frame Properties and Save's exact-change review use the Inspector.
+Collapse either side pane with its header arrow to make more room for drawing.
+Save opens the Inspector for review if it was collapsed. Return to scene restores
+scene canvas focus and the scene Inspector; scene edits and Undo remain retained
+for ordinary shared artwork edits. Selected-placement variations retain their
+separate atomic save and scene-history behavior described below.
+
+The initial shared shell keeps artwork's existing Save footer, document chooser
+and frame/animation dock while milestone 22 proceeds through its next increments.
+
 ## Layers, agent exchange and navigation
 
-Open **Layers** above the drawing viewport to add a layer, choose the
+Open **Layers** in the Inspector to add a layer, choose the
 active layer, rename, reorder, hide, set opacity (0..255) or lock it. First **Add
 layer** retains flat artwork as **Base** and adds a transparent layer. Draw tools
 edit the selected source; the canvas and scenes show the visible composite.

@@ -5,17 +5,30 @@ import type { EditorLifetime } from '../editor/editor-lifetime.mts';
 
 export function createArtworkWorkspace(
   lifetime: EditorLifetime,
-  dialog: HTMLDialogElement,
+  surface: HTMLElement,
   changed: () => void,
 ) {
-  element('editor-layout', HTMLElement).append(dialog);
+  const inspector = element('art-inspector-content', HTMLElement);
+  for (const node of [
+    element('art-inspector-actions', HTMLElement),
+    element('art-shared', HTMLElement),
+    element('art-selection-details', HTMLElement),
+    element('art-layer-panel', HTMLElement),
+    element('art-properties', HTMLElement),
+    element('art-review-panel', HTMLElement),
+  ]) {
+    const marker = document.createComment('artwork panel');
+    node.before(marker);
+    inspector.append(node);
+    lifetime.cleanup(() => marker.replaceWith(node));
+  }
   element('art-editor', HTMLElement).insertBefore(
     element('art-sheet-controls', HTMLElement),
     element('art-draft-status', HTMLElement),
   );
-  const help = dialog.querySelector('.art-help');
+  const help = surface.querySelector('.art-help');
   if (help) {
-    dialog.querySelector('.art-document-actions>div')?.append(help);
+    surface.querySelector('.art-document-actions>div')?.append(help);
   }
   let automaticIdentity = true;
   function identityFromName() {
@@ -58,11 +71,11 @@ export function createArtworkWorkspace(
     changed();
   }
   function reviewPanel(open: boolean) {
-    const panel = dialog.querySelector<HTMLElement>('.art-review');
+    const panel = element('art-review-panel', HTMLElement);
     if (panel) {
       panel.hidden = !open;
     }
-    dialog.classList.toggle('show-art-review', open);
+    surface.classList.toggle('show-art-review', open);
     if (!open) {
       button('art-save').textContent = 'Save…';
     }

@@ -6,11 +6,27 @@ artwork-free blockouts, optional MCP and conflict-aware recovery. See
 [usage](STANDALONE.md) and the [changelog](CHANGELOG.md) for supported behavior.
 
 Open milestone state was checked on 2026-11-03. The user selected
-[milestone 21](https://github.com/cliffom/gbc-scene-forge/milestone/21), human–agent
-artwork iteration, for the next release. Its scoped implementation/evaluation
-precedes the remaining priority order **17 → 18 → 19**;
-these outcomes have no promised dates. Validation gaps live in the
+[milestone 22](https://github.com/cliffom/gbc-scene-forge/milestone/22), a single
+editor experience for scenes and artwork, as the next priority. The priority
+order is **22 → 17 → 18 → 19**; these outcomes have no promised release versions
+or dates. Validation gaps live in the
 [single remaining-check list](VALIDATION.md#remaining-checks).
+
+## Single editor experience for scenes and artwork (milestone 22)
+
+[Milestone 22](https://github.com/cliffom/gbc-scene-forge/milestone/22): use the
+scene editor's layout as the shared host for scene and artwork documents, with
+consistent navigation, contextual commands, Library, Inspector and optional
+frame/animation dock. Preserve domain-owned history, exact artwork review,
+revision guards, recoverable local work and browser/MCP coexistence.
+
+Start with the shared-shell prototype (#194), then complete retained-document
+navigation (#195). Shared commands and saving (#196) and contextual panels (#197)
+follow that foundation; Library/source/variation workflows (#198) integrate those
+pieces. Finish with integrated workflow and layout validation (#199). Each
+implementation issue includes its own regression coverage and documentation.
+Independent-user evaluation remains owned by #165/#166 rather than gating this
+user-requested consolidation.
 
 ## Existing workflow usability and manual–MCP parity (milestone 17)
 

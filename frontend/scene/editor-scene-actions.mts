@@ -86,7 +86,12 @@ export function createSceneActionsController({
   ports: Ports;
 }) {
   const navigation = createSceneNavigation(lifetime, projectBase, async (path) => {
-    if (activity.busy || gestures.anchor || document.querySelector('dialog[open]')) {
+    if (
+      activity.document !== 'scene' ||
+      activity.busy ||
+      gestures.anchor ||
+      document.querySelector('dialog[open]')
+    ) {
       return false;
     }
     let opened = false;

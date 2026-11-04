@@ -83,7 +83,7 @@ test('mcp: artwork brief, hand edits, agent revision, selected sprite variation 
   await reviewArtwork(page);
   await saveArtwork(page);
   await page.locator('#art-close').click();
-  await expect(page.locator('#artwork-dialog')).not.toBeVisible();
+  await expect(page.locator('#artwork-surface')).not.toBeVisible();
   const writes = join(output, 'revision-writes.json');
   await writeFile(writes, JSON.stringify([{ x: 7, y: 7, rgba: [180, 156, 78, 255] }]));
   await run(['--asset', 'moss', '--writes', writes]);

@@ -93,6 +93,7 @@ export class GestureState {
 }
 
 export class EditorActivity {
+  document: 'scene' | 'artwork' = 'scene';
   busy = false;
   reviewing = false;
 }

@@ -15,6 +15,43 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Shared editor shell (#194, milestone 22)
+
+- **Scope:** Prepared 0.33.0 working tree on `milestone/22`, based on
+  `0b90f839450ee4dfb3cb3a2eefacc86a2f6d4f5f`, checked 2026-11-03 local time
+  (2026-11-04 UTC), macOS arm64, Python 3.13.13, Node 24.22.1 and local
+  Playwright Chromium. Disposable native-artwork/scene projects; source-checkout
+  production bundle and separately installed wheel.
+- **Method:** Synthetic browser scene → selected source → pixel edit → review/save
+  → scene return at 1440×900, 1280×800 and 800×640, independent saved-RGBA reads,
+  scene history checks, artwork without a scene and repeated mount/dispose checks.
+  Agent screenshot inspection covered scene return, drawing and review across
+  those sizes. Archived captures: [desktop artwork](screenshots/shared-editor-shell/1440×900-artwork.png),
+  [desktop review](screenshots/shared-editor-shell/1440×900-review.png),
+  [desktop return](screenshots/shared-editor-shell/1440×900-scene.png),
+  [1280 artwork](screenshots/shared-editor-shell/1280×800-artwork.png),
+  [1280 review](screenshots/shared-editor-shell/1280×800-review.png),
+  [1280 return](screenshots/shared-editor-shell/1280×800-scene.png),
+  [compact artwork](screenshots/shared-editor-shell/800×640-artwork.png),
+  [compact review](screenshots/shared-editor-shell/800×640-review.png) and
+  [compact return](screenshots/shared-editor-shell/800×640-scene.png).
+- **Result:** `make lint test` passed, including 448 Python tests and all
+  TypeScript suites. Production build, strict distribution metadata and seven
+  installed-wheel smoke checks passed. The full regular browser run passed 133
+  scenarios, with 11 opt-in profiling scenarios skipped. Three MCP/browser scenarios passed,
+  covering mixed artwork edits, conflicts and real external saves/refresh.
+  Installed-wheel first use passed. The four new shared-shell scenarios passed.
+  Initial focused runs exposed a disabled Inspector toggle during Save and clipped
+  dense variation Save controls; direct layout-owner reveal and Inspector-hosted
+  variation details corrected both. The initial no-scene test incorrectly used
+  the project chooser; the corrected empty-project fixture passed.
+- **Limits:** Local synthetic and agent-inspection evidence does not establish
+  independent-human usability, prolonged drawing comfort, physical-device scaling,
+  non-Chromium/Windows behavior or official Tiled interoperability. The shell
+  increment retains the artwork Save footer, chooser and frame dock; later
+  milestone issues own navigation, commands and panel refinements. No CI or
+  publication result is claimed.
+
 ## PR #193 release-gate fixture contention
 
 - **Scope:** Prepared 0.32.0 working tree based on
@@ -1862,6 +1899,10 @@ Dates, revisions and environments missing from the originals remain unknown.
   claim is made by this local record.
 
 ## Remaining checks
+
+### Shared editor consolidation (milestone 22)
+
+- [ ] Obtain the user's manual verification of #194's shared-shell increment before pushing `milestone/22` and proceeding to #195, following the requested issue-by-issue gate. Automated layout and exact-pixel checks do not substitute for this acceptance.
 
 ### Human–agent artwork iteration (milestone 21)
 

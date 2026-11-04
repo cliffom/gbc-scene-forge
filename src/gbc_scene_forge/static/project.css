@@ -498,10 +498,14 @@
 
 
 /* Native artwork shares the mounted workbench; creation, drawing and review are separate surfaces. */
-#artwork-dialog[open] {display:flex;flex-direction:column;gap:6px;overflow:hidden;padding:12px}
-#artwork-dialog [hidden] {display:none!important}
-.editing-artwork #editor-layout>.workbench,.editing-artwork #editor-layout>.inspector,.editing-artwork #inspector-rail {display:none!important}
-.standalone #editor-layout>#artwork-dialog[open] {position:static;inset:auto;grid-column:2/-1;grid-row:1;margin:0;width:100%;max-width:none;height:100%;max-height:none;box-sizing:border-box;border:0;border-left:1px solid var(--line);border-radius:0;background:var(--panel)}
+/* Scene and artwork contribute to the same mounted workbench and Inspector. */
+.editor-surface {display:flex;flex-direction:column;flex:1;min-width:0;min-height:0;overflow:hidden}
+#editor-layout[data-document=scene] [data-document-owner=artwork],
+#editor-layout[data-document=artwork] [data-document-owner=scene] {display:none!important}
+#artwork-surface {gap:6px;padding:0;background:var(--bg)}
+#artwork-surface [hidden] {display:none!important}
+#artwork-heading {margin:0;font-size:13px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.editing-artwork #dirty {display:none}
 .art-heading {display:flex;align-items:center;gap:12px;flex:none;min-width:0}
 .art-heading h2 {margin:0;font-size:16px;overflow-wrap:anywhere;min-width:0}
 .art-heading button {flex:none}
@@ -663,15 +667,13 @@
   #art-properties,#art-layer-panel,.art-review {position:absolute;inset:0 0 0 auto;z-index:2;max-width:100%;box-shadow:-8px 0 20px #0007;border-left:1px solid var(--line)}
 }
 @media (max-width:850px) {
-  .editing-artwork #library-pane,.editing-artwork #library-rail {display:none!important}
-  .editing-artwork #editor-layout>#artwork-dialog[open] {grid-column:1/-1}
   .art-frame-bar {gap:6px;flex-wrap:wrap}
   .art-tools {gap:4px}
   #art-frame-strip canvas {height:28px}
   #art-frame-strip {max-height:44px}
 }
 @media (max-height:700px) {
-  #artwork-dialog[open] {padding:8px;gap:4px}
+  #artwork-surface {gap:4px}
   #art-editor {gap:4px}
   #art-draft-status,#art-frame-strip {display:none}
   #art-sheet-controls {max-height:140px}
@@ -696,3 +698,17 @@
 #art-layer-panel button {max-width:100%;margin:3px 0}
 #art-handoff-result {max-width:100%;max-height:160px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}
 #art-handoff-candidates p {overflow-wrap:anywhere}
+
+#art-inspector-content {min-width:0;flex:none}
+#art-inspector-content .art-heading {flex-direction:column;align-items:stretch;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+#art-inspector-content .art-heading-actions {margin:0;display:flex;flex-wrap:wrap;gap:6px}
+#art-inspector-content #art-shared {display:block;font-size:11px;line-height:1.6}
+#art-inspector-content #art-properties,#art-inspector-content #art-layer-panel,#art-inspector-content .art-review {position:static;width:100%;height:auto;max-width:none;padding:12px 0;overflow:visible;box-shadow:none;border:0}
+#art-inspector-content button {white-space:normal;max-width:100%}
+#art-inspector-content #art-layer-panel>label {display:flex;flex-direction:column;gap:5px;margin:12px 0;font-size:12px}
+#art-inspector-content #art-layer-panel>label:has(input[type=checkbox]) {flex-direction:row;align-items:center}
+#art-inspector-content #art-layer-panel input:not([type=checkbox]),#art-inspector-content #art-layer-panel select {width:100%;min-width:0}
+#artwork-surface .art-controls {padding:6px 10px;border-bottom:1px solid var(--line)}
+#artwork-surface .art-workspace {gap:0}
+#artwork-surface .art-canvas-scroll {border:0;border-radius:0;background-color:#181b17;background-image:radial-gradient(#3b4034 .7px,transparent .7px);background-size:16px 16px}
+#artwork-surface #art-sheet-controls,#artwork-surface #art-draft-status,#artwork-surface #art-message,#artwork-surface #art-editor>.dialog-actions {padding-inline:10px}

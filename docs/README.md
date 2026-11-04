@@ -71,7 +71,8 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Release notes
 
-- [Scene Forge 0.32.0](RELEASE-0.32.0.md) — prepared release.
+- [Scene Forge 0.33.0](RELEASE-0.33.0.md) — prepared milestone 22 release.
+- [Scene Forge 0.32.0](RELEASE-0.32.0.md) — [published release](https://github.com/cliffom/gbc-scene-forge/releases/tag/v0.32.0).
 - [Scene Forge 0.31.0](RELEASE-0.31.0.md) — [published release](https://github.com/cliffom/gbc-scene-forge/releases/tag/v0.31.0).
 
 - [Scene Forge 0.30.1](RELEASE-0.30.1.md) — [published release](https://github.com/cliffom/gbc-scene-forge/releases/tag/v0.30.1).

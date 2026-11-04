@@ -212,7 +212,7 @@ test('pan, Fit, cancellation and document restoration preserve authoring and foc
   await expect(page.locator('#art-pan')).toHaveAttribute('aria-pressed', 'true');
   const before = await page.locator('#art-canvas').boundingBox();
   await page.locator('#art-canvas').press('Escape');
-  await expect(page.locator('#artwork-dialog')).toBeVisible();
+  await expect(page.locator('#artwork-surface')).toBeVisible();
   await expect(page.getByRole('radio', { name: 'Pencil', exact: true })).toBeChecked();
   const p = await pixel(page, 2, 3);
   await page.mouse.click(p.x, p.y);
@@ -257,7 +257,7 @@ test('pan, Fit, cancellation and document restoration preserve authoring and foc
   await page.keyboard.press('Escape');
   await page.mouse.up();
   await page.keyboard.up('Space');
-  await expect(page.locator('#artwork-dialog')).toBeVisible();
+  await expect(page.locator('#artwork-surface')).toBeVisible();
   await expect(page.locator('#art-undo')).toBeDisabled();
   await page.locator('#art-alpha').focus();
   expect(
@@ -294,7 +294,7 @@ for (const route of ['Documents', 'Library'] as const) {
     }
 
     await page.locator('#art-close').click();
-    await expect(page.locator('#artwork-dialog')).toBeHidden();
+    await expect(page.locator('#artwork-surface')).toBeHidden();
     if (route === 'Documents') {
       await page.locator('#document-switcher').click();
       await page.locator('#artwork-documents button').filter({ hasText: longName }).click();
@@ -302,7 +302,7 @@ for (const route of ['Documents', 'Library'] as const) {
       await page.locator('[data-asset="player/f1"]').click();
     }
 
-    await expect(page.locator('#artwork-dialog')).toBeVisible();
+    await expect(page.locator('#artwork-surface')).toBeVisible();
     await expect(page.locator('#art-frame')).toHaveValue('f1');
     await expect(page.locator('#art-edit-frame')).toBeChecked();
     await expect(page.locator('#art-zoom')).toHaveValue('16');
@@ -472,7 +472,7 @@ test('artwork layout keeps commands and drawing reachable across window sizes', 
         await expect(page.locator('#art-comparison')).toBeVisible();
         await expect(page.locator('#art-save')).toBeEnabled();
       }
-      const geometry = await page.locator('#artwork-dialog').evaluate((dialog) => {
+      const geometry = await page.locator('#artwork-surface').evaluate((dialog) => {
         const viewport = dialog.querySelector<HTMLElement>('.art-canvas-scroll');
         const controls = dialog.querySelector<HTMLElement>('.art-controls');
         const footerElement = dialog.querySelector<HTMLElement>('#art-editor>.dialog-actions');

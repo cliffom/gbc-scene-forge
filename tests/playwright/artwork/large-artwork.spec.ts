@@ -227,7 +227,7 @@ a.save(c)
   await page.keyboard.press('Escape');
   await expect(page.locator('#art-palette')).toBeHidden();
   await expect(trigger).toBeFocused();
-  await expect(page.locator('#artwork-dialog')).toBeVisible();
+  await expect(page.locator('#artwork-surface')).toBeVisible();
   await trigger.click();
   await page.getByRole('button', { name: 'RGBA 17, 34, 51, 0', exact: true }).click();
   await expect(page.locator('#art-color')).toHaveValue('#112233');

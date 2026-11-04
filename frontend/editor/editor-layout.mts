@@ -267,6 +267,9 @@ export function createEditorLayout(
   reflectPaletteState();
   return {
     showLibrary,
+    showInspector() {
+      showPane('inspector', true);
+    },
     syncToolbar() {
       reflectToolbar(expandTools.getAttribute('aria-expanded') === 'true');
     },

@@ -191,6 +191,9 @@ export function createCommandsController({
   document.addEventListener(
     'keydown',
     (event) => {
+      if (activity.document !== 'scene') {
+        return;
+      }
       if (activity.reviewing) {
         // Keep native focus/zoom controls and viewport scrolling; block authoring shortcuts.
         if (

@@ -10,6 +10,7 @@ start polling, or acquire canvas resources. No frontend framework is required.
 
 | Owner/module | Responsibility |
 | --- | --- |
+| `editor/editor-shell.mts` | Shared workbench/Inspector presentation slots and active document kind. Typed contributions provide a surface, Inspector panels and focus callback; controllers retain models, commands, history and persistence. Mounted nodes return to their source locations on disposal. |
 | `editor/project-editor.mts` | Composition, operation/busy gate, shared control availability, preview preferences and initial load. Callback forwarding connects controllers without importing each other. |
 | `editor/editor-state.mts` | `SceneSession` owns the current scene descriptor, committed baseline/revision and `LayerEditor`, dirty comparisons and native serialization. `WorkspaceState` owns the adopted project catalog/revision, separately validated scene choices and navigation state. Selection, brushes/clipboard and gestures have separate owners. |
 | `scene/layers.mts`, `scene/model.mts` | Authored scene, active layer, strokes and undo/redo. Controllers mutate through this existing model. Bidirectional changed-path/subtree records retain up to 100 operations; one transaction clone supports cancellation. Layer context replays with undo/redo. Selection, camera scroll and preview positions are not authored history. |
@@ -61,6 +62,23 @@ classification in `scene/view-filters.mts`. They never enter scene history,
 serialization, recovery or diagnostics. Hidden categories lose selection and hit
 tests; gestures reject hidden placements/tiles, and composition commands require
 all categories visible. Filter redraws refresh controls without checkpointing.
+
+## Shared document shell
+
+The scene and artwork surfaces occupy the same `editor-workbench`; scene and
+artwork panel contributions occupy the same `inspector-pane`. The mounted shell
+sets `EditorActivity.document` and presentation visibility together. Scene keyboard,
+Space-pan, focus restoration, history navigation and saved-refresh eligibility
+explicitly reject the artwork context; they no longer depend on a nonmodal artwork
+dialog being open. Pixel gestures and review/save remain owned by their existing
+controllers. Artwork discovery keeps its existing independent eligibility fence.
+
+The first consolidation increment retains the document chooser, contextual pixel
+toolbar, artwork Save footer and bounded frame dock. Navigation/command and panel
+refinements belong to the subsequent milestone 22 issues. Artwork layer/properties
+and exact-change review currently contribute their existing controls to the shared
+Inspector. Review opens the Inspector when collapsed. Retained artwork controls
+include both its surface and Inspector; they never snapshot scene controls.
 
 ## Initialization, asynchronous work and disposal
 
