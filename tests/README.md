@@ -59,6 +59,7 @@ and archived observations are in the [artwork evaluation](../docs/evaluations/ar
 `playwright/editor/notifications.spec.ts` covers locked-layer rejection without
 pixel/history changes, coalescing, expiry, hover/focus pauses, dismissal, document
 ownership, persistent checkpoint/save failures and retries, modal keyboard access,
+keyboard review/save retry coalescing and resolution across command entry points,
 stale replies/timers and mounted disposal.
 
 `make test-frontend` discovers the TypeScript suite files one domain level

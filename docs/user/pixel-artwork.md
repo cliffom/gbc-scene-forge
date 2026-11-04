@@ -17,6 +17,8 @@ attempts refresh the same card. Hovering or focusing a card pauses its timer.
 Save and recovery failures stay visible until dismissed or resolved. Closing a
 card only acknowledges the message: protect your local work and resolve the
 reported problem before leaving the document.
+Artwork review and save retries share their feedback across keyboard shortcuts
+and buttons: repeated failures keep one card, and a successful retry clears it.
 
 ## Shared editor workspace
 

@@ -589,7 +589,7 @@ export function createPixelEditor({
     }
     discard.classList.toggle('destructive-command', modified);
   }
-  async function execute(work: () => Promise<void>) {
+  async function execute(work: () => Promise<void>, key?: string) {
     if (busy || ports.presentation.unavailable() || lifetime.disposed) {
       return;
     }
@@ -597,7 +597,8 @@ export function createPixelEditor({
     busy = true;
     controls();
     message('');
-    const operationKey = work.name ? work : (document.activeElement?.closest('button') ?? work);
+    const operationKey =
+      key ?? (work.name ? work : (document.activeElement?.closest('button') ?? work));
     const previousFeedback = feedback.capture();
     await ports.run(async () => {
       try {
@@ -1727,10 +1728,11 @@ export function createPixelEditor({
     message('Review ready. Saving commits exactly these pixels against the reviewed saved bases.');
   }
   lifetime.assign(button('art-review'), 'onclick', () => {
-    void execute(reviewCurrent);
+    void execute(reviewCurrent, 'review');
   });
   function save() {
-    void execute(async () => {
+    const reviewing = !session?.receipt || !surface.classList.contains('show-art-review');
+    const work = async () => {
       const current = session;
       if (!current) {
         return;
@@ -1791,7 +1793,8 @@ export function createPixelEditor({
           true,
         );
       }
-    });
+    };
+    void execute(work, reviewing ? 'review' : 'save');
   }
   for (const id of ['art-view-x', 'art-view-y', 'art-use-scene']) {
     input(id).addEventListener(

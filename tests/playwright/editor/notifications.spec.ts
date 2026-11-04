@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { transpileModule, ModuleKind, ScriptTarget } from 'typescript';
 import { test, expect } from '../support/browser-fixtures.ts';
-import { revealArtworkControl, reviewArtwork, saveArtwork } from '../support/artwork-controls.ts';
+import { revealArtworkControl, saveArtwork } from '../support/artwork-controls.ts';
 import type { Feedback } from '../../../frontend/editor/editor-notifications.mts';
 
 declare global {
@@ -93,7 +93,7 @@ for key in ['picture','other']:
   expect(errors).toEqual([]);
 });
 
-test('checkpoint failures persist through routine feedback and clear only after a successful retry', async ({
+test('checkpoint, review and save failures clear after successful button or keyboard retries', async ({
   page,
   workspace,
 }) => {
@@ -133,7 +133,27 @@ a.save(a.create('picture','Picture','sprite',16,16,p.catalog()['revision']))
   await page.clock.runFor(500);
   await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
   await expect(failure).toHaveCount(0);
-  await reviewArtwork(page);
+  await page.route('**/api/artwork-review', (route) =>
+    route.fulfill({
+      status: 400,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'review temporarily failed' }),
+    }),
+  );
+  const reviewFailure = page.locator('.notification', { hasText: 'review temporarily failed' });
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await Promise.all([
+      page.waitForResponse('**/api/artwork-review'),
+      page.locator('#art-canvas').press('Control+s'),
+    ]);
+    await expect(page.locator('#save')).toBeEnabled();
+    await expect(reviewFailure).toHaveCount(1);
+  }
+  await page.unroute('**/api/artwork-review');
+  await page.locator('#art-canvas').press('Control+s');
+  await expect(page.locator('#art-comparison')).toBeVisible();
+  await expect(page.locator('#save')).toHaveText('Confirm save');
+  await expect(reviewFailure).toHaveCount(0);
   await page.route('**/api/artwork-save', (route) =>
     route.fulfill({
       status: 409,
@@ -141,9 +161,15 @@ a.save(a.create('picture','Picture','sprite',16,16,p.catalog()['revision']))
       body: JSON.stringify({ error: 'saved base changed' }),
     }),
   );
-  await page.locator('#save').click();
   const saveFailure = page.locator('.notification', { hasText: 'saved base changed' });
-  await expect(saveFailure).toBeVisible();
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await Promise.all([
+      page.waitForResponse('**/api/artwork-save'),
+      page.locator('#art-canvas').press('Control+s'),
+    ]);
+    await expect(page.locator('#save')).toBeEnabled();
+    await expect(saveFailure).toHaveCount(1);
+  }
   await page.clock.fastForward(12000);
   await expect(saveFailure).toBeVisible();
   await expect(page.locator('#document-state')).toHaveText('Modified');

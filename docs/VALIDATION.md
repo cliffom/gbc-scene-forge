@@ -15,6 +15,19 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Artwork keyboard retry feedback (PR #205)
+
+- **Scope:** Review fix based on `aecf539`, checked locally on 2026-11-04 in
+  Chromium against rebuilt production 0.33.2 assets.
+- **Method:** Repeated failed artwork review/save requests through Ctrl+S,
+  followed by successful keyboard/button retries, plus the notification,
+  artwork iteration and document-navigation Playwright suites.
+- **Result:** The regression initially left two error cards after a successful
+  review. With explicit operation keys, repeated failures coalesced and successful
+  retries cleared them. All 13 browser cases passed.
+- **Limits:** Synthetic local Chromium checks; no full browser matrix or
+  independent human/accessibility assessment was repeated for this fix.
+
 ## Shared editor notifications (#204)
 
 - **Scope:** Prepared 0.33.2 working tree based on `8ac63d1`, inspected locally
