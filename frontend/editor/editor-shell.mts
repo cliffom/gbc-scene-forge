@@ -24,7 +24,6 @@ export function createEditorShell(
     changed(active);
     layout.dataset.document = active;
     document.body.classList.toggle('editing-artwork', active === 'artwork');
-    element('artwork-heading', HTMLElement).hidden = active !== 'artwork';
     inspector.setAttribute(
       'aria-label',
       active === 'artwork' ? 'Artwork inspector' : 'Scene inspector',

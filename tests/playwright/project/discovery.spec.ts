@@ -4,7 +4,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { join } from 'node:path';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { test, clickControl, paint } from '../support/browser-fixtures.ts';
+import { test, clickControl, paint, chooseSavedScene } from '../support/browser-fixtures.ts';
 
 const execute = promisify(execFile);
 const create = async (python: string, root: string, title: string) => {
@@ -96,7 +96,7 @@ test('discovers the first scene in an empty project and enables navigation', asy
   const id = await addScene(forge.python, root, 'First external scene');
   await expect(page.locator('#scenes')).toBeEnabled();
   await expect(page.locator(`#scenes option[value="${id}"]`)).toHaveCount(1);
-  await page.locator('#scenes').selectOption(id);
+  await chooseSavedScene(page, id);
   await expect(page.locator('#status')).toHaveText('Scene opened.');
   await expect(page.locator('#scenes')).toHaveValue(id);
 });
@@ -122,7 +122,7 @@ test.describe('scene inventory in a directly opened project', () => {
     await writeFile(path, content);
     await expect(page.locator(`#scenes option[value="${first}"]`)).toHaveCount(1);
     await expect(page.locator('#inventory-status')).toBeHidden();
-    await page.locator('#scenes').selectOption({ label: 'Riverside' });
+    await chooseSavedScene(page, { label: 'Riverside' });
     await expect(page.locator('#status')).toHaveText('Scene opened.');
     const active = await page.locator('#scenes').inputValue();
     await page.locator('#palette button.asset').first().click();
@@ -133,7 +133,7 @@ test.describe('scene inventory in a directly opened project', () => {
     await expect(page.locator('#scenes')).toHaveValue(active);
     await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
     await expect(page.locator('#undo')).toBeEnabled();
-    await page.locator('#scenes').selectOption(second);
+    await chooseSavedScene(page, second);
     await expect(page.locator('#switch-scene-description')).toContainText('External dirty');
     await page.screenshot({ path: testInfo.outputPath('dirty-scene-discovery.png') });
     await page.locator('#scene-switch-cancel').click();
@@ -145,7 +145,7 @@ test.describe('scene inventory in a directly opened project', () => {
     await page.locator('#undo').click();
     await expect(page.locator('#scene-save-state')).toHaveText('Saved');
     // A choice discovered while dirty must be usable before snapshot adoption.
-    await page.locator('#scenes').selectOption(second);
+    await chooseSavedScene(page, second);
     await expect(page.locator('#status')).toHaveText('Scene opened.');
     await expect(page.locator('#scenes')).toHaveValue(second);
   });
@@ -170,11 +170,12 @@ test.describe('scene inventory in a directly opened project', () => {
       "delete document.visibilityState; document.dispatchEvent(new Event('visibilitychange'))",
     );
     await expect(page.locator(`#scenes option[value="${hidden}"]`)).toHaveCount(1);
+    await page.locator('#document-switcher').click();
     await page.locator('#scenes').focus();
     const focused = await addScene(forge.python, forge.root, 'Focused discovery');
     await page.waitForTimeout(2300);
     await expect(page.locator(`#scenes option[value="${focused}"]`)).toHaveCount(0);
-    await page.locator('#scenes').blur();
+    await page.locator('#document-chooser-close').click();
     await expect(page.locator(`#scenes option[value="${focused}"]`)).toHaveCount(1);
     let count = 0;
     let release = () => {};

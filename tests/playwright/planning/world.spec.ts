@@ -6,7 +6,13 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { array, record, string } from '../../../frontend/shared/decode.mts';
-import { clickControl, setControl, test, waitForUI } from '../support/browser-fixtures.ts';
+import {
+  clickControl,
+  setControl,
+  test,
+  waitForUI,
+  chooseSavedScene,
+} from '../support/browser-fixtures.ts';
 test('world: Real world dragging, link authoring, navigation and endpoint lifecycle.', async ({
   page,
   workspace,
@@ -44,7 +50,7 @@ print(json.dumps(ids))
   const click = (id: string) => clickControl(page, id);
   const choose = async (id: string) => {
     await wait("!document.getElementById('scenes').disabled");
-    await page.locator('#scenes').selectOption(id);
+    await chooseSavedScene(page, id);
     await wait(
       `document.getElementById('scene-name').textContent.startsWith(${JSON.stringify(id === first ? 'Forest ·' : 'Cave ·')}) && !document.getElementById('show-world').disabled`,
     );

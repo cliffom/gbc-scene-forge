@@ -73,11 +73,19 @@ explicitly reject the artwork context; they no longer depend on a nonmodal artwo
 dialog being open. Pixel gestures and review/save remain owned by their existing
 controllers. Artwork discovery keeps its existing independent eligibility fence.
 
-The first consolidation increment retains the document chooser, contextual pixel
-toolbar, artwork Save footer and bounded frame dock. Navigation/command and panel
-refinements belong to the subsequent milestone 22 issues. Artwork layer/properties
-and exact-change review currently contribute their existing controls to the shared
-Inspector. Review opens the Inspector when collapsed. Retained artwork controls
+The document bar derives names, kinds and local Saved/Modified/New state from
+the active owner. A separate warning reports detected changes to its saved base;
+it does not rebase local history. Documents offers the active scene, other saved
+scenes and up to 16 retained artwork sessions. Switching cancels captured gestures
+and stops outgoing playback. Scene view retention belongs to its viewport
+controller; artwork controls, selection and view belong to its retained session.
+Artwork checkpoints must succeed before a scene or project departure. The shared
+operation gate rejects duplicate navigation, and lifetime checks prevent disposed
+responses from restoring a document. The contextual pixel toolbar, artwork Save
+footer and bounded frame dock remain; subsequent milestone issues refine commands
+and panels. Artwork layer/properties and exact-change review currently contribute
+their existing controls to the shared Inspector. Review opens it when collapsed.
+Retained artwork controls
 include both its surface and Inspector; they never snapshot scene controls.
 
 ## Initialization, asynchronous work and disposal

@@ -1,7 +1,7 @@
 /** Display-name search and guarded import feedback through public browser controls. */
 import { expect } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
-import { test, paint } from '../support/browser-fixtures.ts';
+import { test, paint, chooseSavedScene } from '../support/browser-fixtures.ts';
 
 for (const viewport of [
   { width: 1440, height: 900 },
@@ -14,7 +14,7 @@ for (const viewport of [
     await page.setViewportSize(viewport);
     await page.goto(await workspace.start(workspace.folder, false, true, true));
     await expect(page.locator('#scenes')).toBeEnabled();
-    await page.locator('#scenes').selectOption({ label: 'Riverside' });
+    await chooseSavedScene(page, { label: 'Riverside' });
     await expect(page.locator('#status')).toHaveText('Scene opened.');
     await page.locator('#palette button.asset').first().click();
     let checkpoints = 0;

@@ -16,13 +16,13 @@ Artwork opens in the same central workbench as scenes. Its name appears in the
 document bar. The Library and collapsible Inspector remain in their usual places;
 Layers, frame Properties and Save's exact-change review use the Inspector.
 Collapse either side pane with its header arrow to make more room for drawing.
-Save opens the Inspector for review if it was collapsed. Return to scene restores
+Save opens the Inspector for review if it was collapsed. Choosing the scene in Documents restores
 scene canvas focus and the scene Inspector; scene edits and Undo remain retained
 for ordinary shared artwork edits. Selected-placement variations retain their
 separate atomic save and scene-history behavior described below.
 
-The initial shared shell keeps artwork's existing Save footer, document chooser
-and frame/animation dock while milestone 22 proceeds through its next increments.
+The shared shell keeps artwork's existing Save footer and frame/animation dock
+while milestone 22 proceeds through its next increments.
 
 ## Layers, agent exchange and navigation
 
@@ -48,7 +48,7 @@ saving. **Adopt a copy** checks its artwork and selected-scene bases and opens
 separately owned local work with a new Undo history; other open documents keep
 their history/checkpoints.
 Adopted edits to saved artwork remain **Modified** against the actual saved
-original until saved. Returning to Scene retains their recovery checkpoint.
+original until saved. Choosing the scene in Documents retains their recovery checkpoint.
 **Document actions → Return candidate to agent** checkpoints and downloads an immutable handle that
 the agent can list/export and edit against its actual saved base. It does not
 publish. A later browser/MCP save still needs fresh review and guards. Stale work
@@ -144,8 +144,10 @@ choice returns focus to the canvas. History, clipboard and transforms use the
 same icon style as scene commands; gold marks the selected drawing tool.
 
 The toolbar groups tools, history/transforms, Color/Opacity and Pan/Fit/Zoom on
-one row when space permits. Groups wrap together at smaller widths; the **Palette ▾** dropdown opens a scrollable 12-column swatch grid. A badge beside the document name distinguishes shared artwork, new artwork and
-selected-placement variations. Save stays beneath the canvas. **Document actions**
+one row when space permits. Groups wrap together at smaller widths; the **Palette ▾**
+dropdown opens a scrollable 12-column swatch grid. The Inspector identifies shared
+artwork, new artwork and selected-placement variations; the document bar shows
+local Saved/Modified/New state. Save stays beneath the canvas. **Document actions**
 contains download, close/discard and **Drawing & keyboard help**. **Fit** chooses
 the largest available zoom that fits the current sheet or frame and centers it.
 
@@ -225,7 +227,7 @@ remain present through Undo. Saving a new representation removes history states
 that become no-ops or exceed document limits after retaining the saved frames.
 Other pixel, name and animation history remains undoable, including valid states
 before and after a removed state.
-Return to Scene to place new artwork
+Choose the scene in **Documents** to place new artwork
 from the Library separately. **Close review** returns space to drawing; **Update
 review** regenerates the comparison after adjustments. A failed scene preview
 leaves its options available so you can switch to isolated review.
@@ -277,23 +279,34 @@ for the exercised tasks, evidence and limits.
 
 ## Sheets, animations and the shared workbench
 
-Artwork shares the main workspace with Scene. The document-name button in the
-existing context bar opens the **Open documents** dialog. Its dimmed background
-is inactive until you choose a document or dismiss it. The current artwork and
-Saved/Modified/New state are marked; **Return to scene** is the first action
-(**Return to Scene workspace** when no scene is open). Close, Escape or clicking
-the backdrop dismisses it and restores focus to the document-name button.
-Long names wrap, and the chooser scrolls within compact viewport bounds. No extra
-document row is reserved. Merely opening/dismissing it creates no checkpoint. **Return to scene** checkpoints artwork, and choosing its name
-in the switcher restores history, selection, tools, zoom and viewport. A failed
-checkpoint keeps the current document open. Returning to a document restores its
-selected sequence and rebuilds its timing controls. Previous comparison images,
-reference summaries and generated animation reviews are cleared; Save requires
-a fresh review of that document. Saving retains it; closing/discarding
-removes it. Up to 16 artwork documents can remain open at once. Setup hides the
-switcher when no artwork documents are retained. Otherwise its
-**Documents ▾** label distinguishes navigation from creation. The switcher also
-provides New and Browse actions when the Library is hidden in compact windows.
+Scenes and artwork share one document-name button in the context bar. It shows
+the name and **Scene** or **Artwork** kind; the adjacent **Saved**, **Modified** or
+**New** label describes local work. **Saved base changed externally** is a separate
+warning when discovery or a manual scene check detects a different saved revision.
+Undoing to your own saved base does not remove that warning or adopt external edits.
+Automatic scene adoption remains paused while the scene is dirty.
+
+The button opens **Open documents**, including the active scene, an **Open another
+scene** selector and retained artwork. Enter/Space opens it from keyboard focus.
+Close, Escape or the backdrop dismisses it and restores focus to the button.
+The background stays inactive while it is open. Long names wrap and the chooser
+scrolls within compact viewport bounds. It remains available during artwork setup
+and when no artwork documents are retained.
+
+Choosing a retained document keeps independent history, selection, active layer,
+tools, color, frame/sequence, zoom and viewport. Outgoing playback stops. Switching
+away from artwork waits for its checkpoint; failure keeps that document open.
+Returning restores canvas focus. Opening/dismissing the chooser alone creates no
+checkpoint. Opening **another scene** replaces the single active scene after its
+existing unsaved-work confirmation; changing projects checkpoints artwork and
+retains scene Save/Discard/Keep editing choices. Reload recovery restores checkpoints,
+not the in-memory Undo stack. Up to 16 artwork documents can remain open at once.
+
+Saving retains an artwork document; **Document actions → Close artwork** closes a
+saved document and **Discard draft…** confirms removal of a modified one. Switching
+does neither. Returning clears comparison images, reference summaries and animation
+reviews; Save requires a fresh review. New/Browse remain available in the chooser
+when the Library is collapsed.
 
 For a sheet, set overall Width/Height, enable multiple frames, then choose Frame
 width/height and optional sprite origin. Frame dimensions must divide the sheet
@@ -335,7 +348,11 @@ into looping Tiled animations. Scene preview returns to **Play** when a
 non-looping sequence finishes, including a one-frame pose
 ([completed preview](../images/non-looping-preview-complete.png)).
 
-Current workspace: [compact toolbar](../screenshots/artwork-polish/desktop.png),
+Document navigation: [shared artwork workspace](../screenshots/document-navigation/artwork.png),
+[Documents chooser](../screenshots/document-navigation/documents.png) and
+[compact chooser](../screenshots/document-navigation/documents-compact.png).
+
+Earlier artwork layout captures: [compact toolbar](../screenshots/artwork-polish/desktop.png),
 [pixel target](../screenshots/artwork-polish/target-light.png),
 [Documents chooser](../screenshots/artwork-polish/documents.png),
 [800×640 review](../screenshots/artwork-polish/compact-review.png) and

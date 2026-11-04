@@ -1,7 +1,13 @@
 /** Native RGBA sources remain usable through the existing scene authoring browser. */
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
-import { expect, paint, test, clickControl } from '../support/browser-fixtures.ts';
+import {
+  expect,
+  paint,
+  test,
+  clickControl,
+  chooseSavedScene,
+} from '../support/browser-fixtures.ts';
 
 test('native artwork: load, place, save and reopen generated tiles', async ({
   page,
@@ -27,7 +33,7 @@ p.scenes.save(s['id'], s['scene'], s['revision'], p.catalog()['revision'])`,
   const url = await workspace.start(root);
   await page.goto(url);
   await expect(page.locator('#scenes')).toBeEnabled();
-  await page.locator('#scenes').selectOption({ label: 'Native room' });
+  await chooseSavedScene(page, { label: 'Native room' });
   await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   await page.locator('[data-asset="grass/artwork"]').click();
   await paint(page, 12, 12);

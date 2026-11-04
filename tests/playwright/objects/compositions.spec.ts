@@ -12,6 +12,7 @@ import {
   setControl,
   test,
   waitForUI,
+  chooseSavedScene,
 } from '../support/browser-fixtures.ts';
 test('compositions: Real keyboard/pointer clipboard editing, library persistence and atomic bounds checks.', async ({
   page,
@@ -69,7 +70,7 @@ print(json.dumps(ids))
     await wait(
       "document.getElementById('scenes')?.disabled === false && !document.getElementById('show-create').disabled",
     );
-    await page.locator('#scenes').selectOption(id);
+    await chooseSavedScene(page, id);
     await wait(
       `document.getElementById('scene-name').textContent.startsWith(${JSON.stringify(id === first ? 'Room ·' : id === second ? 'Other room ·' : 'Missing layers ·')}) && !document.getElementById('show-create').disabled`,
     );

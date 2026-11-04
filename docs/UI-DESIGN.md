@@ -77,9 +77,12 @@ and review use the existing Inspector. Its collapse handle works in both context
 opening artwork review reveals the Inspector if needed. Returning to the scene
 restores its canvas focus and existing Inspector content.
 
-This first shell increment preserves the artwork document chooser, Save footer
-and frame/animation dock. Subsequent milestone 22 issues refine common command
-placement, navigation and panel controls. Setup is a focused surface in the
+One Documents button shows the active name and kind, with Saved/Modified/New
+beside it and a separate detected-external-change warning. Its chooser offers the
+active scene, other saved scenes and retained artwork. Switching preserves local
+context and independent history; failed checkpoints block departure. The artwork
+Save footer and frame/animation dock remain. Subsequent milestone 22 issues refine
+common command placement and panel controls. Setup is a focused surface in the
 workbench; dialogs remain appropriate for modal confirmations and document choice.
 
 ## Pixel editor layout
@@ -102,7 +105,7 @@ document switcher retains New/Browse navigation.
 Save opens change review and explicit confirmation. Keep its footer reachable
 while the animation dock or comparison scrolls. A successful save retains the
 current document, history and viewport and updates Saved/Modified/New state.
-Return to Scene and Close/discard are separate actions. Document actions contains
+Choosing the scene in Documents retains artwork; Close/discard removes it. Document actions contains
 less frequent download/discard/help commands. Preserve revision guards, review
 invalidation, checkpoints and independent scene history. Bounds checks and agent
 inspection do not replace independent human usability testing. The

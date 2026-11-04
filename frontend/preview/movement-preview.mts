@@ -413,6 +413,12 @@ export function createMovementPreview(
       render();
     },
     model,
+    suspend() {
+      keys.clear();
+      model.paused = true;
+      model.moving = false;
+      render();
+    },
     get active() {
       return enabled.checked && !!target;
     },

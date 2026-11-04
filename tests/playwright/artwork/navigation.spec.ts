@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import type { Page } from '@playwright/test';
-import { test, expect } from '../support/browser-fixtures.ts';
+import { test, expect, activateScene } from '../support/browser-fixtures.ts';
 import { record, string } from '../../../frontend/shared/decode.mts';
 import { revealArtworkControl } from '../support/artwork-controls.ts';
 
@@ -293,7 +293,7 @@ for (const route of ['Documents', 'Library'] as const) {
       throw Error('Expected canvas');
     }
 
-    await page.locator('#art-close').click();
+    await activateScene(page);
     await expect(page.locator('#artwork-surface')).toBeHidden();
     if (route === 'Documents') {
       await page.locator('#document-switcher').click();
@@ -328,9 +328,9 @@ test('Documents is modal, dismisses predictably and fits long names at compact w
   workspace,
 }, info) => {
   await setup(page, workspace);
-  await page.locator('#art-close').click();
+  await activateScene(page);
   await page.locator('[data-asset="large/artwork"]').click();
-  await page.locator('#art-close').click();
+  await activateScene(page);
   await page.locator('[data-asset="player/f0"]').click();
   const trigger = page.locator('#document-switcher');
   const chooser = page.locator('#document-tabs');
@@ -357,7 +357,7 @@ test('Documents is modal, dismisses predictably and fits long names at compact w
     await expect(chooser).toBeVisible();
     await expect(page.locator('#document-chooser-close')).toBeFocused();
     expect(await chooser.evaluate((n) => n.matches(':modal'))).toBe(true);
-    await expect(page.locator('#scene-document')).toHaveText('Return to Scene workspace');
+    await expect(page.locator('#scene-document')).toHaveText('Scene workspace · Scene');
     await expect(page.locator('#artwork-documents [aria-pressed=true]')).toContainText('Current');
     expect(
       await chooser.evaluate(
@@ -382,7 +382,7 @@ test('oversized panned artwork writes the targeted pixel and releases navigation
   workspace,
 }) => {
   await setup(page, workspace);
-  await page.locator('#art-close').click();
+  await activateScene(page);
   await page.locator('[data-asset="large/artwork"]').click();
   await page.locator('#art-zoom').selectOption('32');
   await drag(page, 80, 20, 'middle');

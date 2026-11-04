@@ -24,6 +24,7 @@ export class WorkspaceState {
 }
 
 export class SceneSession {
+  externalChanged = false;
   loaded: Loaded | null = null;
   committed: Loaded | null = null;
   editor: LayerEditor | null = null;

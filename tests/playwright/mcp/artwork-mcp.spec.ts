@@ -9,7 +9,7 @@ import { record, array, string } from '../../../frontend/shared/decode.mts';
 import { decodeCandidate } from '../../../frontend/artwork/artwork-contracts.mts';
 import { PixelModel } from '../../../frontend/artwork/pixel-model.mts';
 import { expect } from '@playwright/test';
-import { test } from '../support/browser-fixtures.ts';
+import { test, chooseSavedScene, activateScene } from '../support/browser-fixtures.ts';
 
 test('mcp: artwork brief, hand edits, agent revision, selected sprite variation and conflict recovery', async ({
   page,
@@ -73,7 +73,7 @@ test('mcp: artwork brief, hand edits, agent revision, selected sprite variation 
   };
   await page.goto(url);
   await expect(page.locator('#scenes')).toBeEnabled();
-  await page.locator('#scenes').selectOption(string(seed.scene_id));
+  await chooseSavedScene(page, string(seed.scene_id));
   await expect(page.locator('#status')).toHaveText('Scene opened.');
   const originalLantern = await open('lantern');
   await editMoss();
@@ -82,7 +82,7 @@ test('mcp: artwork brief, hand edits, agent revision, selected sprite variation 
   await page.locator('#art-redo').click();
   await reviewArtwork(page);
   await saveArtwork(page);
-  await page.locator('#art-close').click();
+  await activateScene(page);
   await expect(page.locator('#artwork-surface')).not.toBeVisible();
   const writes = join(output, 'revision-writes.json');
   await writeFile(writes, JSON.stringify([{ x: 7, y: 7, rgba: [180, 156, 78, 255] }]));
@@ -123,7 +123,7 @@ test('mcp: artwork brief, hand edits, agent revision, selected sprite variation 
   await page.locator('#art-save').click();
   await expect(page.locator('#art-message')).toContainText('Local pixels are retained');
   await page.screenshot({ path: info.outputPath('mixed-writer-conflict.png') });
-  await page.locator('#art-close').click();
+  await activateScene(page);
   await page.reload();
   await expect(page.locator('#status')).toHaveText('Scene opened.');
   await page.locator('#show-artwork').click();
@@ -196,7 +196,7 @@ a.save(c,receipt=p.artwork.reviews.animation(c,'walk',scale=1)['receipt'])
       await reviewArtwork(page);
       await saveArtwork(page);
     }
-    await page.locator('#art-close').click();
+    await activateScene(page);
     const result = await promisify(execFile)(process.env.FORGE_MCP_PYTHON || '.venv/bin/python', [
       '-c',
       `

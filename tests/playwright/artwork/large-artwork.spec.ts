@@ -2,7 +2,7 @@
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { record, array, string } from '../../../frontend/shared/decode.mts';
-import { test, expect } from '../support/browser-fixtures.ts';
+import { test, expect, activateScene } from '../support/browser-fixtures.ts';
 import { reviewArtwork, saveArtwork, revealArtworkControl } from '../support/artwork-controls.ts';
 
 for (const [width, height] of [
@@ -64,7 +64,7 @@ Project.create(Path(sys.argv[1]),'Card artwork')
     const edited = Date.now();
     // Returning to the scene and recovering verifies the durable record, including
     // original plus edited envelopes larger than the previous HTTP request limit.
-    await page.locator('#art-close').click();
+    await activateScene(page);
     await page.locator('#show-artwork').click();
     await revealArtworkControl(page, 'art-drafts');
     await page.getByRole('button', { name: 'Recover copy', exact: true }).click();
@@ -80,7 +80,7 @@ Project.create(Path(sys.argv[1]),'Card artwork')
     ).toBeLessThanOrEqual(1024);
     await saveArtwork(page);
     const saved = Date.now();
-    await page.locator('#art-close').click();
+    await activateScene(page);
     await page.reload();
     await page.locator('[data-asset="single_card/artwork"]').click();
     await expect(page.locator('#art-document-state')).toHaveText('Saved');
@@ -241,7 +241,7 @@ a.save(c)
     expect(bounds?.x).toBeGreaterThanOrEqual(0);
     expect((bounds?.x ?? 0) + (bounds?.width ?? 0)).toBeLessThanOrEqual(width);
     await page.screenshot({ path: info.outputPath(`palette-${width}.png`) });
-    await page.locator('#artwork-heading').click();
+    await page.locator('#project-name').click();
     await expect(page.locator('#art-palette')).toBeHidden();
   }
 });
@@ -270,7 +270,7 @@ test('detail review initializes new document bounds and restores retained docume
   await page.locator('#art-review-x').fill('10');
   await page.locator('#art-review-y').fill('20');
   await reviewArtwork(page);
-  await page.locator('#art-close').click();
+  await activateScene(page);
   await page.locator('#show-artwork').click();
   await page.locator('#art-kind').selectOption('tile');
   await page.locator('#art-name').fill('Small detail');

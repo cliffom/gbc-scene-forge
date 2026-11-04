@@ -114,9 +114,11 @@ Imported assets open a focused copy flow. Scene placement remains the ordinary
 single-click behavior when a scene is open. Opening a frame selects that frame
 in a whole-sheet overview, including in an already-open document.
 
-Setup hides the document switcher until artwork is active or retained; its setup
-label is Documents. Creation IDs follow normalized names while preserving manual
-overrides.
+Documents remains available in scene, artwork and setup contexts. Its button
+shows the active name and kind; local Saved/Modified/New state and a separate
+detected-external-change warning remain visible beside it. The chooser also
+contains the saved-scene selector. Creation IDs follow normalized names while
+preserving manual overrides.
 
 Switching checkpoints outgoing changed artwork and retains its local model,
 Undo/Redo, selection, pixel tool, frame/sequence controls, zoom and scroll.
@@ -133,7 +135,7 @@ allowing earlier pixel, name and sequence edits to be undone. Representation-onl
 history entries which become no-ops are removed. Offline work downloads contain
 the live descriptor and RGBA snapshot alongside the last synchronized candidate
 and original base, without requiring successful synchronization. Close/discard
-removes it; Return to scene retains it. A failure during post-save adoption retires
+removes it; choosing the scene in Documents retains it. A failure during post-save adoption retires
 the submitted candidate and reports the committed save rather than making it
 editable against a stale base. Dirty inactive documents keep their original saved bases;
 external changes do not silently rebase them. Explicit reopen/recovery follows

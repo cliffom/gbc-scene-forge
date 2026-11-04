@@ -8,6 +8,9 @@ and publication procedures in [releasing](RELEASING.md).
 
 ## 0.33.0 — Shared scene and artwork editor shell
 
+One document control now navigates scenes and retained artwork, preserving local
+editing context and showing local state separately from detected external changes.
+
 [Release notes](RELEASE-0.33.0.md). Begin milestone 22 with a shared workbench and
 Inspector for scenes and artwork, contextual panel contributions, and explicit
 active-document protection for scene shortcuts and refresh. Publication is separate.

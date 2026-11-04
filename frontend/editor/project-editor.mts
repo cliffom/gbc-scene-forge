@@ -330,6 +330,7 @@ export function mountProjectEditor() {
     layersController.renderLayerContext();
     layersController.inspect();
     editorLayout.syncToolbar();
+    pixelEditor.syncNavigation(unsaved);
   }
   async function run(work: () => Promise<void> | void) {
     if (lifetime.disposed) {
@@ -637,6 +638,8 @@ export function mountProjectEditor() {
     sceneSelection,
     animationPreview,
     ports: {
+      beforeSceneChange: () => pixelEditor.activateScene(),
+      beforeProjectChange: () => pixelEditor.prepareDeparture(),
       discard: (...args) => discard(...args),
       run: (...args) => run(...args),
 
@@ -734,7 +737,7 @@ export function mountProjectEditor() {
       },
     },
   });
-  createPixelEditor({
+  const pixelEditor = createPixelEditor({
     lifetime,
     api,
     workspaceState,
@@ -744,8 +747,25 @@ export function mountProjectEditor() {
     ports: {
       presentation: {
         contribute: (contribution) => shell.contribute('artwork', contribution),
-        scene: () => scenePresentation.activate(true),
+        scene: () => {
+          scenePresentation.activate(true);
+          viewportController.restoreDocument();
+        },
         revealInspector: () => shell.revealInspector(),
+        prepareSceneDeparture: () => {
+          if (activity.document === 'scene') {
+            gesturesController.cancelEditing();
+            animationPreview.suspend();
+            viewportController.rememberDocument();
+          }
+        },
+        sceneSummary: (modified = sceneSession.dirty()) => ({
+          name: sceneSession.loaded?.name ?? 'Scene workspace',
+          kind: 'Scene',
+          state: !sceneSession.loaded ? '' : modified ? 'Modified' : 'Saved',
+          externalChanged: sceneSession.externalChanged,
+        }),
+        unavailable: () => activity.busy || workspaceState.navigating || gestures.anchor !== null,
       },
       discovered: async (data, eligible) => {
         const snapshot = decodeProject(data.project);

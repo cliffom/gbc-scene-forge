@@ -122,6 +122,15 @@ export class EditorLifetime {
     cancelAnimationFrame(frame);
     this.frames.delete(frame);
   }
+  releaseCaptures(target: Element) {
+    const pointers = this.captures.get(target);
+    for (const pointer of [...(pointers ?? [])]) {
+      if (target.hasPointerCapture(pointer)) {
+        target.releasePointerCapture(pointer);
+      }
+    }
+    pointers?.clear();
+  }
   cancelTimeout(timer: ReturnType<typeof setTimeout> | undefined) {
     clearTimeout(timer);
     if (timer !== undefined) {

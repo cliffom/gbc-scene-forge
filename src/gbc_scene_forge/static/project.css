@@ -652,7 +652,6 @@
 #document-switcher {max-width:220px;overflow:hidden;text-overflow:ellipsis;border-color:var(--accent)}
 #art-document-state {font-size:12px;color:var(--muted)}
 .editing-artwork #scene-save-state,.editing-artwork #scene-commands {display:none}
-.editing-artwork .document-context label:has(#scenes) {display:none}
 .editing-artwork #edit-tile,.editing-artwork #terrain-tools,.editing-artwork .library-tabs {display:none}
 .asset-card {display:flex;flex-direction:column;gap:3px;min-width:0}
 .asset-card .asset {width:100%;flex:1}
@@ -712,3 +711,9 @@
 #artwork-surface .art-workspace {gap:0}
 #artwork-surface .art-canvas-scroll {border:0;border-radius:0;background-color:#181b17;background-image:radial-gradient(#3b4034 .7px,transparent .7px);background-size:16px 16px}
 #artwork-surface #art-sheet-controls,#artwork-surface #art-draft-status,#artwork-surface #art-message,#artwork-surface #art-editor>.dialog-actions {padding-inline:10px}
+
+#document-switcher {max-width:360px}
+#document-state,#document-base-state {font-size:11px;color:var(--muted);white-space:nowrap}
+#document-state[data-modified=true],#document-base-state {color:var(--accent)}
+#document-tabs>.field {display:flex;flex-direction:column;gap:6px;margin-block:16px}
+#document-tabs>.field select {width:100%;min-width:0}

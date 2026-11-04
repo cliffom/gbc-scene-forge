@@ -217,5 +217,49 @@ export function createViewportController({
         after.top + y * after.height - next.top - ports.viewport.clientHeight / 2;
     }
   }
-  return { sceneZoom, fitScene, syncBlockoutZoom, changeLayout };
+  let retainedView: {
+    editor: SceneSession['editor'];
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+    x: number;
+    y: number;
+  } | null = null;
+  function rememberDocument() {
+    const bounds = canvas.getBoundingClientRect();
+    const viewport = ports.viewport;
+    const view = viewport.getBoundingClientRect();
+    if (sceneSession.editor && bounds.width && bounds.height) {
+      retainedView = {
+        editor: sceneSession.editor,
+        left: viewport.scrollLeft,
+        top: viewport.scrollTop,
+        width: viewport.clientWidth,
+        height: viewport.clientHeight,
+        x: (view.left + viewport.clientWidth / 2 - bounds.left) / bounds.width,
+        y: (view.top + viewport.clientHeight / 2 - bounds.top) / bounds.height,
+      };
+    }
+  }
+  function restoreDocument() {
+    const saved = retainedView;
+    retainedView = null;
+    if (!saved || sceneSession.editor !== saved.editor || lifetime.disposed) {
+      return;
+    }
+    ports.draw(false);
+    const viewport = ports.viewport;
+    if (viewport.clientWidth === saved.width && viewport.clientHeight === saved.height) {
+      viewport.scrollTo(saved.left, saved.top);
+    } else {
+      const bounds = canvas.getBoundingClientRect();
+      const view = viewport.getBoundingClientRect();
+      viewport.scrollLeft +=
+        bounds.left + saved.x * bounds.width - view.left - viewport.clientWidth / 2;
+      viewport.scrollTop +=
+        bounds.top + saved.y * bounds.height - view.top - viewport.clientHeight / 2;
+    }
+  }
+  return { sceneZoom, fitScene, syncBlockoutZoom, changeLayout, rememberDocument, restoreDocument };
 }

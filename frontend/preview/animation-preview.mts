@@ -224,7 +224,7 @@ export function createAnimationPreview(
     playback.playing = !!animation;
   }
   function ensureTimer() {
-    if (timer === undefined && (playback.playing || movement.active)) {
+    if (timer === undefined && (playback.playing || (movement.active && !movement.model.paused))) {
       lastTime = performance.now();
       timer = lifetime.frame(tick);
     }
@@ -404,6 +404,14 @@ export function createAnimationPreview(
   });
   lifetime.assign(origin, 'onchange', refresh);
   return {
+    suspend() {
+      playback.playing = false;
+      if (movement.active) {
+        movement.suspend();
+      }
+      stopTimer();
+      render();
+    },
     configure(value: typeof target) {
       const nextSignature = value
         ? JSON.stringify([value.key, value.region, value.animations])

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { expect } from '@playwright/test';
-import { test, clickControl, editorReady } from '../support/browser-fixtures.ts';
+import { test, clickControl, editorReady, chooseSavedScene } from '../support/browser-fixtures.ts';
 
 test.use({ projectMode: 'sample' });
 
@@ -15,7 +15,7 @@ test('review mode expands the canvas and preserves edits, selection and history'
   await editorReady(page);
   const toggle = page.locator('#review-mode');
   await expect(toggle).toBeDisabled();
-  await page.locator('#scenes').selectOption({ index: 1 });
+  await chooseSavedScene(page, { index: 1 });
   await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   const viewport = page.locator('#viewport');
   const canvas = page.locator('#scene');
@@ -210,7 +210,7 @@ test('review mode exits safely after external scene deletion and editor disposal
 }) => {
   await page.goto(forge.url);
   await editorReady(page);
-  await page.locator('#scenes').selectOption({ index: 1 });
+  await chooseSavedScene(page, { index: 1 });
   await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   const scene = await page.locator('#scenes').inputValue();
   await page.locator('#review-mode').click();
@@ -243,8 +243,8 @@ p.scenes.delete(sys.argv[2], p.store.load_scene(sys.argv[2])['revision'], p.cata
   await expect(page).toHaveURL(forge.url);
   await expect(page.locator('body')).not.toHaveClass(/reviewing/);
   await expect(page.locator('#review-mode')).toBeDisabled();
-  await expect(page.locator('#scenes')).toBeVisible();
-  await page.locator('#scenes').selectOption({ index: 1 });
+  await expect(page.locator('#document-switcher')).toBeVisible();
+  await chooseSavedScene(page, { index: 1 });
   await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   await expect(page.locator('#review-mode')).toBeEnabled();
 });

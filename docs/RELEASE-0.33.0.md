@@ -1,7 +1,7 @@
 # Scene Forge 0.33.0
 
 Prepared feature release for [milestone 22](https://github.com/cliffom/gbc-scene-forge/milestone/22).
-Publication is separate. This draft currently describes the shared-shell increment;
+Publication is separate. This draft currently describes the shell and navigation increments;
 later milestone issues extend the release before final publication.
 
 ## Changes
@@ -14,7 +14,12 @@ later milestone issues extend the release before final publication.
   guarded review/save, recoverable drafts and browser/MCP discovery.
 - Returning to a scene restores its canvas focus and contextual Inspector. Artwork
   creation also works without a scene. The initial increment retains the artwork
-  Save footer, document chooser and frame/animation dock.
+  Save footer and frame/animation dock.
+- One Documents control navigates between the active scene, other saved scenes and
+  retained artwork. The bar shows the active name, document kind and local state,
+  with detected external saved-base changes shown separately. Switching preserves
+  editing context and independent history; project departure waits for artwork
+  checkpoints, and outgoing preview playback stops.
 
 ## Upgrade and compatibility
 

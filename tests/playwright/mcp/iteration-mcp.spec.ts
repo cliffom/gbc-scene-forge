@@ -1,7 +1,7 @@
 /** Real stdio candidate exchange and saved-library discovery with dirty artwork. */
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
-import { test, expect } from '../support/browser-fixtures.ts';
+import { test, expect, activateScene } from '../support/browser-fixtures.ts';
 import { revealArtworkControl, saveArtwork } from '../support/artwork-controls.ts';
 import { record, string, array } from '../../../frontend/shared/decode.mts';
 import { decodeCandidate } from '../../../frontend/artwork/artwork-contracts.mts';
@@ -284,7 +284,7 @@ p.artwork.documents.save(c)
   await page.locator('#art-palette-toggle').click();
   await page.screenshot({ path: info.outputPath('adopted-edit-palette.png') });
   await page.locator('#art-palette-toggle').click();
-  await page.locator('#art-close').click();
+  await activateScene(page);
   const post = async (action: string, data = {}) => {
     const response = await page.request.post(new URL('api/artwork-' + action, url).href, {
       data,

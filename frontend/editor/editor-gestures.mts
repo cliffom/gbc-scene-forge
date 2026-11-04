@@ -613,14 +613,18 @@ export function createGesturesController({
     ports.update();
   });
 
-  lifetime.assign(canvas, 'onpointercancel', () => {
+  function cancelEditing() {
+    finishPan();
+    gestures.spacePan = false;
     gestures.blockoutDraw = null;
     gestures.objectResize = null;
     sceneSession.editor?.cancel();
     gestures.anchor = null;
     gestures.objectDrag = null;
     ports.draw();
-  });
+    lifetime.releaseCaptures(canvas);
+  }
+  lifetime.assign(canvas, 'onpointercancel', cancelEditing);
 
   lifetime.assign(canvas, 'onlostpointercapture', () => {
     gestures.blockoutDraw = null;
@@ -674,5 +678,5 @@ export function createGesturesController({
     gestures.anchor = null;
     ports.draw();
   });
-  return { syncPanCursor, viewport, finishPan };
+  return { syncPanCursor, viewport, finishPan, cancelEditing };
 }

@@ -18,7 +18,7 @@ An occupied port reports an alternative command; permission errors suggest a
 writable project root and launch directory. Python 3.10+ and a current desktop
 browser are required; installed editing needs no Node, Poetry or Tiled.
 
-Open the printed local URL. Use the **Project** dropdown beside the scene selector
+Open the printed local URL. Use the **Project** dropdown beside the document button
 to change projects, or choose **Choose or create project…** to return to the
 selector. Unsaved scene edits offer **Save and switch**, **Discard and switch**,
 or **Keep editing**.
@@ -102,8 +102,8 @@ not included. A browser remains necessary even when Python runs headlessly.
 
 ## Editor layout
 
-The document bar keeps project and scene selectors, save state and two command
-groups. **Scene actions** starts with **Save scene** (Ctrl/⌘ S), followed by create,
+The document bar keeps the project selector, active Documents button, local state
+and two command groups. **Scene actions** starts with **Save scene** (Ctrl/⌘ S), followed by create,
 rename, duplicate, resize/crop, revert and delete. **Project tools** starts with
 **Export…**, followed by World view, Diagnostics and optional GBC palette checks.
 A warning beside Project tools remains visible when a scene
@@ -189,8 +189,8 @@ camera intent, limits, the opening-forest example and shared services for MCP #5
 3. Choose **Create scene**, select a tile region to paint or a sprite to place.
 4. Use Erase, one-cell Fill, or Select. Drag a selection, then use arrow keys to
    move it or Delete to erase it. Undo/Redo retain up to 100 completed edits.
-5. Choose **Save** or press Ctrl/⌘ S. Select another saved scene from the dropdown
-   to switch. Unsaved changes prompt before being discarded. **Revert** restores
+5. Choose **Save** or press Ctrl/⌘ S. Open **Documents → Open another scene**
+   to select a different saved scene. Unsaved changes prompt before being discarded. **Revert** restores
    the last opened/saved canvas. Ctrl/⌘ Z undoes; Ctrl/⌘ Shift Z or Ctrl/⌘ Y redoes.
 
 Search the asset library or filter by atlas and kind. Drag an asset onto the
@@ -219,7 +219,7 @@ Ctrl/⌘ wheel keeps the browser’s normal behavior.
 The message below the tools names the active layer; a hidden layer offers
 **Show layer** there. View changes do not mark the scene as unsaved.
 
-**Unsaved changes** appears beside the scene selector, and **Save scene** gains
+**Modified** appears beside the Documents button, and **Save scene** gains
 an accent when edits need saving. The asset library contains **Import** for
 artwork, Tiled maps and Forge export ZIPs. **New artwork…** opens the
 [native artwork editor](user/pixel-artwork.md) for creating tiles and sprites, with optional sheet layout. **Edit artwork…** and

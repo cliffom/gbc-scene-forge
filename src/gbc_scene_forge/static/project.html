@@ -86,12 +86,12 @@
     <nav class="document-bar" aria-label="Document controls">
       <div class="document-context" role="group" aria-label="Current document">
         <label>Project <select id="switch-project" aria-label="Current project" disabled></select></label>
-        <label>Scene <select id="scenes" aria-label="Saved scenes"><option value="">Choose a scene…</option></select></label>
-        <button id="document-switcher" aria-haspopup="dialog" aria-controls="document-tabs" aria-expanded="false" hidden title="Switch open document">Documents</button>
-        <dialog id="document-tabs" aria-labelledby="document-chooser-heading"><div class="document-chooser-heading"><h2 id="document-chooser-heading">Open documents</h2><button id="document-chooser-close" autofocus>Close</button></div><button id="scene-document" aria-pressed="true">Return to scene</button><p class="hint">Artwork documents</p><div id="artwork-documents"></div><div class="document-chooser-actions"><button id="artwork-new-document">New artwork…</button><button id="artwork-browse-document">Browse / recover artwork…</button></div></dialog>
+        <button id="document-switcher" aria-haspopup="dialog" aria-controls="document-tabs" aria-expanded="false" title="Switch document">Documents</button>
+        <dialog id="document-tabs" aria-labelledby="document-chooser-heading"><div class="document-chooser-heading"><h2 id="document-chooser-heading">Open documents</h2><button id="document-chooser-close" autofocus>Close</button></div><button id="scene-document" aria-pressed="true">Scene workspace</button><label class="field">Open another scene<select id="scenes" aria-label="Saved scenes"><option value="">Choose a scene…</option></select></label><p class="hint">Opening another scene replaces the active scene after any unsaved-work confirmation. Switching to retained artwork keeps local work.</p><p class="hint">Artwork documents</p><div id="artwork-documents"></div><div class="document-chooser-actions"><button id="artwork-new-document">New artwork…</button><button id="artwork-browse-document">Browse / recover artwork…</button></div></dialog>
         <h2 id="artwork-heading" hidden>Artwork</h2>
         <span id="art-document-state" role="status" hidden></span>
-        <span id="scene-save-state" role="status" aria-live="polite"></span>
+        <span id="scene-save-state" hidden></span>
+        <span id="document-state" role="status" aria-live="polite"></span><span id="document-base-state" role="status" hidden></span>
       </div>
       <div class="document-actions" role="group" aria-label="Document actions">
         <button id="scene-commands" popovertarget="scene-command-panel" class="command-trigger" disabled>Scene actions</button>
@@ -377,7 +377,7 @@
     <div class="dialog-actions"><button id="conversion-close">Cancel</button><button id="conversion-review">Review mapping</button><button id="conversion-save" disabled>Replace reviewed placements</button></div>
   </dialog>
   <section id="artwork-surface" class="editor-surface" aria-labelledby="artwork-heading" hidden>
-    <header id="art-inspector-actions" class="art-heading"><span id="art-scope-label" class="muted"></span><div class="art-heading-actions"><button id="art-layers-toggle" aria-expanded="false" aria-controls="art-layer-panel">Layers</button><button id="art-properties-toggle" aria-expanded="false">Properties</button><button id="art-close">Return to scene</button></div></header>
+    <header id="art-inspector-actions" class="art-heading"><span id="art-scope-label" class="muted"></span><div class="art-heading-actions"><button id="art-layers-toggle" aria-expanded="false" aria-controls="art-layer-panel">Layers</button><button id="art-properties-toggle" aria-expanded="false">Properties</button></div></header>
     <p id="art-message" role="status" aria-live="polite"></p>
     <div id="art-setup">
     <details id="art-handoff"><summary>Agent candidates</summary><p>Inspect unpublished snapshots, then adopt a separate editable copy. Saved artwork is unchanged. Existing documents and their Undo histories are retained.</p><button id="art-handoff-list" type="button">Refresh candidates</button><div id="art-handoff-candidates"></div></details>

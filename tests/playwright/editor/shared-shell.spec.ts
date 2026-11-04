@@ -1,7 +1,14 @@
 /** The shared host must preserve the real scene/artwork save loop and resource ownership. */
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
-import { test, expect, paint, clickControl } from '../support/browser-fixtures.ts';
+import {
+  test,
+  expect,
+  paint,
+  clickControl,
+  chooseSavedScene,
+  activateScene,
+} from '../support/browser-fixtures.ts';
 import { reviewArtwork, saveArtwork } from '../support/artwork-controls.ts';
 
 for (const [width, height] of [
@@ -40,7 +47,7 @@ print(s['id'])
     ).trim();
     const url = await workspace.start(root);
     await page.goto(url);
-    await page.locator('#scenes').selectOption(scene);
+    await chooseSavedScene(page, scene);
     await expect(page.locator('#status')).toHaveText('Scene opened.');
     // Keep an unrelated scene edit across source editing and saving.
     await page.locator('[data-asset="grass/artwork"]').click();
@@ -86,7 +93,7 @@ print(s['id'])
     expect(save.y + save.height).toBeLessThanOrEqual(height);
     await page.screenshot({ path: info.outputPath('review.png') });
     await saveArtwork(page);
-    await page.locator('#art-close').click();
+    await activateScene(page);
     await expect(page.locator('#editor-workbench > #scene-surface')).toBeVisible();
     await expect(page.locator('#inspector-pane')).toHaveAccessibleName('Scene inspector');
     await expect(page.locator('#scene-panel')).toBeVisible();
@@ -164,7 +171,7 @@ test('artwork without a scene and repeated remounts retain a single shared host'
   await expect(page.locator('#editor-workbench > #artwork-surface')).toHaveCount(1);
   await expect(page.locator('#inspector-pane #art-inspector-actions')).toHaveCount(1);
   await expect(page.locator('#art-canvas')).toBeFocused();
-  await page.locator('#art-close').click();
+  await activateScene(page);
   await expect(page.locator('#scene-surface')).toBeVisible();
   await expect(page.locator('#viewport')).toBeFocused();
 });

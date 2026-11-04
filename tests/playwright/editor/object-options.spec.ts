@@ -7,6 +7,7 @@ import {
   editorReady,
   clickControl,
   setControl,
+  chooseSavedScene,
 } from '../support/browser-fixtures.ts';
 
 test('object options survive transient updates and follow rename, history and layers', async ({
@@ -18,7 +19,7 @@ test('object options survive transient updates and follow rename, history and la
   const url = await workspace.start(root);
   await page.goto(url);
   await editorReady(page);
-  await page.locator('#scenes').selectOption({ label: 'Village' });
+  await chooseSavedScene(page, { label: 'Village' });
   await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   await page
     .getByRole('radio', { name: 'Sprites Objects · Visible', exact: true })

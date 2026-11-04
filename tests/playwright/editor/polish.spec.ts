@@ -1,7 +1,14 @@
 import { revealArtworkControl, reviewArtwork, saveArtwork } from '../support/artwork-controls.ts';
 /** Bounds and real input acceptance for the shared scene/pixel command hierarchy. */
 import { expect, type Page } from '@playwright/test';
-import { test, clickControl, editorReady, paint } from '../support/browser-fixtures.ts';
+import {
+  test,
+  clickControl,
+  editorReady,
+  paint,
+  chooseSavedScene,
+  activateScene,
+} from '../support/browser-fixtures.ts';
 
 const sizes = [
   [1440, 900],
@@ -55,7 +62,7 @@ test.describe('editor polish', () => {
     await page.setViewportSize({ width: 760, height: 640 });
     await page.goto(forge.url);
     await editorReady(page);
-    await page.locator('#scenes').selectOption({ index: 1 });
+    await chooseSavedScene(page, { index: 1 });
     await expect(page.locator('#scene-save-state')).toHaveText('Saved');
     await expect(page.locator('.document-actions > button')).toHaveText([
       'Scene actions',
@@ -117,7 +124,7 @@ test.describe('editor polish', () => {
   }, info) => {
     await page.goto(forge.url);
     await editorReady(page);
-    await page.locator('#scenes').selectOption({ index: 1 });
+    await chooseSavedScene(page, { index: 1 });
     await expect(page.locator('#scene-save-state')).toHaveText('Saved');
     for (const [width, height] of sizes) {
       await page.setViewportSize({ width, height });
@@ -286,7 +293,7 @@ test.describe('editor polish', () => {
   }) => {
     await page.goto(forge.url);
     await editorReady(page);
-    await page.locator('#scenes').selectOption({ index: 1 });
+    await chooseSavedScene(page, { index: 1 });
     await expect(page.locator('#scene-save-state')).toHaveText('Saved');
     const expand = page.locator('#expand-scene-tools');
     await page.setViewportSize({ width: 1280, height: 900 });
@@ -314,9 +321,9 @@ test.describe('editor polish', () => {
     await page.locator('#toggle-library').click();
     await page.locator('#toggle-inspector').click();
     await paint.focus();
-    await page.locator('#scenes').focus();
+    await page.locator('#document-switcher').focus();
     await page.setViewportSize({ width: 760, height: 640 });
-    await expect(page.locator('#scenes')).toBeFocused();
+    await expect(page.locator('#document-switcher')).toBeFocused();
     await page.setViewportSize({ width: 1440, height: 900 });
     await paint.focus();
     await paint.evaluate((node) => node.blur());
@@ -331,7 +338,7 @@ test.describe('editor polish', () => {
   }, info) => {
     await page.goto(forge.url);
     await editorReady(page);
-    await page.locator('#scenes').selectOption({ index: 1 });
+    await chooseSavedScene(page, { index: 1 });
     await expect(page.locator('#scene-save-state')).toHaveText('Saved');
     const inspector = page.locator('#inspector-pane');
     const toggle = page.locator('#toggle-inspector');
@@ -387,7 +394,7 @@ test.describe('editor polish', () => {
   }, info) => {
     await page.goto(forge.url);
     await editorReady(page);
-    await page.locator('#scenes').selectOption({ index: 1 });
+    await chooseSavedScene(page, { index: 1 });
     await page.setViewportSize({ width: 760, height: 640 });
     const expand = page.locator('#expand-scene-tools');
     await page.locator('#scene').focus();
@@ -414,11 +421,11 @@ test.describe('editor polish', () => {
   }, info) => {
     await page.goto(forge.url);
     await editorReady(page);
-    await page.locator('#scenes').selectOption({ index: 1 });
+    await chooseSavedScene(page, { index: 1 });
     await page.locator('#show-artwork').click();
     await page.locator('#art-existing-mode').click();
     await expect(page.locator('#artwork-heading')).toHaveText('Open artwork');
-    await expect(page.locator('#document-switcher')).toBeHidden();
+    await expect(page.locator('#document-switcher')).toBeVisible();
     await expect(page.locator('#art-source-help')).not.toBeEmpty();
     await expect(page.locator('#art-source')).toBeEnabled();
     for (const [width, height] of sizes) {
@@ -442,7 +449,7 @@ test.describe('editor polish', () => {
     }
     await page.locator('#art-new-mode').click();
     await expect(page.locator('#artwork-heading')).toHaveText('New artwork');
-    await expect(page.locator('#document-switcher')).toBeHidden();
+    await expect(page.locator('#document-switcher')).toBeVisible();
     await (await revealArtworkControl(page, 'art-id')).fill('toolbar_tile');
     await page
       .locator('#art-name')
@@ -515,7 +522,7 @@ test.describe('editor polish', () => {
       await page.screenshot({ path: info.outputPath(`pixels-${width}-${height}-${scale}.png`) });
     }
     await density.detach();
-    await page.locator('#art-close').click();
+    await activateScene(page);
     await page.locator('#show-artwork').click();
     await revealArtworkControl(page, 'art-drafts');
     await expect(page.getByRole('button', { name: 'Recover copy', exact: true })).toBeVisible();
@@ -526,7 +533,7 @@ test.describe('editor polish', () => {
     await reviewArtwork(page);
     await expect(page.locator('#art-save')).toBeEnabled();
     await saveArtwork(page);
-    await page.locator('#art-close').click();
+    await activateScene(page);
     await expect(page.locator('#artwork-surface')).not.toBeVisible();
     await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   });
@@ -559,7 +566,7 @@ test.describe('editor polish', () => {
     }
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.locator('#show-artwork').click();
-    await expect(page.locator('#document-switcher')).toBeHidden();
+    await expect(page.locator('#document-switcher')).toBeVisible();
     const name = page.locator('#art-name');
     const id = await revealArtworkControl(page, 'art-id');
     await name.fill("Player's Sprite");
@@ -578,9 +585,9 @@ test.describe('editor polish', () => {
     await name.fill("Player's Artwork");
     await expect(id).toHaveValue('my_player');
     await page.locator('#art-create').click();
-    await expect(page.locator('#document-switcher')).toHaveText("Player's Artwork ▾");
+    await expect(page.locator('#document-switcher')).toHaveText("Player's Artwork · Artwork ▾");
     await page.locator('#show-artwork').click();
-    await expect(page.locator('#document-switcher')).toHaveText('Documents ▾');
+    await expect(page.locator('#document-switcher')).toHaveText('New artwork · Artwork ▾');
     await expect(await revealArtworkControl(page, 'art-id')).toHaveValue('new_artwork');
   });
 
@@ -591,7 +598,7 @@ test.describe('editor polish', () => {
     await page.setViewportSize({ width: 760, height: 640 });
     await page.goto(forge.url);
     await editorReady(page);
-    await page.locator('#scenes').selectOption({ label: 'Riverside' });
+    await chooseSavedScene(page, { label: 'Riverside' });
     await expect(page.locator('#scene-save-state')).toHaveText('Saved');
     await page.locator('#show-recovery').focus();
     for (const key of ['Shift+Tab', 'Tab']) {
@@ -644,7 +651,7 @@ test('first-use authoring from visible controls: empty artwork, draw, place, sav
   await reviewArtwork(page);
   await expect(page.locator('#art-save')).toBeEnabled();
   await saveArtwork(page);
-  await page.locator('#art-close').click();
+  await activateScene(page);
   await expect(page.locator('#artwork-surface')).not.toBeVisible();
   await page.locator('#empty-create').click();
   await page.locator('#scene-title').fill('My first scene');

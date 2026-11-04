@@ -23,6 +23,12 @@ import { createArtworkWorkspace } from './artwork-workspace.mts';
 import { conversionViews } from './conversion-views.mts';
 import { createArtworkViewport } from './artwork-viewport.mts';
 import { createArtworkDocuments } from './artwork-documents.mts';
+import {
+  createDocumentBar,
+  documentCaption,
+  documentStateLabel,
+  type DocumentSummary,
+} from '../editor/document-bar.mts';
 import { createDocumentChooser } from './document-chooser.mts';
 import type { DocumentContribution } from '../editor/editor-shell.mts';
 
@@ -56,6 +62,9 @@ export function createPixelEditor({
       };
       scene: () => void;
       revealInspector: () => void;
+      prepareSceneDeparture: () => void;
+      sceneSummary: (modified?: boolean) => DocumentSummary;
+      unavailable: () => boolean;
     };
     discovered: (data: Record<string, unknown>, eligible: () => boolean) => Promise<void>;
     run: (work: () => Promise<void>) => Promise<void>;
@@ -78,9 +87,13 @@ export function createPixelEditor({
   });
   inspector.hidden = false;
   const documents = createArtworkDocuments(lifetime, surface, inspector);
+  const documentBar = createDocumentBar();
   const chooser = createDocumentChooser(lifetime, () => {
     cancelGesture();
+    sheetEditor.stop();
     artworkViewport.suspend();
+    ports.presentation.prepareSceneDeparture();
+    tabs();
   });
   const presentation = createArtworkWorkspace(lifetime, surface, () => {
     controls();
@@ -101,7 +114,9 @@ export function createPixelEditor({
   function focusFrame(region: string) {
     const d = session?.model.descriptor;
     if (session && d?.version === 2 && d.frames.some((f) => f.id === region)) {
-      session.model.selection = null;
+      if (select('art-frame').value !== region) {
+        session.model.selection = null;
+      }
       select('art-frame').value = region;
       // Keep the collection visible while highlighting the requested pose.
       sheetEditor.sync();
@@ -127,13 +142,14 @@ export function createPixelEditor({
   function workspace(active: boolean) {
     artworkViewport.suspend();
     if (active) {
+      ports.presentation.prepareSceneDeparture();
       presentationSlot.activate();
     } else {
       ports.presentation.scene();
     }
     reflectOpacity();
     button('scene-document').setAttribute('aria-pressed', String(!active));
-    element('art-document-state', HTMLElement).hidden = !active;
+    element('art-document-state', HTMLElement).hidden = true;
     element('palette', HTMLElement).dispatchEvent(new Event('artwork-workspace'));
     chooser.close();
     sheetEditor.stop();
@@ -144,20 +160,39 @@ export function createPixelEditor({
       tabs();
     }
   }
+  function artworkSummary(current: ArtworkSession): DocumentSummary {
+    return {
+      name: current.model.descriptor.name,
+      kind: 'Artwork',
+      state: current.original.operation !== 'edit' ? 'New' : current.changed ? 'Modified' : 'Saved',
+      externalChanged: current.externalChanged,
+    };
+  }
+  function syncNavigation(sceneModified?: boolean) {
+    const summary = presentationSlot.active
+      ? session
+        ? artworkSummary(session)
+        : {
+            name: element('artwork-heading', HTMLElement).textContent || 'Open artwork',
+            kind: 'Artwork' as const,
+            state: '' as const,
+            externalChanged: false,
+          }
+      : ports.presentation.sceneSummary(sceneModified);
+    documentBar.render(summary, busy || ports.presentation.unavailable());
+  }
   function tabs() {
-    button('document-switcher').hidden = !session && documents.size === 0;
-    button('document-switcher').textContent =
-      presentationSlot.active && session ? `${session.model.descriptor.name} ▾` : 'Documents ▾';
-    button('document-switcher').disabled = busy;
     documentState();
-    button('scene-document').textContent = sceneSession.loaded
-      ? 'Return to scene'
-      : 'Return to Scene workspace';
+    syncNavigation();
+    const scene = ports.presentation.sceneSummary();
+    button('scene-document').textContent = [documentCaption(scene), documentStateLabel(scene)]
+      .filter(Boolean)
+      .join(' · ');
     element('artwork-documents', HTMLElement).replaceChildren(
       ...documents.sessions().map((current) => {
         const tab = document.createElement('button');
         const active = presentationSlot.active && session === current;
-        tab.textContent = `${active ? 'Current · ' : ''}${current.model.descriptor.name} · ${current.original.operation !== 'edit' ? 'New' : current.changed ? 'Modified' : 'Saved'}`;
+        tab.textContent = `${active ? 'Current · ' : ''}${documentCaption(artworkSummary(current))} · ${documentStateLabel(artworkSummary(current))}`;
         tab.setAttribute('aria-pressed', String(presentationSlot.active && session === current));
         lifetime.assign(tab, 'onclick', () => {
           void execute(async () => {
@@ -170,6 +205,9 @@ export function createPixelEditor({
     );
   }
   function restore(current: ArtworkSession) {
+    if (lifetime.disposed) {
+      return;
+    }
     const saved = documents.get(current);
     if (!saved) {
       return;
@@ -191,6 +229,7 @@ export function createPixelEditor({
     swatches();
     artworkViewport.restore(saved.view);
     tabs();
+    canvas.focus({ preventScroll: true });
   }
   async function suspend() {
     cancelGesture();
@@ -498,9 +537,7 @@ export function createPixelEditor({
     sheetEditor.controls(busy);
     layerControls.sync();
 
-    button('document-switcher').disabled = busy;
-    button('document-switcher').textContent =
-      presentationSlot.active && session ? `${session.model.descriptor.name} ▾` : 'Documents ▾';
+    syncNavigation();
   }
   function dirtyControls() {
     const modified = session?.changed ?? false;
@@ -512,7 +549,7 @@ export function createPixelEditor({
     discard.classList.toggle('destructive-command', modified);
   }
   async function execute(work: () => Promise<void>) {
-    if (busy) {
+    if (busy || ports.presentation.unavailable() || lifetime.disposed) {
       return;
     }
     chooser.close();
@@ -829,6 +866,15 @@ export function createPixelEditor({
           : null,
       })),
     );
+    for (const retained of documents.sessions()) {
+      if (retained.original.operation === 'edit') {
+        const source = sources.find(
+          (item) => item.atlas_id === retained.original.descriptor.atlas_id,
+        );
+        retained.externalChanged = source?.artwork_revision !== retained.original.artwork_revision;
+      }
+    }
+    syncNavigation();
     select('art-source').replaceChildren(
       ...sources.map(
         (s, i) =>
@@ -858,6 +904,9 @@ export function createPixelEditor({
     }
   }
   function start(candidate: Candidate, original = candidate) {
+    if (lifetime.disposed) {
+      return;
+    }
     session = new ArtworkSession(candidate, api, original);
     documents.add(session);
     artworkViewport.authoringTool();
@@ -1193,14 +1242,13 @@ export function createPixelEditor({
     });
   }
   async function close() {
-    await suspend();
+    if (presentationSlot.active) {
+      await suspend();
+    }
     workspace(false);
     tabs();
   }
   lifetime.assign(button('scene-document'), 'onclick', () => {
-    void execute(close);
-  });
-  lifetime.assign(button('art-close'), 'onclick', () => {
     void execute(close);
   });
   lifetime.assign(button('art-discard'), 'onclick', () => {
@@ -1785,6 +1833,16 @@ export function createPixelEditor({
     },
   );
   return {
+    syncNavigation,
+    prepareDeparture: suspend,
+    async activateScene() {
+      let succeeded = false;
+      await execute(async () => {
+        await close();
+        succeeded = true;
+      });
+      return succeeded;
+    },
     get open() {
       return presentationSlot.active;
     },

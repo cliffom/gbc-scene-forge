@@ -15,6 +15,48 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Shared document navigation (#195, milestone 22)
+
+- **Scope:** Prepared 0.33.0 working tree on `milestone/22`, based on
+  `a7e452c9444740f2f596ac1793014044afe31eff`, checked 2026-11-03 local time
+  (2026-11-04 UTC), macOS arm64, Python 3.13.13, Node 24.22.1 and local
+  Playwright Chromium. Disposable scene/artwork projects; source and installed wheel.
+- **Method:** Five focused browser scenarios exercise retained layers, tools,
+  selection, color, frame/sequence, zoom/scroll and independent history; exact
+  canvas snapshots; failed/delayed checkpoints, duplicate navigation, project
+  departure/recovery, separate saved-base warnings, captured pan and playback.
+  Existing scene-history, targeted-frame, disposal, recovery and browser/MCP
+  scenarios cover adjacent ownership contracts. Agent screenshot inspection at
+  1440×1000 and 800×640: [artwork](screenshots/document-navigation/artwork.png),
+  [chooser](screenshots/document-navigation/documents.png) and
+  [compact chooser](screenshots/document-navigation/documents-compact.png).
+- **Result:** Five focused navigation cases pass; the retained-context case also
+  passes three repetitions after correcting a real hidden-surface scene-scroll
+  reset. A captured-pan/playback test exposed ongoing artwork playback while the
+  chooser opened; opening Documents now stops it. Rendering checks exposed a second
+  scene serialization per painting update; navigation now reuses the already
+  computed dirty state. Earlier broad checks also found obsolete hidden-heading
+  targets, old name-only expectations and a frozen-renderer viewport interface;
+  fixtures now use visible controls, kind labels and an interface-only adapter.
+  A production rebuild during the initial development-mode run invalidated two
+  build-label assertions; subsequent runs keep mode and bundle consistent.
+  `make lint test` passed (448 Python tests and all TypeScript suites); final
+  source changes passed lint again. The final production-mode broad browser run
+  passed 137 cases, skipped 11 opt-in profiles and failed one obsolete assertion
+  that the scene selector was inline beside Project. The assertion now checks the
+  shared document button and chooser ownership; its complete launcher/switching/
+  conflict/restart scenario passes separately, accounting for all 138 regular cases.
+  The full suite was not repeated after that test-only correction. Six MCP/browser
+  scenarios passed, including unpublished handoff and real external refresh.
+  Production distribution build, strict metadata checks, seven installed-wheel
+  smoke checks and installed-wheel first use passed.
+- **Limits:** Synthetic tests and agent screenshot inspection do not establish
+  independent-human acceptance, prolonged drawing comfort, physical-device scaling,
+  Windows/non-Chromium behavior or official Tiled interoperability. The integrated
+  Electron review page stalled awaiting image decoding; the same prepared review
+  URL loaded its scene successfully in separate Chromium. Artwork Save and panel
+  refinements remain subsequent milestone scope. No CI or publication claim is made.
+
 ## Shared editor shell (#194, milestone 22)
 
 - **Scope:** Prepared 0.33.0 working tree on `milestone/22`, based on
@@ -41,6 +83,13 @@ Dates, revisions and environments missing from the originals remain unknown.
   scenarios, with 11 opt-in profiling scenarios skipped. Three MCP/browser scenarios passed,
   covering mixed artwork edits, conflicts and real external saves/refresh.
   Installed-wheel first use passed. The four new shared-shell scenarios passed.
+  The user subsequently reported “That felt unified” and authorized proceeding;
+  #194 was pushed in `a7e452c9444740f2f596ac1793014044afe31eff`. This is reported
+  acceptance of the shell experience, not independent evidence for every automated
+  workflow or prolonged use.
+  Its [CI run](https://github.com/cliffom/gbc-scene-forge/actions/runs/41771598861)
+  passed package checks and Python 3.13/3.14 compatibility; that result covers the
+  pushed shell revision, separately from the local #195 work above.
   Initial focused runs exposed a disabled Inspector toggle during Save and clipped
   dense variation Save controls; direct layout-owner reveal and Inspector-hosted
   variation details corrected both. The initial no-scene test incorrectly used
@@ -1902,7 +1951,7 @@ Dates, revisions and environments missing from the originals remain unknown.
 
 ### Shared editor consolidation (milestone 22)
 
-- [ ] Obtain the user's manual verification of #194's shared-shell increment before pushing `milestone/22` and proceeding to #195, following the requested issue-by-issue gate. Automated layout and exact-pixel checks do not substitute for this acceptance.
+- [ ] Obtain the user's manual verification of #195's document-navigation increment before pushing it to `milestone/22` and proceeding to #196, following the requested issue-by-issue gate. Automated context/history checks do not substitute for this acceptance.
 
 ### Human–agent artwork iteration (milestone 21)
 

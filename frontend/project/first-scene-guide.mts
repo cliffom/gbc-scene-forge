@@ -14,7 +14,7 @@ const steps = [
   },
   {
     title: 'Create a scene',
-    text: 'Choose Scene actions → Create scene. Name it “First scene”, keep 20 × 18 cells and an 8 px grid, then create it. Sample scenes stay available in the Scene dropdown. You can also open one of those to explore.',
+    text: 'Choose Scene actions → Create scene. Name it “First scene”, keep 20 × 18 cells and an 8 px grid, then create it. Sample scenes stay available in Documents → Open another scene. You can also open one of those to explore.',
     target: 'show-create',
   },
   {

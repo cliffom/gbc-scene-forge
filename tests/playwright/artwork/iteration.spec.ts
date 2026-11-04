@@ -1,7 +1,7 @@
 /** Layer sources, wheel navigation and isolated local history in the real editor. */
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
-import { test, expect } from '../support/browser-fixtures.ts';
+import { test, expect, activateScene } from '../support/browser-fixtures.ts';
 import { revealArtworkControl, saveArtwork } from '../support/artwork-controls.ts';
 
 test('wheel zoom preserves pointer coordinates and layers survive local undo, save and reopen', async ({
@@ -133,7 +133,7 @@ p.artwork.documents.save(c)
   await page.locator('#art-existing-mode').click();
   await expect(page.locator('#art-source option')).toHaveCount(1);
   await expect(page.locator('#art-open')).toBeEnabled();
-  await page.locator('#artwork-heading').click();
+  await page.locator('#project-name').click();
   let releaseInventory = () => {};
   const responseGate = new Promise<void>((resolve) => {
     releaseInventory = resolve;
@@ -197,7 +197,7 @@ Project.create(Path(sys.argv[1]),'First artwork')
   await expect(page.locator('#art-open')).toBeDisabled();
   await page.locator('#art-name').fill('My independent copy');
   await (await revealArtworkControl(page, 'art-id')).fill('my_copy');
-  await page.locator('#artwork-heading').click();
+  await page.locator('#project-name').click();
   update(`
 import sys
 from pathlib import Path
@@ -218,7 +218,7 @@ p.artwork.documents.save(c)
   await page.locator('#art-open').click();
   await expect(page.locator('#artwork-heading')).toHaveText('Agent');
   await expect(page.locator('#art-document-state')).toHaveText('Saved');
-  await page.locator('#art-close').click();
+  await activateScene(page);
   await page.locator('#project-commands').click();
   await page.locator('#auto-refresh').uncheck();
   await page.locator('#show-artwork').click();
