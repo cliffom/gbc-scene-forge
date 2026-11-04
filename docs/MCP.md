@@ -968,7 +968,8 @@ aggregate bounds still apply. All source layers must be explicitly unlocked.
   origin uses the same floor scaling. Anchor has no effect in this mode.
 - `canvas` translates unchanged pixels by `[0,0]`, floor-half the dimension
   difference, or the full difference for the selected anchor. With an odd center
-  difference the extra pad/crop falls on the right/bottom. Pixels outside the new
+  difference, floor division puts extra padding on the right/bottom and extra
+  cropping on the left/top. Pixels outside the new
   extent are cropped; exposed pixels are transparent black. The origin translates
   by the same offset; a crop removing it rejects instead of silently clamping it.
 - Layer UUIDs, order, names, visibility, opacity and locks are retained. Source
