@@ -172,20 +172,6 @@ export function createCompositionsController({
     }
   }
 
-  const compositionCommands: Record<string, Parameters<typeof compositionAction>[0]> = {
-    'copy-selection': 'copy',
-    'cut-selection': 'cut',
-    'paste-selection': 'paste',
-    'duplicate-selection': 'duplicate',
-    'flip-horizontal': 'horizontal',
-    'flip-vertical': 'vertical',
-    'rotate-selection': 'rotate',
-  };
-
-  for (const [id, action] of Object.entries(compositionCommands)) {
-    lifetime.assign(button(id), 'onclick', () => compositionAction(action));
-  }
-
   lifetime.assign(input('select-all-layers'), 'onchange', () => {
     sceneSelection.selection = null;
     sceneSelection.selectedObject = null;

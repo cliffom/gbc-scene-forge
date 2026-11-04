@@ -107,6 +107,12 @@ export function createSheetEditor(
       s = sequence(),
       f = selectedFrame();
     if (!d) {
+      const source = ports.current()?.model.descriptor;
+      const repeat = element('art-repeat-canvas', HTMLCanvasElement);
+      repeat.hidden = source?.kind !== 'tile';
+      if (source?.kind === 'tile') {
+        image({ ...source, x: 0, y: 0 }, repeat, 3);
+      }
       return;
     }
     const item = s?.frames[position % s.frames.length];
@@ -250,6 +256,7 @@ export function createSheetEditor(
     if (!d) {
       boundDescriptor = null;
       stop();
+      preview();
       return;
     }
     const next = JSON.stringify(d);
@@ -326,7 +333,7 @@ export function createSheetEditor(
       control.setAttribute('aria-pressed', String(frame.id === selectedFrame()?.id));
       const label = control.querySelector('span'),
         thumbnail = control.querySelector('canvas');
-      if (label) {
+      if (label && label.textContent !== frame.name) {
         label.textContent = frame.name;
       }
       if (thumbnail) {
@@ -353,6 +360,7 @@ export function createSheetEditor(
     }
     const d = descriptor();
     if (!d) {
+      preview();
       return;
     }
     const frames = new Map(d.frames.map((frame) => [frame.id, frame]));
@@ -510,6 +518,18 @@ export function createSheetEditor(
         origin: [0, 0],
       });
     }),
+  );
+  const dock = element('art-dock', HTMLDetailsElement);
+  dock.addEventListener(
+    'toggle',
+    () => {
+      if (!dock.open) {
+        stop();
+      } else {
+        paint();
+      }
+    },
+    { signal: lifetime.signal },
   );
   const timeline = element('art-sequence-frames', HTMLElement).closest('details');
   timeline?.addEventListener(

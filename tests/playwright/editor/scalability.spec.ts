@@ -2,7 +2,7 @@
 import { execFileSync } from 'node:child_process';
 import { cp } from 'node:fs/promises';
 import { join } from 'node:path';
-import { test, expect, editorReady } from '../support/browser-fixtures.ts';
+import { test, expect, editorReady, chooseSavedScene } from '../support/browser-fixtures.ts';
 
 import type * as CacheChecks from '../support/tile-cache-checks.ts';
 import { referenceRenderer } from '../support/reference-renderer.ts';
@@ -46,7 +46,7 @@ print(s['id'])
     }
     await page.goto(url);
     await editorReady(page);
-    await page.locator('#scenes').selectOption(scene);
+    await chooseSavedScene(page, scene);
     await expect(page.locator('#scene-save-state')).toHaveText('Saved');
     const images: string[] = [];
     for (const [zoom, left, top, width, height] of [

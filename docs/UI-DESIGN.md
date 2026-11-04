@@ -6,9 +6,9 @@ by what they affect. The established dark colors and accent remain the visual
 system; hierarchy comes from grouping, spacing and clear labels.
 
 - **Document context:** project and scene selection, save state and two command
-  groups. Scene actions starts with Save scene and its keyboard shortcut, followed
-  by scene lifecycle commands; Project tools starts with Export, followed by world
-  and diagnostic work. Separate destructive commands from ordinary actions.
+  groups, plus a single contextual Save entry with its keyboard shortcut.
+  Scene actions contains scene lifecycle commands; Project tools starts with Export,
+  followed by world and diagnostic work. Separate destructive commands from ordinary actions.
 - **Pane edges:** independent Library and Inspector chevrons sit in the open pane
   headers, leaving no extra column between pane and canvas. Closing a pane replaces
   it with a 24px edge handle; the arrow reverses, with Show/Hide tooltips and
@@ -68,6 +68,25 @@ Screenshots are written to `build/reports/playwright/`. The broader browser
 suite verifies that editing, stamps, recovery, definitions, world links and
 first-use instructions remain usable with this hierarchy.
 
+## Shared document shell
+
+Scenes and artwork use one workbench between the same Library and Inspector.
+The artwork name appears in the document bar. Pixel tools and the pixel viewport
+are contextual contributions to the workbench; raster layers, frame properties
+and review use the existing Inspector. Its collapse handle works in both contexts;
+opening artwork review reveals the Inspector if needed. Returning to the scene
+restores its canvas focus and existing Inspector content.
+
+One Documents button shows the active name and kind, with Saved/Modified/New
+beside it and a separate detected-external-change warning. Its chooser offers the
+active scene, other saved scenes and retained artwork. Switching preserves local
+context and independent history; failed checkpoints block departure. The artwork
+frame/animation dock can be collapsed using its Frames & animation disclosure. Save occupies the document bar and shared history,
+clipboard, deselection and transform commands occupy a stable strip above contextual
+tools. Raster layers and document/frame properties use shared Inspector sections;
+color assistance is launched from the Inspector. Setup is a focused
+surface in the workbench; dialogs remain appropriate for modal confirmations and document choice.
+
 ## Pixel editor layout
 
 Use one active-document switcher in the existing context bar; do not reserve an
@@ -77,23 +96,23 @@ Native artwork opens directly with the requested frame selected. Generate asset
 IDs and disclose advanced overrides and layout/origin options progressively.
 
 Keep compact tool/history/clipboard/transform groups, color, opacity, transparency,
-zoom and Fit beside the canvas. Show a short shared/new/variation badge beside
-the title. Put frame selection, Sheet/Frame scope and thumbnails below drawing,
+zoom and Fit beside the canvas. Show shared/new/variation scope in the Inspector;
+keep the active name and local state in the document bar. Put frame selection, Sheet/Frame scope and thumbnails below drawing,
 with an optional bounded animation dock containing sequence entries, millisecond
-durations and playback. Hide frame thumbnails in short windows while preserving
-the labeled selector. Properties and exact-change review are separate optional
-panes; narrow windows use an overlay, and compact artwork hides the Library while
-the document switcher retains New/Browse navigation.
+durations and playback. The dock has its own bounded scrolling at short heights;
+collapse Frames & animation to return that space to drawing. Properties and exact-change review are optional content in the shared Inspector.
+Library and Inspector retain their common collapse handles at compact sizes; the
+document switcher retains New/Browse navigation.
 
-Save opens change review and explicit confirmation. Keep its footer reachable
-while the animation dock or comparison scrolls. A successful save retains the
-current document, history and viewport and updates Saved/Modified/New state.
-Return to Scene and Close/discard are separate actions. Document actions contains
+Save opens change review and explicit confirmation in the same document-bar location,
+remaining reachable while the animation dock or comparison scrolls. A successful
+save retains the current document, history and viewport and updates Saved/Modified/New state.
+Choosing the scene in Documents retains artwork; Close/discard removes it. Document actions contains
 less frequent download/discard/help commands. Preserve revision guards, review
 invalidation, checkpoints and independent scene history. Bounds checks and agent
 inspection do not replace independent human usability testing. The
 [workflow review](evaluations/unified-editor-ux.md) records the motivating findings;
-[current workspace captures](evaluations/unified-editor-ux.md#delivered-interaction-redesign)
+[current workspace captures](evaluations/unified-editor-ux.md#consolidated-editor-assessment-milestone-22)
 show the delivered layout; the [earlier polish evaluation](evaluations/editor-polish.md) preserves its own
 historical scope and captures.
 

@@ -32,6 +32,22 @@ const candidate = decodeCandidate({
   artwork_revision: 'c'.repeat(64),
   operation: 'edit',
 });
+// Cut uses the active frame's absolute bounds and preserves exact hidden RGB in its clipboard.
+const cut = new PixelModel(candidate);
+cut.pixels.set(hidden, (2 * 8 + 5) * 4);
+cut.pixels.set(red, (3 * 8 + 6) * 4);
+cut.bounds = { x: 4, y: 2, width: 4, height: 4 };
+cut.apply(() => cut.cut());
+assert.deepEqual(cut.color({ x: 5, y: 2 }), [0, 0, 0, 0]);
+assert.deepEqual(cut.color({ x: 6, y: 3 }), [0, 0, 0, 0]);
+cut.apply(() => cut.paste());
+assert.deepEqual(cut.color({ x: 5, y: 2 }), hidden);
+assert.deepEqual(cut.color({ x: 6, y: 3 }), red);
+cut.undo();
+assert.deepEqual(cut.color({ x: 6, y: 3 }), [0, 0, 0, 0]);
+cut.undo();
+assert.deepEqual(cut.color({ x: 5, y: 2 }), hidden);
+
 const m = new PixelModel(candidate);
 m.begin();
 m.line({ x: 0, y: 0 }, { x: 7, y: 7 }, red);

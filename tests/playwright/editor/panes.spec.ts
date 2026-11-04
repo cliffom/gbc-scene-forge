@@ -1,14 +1,20 @@
 import assert from 'node:assert/strict';
 import { array, record, string } from '../../../frontend/shared/decode.mts';
 import { expect, type Page } from '@playwright/test';
-import { test, clickControl, editorReady, paint } from '../support/browser-fixtures.ts';
+import {
+  test,
+  clickControl,
+  editorReady,
+  paint,
+  chooseSavedScene,
+} from '../support/browser-fixtures.ts';
 
 test.use({ projectMode: 'sample' });
 
 async function openScene(page: Page, url: string) {
   await page.goto(url);
   await editorReady(page);
-  await page.locator('#scenes').selectOption({ index: 1 });
+  await chooseSavedScene(page, { index: 1 });
   await expect(page.locator('#scene-save-state')).toHaveText('Saved');
 }
 
@@ -122,7 +128,7 @@ test('panes expand the viewport independently at supported widths and survive re
       await expect(page.locator('#scene-save-state')).toHaveText('Saved');
     }
   }
-  await page.locator('#scenes').selectOption({ index: 2 });
+  await chooseSavedScene(page, { index: 2 });
   await expect(page.locator('#scene-name')).toContainText('Courtyard');
   await expect(page.locator('#toggle-library')).toHaveAttribute('aria-expanded', 'false');
   await expect(page.locator('#toggle-inspector')).toHaveAttribute('aria-expanded', 'false');

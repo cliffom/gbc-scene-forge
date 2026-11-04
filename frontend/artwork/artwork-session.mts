@@ -8,6 +8,7 @@ export class ArtworkSession {
   readonly model: PixelModel;
   original: Candidate;
   candidate: Candidate;
+  externalChanged = false;
   receipt: Record<string, unknown> | null = null;
   readonly id = crypto.randomUUID();
   readonly owner = crypto.randomUUID();
@@ -52,6 +53,7 @@ export class ArtworkSession {
     this.model.retainSavedFrames(candidate.descriptor);
     this.candidate = candidate;
     this.original = candidate;
+    this.externalChanged = false;
     this.receipt = null;
   }
   downloadWork() {

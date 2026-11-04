@@ -6,6 +6,20 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.33.0 — Unified scene and artwork editor
+
+One document control now navigates scenes and retained artwork, preserving local
+editing context and showing local state separately from detected external changes.
+One Save location and shared command strip follow the active document; artwork
+retains exact review and explicit confirmation.
+
+[Release notes](RELEASE-0.33.0.md). Share the Library, workbench, collapsible
+Inspector and optional frame/animation dock. Contextual source actions distinguish
+shared edits, independent copies and selected-placement variations; disappeared
+copy sources stay unavailable without clearing entered fields. Single-tile
+repetition previews update with painting, history and document switching. Preserve exact
+review, independent histories and browser/MCP recovery guards. Publication is separate.
+
 ## 0.32.0 — Human–agent artwork iteration
 
 [Release notes](RELEASE-0.32.0.md). Add direct editable PNG intake, bounded inline

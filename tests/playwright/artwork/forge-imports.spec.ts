@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { decodeProject } from '../../../frontend/project/project-contracts.mts';
 import { record } from '../../../frontend/shared/decode.mts';
-import { expect, test, clickControl } from '../support/browser-fixtures.ts';
+import { expect, test, clickControl, chooseSavedScene } from '../support/browser-fixtures.ts';
 
 test('Forge ZIP preflight, rename/skip, dirty protection, reopen and re-export', async ({
   page,
@@ -45,7 +45,7 @@ finally:
     );
   const original = await project();
   const originalId = original.scenes[0].id;
-  await page.locator('#scenes').selectOption(originalId);
+  await chooseSavedScene(page, originalId);
   await expect(page.locator('#status')).toHaveText('Scene opened.');
   const originalScene: unknown = await (
     await page.request.get(new URL(`api/scene/${originalId}`, url).href)
@@ -125,7 +125,7 @@ p.scenes.create('Concurrent scene', 2, 2, 8, p.catalog()['revision'])
   const copiedId = after.scenes[2].id;
   await page.reload();
   await expect(page.locator('#status')).toHaveText('Scene opened.');
-  await page.locator('#scenes').selectOption(copiedId);
+  await chooseSavedScene(page, copiedId);
   await expect(page.locator('#scenes')).toHaveValue(copiedId);
   // An actual canvas edit survives cancelling the import's unsaved-work prompt.
   await page.locator('#palette button[data-kind=tile]').first().click();

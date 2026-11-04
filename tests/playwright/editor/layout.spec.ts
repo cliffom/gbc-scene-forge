@@ -5,7 +5,7 @@ import { execFile } from 'node:child_process';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 
-import { clickControl, test, waitForUI } from '../support/browser-fixtures.ts';
+import { clickControl, test, waitForUI, chooseSavedScene } from '../support/browser-fixtures.ts';
 test('layout: Layout and keyboard acceptance for the editor command hierarchy.', async ({
   page,
   workspace,
@@ -108,7 +108,7 @@ print(p.catalog()['project']['scenes'][0]['id'])
   await page.setViewportSize({ width: 1440, height: 900 });
   // Rebuilding artwork on scene changes preserves the user's chosen library category.
   await click('stamps-tab');
-  await page.locator('#scenes').selectOption({ index: 2 });
+  await chooseSavedScene(page, { index: 2 });
   await waitForUI(
     page,
     "document.getElementById('scene-name').textContent.startsWith('Courtyard ·')",
@@ -117,7 +117,7 @@ print(p.catalog()['project']['scenes'][0]['id'])
     await evaluate("document.getElementById('stamps-tab').getAttribute('aria-selected')"),
     'true',
   );
-  await page.locator('#scenes').selectOption(scene);
+  await chooseSavedScene(page, scene);
   await waitForUI(
     page,
     "document.getElementById('scene-name').textContent.startsWith('Riverside ·')",

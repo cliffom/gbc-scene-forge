@@ -3,7 +3,7 @@ import { build } from 'esbuild';
 import { readFile, cp } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { join, basename } from 'node:path';
-import { test, expect, editorReady } from '../support/browser-fixtures.ts';
+import { test, expect, editorReady, chooseSavedScene } from '../support/browser-fixtures.ts';
 
 // Profiling instrumentation is bundled here; it never enters shipped browser assets.
 async function instrumented(reference: boolean, cache: boolean) {
@@ -142,7 +142,7 @@ print(json.dumps(ids))
         : ids.filter((id: unknown): id is string => typeof id === 'string');
       expect(scenes.length).toBeGreaterThan(0);
       for (const scene of scenes) {
-        await page.locator('#scenes').selectOption(scene);
+        await chooseSavedScene(page, scene);
         await expect(page.locator('#scene-save-state')).toHaveText('Saved');
         // Fit below 1x is a review feature for artwork scenes.
         await page.locator('#review-mode').click();

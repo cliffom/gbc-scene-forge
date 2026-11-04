@@ -86,17 +86,19 @@
     <nav class="document-bar" aria-label="Document controls">
       <div class="document-context" role="group" aria-label="Current document">
         <label>Project <select id="switch-project" aria-label="Current project" disabled></select></label>
-        <label>Scene <select id="scenes" aria-label="Saved scenes"><option value="">Choose a scene…</option></select></label>
-        <button id="document-switcher" aria-haspopup="dialog" aria-controls="document-tabs" aria-expanded="false" hidden title="Switch open document">Documents</button>
-        <dialog id="document-tabs" aria-labelledby="document-chooser-heading"><div class="document-chooser-heading"><h2 id="document-chooser-heading">Open documents</h2><button id="document-chooser-close" autofocus>Close</button></div><button id="scene-document" aria-pressed="true">Return to scene</button><p class="hint">Artwork documents</p><div id="artwork-documents"></div><div class="document-chooser-actions"><button id="artwork-new-document">New artwork…</button><button id="artwork-browse-document">Browse / recover artwork…</button></div></dialog>
+        <button id="document-switcher" aria-haspopup="dialog" aria-controls="document-tabs" aria-expanded="false" title="Switch document">Documents</button>
+        <dialog id="document-tabs" aria-labelledby="document-chooser-heading"><div class="document-chooser-heading"><h2 id="document-chooser-heading">Open documents</h2><button id="document-chooser-close" autofocus>Close</button></div><button id="scene-document" aria-pressed="true">Scene workspace</button><label class="field">Open another scene<select id="scenes" aria-label="Saved scenes"><option value="">Choose a scene…</option></select></label><p class="hint">Opening another scene replaces the active scene after any unsaved-work confirmation. Switching to retained artwork keeps local work.</p><p class="hint">Artwork documents</p><div id="artwork-documents"></div><div class="document-chooser-actions"><button id="artwork-new-document">New artwork…</button><button id="artwork-browse-document">Browse / recover artwork…</button></div></dialog>
+        <h2 id="artwork-heading" hidden>Artwork</h2>
         <span id="art-document-state" role="status" hidden></span>
-        <span id="scene-save-state" role="status" aria-live="polite"></span>
+        <span id="scene-save-state" hidden></span>
+        <span id="document-state" role="status" aria-live="polite"></span><span id="document-base-state" role="status" hidden></span>
       </div>
       <div class="document-actions" role="group" aria-label="Document actions">
+          <button id="save" disabled title="Save scene (⌘/Ctrl S)" aria-keyshortcuts="Control+s Meta+s">Save scene<span class="command-shortcut" aria-hidden="true">⌘/Ctrl S</span></button>
         <button id="scene-commands" popovertarget="scene-command-panel" class="command-trigger" disabled>Scene actions</button>
         <div id="scene-command-panel" class="command-panel" popover aria-label="Scene actions">
           <p class="command-heading">Scene</p>
-          <button id="save" disabled title="Save scene (⌘/Ctrl S)" aria-keyshortcuts="Control+s Meta+s">Save scene<span class="command-shortcut" aria-hidden="true">⌘/Ctrl S</span></button>
+
           <div class="command-divider"></div>
           <button id="show-create">Create scene…</button>
           <button id="show-blockout-create">Create blockout scene…</button>
@@ -133,7 +135,7 @@
         <section id="artwork-panel" class="library-panel" role="tabpanel" aria-labelledby="artwork-tab">
           <div class="panel-heading"><h3>Tiles &amp; sprites</h3><span id="asset-count" class="muted">0</span></div>
           <div class="library-art-actions"><button id="show-artwork" disabled>New artwork…</button><button id="library-import">Import</button></div>
-          <div class="library-art-actions"><button id="library-edit-artwork" disabled title="Edit the selected artwork">Edit artwork…</button><button id="art-browse" title="Browse artwork and recover drafts">Browse / recover</button></div>
+          <div class="library-art-actions"><button id="library-edit-artwork" disabled title="Edit the selected artwork">Edit artwork…</button><button id="library-source-actions" disabled title="Shared editing, independent copies and selected-placement variations">Source actions…</button></div><div class="library-art-actions"><button id="art-browse" title="Browse artwork and recover drafts">Browse / recover</button></div>
           <input id="search" type="search" placeholder="Search artwork…" aria-label="Search assets">
           <div class="filters">
             <select id="atlas-filter" aria-label="Filter atlas"><option value="">All atlases</option></select>
@@ -175,18 +177,8 @@
           <button id="delete-stamp" class="destructive-command" disabled>Delete stamp</button>
         </section>
       </aside>
-      <section class="workbench" aria-label="Scene canvas">
-        <div class="canvas-toolbar">
-          <span class="review-mode-label">Review · Pan</span>
-          <div id="scene-drawing-tools" class="tool-group authoring-tools" role="group" aria-label="Editing tools">
-            <label class="tool" title="Select (S)"><input type="radio" name="tool" value="select" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-select"/></svg><span class="tool-label">Select</span></label>
-            <label class="tool" title="Paint (P)"><input type="radio" name="tool" value="paint" checked disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-pencil"/></svg><span id="paint-label" class="tool-label">Paint</span></label>
-            <label class="tool" title="Fill (F)"><input type="radio" name="tool" value="fill" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-fill"/></svg><span class="tool-label">Fill</span></label>
-            <label class="tool" title="Erase (E)"><input type="radio" name="tool" value="erase" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-erase"/></svg><span class="tool-label">Erase</span></label>
-            <label class="tool" title="Pan (H)"><input type="radio" name="tool" value="pan" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-pan"/></svg><span class="tool-label">Pan</span></label>
-          </div>
-          <div id="scene-secondary-tools" class="toolbar-secondary authoring-tools">
-          <div class="tool-group" role="group" aria-label="History"><button id="undo" class="icon-button" aria-label="Undo" title="Undo (⌘/Ctrl Z)" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-undo"/></svg></button><button id="redo" class="icon-button" aria-label="Redo" title="Redo (⌘/Ctrl Shift Z)" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-redo"/></svg></button></div>
+      <section id="editor-workbench" class="workbench" aria-label="Editor canvas">
+        <div id="document-command-toolbar" role="toolbar" aria-label="Active document commands">          <div class="tool-group" role="group" aria-label="History"><button id="undo" class="icon-button" aria-label="Undo" title="Undo (⌘/Ctrl Z)" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-undo"/></svg></button><button id="redo" class="icon-button" aria-label="Redo" title="Redo (⌘/Ctrl Shift Z)" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-redo"/></svg></button></div>
           <div class="composition-tools" role="group" aria-label="Selection and clipboard">
           <div class="command-group" role="group" aria-label="Clipboard and selection">
             <button id="copy-selection" class="icon-button" aria-label="Copy" title="Copy (⌘/Ctrl C)" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-copy"/></svg></button><button id="cut-selection" class="icon-button" aria-label="Cut" title="Cut (⌘/Ctrl X)" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-cut"/></svg></button>
@@ -199,10 +191,22 @@
               <p class="command-heading">Transform selection</p>
               <button id="flip-horizontal" disabled>Flip horizontally</button><button id="flip-vertical" disabled>Flip vertically</button><button id="rotate-selection" disabled>Rotate 90°</button>
             </div>
-            <button id="save-stamp" class="icon-button" aria-label="Save stamp…" title="Save selection as reusable stamp" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-stamp"/></svg></button>
+
           </div>
+</div></div>
+        <div id="scene-surface" class="editor-surface">
+        <div class="canvas-toolbar">
+          <span class="review-mode-label">Review · Pan</span>
+          <div id="scene-drawing-tools" class="tool-group authoring-tools" role="group" aria-label="Editing tools">
+            <label class="tool" title="Select (S)"><input type="radio" name="tool" value="select" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-select"/></svg><span class="tool-label">Select</span></label>
+            <label class="tool" title="Paint (P)"><input type="radio" name="tool" value="paint" checked disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-pencil"/></svg><span id="paint-label" class="tool-label">Paint</span></label>
+            <label class="tool" title="Fill (F)"><input type="radio" name="tool" value="fill" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-fill"/></svg><span class="tool-label">Fill</span></label>
+            <label class="tool" title="Erase (E)"><input type="radio" name="tool" value="erase" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-erase"/></svg><span class="tool-label">Erase</span></label>
+            <label class="tool" title="Pan (H)"><input type="radio" name="tool" value="pan" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-pan"/></svg><span class="tool-label">Pan</span></label>
+          </div>
+          <div id="scene-secondary-tools" class="toolbar-secondary authoring-tools">
+<button id="save-stamp" class="icon-button" aria-label="Save stamp…" title="Save selection as reusable stamp" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-stamp"/></svg></button>
           <label class="selection-scope" title="Include tiles and objects across all visible layers when selecting"><input type="checkbox" id="select-all-layers"> Across layers</label>
-        </div>
           </div>
           <div class="zoom-controls"><label><span class="zoom-label">Zoom</span> <select id="zoom" aria-label="Zoom"><option value="fit" id="fit-zoom-option">Fit</option><option value="1">1×</option><option value="2">2×</option><option value="3" selected>3×</option><option value="4">4×</option><option value="6">6×</option><option value="8">8×</option></select></label><button id="review-mode" aria-label="Review scene" title="Review scene" aria-pressed="false" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-review"/></svg><span class="review-action-label">Review scene</span></button><button id="fit-scene" class="icon-button" aria-label="Fit scene" title="Center and fit the entire scene in the workspace" disabled><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-fit"/></svg></button></div>
           <button id="expand-scene-tools" class="toolbar-expand authoring-tools" aria-label="Expand tools (Paint)" title="Expand tools" aria-expanded="false" aria-controls="scene-drawing-tools scene-secondary-tools"><span class="toolbar-tool-name">Paint</span><svg class="command-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
@@ -225,6 +229,7 @@
           <p>Layer eyes still control authored visibility. Show all categories before placing stamps or transforming across layers.</p>
         </details>
         <div class="review-bar"><span class="eyebrow">VIEW</span><label><input id="grid" type="checkbox" checked> Grid</label><label class="snap-control" title="Snap sprite origins to grid intersections. Hold Alt to bypass; arrow keys nudge one pixel."><input id="snap" type="checkbox" checked> Snap to grid</label><label><input id="terrain-overlay" type="checkbox"> Artwork terrain</label><label><input id="collision-overlay" type="checkbox"> Artwork collision</label><span class="hint">Middle drag / Space: pan · Wheel: zoom · Alt: free placement · Arrow keys: 1 px</span></div>
+        </div>
       </section>
       <div id="inspector-rail" class="pane-rail inspector-rail" hidden></div>
       <aside id="inspector-pane" class="inspector" aria-label="Scene inspector">
@@ -373,8 +378,8 @@
     <div id="conversion-images" hidden><div id="conversion-views"></div><ul id="conversion-mapping" aria-label="Reviewed replacements; tile coordinates start at zero"></ul></div>
     <div class="dialog-actions"><button id="conversion-close">Cancel</button><button id="conversion-review">Review mapping</button><button id="conversion-save" disabled>Replace reviewed placements</button></div>
   </dialog>
-  <dialog id="artwork-dialog" aria-labelledby="artwork-heading">
-    <header class="art-heading"><h2 id="artwork-heading">Artwork</h2><span id="art-scope-label" class="muted"></span><div class="art-heading-actions"><button id="art-layers-toggle" aria-expanded="false" aria-controls="art-layer-panel">Layers</button><button id="art-properties-toggle" aria-expanded="false">Properties</button><button id="art-close">Return to scene</button></div></header>
+  <section id="artwork-surface" class="editor-surface" aria-labelledby="artwork-heading" hidden>
+    <header id="art-inspector-actions" class="art-heading"><span id="art-scope-label" class="muted"></span><div class="art-heading-actions"><button id="art-layers-toggle" aria-expanded="false" aria-controls="art-layer-panel">Layers</button><button id="art-properties-toggle" aria-expanded="false" aria-controls="art-properties">Properties</button></div></header>
     <p id="art-message" role="status" aria-live="polite"></p>
     <div id="art-setup">
     <details id="art-handoff"><summary>Agent candidates</summary><p>Inspect unpublished snapshots, then adopt a separate editable copy. Saved artwork is unchanged. Existing documents and their Undo histories are retained.</p><button id="art-handoff-list" type="button">Refresh candidates</button><div id="art-handoff-candidates"></div></details>
@@ -386,16 +391,16 @@
         <button id="art-open" class="primary" aria-describedby="art-source-help">Edit shared artwork</button>
         <p id="art-source-help" class="hint"></p>
         <div id="art-copy-fields"></div>
-        <button id="art-duplicate-sheet">Create editable sheet copy</button>
+        <h3>Create independent copy</h3><p id="art-copy-help" class="hint">A sheet copy preserves compatible frames, animation timing, metadata and native layers. Imported sheets must fit the editable sheet limits (8–256 pixels per axis, multiples of eight, at most 128 frames). A region copy takes one selected sprite pose or tile cell; it does not copy an animation.</p><button id="art-duplicate-sheet">Create editable sheet copy</button>
         <details><summary>Copy a region or replace selected placements</summary>
           <div class="art-row"><label class="field">Tile column<input id="art-cell-x" type="number" min="0" value="0"></label><label class="field">Tile row<input id="art-cell-y" type="number" min="0" value="0"></label><label class="field">Tile size<select id="art-source-grid"><option>8</option><option>16</option><option>32</option></select></label></div>
           <button id="art-duplicate">Copy selected region</button><button id="art-variation">Create variation for selected placements</button>
-          <p class="hint">Variations replace matching selections in a saved scene. Other placements keep the source artwork.</p>
+          <p id="art-variation-help" class="hint">Variations capture 1–256 matching placements from one active layer of a saved, unmodified scene. Review then Save commits the new source and replacements together. Other placements keep the original.</p>
         </details>
       </section>
       <section id="art-new-panel"><h3>Create artwork</h3><div id="art-new-fields">
         <div id="art-identity"><label class="field">Name<input id="art-name" value="New artwork" maxlength="100"></label><details><summary>Asset identity</summary><label class="field">Asset ID<input id="art-id" pattern="[a-z][a-z0-9_]{0,63}" maxlength="64"></label></details></div>
-        <div class="art-row"><label class="field">Artwork type<select id="art-kind"><option value="tile">Tile</option><option value="sprite">Sprite</option></select></label><label class="field">Width (px)<input id="art-width" type="number" min="8" max="256" step="8" value="16"></label><label class="field">Height (px)<input id="art-height" type="number" min="8" max="256" step="8" value="16"></label></div>
+        <div class="art-row"><label class="field">Artwork type<select id="art-kind"><option value="tile">Tile</option><option value="sprite">Sprite / illustration</option></select></label><label class="field">Width (px)<input id="art-width" type="number" min="8" max="256" step="8" value="16"></label><label class="field">Height (px)<input id="art-height" type="number" min="8" max="256" step="8" value="16"></label></div>
         <p class="hint">Static sprites/illustrations: 1–4,096 pixels per axis, at most 4,194,304 pixels. Single tiles are 8, 16 or 32 pixels square; sheets use multiples of eight within 8–256.</p>
         <label><input id="art-multiple" type="checkbox"> Create a sheet with multiple frames</label>
         <div id="art-sheet-layout" hidden><div class="art-row"><label class="field">Frame width<input id="art-frame-width" type="number" min="8" max="256" step="8" value="8"></label><label class="field">Frame height<input id="art-frame-height" type="number" min="8" max="256" step="8" value="8"></label></div>
@@ -408,29 +413,26 @@
     <div id="art-editor" hidden>
       <div class="art-controls">
       <p id="art-shared" class="hint"></p><details class="art-help"><summary>Drawing &amp; keyboard help</summary><p class="hint">Drag to draw or select. The outlined pixel is your target; Move selection uses a move cursor. <span id="art-navigation-help">Pan with middle drag, Space+drag on the canvas, or Pan then drag/arrow keys. Fit centers the artwork; frame/sheet changes reframe it.</span> Move selections by dragging or arrow keys. Escape cancels a gesture. ⌘/Ctrl Z undoes, C/V copies/pastes. Opacity ranges from 0 (transparent) to 255 (opaque). Toggle Transparent again or choose a color to resume painting.</p></details>
-      <section id="art-sheet-controls" hidden>
+      <section id="art-sheet-controls" aria-label="Frames and animation dock" hidden><details id="art-dock" open><summary>Frames &amp; animation</summary>
         <div class="art-frame-bar"><label class="field">Frame<select id="art-frame"></select></label><div class="art-scope" role="group" aria-label="Drawing scope"><button id="art-sheet-view" aria-pressed="true">Sheet</button><button id="art-frame-view" aria-pressed="false">Frame</button></div><input id="art-edit-frame" type="checkbox" hidden><label><input id="art-onion" type="checkbox"> Onion skin</label></div>
         <div id="art-frame-strip" aria-label="Sheet frames"></div>
         <details id="art-timeline"><summary>Animation</summary><div class="art-animation-layout"><div class="art-animation-edit">
           <div class="art-row"><label class="field">Animation<select id="art-sequence"></select></label><label><input id="art-loop" type="checkbox" checked> Loop</label><button id="art-play">Play</button><button id="art-step">Step</button><button id="art-add-animation-frame">Append frame</button></div>
           <div id="art-sequence-frames" aria-label="Animation frame timing"></div>
           <details><summary>New animation</summary><div class="art-row"><label class="field">Animation name<input id="art-sequence-id" maxlength="64" placeholder="Walk"></label><button id="art-add-sequence">Create animation</button></div></details>
-        </div><div class="art-playback"><canvas id="art-animation-canvas" aria-label="Animation preview"></canvas><p id="art-animation-status" role="status"></p><button id="art-animation-review">Generate animation review</button><figure id="art-animation-result" hidden><figcaption>Animation review</figcaption><img id="art-animation-image" alt="Timed animation review"></figure></div></div></details>
+        </div><div class="art-playback"><canvas id="art-animation-canvas" aria-label="Animation preview"></canvas><p id="art-animation-status" role="status"></p><button id="art-animation-review">Generate animation review</button><figure id="art-animation-result" hidden><figcaption>Animation review</figcaption><img id="art-animation-image" alt="Timed animation review"></figure></div></div></details></details>
       </section>
       <details id="art-selection-details" hidden><summary>Placements this variation will replace</summary><ul id="art-selection-list"></ul></details>
 <div class="art-toolbar">
 <div class="pixel-toolbar" aria-label="Pixel editing commands">
 <div class="tool-group" role="group" aria-label="Pixel tools"><label class="tool" title="Pencil"><input type="radio" name="art-tool" value="pencil" checked><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-pencil"/></svg><span class="tool-label">Pencil</span></label><label class="tool" title="Eraser"><input type="radio" name="art-tool" value="erase"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-erase"/></svg><span class="tool-label">Eraser</span></label><label class="tool" title="Flood fill"><input type="radio" name="art-tool" value="fill"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-fill"/></svg><span class="tool-label">Flood fill</span></label><label class="tool" title="Eyedropper"><input type="radio" name="art-tool" value="pick"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-pick"/></svg><span class="tool-label">Eyedropper</span></label><label class="tool" title="Line"><input type="radio" name="art-tool" value="line"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-line"/></svg><span class="tool-label">Line</span></label><label class="tool" title="Rectangle outline"><input type="radio" name="art-tool" value="rectangle"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-rectangle"/></svg><span class="tool-label">Rectangle outline</span></label><label class="tool" title="Select rectangle"><input type="radio" name="art-tool" value="select"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-select"/></svg><span class="tool-label">Select rectangle</span></label><label class="tool" title="Move selection"><input type="radio" name="art-tool" value="move"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-move"/></svg><span class="tool-label">Move selection</span></label></div>
-<div class="tool-group" role="group" aria-label="History"><button id="art-undo" class="icon-button" aria-label="Undo" title="Undo (⌘/Ctrl Z)"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-undo"/></svg></button><button id="art-redo" class="icon-button" aria-label="Redo" title="Redo (⌘/Ctrl Shift Z)"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-redo"/></svg></button></div>
-<div class="tool-group" role="group" aria-label="Clipboard and selection"><button id="art-copy" class="icon-button" aria-label="Copy" title="Copy (⌘/Ctrl C)"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-copy"/></svg></button><button id="art-paste" class="icon-button" aria-label="Paste" title="Paste (⌘/Ctrl V)"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-paste"/></svg></button><button id="art-deselect" class="icon-button" aria-label="Deselect" title="Deselect"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-deselect"/></svg></button></div>
-<div class="tool-group" role="group" aria-label="Transform artwork"><button id="art-horizontal" class="icon-button" aria-label="Flip horizontal" title="Flip horizontal"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-flip-h"/></svg></button><button id="art-vertical" class="icon-button" aria-label="Flip vertical" title="Flip vertical"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-flip-v"/></svg></button><button id="art-rotate" class="icon-button" aria-label="Rotate 90°" title="Rotate 90°"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-rotate"/></svg></button></div>
 </div>
 <div class="art-row art-tools"><div class="art-row color-controls" role="group" aria-label="Drawing color"><label class="field">Color<input id="art-color" type="color" value="#729b4f"></label><label class="field">Opacity<input title="0 = transparent, 255 = opaque" id="art-alpha" type="number" min="0" max="255" value="255"></label><button id="art-transparent" class="icon-button" aria-pressed="false" title="Toggle transparent drawing; click again to restore opacity"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-transparent"/></svg><span id="art-transparency-label">Transparent</span></button></div><div class="art-row pixel-view-controls" role="group" aria-label="Pixel view"><button id="art-pan" aria-pressed="false" title="Pan artwork: drag, or use arrow keys on the canvas. Also middle drag or Space+drag.">Pan</button><button id="art-fit" title="Center and fit artwork in the drawing area">Fit</button><label class="field">Zoom<select id="art-zoom"><option value="0.03125">¹⁄₃₂×</option><option value="0.0625">¹⁄₁₆×</option><option value="0.125">⅛×</option><option value="0.25">¼×</option><option value="0.5">½×</option><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option><option value="8">8×</option><option value="16" selected>16×</option><option value="32">32×</option></select></label><label><input id="art-grid" type="checkbox" checked> Pixel grid</label></div></div>
-<button id="art-palette-toggle" type="button" popovertarget="art-palette">Palette ▾</button>
+<button id="art-palette-toggle" type="button" popovertarget="art-palette">Colors ▾</button>
 <div id="art-palette" popover="auto" aria-label="Artwork palette"><p id="art-palette-count" class="hint"></p><div id="art-swatches" class="art-swatches" aria-label="Artwork colors sorted by hue"></div></div>
 </div>
       </div>
-      <div class="art-workspace"><div id="art-viewport" class="art-canvas-scroll"><div id="art-stage"><canvas id="art-canvas" tabindex="0" aria-label="Pixel artwork canvas" aria-describedby="art-navigation-help"></canvas><div id="art-pixel-grid" aria-hidden="true" hidden></div><div id="art-target" aria-hidden="true" hidden></div></div></div>      <aside id="art-layer-panel" hidden><h3>Artwork layers</h3>
+      <div class="art-workspace"><div id="art-viewport" class="art-canvas-scroll"><div id="art-stage"><canvas id="art-canvas" tabindex="0" aria-label="Pixel artwork canvas" aria-describedby="art-navigation-help"></canvas><div id="art-pixel-grid" aria-hidden="true" hidden></div><div id="art-target" aria-hidden="true" hidden></div></div></div>      <aside id="art-layer-panel" class="inspector-panel" hidden><h3>Artwork layers</h3>
         <label>Layer <select id="art-layer"></select></label>
         <button id="art-layer-add" type="button">Add layer</button>
         <button id="art-layer-up" type="button">Move up</button><button id="art-layer-down" type="button">Move down</button>
@@ -441,7 +443,7 @@
         <label><input id="art-layer-locked" type="checkbox">Locked</label>
         <button id="art-layer-update" type="button">Update layer</button>
       </aside>
-<aside id="art-properties" hidden><h3>Frame properties</h3><label class="field">Frame name<input id="art-frame-name" maxlength="100"></label><button id="art-rename-frame">Rename frame</button><p id="art-frame-geometry"></p><details><summary>Representations</summary><p class="hint">Tile representations share pixels with this sprite. Adding one does not replace placements.</p><button id="art-tile-representation">Add tile representation</button></details><canvas id="art-repeat-canvas" aria-label="Tile repetition preview" hidden></canvas></aside><aside class="art-review" hidden><div class="art-review-heading"><h3>Review changes</h3><button id="art-review-close">Close review</button></div>
+<aside id="art-properties" class="inspector-panel" hidden><h3>Document &amp; frame properties</h3><p id="art-document-geometry" class="hint"></p><div id="art-frame-properties"><label class="field">Frame name<input id="art-frame-name" maxlength="100"></label><button id="art-rename-frame">Rename frame</button><p id="art-frame-geometry"></p><details><summary>Representations</summary><p class="hint">Tile representations share pixels with this sprite. Adding one does not replace placements.</p><button id="art-tile-representation">Add tile representation</button></details></div><canvas id="art-repeat-canvas" aria-label="Tile repetition preview" hidden></canvas></aside><aside id="art-review-panel" class="art-review inspector-panel" hidden><div class="art-review-heading"><h3>Review changes</h3><button id="art-review-close">Close review</button></div>
         <label><input id="art-use-scene" type="checkbox" checked> Preview in the open scene</label>
         <button id="art-review">Update review</button>
         <details><summary>Artwork detail view</summary><p class="hint">The default review shows the whole artwork. Review any region at native resolution.</p><label><input id="art-review-detail" type="checkbox"> Review detail region</label><div class="property-grid"><label class="field">X<input id="art-review-x" type="number" min="0" value="0"></label><label class="field">Y<input id="art-review-y" type="number" min="0" value="0"></label><label class="field">Width<input id="art-review-width" type="number" min="1" max="1024" value="256"></label><label class="field">Height<input id="art-review-height" type="number" min="1" max="1024" value="256"></label></div></details><p id="art-review-view" class="hint"></p>
@@ -454,9 +456,10 @@
       <p id="art-draft-status" role="status"></p>
       <div class="dialog-actions"><details class="art-document-actions"><summary>Document actions</summary><div>      <button id="art-handoff-return" type="button">Return candidate to agent</button>
       <pre id="art-handoff-result" hidden></pre>
-<button id="art-download">Download work</button><button id="art-discard" class="destructive-command">Close / discard draft</button></div></details><button id="art-save" class="primary" disabled>Save…</button></div>
+<button id="art-download">Download work</button><button id="art-discard" class="destructive-command">Close / discard draft</button></div></details></div>
     </div>
-  </dialog>
+  </section>
+  <section id="art-inspector-content" hidden></section>
   <dialog id="tile-dialog" aria-labelledby="tile-heading">
     <form id="tile-form">
       <h2 id="tile-heading">Tile terrain &amp; collision</h2>

@@ -15,6 +15,201 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Single-tile repetition preview cache (PR #200)
+
+- **Scope:** Prepared 0.33.0 working tree based on `1e6dfab`, checked
+  2026-11-03 local time (2026-11-04 UTC), macOS arm64, local production bundle
+  and Playwright Chromium; disposable projects.
+- **Method:** Extend contextual-panel acceptance to inspect all three repeated
+  copies after painting, Undo, Redo and switching between equal-sized single
+  tiles. Run the pixel and raster suites, including unaffected sheet frame stamps
+  and the contextual dock's unchanged-thumbnail work counts.
+- **Result:** The regression failed before the fix with the original color still
+  visible after painting. An intermediate run reached document restoration but
+  exposed an ambiguous test name selector, which was corrected. The final pixel
+  and contextual-panel run passed all 44 cases; both direct raster cases passed.
+  The production frontend build and `make lint test` passed (448 Python tests
+  and all TypeScript suites), but formatting ran before the final selector edit.
+  [CI at `75b4225`](https://github.com/cliffom/gbc-scene-forge/actions/runs/41783329047)
+  then rejected that selector's formatting before compilation, tests or packaging;
+  the selector was subsequently formatted with Prettier.
+- **Limits:** Scoped local automation; no full-browser, installed-wheel, MCP or
+  CI rerun is claimed for this follow-up. Earlier broader checks retain their
+  revision boundary below; human verification of this fix remains unreported.
+
+## Consolidated editor workflows (milestone 22)
+
+- **Scope:** Prepared 0.33.0 product source at `0269aae` on `milestone/22`,
+  #197–#199, checked 2026-11-03 local time (2026-11-04 UTC), macOS arm64,
+  Python 3.13.13, Node 24.22.1 and Playwright Chromium. Disposable projects,
+  production source bundle and separately installed production wheel.
+- **Method:** Four new browser cases cover contextual Inspector/dock states,
+  exact single-tile repetition, no-scene creation, named poses, explicit source
+  actions and deletion during copy setup. Sixteen panel captures at 1440×900,
+  1280×800, 800×640 and 1280×600 include real canvas dimensions, keyboard scrolling
+  from playback into timing, document-action bounds and transient history checks.
+  Agent inspection of the full capture grid and representative originals includes
+  layered illustration and retained copy fields. The
+  [integrated assessment](evaluations/unified-editor-ux.md#consolidated-editor-assessment-milestone-22)
+  archives fixture provenance, captures, measurements and navigation work counts.
+  Existing acceptance covers dirty scene/artwork round trips, shared references,
+  imports, variations, exact RGBA/hidden RGB, origins/timing, guards, failed writes,
+  recovery, remount/disposal and portable save/reopen/export. Real MCP/browser
+  scenarios exercise saved discovery and unpublished handoff with independent owners.
+- **Result:** `make lint test` passed (448 Python tests and all TypeScript suites).
+  An early broad run was stopped during source review to move a new dock listener
+  from redraw to mount scope. Focused checks then exposed unchanged frame-label
+  text-node rebuilds and a rapid source-action click during pending native open;
+  equal label writes are now skipped and source actions respect the shared busy gate.
+  The first completed broad run passed 145 cases, failed one palette-position case
+  and skipped 11 optional profiles. Palette position is now bounded before its
+  first visible frame and updated while resizing an open popover; five focused
+  repetitions passed. The final consistent production-mode `make test-browser`
+  run passed all 146 regular cases and skipped the 11 optional profiles. All six
+  real MCP/browser scenarios passed again. Production build/strict metadata,
+  seven installed-wheel smoke tests and installed-wheel first-use authoring passed.
+  Thirty-two frame switches produced zero thumbnail paints, subtree rebuilds,
+  additional dock handlers or DOM canvas growth; the existing hover and remount
+  cases passed. Documentation checks passed. The user accepted #196 at `d494519`;
+  the user reported “verified. This is very nice” after the combined #197–#199
+  walkthrough at local revision `86855bb`, recording acceptance of those increments.
+- **Limits:** These synthetic checks and agent inspection do not complete #165's
+  independent-user study or #166's findings-based remediation. Both panes plus an
+  expanded dock leave only 150px drawing height in the compact/short captures;
+  controls scroll inside the dock and collapsing it restores height. Work counts
+  do not measure heap/GPU memory or sixteen maximum-size documents with full
+  histories. Optional profiles, prolonged physical-device drawing, Windows,
+  non-Chromium browsers and official Tiled interoperability were not tested.
+  The integrated Electron review page stalled during image loading; the same
+  review URL opened successfully in separate Chromium. No CI-pass claim is made
+  for these checks. User acceptance does not constitute an independent-participant study.
+
+## Active document commands and Save (#196, milestone 22)
+
+- **Scope:** Prepared 0.33.0 working tree on `milestone/22`, based on
+  `8d8f7b5fb25f758e89eefe21fbf01f99260b9888`, checked 2026-11-03 local time
+  (2026-11-04 UTC), macOS arm64, Python 3.13.13, Node 24.22.1 and local
+  Playwright Chromium. Disposable projects; source and installed production wheel.
+- **Method:** Four new browser scenarios exercise shared pointer/keyboard commands,
+  repeated document switches/remounts, independent dirty histories, clipboard,
+  native form/modal focus, one Save location, receipt invalidation and saved-base
+  Undo. A model regression checks exact Cut/Paste, hidden RGB and frame-offset bounds.
+  Existing browser cases cover frame history, captured gestures, large-document
+  zoom/Fit, atomic selected-placement saves, external conflicts, recovery and failed
+  post-save adoption. Agent inspection at 1440×1000 and 800×640:
+  [artwork review](screenshots/document-commands/artwork-review.png),
+  [scene Save](screenshots/document-commands/scene-saved.png) and
+  [compact review](screenshots/document-commands/artwork-compact-review.png).
+- **Result:** `make lint test` passed (448 Python tests and all TypeScript suites).
+  The initial development-mode broad run passed 134 cases, failed seven and skipped
+  11 optional profiles. It exposed compact overflow, review-state refresh overwriting
+  checkpoint status, a review-mode visibility override, pointer-command focus loss,
+  and two obsolete dynamic artwork-button selectors. Those defects/fixtures were
+  corrected; all 11 focused regression cases passed. An earlier retained-context
+  test targeted a clipped pixel after the toolbar moved; it now chooses a visible
+  drawing zoom. The final consistent production-mode full browser run passed all
+  142 regular cases and skipped 11 optional profiles. Six real MCP/browser scenarios
+  passed, including concurrent saved writes and refresh. Production build, strict
+  distribution metadata, seven installed-wheel smoke tests and installed-wheel
+  first-use authoring passed. Documentation checks passed. The user reported
+  “Verified” for the shared-command and Save walkthrough at local revision
+  `d494519`; this records acceptance of that increment.
+- **Limits:** Synthetic automation and agent screenshot inspection do not establish
+  independent usability, prolonged drawing
+  comfort, physical-device scaling, Windows/non-Chromium support or official Tiled
+  interoperability. Optional profiling matrices were not run. No CI or publication
+  claim is made for this local increment.
+
+## Shared document navigation (#195, milestone 22)
+
+- **Scope:** Prepared 0.33.0 working tree on `milestone/22`, based on
+  `a7e452c9444740f2f596ac1793014044afe31eff`, checked 2026-11-03 local time
+  (2026-11-04 UTC), macOS arm64, Python 3.13.13, Node 24.22.1 and local
+  Playwright Chromium. Disposable scene/artwork projects; source and installed wheel.
+- **Method:** Five focused browser scenarios exercise retained layers, tools,
+  selection, color, frame/sequence, zoom/scroll and independent history; exact
+  canvas snapshots; failed/delayed checkpoints, duplicate navigation, project
+  departure/recovery, separate saved-base warnings, captured pan and playback.
+  Existing scene-history, targeted-frame, disposal, recovery and browser/MCP
+  scenarios cover adjacent ownership contracts. Agent screenshot inspection at
+  1440×1000 and 800×640: [artwork](screenshots/document-navigation/artwork.png),
+  [chooser](screenshots/document-navigation/documents.png) and
+  [compact chooser](screenshots/document-navigation/documents-compact.png).
+- **Result:** Five focused navigation cases pass; the retained-context case also
+  passes three repetitions after correcting a real hidden-surface scene-scroll
+  reset. A captured-pan/playback test exposed ongoing artwork playback while the
+  chooser opened; opening Documents now stops it. Rendering checks exposed a second
+  scene serialization per painting update; navigation now reuses the already
+  computed dirty state. Earlier broad checks also found obsolete hidden-heading
+  targets, old name-only expectations and a frozen-renderer viewport interface;
+  fixtures now use visible controls, kind labels and an interface-only adapter.
+  A production rebuild during the initial development-mode run invalidated two
+  build-label assertions; subsequent runs keep mode and bundle consistent.
+  `make lint test` passed (448 Python tests and all TypeScript suites); final
+  source changes passed lint again. The final production-mode broad browser run
+  passed 137 cases, skipped 11 opt-in profiles and failed one obsolete assertion
+  that the scene selector was inline beside Project. The assertion now checks the
+  shared document button and chooser ownership; its complete launcher/switching/
+  conflict/restart scenario passes separately, accounting for all 138 regular cases.
+  The full suite was not repeated after that test-only correction. Six MCP/browser
+  scenarios passed, including unpublished handoff and real external refresh.
+  Production distribution build, strict metadata checks, seven installed-wheel
+  smoke checks and installed-wheel first use passed.
+  The user reported “verified” after the document-navigation walkthrough at
+  local revision `7589b75`. This records acceptance of that increment, including
+  clarification of the modified-scene replacement step; it does not establish
+  independent usability or prolonged-use evidence.
+- **Limits:** Synthetic tests and agent screenshot inspection do not establish
+  independent-human acceptance, prolonged drawing comfort, physical-device scaling,
+  Windows/non-Chromium behavior or official Tiled interoperability. The integrated
+  Electron review page stalled awaiting image decoding; the same prepared review
+  URL loaded its scene successfully in separate Chromium. Artwork Save and panel
+  refinements remain subsequent milestone scope. No CI or publication claim is made.
+
+## Shared editor shell (#194, milestone 22)
+
+- **Scope:** Prepared 0.33.0 working tree on `milestone/22`, based on
+  `0b90f839450ee4dfb3cb3a2eefacc86a2f6d4f5f`, checked 2026-11-03 local time
+  (2026-11-04 UTC), macOS arm64, Python 3.13.13, Node 24.22.1 and local
+  Playwright Chromium. Disposable native-artwork/scene projects; source-checkout
+  production bundle and separately installed wheel.
+- **Method:** Synthetic browser scene → selected source → pixel edit → review/save
+  → scene return at 1440×900, 1280×800 and 800×640, independent saved-RGBA reads,
+  scene history checks, artwork without a scene and repeated mount/dispose checks.
+  Agent screenshot inspection covered scene return, drawing and review across
+  those sizes. Archived captures: [desktop artwork](screenshots/shared-editor-shell/1440×900-artwork.png),
+  [desktop review](screenshots/shared-editor-shell/1440×900-review.png),
+  [desktop return](screenshots/shared-editor-shell/1440×900-scene.png),
+  [1280 artwork](screenshots/shared-editor-shell/1280×800-artwork.png),
+  [1280 review](screenshots/shared-editor-shell/1280×800-review.png),
+  [1280 return](screenshots/shared-editor-shell/1280×800-scene.png),
+  [compact artwork](screenshots/shared-editor-shell/800×640-artwork.png),
+  [compact review](screenshots/shared-editor-shell/800×640-review.png) and
+  [compact return](screenshots/shared-editor-shell/800×640-scene.png).
+- **Result:** `make lint test` passed, including 448 Python tests and all
+  TypeScript suites. Production build, strict distribution metadata and seven
+  installed-wheel smoke checks passed. The full regular browser run passed 133
+  scenarios, with 11 opt-in profiling scenarios skipped. Three MCP/browser scenarios passed,
+  covering mixed artwork edits, conflicts and real external saves/refresh.
+  Installed-wheel first use passed. The four new shared-shell scenarios passed.
+  The user subsequently reported “That felt unified” and authorized proceeding;
+  #194 was pushed in `a7e452c9444740f2f596ac1793014044afe31eff`. This is reported
+  acceptance of the shell experience, not independent evidence for every automated
+  workflow or prolonged use.
+  Its [CI run](https://github.com/cliffom/gbc-scene-forge/actions/runs/41771598861)
+  passed package checks and Python 3.13/3.14 compatibility; that result covers the
+  pushed shell revision, separately from the local #195 work above.
+  Initial focused runs exposed a disabled Inspector toggle during Save and clipped
+  dense variation Save controls; direct layout-owner reveal and Inspector-hosted
+  variation details corrected both. The initial no-scene test incorrectly used
+  the project chooser; the corrected empty-project fixture passed.
+- **Limits:** Local synthetic and agent-inspection evidence does not establish
+  independent-human usability, prolonged drawing comfort, physical-device scaling,
+  non-Chromium/Windows behavior or official Tiled interoperability. The shell
+  increment retains the artwork Save footer, chooser and frame dock; later
+  milestone issues own navigation, commands and panel refinements. No CI or
+  publication result is claimed.
+
 ## PR #193 release-gate fixture contention
 
 - **Scope:** Prepared 0.32.0 working tree based on

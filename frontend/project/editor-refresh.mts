@@ -51,7 +51,10 @@ export function createRefreshController({
   lifetime: EditorLifetime;
   workspaceState: Pick<WorkspaceState, 'navigating' | 'project' | 'revision'>;
   activity: EditorActivity;
-  sceneSession: Pick<SceneSession, 'baseline' | 'committed' | 'dirty' | 'editor' | 'loaded'>;
+  sceneSession: Pick<
+    SceneSession,
+    'baseline' | 'committed' | 'dirty' | 'editor' | 'loaded' | 'externalChanged'
+  >;
   gestures: Pick<
     GestureState,
     'anchor' | 'blockoutDraw' | 'objectDrag' | 'objectResize' | 'pan' | 'spacePan'
@@ -76,6 +79,7 @@ export function createRefreshController({
 
   function liveReady() {
     return Boolean(
+      activity.document === 'scene' &&
       !lifetime.disposed &&
       workspaceState.project &&
       !activity.busy &&
@@ -108,6 +112,7 @@ export function createRefreshController({
       return;
     }
     const eligible = () =>
+      activity.document === 'scene' &&
       !lifetime.disposed &&
       !activity.busy &&
       !workspaceState.navigating &&
@@ -139,6 +144,16 @@ export function createRefreshController({
     }
     if (!liveReady()) {
       if (manual) {
+        // A manual check may identify a stale dirty base without adopting pixels,
+        // a scene snapshot or a new revision. Automatic dirty polling stays paused.
+        const loaded = sceneSession.loaded;
+        if (loaded && sceneSession.dirty() && !activity.busy && !workspaceState.navigating) {
+          const probe = await api(`revisions?scene=${encodeURIComponent(loaded.id)}`, record);
+          if (!lifetime.disposed && sceneSession.loaded === loaded) {
+            sceneSession.externalChanged = probe.scene_revision !== loaded.revision;
+            ports.update();
+          }
+        }
         syncMessage(
           'Refresh paused. Finish the current interaction and save or revert local edits first.',
         );

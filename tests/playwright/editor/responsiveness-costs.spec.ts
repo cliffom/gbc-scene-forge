@@ -10,6 +10,7 @@ import {
   clickControl,
   setControl,
   scenePoint,
+  chooseSavedScene,
 } from '../support/browser-fixtures.ts';
 import { saveArtwork } from '../support/artwork-controls.ts';
 import { createHash } from 'node:crypto';
@@ -106,7 +107,7 @@ print(s['id'])
     await editorReady(page);
     const coldProjectMs = performance.now() - cold;
     await phase('open', async () => {
-      await page.locator('#scenes').selectOption(scene);
+      await chooseSavedScene(page, scene);
       await expect(page.locator('#scene-save-state')).toHaveText('Saved');
     });
     await phase('library-search', async () => {
@@ -277,7 +278,7 @@ p.scenes.save(sys.argv[2],loaded['scene'],loaded['revision'],p.catalog()['revisi
         "history.replaceState(null,'','/');window.profileMounted=window.profileModule.mountProjectEditor()",
       );
       await editorReady(page);
-      await page.locator('#scenes').selectOption(scene);
+      await chooseSavedScene(page, scene);
       await expect(page.locator('#scene-save-state')).toHaveText('Saved');
       await evaluate('window.profileMounted.dispose()');
       await sample(`remount-disposed-${cycle + 1}`);

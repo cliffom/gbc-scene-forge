@@ -61,15 +61,26 @@ export function createArtworkController({
 }) {
   let atlasFolder: AtlasFolder | null = null;
   let editAsset = '';
-  function editArtwork(asset = editAsset) {
+  function syncSourceActions() {
+    for (const id of ['library-edit-artwork', 'library-source-actions']) {
+      button(id).disabled = activity.busy || !editAsset;
+      button(id).title = editAsset
+        ? `${editAsset} · ${id === 'library-edit-artwork' ? 'Edit artwork' : 'Shared editing, independent copies and selected-placement variations'}`
+        : 'Choose artwork first';
+    }
+  }
+  function editArtwork(asset = editAsset, action: 'edit' | 'source-actions' = 'edit') {
     const [atlas, region] = asset.split('/');
     if (atlas && region) {
       element('palette', HTMLElement).dispatchEvent(
-        new CustomEvent('open-artwork', { detail: { atlas, region } }),
+        new CustomEvent('open-artwork', { detail: { atlas, region, action } }),
       );
     }
   }
   lifetime.assign(button('library-edit-artwork'), 'onclick', () => editArtwork());
+  lifetime.assign(button('library-source-actions'), 'onclick', () =>
+    editArtwork(editAsset, 'source-actions'),
+  );
   element('palette', HTMLElement).addEventListener('artwork-workspace', filterPalette, {
     signal: lifetime.signal,
   });
@@ -109,6 +120,7 @@ export function createArtworkController({
         (atlas && item.dataset.atlas !== atlas) ||
         (kind && item.dataset.kind !== kind),
       );
+      item.draggable = !document.body.classList.contains('editing-artwork');
       item.disabled =
         !document.body.classList.contains('editing-artwork') &&
         item.dataset.sceneUnavailable === 'true';
@@ -129,7 +141,7 @@ export function createArtworkController({
     if (!Array.from(items).some((item) => item.dataset.asset === editAsset)) {
       editAsset = items[0]?.dataset.asset ?? '';
     }
-    button('library-edit-artwork').disabled = !editAsset;
+    syncSourceActions();
     element('asset-count', HTMLElement).textContent = `${count} / ${items.length}`;
     element('library-hint', HTMLElement).textContent = !items.length
       ? 'Import artwork or a map: PNG tilesheets, gbc-atlas bundles, Tiled JSON maps or Forge export ZIPs.'
@@ -335,7 +347,7 @@ export function createArtworkController({
         }
         item.draggable = !item.disabled;
         lifetime.assign(item, 'ondragstart', (event) => {
-          if (activity.busy || !event.dataTransfer) {
+          if (activity.busy || activity.document === 'artwork' || !event.dataTransfer) {
             event.preventDefault();
             return;
           }
@@ -393,7 +405,7 @@ export function createArtworkController({
         }
         const chooseAsset = (reveal = true) => {
           editAsset = asset;
-          button('library-edit-artwork').disabled = false;
+          syncSourceActions();
           if (reveal) {
             editorLayout.showLibrary('artwork');
           }
@@ -425,7 +437,7 @@ export function createArtworkController({
         };
         lifetime.assign(item, 'onclick', () => {
           editAsset = asset;
-          button('library-edit-artwork').disabled = false;
+          syncSourceActions();
           if (document.body.classList.contains('editing-artwork') || !sceneSession.loaded) {
             editArtwork(asset);
           } else {
@@ -655,6 +667,7 @@ export function createArtworkController({
   });
   return {
     regions,
+    syncSourceActions,
     updateTerrain,
     tileMetadata,
     sprites,

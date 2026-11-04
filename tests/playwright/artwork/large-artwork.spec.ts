@@ -2,7 +2,7 @@
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { record, array, string } from '../../../frontend/shared/decode.mts';
-import { test, expect } from '../support/browser-fixtures.ts';
+import { test, expect, activateScene } from '../support/browser-fixtures.ts';
 import { reviewArtwork, saveArtwork, revealArtworkControl } from '../support/artwork-controls.ts';
 
 for (const [width, height] of [
@@ -55,16 +55,16 @@ Project.create(Path(sys.argv[1]),'Card artwork')
       box.x + ((x + 0.5) / width) * box.width,
       box.y + ((y + 0.5) / height) * box.height,
     );
-    await expect(page.locator('#art-undo')).toBeEnabled();
-    await page.locator('#art-undo').click();
-    await page.locator('#art-redo').click();
+    await expect(page.locator('#undo')).toBeEnabled();
+    await page.locator('#undo').click();
+    await page.locator('#redo').click();
     await expect(page.locator('#art-draft-status')).toContainText('checkpointed in this project.', {
       timeout: 60000,
     });
     const edited = Date.now();
     // Returning to the scene and recovering verifies the durable record, including
     // original plus edited envelopes larger than the previous HTTP request limit.
-    await page.locator('#art-close').click();
+    await activateScene(page);
     await page.locator('#show-artwork').click();
     await revealArtworkControl(page, 'art-drafts');
     await page.getByRole('button', { name: 'Recover copy', exact: true }).click();
@@ -80,7 +80,7 @@ Project.create(Path(sys.argv[1]),'Card artwork')
     ).toBeLessThanOrEqual(1024);
     await saveArtwork(page);
     const saved = Date.now();
-    await page.locator('#art-close').click();
+    await activateScene(page);
     await page.reload();
     await page.locator('[data-asset="single_card/artwork"]').click();
     await expect(page.locator('#art-document-state')).toHaveText('Saved');
@@ -227,7 +227,7 @@ a.save(c)
   await page.keyboard.press('Escape');
   await expect(page.locator('#art-palette')).toBeHidden();
   await expect(trigger).toBeFocused();
-  await expect(page.locator('#artwork-dialog')).toBeVisible();
+  await expect(page.locator('#artwork-surface')).toBeVisible();
   await trigger.click();
   await page.getByRole('button', { name: 'RGBA 17, 34, 51, 0', exact: true }).click();
   await expect(page.locator('#art-color')).toHaveValue('#112233');
@@ -241,9 +241,26 @@ a.save(c)
     expect(bounds?.x).toBeGreaterThanOrEqual(0);
     expect((bounds?.x ?? 0) + (bounds?.width ?? 0)).toBeLessThanOrEqual(width);
     await page.screenshot({ path: info.outputPath(`palette-${width}.png`) });
-    await page.locator('#artwork-heading').click();
+    await page.locator('#project-name').click();
     await expect(page.locator('#art-palette')).toBeHidden();
   }
+  await trigger.click();
+  await page.setViewportSize({ width: 800, height: 640 });
+  await expect(page.locator('#art-palette')).toBeVisible();
+  await expect
+    .poll(async () => {
+      const bounds = await page.locator('#art-palette').boundingBox();
+      return (
+        !!bounds &&
+        bounds.x >= 0 &&
+        bounds.y >= 0 &&
+        bounds.x + bounds.width <= 800 &&
+        bounds.y + bounds.height <= 640
+      );
+    })
+    .toBe(true);
+  await page.locator('#project-name').click();
+  await expect(page.locator('#art-palette')).toBeHidden();
 });
 
 test('detail review initializes new document bounds and restores retained document settings', async ({
@@ -270,7 +287,7 @@ test('detail review initializes new document bounds and restores retained docume
   await page.locator('#art-review-x').fill('10');
   await page.locator('#art-review-y').fill('20');
   await reviewArtwork(page);
-  await page.locator('#art-close').click();
+  await activateScene(page);
   await page.locator('#show-artwork').click();
   await page.locator('#art-kind').selectOption('tile');
   await page.locator('#art-name').fill('Small detail');

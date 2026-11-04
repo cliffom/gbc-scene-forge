@@ -200,6 +200,10 @@ export async function waitForUI(page: Page, expression: string): Promise<void> {
 
 /** Native controls use real input/select events and Playwright actionability. */
 export async function setControl(page: Page, id: string, value: string): Promise<void> {
+  if (id === 'scenes') {
+    await chooseSavedScene(page, value);
+    return;
+  }
   const control = page.locator('#' + id);
   if (!(await control.isVisible())) {
     const dialog = await control.evaluate((element) => element.closest('dialog')?.id);
@@ -267,3 +271,21 @@ export async function clickControl(page: Page, id: string): Promise<void> {
 }
 
 export { expect };
+
+/** Navigate through the same Documents control used by a person. */
+export async function chooseSavedScene(
+  page: Page,
+  value: Parameters<ReturnType<Page['locator']>['selectOption']>[0],
+) {
+  if (!(await page.locator('#document-tabs').isVisible())) {
+    await page.locator('#document-switcher').click();
+  }
+  await page.locator('#scenes').selectOption(value);
+}
+
+export async function activateScene(page: Page) {
+  if (!(await page.locator('#document-tabs').isVisible())) {
+    await page.locator('#document-switcher').click();
+  }
+  await page.locator('#scene-document').click();
+}

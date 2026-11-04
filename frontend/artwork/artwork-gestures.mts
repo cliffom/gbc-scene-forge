@@ -4,7 +4,7 @@ import type { Color, PixelModel, PixelTool, Point } from './pixel-model.mts';
 
 export function createArtworkGestures(
   lifetime: EditorLifetime,
-  dialog: HTMLDialogElement,
+  surface: HTMLElement,
   canvas: HTMLCanvasElement,
   ports: {
     current: () => PixelModel | null;
@@ -48,7 +48,7 @@ export function createArtworkGestures(
     return p;
   }
   function tool(): PixelTool {
-    const value = dialog.querySelector<HTMLInputElement>('input[name=art-tool]:checked')?.value;
+    const value = surface.querySelector<HTMLInputElement>('input[name=art-tool]:checked')?.value;
     switch (value) {
       case 'pencil':
       case 'erase':
@@ -63,7 +63,7 @@ export function createArtworkGestures(
         throw Error('Unknown pixel tool');
     }
   }
-  for (const control of dialog.querySelectorAll<HTMLInputElement>('input[name=art-tool]')) {
+  for (const control of surface.querySelectorAll<HTMLInputElement>('input[name=art-tool]')) {
     lifetime.assign(control, 'onchange', () => {
       cancel();
       ports.authoringTool();

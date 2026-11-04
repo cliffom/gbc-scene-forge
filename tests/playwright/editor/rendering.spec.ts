@@ -10,6 +10,7 @@ import {
   scenePoint,
   clickControl,
   setControl,
+  chooseSavedScene,
 } from '../support/browser-fixtures.ts';
 
 import { referenceRenderer } from '../support/reference-renderer.ts';
@@ -82,7 +83,7 @@ print(loaded['id'])
     }
     await page.goto(url);
     await editorReady(page);
-    await page.locator('#scenes').selectOption(stdout.trim());
+    await chooseSavedScene(page, stdout.trim());
     await expect(page.locator('#scene-save-state')).toHaveText('Saved');
     await page.locator('#zoom').selectOption('1');
 
@@ -542,9 +543,9 @@ print(loaded['id'])
     await page.locator('#redo').click();
     await clickControl(page, 'save');
     await expect(page.locator('#scene-save-state')).toHaveText('Saved');
-    await page.locator('#scenes').selectOption({ label: 'River' });
+    await chooseSavedScene(page, { label: 'River' });
     await expect(page.locator('#scene')).toHaveAttribute('width', '56');
-    await page.locator('#scenes').selectOption(stdout.trim());
+    await chooseSavedScene(page, stdout.trim());
     await expect(page.locator('#scene')).toHaveAttribute('width', String((width + 1) * 8));
     await info.attach('interaction-profile.json', {
       body: JSON.stringify(interactions, null, 2),

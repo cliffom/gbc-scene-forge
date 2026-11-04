@@ -1,0 +1,178 @@
+[
+  {
+    "width": 1440,
+    "height": 900,
+    "state": "normal",
+    "canvasViewport": {
+      "x": 260,
+      "y": 219,
+      "width": 910,
+      "height": 535.5
+    }
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "state": "animation",
+    "canvasViewport": {
+      "x": 260,
+      "y": 219,
+      "width": 910,
+      "height": 337.5
+    }
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "state": "properties",
+    "canvasViewport": {
+      "x": 260,
+      "y": 219,
+      "width": 910,
+      "height": 407.5
+    }
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "state": "review",
+    "canvasViewport": {
+      "x": 260,
+      "y": 243,
+      "width": 910,
+      "height": 383.5
+    }
+  },
+  {
+    "width": 1280,
+    "height": 800,
+    "state": "normal",
+    "canvasViewport": {
+      "x": 260,
+      "y": 279,
+      "width": 750,
+      "height": 375.5
+    }
+  },
+  {
+    "width": 1280,
+    "height": 800,
+    "state": "animation",
+    "canvasViewport": {
+      "x": 260,
+      "y": 279,
+      "width": 750,
+      "height": 177.5
+    }
+  },
+  {
+    "width": 1280,
+    "height": 800,
+    "state": "properties",
+    "canvasViewport": {
+      "x": 260,
+      "y": 279,
+      "width": 750,
+      "height": 247.5
+    }
+  },
+  {
+    "width": 1280,
+    "height": 800,
+    "state": "review",
+    "canvasViewport": {
+      "x": 260,
+      "y": 279,
+      "width": 750,
+      "height": 247.5
+    }
+  },
+  {
+    "width": 800,
+    "height": 640,
+    "state": "normal",
+    "canvasViewport": {
+      "x": 196,
+      "y": 323,
+      "width": 392,
+      "height": 204
+    }
+  },
+  {
+    "width": 800,
+    "height": 640,
+    "state": "animation",
+    "canvasViewport": {
+      "x": 196,
+      "y": 323,
+      "width": 392,
+      "height": 150
+    }
+  },
+  {
+    "width": 800,
+    "height": 640,
+    "state": "properties",
+    "canvasViewport": {
+      "x": 196,
+      "y": 323,
+      "width": 392,
+      "height": 150
+    }
+  },
+  {
+    "width": 800,
+    "height": 640,
+    "state": "review",
+    "canvasViewport": {
+      "x": 196,
+      "y": 323,
+      "width": 392,
+      "height": 150
+    }
+  },
+  {
+    "width": 1280,
+    "height": 600,
+    "state": "normal",
+    "canvasViewport": {
+      "x": 260,
+      "y": 273,
+      "width": 750,
+      "height": 214
+    }
+  },
+  {
+    "width": 1280,
+    "height": 600,
+    "state": "animation",
+    "canvasViewport": {
+      "x": 260,
+      "y": 273,
+      "width": 750,
+      "height": 150
+    }
+  },
+  {
+    "width": 1280,
+    "height": 600,
+    "state": "properties",
+    "canvasViewport": {
+      "x": 260,
+      "y": 273,
+      "width": 750,
+      "height": 150
+    }
+  },
+  {
+    "width": 1280,
+    "height": 600,
+    "state": "review",
+    "canvasViewport": {
+      "x": 260,
+      "y": 273,
+      "width": 750,
+      "height": 150
+    }
+  }
+]

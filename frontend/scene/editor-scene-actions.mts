@@ -23,6 +23,8 @@ import { resizeScene } from './scene-size.mts';
 import type { Endpoint } from '../world/world.mts';
 
 export interface Ports {
+  beforeSceneChange: () => Promise<boolean>;
+  beforeProjectChange: () => Promise<void>;
   discard: () => Promise<boolean>;
   run: (work: () => Promise<void> | void) => Promise<void>;
   clearDraft: () => Promise<void>;
@@ -71,7 +73,14 @@ export function createSceneActionsController({
   status: HTMLElement;
   sceneSession: Pick<
     SceneSession,
-    'baseline' | 'committed' | 'dirty' | 'editor' | 'loaded' | 'serialize' | 'snapshot'
+    | 'baseline'
+    | 'committed'
+    | 'dirty'
+    | 'editor'
+    | 'loaded'
+    | 'serialize'
+    | 'snapshot'
+    | 'externalChanged'
   >;
   activity: EditorActivity;
   gestures: Pick<GestureState, 'anchor' | 'blockoutDraw' | 'hover' | 'objectDrag' | 'objectResize'>;
@@ -86,7 +95,12 @@ export function createSceneActionsController({
   ports: Ports;
 }) {
   const navigation = createSceneNavigation(lifetime, projectBase, async (path) => {
-    if (activity.busy || gestures.anchor || document.querySelector('dialog[open]')) {
+    if (
+      activity.document !== 'scene' ||
+      activity.busy ||
+      gestures.anchor ||
+      document.querySelector('dialog[open]')
+    ) {
       return false;
     }
     let opened = false;
@@ -135,6 +149,7 @@ export function createSceneActionsController({
     }
     brushes.stampBrush = null;
     brushes.definitionBrush = null;
+    sceneSession.externalChanged = false;
     sceneSession.committed = data;
     ports.newDraftWriter();
     sceneSession.loaded = data;
@@ -250,7 +265,11 @@ export function createSceneActionsController({
     select('scenes').value = sceneSession.loaded?.id || '';
     ports.pendingWorldEndpoint = null;
     ports.pendingDiagnostic = null;
-    requestSceneOpen(id);
+    void (async () => {
+      if (await ports.beforeSceneChange()) {
+        requestSceneOpen(id);
+      }
+    })();
   });
 
   function requestSceneOpen(id: string) {
@@ -352,6 +371,7 @@ export function createSceneActionsController({
     sceneSession.loaded = data;
     brushes.stampBrush = null;
     brushes.definitionBrush = null;
+    sceneSession.externalChanged = false;
     sceneSession.committed = data;
     sceneSession.baseline = sceneSession.snapshot();
     ports.newDraftWriter();
@@ -360,9 +380,8 @@ export function createSceneActionsController({
     status.textContent = 'Scene saved.';
   }
 
-  lifetime.assign(button('save'), 'onclick', () => void ports.run(saveScene));
-
-  function navigateProject() {
+  async function navigateProject() {
+    await ports.beforeProjectChange();
     if (lifetime.disposed) {
       return;
     }
@@ -385,21 +404,21 @@ export function createSceneActionsController({
     if (sceneSession.dirty()) {
       element('switch-project-dialog', HTMLDialogElement).showModal();
     } else {
-      navigateProject();
+      void ports.run(navigateProject);
     }
   });
 
   lifetime.assign(button('switch-save'), 'onclick', () => {
     void ports.run(async () => {
       await saveScene();
-      navigateProject();
+      await navigateProject();
     });
   });
 
   lifetime.assign(button('switch-discard'), 'onclick', () => {
     void ports.run(async () => {
       await ports.clearDraft();
-      navigateProject();
+      await navigateProject();
     });
   });
 
@@ -413,18 +432,6 @@ export function createSceneActionsController({
     if (activity.busy) {
       event.preventDefault();
     }
-  });
-
-  lifetime.assign(button('undo'), 'onclick', () => {
-    sceneSelection.selection = null;
-    sceneSession.editor?.undo();
-    ports.draw();
-  });
-
-  lifetime.assign(button('redo'), 'onclick', () => {
-    sceneSelection.selection = null;
-    sceneSession.editor?.redo();
-    ports.draw();
   });
 
   lifetime.assign(button('revert'), 'onclick', async () => {
@@ -746,6 +753,7 @@ export function createSceneActionsController({
 
   lifetime.assign(button('empty-create'), 'onclick', showCreate);
   return {
+    save: () => void ports.run(saveScene),
     requestSceneOpen,
     openInitialScene,
     closeScene,

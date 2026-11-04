@@ -1,7 +1,7 @@
 /** Real stdio candidate exchange and saved-library discovery with dirty artwork. */
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
-import { test, expect } from '../support/browser-fixtures.ts';
+import { test, expect, activateScene } from '../support/browser-fixtures.ts';
 import { revealArtworkControl, saveArtwork } from '../support/artwork-controls.ts';
 import { record, string, array } from '../../../frontend/shared/decode.mts';
 import { decodeCandidate } from '../../../frontend/artwork/artwork-contracts.mts';
@@ -87,7 +87,7 @@ print(base64.b64encode(encode(16,16,bytes([71,72,73,0])*256)).decode())
     .getByRole('button', { name: 'Adopt a copy', exact: true })
     .click();
   await expect(page.locator('#art-message')).toContainText('Adopted a separate unpublished copy');
-  await expect(page.locator('#art-undo')).toBeDisabled();
+  await expect(page.locator('#undo')).toBeDisabled();
   await (await revealArtworkControl(page, 'art-layer')).selectOption({ label: 'Glow' });
   await page.locator('#art-layer-opacity').fill('96');
   await page.locator('#art-layer-update').click();
@@ -125,10 +125,10 @@ print(base64.b64encode(encode(16,16,bytes([71,72,73,0])*256)).decode())
   await page.locator('#document-switcher').click();
   await page.locator('#artwork-documents button').filter({ hasText: 'Local' }).click();
   await expect(page.locator('#art-document-state')).toHaveText('Modified');
-  await expect(page.locator('#art-undo')).toBeEnabled();
-  await page.locator('#art-undo').click();
+  await expect(page.locator('#undo')).toBeEnabled();
+  await page.locator('#undo').click();
   await expect(page.locator('#art-document-state')).toHaveText('Saved');
-  await page.locator('#art-redo').click();
+  await page.locator('#redo').click();
   await expect(page.locator('#art-document-state')).toHaveText('Modified');
   // Open the saved revision explicitly; discovery never rebases the old candidate.
   await page.locator('[data-asset="agent/artwork"]').click();
@@ -175,7 +175,7 @@ print(base64.b64encode(encode(16,16,bytes([71,72,73,0])*256)).decode())
   await page.locator('#art-canvas').focus();
   await expect(page.locator('[data-asset="agent/artwork"]')).toHaveCount(0);
   await expect(page.locator('#art-document-state')).toHaveText('Modified');
-  await expect(page.locator('#art-undo')).toBeEnabled();
+  await expect(page.locator('#undo')).toBeEnabled();
   await page.screenshot({ path: info.outputPath('unpublished-and-saved-handoff.png') });
 });
 
@@ -259,7 +259,7 @@ p.artwork.documents.save(c)
     .click();
   await expect(page.locator('#art-document-state')).toHaveText('Modified');
   await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
-  await expect(page.locator('#art-undo')).toBeDisabled();
+  await expect(page.locator('#undo')).toBeDisabled();
   let writes = 0;
   page.on('request', (request) => {
     if (request.url().endsWith('/api/artwork-draft-write')) {
@@ -279,12 +279,12 @@ p.artwork.documents.save(c)
   await layerSelect.selectOption({ label: 'Red' });
   expect(await colors()).toContain('255,0,0,255');
   expect(await colors()).not.toContain('0,0,255,255');
-  await expect(page.locator('#art-undo')).toBeDisabled();
+  await expect(page.locator('#undo')).toBeDisabled();
   expect(writes).toBe(0);
   await page.locator('#art-palette-toggle').click();
   await page.screenshot({ path: info.outputPath('adopted-edit-palette.png') });
   await page.locator('#art-palette-toggle').click();
-  await page.locator('#art-close').click();
+  await activateScene(page);
   const post = async (action: string, data = {}) => {
     const response = await page.request.post(new URL('api/artwork-' + action, url).href, {
       data,

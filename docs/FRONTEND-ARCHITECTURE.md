@@ -10,6 +10,7 @@ start polling, or acquire canvas resources. No frontend framework is required.
 
 | Owner/module | Responsibility |
 | --- | --- |
+| `editor/editor-shell.mts` | Shared workbench/Inspector presentation slots and active document kind. Typed contributions provide a surface, Inspector panels and focus callback; controllers retain models, commands, history and persistence. Mounted nodes return to their source locations on disposal. |
 | `editor/project-editor.mts` | Composition, operation/busy gate, shared control availability, preview preferences and initial load. Callback forwarding connects controllers without importing each other. |
 | `editor/editor-state.mts` | `SceneSession` owns the current scene descriptor, committed baseline/revision and `LayerEditor`, dirty comparisons and native serialization. `WorkspaceState` owns the adopted project catalog/revision, separately validated scene choices and navigation state. Selection, brushes/clipboard and gestures have separate owners. |
 | `scene/layers.mts`, `scene/model.mts` | Authored scene, active layer, strokes and undo/redo. Controllers mutate through this existing model. Bidirectional changed-path/subtree records retain up to 100 operations; one transaction clone supports cancellation. Layer context replays with undo/redo. Selection, camera scroll and preview positions are not authored history. |
@@ -26,7 +27,7 @@ start polling, or acquire canvas resources. No frontend framework is required.
 | `editor/editor-rendering.mts` | Canvas drawing, coordinate conversion, object hit bounds and preview collision queries. `draw(false)` updates transient display without authored checkpoints or rebuilding controls. Backing and CSS dimensions change only when needed; each synchronous repaint isolates drawing styles and starts a fresh path. Owns a 16 MiB LRU of transparent tile chunks with content/region invalidation and viewport clipping; scroll/resize redraw through the mounted lifetime. `drawOverview` renders full authored layers directly to the resize preview without display clipping or transient feedback. See [rendering/history contracts and measurements](evaluations/scene-scalability.md). |
 | `editor/editor-gestures.mts`, `editor/editor-viewport.mts`, `editor/editor-commands.mts` | Pointer authoring/cancellation and pan capture; zoom/fit/wheel and resize; keyboard/toolbar/export commands. The scene/pixel tool radio groups and zoom selectors are the single current tool/zoom values; do not add a second mutable copy. |
 | `editor/editor-layers.mts`, `editor/editor-compositions.mts` | Layer/selection inspectors and layer actions; copy/cut/paste/transforms/stamp controls. |
-| `editor/editor-layout.mts` | Mounted Library/Inspector visibility, accessible pane toggles, Library categories, guided reveal, responsive toolbar disclosure and command popovers. Pane/toolbar preferences are transient UI state; viewport transitions redraw without authored checkpoints. Disposal resets visibility. |
+| `editor/editor-layout.mts` | Mounted Library/Inspector visibility, accessible pane toggles, Library categories, guided reveal, responsive toolbar disclosure and command popovers. The active document selects artwork Library content while retaining the scene category. Pane/toolbar preferences are transient UI state; viewport transitions redraw without authored checkpoints. Disposal resets visibility. |
 | `editor/editor-review.mts` | Transient review mode in `EditorActivity.reviewing`, layout/focus and camera transition; gestures enforce Pan and commands block authoring shortcuts. The existing tool/brush/selection remain owned by their usual controllers. |
 | `editor/editor-panels.mts` | Wire existing tile/object inspectors, definitions, world, diagnostics, palette and blockout views to scene/project operations. Each feature view continues to own its dialog and validation state. Pending cross-scene navigation is owned here. |
 | `preview/animation-preview.mts`, `preview/movement-preview.mts` | Playback, input state and preview positions/preferences. They receive preview contracts and redraw callbacks, never scene writers. |
@@ -39,6 +40,15 @@ never eagerly resolves a controller that has not been constructed. Getters are
 used for current resources/state, not captured copies of mutable primitives.
 Keep ports limited to each consumer's needs; do not replace these owners with a
 shared miscellaneous state object or global event bus.
+
+`artwork/artwork-workspace.mts` contributes layer/property/review sections and
+color assistance to the one Inspector. `artwork/sheet-editor.mts` owns the bounded
+bottom frame/animation dock, stops playback on collapse and reuses raster stamps
+for unchanged thumbnails. Panel/dock disclosure is transient UI state, outside
+pixel history. Source setup in `pixel-editor.mts` preserves entered fields during
+discovery; a missing selected source stays an explicit unavailable choice instead
+of adopting an unrelated source. Shared source edits and captured-placement copies
+continue to use the existing guarded domain operations.
 
 Illustration-layer UI belongs to `artwork/artwork-layer-controls.mts`; exact sources,
 active layer and history belong to `PixelModel`, and `artwork/artwork-layers.mts`
@@ -61,6 +71,37 @@ classification in `scene/view-filters.mts`. They never enter scene history,
 serialization, recovery or diagnostics. Hidden categories lose selection and hit
 tests; gestures reject hidden placements/tiles, and composition commands require
 all categories visible. Filter redraws refresh controls without checkpointing.
+
+## Shared document shell
+
+The scene and artwork surfaces occupy the same `editor-workbench`; scene and
+artwork panel contributions occupy the same `inspector-pane`. The mounted shell
+sets `EditorActivity.document` and presentation visibility together. Scene keyboard,
+Space-pan, focus restoration, history navigation and saved-refresh eligibility
+explicitly reject the artwork context; they no longer depend on a nonmodal artwork
+dialog being open. Pixel gestures and review/save remain owned by their existing
+controllers. Artwork discovery keeps its existing independent eligibility fence.
+
+The document bar derives names, kinds and local Saved/Modified/New state from
+the active owner. A separate warning reports detected changes to its saved base;
+it does not rebase local history. Documents offers the active scene, other saved
+scenes and up to 16 retained artwork sessions. Switching cancels captured gestures
+and stops outgoing playback. Scene view retention belongs to its viewport
+controller; artwork controls, selection and view belong to its retained session.
+Artwork checkpoints must succeed before a scene or project departure. The shared
+operation gate rejects duplicate navigation, and lifetime checks prevent disposed
+responses from restoring a document. `editor/document-commands.mts` binds the shared command strip and document-bar Save
+once per mount. Fresh typed capabilities come only from the active scene/artwork
+owner; model, history, clipboard and persistence stay domain-owned. The same route
+handles common shortcuts from outside either surface, excluding text editing and
+modal/popover focus. Scene dirty equality is reused from the current update;
+capabilities are checked again at invocation. Artwork Save retains exact review,
+confirmation, receipt invalidation, checkpoint and acknowledgment adoption.
+The contextual pixel toolbar and bounded frame dock remain; subsequent milestone
+issues refine panels. Artwork layer/properties and exact-change review currently contribute
+their existing controls to the shared Inspector. Review opens it when collapsed.
+Retained artwork controls
+include both its surface and Inspector; they never snapshot scene controls.
 
 ## Initialization, asynchronous work and disposal
 

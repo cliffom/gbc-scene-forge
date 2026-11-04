@@ -1,7 +1,7 @@
 /** Layer sources, wheel navigation and isolated local history in the real editor. */
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
-import { test, expect } from '../support/browser-fixtures.ts';
+import { test, expect, activateScene } from '../support/browser-fixtures.ts';
 import { revealArtworkControl, saveArtwork } from '../support/artwork-controls.ts';
 
 test('wheel zoom preserves pointer coordinates and layers survive local undo, save and reopen', async ({
@@ -57,7 +57,7 @@ p.artwork.documents.save(c)
   await page.mouse.wheel(0, 10000);
   await expect(page.locator('#art-zoom')).toHaveValue(minimum);
   await expect(page.locator('#art-document-state')).toHaveText('Saved');
-  await expect(page.locator('#art-undo')).toBeDisabled();
+  await expect(page.locator('#undo')).toBeDisabled();
   await page.locator('#art-zoom').selectOption('2');
   await (await revealArtworkControl(page, 'art-layer-add')).click();
   await expect(page.locator('#art-layer option')).toHaveCount(2);
@@ -73,19 +73,19 @@ p.artwork.documents.save(c)
   await page.locator('#art-color').fill('#ff0000');
   await page.locator('#art-canvas').click({ position: { x: 12, y: 12 } });
   await expect(page.locator('#art-document-state')).toHaveText('Modified');
-  await page.locator('#art-undo').click();
-  await page.locator('#art-redo').click();
+  await page.locator('#undo').click();
+  await page.locator('#redo').click();
   await page.locator('#art-layer-locked').check();
   await page.locator('#art-layer-update').click();
   await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
   // Several local Undo steps can coalesce before their next durable checkpoint.
   for (let i = 0; i < 3; i++) {
-    await page.locator('#art-undo').click();
+    await page.locator('#undo').click();
   }
   await expect(page.locator('#art-layer-name')).toHaveValue('Layer');
   await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
   for (let i = 0; i < 3; i++) {
-    await page.locator('#art-redo').click();
+    await page.locator('#redo').click();
   }
   await expect(page.locator('#art-layer-locked')).toBeChecked();
   await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
@@ -105,7 +105,7 @@ p.artwork.documents.save(c)
   await expect(red).toHaveCount(1);
   await expect(page.locator('#art-layer-opacity')).toHaveValue('128');
   await expect(page.locator('#art-document-state')).toHaveText('Saved');
-  await expect(page.locator('#art-undo')).toBeDisabled();
+  await expect(page.locator('#undo')).toBeDisabled();
   await page.setViewportSize({ width: 760, height: 800 });
   await expect(page.locator('#art-layer-update')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(
@@ -133,7 +133,7 @@ p.artwork.documents.save(c)
   await page.locator('#art-existing-mode').click();
   await expect(page.locator('#art-source option')).toHaveCount(1);
   await expect(page.locator('#art-open')).toBeEnabled();
-  await page.locator('#artwork-heading').click();
+  await page.locator('#project-name').click();
   let releaseInventory = () => {};
   const responseGate = new Promise<void>((resolve) => {
     releaseInventory = resolve;
@@ -197,7 +197,7 @@ Project.create(Path(sys.argv[1]),'First artwork')
   await expect(page.locator('#art-open')).toBeDisabled();
   await page.locator('#art-name').fill('My independent copy');
   await (await revealArtworkControl(page, 'art-id')).fill('my_copy');
-  await page.locator('#artwork-heading').click();
+  await page.locator('#project-name').click();
   update(`
 import sys
 from pathlib import Path
@@ -218,7 +218,7 @@ p.artwork.documents.save(c)
   await page.locator('#art-open').click();
   await expect(page.locator('#artwork-heading')).toHaveText('Agent');
   await expect(page.locator('#art-document-state')).toHaveText('Saved');
-  await page.locator('#art-close').click();
+  await activateScene(page);
   await page.locator('#project-commands').click();
   await page.locator('#auto-refresh').uncheck();
   await page.locator('#show-artwork').click();

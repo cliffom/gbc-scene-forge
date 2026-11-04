@@ -5,17 +5,33 @@ import type { EditorLifetime } from '../editor/editor-lifetime.mts';
 
 export function createArtworkWorkspace(
   lifetime: EditorLifetime,
-  dialog: HTMLDialogElement,
+  surface: HTMLElement,
   changed: () => void,
+  reviewChanged: () => void,
 ) {
-  element('editor-layout', HTMLElement).append(dialog);
+  const inspector = element('art-inspector-content', HTMLElement);
+  for (const node of [
+    element('art-inspector-actions', HTMLElement),
+    element('art-shared', HTMLElement),
+    element('art-selection-details', HTMLElement),
+    element('art-layer-panel', HTMLElement),
+    element('art-properties', HTMLElement),
+    button('art-palette-toggle'),
+    element('art-palette', HTMLElement),
+    element('art-review-panel', HTMLElement),
+  ]) {
+    const marker = document.createComment('artwork panel');
+    node.before(marker);
+    inspector.append(node);
+    lifetime.cleanup(() => marker.replaceWith(node));
+  }
   element('art-editor', HTMLElement).insertBefore(
     element('art-sheet-controls', HTMLElement),
     element('art-draft-status', HTMLElement),
   );
-  const help = dialog.querySelector('.art-help');
+  const help = surface.querySelector('.art-help');
   if (help) {
-    dialog.querySelector('.art-document-actions>div')?.append(help);
+    surface.querySelector('.art-document-actions>div')?.append(help);
   }
   let automaticIdentity = true;
   function identityFromName() {
@@ -58,14 +74,12 @@ export function createArtworkWorkspace(
     changed();
   }
   function reviewPanel(open: boolean) {
-    const panel = dialog.querySelector<HTMLElement>('.art-review');
+    const panel = element('art-review-panel', HTMLElement);
     if (panel) {
       panel.hidden = !open;
     }
-    dialog.classList.toggle('show-art-review', open);
-    if (!open) {
-      button('art-save').textContent = 'Save…';
-    }
+    surface.classList.toggle('show-art-review', open);
+    reviewChanged();
     if (open) {
       element('art-layer-panel', HTMLElement).hidden = true;
       button('art-layers-toggle').setAttribute('aria-expanded', 'false');
@@ -75,14 +89,12 @@ export function createArtworkWorkspace(
   }
   lifetime.assign(button('art-review-close'), 'onclick', () => {
     reviewPanel(false);
-    button('art-save').focus();
+    button('save').focus();
   });
   lifetime.assign(button('art-properties-toggle'), 'onclick', () => {
     const panel = element('art-properties', HTMLElement);
     panel.hidden = !panel.hidden;
     if (!panel.hidden) {
-      element('art-layer-panel', HTMLElement).hidden = true;
-      button('art-layers-toggle').setAttribute('aria-expanded', 'false');
       reviewPanel(false);
     }
     button('art-properties-toggle').setAttribute('aria-expanded', String(!panel.hidden));

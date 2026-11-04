@@ -20,10 +20,17 @@ export async function referenceRenderer() {
             contents: readFileSync(
               `tests/fixtures/rendering-baseline/${basename(args.path, '.mts')}.txt`,
               'utf8',
-            ).replace(
-              '    draw,',
-              '    drawOverview: (context, ...rect) => context.drawImage(canvas, ...rect),\n    draw,',
-            ),
+            )
+              .replace(
+                '    draw,',
+                '    drawOverview: (context, ...rect) => context.drawImage(canvas, ...rect),\n    draw,',
+              )
+              // These comparisons never leave the scene. Adapt the frozen viewport
+              // interface without replacing its original rendering or zoom behavior.
+              .replace(
+                'return { sceneZoom, fitScene, syncBlockoutZoom };',
+                'return { sceneZoom, fitScene, syncBlockoutZoom, rememberDocument() {}, restoreDocument() {} };',
+              ),
             loader: 'ts',
           }));
         },

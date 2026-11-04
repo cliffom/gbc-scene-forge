@@ -1,6 +1,6 @@
 import { cp, mkdir } from 'node:fs/promises';
 import { expect } from '@playwright/test';
-import { test, editorReady } from '../support/browser-fixtures.ts';
+import { test, editorReady, chooseSavedScene } from '../support/browser-fixtures.ts';
 
 for (const single of [true, false]) {
   test(`scene links and guarded history (${single ? 'direct' : 'workspace'})`, async ({
@@ -27,7 +27,7 @@ for (const single of [true, false]) {
       );
     expect(ids.length).toBeGreaterThanOrEqual(2);
     const choose = async (id: string) => {
-      await page.locator('#scenes').selectOption(id);
+      await chooseSavedScene(page, id);
       await expect(page.locator('#scenes')).toBeEnabled();
       await expect(page.locator('#scenes')).toHaveValue(id);
       await expect(page).toHaveURL(base + 'scenes/' + id);

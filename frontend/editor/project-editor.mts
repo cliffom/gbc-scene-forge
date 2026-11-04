@@ -1,3 +1,4 @@
+import { createDocumentCommands, type CommandCapabilities } from './document-commands.mts';
 import { createPixelEditor } from '../artwork/pixel-editor.mts';
 import { EditorLifetime } from './editor-lifetime.mts';
 import { createArtworkController } from '../artwork/editor-artwork.mts';
@@ -29,6 +30,7 @@ import { blockoutDefinitions } from '../blockout/blockout.mts';
 import { boolean, number, record, string } from '../shared/decode.mts';
 import { createReviewController } from './editor-review.mts';
 import { createEditorLayout } from './editor-layout.mts';
+import { createEditorShell } from './editor-shell.mts';
 import { createFirstSceneGuide } from '../project/first-scene-guide.mts';
 import { prunePreviewSettings } from '../preview/preview-settings.mts';
 
@@ -62,9 +64,35 @@ export function mountProjectEditor() {
   const brushes = new BrushState();
   const gestures = new GestureState();
   const activity = new EditorActivity();
+  const commandView: { current?: ReturnType<typeof createDocumentCommands> } = {};
+  let sceneModified = false;
+  const layoutView: { current?: ReturnType<typeof createEditorLayout> } = {};
+  const shell = createEditorShell(
+    lifetime,
+    (kind) => {
+      activity.document = kind;
+      layoutView.current?.document(kind);
+      commandView.current?.render();
+    },
+    () => editorLayout.showInspector(),
+  );
+  const scenePresentation = shell.contribute('scene', {
+    surface: element('scene-surface', HTMLElement),
+    inspector: [
+      ...element('inspector-pane', HTMLElement).querySelectorAll<HTMLElement>(
+        ':scope > .inspector-panel',
+      ),
+    ],
+    focus: () =>
+      (sceneSession.loaded
+        ? element('scene', HTMLElement)
+        : element('viewport', HTMLElement)
+      ).focus({ preventScroll: true }),
+  });
   const editorLayout = createEditorLayout(lifetime, (apply) =>
     viewportController.changeLayout(apply),
   );
+  layoutView.current = editorLayout;
   const canvas = element('scene', HTMLCanvasElement);
   const blockoutLabels = createBlockoutLabels(canvas, element('viewport', HTMLElement), lifetime);
   const ctx = canvas.getContext('2d');
@@ -104,8 +132,10 @@ export function mountProjectEditor() {
     }
     // Content equality is evaluated once for this synchronous control refresh.
     const unsaved = sceneSession.dirty();
+    sceneModified = unsaved;
     reviewController.sync();
     artworkController.updateTerrain();
+    artworkController.syncSourceActions();
     panelsController.renderObjectValidation();
     editorLayout.enableBlockout(
       blockoutDefinitions(workspaceState.project?.definitions ?? []).length > 0,
@@ -169,8 +199,6 @@ export function mountProjectEditor() {
         : 'SAVED';
     element('dirty', HTMLElement).dataset.dirty = String(unsaved);
     button('save-preview-settings').disabled = activity.busy || !workspaceState.project;
-    button('save').disabled = activity.busy || !unsaved;
-    button('save').classList.toggle('primary', unsaved);
     const saveState = element('scene-save-state', HTMLElement);
     const saveText = !sceneSession.editor ? '' : unsaved ? 'Unsaved changes' : 'Saved';
     if (saveState.textContent !== saveText) {
@@ -200,30 +228,9 @@ export function mountProjectEditor() {
     button('export-confirm').disabled = button('export-cancel').disabled = activity.busy;
     select('export-scope').disabled = activity.busy;
     input('export-canvas').disabled = activity.busy || !sceneSession.editor || !unsaved;
-    button('undo').disabled = activity.busy || !sceneSession.editor?.undoStack.length;
-    button('redo').disabled = activity.busy || !sceneSession.editor?.redoStack.length;
     button('revert').disabled = activity.busy || !unsaved;
-    const hasComposition = Boolean(
-      sceneSelection.selection ||
-      sceneSelection.selectedObject ||
-      sceneSelection.selectedObjects.size,
-    );
-    button('transform-commands').disabled =
-      activity.busy || !sceneSession.editor || !hasComposition || gestures.anchor !== null;
-    for (const id of [
-      'copy-selection',
-      'cut-selection',
-      'duplicate-selection',
-      'flip-horizontal',
-      'flip-vertical',
-      'rotate-selection',
-      'save-stamp',
-    ]) {
-      button(id).disabled =
-        activity.busy || !sceneSession.editor || !hasComposition || gestures.anchor !== null;
-    }
-    button('paste-selection').disabled =
-      activity.busy || !sceneSession.editor || !brushes.clipboard || gestures.anchor !== null;
+    button('save-stamp').disabled =
+      activity.busy || !sceneSession.editor || !hasSceneSelection() || gestures.anchor !== null;
     button('place-stamp').disabled =
       activity.busy || !sceneSession.editor || !select('stamps').value;
     button('place-stamp').setAttribute('aria-pressed', String(brushes.stampBrush !== null));
@@ -233,11 +240,6 @@ export function mountProjectEditor() {
     button('delete-stamp').disabled = activity.busy || !select('stamps').value;
     input('select-all-layers').disabled =
       activity.busy || !sceneSession.editor || gestures.anchor !== null;
-    button('deselect').disabled =
-      activity.busy ||
-      (!sceneSelection.selection &&
-        !sceneSelection.selectedObject &&
-        !sceneSelection.selectedObjects.size);
     button('edit-tile').disabled =
       activity.busy ||
       !sceneSession.loaded ||
@@ -309,6 +311,7 @@ export function mountProjectEditor() {
     layersController.renderLayerContext();
     layersController.inspect();
     editorLayout.syncToolbar();
+    pixelEditor.syncNavigation(unsaved);
   }
   async function run(work: () => Promise<void> | void) {
     if (lifetime.disposed) {
@@ -616,6 +619,8 @@ export function mountProjectEditor() {
     sceneSelection,
     animationPreview,
     ports: {
+      beforeSceneChange: () => pixelEditor.activateScene(),
+      beforeProjectChange: () => pixelEditor.prepareDeparture(),
       discard: (...args) => discard(...args),
       run: (...args) => run(...args),
 
@@ -706,14 +711,13 @@ export function mountProjectEditor() {
       filterPalette: (...args) => artworkController.filterPalette(...args),
       draw: (...args) => renderingController.draw(...args),
       syncPanCursor: (...args) => gesturesController.syncPanCursor(...args),
-      compositionAction: (...args) => compositionsController.compositionAction(...args),
       compositionSelection: (...args) => compositionsController.compositionSelection(...args),
       get regions() {
         return artworkController.regions;
       },
     },
   });
-  createPixelEditor({
+  const pixelEditor = createPixelEditor({
     lifetime,
     api,
     workspaceState,
@@ -721,6 +725,29 @@ export function mountProjectEditor() {
     sceneSelection,
     brushes,
     ports: {
+      presentation: {
+        contribute: (contribution) => shell.contribute('artwork', contribution),
+        scene: () => {
+          scenePresentation.activate(true);
+          viewportController.restoreDocument();
+        },
+        revealInspector: () => shell.revealInspector(),
+        commandsChanged: () => commandView.current?.render(),
+        prepareSceneDeparture: () => {
+          if (activity.document === 'scene') {
+            gesturesController.cancelEditing();
+            animationPreview.suspend();
+            viewportController.rememberDocument();
+          }
+        },
+        sceneSummary: (modified = sceneSession.dirty()) => ({
+          name: sceneSession.loaded?.name ?? 'Scene workspace',
+          kind: 'Scene',
+          state: !sceneSession.loaded ? '' : modified ? 'Modified' : 'Saved',
+          externalChanged: sceneSession.externalChanged,
+        }),
+        unavailable: () => activity.busy || workspaceState.navigating || gestures.anchor !== null,
+      },
       discovered: async (data, eligible) => {
         const snapshot = decodeProject(data.project);
         const discoveredImages = new Map<string, HTMLImageElement>();
@@ -798,6 +825,80 @@ export function mountProjectEditor() {
       },
     },
   });
+
+  function hasSceneSelection() {
+    return Boolean(
+      sceneSelection.selection ||
+      sceneSelection.selectedObject ||
+      sceneSelection.selectedObjects.size,
+    );
+  }
+  function sceneCommands(): CommandCapabilities {
+    const editor = sceneSession.editor;
+    const ready =
+      !!editor &&
+      !activity.busy &&
+      !activity.reviewing &&
+      gestures.anchor === null &&
+      !editor.stroke;
+    const selected = ready && hasSceneSelection();
+    const composition = selected && renderingController.allVisible();
+    const transform =
+      (action: 'copy' | 'cut' | 'paste' | 'duplicate' | 'horizontal' | 'vertical' | 'rotate') =>
+      () =>
+        compositionsController.compositionAction(action);
+    return {
+      save: {
+        enabled: ready && sceneModified,
+        run: sceneActionsController.save,
+        label: 'Save scene',
+      },
+      undo: {
+        enabled: ready && !!editor.undoStack.length,
+        run: () => {
+          sceneSelection.selection = null;
+          editor?.undo();
+          renderingController.draw();
+        },
+      },
+      redo: {
+        enabled: ready && !!editor.redoStack.length,
+        run: () => {
+          sceneSelection.selection = null;
+          editor?.redo();
+          renderingController.draw();
+        },
+      },
+      copy: { enabled: composition, run: transform('copy') },
+      cut: { enabled: composition, run: transform('cut') },
+      paste: {
+        enabled: ready && !!brushes.clipboard && renderingController.allVisible(),
+        run: transform('paste'),
+      },
+      duplicate: { enabled: composition, run: transform('duplicate') },
+      horizontal: { enabled: composition, run: transform('horizontal') },
+      vertical: { enabled: composition, run: transform('vertical') },
+      rotate: { enabled: composition, run: transform('rotate') },
+      deselect: {
+        enabled: selected,
+        run: () => {
+          sceneSelection.selection = null;
+          sceneSelection.selectedObject = null;
+          sceneSelection.selectedObjects.clear();
+          renderingController.draw();
+        },
+      },
+    };
+  }
+  commandView.current = createDocumentCommands(
+    lifetime,
+    () => (activity.document === 'artwork' ? pixelEditor.commands() : sceneCommands()),
+    () =>
+      element(activity.document === 'artwork' ? 'art-canvas' : 'scene', HTMLElement).focus({
+        preventScroll: true,
+      }),
+  );
+  commandView.current.render();
 
   // Import boolean decoding here too: reject malformed preview defaults before first render.
   void run(async () => {

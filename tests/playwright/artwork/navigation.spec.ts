@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import type { Page } from '@playwright/test';
-import { test, expect } from '../support/browser-fixtures.ts';
+import { test, expect, activateScene } from '../support/browser-fixtures.ts';
 import { record, string } from '../../../frontend/shared/decode.mts';
 import { revealArtworkControl } from '../support/artwork-controls.ts';
 
@@ -194,7 +194,7 @@ test('hover and pan target exact sheet/frame pixels without raster, control or c
   await hover(page, 3, 4, 16);
   await page.mouse.move(1, 1);
   await expect(page.locator('#art-target')).toBeHidden();
-  await expect(page.locator('#art-undo')).toBeDisabled();
+  await expect(page.locator('#undo')).toBeDisabled();
   await expect(page.locator('#art-document-state')).toHaveText('Saved');
   expect(requests).toEqual([]);
 });
@@ -212,12 +212,12 @@ test('pan, Fit, cancellation and document restoration preserve authoring and foc
   await expect(page.locator('#art-pan')).toHaveAttribute('aria-pressed', 'true');
   const before = await page.locator('#art-canvas').boundingBox();
   await page.locator('#art-canvas').press('Escape');
-  await expect(page.locator('#artwork-dialog')).toBeVisible();
+  await expect(page.locator('#artwork-surface')).toBeVisible();
   await expect(page.getByRole('radio', { name: 'Pencil', exact: true })).toBeChecked();
   const p = await pixel(page, 2, 3);
   await page.mouse.click(p.x, p.y);
   await expect(page.locator('#art-document-state')).toHaveText('Modified');
-  await expect(page.locator('#art-undo')).toBeEnabled();
+  await expect(page.locator('#undo')).toBeEnabled();
 
   await page.locator('#document-switcher').click();
   await page.locator('#artwork-new-document').click();
@@ -228,11 +228,11 @@ test('pan, Fit, cancellation and document restoration preserve authoring and foc
   await page.locator('#artwork-documents button').filter({ hasText: longName }).click();
   await expect(page.locator('#art-frame')).toHaveValue('f1');
   await expect(page.locator('#art-edit-frame')).toBeChecked();
-  await expect(page.locator('#art-undo')).toBeEnabled();
+  await expect(page.locator('#undo')).toBeEnabled();
   const restored = await page.locator('#art-canvas').boundingBox();
   expect(Math.abs((restored?.x ?? 0) - (before?.x ?? 0))).toBeLessThan(2);
   expect(Math.abs((restored?.y ?? 0) - (before?.y ?? 0))).toBeLessThan(2);
-  await page.locator('#art-undo').click();
+  await page.locator('#undo').click();
   await expect(page.locator('#art-document-state')).toHaveText('Saved');
   // Fit and scope changes deliberately center the drawing.
   await page.locator('#art-fit').click();
@@ -257,8 +257,8 @@ test('pan, Fit, cancellation and document restoration preserve authoring and foc
   await page.keyboard.press('Escape');
   await page.mouse.up();
   await page.keyboard.up('Space');
-  await expect(page.locator('#artwork-dialog')).toBeVisible();
-  await expect(page.locator('#art-undo')).toBeDisabled();
+  await expect(page.locator('#artwork-surface')).toBeVisible();
+  await expect(page.locator('#undo')).toBeDisabled();
   await page.locator('#art-alpha').focus();
   expect(
     await page.locator('#art-alpha').evaluate((n) => {
@@ -293,8 +293,8 @@ for (const route of ['Documents', 'Library'] as const) {
       throw Error('Expected canvas');
     }
 
-    await page.locator('#art-close').click();
-    await expect(page.locator('#artwork-dialog')).toBeHidden();
+    await activateScene(page);
+    await expect(page.locator('#artwork-surface')).toBeHidden();
     if (route === 'Documents') {
       await page.locator('#document-switcher').click();
       await page.locator('#artwork-documents button').filter({ hasText: longName }).click();
@@ -302,7 +302,7 @@ for (const route of ['Documents', 'Library'] as const) {
       await page.locator('[data-asset="player/f1"]').click();
     }
 
-    await expect(page.locator('#artwork-dialog')).toBeVisible();
+    await expect(page.locator('#artwork-surface')).toBeVisible();
     await expect(page.locator('#art-frame')).toHaveValue('f1');
     await expect(page.locator('#art-edit-frame')).toBeChecked();
     await expect(page.locator('#art-zoom')).toHaveValue('16');
@@ -318,7 +318,7 @@ for (const route of ['Documents', 'Library'] as const) {
       })
       .toBeLessThan(2);
     await page.screenshot({ path: info.outputPath('restored-artwork.png') });
-    await page.locator('#art-undo').click();
+    await page.locator('#undo').click();
     await expect(page.locator('#art-document-state')).toHaveText('Saved');
   });
 }
@@ -328,9 +328,9 @@ test('Documents is modal, dismisses predictably and fits long names at compact w
   workspace,
 }, info) => {
   await setup(page, workspace);
-  await page.locator('#art-close').click();
+  await activateScene(page);
   await page.locator('[data-asset="large/artwork"]').click();
-  await page.locator('#art-close').click();
+  await activateScene(page);
   await page.locator('[data-asset="player/f0"]').click();
   const trigger = page.locator('#document-switcher');
   const chooser = page.locator('#document-tabs');
@@ -357,7 +357,7 @@ test('Documents is modal, dismisses predictably and fits long names at compact w
     await expect(chooser).toBeVisible();
     await expect(page.locator('#document-chooser-close')).toBeFocused();
     expect(await chooser.evaluate((n) => n.matches(':modal'))).toBe(true);
-    await expect(page.locator('#scene-document')).toHaveText('Return to Scene workspace');
+    await expect(page.locator('#scene-document')).toHaveText('Scene workspace · Scene');
     await expect(page.locator('#artwork-documents [aria-pressed=true]')).toContainText('Current');
     expect(
       await chooser.evaluate(
@@ -382,7 +382,7 @@ test('oversized panned artwork writes the targeted pixel and releases navigation
   workspace,
 }) => {
   await setup(page, workspace);
-  await page.locator('#art-close').click();
+  await activateScene(page);
   await page.locator('[data-asset="large/artwork"]').click();
   await page.locator('#art-zoom').selectOption('32');
   await drag(page, 80, 20, 'middle');
@@ -405,7 +405,7 @@ test('oversized panned artwork writes the targeted pixel and releases navigation
   expect([...rgba.subarray(index, index + 4)]).toEqual([204, 119, 68, 73]);
   expect([...rgba.subarray(index - 4, index)]).toEqual([0, 0, 0, 0]);
   await page.locator('.art-document-actions>summary').click();
-  await page.locator('#art-undo').click();
+  await page.locator('#undo').click();
   await expect(page.locator('#art-document-state')).toHaveText('Saved');
   for (const ending of ['pointercancel', 'lostpointercapture', 'blur']) {
     await page.locator('#art-canvas').focus();
@@ -434,7 +434,7 @@ test('oversized panned artwork writes the targeted pixel and releases navigation
     await page.mouse.up();
     await page.keyboard.up('Space');
   }
-  await expect(page.locator('#art-undo')).toBeDisabled();
+  await expect(page.locator('#undo')).toBeDisabled();
   await expect(page.locator('#art-document-state')).toHaveText('Saved');
 });
 
@@ -468,11 +468,11 @@ test('artwork layout keeps commands and drawing reachable across window sizes', 
         await page.locator('#art-properties-toggle').click();
       }
       if (state === 'review') {
-        await page.locator('#art-save').click();
+        await page.locator('#save').click();
         await expect(page.locator('#art-comparison')).toBeVisible();
-        await expect(page.locator('#art-save')).toBeEnabled();
+        await expect(page.locator('#save')).toBeEnabled();
       }
-      const geometry = await page.locator('#artwork-dialog').evaluate((dialog) => {
+      const geometry = await page.locator('#artwork-surface').evaluate((dialog) => {
         const viewport = dialog.querySelector<HTMLElement>('.art-canvas-scroll');
         const controls = dialog.querySelector<HTMLElement>('.art-controls');
         const footerElement = dialog.querySelector<HTMLElement>('#art-editor>.dialog-actions');

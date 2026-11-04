@@ -6,7 +6,13 @@ import { readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { array, record, string } from '../../../frontend/shared/decode.mts';
-import { clickControl, scenePoint, test, waitForUI } from '../support/browser-fixtures.ts';
+import {
+  clickControl,
+  scenePoint,
+  test,
+  waitForUI,
+  chooseSavedScene,
+} from '../support/browser-fixtures.ts';
 
 test('independent tabs, crash, restart, move, restore and revert', async ({
   page,
@@ -63,7 +69,7 @@ print(json.dumps({'first': a['id'], 'second': b['id']}))
     return page;
   }
   async function chooseScene(id = first) {
-    await page.locator('#scenes').selectOption(id);
+    await chooseSavedScene(page, id);
     await wait(
       `document.getElementById('scenes').value === ${JSON.stringify(id)} && document.getElementById('show-create').disabled === false`,
     );
@@ -189,7 +195,7 @@ print(json.dumps({'first': a['id'], 'second': b['id']}))
     return page;
   }
   async function chooseScene(id = first) {
-    await page.locator('#scenes').selectOption(id);
+    await chooseSavedScene(page, id);
     await wait(
       `document.getElementById('scenes').value === ${JSON.stringify(id)} && document.getElementById('show-create').disabled === false`,
     );
@@ -386,7 +392,7 @@ print(json.dumps({'first': a['id'], 'second': b['id']}))
     return page;
   }
   async function chooseScene(id = first) {
-    await page.locator('#scenes').selectOption(id);
+    await chooseSavedScene(page, id);
     await wait(
       `document.getElementById('scenes').value === ${JSON.stringify(id)} && document.getElementById('show-create').disabled === false`,
     );

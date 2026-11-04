@@ -300,7 +300,7 @@ export function createGesturesController({
   editorFocus(
     element('workspace', HTMLElement),
     canvas,
-    () => Boolean(sceneSession.editor),
+    () => Boolean(sceneSession.editor) && activity.document === 'scene',
     lifetime,
   );
 
@@ -387,7 +387,7 @@ export function createGesturesController({
   document.addEventListener(
     'keydown',
     (event) => {
-      if (event.code !== 'Space' && event.key !== ' ') {
+      if (activity.document !== 'scene' || (event.code !== 'Space' && event.key !== ' ')) {
         return;
       }
       if (gestures.spacePan) {
@@ -613,14 +613,18 @@ export function createGesturesController({
     ports.update();
   });
 
-  lifetime.assign(canvas, 'onpointercancel', () => {
+  function cancelEditing() {
+    finishPan();
+    gestures.spacePan = false;
     gestures.blockoutDraw = null;
     gestures.objectResize = null;
     sceneSession.editor?.cancel();
     gestures.anchor = null;
     gestures.objectDrag = null;
     ports.draw();
-  });
+    lifetime.releaseCaptures(canvas);
+  }
+  lifetime.assign(canvas, 'onpointercancel', cancelEditing);
 
   lifetime.assign(canvas, 'onlostpointercapture', () => {
     gestures.blockoutDraw = null;
@@ -674,5 +678,5 @@ export function createGesturesController({
     gestures.anchor = null;
     ports.draw();
   });
-  return { syncPanCursor, viewport, finishPan };
+  return { syncPanCursor, viewport, finishPan, cancelEditing };
 }

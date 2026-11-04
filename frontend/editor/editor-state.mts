@@ -24,6 +24,7 @@ export class WorkspaceState {
 }
 
 export class SceneSession {
+  externalChanged = false;
   loaded: Loaded | null = null;
   committed: Loaded | null = null;
   editor: LayerEditor | null = null;
@@ -93,6 +94,7 @@ export class GestureState {
 }
 
 export class EditorActivity {
+  document: 'scene' | 'artwork' = 'scene';
   busy = false;
   reviewing = false;
 }

@@ -216,10 +216,12 @@ test('project launcher, switching, save conflicts and restart', async ({
     await evaluate(`(() => {
       const project = document.getElementById('switch-project');
       const scene = document.getElementById('scenes');
+      const documents = document.getElementById('document-switcher');
       return project.value === '/projects/hello-world' &&
         project.selectedOptions[0].textContent === 'Hello World' &&
-        project.closest('.document-bar') === scene.closest('.document-bar') &&
-        project.getBoundingClientRect().right < scene.getBoundingClientRect().left &&
+        project.closest('.document-bar') === documents.closest('.document-bar') &&
+        scene.closest('#document-tabs') !== null &&
+        project.getBoundingClientRect().right < documents.getBoundingClientRect().left &&
         !document.querySelector('.masthead select');
     })()`),
     true,

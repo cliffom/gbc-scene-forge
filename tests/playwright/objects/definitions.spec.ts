@@ -6,7 +6,13 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { record, string } from '../../../frontend/shared/decode.mts';
-import { clickControl, scenePoint, test, waitForUI } from '../support/browser-fixtures.ts';
+import {
+  clickControl,
+  scenePoint,
+  test,
+  waitForUI,
+  chooseSavedScene,
+} from '../support/browser-fixtures.ts';
 test('definitions: Real keyboard/pointer object definitions, inheritance and instance validation.', async ({
   page,
   workspace,
@@ -70,7 +76,7 @@ print(json.dumps(ids))
     await wait(
       "document.getElementById('scenes')?.disabled === false && !document.getElementById('show-create').disabled",
     );
-    await page.locator('#scenes').selectOption(id);
+    await chooseSavedScene(page, id);
     await wait(
       `document.getElementById('scene-name').textContent.startsWith(${JSON.stringify(id === first ? 'Room ·' : id === regression ? 'Regression ·' : 'Other room ·')}) && !document.getElementById('show-create').disabled`,
     );

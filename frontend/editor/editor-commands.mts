@@ -22,9 +22,6 @@ export interface Ports {
   filterPalette: () => void;
   draw: (refreshUI?: boolean) => void;
   syncPanCursor: () => void;
-  compositionAction: (
-    action: 'copy' | 'cut' | 'paste' | 'duplicate' | 'horizontal' | 'vertical' | 'rotate',
-  ) => void;
   compositionSelection: () => CompositionSelection;
   regions: ReadonlyMap<string, { image: HTMLImageElement; x: number; y: number }>;
 }
@@ -143,13 +140,6 @@ export function createCommandsController({
 
   lifetime.assign(select('kind-filter'), 'onchange', ports.filterPalette);
 
-  lifetime.assign(button('deselect'), 'onclick', () => {
-    sceneSelection.selection = null;
-    sceneSelection.selectedObject = null;
-    sceneSelection.selectedObjects.clear();
-    ports.draw();
-  });
-
   lifetime.assign(button('remove-sprite'), 'onclick', () => {
     const id = sceneSelection.selectedObject;
     sceneSession.editor?.change(() => {
@@ -191,15 +181,10 @@ export function createCommandsController({
   document.addEventListener(
     'keydown',
     (event) => {
+      if (activity.document !== 'scene') {
+        return;
+      }
       if (activity.reviewing) {
-        // Keep native focus/zoom controls and viewport scrolling; block authoring shortcuts.
-        if (
-          ['Delete', 'Backspace'].includes(event.key) ||
-          ((event.ctrlKey || event.metaKey) &&
-            ['c', 'x', 'v', 'd', 's', 'z', 'y'].includes(event.key.toLowerCase()))
-        ) {
-          event.preventDefault();
-        }
         return;
       }
       if (
@@ -246,30 +231,6 @@ export function createCommandsController({
           return;
         }
         if (
-          (event.ctrlKey || event.metaKey) &&
-          ['c', 'x', 'v', 'd'].includes(event.key.toLowerCase())
-        ) {
-          event.preventDefault();
-          const commands: Record<string, Parameters<typeof ports.compositionAction>[0]> = {
-            c: 'copy',
-            x: 'cut',
-            v: 'paste',
-            d: 'duplicate',
-          };
-          ports.compositionAction(commands[event.key.toLowerCase()]);
-        } else if (
-          (event.ctrlKey || event.metaKey) &&
-          ['s', 'z', 'y'].includes(event.key.toLowerCase())
-        ) {
-          event.preventDefault();
-          button(
-            event.key.toLowerCase() === 's'
-              ? 'save'
-              : event.key.toLowerCase() === 'y' || event.shiftKey
-                ? 'redo'
-                : 'undo',
-          ).click();
-        } else if (
           !event.ctrlKey &&
           !event.metaKey &&
           !event.altKey &&

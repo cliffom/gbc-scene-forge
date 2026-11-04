@@ -1,7 +1,13 @@
 import { execFileSync } from 'node:child_process';
 import { cp } from 'node:fs/promises';
 import { join } from 'node:path';
-import { test, expect, editorReady, clickControl } from '../support/browser-fixtures.ts';
+import {
+  test,
+  expect,
+  editorReady,
+  clickControl,
+  chooseSavedScene,
+} from '../support/browser-fixtures.ts';
 
 test('resize overview includes offscreen artwork independently of pan, zoom and crop', async ({
   page,
@@ -40,7 +46,7 @@ print(s['id'])
   ).trim();
   await page.goto(await workspace.start(root));
   await editorReady(page);
-  await page.locator('#scenes').selectOption(id);
+  await chooseSavedScene(page, id);
   await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   const overview = () =>
     page.locator('#resize-preview').evaluate((canvas) => {

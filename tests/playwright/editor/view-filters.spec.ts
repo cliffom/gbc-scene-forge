@@ -2,7 +2,13 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { expect } from '@playwright/test';
 import { record, string } from '../../../frontend/shared/decode.mts';
-import { test, editorReady, paint, clickControl } from '../support/browser-fixtures.ts';
+import {
+  test,
+  editorReady,
+  paint,
+  clickControl,
+  chooseSavedScene,
+} from '../support/browser-fixtures.ts';
 
 test.use({ projectMode: 'sample' });
 
@@ -41,7 +47,7 @@ print(json.dumps(dict(id=loaded['id'])))
   const sceneId = string(record(JSON.parse(seeded.stdout)).id);
   await page.goto(forge.url);
   await editorReady(page);
-  await page.locator('#scenes').selectOption(sceneId);
+  await chooseSavedScene(page, sceneId);
   await expect(page.locator('#scene-save-state')).toHaveText('Saved');
   await page.locator('.scene-view-controls summary').click();
   const snapshot = () =>

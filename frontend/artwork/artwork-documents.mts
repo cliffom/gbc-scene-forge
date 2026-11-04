@@ -9,7 +9,11 @@ type RetainedDocument = {
   view: ArtworkViewState;
 };
 
-export function createArtworkDocuments(lifetime: EditorLifetime, dialog: HTMLDialogElement) {
+export function createArtworkDocuments(
+  lifetime: EditorLifetime,
+  surface: HTMLElement,
+  inspector: HTMLElement,
+) {
   const documents = new Map<string, RetainedDocument>();
   lifetime.cleanup(() => documents.clear());
   return {
@@ -41,9 +45,14 @@ export function createArtworkDocuments(lifetime: EditorLifetime, dialog: HTMLDia
         return;
       }
       const values: RetainedDocument['values'] = new Map();
-      for (const control of dialog.querySelectorAll<
-        HTMLInputElement | HTMLSelectElement | HTMLDetailsElement
-      >('input[id],input[name="art-tool"],select[id],details[id]')) {
+      for (const control of [
+        ...surface.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLDetailsElement>(
+          'input[id],input[name="art-tool"],select[id],details[id]',
+        ),
+        ...inspector.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLDetailsElement>(
+          'input[id],select[id],details[id]',
+        ),
+      ]) {
         const key =
           control.id ||
           `input[name="art-tool"][value="${control instanceof HTMLInputElement ? control.value : ''}"]`;
@@ -62,7 +71,7 @@ export function createArtworkDocuments(lifetime: EditorLifetime, dialog: HTMLDia
         return;
       }
       for (const [id, value] of saved.values) {
-        const control = document.getElementById(id) ?? dialog.querySelector(id);
+        const control = document.getElementById(id) ?? surface.querySelector(id);
         if (control instanceof HTMLInputElement || control instanceof HTMLSelectElement) {
           control.value = value.value;
         }

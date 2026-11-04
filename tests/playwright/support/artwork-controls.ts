@@ -11,7 +11,7 @@ export async function revealArtworkControl(page: Page, id: string) {
   }
   if (await control.locator('xpath=ancestor::aside[contains(@class,"art-review")]').count()) {
     if (!(await control.isVisible())) {
-      await page.locator('#art-save').click();
+      await page.locator('#save').click();
     }
   }
   if (await control.locator('xpath=ancestor::*[@id="art-properties"]').count()) {
@@ -31,18 +31,18 @@ export async function reviewArtwork(page: Page) {
   if (await page.locator('.art-review').isVisible()) {
     await page.locator('#art-review').click();
   } else {
-    await page.locator('#art-save').click();
+    await page.locator('#save').click();
   }
   await expect(page.locator('#art-comparison')).toBeVisible();
-  await expect(page.locator('#art-save')).toHaveText('Confirm save');
+  await expect(page.locator('#save')).toHaveText('Confirm save');
 }
 
 export async function saveArtwork(page: Page) {
   if (!(await page.locator('.art-review').isVisible())) {
     await reviewArtwork(page);
   }
-  await page.locator('#art-save').click();
+  await page.locator('#save').click();
   await expect(page.locator('#art-message')).toContainText('Artwork saved.');
   await expect(page.locator('#art-document-state')).toHaveText('Saved');
-  await expect(page.locator('#artwork-dialog')).toBeVisible();
+  await expect(page.locator('#artwork-surface')).toBeVisible();
 }
