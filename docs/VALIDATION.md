@@ -15,6 +15,28 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Unchanged artwork discovery after mounting (PR #193 CI)
+
+- **Scope:** Prepared 0.32.0 correction based on `26290d4faedd072c0d603cba54b58c7b5f9f1f6e`,
+  checked 2026-11-03 on the local macOS/Python/Node environment recorded below and
+  an Ubuntu 24.04 GitHub runner in the linked CI run.
+- **Method:** [Initial Linux CI](https://github.com/cliffom/gbc-scene-forge/actions/runs/41751708249)
+  exercised the full production browser suite. The
+  [navigation regression](../tests/playwright/artwork/navigation.spec.ts)
+  now deliberately crosses a discovery interval before checking that unchanged
+  navigation makes no artwork requests. Local focused production checks also
+  exercise wheel/layer history and scene navigation; installed-wheel SDK/browser
+  coverage distinguishes unchanged discovery from actual external saved changes.
+- **Result:** The initial CI run passed 126 cases, skipped 11 opt-in profiles and
+  failed one no-request assertion because the first discovery poll reloaded an
+  unchanged inventory. Discovery now compares against the composition's loaded
+  project revision until its first external adoption; it continues preserving
+  original authoring bases. The ten focused production browser cases and seven
+  rebuilt-wheel smoke checks pass.
+- **Limits:** The focused local rerun does not itself replace a full Linux CI
+  result. Independent human/physical-device, non-Chromium and external-tool
+  boundaries remain those recorded below.
+
 ## Human–agent artwork iteration (milestone 21)
 
 - **Scope:** Prepared 0.32.0 working tree on `milestone/21-artwork-iteration`,

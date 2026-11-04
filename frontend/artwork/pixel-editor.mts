@@ -1713,7 +1713,8 @@ export function createPixelEditor({
     discovering = true;
     try {
       const data = await api('project', record);
-      if (!eligible() || data.revision === discoveredRevision) {
+      // The composition loads its initial catalog after mounting this controller.
+      if (!eligible() || data.revision === (discoveredRevision || workspaceState.revision)) {
         return;
       }
       await ports.discovered(data, eligible);
