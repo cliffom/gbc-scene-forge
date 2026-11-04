@@ -38,6 +38,7 @@ help:
 	@echo '  make test-frontend-<suite>   Run one suite (model, drafts, contracts, etc.)'
 	@echo '  make test-browser            Run all browser acceptance suites (CHROME=/path)'
 	@echo '  make test-playwright-browser Run all regular Playwright suites'
+	@echo '  FORGE_BROWSER_WORKERS=N      Override browser workers (default: up to 4, CPU-bounded)'
 	@echo '  make test-blockout-browser   Run artwork-free blockout acceptance'
 	@echo '  make test-mcp                Run optional MCP SDK/service checks'
 	@echo '  make test-mcp-browser        Run agent/browser draft-conflict acceptance'

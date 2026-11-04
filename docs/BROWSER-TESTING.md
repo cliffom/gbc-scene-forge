@@ -13,12 +13,12 @@ The runner configuration is `tests/playwright/playwright.config.ts`. It discover
 
 | Folder | Suites | Scenarios |
 | --- | --- | ---: |
-| `editor/` | standalone editor workflow (including cross-domain persistence/export), layout and chooser, editor lifecycle, review mode, middle-button pan, scene links, wide scenes, canvas repaint profiling | 21 |
-| `project/` | first use, discovery and draft recovery | 10 |
-| `artwork/` | PNG/Tiled imports and terrain brushes | 2 |
+| `editor/` | standalone editor workflow (including cross-domain persistence/export), layout and chooser, editor lifecycle, review mode, middle-button pan, scene links, wide scenes, canvas repaint profiling | 65 |
+| `project/` | first use, discovery, draft recovery and server-log ownership | 12 |
+| `artwork/` | PNG/Tiled imports, terrain brushes, artwork editing, navigation, layers, ownership and responsiveness | 83 |
 | `objects/` | compositions and definitions | 2 |
 | `planning/` | blockout, world and diagnostics | 3 |
-| `mcp/` | optional real SDK authoring and external refresh | 2 |
+| `mcp/` | optional real SDK authoring, layered exchange and external refresh | 6 |
 | `support/` | shared browser/server fixtures and `fixtures/editor/` seed projects | — |
 
 The standalone workflow remains together to preserve its existing public suite
@@ -36,8 +36,9 @@ FORGE_MCP_ONLY=1 npm run test:playwright -- --list
 npm run test:playwright -- editor/review.spec.ts --list
 ```
 
-Regular discovery includes 38 scenarios in 18 files; optional discovery includes
-only the two MCP/refresh scenarios. Basename selectors such as `first-use.spec.ts`
+Regular discovery includes 165 cases in 43 files, including optional profiling
+cases skipped by default; optional discovery includes six MCP/refresh cases in
+four files. Basename selectors such as `first-use.spec.ts`
 and all existing Make/npm entry points remain supported. Reports resolve from the
 configuration to the repository's `build/reports/playwright/`, matching CI uploads.
 
@@ -63,13 +64,54 @@ Make targets rebuild assets; npm runner commands use the existing bundle. Use
 same versioned Playwright Chromium. Linux installation can use
 `npx playwright install --with-deps chromium`.
 
-The runner uses one worker and zero retries. Each test receives an isolated
+The runner retains zero retries and schedules individual tests in parallel,
+including tests within a file. Locally and on CI, the default is half of Node's
+available CPU parallelism, rounded down, with at least one and at most four
+workers. Each test drives Chromium and Python processes, so the policy leaves
+CPU headroom: two workers on the measured four-CPU CI runner and four on an
+eight-or-more-CPU development machine. Set
+`FORGE_BROWSER_WORKERS` to a positive integer to override the count for any
+Make/npm entry point, including installed-wheel and optional MCP checks:
+
+```sh
+FORGE_BROWSER_WORKERS=1 make test-browser
+FORGE_BROWSER_WORKERS=4 npm run test:playwright
+FORGE_BROWSER_WORKERS=2 make test-mcp-browser
+```
+
+Empty, fractional, zero and negative overrides fail before running tests.
+Playwright's `--workers=N` also overrides the configured count for direct npm
+commands. Explicit profiling modes automatically use one worker; both environment
+and CLI requests for more workers are rejected in those modes. Run timing
+comparisons on an otherwise idle runner, with the same revision, suite, browser
+and build mode. Ordinary concurrent acceptance results establish assertions and
+resource behavior; their attached timings are not performance baselines.
+
+Each test receives an isolated
 browser context and temporary project directory. Fixtures start servers on
 an ephemeral port, retain their output, terminate them on success, assertion
 failure or startup failure, and remove workspaces. Servers ignoring SIGINT receive
 SIGKILL after five seconds. Tests can restart servers or open multiple pages
 inside their own fixture; they never share mutable workspaces across scenarios.
 A hard host/process kill cannot execute teardown.
+
+The concurrency audit for #206 covers regular acceptance, installed-wheel first
+use, and optional MCP/refresh. All use the same test-scoped workspace fixture;
+Python input artwork, exports, SDK writers and lock holders stay under that
+test's temporary directory. An empty `workspace/` child remains available for
+project creation; its parent owns neighboring input artwork, including for tests
+that create a project directly at the workspace root. Servers also use that parent as their working
+directory: per-port rotating activity logs previously shared the checkout and
+could mix evidence when ports were reused. The fixture attaches those activity
+files alongside captured server output before removing the workspace, including
+on failure. Ports are assigned by the operating system. Shared
+seed projects and application bundles are read-only during a runner invocation.
+Make builds the application before invoking Playwright; do not rebuild or run
+another Make browser target in the same checkout while an invocation is active.
+Test-only instrumented bundles use esbuild's `write: false` and page-scoped routes.
+Screenshots, attachments and traces use Playwright's per-test output paths under
+the invocation's report directory. No serial groups are needed for ordinary
+acceptance; explicit timing profiles own the entire single-worker invocation.
 
 Standalone acceptance separates launcher/switching, artwork/placement, sprite
 preview, layer/object editing with export/restart, demo conformance, and palette
@@ -81,10 +123,44 @@ purpose-specific project setup. Review-mode acceptance covers viewport expansion
 pan/zoom/Fit, blocked authoring input, retained selection/history and camera position,
 narrow layouts, installed-wheel use, disposal/remount and external deletion. See [the coverage inventory](BROWSER-COVERAGE.md).
 
+## Worker comparison (#206)
+
+The [CI comparison](https://github.com/cliffom/gbc-scene-forge/actions/runs/41859847523)
+ran the same production bundle and original 163-case regular suite at revision
+`430598b`, sequentially with one, two and four workers on one Ubuntu 24.04 x86_64
+runner. Its AMD EPYC 9V74 exposed four logical CPUs (two cores, two threads each),
+15,983 MiB RAM, 3,071 MiB swap and 7.9 GiB shared memory. Open-file and process
+limits were 65,536 and 58,121; stack was 16,384 KiB, with CPU, data and virtual
+memory unlimited. Cgroup CPU/memory/process limit files were unavailable.
+
+| Workers | Wall time | Passed / skipped / failed | Maximum RSS (KiB) |
+| ---: | ---: | --- | ---: |
+| 1 | 10:38.36 | 152 / 11 / 0 | 932,708 |
+| 2 | 6:25.95 | 152 / 11 / 0 | 817,872 |
+| 4 | 4:59.51 | 150 / 11 / 2 | 824,104 |
+
+Two workers reduced wall time by 39.5% and establish the default on this runner.
+Four workers failed Library navigation assertions in artwork pixels (Undo stayed
+disabled) and contextual panels (the expected animation frame remained absent).
+Their root cause was not established; assertions and zero retries remain intact.
+The half-CPU policy permits up to four workers locally: the final 165-case suite
+passed on a 16-CPU macOS development machine with 154 passes and 11 profile skips.
+
+The run's `browser-diagnostics` artifact retains per-count JSON/HTML reports,
+failure traces/logs, GNU time output and runner resource observations. Wall time
+includes npm/report overhead. GNU maximum RSS is not aggregate peak memory across
+all browser/server processes. This was one sequential sweep, without repeated
+sampling or control for warm-cache/order effects. The benchmark predates the final
+fixture isolation changes and two server-ownership tests. Final local acceptance
+also passed installed-wheel first use and all six optional MCP cases; these were
+skipped in the benchmark CI run. Ordinary acceptance timings do not establish
+editor performance baselines.
+
 ## Failure evidence
 
 Each invocation writes a unique directory under `build/reports/playwright/`, named
-with its timestamp and process ID. Workers inherit that name. HTML reports,
+with its timestamp and process ID. Workers inherit that name. JSON summaries
+(`summary.json`, including effective configuration, durations and failures), HTML reports,
 server/browser logs and scenario screenshots survive subsequent suite,
 installed-wheel and MCP invocations. Failures retain a screenshot, DOM error
 context and trace without requiring a retry. CI uploads all of `build/reports/`
@@ -168,5 +244,5 @@ enables mixed-inventory scene-control and resource-lifetime observations.
 `FORGE_COST_BASELINE=1` reads the pinned pre-optimization frontend from Git for the
 scene profile. See the [evaluation](evaluations/editor-responsiveness.md) for exact
 commands, workload sizes, provenance, reference-build instructions and limits.
-These optional profiles extend the regular tests; unchanged CI does not collect
+These optional profiles extend the regular tests; ordinary CI does not collect
 the entire timing/resource matrix.

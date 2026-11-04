@@ -3,7 +3,7 @@ import { test as base, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { spawn, execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -25,7 +25,13 @@ export const test = base.extend<{
   // Playwright requires a destructured fixture parameter, even without dependencies.
   // eslint-disable-next-line no-empty-pattern
   workspace: async ({}, use, testInfo) => {
-    const folder = await mkdtemp(join(tmpdir(), 'forge-playwright-'));
+    const scratch = await mkdtemp(join(tmpdir(), 'forge-playwright-'));
+    // Keep an empty project root available, even when a test uses folder directly.
+    // Its parent also owns neighboring fixture artwork instead of the shared system temp dir.
+    const folder = join(scratch, 'workspace');
+    await mkdir(folder);
+    const activityLogs = join(scratch, '.forge-logs');
+    await mkdir(activityLogs);
     const python = resolve(process.env.FORGE_TEST_PYTHON ?? '.venv/bin/python');
     let server: ReturnType<typeof spawn> | undefined;
     let logs = '';
@@ -54,7 +60,7 @@ export const test = base.extend<{
         ? ['-m', 'gbc_scene_forge.adapters.sample', '--root', root, '--reset', '--port', '0']
         : fixture
           ? [
-              'tests/support/serve_standalone_fixture.py',
+              resolve('tests/support/serve_standalone_fixture.py'),
               '--root',
               root,
               ...(single ? ['--single-project'] : []),
@@ -69,7 +75,8 @@ export const test = base.extend<{
               '--port',
               '0',
             ];
-      const child = spawn(python, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+      // The server writes .forge-logs relative to cwd; activity files belong to this test.
+      const child = spawn(python, args, { cwd: scratch, stdio: ['ignore', 'pipe', 'pipe'] });
       server = child;
       let startup = '';
       return await new Promise<string>((resolveUrl, reject) => {
@@ -103,8 +110,17 @@ export const test = base.extend<{
       await use({ folder, python, start, stop });
     } finally {
       await stop();
-      await testInfo.attach('server.log', { body: logs, contentType: 'text/plain' });
-      await rm(folder, { recursive: true, force: true });
+      try {
+        await testInfo.attach('server.log', { body: logs, contentType: 'text/plain' });
+        for (const name of await readdir(activityLogs)) {
+          await testInfo.attach(name, {
+            path: join(activityLogs, name),
+            contentType: 'text/plain',
+          });
+        }
+      } finally {
+        await rm(scratch, { recursive: true, force: true });
+      }
     }
   },
   forge: async ({ projectMode, workspace }, use) => {

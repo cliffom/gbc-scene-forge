@@ -123,9 +123,9 @@ test('one document bar retains dirty scene, layers, selection, tools and sheet c
   await activateScene(page);
   await expect(page.locator('#document-state')).toHaveText('Modified');
   await expect(page.locator('#zoom')).toHaveValue('6');
-  expect(await page.locator('#viewport').evaluate((n) => [n.scrollLeft, n.scrollTop])).toEqual(
-    sceneView,
-  );
+  await expect
+    .poll(() => page.locator('#viewport').evaluate((n) => [n.scrollLeft, n.scrollTop]))
+    .toEqual(sceneView);
   await page.locator('#document-switcher').focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('#scene-document')).toHaveText('Workshop · Scene · Modified');

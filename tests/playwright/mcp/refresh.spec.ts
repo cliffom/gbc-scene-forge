@@ -116,7 +116,7 @@ test('refresh: Saved-file refresh with a real stdio MCP writer and protected bro
     await holderExit;
   }
   async function moveCamera(x: number) {
-    await evaluate("document.getElementById('status').textContent=''");
+    await clearStatus();
     const scene = await saved();
     return agent('edit_scene', {
       project_revision: (await catalog()).revision,
@@ -124,6 +124,17 @@ test('refresh: Saved-file refresh with a real stdio MCP writer and protected bro
       scene_id: id,
       operations: [{ op: 'update', object_id: 1, changes: { x } }],
     });
+  }
+  async function clearStatus() {
+    await page
+      .locator('.notification[data-channel="status"] .notification-dismiss')
+      .evaluateAll((buttons) => {
+        for (const button of buttons) {
+          if (button instanceof HTMLButtonElement) {
+            button.click();
+          }
+        }
+      });
   }
   const tick = () => evaluate("window.dispatchEvent(new Event('focus'))");
   const cameraX = () => evaluate("document.getElementById('object-x').value");
@@ -140,7 +151,7 @@ test('refresh: Saved-file refresh with a real stdio MCP writer and protected bro
   await set('object-x', '8');
   await click('object-apply');
   await click('save');
-  await wait("document.getElementById('status').textContent==='Scene saved.'");
+  await expect(page.locator('#status')).toHaveText('Scene saved.');
   await expect(page.locator('#undo')).toBeEnabled();
   const selected = await evaluate(
     "[document.getElementById('selection-name').textContent,document.getElementById('layers').querySelector('input:checked')?.value]",
@@ -155,7 +166,7 @@ test('refresh: Saved-file refresh with a real stdio MCP writer and protected bro
   console.log('Refresh: clean real MCP saves and preserved view');
   await moveCamera(16);
   await tick();
-  await wait("document.getElementById('status').textContent.includes('External changes loaded')");
+  await expect(page.locator('#status')).toContainText('External changes loaded');
   await expect(page.locator('#zoom')).toHaveValue('4');
   assert.deepEqual(
     await evaluate(
@@ -246,14 +257,14 @@ test('refresh: Saved-file refresh with a real stdio MCP writer and protected bro
   await expect(page.locator('#dirty')).toHaveText('UNSAVED');
   await expect(page.locator('#undo')).toBeEnabled();
   await click('save');
-  await wait("document.getElementById('status').textContent.includes('changed')");
+  await expect(page.locator('#status')).toContainText('changed');
   assert.equal(objects((await saved()).scene).find((item) => item.id === 1)?.x, 24);
   await click('revert');
   await wait("document.getElementById('discard-dialog').open");
   await page.locator('#discard-dialog button[value=discard]').first().click();
   await wait("document.getElementById('dirty').textContent==='SAVED'");
   await tick();
-  await wait("document.getElementById('status').textContent.includes('External changes loaded')");
+  await expect(page.locator('#status')).toContainText('External changes loaded');
   await inspectCamera(24);
   console.log('Refresh: hidden tabs make no revision requests');
   await evaluate(
@@ -275,7 +286,7 @@ test('refresh: Saved-file refresh with a real stdio MCP writer and protected bro
   assert.equal(await evaluate('window.__probeCount'), 0);
   await evaluate("document.getElementById('project-command-panel').showPopover()");
   await click('check-external');
-  await wait("document.getElementById('status').textContent.includes('External changes loaded')");
+  await expect(page.locator('#status')).toContainText('External changes loaded');
   await inspectCamera(40);
   await evaluate("document.getElementById('project-command-panel').showPopover()");
   await click('auto-refresh');
@@ -301,7 +312,7 @@ test('refresh: Saved-file refresh with a real stdio MCP writer and protected bro
   assert.equal(await cameraX(), '56');
   await click('object-cancel');
   await tick();
-  await wait("document.getElementById('status').textContent.includes('External changes loaded')");
+  await expect(page.locator('#status')).toContainText('External changes loaded');
   await inspectCamera(48);
   console.log('Refresh: connection recovery and rapid successive writes');
   await evaluate(
@@ -368,7 +379,7 @@ test('refresh: Saved-file refresh with a real stdio MCP writer and protected bro
     const before = await mode();
     await moveCamera(73 + index);
     await tick();
-    await wait("document.getElementById('status').textContent.includes('External changes loaded')");
+    await expect(page.locator('#status')).toContainText('External changes loaded');
     assert.deepEqual(await mode(), before);
   }
   await set('zoom', '1');
@@ -401,7 +412,7 @@ test('refresh: Saved-file refresh with a real stdio MCP writer and protected bro
   })();
   await wait("document.getElementById('dirty').textContent==='UNSAVED'");
   await click('save');
-  await wait("document.getElementById('status').textContent==='Scene saved.'");
+  await expect(page.locator('#status')).toHaveText('Scene saved.');
   const painted = array(record((await saved()).scene).layers, record).find(
     (l) => l.type === 'tilelayer',
   );
@@ -431,14 +442,14 @@ test('refresh: Saved-file refresh with a real stdio MCP writer and protected bro
   await wait('document.querySelector(\'#palette [data-asset="spare/earth"]\')!==null');
   await click('artwork-tab');
   await page.locator('#palette [data-asset="spare/earth"]').first().click();
-  await evaluate("document.getElementById('status').textContent=''");
+  await clearStatus();
   await post('delete-atlas', {
     id: 'spare',
     project_revision: (await catalog()).revision,
     scene: { id, revision: (await saved()).revision },
   });
   await tick();
-  await wait("document.getElementById('status').textContent.includes('External changes loaded')");
+  await expect(page.locator('#status')).toContainText('External changes loaded');
   assert.equal(
     await evaluate('document.querySelector(\'#palette [aria-pressed="true"]\')===null'),
     true,
@@ -465,7 +476,7 @@ test('refresh: Saved-file refresh with a real stdio MCP writer and protected bro
     const before = await mode();
     await moveCamera(77 + index);
     await tick();
-    await wait("document.getElementById('status').textContent.includes('External changes loaded')");
+    await expect(page.locator('#status')).toContainText('External changes loaded');
     assert.deepEqual(await mode(), before);
   }
   const stampScene = record((await saved()).scene);
@@ -483,7 +494,7 @@ test('refresh: Saved-file refresh with a real stdio MCP writer and protected bro
   const stampMode = await mode();
   await moveCamera(79);
   await tick();
-  await wait("document.getElementById('status').textContent.includes('External changes loaded')");
+  await expect(page.locator('#status')).toContainText('External changes loaded');
   assert.deepEqual(await mode(), stampMode);
   await click('place-stamp');
   await inspectCamera(79);
@@ -538,7 +549,7 @@ test('refresh: Saved-file refresh with a real stdio MCP writer and protected bro
     } else {
       await tick();
     }
-    await wait("document.getElementById('status').textContent.includes('External changes loaded')");
+    await expect(page.locator('#status')).toContainText('External changes loaded');
     assert.ok(Number(await evaluate('window.__animatedSnapshots')) >= 1);
     assert.equal(record(await mode()).asset, 'actors/idle');
     assert.equal(record(await mode()).tool, 'select');
@@ -567,7 +578,7 @@ test('refresh: Saved-file refresh with a real stdio MCP writer and protected bro
     confirm_broken_links: true,
   });
   await tick();
-  await wait("document.getElementById('status').textContent.includes('removed externally')");
+  await expect(page.locator('#status')).toContainText('removed externally');
   await expect(page.locator('#save')).toBeDisabled();
   await expect(page.locator('#canvas-surround')).toHaveJSProperty('hidden', true);
   await evaluate("document.getElementById('project-command-panel').showPopover()");

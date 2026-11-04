@@ -1,5 +1,6 @@
 import { resolve } from 'node:path';
 import { defineConfig } from '@playwright/test';
+import { browserWorkers } from './support/worker-policy.ts';
 
 // Every invocation owns a unique report directory; later wheel/MCP runs retain earlier failures.
 const run =
@@ -15,10 +16,16 @@ export default defineConfig({
     ? /^(?!.*(?:mcp|refresh)\.spec\.ts).*$/
     : /(?:mcp|refresh)\.spec\.ts$/,
   outputDir: `${reports}/results`,
-  reporter: [['list'], ['html', { outputFolder: `${reports}/html`, open: 'never' }]],
+  reporter: [
+    ['list'],
+    ['html', { outputFolder: `${reports}/html`, open: 'never' }],
+    ['json', { outputFile: `${reports}/summary.json` }],
+  ],
   forbidOnly: Boolean(process.env.CI),
   retries: 0,
-  workers: 1,
+  workers: browserWorkers(),
+  fullyParallel: true,
+  globalSetup: './support/worker-setup.ts',
   timeout: 90000,
   expect: { timeout: 15000 },
   use: {
