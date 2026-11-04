@@ -8,6 +8,7 @@ import { array, record, string } from '../../../frontend/shared/decode.mts';
 
 import {
   clickControl,
+  expect,
   scenePoint,
   setControl,
   test,
@@ -63,7 +64,7 @@ test('mcp: Real stdio-authored plan, browser edits, stale saves and independent 
   await set('object-x', '16');
   await click('object-apply');
   await click('save');
-  await wait("document.getElementById('status').textContent==='Scene saved.'");
+  await expect(page.locator('#status')).toHaveText('Scene saved.');
   assert.equal(objects((await saved()).scene).find((item) => item.id === 1)?.x, 16);
   assert.deepEqual(
     objects((await saved()).scene).filter((item) => item.id !== 1),
@@ -80,7 +81,7 @@ test('mcp: Real stdio-authored plan, browser edits, stale saves and independent 
   await click('library-import');
   await set('atlas-path', source.trim());
   await page.locator('#' + 'atlas-apply').click();
-  await wait("document.getElementById('status').textContent.includes('Atlas imported')");
+  await expect(page.locator('#status')).toContainText('Atlas imported');
   await page.locator('#palette button.asset').first().click();
   await set('zoom', '1');
   await (async () => {
@@ -94,7 +95,7 @@ test('mcp: Real stdio-authored plan, browser edits, stale saves and independent 
     await page.mouse.up();
   })();
   await click('save');
-  await wait("document.getElementById('status').textContent==='Scene saved.'");
+  await expect(page.locator('#status')).toHaveText('Scene saved.');
   assert.deepEqual(objects((await saved()).scene), planObjects);
   await page.reload();
   await wait(
@@ -169,7 +170,7 @@ test('mcp: Real stdio-authored plan, browser edits, stale saves and independent 
   const agentSaved = await saved();
   assert.equal(objects(agentSaved.scene).find((item) => item.name === 'Forest patrol')?.x, 128);
   await click('save');
-  await wait("document.getElementById('status').textContent.includes('changed')");
+  await expect(page.locator('#status')).toContainText('changed');
   assert.deepEqual(await saved(), agentSaved);
   // Lose the tab so its checkpoint becomes recoverable by a fresh browser session.
   await page.close();

@@ -24,22 +24,7 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
       - name: Browser acceptance checks
-        run: |
-          mkdir -p build/reports/worker-comparison
-          lscpu > build/reports/worker-comparison/cpu.txt
-          free -m > build/reports/worker-comparison/memory.txt
-          df -h /dev/shm > build/reports/worker-comparison/shm.txt
-          ulimit -a > build/reports/worker-comparison/limits.txt
-          for limit in cpu.max memory.max pids.max; do
-            cat "/sys/fs/cgroup/$limit" > "build/reports/worker-comparison/$limit.txt" || true
-          done
-          failed=0
-          for workers in 1 2 4; do
-            FORGE_BROWSER_WORKERS="$workers" FORGE_BROWSER_RUN="workers-$workers" \
-              /usr/bin/time -v -o "build/reports/worker-comparison/workers-$workers.txt" \
-              npm run test:playwright || failed=1
-          done
-          exit "$failed"
+        run: make test-browser
       - name: Installed-wheel first-use acceptance
         run: FORGE_TEST_PYTHON="$PWD/build/package-smoke/bin/python" npx playwright test --config tests/playwright/playwright.config.ts first-use.spec.ts
       - name: Optional MCP installed-wheel and browser checks

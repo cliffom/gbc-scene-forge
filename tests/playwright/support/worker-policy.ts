@@ -24,5 +24,5 @@ export function browserWorkers(
   if (profiling && requested !== undefined && requested !== 1) {
     throw Error('Profiling requires FORGE_BROWSER_WORKERS=1 on an otherwise idle runner');
   }
-  return profiling ? 1 : (requested ?? (env.CI ? Math.min(4, capacity) : 1));
+  return profiling ? 1 : (requested ?? Math.min(4, capacity));
 }
