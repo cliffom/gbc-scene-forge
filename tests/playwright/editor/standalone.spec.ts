@@ -2787,12 +2787,7 @@ test('palette and hardware budgets, stale reports and profile saves', async ({
   await evaluate('window.fetch = window.__pollFetch');
   await page.locator('#palette-findings .palette-contributor').first().click();
   await wait("!document.getElementById('palette-dialog').open");
-  assert.equal(
-    await evaluate(
-      "document.getElementById('status')?.textContent.startsWith('Palette contributor:')",
-    ),
-    true,
-  );
+  await expect(page.locator('#status')).toHaveText(/^Palette contributor:/);
   await expect(page.locator('#dirty')).toHaveText('SAVED');
   const paletteIndicatorWidth = await evaluate(
     "document.getElementById('show-palettes').getBoundingClientRect().width",

@@ -39,6 +39,9 @@ Dates, revisions and environments missing from the originals remain unknown.
   the creation directory empty inside an owned scratch parent resolved them.
   Optional refresh status failures reproduced at both one and four workers before
   replacing obsolete direct status access with locator assertions/dismissal.
+  A subsequent two-worker local run passed 152 cases and failed two immediate
+  viewport/status reads; polling the same expected scroll coordinates and palette
+  message passed both focused cases without relaxing their outcomes.
 - **Limits:** The benchmark precedes final fixture isolation and the two added
   ownership tests; its installed-wheel/MCP steps were skipped. Final local reports
   are ignored build outputs, not archived CI evidence. The single CI sweep does
