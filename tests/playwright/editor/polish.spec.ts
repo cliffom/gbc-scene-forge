@@ -55,7 +55,7 @@ async function boundedCommands(page: Page, container: string, controls: string) 
 test.describe('editor polish', () => {
   test.use({ projectMode: 'sample' });
 
-  test('save and export are keyboard-accessible in their menus, shortcuts and guide', async ({
+  test('save and export are keyboard-accessible through the document bar, menu, shortcuts and guide', async ({
     page,
     forge,
   }, info) => {
@@ -65,30 +65,29 @@ test.describe('editor polish', () => {
     await chooseSavedScene(page, { index: 1 });
     await expect(page.locator('#scene-save-state')).toHaveText('Saved');
     await expect(page.locator('.document-actions > button')).toHaveText([
+      'Save scene',
       'Scene actions',
       'Project tools!',
     ]);
-    await expect(page.locator('#save')).toBeHidden();
+    await expect(page.locator('#save')).toBeVisible();
     await expect(page.locator('#show-export')).toBeHidden();
-    await page.locator('#layer-name').fill('Save through the scene menu');
+    await page.locator('#layer-name').fill('Save through the document bar');
     await page.locator('#layer-name').press('Tab');
-    await page.locator('#scene-commands').focus();
-    await page.keyboard.press('Enter');
-    await page.keyboard.press('Tab');
+    await page.locator('#save').focus();
     await expect(page.locator('#save')).toBeFocused();
     await expect(page.locator('#save')).toHaveAccessibleName('Save scene');
-    await boundedCommands(page, '#scene-command-panel', 'button');
-    await page.screenshot({ path: info.outputPath('scene-save-menu.png') });
+    await boundedCommands(page, '.document-actions', ':scope > button');
+    await page.screenshot({ path: info.outputPath('document-save.png') });
     await page.keyboard.press('Enter');
     await expect(page.locator('#scene-save-state')).toHaveText('Saved');
-    await expect(page.locator('#save')).toBeHidden();
+    await expect(page.locator('#save')).toBeVisible();
     for (const shortcut of ['Control+s', 'Meta+s']) {
       await page.locator('#layer-name').fill(`Save through ${shortcut}`);
       await page.locator('#scene').focus();
       await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
       await page.keyboard.press(shortcut);
       await expect(page.locator('#scene-save-state')).toHaveText('Saved');
-      await expect(page.locator('#save')).toBeHidden();
+      await expect(page.locator('#save')).toBeVisible();
     }
     await page.locator('#layer-name').fill('Save through the guide');
     await page.locator('#layer-name').press('Tab');
@@ -97,7 +96,7 @@ test.describe('editor polish', () => {
     for (let i = 0; i < 4; i++) {
       await page.locator('#guide-next').click();
     }
-    await expect(page.locator('#guide-text')).toContainText('Scene actions → Save scene');
+    await expect(page.locator('#guide-text')).toContainText('Save scene in the document bar');
     await page.locator('#guide-action').click();
     await expect(page.locator('#scene-save-state')).toHaveText('Saved');
     await page.locator('#show-first-scene-guide').click();
@@ -471,7 +470,7 @@ test.describe('editor polish', () => {
     await page.locator('#art-canvas').click({ position: { x: 8, y: 8 } });
     await expect(page.getByRole('button', { name: 'Undo', exact: true }).last()).toBeEnabled();
     await reviewArtwork(page);
-    await expect(page.locator('#art-save')).toBeEnabled();
+    await expect(page.locator('#save')).toBeEnabled();
     const density = await page.context().newCDPSession(page);
     for (const [width, height, scale] of [...sizes.map(([w, h]) => [w, h, 1]), [1024, 640, 1.25]]) {
       await page.setViewportSize({ width, height });
@@ -531,7 +530,7 @@ test.describe('editor polish', () => {
     await page.getByRole('button', { name: 'Recover copy', exact: true }).click();
     await expect(page.locator('#art-canvas')).toBeFocused();
     await reviewArtwork(page);
-    await expect(page.locator('#art-save')).toBeEnabled();
+    await expect(page.locator('#save')).toBeEnabled();
     await saveArtwork(page);
     await activateScene(page);
     await expect(page.locator('#artwork-surface')).not.toBeVisible();
@@ -649,7 +648,7 @@ test('first-use authoring from visible controls: empty artwork, draw, place, sav
   await page.locator('#art-create').click();
   await page.locator('#art-canvas').click({ position: { x: 8, y: 8 } });
   await reviewArtwork(page);
-  await expect(page.locator('#art-save')).toBeEnabled();
+  await expect(page.locator('#save')).toBeEnabled();
   await saveArtwork(page);
   await activateScene(page);
   await expect(page.locator('#artwork-surface')).not.toBeVisible();

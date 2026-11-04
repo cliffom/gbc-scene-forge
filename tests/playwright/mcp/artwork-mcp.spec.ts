@@ -78,8 +78,8 @@ test('mcp: artwork brief, hand edits, agent revision, selected sprite variation 
   const originalLantern = await open('lantern');
   await editMoss();
   await dab('#92a15a');
-  await page.locator('#art-undo').click();
-  await page.locator('#art-redo').click();
+  await page.locator('#undo').click();
+  await page.locator('#redo').click();
   await reviewArtwork(page);
   await saveArtwork(page);
   await activateScene(page);
@@ -117,10 +117,10 @@ test('mcp: artwork brief, hand edits, agent revision, selected sprite variation 
   await editMoss();
   await dab('#aa1133');
   await reviewArtwork(page);
-  await expect(page.locator('#art-save')).toBeEnabled();
+  await expect(page.locator('#save')).toBeEnabled();
   await writeFile(writes, JSON.stringify([{ x: 6, y: 6, rgba: [90, 130, 80, 255] }]));
   await run(['--asset', 'moss', '--writes', writes]);
-  await page.locator('#art-save').click();
+  await page.locator('#save').click();
   await expect(page.locator('#art-message')).toContainText('Local pixels are retained');
   await page.screenshot({ path: info.outputPath('mixed-writer-conflict.png') });
   await activateScene(page);

@@ -30,6 +30,7 @@ import {
   type DocumentSummary,
 } from '../editor/document-bar.mts';
 import { createDocumentChooser } from './document-chooser.mts';
+import type { CommandCapabilities } from '../editor/document-commands.mts';
 import type { DocumentContribution } from '../editor/editor-shell.mts';
 
 type Source = {
@@ -65,6 +66,7 @@ export function createPixelEditor({
       prepareSceneDeparture: () => void;
       sceneSummary: (modified?: boolean) => DocumentSummary;
       unavailable: () => boolean;
+      commandsChanged: () => void;
     };
     discovered: (data: Record<string, unknown>, eligible: () => boolean) => Promise<void>;
     run: (work: () => Promise<void>) => Promise<void>;
@@ -95,10 +97,15 @@ export function createPixelEditor({
     ports.presentation.prepareSceneDeparture();
     tabs();
   });
-  const presentation = createArtworkWorkspace(lifetime, surface, () => {
-    controls();
-    tabs();
-  });
+  const presentation = createArtworkWorkspace(
+    lifetime,
+    surface,
+    () => {
+      controls();
+      tabs();
+    },
+    () => ports.presentation.commandsChanged(),
+  );
   const { setup } = presentation;
   function reviewPanel(open: boolean) {
     presentation.reviewPanel(open);
@@ -180,6 +187,7 @@ export function createPixelEditor({
           }
       : ports.presentation.sceneSummary(sceneModified);
     documentBar.render(summary, busy || ports.presentation.unavailable());
+    ports.presentation.commandsChanged();
   }
   function tabs() {
     documentState();
@@ -514,9 +522,6 @@ export function createPixelEditor({
       button('art-duplicate').disabled = busy || !sources.length;
       button('art-variation').disabled = busy || !sources.length;
     }
-    button('art-save').disabled = busy || !session;
-    button('art-save').textContent =
-      session?.receipt && surface.classList.contains('show-art-review') ? 'Confirm save' : 'Save…';
     button('art-properties-toggle').hidden = !active || session?.model.descriptor.version !== 2;
     button('art-layers-toggle').hidden = !active;
     if (!active && presentation.mode === 'existing') {
@@ -530,9 +535,6 @@ export function createPixelEditor({
         : 'Edit the shared original; saving updates its references.';
     }
     dirtyControls();
-    button('art-undo').disabled = busy || !session?.model.undoStack.length;
-    button('art-redo').disabled = busy || !session?.model.redoStack.length;
-    button('art-paste').disabled = busy || !session?.model.clipboard;
     input('art-use-scene').disabled = busy || !sceneSession.loaded;
     sheetEditor.controls(busy);
     layerControls.sync();
@@ -1405,34 +1407,6 @@ export function createPixelEditor({
       }),
     { signal: lifetime.signal },
   );
-  for (const kind of ['horizontal', 'vertical', 'rotate'] as const) {
-    lifetime.assign(button(`art-${kind}`), 'onclick', () =>
-      operation(() => session?.model.transform(kind)),
-    );
-  }
-  lifetime.assign(button('art-undo'), 'onclick', () => {
-    if (session && !gestures.active) {
-      session.model.undo();
-      changed();
-    }
-  });
-  lifetime.assign(button('art-redo'), 'onclick', () => {
-    if (session && !gestures.active) {
-      session.model.redo();
-      changed();
-    }
-  });
-  lifetime.assign(button('art-copy'), 'onclick', () => {
-    session?.model.copy();
-    controls();
-  });
-  lifetime.assign(button('art-paste'), 'onclick', () => operation(() => session?.model.paste()));
-  lifetime.assign(button('art-deselect'), 'onclick', () => {
-    if (session) {
-      session.model.selection = null;
-      draw();
-    }
-  });
   lifetime.assign(button('art-transparent'), 'onclick', () => {
     input('art-alpha').value = Number(input('art-alpha').value) === 0 ? String(drawingAlpha) : '0';
     reflectOpacity();
@@ -1486,20 +1460,7 @@ export function createPixelEditor({
       ) {
         return;
       }
-      const key = event.key.toLowerCase(),
-        mod = event.ctrlKey || event.metaKey;
-      const commands: Record<string, string> = {
-        z: event.shiftKey ? 'art-redo' : 'art-undo',
-        y: 'art-redo',
-        c: 'art-copy',
-        v: 'art-paste',
-        s: 'art-save',
-      };
-      if (mod && commands[key]) {
-        event.preventDefault();
-        event.stopPropagation();
-        button(commands[key]).click();
-      } else if (
+      if (
         ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key) &&
         document.activeElement === canvas
       ) {
@@ -1671,7 +1632,7 @@ export function createPixelEditor({
   lifetime.assign(button('art-review'), 'onclick', () => {
     void execute(reviewCurrent);
   });
-  lifetime.assign(button('art-save'), 'onclick', () => {
+  function save() {
     void execute(async () => {
       const current = session;
       if (!current) {
@@ -1679,7 +1640,7 @@ export function createPixelEditor({
       }
       if (!current.receipt || !surface.classList.contains('show-art-review')) {
         await reviewCurrent();
-        button('art-save').focus();
+        button('save').focus();
         return;
       }
       cancelGesture();
@@ -1733,7 +1694,7 @@ export function createPixelEditor({
         );
       }
     });
-  });
+  }
   for (const id of ['art-view-x', 'art-view-y', 'art-use-scene']) {
     input(id).addEventListener(
       'input',
@@ -1833,6 +1794,69 @@ export function createPixelEditor({
     },
   );
   return {
+    commands(): CommandCapabilities {
+      const model = session?.model;
+      const ready =
+        presentationSlot.active &&
+        !!model &&
+        !busy &&
+        !ports.presentation.unavailable() &&
+        !gestures.active;
+      const writable =
+        ready &&
+        !model?.descriptor.layers?.items.find((layer) => layer.id === model.activeLayer)?.locked;
+      return {
+        save: {
+          enabled: ready,
+          run: save,
+          label:
+            session?.receipt && surface.classList.contains('show-art-review')
+              ? 'Confirm save'
+              : 'Save artwork…',
+        },
+        undo: {
+          enabled: ready && !!model?.undoStack.length,
+          run: () => {
+            model?.undo();
+            changed();
+          },
+        },
+        redo: {
+          enabled: ready && !!model?.redoStack.length,
+          run: () => {
+            model?.redo();
+            changed();
+          },
+        },
+        copy: {
+          enabled: ready,
+          run: () => {
+            model?.copy();
+            controls();
+          },
+        },
+        cut: { enabled: writable, run: () => operation(() => model?.cut()) },
+        paste: {
+          enabled: writable && !!model?.clipboard,
+          run: () => operation(() => model?.paste()),
+        },
+        deselect: {
+          enabled: ready && !!model?.selection,
+          run: () => {
+            if (model) {
+              model.selection = null;
+            }
+            draw();
+          },
+        },
+        horizontal: {
+          enabled: writable,
+          run: () => operation(() => model?.transform('horizontal')),
+        },
+        vertical: { enabled: writable, run: () => operation(() => model?.transform('vertical')) },
+        rotate: { enabled: writable, run: () => operation(() => model?.transform('rotate')) },
+      };
+    },
     syncNavigation,
     prepareDeparture: suspend,
     async activateScene() {

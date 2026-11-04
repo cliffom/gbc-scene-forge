@@ -55,9 +55,9 @@ Project.create(Path(sys.argv[1]),'Card artwork')
       box.x + ((x + 0.5) / width) * box.width,
       box.y + ((y + 0.5) / height) * box.height,
     );
-    await expect(page.locator('#art-undo')).toBeEnabled();
-    await page.locator('#art-undo').click();
-    await page.locator('#art-redo').click();
+    await expect(page.locator('#undo')).toBeEnabled();
+    await page.locator('#undo').click();
+    await page.locator('#redo').click();
     await expect(page.locator('#art-draft-status')).toContainText('checkpointed in this project.', {
       timeout: 60000,
     });

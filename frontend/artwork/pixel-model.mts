@@ -424,6 +424,10 @@ export class PixelModel {
     }
     this.clipboard = { width: r.width, height: r.height, pixels };
   }
+  cut() {
+    this.copy();
+    this.clear(this.area());
+  }
   private fits(r: Rectangle) {
     if (!this.inside(r) || !this.inside({ x: r.x + r.width - 1, y: r.y + r.height - 1 })) {
       throw Error(

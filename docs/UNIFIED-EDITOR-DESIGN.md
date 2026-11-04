@@ -20,9 +20,12 @@ source surface inside the shared workbench.
 Controllers keep distinct scene/pixel models and histories. Shell contributions
 supply presentation nodes and a focus callback; active-document state fences
 scene commands, focus and refresh. Leaving artwork retains its existing guarded
-checkpoint and scene-return behavior. Shared command placement, document navigation
-and richer contextual panel interaction are subsequent milestone issues; the
-initial increment keeps artwork's Save/review footer and frame/animation dock.
+checkpoint and scene-return behavior. One Documents control retains editing context;
+one command strip and document-bar Save route explicit capabilities to the active
+owner. Common shortcuts respect native text editing and modal focus. Artwork Save
+opens its exact review and requires confirmation; no duplicate footer Save remains.
+Richer contextual panel interaction is subsequent milestone scope; the bounded
+frame/animation dock remains.
 
 ## Foundation and ownership
 

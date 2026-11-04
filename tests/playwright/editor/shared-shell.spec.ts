@@ -78,6 +78,9 @@ print(s['id'])
     // Shared controls outside the former dialog must not trigger scene Undo.
     await page.locator('#toggle-inspector').focus();
     await page.keyboard.press('Control+z');
+    await expect(page.locator('#art-document-state')).toHaveText('Saved');
+    await page.keyboard.press('Control+Shift+z');
+    await expect(page.locator('#art-document-state')).toHaveText('Modified');
     await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
     await page.locator('#toggle-inspector').click();
     await expect(page.locator('#inspector-pane')).toBeHidden();
@@ -86,7 +89,7 @@ print(s['id'])
     await expect(page.locator('#inspector-pane #art-review-panel')).toBeVisible();
     const geometry = await page.locator('#art-viewport').boundingBox();
     expect(geometry?.height).toBeGreaterThanOrEqual(150);
-    const save = await page.locator('#art-save').boundingBox();
+    const save = await page.locator('#save').boundingBox();
     if (!save) {
       throw Error('Expected Save action');
     }

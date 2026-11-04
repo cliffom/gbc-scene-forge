@@ -24,7 +24,7 @@ const steps = [
   },
   {
     title: 'Save and reopen',
-    text: 'Choose Scene actions → Save scene (Ctrl/⌘ S) and wait for “Saved”. Reload the browser, then select “First scene” in the Scene dropdown to confirm your painted tiles survived. Resume this guide from the header. If a save fails, keep the page open and resolve the reported error before reloading.',
+    text: 'Choose Save scene in the document bar (Ctrl/⌘ S) and wait for “Saved”. Reload the browser, then choose “First scene” from Documents → Open another scene to confirm your painted tiles survived. Resume this guide from the header. If a save fails, keep the page open and resolve the reported error before reloading.',
     target: 'save',
   },
   {

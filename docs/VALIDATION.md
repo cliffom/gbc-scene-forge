@@ -15,6 +15,41 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Active document commands and Save (#196, milestone 22)
+
+- **Scope:** Prepared 0.33.0 working tree on `milestone/22`, based on
+  `8d8f7b5fb25f758e89eefe21fbf01f99260b9888`, checked 2026-11-03 local time
+  (2026-11-04 UTC), macOS arm64, Python 3.13.13, Node 24.22.1 and local
+  Playwright Chromium. Disposable projects; source and installed production wheel.
+- **Method:** Four new browser scenarios exercise shared pointer/keyboard commands,
+  repeated document switches/remounts, independent dirty histories, clipboard,
+  native form/modal focus, one Save location, receipt invalidation and saved-base
+  Undo. A model regression checks exact Cut/Paste, hidden RGB and frame-offset bounds.
+  Existing browser cases cover frame history, captured gestures, large-document
+  zoom/Fit, atomic selected-placement saves, external conflicts, recovery and failed
+  post-save adoption. Agent inspection at 1440×1000 and 800×640:
+  [artwork review](screenshots/document-commands/artwork-review.png),
+  [scene Save](screenshots/document-commands/scene-saved.png) and
+  [compact review](screenshots/document-commands/artwork-compact-review.png).
+- **Result:** `make lint test` passed (448 Python tests and all TypeScript suites).
+  The initial development-mode broad run passed 134 cases, failed seven and skipped
+  11 optional profiles. It exposed compact overflow, review-state refresh overwriting
+  checkpoint status, a review-mode visibility override, pointer-command focus loss,
+  and two obsolete dynamic artwork-button selectors. Those defects/fixtures were
+  corrected; all 11 focused regression cases passed. An earlier retained-context
+  test targeted a clipped pixel after the toolbar moved; it now chooses a visible
+  drawing zoom. The final consistent production-mode full browser run passed all
+  142 regular cases and skipped 11 optional profiles. Six real MCP/browser scenarios
+  passed, including concurrent saved writes and refresh. Production build, strict
+  distribution metadata, seven installed-wheel smoke tests and installed-wheel
+  first-use authoring passed. Documentation checks passed.
+- **Limits:** Synthetic automation and agent screenshot inspection do not establish
+  the user's acceptance of this increment, independent usability, prolonged drawing
+  comfort, physical-device scaling, Windows/non-Chromium support or official Tiled
+  interoperability. Optional profiling matrices were not run. No CI or publication
+  claim is made for this local increment; the requested user verification remains
+  in the single checklist below.
+
 ## Shared document navigation (#195, milestone 22)
 
 - **Scope:** Prepared 0.33.0 working tree on `milestone/22`, based on
@@ -1955,7 +1990,7 @@ Dates, revisions and environments missing from the originals remain unknown.
 
 ### Shared editor consolidation (milestone 22)
 
-- [ ] Implement and obtain the user's manual verification of #196's shared-command and Save increment before pushing it, following the requested issue-by-issue gate.
+- [ ] Obtain the user's manual verification of #196's shared-command and Save increment before pushing it to `milestone/22` and proceeding to #197, following the requested issue-by-issue gate.
 
 ### Human–agent artwork iteration (milestone 21)
 

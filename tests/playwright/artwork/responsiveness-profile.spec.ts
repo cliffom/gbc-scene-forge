@@ -226,8 +226,8 @@ p.artwork.documents.save(c)
                   const moveCounts = { ...counts };
                   const releaseMs = event('pointerup', moves - 1);
                   const releaseCounts = { ...counts };
-                  const undo = document.getElementById('art-undo'),
-                    redo = document.getElementById('art-redo');
+                  const undo = document.getElementById('undo'),
+                    redo = document.getElementById('redo');
                   const historyMs = [];
                   for (const control of [undo, redo]) {
                     const start = performance.now();
@@ -320,7 +320,7 @@ p.artwork.documents.save(c)
         expect(await thumbnailPixel(timeline)).toEqual(previous);
         await page.locator('#art-timeline summary').first().click();
         await expect.poll(() => thumbnailPixel(timeline)).toEqual([0, 255, 0, 255]);
-        await page.locator('#art-undo').click();
+        await page.locator('#undo').click();
         expect(await thumbnailPixel(strip)).toEqual(previous);
         expect(await thumbnailPixel(timeline)).toEqual(previous);
         // New rows must paint immediately when switching sequences while visible.

@@ -717,3 +717,14 @@
 #document-state[data-modified=true],#document-base-state {color:var(--accent)}
 #document-tabs>.field {display:flex;flex-direction:column;gap:6px;margin-block:16px}
 #document-tabs>.field select {width:100%;min-width:0}
+
+/* Shared active-document commands keep their position across surface changes. */
+#document-command-toolbar {display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 8px;flex:none;background:#242723;border-bottom:1px solid var(--line)}
+#document-command-toolbar .tool-group,#document-command-toolbar .command-group {display:flex;gap:2px;align-items:center}
+#document-command-toolbar .composition-tools {display:flex;gap:6px;flex-wrap:wrap;padding:0;border:0}
+#document-command-toolbar .command-group+.command-group {border-left:1px solid var(--line);padding-left:6px}
+.standalone.reviewing #document-command-toolbar {display:none}
+.standalone .document-context {flex:1;flex-wrap:nowrap}
+.document-context #document-switcher {min-width:0;flex:0 1 360px}
+.document-context #document-state {flex:none}
+.document-actions {flex:none}

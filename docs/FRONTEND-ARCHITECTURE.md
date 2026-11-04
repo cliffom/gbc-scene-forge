@@ -81,9 +81,15 @@ and stops outgoing playback. Scene view retention belongs to its viewport
 controller; artwork controls, selection and view belong to its retained session.
 Artwork checkpoints must succeed before a scene or project departure. The shared
 operation gate rejects duplicate navigation, and lifetime checks prevent disposed
-responses from restoring a document. The contextual pixel toolbar, artwork Save
-footer and bounded frame dock remain; subsequent milestone issues refine commands
-and panels. Artwork layer/properties and exact-change review currently contribute
+responses from restoring a document. `editor/document-commands.mts` binds the shared command strip and document-bar Save
+once per mount. Fresh typed capabilities come only from the active scene/artwork
+owner; model, history, clipboard and persistence stay domain-owned. The same route
+handles common shortcuts from outside either surface, excluding text editing and
+modal/popover focus. Scene dirty equality is reused from the current update;
+capabilities are checked again at invocation. Artwork Save retains exact review,
+confirmation, receipt invalidation, checkpoint and acknowledgment adoption.
+The contextual pixel toolbar and bounded frame dock remain; subsequent milestone
+issues refine panels. Artwork layer/properties and exact-change review currently contribute
 their existing controls to the shared Inspector. Review opens it when collapsed.
 Retained artwork controls
 include both its surface and Inspector; they never snapshot scene controls.

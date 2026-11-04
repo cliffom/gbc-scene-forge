@@ -7,6 +7,7 @@ export function createArtworkWorkspace(
   lifetime: EditorLifetime,
   surface: HTMLElement,
   changed: () => void,
+  reviewChanged: () => void,
 ) {
   const inspector = element('art-inspector-content', HTMLElement);
   for (const node of [
@@ -76,9 +77,7 @@ export function createArtworkWorkspace(
       panel.hidden = !open;
     }
     surface.classList.toggle('show-art-review', open);
-    if (!open) {
-      button('art-save').textContent = 'Save…';
-    }
+    reviewChanged();
     if (open) {
       element('art-layer-panel', HTMLElement).hidden = true;
       button('art-layers-toggle').setAttribute('aria-expanded', 'false');
@@ -88,7 +87,7 @@ export function createArtworkWorkspace(
   }
   lifetime.assign(button('art-review-close'), 'onclick', () => {
     reviewPanel(false);
-    button('art-save').focus();
+    button('save').focus();
   });
   lifetime.assign(button('art-properties-toggle'), 'onclick', () => {
     const panel = element('art-properties', HTMLElement);

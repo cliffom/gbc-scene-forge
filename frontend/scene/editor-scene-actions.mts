@@ -380,8 +380,6 @@ export function createSceneActionsController({
     status.textContent = 'Scene saved.';
   }
 
-  lifetime.assign(button('save'), 'onclick', () => void ports.run(saveScene));
-
   async function navigateProject() {
     await ports.beforeProjectChange();
     if (lifetime.disposed) {
@@ -434,18 +432,6 @@ export function createSceneActionsController({
     if (activity.busy) {
       event.preventDefault();
     }
-  });
-
-  lifetime.assign(button('undo'), 'onclick', () => {
-    sceneSelection.selection = null;
-    sceneSession.editor?.undo();
-    ports.draw();
-  });
-
-  lifetime.assign(button('redo'), 'onclick', () => {
-    sceneSelection.selection = null;
-    sceneSession.editor?.redo();
-    ports.draw();
   });
 
   lifetime.assign(button('revert'), 'onclick', async () => {
@@ -767,6 +753,7 @@ export function createSceneActionsController({
 
   lifetime.assign(button('empty-create'), 'onclick', showCreate);
   return {
+    save: () => void ports.run(saveScene),
     requestSceneOpen,
     openInitialScene,
     closeScene,

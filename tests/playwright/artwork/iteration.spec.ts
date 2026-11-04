@@ -57,7 +57,7 @@ p.artwork.documents.save(c)
   await page.mouse.wheel(0, 10000);
   await expect(page.locator('#art-zoom')).toHaveValue(minimum);
   await expect(page.locator('#art-document-state')).toHaveText('Saved');
-  await expect(page.locator('#art-undo')).toBeDisabled();
+  await expect(page.locator('#undo')).toBeDisabled();
   await page.locator('#art-zoom').selectOption('2');
   await (await revealArtworkControl(page, 'art-layer-add')).click();
   await expect(page.locator('#art-layer option')).toHaveCount(2);
@@ -73,19 +73,19 @@ p.artwork.documents.save(c)
   await page.locator('#art-color').fill('#ff0000');
   await page.locator('#art-canvas').click({ position: { x: 12, y: 12 } });
   await expect(page.locator('#art-document-state')).toHaveText('Modified');
-  await page.locator('#art-undo').click();
-  await page.locator('#art-redo').click();
+  await page.locator('#undo').click();
+  await page.locator('#redo').click();
   await page.locator('#art-layer-locked').check();
   await page.locator('#art-layer-update').click();
   await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
   // Several local Undo steps can coalesce before their next durable checkpoint.
   for (let i = 0; i < 3; i++) {
-    await page.locator('#art-undo').click();
+    await page.locator('#undo').click();
   }
   await expect(page.locator('#art-layer-name')).toHaveValue('Layer');
   await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
   for (let i = 0; i < 3; i++) {
-    await page.locator('#art-redo').click();
+    await page.locator('#redo').click();
   }
   await expect(page.locator('#art-layer-locked')).toBeChecked();
   await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
@@ -105,7 +105,7 @@ p.artwork.documents.save(c)
   await expect(red).toHaveCount(1);
   await expect(page.locator('#art-layer-opacity')).toHaveValue('128');
   await expect(page.locator('#art-document-state')).toHaveText('Saved');
-  await expect(page.locator('#art-undo')).toBeDisabled();
+  await expect(page.locator('#undo')).toBeDisabled();
   await page.setViewportSize({ width: 760, height: 800 });
   await expect(page.locator('#art-layer-update')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(

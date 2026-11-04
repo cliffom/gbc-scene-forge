@@ -10,6 +10,8 @@ and publication procedures in [releasing](RELEASING.md).
 
 One document control now navigates scenes and retained artwork, preserving local
 editing context and showing local state separately from detected external changes.
+One Save location and shared command strip follow the active document; artwork
+retains exact review and explicit confirmation.
 
 [Release notes](RELEASE-0.33.0.md). Begin milestone 22 with a shared workbench and
 Inspector for scenes and artwork, contextual panel contributions, and explicit

@@ -20,8 +20,8 @@ consistent navigation, contextual commands, Library, Inspector and optional
 frame/animation dock. Preserve domain-owned history, exact artwork review,
 revision guards, recoverable local work and browser/MCP coexistence.
 
-Complete retained-document navigation acceptance (#195) on the shared shell, then
-unify commands and saving (#196) and contextual panels (#197).
+Complete shared-command and Save acceptance (#196), then integrate contextual
+panels (#197).
 Library/source/variation workflows (#198) integrate those
 pieces. Finish with integrated workflow and layout validation (#199). Each
 implementation issue includes its own regression coverage and documentation.

@@ -21,8 +21,9 @@ scene canvas focus and the scene Inspector; scene edits and Undo remain retained
 for ordinary shared artwork edits. Selected-placement variations retain their
 separate atomic save and scene-history behavior described below.
 
-The shared shell keeps artwork's existing Save footer and frame/animation dock
-while milestone 22 proceeds through its next increments.
+The document bar has one Save location for either document. The shared command
+strip above the contextual drawing tools contains history, clipboard, deselection
+and transforms. The bounded frame/animation dock remains below the canvas.
 
 ## Layers, agent exchange and navigation
 
@@ -143,11 +144,12 @@ Tab reaches the selected tool and arrow keys choose adjacent tools. A pointer
 choice returns focus to the canvas. History, clipboard and transforms use the
 same icon style as scene commands; gold marks the selected drawing tool.
 
-The toolbar groups tools, history/transforms, Color/Opacity and Pan/Fit/Zoom on
-one row when space permits. Groups wrap together at smaller widths; the **Palette ▾**
+The shared strip holds history, clipboard and transforms. The contextual toolbar
+groups drawing tools, Color/Opacity and Pan/Fit/Zoom beside the canvas. Groups wrap
+together at smaller widths; the **Palette ▾**
 dropdown opens a scrollable 12-column swatch grid. The Inspector identifies shared
 artwork, new artwork and selected-placement variations; the document bar shows
-local Saved/Modified/New state. Save stays beneath the canvas. **Document actions**
+local Saved/Modified/New state. Save stays in the document bar. **Document actions**
 contains download, close/discard and **Drawing & keyboard help**. **Fit** chooses
 the largest available zoom that fits the current sheet or frame and centers it.
 
@@ -198,7 +200,16 @@ fits its dimensions. Switching between open documents restores their detail sett
 
 Each stroke, fill, paste, move or transform is one undo operation. Artwork keeps up
 to 100 operations within a 64 MiB history budget using changed pixel blocks, independently of scene history.
-Use Undo/Redo or ⌘/Ctrl Z and Shift Z (Ctrl Y also redoes); ⌘/Ctrl C/V copies/pastes.
+Use the shared Undo/Redo buttons or ⌘/Ctrl Z and Shift Z (Ctrl Y also redoes).
+⌘/Ctrl C/X/V copies, cuts and pastes pixels in the active artwork selection, or the
+current frame/sheet when there is no selection. Cut clears that area and retains
+its exact RGBA values in the artwork clipboard. Scene and artwork clipboards and
+histories remain independent. **Duplicate** (⌘/Ctrl D) is a scene command; it is
+disabled for artwork. Open **Transform selection** for flips and 90° rotation.
+Pointer commands return focus to the active canvas; keyboard button activation
+keeps its focus. Shortcuts work from shared controls as well as the canvas.
+Text fields retain
+native editing/clipboard shortcuts, and modal dialogs retain keyboard focus.
 Undo/Redo keeps the active frame. If a restored selection extends outside that
 frame, it is cleared so clipboard and transform commands use the active frame.
 Selections within the frame, or anywhere in Sheet view, remain selected.
@@ -208,7 +219,7 @@ Keyboard shortcuts in text/color/number inputs retain their native behavior.
 
 ## Review, save and recover
 
-**Save…** opens a focused change review. It compares the saved and proposed artwork and reports the
+**Save artwork…** in the document bar opens a focused change review. It compares the saved and proposed artwork and reports the
 number of affected saved references across scenes, stamps and definitions. With
 **Preview in the open scene** checked, the preview includes local unsaved scene
 edits, within a 256 × 256 view. Expand **Scene preview position** to set pixel X/Y. Existing placements retain
@@ -348,7 +359,11 @@ into looping Tiled animations. Scene preview returns to **Play** when a
 non-looping sequence finishes, including a one-frame pose
 ([completed preview](../images/non-looping-preview-complete.png)).
 
-Document navigation: [shared artwork workspace](../screenshots/document-navigation/artwork.png),
+Shared commands: [artwork review](../screenshots/document-commands/artwork-review.png),
+[compact review](../screenshots/document-commands/artwork-compact-review.png) and
+[scene Save](../screenshots/document-commands/scene-saved.png).
+
+Earlier document navigation: [shared artwork workspace](../screenshots/document-navigation/artwork.png),
 [Documents chooser](../screenshots/document-navigation/documents.png) and
 [compact chooser](../screenshots/document-navigation/documents-compact.png).
 

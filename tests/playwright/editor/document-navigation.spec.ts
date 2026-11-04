@@ -103,6 +103,7 @@ test('one document bar retains dirty scene, layers, selection, tools and sheet c
   await page.locator('#art-zoom').selectOption('32');
   await expect(page.locator('#document-state')).toHaveText('Modified');
   await page.locator('[data-asset="player/f0"]').click();
+  await page.locator('#art-zoom').selectOption('16');
   await page.locator('#art-frame').selectOption('f1');
   await page.locator('#art-frame-view').click();
   await (await revealArtworkControl(page, 'art-sequence')).selectOption('walk');
@@ -144,9 +145,9 @@ test('one document bar retains dirty scene, layers, selection, tools and sheet c
       .locator('#art-canvas')
       .evaluate((n) => (n instanceof HTMLCanvasElement ? n.toDataURL() : '')),
   ).toBe(selected);
-  await page.locator('#art-undo').click();
+  await page.locator('#undo').click();
   await expect(page.locator('#document-state')).toHaveText('Saved');
-  await page.locator('#art-redo').click();
+  await page.locator('#redo').click();
   await expect(page.locator('#document-state')).toHaveText('Modified');
   await page.setViewportSize({ width: 800, height: 640 });
   await page.locator('#document-switcher').click();
@@ -178,10 +179,10 @@ c=a.edit(c,[dict(x=0,y=0,rgba=[255,0,0,255])]);a.save(c)
   await page.locator('#art-canvas').focus();
   await expect(page.locator('#document-base-state')).toHaveText('Saved base changed externally');
   await expect(page.locator('#document-state')).toHaveText('Modified');
-  await page.locator('#art-undo').click();
+  await page.locator('#undo').click();
   await expect(page.locator('#document-state')).toHaveText('Saved');
   await expect(page.locator('#document-base-state')).toBeVisible();
-  await page.locator('#art-redo').click();
+  await page.locator('#redo').click();
   await expect(page.locator('#document-state')).toHaveText('Modified');
 });
 

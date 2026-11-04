@@ -6,9 +6,9 @@ by what they affect. The established dark colors and accent remain the visual
 system; hierarchy comes from grouping, spacing and clear labels.
 
 - **Document context:** project and scene selection, save state and two command
-  groups. Scene actions starts with Save scene and its keyboard shortcut, followed
-  by scene lifecycle commands; Project tools starts with Export, followed by world
-  and diagnostic work. Separate destructive commands from ordinary actions.
+  groups, plus a single contextual Save entry with its keyboard shortcut.
+  Scene actions contains scene lifecycle commands; Project tools starts with Export,
+  followed by world and diagnostic work. Separate destructive commands from ordinary actions.
 - **Pane edges:** independent Library and Inspector chevrons sit in the open pane
   headers, leaving no extra column between pane and canvas. Closing a pane replaces
   it with a 24px edge handle; the arrow reverses, with Show/Hide tooltips and
@@ -81,9 +81,10 @@ One Documents button shows the active name and kind, with Saved/Modified/New
 beside it and a separate detected-external-change warning. Its chooser offers the
 active scene, other saved scenes and retained artwork. Switching preserves local
 context and independent history; failed checkpoints block departure. The artwork
-Save footer and frame/animation dock remain. Subsequent milestone 22 issues refine
-common command placement and panel controls. Setup is a focused surface in the
-workbench; dialogs remain appropriate for modal confirmations and document choice.
+frame/animation dock remains. Save occupies the document bar and shared history,
+clipboard, deselection and transform commands occupy a stable strip above contextual
+tools. Subsequent milestone 22 issues refine panel controls. Setup is a focused
+surface in the workbench; dialogs remain appropriate for modal confirmations and document choice.
 
 ## Pixel editor layout
 
@@ -102,9 +103,9 @@ the labeled selector. Properties and exact-change review are optional content in
 Library and Inspector retain their common collapse handles at compact sizes; the
 document switcher retains New/Browse navigation.
 
-Save opens change review and explicit confirmation. Keep its footer reachable
-while the animation dock or comparison scrolls. A successful save retains the
-current document, history and viewport and updates Saved/Modified/New state.
+Save opens change review and explicit confirmation in the same document-bar location,
+remaining reachable while the animation dock or comparison scrolls. A successful
+save retains the current document, history and viewport and updates Saved/Modified/New state.
 Choosing the scene in Documents retains artwork; Close/discard removes it. Document actions contains
 less frequent download/discard/help commands. Preserve revision guards, review
 invalidation, checkpoints and independent scene history. Bounds checks and agent

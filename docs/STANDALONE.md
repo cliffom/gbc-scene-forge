@@ -103,9 +103,13 @@ not included. A browser remains necessary even when Python runs headlessly.
 ## Editor layout
 
 The document bar keeps the project selector, active Documents button, local state
-and two command groups. **Scene actions** starts with **Save scene** (Ctrl/⌘ S), followed by create,
-rename, duplicate, resize/crop, revert and delete. **Project tools** starts with
+and one contextual **Save scene** / **Save artwork…** button (Ctrl/⌘ S).
+Artwork Save opens review, then **Confirm save** commits the reviewed pixels.
+**Scene actions** contains create, rename, duplicate, resize/crop, revert and delete. **Project tools** starts with
 **Export…**, followed by World view, Diagnostics and optional GBC palette checks.
+The shared strip above the contextual drawing tools routes Undo/Redo, clipboard,
+deselection and transforms to the active document; unavailable commands are disabled.
+Text fields retain native editing shortcuts and modal dialogs retain focus.
 A warning beside Project tools remains visible when a scene
 exceeds its configured palette budget. Open a command group with Enter or Space;
 Tab moves between its buttons and Escape dismisses it.

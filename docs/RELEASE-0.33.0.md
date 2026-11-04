@@ -1,7 +1,7 @@
 # Scene Forge 0.33.0
 
 Prepared feature release for [milestone 22](https://github.com/cliffom/gbc-scene-forge/milestone/22).
-Publication is separate. This draft currently describes the shell and navigation increments;
+Publication is separate. This draft currently describes the shell, navigation and command increments;
 later milestone issues extend the release before final publication.
 
 ## Changes
@@ -13,13 +13,18 @@ later milestone issues extend the release before final publication.
   the active document. Artwork retains its existing models, history, pixel targeting,
   guarded review/save, recoverable drafts and browser/MCP discovery.
 - Returning to a scene restores its canvas focus and contextual Inspector. Artwork
-  creation also works without a scene. The initial increment retains the artwork
-  Save footer and frame/animation dock.
+  creation also works without a scene. The bounded frame/animation dock remains.
 - One Documents control navigates between the active scene, other saved scenes and
   retained artwork. The bar shows the active name, document kind and local state,
   with detected external saved-base changes shown separately. Switching preserves
   editing context and independent history; project departure waits for artwork
   checkpoints, and outgoing preview playback stops.
+
+- A single document-bar Save action and shared history/clipboard/transform strip
+  follow the active scene or artwork, including shortcuts from shared controls.
+  Artwork Save opens exact-change review and requires confirmation in that same
+  location. Pixel Cut/Paste preserves exact RGBA; text editing and modal focus
+  retain native keyboard behavior. Scene and artwork histories remain independent.
 
 ## Upgrade and compatibility
 
