@@ -333,6 +333,9 @@ test('Documents is modal, dismisses predictably and fits long names at compact w
   await activateScene(page);
   await page.locator('[data-asset="player/f0"]').click();
   const trigger = page.locator('#document-switcher');
+  // Library opening now paints a loading frame before restoring a retained tab.
+  // Keyboard focus must wait until the document transition releases its gate.
+  await expect(trigger).toBeEnabled();
   const chooser = page.locator('#document-tabs');
   const requests: string[] = [];
   page.on('request', (r) => {

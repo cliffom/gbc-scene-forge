@@ -103,6 +103,13 @@ tools. Raster layers and document/frame properties use shared Inspector sections
 color assistance is launched from the Inspector. Setup is a focused
 surface in the workbench; dialogs remain appropriate for modal confirmations and document choice.
 
+Library opening shows the selected asset in a dedicated loading surface before
+expensive work. Cancel opening returns to retained work; another Library selection
+supersedes the read. A failed open offers retry and return actions. The source/copy
+chooser appears for explicit source actions and imported artwork that needs a copy.
+[Desktop loading](screenshots/artwork-opening/desktop.png) ·
+[Compact loading](screenshots/artwork-opening/compact.png)
+
 ## Pixel editor layout
 
 Use one active-document switcher in the existing context bar; do not reserve an

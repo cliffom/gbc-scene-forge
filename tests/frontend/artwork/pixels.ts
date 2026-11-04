@@ -595,3 +595,58 @@ assert.deepEqual(layerSheetSession.model.color({ x: 1, y: 1 }), [0, 0, 0, 0]);
 assert.equal(layerSheetSession.changed, true);
 layerSheetSession.model.redo();
 assert.equal(layerSheetSession.changed, false);
+
+// Layer metadata rejection short-circuits raster work; clean reads retain every
+// distinct source baseline and still observe direct hidden-RGB byte mutations.
+const threeLayers = new PixelModel(hiddenLayerCandidate);
+const thirdLayer = { ...effectLayer, id: '66666666-6666-4666-8666-666666666666', name: 'Third' };
+threeLayers.apply(() => threeLayers.setLayers([baseLayer, effectLayer, thirdLayer]));
+threeLayers.apply(() => threeLayers.put({ x: 2, y: 0 }, [8, 9, 10, 0]));
+const threeCandidate = decodeCandidate({
+  ...candidate,
+  descriptor: threeLayers.descriptor,
+  rgba: encoded(threeLayers.composite()),
+  layer_rgba: threeLayers.layerEncoding(),
+});
+const three = new ArtworkSession(threeCandidate, api);
+const decodeBefore = globalThis.atob;
+let sourceDecodes = 0;
+globalThis.atob = (raw) => {
+  sourceDecodes++;
+  return decodeBefore(raw);
+};
+const compareComposite = three.model.composite.bind(three.model);
+three.model.composite = () => {
+  throw Error('Dirty checks must not composite layer sources');
+};
+try {
+  three.model.apply(() =>
+    three.model.setLayers([{ ...baseLayer, visible: false }, effectLayer, thirdLayer]),
+  );
+  assert.equal(three.changed, true);
+  assert.equal(three.uncheckpointed, true);
+  assert.equal(sourceDecodes, 0, 'Metadata changes never decode a pixel baseline');
+  three.model.undo();
+  assert.equal(three.changed, false);
+  const warmed = sourceDecodes;
+  assert.ok(warmed >= 2);
+  for (let read = 0; read < 10; read++) {
+    assert.equal(three.changed, false);
+  }
+  assert.equal(
+    sourceDecodes,
+    warmed,
+    'All source baselines fit; repeated reads never decode them again',
+  );
+  for (const layer of [baseLayer, effectLayer, thirdLayer]) {
+    three.model.selectLayer(layer.id);
+    const previous = three.model.pixels[0];
+    three.model.pixels[0] ^= 1;
+    assert.equal(three.changed, true, 'Direct hidden/visible source edits are observed');
+    three.model.pixels[0] = previous;
+    assert.equal(three.changed, false);
+  }
+} finally {
+  globalThis.atob = decodeBefore;
+  three.model.composite = compareComposite;
+}

@@ -85,6 +85,10 @@ export function createPixelEditor({
     () => presentationSlot.active,
   );
   let busy = false;
+  let loading: { label: string; failed: boolean } | null = null;
+  let libraryOpen: { controller: AbortController; done: Promise<void> } | null = null;
+  let retryOpen: (() => void) | null = null;
+  let libraryRequest = 0;
   let sources: Source[] = [];
   let unavailableSource: Source | null = null;
   let inventoryRevision = workspaceState.revision;
@@ -161,6 +165,7 @@ export function createPixelEditor({
       ports.presentation.prepareSceneDeparture();
       presentationSlot.activate();
     } else {
+      loading = null;
       ports.presentation.scene();
     }
     reflectOpacity();
@@ -229,6 +234,7 @@ export function createPixelEditor({
     if (!saved) {
       return;
     }
+    loading = null;
     session = current;
     sheetEditor.sync();
     documents.restoreControls(current);
@@ -521,15 +527,27 @@ export function createPixelEditor({
       ),
     ]);
     for (const control of controls) {
-      const disabled = busy || control.dataset.unavailable === 'true';
+      const disabled =
+        (busy && control.id !== 'art-loading-cancel') || control.dataset.unavailable === 'true';
       if (control.disabled !== disabled) {
         control.disabled = disabled;
       }
     }
-    const active = session !== null;
+    const active = session !== null && !loading;
     inspector.hidden = !active;
-    element('art-setup', HTMLElement).hidden = active;
+    element('art-setup', HTMLElement).hidden = active || loading !== null;
     element('art-editor', HTMLElement).hidden = !active;
+    element('art-loading', HTMLElement).hidden = !loading;
+    surface.setAttribute('aria-busy', String(!!loading && !loading.failed));
+    if (loading) {
+      element('art-loading-status', HTMLElement).textContent = loading.failed
+        ? `Could not open ${loading.label}.`
+        : `Opening ${loading.label}…`;
+      button('art-loading-retry').hidden = !loading.failed;
+      button('art-loading-cancel').textContent = loading.failed
+        ? 'Return to document'
+        : 'Cancel opening';
+    }
     if (!active) {
       const source = sources[Number(select('art-source').value)];
       select('art-source').disabled = busy || !sources.length;
@@ -918,6 +936,9 @@ export function createPixelEditor({
   async function inventory(preserve = false, eligible = () => true) {
     const previous = sources[Number(select('art-source').value)] ?? unavailableSource;
     const project = await api('project', record);
+    if (!eligible()) {
+      return;
+    }
     const revision = string(project.revision);
     const result = await api('artwork-list', record, { project_revision: revision });
     if (!eligible()) {
@@ -984,6 +1005,7 @@ export function createPixelEditor({
     if (lifetime.disposed) {
       return;
     }
+    loading = null;
     session = new ArtworkSession(candidate, api, original);
     documents.add(session);
     artworkViewport.authoringTool();
@@ -1056,6 +1078,7 @@ export function createPixelEditor({
         );
       }
       session = null;
+      loading = null;
       setup(mode);
       reviewPanel(false);
       element('artwork-heading', HTMLElement).textContent =
@@ -1082,63 +1105,172 @@ export function createPixelEditor({
       void show('existing');
     });
   }
+  /** Read-only loading can be abandoned; suspension/checkpoint writes always finish. */
+  async function openLibrary(detail: Record<string, unknown>) {
+    const request = ++libraryRequest;
+    if (libraryOpen) {
+      const previous = libraryOpen;
+      previous.controller.abort();
+      await previous.done;
+    }
+    if (
+      request !== libraryRequest ||
+      busy ||
+      ports.presentation.unavailable() ||
+      lifetime.disposed
+    ) {
+      return;
+    }
+    const controller = new AbortController();
+    const signal = AbortSignal.any([controller.signal, lifetime.signal]);
+    let finished!: () => void;
+    const done = new Promise<void>((resolve) => {
+      finished = resolve;
+    });
+    const owner = { controller, done };
+    libraryOpen = owner;
+    const outgoing = session;
+    const wasArtwork = presentationSlot.active;
+    function wait<T>(promise: Promise<T>): Promise<T> {
+      return new Promise<T>((resolve, reject) => {
+        const abort = () => reject(new DOMException('Artwork opening cancelled.', 'AbortError'));
+        signal.addEventListener('abort', abort, { once: true });
+        promise.then(resolve, reject).finally(() => signal.removeEventListener('abort', abort));
+        if (signal.aborted) {
+          abort();
+        }
+      });
+    }
+    try {
+      await execute(async () => {
+        remember();
+        loading = { label: `${string(detail.atlas)} / ${string(detail.region)}`, failed: false };
+        element('artwork-heading', HTMLElement).textContent = loading.label;
+        workspace(true);
+        controls();
+        // Let the named loading state paint before suspension, decoding or raster work.
+        try {
+          await wait(
+            new Promise<void>((resolve) => lifetime.frame(() => lifetime.frame(() => resolve()))),
+          );
+          await suspend();
+          signal.throwIfAborted();
+          const existing = documents
+            .sessions()
+            .find((current) => current.model.descriptor.atlas_id === detail.atlas);
+          if (existing && detail.action !== 'source-actions') {
+            loading = null;
+            restore(existing);
+            focusFrame(string(detail.region));
+            return;
+          }
+          if (documents.size >= 16) {
+            throw Error('Save or discard an open artwork document first (limit 16).');
+          }
+          session = null;
+          reviewPanel(false);
+          await wait(inventory(false, () => !signal.aborted));
+          signal.throwIfAborted();
+          const index = sources.findIndex(
+            (source) => source.atlas_id === detail.atlas && source.region === detail.region,
+          );
+          const source = sources[index];
+          if (!source) {
+            throw Error('This source is no longer available. Choose another Library source.');
+          }
+          unavailableSource = null;
+          select('art-source').value = String(index);
+          if (source && detail.action === 'source-actions') {
+            loading = null;
+            setup('existing');
+            presentation.prepareIdentity(`${source.region} copy`);
+            message(
+              'Choose shared editing or name an independent copy. Variations require matching selections in a saved scene.',
+            );
+            controls();
+            select('art-source').focus();
+          } else if (source?.target) {
+            const candidate = await wait(
+              api(
+                'artwork-open',
+                (value) => {
+                  signal.throwIfAborted();
+                  return decodeCandidate(value);
+                },
+                {
+                  target: source.target,
+                  project_revision: inventoryRevision,
+                  artwork_revision: source.artwork_revision,
+                },
+              ),
+            );
+            signal.throwIfAborted();
+            loading = null;
+            start(candidate);
+            focusFrame(string(detail.region));
+          } else {
+            loading = null;
+            setup('existing');
+            presentation.prepareIdentity(`${string(detail.region)} copy`);
+            message('Imported artwork: copy the selected source to native artwork to edit.');
+            controls();
+            input('art-name').focus();
+          }
+        } catch (error) {
+          if (lifetime.disposed) {
+            return;
+          }
+          if (signal.aborted && error instanceof DOMException && error.name === 'AbortError') {
+            loading = null;
+            session = outgoing;
+            if (outgoing && wasArtwork) {
+              restore(outgoing);
+            } else {
+              workspace(false);
+              tabs();
+            }
+          } else {
+            session = outgoing;
+            loading = { label: `${string(detail.atlas)} / ${string(detail.region)}`, failed: true };
+            retryOpen = () => {
+              void openLibrary(detail);
+            };
+            feedback.error(
+              `Could not open artwork: ${feedbackText(error)} Retry opening or choose another Library asset.`,
+              'artwork-open',
+            );
+            controls();
+          }
+        }
+      }, 'artwork-open');
+    } finally {
+      if (libraryOpen === owner) {
+        libraryOpen = null;
+      }
+      finished();
+    }
+  }
+  lifetime.assign(button('art-loading-cancel'), 'onclick', () => {
+    if (libraryOpen) {
+      libraryOpen.controller.abort();
+    } else {
+      loading = null;
+      if (session) {
+        restore(session);
+      } else {
+        workspace(false);
+        tabs();
+        controls();
+      }
+    }
+  });
+  lifetime.assign(button('art-loading-retry'), 'onclick', () => retryOpen?.());
   element('palette', HTMLElement).addEventListener(
     'open-artwork',
     (event) => {
-      if (!(event instanceof CustomEvent)) {
-        return;
+      if (event instanceof CustomEvent) {
+        void openLibrary(record(event.detail));
       }
-      const detail = record(event.detail);
-      void execute(async () => {
-        await suspend();
-        const existing = documents
-          .sessions()
-          .find((current) => current.model.descriptor.atlas_id === detail.atlas);
-        if (existing && detail.action !== 'source-actions') {
-          restore(existing);
-          focusFrame(string(detail.region));
-          return;
-        }
-        if (documents.size >= 16) {
-          throw Error('Save or discard an open artwork document first (limit 16).');
-        }
-        session = null;
-        setup('existing');
-        reviewPanel(false);
-        workspace(true);
-        await inventory();
-        const index = sources.findIndex(
-          (source) => source.atlas_id === detail.atlas && source.region === detail.region,
-        );
-        const source = sources[index];
-        if (!source) {
-          throw Error('This source is no longer available. Choose another Library source.');
-        }
-        unavailableSource = null;
-        select('art-source').value = String(index);
-        if (source && detail.action === 'source-actions') {
-          presentation.prepareIdentity(`${source.region} copy`);
-          message(
-            'Choose shared editing or name an independent copy. Variations require matching selections in a saved scene.',
-          );
-          controls();
-          select('art-source').focus();
-        } else if (source?.target) {
-          start(
-            await api('artwork-open', decodeCandidate, {
-              target: source.target,
-              project_revision: inventoryRevision,
-              artwork_revision: source.artwork_revision,
-            }),
-          );
-          focusFrame(string(detail.region));
-        } else {
-          presentation.prepareIdentity(`${string(detail.region)} copy`);
-          message('Imported artwork: copy the selected source to native artwork to edit.');
-          controls();
-          input('art-name').focus();
-        }
-      });
     },
     { signal: lifetime.signal },
   );

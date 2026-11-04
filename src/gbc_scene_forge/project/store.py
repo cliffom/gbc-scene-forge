@@ -73,6 +73,9 @@ class ProjectStore:
     def __init__(self, root: str | Path) -> None:
         self.root = Path(root).absolute()
         self.transactions = Transactions(self.root, ".forge/history")
+        # A proof of native decoding/composition for one exact manifest and its
+        # declared digests. Every current() call still hashes every file's bytes.
+        self._verified_native_revision: str | None = None
 
     def read(self) -> tuple[NativeDocument, str]:
         data = safe_path(self.root, MANIFEST).read_bytes()
@@ -119,6 +122,8 @@ class ProjectStore:
                 raise Conflict(
                     f"Project asset changed on disk: {path}. Restore it before continuing."
                 )
+        if self._verified_native_revision == current:
+            return document
         for entry in document["atlases"].values():
             if "editable" in entry:
                 descriptor = editable.read_descriptor(
@@ -130,6 +135,7 @@ class ProjectStore:
                 layers.verify(
                     descriptor, pixels, lambda path: safe_path(self.root, path).read_bytes()
                 )
+        self._verified_native_revision = current
         return document
 
     def commit(

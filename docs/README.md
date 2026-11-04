@@ -69,7 +69,11 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 - [Editor responsiveness and resource measurements (#160–#164)](evaluations/editor-responsiveness.md)
 
+- [Artwork opening and layered visibility (#202, #207)](evaluations/artwork-opening.md)
+
 ## Release notes
+
+- [Scene Forge 0.33.3](RELEASE-0.33.3.md) — artwork opening and layer responsiveness.
 
 - [Scene Forge 0.33.2](RELEASE-0.33.2.md) — dismissible editor notifications.
 

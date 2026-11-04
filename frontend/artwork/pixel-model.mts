@@ -8,7 +8,12 @@ export type Rectangle = Point & { width: number; height: number };
 export type PixelTool =
   'pencil' | 'erase' | 'fill' | 'pick' | 'line' | 'rectangle' | 'select' | 'move';
 export function bytes(encoded: string) {
-  return Uint8ClampedArray.from(atob(encoded), (c) => c.charCodeAt(0));
+  const raw = atob(encoded);
+  const result = new Uint8ClampedArray(raw.length);
+  for (let i = 0; i < raw.length; i++) {
+    result[i] = raw.charCodeAt(i);
+  }
+  return result;
 }
 export function encoded(pixels: Uint8ClampedArray) {
   const chunks: string[] = [];
@@ -63,6 +68,19 @@ export class PixelModel {
   }
   layerEncoding() {
     return Object.fromEntries([...this.layerData()].map(([id, pixels]) => [id, encoded(pixels)]));
+  }
+  /** Compare live sources without cloning them; direct buffer edits remain observable. */
+  layersMatch(
+    value: Record<string, string>,
+    matches: (pixels: Uint8ClampedArray, raw: string) => boolean,
+  ) {
+    if (this.activeLayer) {
+      this.layerPixels.set(this.activeLayer, this.pixels);
+    }
+    return (
+      this.layerPixels.size === Object.keys(value).length &&
+      [...this.layerPixels].every(([id, pixels]) => value[id] && matches(pixels, value[id]))
+    );
   }
   composite() {
     return this.descriptor.layers ? composite(this.descriptor, this.layerData()) : this.pixels;

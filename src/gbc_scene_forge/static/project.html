@@ -381,6 +381,11 @@
     <div class="dialog-actions"><button id="conversion-close">Cancel</button><button id="conversion-review">Review mapping</button><button id="conversion-save" disabled>Replace reviewed placements</button></div>
   </dialog>
   <section id="artwork-surface" class="editor-surface" aria-labelledby="artwork-heading" hidden>
+    <div id="art-loading" class="art-loading" hidden>
+      <p id="art-loading-status" role="status" aria-live="polite"></p>
+      <p id="art-loading-help" class="hint">Your open documents are retained.</p>
+      <div class="art-row"><button id="art-loading-retry" hidden>Retry opening</button><button id="art-loading-cancel">Cancel opening</button></div>
+    </div>
     <header id="art-inspector-actions" class="art-heading"><span id="art-scope-label" class="muted"></span><div class="art-heading-actions"><button id="art-layers-toggle" aria-expanded="false" aria-controls="art-layer-panel">Layers</button><button id="art-properties-toggle" aria-expanded="false" aria-controls="art-properties">Properties</button></div></header>
     <div id="art-setup">
     <details id="art-handoff"><summary>Agent candidates</summary><p>Inspect unpublished snapshots, then adopt a separate editable copy. Saved artwork is unchanged. Existing documents and their Undo histories are retained.</p><button id="art-handoff-list" type="button">Refresh candidates</button><div id="art-handoff-candidates"></div></details>
