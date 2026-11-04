@@ -22,6 +22,10 @@ system; hierarchy comes from grouping, spacing and clear labels.
 - **Library:** Artwork, Objects and Stamps are separate authoring categories.
   Keep search and filters with artwork, definitions with objects, and stamp
   selection/placement together. Ordinary refreshes preserve the chosen category.
+  Artwork rows show the source name inside each card, without repeated headings
+  above cards or generic region/kind labels.
+  Source actions keeps shared editing, copies, updates and deletion with the
+  chosen Library source; the Inspector does not repeat the project asset inventory.
 - **Canvas:** group drawing tools, history, clipboard and selection commands in one
   compact toolbar. Keep zoom, review and fit on the first row; use a container-width
   disclosure for secondary commands instead of automatically adding rows. At the

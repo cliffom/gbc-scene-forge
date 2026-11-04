@@ -55,6 +55,27 @@ export function createArtworkLayerControls(
       }),
     { signal: lifetime.signal },
   );
+  for (const field of ['visible', 'locked'] as const) {
+    input(`art-layer-${field}`).addEventListener(
+      'change',
+      () => {
+        const checked = input(`art-layer-${field}`).checked;
+        ports.cancelGesture();
+        ports.operation(() => {
+          const model = ports.current();
+          if (!model?.descriptor.layers) {
+            return;
+          }
+          model.setLayers(
+            model.descriptor.layers.items.map((item) =>
+              item.id === model.activeLayer ? { ...item, [field]: checked } : item,
+            ),
+          );
+        });
+      },
+      { signal: lifetime.signal },
+    );
+  }
   for (const action of ['up', 'down', 'remove', 'update'] as const) {
     button(`art-layer-${action}`).addEventListener(
       'click',
@@ -79,7 +100,6 @@ export function createArtworkLayerControls(
             if (
               item.locked &&
               (input('art-layer-name').value !== item.name ||
-                input('art-layer-visible').checked !== item.visible ||
                 Number(input('art-layer-opacity').value) !== item.opacity)
             ) {
               throw Error('Unlock the layer first.');
@@ -87,9 +107,7 @@ export function createArtworkLayerControls(
             items[index] = {
               ...item,
               name: input('art-layer-name').value.trim(),
-              visible: input('art-layer-visible').checked,
               opacity: Number(input('art-layer-opacity').value),
-              locked: input('art-layer-locked').checked,
             };
           } else {
             const next = Math.max(
@@ -122,8 +140,16 @@ export function createArtworkLayerControls(
       input('art-layer-visible').checked = item?.visible ?? true;
       input('art-layer-locked').checked = item?.locked ?? false;
       input('art-layer-opacity').value = String(item?.opacity ?? 255);
+      layerSelect.disabled = ports.busy() || !items.length;
+      for (const id of ['art-layer-name', 'art-layer-visible', 'art-layer-opacity']) {
+        input(id).disabled = ports.busy() || !item || item.locked;
+      }
+      input('art-layer-visible').title = item?.locked
+        ? 'Unlock the layer to change visibility'
+        : 'Show or hide this layer immediately';
+      input('art-layer-locked').disabled = ports.busy() || !item;
       for (const id of ['art-layer-remove', 'art-layer-up', 'art-layer-down', 'art-layer-update']) {
-        button(id).disabled = ports.busy() || !item;
+        button(id).disabled = ports.busy() || !item || item.locked;
       }
       button('art-layer-add').disabled = ports.busy() || !model || items.length >= 8;
     },

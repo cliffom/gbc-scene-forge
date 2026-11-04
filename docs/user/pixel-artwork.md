@@ -30,7 +30,7 @@ independently in short windows. **Properties** shows document dimensions and, fo
 sheets, frame names, geometry and representations. **Layers** remains independently
 collapsible in the same Inspector. These pane changes do not enter Undo history.
 
-Use **Library → Source actions…** for the selected source's shared-edit and
+Use **Library → Source actions… → Shared editing / copies…** for the selected source's shared-edit and
 copy choices. **Edit artwork…** opens native artwork directly; clicking a named
 pose while editing artwork opens that sheet with the requested frame selected.
 Scene Library clicks keep their placement behavior. Source actions lets you name
@@ -49,8 +49,10 @@ layer** retains flat artwork as **Base** and adds a transparent layer. Draw tool
 edit the selected source; the canvas and scenes show the visible composite.
 Choosing a layer immediately updates the color palette to that source's colors
 without adding an Undo step or changing the document.
-Updating a layer trims its name; an empty name is rejected before changing the
-document.
+**Visible** and **Locked** apply immediately and each change has its own Undo step.
+Locked layers disable visibility and other editing controls; uncheck **Locked**
+to enable them. Name and opacity use **Apply name / opacity**; applying trims the
+name and rejects an empty name before changing the document.
 Unlock a layer before changing its pixels or structure. Layer changes and pixels
 share this document's Undo/Redo; checkpoints retain exact source pixels but do not
 contain the local Undo stack. Save → review → Confirm save publishes all sources

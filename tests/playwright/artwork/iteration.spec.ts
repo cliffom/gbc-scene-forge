@@ -4,6 +4,84 @@ import { join } from 'node:path';
 import { test, expect, activateScene } from '../support/browser-fixtures.ts';
 import { revealArtworkControl, saveArtwork } from '../support/artwork-controls.ts';
 
+test('layer visibility and locking apply immediately, undo independently, and survive saving', async ({
+  page,
+  workspace,
+}, info) => {
+  const root = join(workspace.folder, 'project');
+  execFileSync(workspace.python, [
+    '-I',
+    '-c',
+    `
+import sys
+from pathlib import Path
+from gbc_scene_forge.project.application import Project
+from gbc_scene_forge.artwork import layers
+p=Project.create(Path(sys.argv[1]),'Layer visibility')
+a=p.artwork.documents
+c=a.create('picture','Picture','sprite',16,16,p.catalog()['revision'])
+c=a.edit(c,[dict(x=x,y=y,rgba=[255,0,0,255]) for y in range(16) for x in range(16)])
+base=layers.item('Base')
+base['locked']=True
+c=layers.edit(c,[base,layers.item('Overlay')])
+a.save(c)
+`,
+    root,
+  ]);
+  await page.goto(await workspace.start(root));
+  await page.locator('[data-asset="picture/artwork"]').click();
+  await expect(page.locator('#art-document-state')).toHaveText('Saved');
+  await page.locator('#art-zoom').selectOption('1');
+  await page.locator('#art-grid').uncheck();
+  await revealArtworkControl(page, 'art-layer');
+  const visible = page.locator('#art-layer-visible');
+  const locked = page.locator('#art-layer-locked');
+  const pixel = () =>
+    page.locator('#art-canvas').evaluate((canvas) => {
+      if (!(canvas instanceof HTMLCanvasElement)) {
+        throw Error('Expected artwork canvas');
+      }
+      return [...(canvas.getContext('2d')?.getImageData(4, 4, 1, 1).data ?? [])];
+    });
+  await expect(locked).toBeChecked();
+  await expect(visible).toBeDisabled();
+  await expect(page.locator('#art-layer-update')).toBeDisabled();
+  expect(await pixel()).toEqual([255, 0, 0, 255]);
+  await locked.uncheck();
+  await expect(visible).toBeEnabled();
+  await visible.uncheck();
+  expect(await pixel()).toEqual([0, 0, 0, 0]);
+  await page.locator('#undo').click();
+  await expect(visible).toBeChecked();
+  expect(await pixel()).toEqual([255, 0, 0, 255]);
+  await expect(locked).not.toBeChecked();
+  await page.locator('#undo').click();
+  await expect(locked).toBeChecked();
+  await expect(visible).toBeDisabled();
+  await expect(page.locator('#art-document-state')).toHaveText('Saved');
+  await page.locator('#redo').click();
+  await page.locator('#redo').click();
+  await expect(visible).not.toBeChecked();
+  expect(await pixel()).toEqual([0, 0, 0, 0]);
+  await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
+  await page.screenshot({ path: info.outputPath('hidden-layer.png') });
+  await saveArtwork(page);
+  await page.reload();
+  await page.locator('[data-asset="picture/artwork"]').click();
+  await revealArtworkControl(page, 'art-layer');
+  await expect(visible).not.toBeChecked();
+  await expect(locked).not.toBeChecked();
+  await expect(page.locator('#art-document-state')).toHaveText('Saved');
+  await visible.check();
+  await locked.check();
+  await expect(visible).toBeDisabled();
+  await page.locator('#undo').click();
+  await expect(visible).toBeEnabled();
+  await expect(locked).not.toBeChecked();
+  await expect(visible).toBeChecked();
+  await page.screenshot({ path: info.outputPath('visible-layer.png') });
+});
+
 test('wheel zoom preserves pointer coordinates and layers survive local undo, save and reopen', async ({
   page,
   workspace,
@@ -76,7 +154,6 @@ p.artwork.documents.save(c)
   await page.locator('#undo').click();
   await page.locator('#redo').click();
   await page.locator('#art-layer-locked').check();
-  await page.locator('#art-layer-update').click();
   await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
   // Several local Undo steps can coalesce before their next durable checkpoint.
   for (let i = 0; i < 3; i++) {

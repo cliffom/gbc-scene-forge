@@ -213,9 +213,14 @@ export function createEditorLayout(
       showLibrary(available[next], true);
     });
   }
-  for (const name of ['scene', 'project', 'transform']) {
-    const trigger = element(`${name}-commands`, HTMLButtonElement);
-    const panel = element(`${name}-command-panel`, HTMLElement);
+  for (const [triggerId, panelId] of [
+    ['scene-commands', 'scene-command-panel'],
+    ['project-commands', 'project-command-panel'],
+    ['transform-commands', 'transform-command-panel'],
+    ['library-source-actions', 'source-command-panel'],
+  ]) {
+    const trigger = element(triggerId, HTMLButtonElement);
+    const panel = element(panelId, HTMLElement);
     trigger.setAttribute('aria-controls', panel.id);
     trigger.setAttribute('aria-expanded', 'false');
     function position() {

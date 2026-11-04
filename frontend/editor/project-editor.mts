@@ -302,11 +302,6 @@ export function mountProjectEditor() {
         ),
       );
     button('delete-atlas-cancel').disabled = activity.busy;
-    element('atlas-list', HTMLElement)
-      .querySelectorAll('button')
-      .forEach((button) => {
-        button.disabled = activity.busy;
-      });
     layersController.renderLayers();
     layersController.renderLayerContext();
     layersController.inspect();
@@ -486,8 +481,6 @@ export function mountProjectEditor() {
       image: (...args) => artworkController.image(...args),
       replaceImages: (...args) => artworkController.replaceImages(...args),
 
-      showImport: (...args) => artworkController.showImport(...args),
-      showDeleteAtlas: (...args) => artworkController.showDeleteAtlas(...args),
       palette: (...args) => artworkController.palette(...args),
       run: (...args) => run(...args),
       get blockoutView() {
