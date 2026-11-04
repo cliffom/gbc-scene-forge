@@ -50,6 +50,10 @@ Dates, revisions and environments missing from the originals remain unknown.
   scenarios passed, including unpublished handoff and real external refresh.
   Production distribution build, strict metadata checks, seven installed-wheel
   smoke checks and installed-wheel first use passed.
+  The user reported “verified” after the document-navigation walkthrough at
+  local revision `7589b75`. This records acceptance of that increment, including
+  clarification of the modified-scene replacement step; it does not establish
+  independent usability or prolonged-use evidence.
 - **Limits:** Synthetic tests and agent screenshot inspection do not establish
   independent-human acceptance, prolonged drawing comfort, physical-device scaling,
   Windows/non-Chromium behavior or official Tiled interoperability. The integrated
@@ -1951,7 +1955,7 @@ Dates, revisions and environments missing from the originals remain unknown.
 
 ### Shared editor consolidation (milestone 22)
 
-- [ ] Obtain the user's manual verification of #195's document-navigation increment before pushing it to `milestone/22` and proceeding to #196, following the requested issue-by-issue gate. Automated context/history checks do not substitute for this acceptance.
+- [ ] Implement and obtain the user's manual verification of #196's shared-command and Save increment before pushing it, following the requested issue-by-issue gate.
 
 ### Human–agent artwork iteration (milestone 21)
 
