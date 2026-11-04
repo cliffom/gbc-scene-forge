@@ -20,9 +20,8 @@ consistent navigation, contextual commands, Library, Inspector and optional
 frame/animation dock. Preserve domain-owned history, exact artwork review,
 revision guards, recoverable local work and browser/MCP coexistence.
 
-Complete combined user acceptance of contextual panels, Library/source actions
-and the integrated workflow assessment (#197–#199). The implementation and scoped
-validation remain on the prepared release branch until that verification gate.
+Complete PR review, CI checks and release readiness for the prepared 0.33.0
+consolidation on `milestone/22`.
 Independent-user evaluation remains owned by #165/#166 rather than gating this
 user-requested consolidation.
 

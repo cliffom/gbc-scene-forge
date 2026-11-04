@@ -49,7 +49,8 @@ Dates, revisions and environments missing from the originals remain unknown.
   Thirty-two frame switches produced zero thumbnail paints, subtree rebuilds,
   additional dock handlers or DOM canvas growth; the existing hover and remount
   cases passed. Documentation checks passed. The user accepted #196 at `d494519`;
-  combined acceptance of #197–#199 remains in the single checklist below.
+  the user reported “verified. This is very nice” after the combined #197–#199
+  walkthrough at local revision `86855bb`, recording acceptance of those increments.
 - **Limits:** These synthetic checks and agent inspection do not complete #165's
   independent-user study or #166's findings-based remediation. Both panes plus an
   expanded dock leave only 150px drawing height in the compact/short captures;
@@ -59,7 +60,7 @@ Dates, revisions and environments missing from the originals remain unknown.
   non-Chromium browsers and official Tiled interoperability were not tested.
   The integrated Electron review page stalled during image loading; the same
   review URL opened successfully in separate Chromium. No CI-pass claim is made
-  for these local commits, which await combined verification before pushing.
+  for these checks. User acceptance does not constitute an independent-participant study.
 
 ## Active document commands and Save (#196, milestone 22)
 
@@ -2034,10 +2035,6 @@ Dates, revisions and environments missing from the originals remain unknown.
   claim is made by this local record.
 
 ## Remaining checks
-
-### Shared editor consolidation (milestone 22)
-
-- [ ] Obtain combined user verification of the completed #197–#199 increments; the user authorized completing all three before the next verification pause.
 
 ### Human–agent artwork iteration (milestone 21)
 
