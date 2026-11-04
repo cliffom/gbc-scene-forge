@@ -6,6 +6,14 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.33.2 — Dismissible editor notifications
+
+[Release notes](RELEASE-0.33.2.md). Replace transient artwork, scene and project
+status text with shared top-right notification cards. Routine notices expire or
+can be dismissed; save and recovery failures persist until acknowledged or
+resolved. Locked-layer warnings coalesce and explain how to resume editing.
+Publication is separate.
+
 ## 0.33.1 — Library source actions and layer controls
 
 [Release notes](RELEASE-0.33.1.md). Wrap long source names in Library rows and

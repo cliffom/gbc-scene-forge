@@ -77,7 +77,7 @@ export function createDocumentCommands(
         event.isComposing ||
         event.altKey ||
         !(event.ctrlKey || event.metaKey) ||
-        document.querySelector('dialog[open], [popover]:popover-open') ||
+        document.querySelector('dialog[open], [popover]:popover-open:not(.notifications)') ||
         (event.target instanceof Element &&
           event.target.closest(
             'input:not([type=radio]):not([type=checkbox]), select, textarea, a, [contenteditable]:not([contenteditable="false"])',

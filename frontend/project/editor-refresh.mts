@@ -1,3 +1,4 @@
+import type { Feedback } from '../editor/editor-notifications.mts';
 import { projectPath } from '../scene/scene-navigation.mts';
 import { ExternalRefreshState } from './editor-refresh-state.mts';
 import type { EditorLifetime } from '../editor/editor-lifetime.mts';
@@ -61,7 +62,7 @@ export function createRefreshController({
   >;
   animationPreview: ReturnType<typeof createAnimationPreview>;
   api: ProjectApi['json'];
-  status: HTMLElement;
+  status: Feedback;
   sceneSelection: Pick<SceneSelection, 'selectedObject' | 'selectedObjects' | 'selection'>;
   ports: Ports;
 }) {
@@ -94,7 +95,7 @@ export function createRefreshController({
       !fence.pointers.size &&
       !animationPreview.movement.active &&
       document.visibilityState === 'visible' &&
-      !document.querySelector('dialog[open], [popover]:popover-open') &&
+      !document.querySelector('dialog[open], [popover]:popover-open:not(.notifications)') &&
       !document.activeElement?.matches('input, select, textarea, [contenteditable="true"]') &&
       element('layers', HTMLElement).dataset.dragging !== 'true',
     );
@@ -125,7 +126,7 @@ export function createRefreshController({
       !gestures.objectResize &&
       !gestures.blockoutDraw &&
       !document.activeElement?.matches('select') &&
-      !document.querySelector('dialog[open], [popover]:popover-open');
+      !document.querySelector('dialog[open], [popover]:popover-open:not(.notifications)');
     if (!eligible()) {
       return;
     }
@@ -178,7 +179,7 @@ export function createRefreshController({
       ) {
         syncMessage();
         if (manual) {
-          status.textContent = 'No external changes.';
+          status.show('No external changes.');
         }
         return;
       }
@@ -258,10 +259,11 @@ export function createRefreshController({
         ports.update();
       }
       syncMessage();
-      status.textContent =
+      status.show(
         before.sceneId && !next
           ? 'The open scene was removed externally. Choose another scene; saved recovery drafts remain available.'
-          : 'External changes loaded. Undo/Redo history was cleared.';
+          : 'External changes loaded. Undo/Redo history was cleared.',
+      );
     } catch (error) {
       if (lifetime.disposed) {
         return;

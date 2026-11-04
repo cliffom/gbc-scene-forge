@@ -31,6 +31,7 @@ start polling, or acquire canvas resources. No frontend framework is required.
 | `editor/editor-review.mts` | Transient review mode in `EditorActivity.reviewing`, layout/focus and camera transition; gestures enforce Pan and commands block authoring shortcuts. The existing tool/brush/selection remain owned by their usual controllers. |
 | `editor/editor-panels.mts` | Wire existing tile/object inspectors, definitions, world, diagnostics, palette and blockout views to scene/project operations. Each feature view continues to own its dialog and validation state. Pending cross-scene navigation is owned here. |
 | `preview/animation-preview.mts`, `preview/movement-preview.mts` | Playback, input state and preview positions/preferences. They receive preview contracts and redraw callbacks, never scene writers. |
+| `editor/editor-notifications.mts` | Mounted feedback channels own document/operation identity, coalescing cards, live announcements, dismiss/expiry and paused timers. Explicit warnings expire; errors persist. Captured acknowledgments only resolve the notices they captured. Passive top-layer cards follow modal ownership without entering command-menu interaction guards. |
 | `editor/editor-lifetime.mts`, `editor/editor-dom.mts` | Mounted resource ownership and checked, deferred DOM lookup. |
 
 Controllers depend on models, JSON primitives and feature views, with explicit

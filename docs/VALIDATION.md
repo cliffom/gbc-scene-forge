@@ -15,6 +15,35 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Shared editor notifications (#204)
+
+- **Scope:** Prepared 0.33.2 working tree based on `8ac63d1`, inspected locally
+  on 2026-11-04 with macOS 27.0.1, Python 3.13.13, Node 24.22.1 and Chromium
+  156.0.8078.4. The retained screenshots show synthetic fixtures in the production
+  0.33.2 build before commit, not a published installation.
+- **Method:** `make lint test`, production `make build check-dist`, affected
+  Playwright suites and agent inspection of the [1440×1000 desktop](screenshots/notifications/desktop.png)
+  and [760×640 compact](screenshots/notifications/compact.png) captures. The
+  [notification suite](../tests/playwright/editor/notifications.spec.ts) combines
+  real locked-layer/checkpoint/save workflows with a component harness and virtual
+  time for expiry, hover/focus pauses, stale ownership, modal dismissal, canvas
+  pointer passage and disposal.
+- **Result:** Lint, documentation and Python/TypeScript checks passed, including
+  448 Python tests. Production distributions passed metadata checks and seven
+  installed-wheel smoke tests. All 35 affected browser scenarios passed; after
+  the final feedback-generation refinement, the four notification/import cases
+  passed again against rebuilt production assets. Earlier checks exposed passive
+  cards being counted as command menus and hidden-viewport positioning; both were
+  corrected. A pre-final full browser run had 147 passes, four failures and 11
+  optional skips: card pointer interception, an obsolete permanent-footer fixture
+  and two production/development build-setting mismatches. The affected rerun
+  covers all four failures with the corrected component, fixture and environment.
+- **Limits:** The full browser matrix was not repeated locally after those fixes;
+  the final local browser claims are scoped to the affected suites. No independent
+  human or screen-reader assessment, non-Chromium/Windows run or publication was
+  performed. Screenshots establish the inspected layouts, not drawing comfort or
+  accessibility conformance. Existing external-tool checks remain below.
+
 ## Library source actions and layer controls (PR #203)
 
 - **Scope:** Prepared 0.33.1 working tree based on `a8d1c2e`, checked

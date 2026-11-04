@@ -1,3 +1,4 @@
+import type { Feedback } from '../editor/editor-notifications.mts';
 /** Explicit preflight and confirmed import of generic, project-owned artwork. */
 import { createForgeImport } from '../project/forge-import.mts';
 import type { EditorLifetime } from '../editor/editor-lifetime.mts';
@@ -33,7 +34,7 @@ export function createGenericImport({
   ports: Ports;
   revision: () => string;
   sceneId: () => string | undefined;
-  status: HTMLElement;
+  status: Feedback;
 }) {
   const forgeImport = createForgeImport({ lifetime, api, ports, revision, status });
   let prepared: { kind: string; data: Record<string, unknown> } | null = null;
@@ -49,13 +50,8 @@ export function createGenericImport({
     apply.disabled = true;
     report.textContent = '';
     canvas.hidden = true;
-    if (
-      !lifetime.disposed &&
-      status.textContent === checkedStatus &&
-      status.dataset.state !== 'error'
-    ) {
-      status.textContent =
-        'Preview confirmation cleared. Check the current source before importing.';
+    if (!lifetime.disposed && status.text === checkedStatus && status.state !== 'error') {
+      status.show('Preview confirmation cleared. Check the current source before importing.');
     }
   };
   lifetime.cleanup(invalidate);
@@ -91,11 +87,11 @@ export function createGenericImport({
     invalidate();
     const request = generation;
     void ports.run(async () => {
-      const initialStatus = status.textContent;
+      const initialStatus = status.revision;
       const current = () => request === generation && !lifetime.disposed && dialog.open;
       // Only replace feedback still owned by this check. Input changes, closing the
       // dialog and newer operations make both successful and failed replies stale.
-      const canReport = () => current() && status.textContent === initialStatus;
+      const canReport = () => current() && status.revision === initialStatus;
       try {
         const kind = mode.value;
         const id = input('generic-id').value.trim();
@@ -209,8 +205,7 @@ export function createGenericImport({
         apply.dataset.ready = 'true';
         apply.disabled = false;
         if (canReport()) {
-          status.textContent = checkedStatus;
-          status.dataset.state = '';
+          status.show(checkedStatus);
         }
       } catch (error) {
         if (canReport()) {
@@ -243,7 +238,7 @@ export function createGenericImport({
         ports.open(loaded);
       }
       element('import-atlas-dialog', HTMLDialogElement).close();
-      status.textContent = 'Import complete. Artwork and scene files belong to this project.';
+      status.show('Import complete. Artwork and scene files belong to this project.');
       invalidate();
     });
   });

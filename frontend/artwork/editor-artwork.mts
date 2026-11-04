@@ -1,3 +1,4 @@
+import type { Feedback } from '../editor/editor-notifications.mts';
 import { terrainRules, ruleReport } from './terrain.mts';
 import { createGenericImport } from './generic-import.mts';
 import type { EditorLifetime } from '../editor/editor-lifetime.mts';
@@ -55,7 +56,7 @@ export function createArtworkController({
   activity: EditorActivity;
   editorLayout: ReturnType<typeof createEditorLayout>;
   sceneSelection: Pick<SceneSelection, 'selectedObject' | 'selectedObjects' | 'selection'>;
-  status: HTMLElement;
+  status: Feedback;
   api: ProjectApi['json'];
   ports: Ports;
 }) {
@@ -441,9 +442,11 @@ export function createArtworkController({
             paint.checked = true;
           }
           ports.syncPanCursor();
-          status.textContent = sprite
-            ? `Click the canvas to place ${region.name}. Select to drag it; Delete removes it.`
-            : `Paint ${region.name}.`;
+          status.show(
+            sprite
+              ? `Click the canvas to place ${region.name}. Select to drag it; Delete removes it.`
+              : `Paint ${region.name}.`,
+          );
           ports.draw();
         };
         lifetime.assign(item, 'onclick', () => {
@@ -532,7 +535,7 @@ export function createArtworkController({
       element('import-result-summary', HTMLElement).textContent =
         `Imported ${string(report.atlas)} · ${added.length} new, ${changed.length} updated`;
       element('import-atlas-dialog', HTMLDialogElement).close();
-      status.textContent = 'Atlas imported. Stable placements preserved.';
+      status.show('Atlas imported. Stable placements preserved.');
     });
   });
 
@@ -540,14 +543,14 @@ export function createArtworkController({
     void ports.run(async () => {
       const browse = button('browse-atlas');
       browse.textContent = 'Choosing…';
-      status.textContent = 'Choose the folder containing your atlas.';
+      status.show('Choose the folder containing your atlas.');
       try {
         const selected = await chooseFolder(input('atlas-folder-files'), lifetime.signal);
         if (lifetime.disposed) {
           return;
         }
         if (!selected) {
-          status.textContent = 'Folder selection cancelled.';
+          status.show('Folder selection cancelled.');
           return;
         }
         if (!selected.manifests.length) {
@@ -563,10 +566,11 @@ export function createArtworkController({
         );
         manifests.required = true;
         element('atlas-manifest-field', HTMLElement).hidden = false;
-        status.textContent =
+        status.show(
           selected.manifests.length === 1
             ? 'Atlas selected. Choose Import atlas to copy it into this project.'
-            : 'Folder selected. Choose an atlas manifest to import.';
+            : 'Folder selected. Choose an atlas manifest to import.',
+        );
       } finally {
         if (!lifetime.disposed) {
           browse.textContent = 'Browse folder…';
@@ -673,7 +677,7 @@ export function createArtworkController({
         select('scenes').value = sceneSession.loaded.id;
         ports.draw();
       }
-      status.textContent = `Deleted atlas “${candidate.id}”.`;
+      status.show(`Deleted atlas “${candidate.id}”.`);
     });
   });
   return {

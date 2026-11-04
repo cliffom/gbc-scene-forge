@@ -2,7 +2,7 @@
 .standalone {min-width:760px;height:100dvh;--control-height:32px;--select-arrow-space:32px}
 .standalone .status-bar {width:100vw;max-width:100%;align-items:flex-end}
 .standalone #status {min-width:0;overflow-wrap:anywhere}
-.build-identity {flex:none;white-space:nowrap}
+.build-identity {flex:none;white-space:nowrap;margin-inline-start:auto}
 #palette-dialog {width:620px}
 #palette-dialog[open] {display:flex;flex-direction:column;max-height:calc(100dvh - 32px);overflow:hidden}
 #palette-dialog>* {flex:none}
@@ -120,7 +120,7 @@
 #import-results summary {cursor:pointer;color:var(--accent)}
 #import-report {white-space:pre-wrap;overflow-wrap:anywhere;margin-top:8px}
 #dirty[data-dirty=true] {color:var(--accent);border-color:#75663d}
-#status[data-state=error],.form-error {color:#f19b82}
+.form-error {color:#f19b82}
 .form-error:empty {display:none}
 .standalone button.danger {background:#713b30;border-color:#ad6752;color:#ffe5da}
 .standalone button.danger:hover {background:#8b493b}
@@ -508,9 +508,6 @@
 .art-heading button {flex:none}
 .art-heading-actions {flex:none;display:flex;gap:6px;align-items:center;margin-left:auto}
 #art-scope-label {font-size:11px}
-#art-message {flex:none;margin:0;max-height:36px;font-size:12px;overflow:auto;overflow-wrap:anywhere}
-#art-message:empty {display:none}
-#art-message[data-error=true] {color:#f19b82}
 #art-setup {flex:1;min-height:0;overflow:auto;padding:4px;scroll-padding:6px}
 #art-start {max-width:620px;margin:12px auto;width:100%}
 #art-start section {padding:0 12px 12px}
@@ -702,7 +699,7 @@
 #artwork-surface .art-controls {padding:6px 10px;border-bottom:1px solid var(--line)}
 #artwork-surface .art-workspace {gap:0}
 #artwork-surface .art-canvas-scroll {border:0;border-radius:0;background-color:#181b17;background-image:radial-gradient(#3b4034 .7px,transparent .7px);background-size:16px 16px}
-#artwork-surface #art-sheet-controls,#artwork-surface #art-draft-status,#artwork-surface #art-message,#artwork-surface #art-editor>.dialog-actions {padding-inline:10px}
+#artwork-surface #art-sheet-controls,#artwork-surface #art-draft-status,#artwork-surface #art-editor>.dialog-actions {padding-inline:10px}
 
 #document-switcher {max-width:360px}
 #document-state,#document-base-state {font-size:11px;color:var(--muted);white-space:nowrap}
@@ -734,3 +731,17 @@
   #art-editor>#art-sheet-controls {max-height:160px}
   #art-sheet-controls #art-frame-strip {display:flex}
 }
+
+/* Operation feedback occupies the workbench's top-right without changing its layout. */
+.notifications {position:fixed;inset:auto;margin:0;padding:0;border:0;background:transparent;color:inherit;width:360px;overflow:auto;pointer-events:none;scrollbar-width:thin}
+.notifications::backdrop {background:transparent;pointer-events:none}
+.notification {display:grid;grid-template-columns:1fr 32px;gap:4px 10px;margin-bottom:8px;padding:12px 12px 12px 14px;border:1px solid #57574d;border-left:3px solid #d5bd71;border-radius:10px;background:#282b26;color:var(--text);box-shadow:0 6px 20px #0006;pointer-events:none;font-size:13px;line-height:1.45;overflow-wrap:anywhere}
+.notification[data-severity=error] {border-left-color:#f19b82}
+.notification[data-severity=warning] {border-left-color:#e1c35d}
+.notification-severity {font-size:11px;font-weight:600;color:#d5bd71}
+.notification[data-severity=error] .notification-severity {color:#f19b82}
+.notification[data-severity=warning] .notification-severity {color:#e1c35d}
+.notification-message {grid-column:1;white-space:pre-wrap}
+.notification-dismiss {pointer-events:auto;grid-column:2;grid-row:1 / span 2;align-self:start;min-width:32px;min-height:32px;padding:0;font-size:22px;line-height:1;background:transparent;border:0;border-radius:5px;color:inherit}
+.notification-dismiss:hover {background:#ffffff15}
+.notification[hidden] {display:none}

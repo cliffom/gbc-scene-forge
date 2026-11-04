@@ -1,5 +1,6 @@
 import { createDocumentCommands, type CommandCapabilities } from './document-commands.mts';
 import { createPixelEditor } from '../artwork/pixel-editor.mts';
+import { createNotifications, feedbackText } from './editor-notifications.mts';
 import { EditorLifetime } from './editor-lifetime.mts';
 import { createArtworkController } from '../artwork/editor-artwork.mts';
 import { createCommandsController } from './editor-commands.mts';
@@ -58,6 +59,7 @@ export function mountProjectEditor() {
       }
     }
   });
+  const notifications = createNotifications(lifetime, element('editor-workbench', HTMLElement));
   const workspaceState = new WorkspaceState();
   const sceneSession = new SceneSession();
   const sceneSelection = new SceneSelection();
@@ -100,7 +102,11 @@ export function mountProjectEditor() {
     throw Error('Canvas rendering is unavailable');
   }
   const context = ctx;
-  const status = element('status', HTMLElement);
+  const status = notifications.channel(
+    'status',
+    () =>
+      `${workspaceState.project?.id ?? ''}/${activity.document}/${sceneSession.loaded?.id ?? ''}`,
+  );
   const projectMatch = /^\/projects\/([^/]+)\//.exec(location.pathname);
   const projectBase = projectMatch ? `/projects/${projectMatch[1]}` : '';
   const transport = new ProjectApi(projectBase, lifetime.signal);
@@ -317,24 +323,25 @@ export function mountProjectEditor() {
       return;
     }
     activity.busy = true;
-    status.dataset.state = '';
+    const operationKey = work.name ? work : (document.activeElement?.closest('button') ?? work);
+    const previousFeedback = status.capture();
     document.querySelectorAll('.form-error').forEach((item) => {
       item.textContent = '';
     });
     update();
     try {
       await work();
+      previousFeedback.clear(operationKey);
     } catch (error) {
       if (lifetime.disposed) {
         return;
       }
-      status.textContent = error instanceof Error ? error.message : String(error);
-      status.dataset.state = 'error';
+      status.error(error, operationKey);
       const errorField =
         document.querySelector('dialog[open] .form-error') ||
         (!workspaceState.project && document.querySelector('#project-form .form-error'));
       if (errorField) {
-        errorField.textContent = status.textContent;
+        errorField.textContent = feedbackText(error);
       }
     } finally {
       activity.busy = false;
@@ -372,8 +379,7 @@ export function mountProjectEditor() {
       });
       workspaceState.project = decodeProject(result.project);
       workspaceState.revision = string(result.revision);
-      status.textContent =
-        'Preview settings saved. Scene edits and starting positions are unchanged.';
+      status.show('Preview settings saved. Scene edits and starting positions are unchanged.');
     });
   });
 
@@ -514,6 +520,7 @@ export function mountProjectEditor() {
   });
 
   const renderingController = createRenderingController({
+    status,
     activity,
     lifetime,
     sceneSession,
@@ -711,6 +718,7 @@ export function mountProjectEditor() {
     },
   });
   const pixelEditor = createPixelEditor({
+    notifications,
     lifetime,
     api,
     workspaceState,
@@ -810,11 +818,12 @@ export function mountProjectEditor() {
           }
           await recoveryController.clearDraft();
           sceneActionsController.open(loaded, false);
-          status.textContent =
-            'Variation saved. Selected placements updated; other references retain the original.';
+          status.show(
+            'Variation saved. Selected placements updated; other references retain the original.',
+          );
           return;
         }
-        status.textContent = 'Artwork saved. Scene edits and undo history are unchanged.';
+        status.show('Artwork saved. Scene edits and undo history are unchanged.');
       },
     },
   });
@@ -904,11 +913,13 @@ export function mountProjectEditor() {
       input('grid').checked = boolean(preview.grid);
       select('zoom').value = String(number(preview.zoom));
     }
-    status.textContent = workspaceState.project
-      ? 'Choose a scene, or import artwork or a map to get started.'
-      : workspaceState.choosingProject
-        ? 'Choose a project or create a new one.'
-        : 'Name your project to get started.';
+    status.show(
+      workspaceState.project
+        ? 'Choose a scene, or import artwork or a map to get started.'
+        : workspaceState.choosingProject
+          ? 'Choose a project or create a new one.'
+          : 'Name your project to get started.',
+    );
     if (workspaceState.project) {
       await sceneActionsController.openInitialScene();
       if (new URLSearchParams(location.search).get('blockout') === '1') {

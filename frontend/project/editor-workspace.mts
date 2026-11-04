@@ -1,3 +1,4 @@
+import type { Feedback } from '../editor/editor-notifications.mts';
 import type { EditorLifetime } from '../editor/editor-lifetime.mts';
 import type { createAnimationPreview } from '../preview/animation-preview.mts';
 import { array, record, string } from '../shared/decode.mts';
@@ -50,7 +51,7 @@ export function createWorkspaceController({
   request: ProjectApi['request'];
   transport: ProjectApi;
   animationPreview: ReturnType<typeof createAnimationPreview>;
-  status: HTMLElement;
+  status: Feedback;
   editorLayout: ReturnType<typeof createEditorLayout>;
   firstSceneGuide: ReturnType<typeof createFirstSceneGuide>;
   ports: Ports;
@@ -456,7 +457,7 @@ export function createWorkspaceController({
       if (!(await refresh()) || lifetime.disposed) {
         return;
       }
-      status.textContent = 'Project created. Choose a scene or create your own.';
+      status.show('Project created. Choose a scene or create your own.');
       if (startingBlockout) {
         editorLayout.showLibrary('blockout');
         ports.blockoutView.showCreate();

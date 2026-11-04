@@ -49,6 +49,7 @@ print(p.catalog()['project']['scenes'][0]['id'])
     window.__module.editor.dispose();
     document.activeElement?.blur();})()`);
     assert.equal(await evaluate("document.querySelectorAll('.scene-surface').length"), 0);
+    assert.equal(await evaluate("document.querySelectorAll('.notifications').length"), 0);
     assert.equal(await evaluate("document.querySelectorAll('#diagnostics-dialog').length"), 0);
     await new Promise((resolve) => setTimeout(resolve, 2300));
     assert.deepEqual(await evaluate('window.__requests'), []);
@@ -56,7 +57,7 @@ print(p.catalog()['project']['scenes'][0]['id'])
     // A replaced editor owns exactly one set of handlers, overlays and pollers.
     for (let attempt = 0; attempt < 2; attempt++) {
       await evaluate(
-        "document.getElementById('status').textContent='Loading replacement';history.replaceState(history.state,'','/');window.__mounted=window.__module.mountProjectEditor()",
+        "history.replaceState(history.state,'','/');window.__mounted=window.__module.mountProjectEditor()",
       );
       await editorReady(page);
       await expect(page.locator('#library-pane')).toBeVisible();
@@ -73,6 +74,7 @@ print(p.catalog()['project']['scenes'][0]['id'])
       );
       await evaluate('window.__mounted.dispose();window.__requests=[]');
       assert.equal(await evaluate("document.querySelectorAll('.scene-surface').length"), 0);
+      assert.equal(await evaluate("document.querySelectorAll('.notifications').length"), 0);
       assert.equal(await evaluate("document.querySelectorAll('#diagnostics-dialog').length"), 0);
       await new Promise((resolve) => setTimeout(resolve, 2300));
       assert.deepEqual(await evaluate('window.__requests'), []);
@@ -91,7 +93,7 @@ print(p.catalog()['project']['scenes'][0]['id'])
   };window.__stale=window.__module.mountProjectEditor()`);
     await wait('window.__held');
     await evaluate(`window.__stale.dispose();window.fetch=window.__fetch;
-    document.getElementById('status').textContent='Loading replacement';history.replaceState(history.state,'','/');window.__mounted=window.__module.mountProjectEditor()`);
+    history.replaceState(history.state,'','/');window.__mounted=window.__module.mountProjectEditor()`);
     await editorReady(page);
     await evaluate('window.__release()');
     await new Promise((resolve) => setTimeout(resolve, 50));
@@ -109,7 +111,7 @@ print(p.catalog()['project']['scenes'][0]['id'])
     await evaluate('window.__mounted.dispose()');
     assert.equal(await evaluate('document.querySelectorAll("dialog[open]").length'), 0);
     await evaluate(
-      "document.getElementById('status').textContent='Loading replacement';history.replaceState(history.state,'','/');window.__mounted=window.__module.mountProjectEditor()",
+      "history.replaceState(history.state,'','/');window.__mounted=window.__module.mountProjectEditor()",
     );
     await editorReady(page);
     await evaluate("document.getElementById('project-command-panel').showPopover()");
@@ -120,7 +122,7 @@ print(p.catalog()['project']['scenes'][0]['id'])
     // Hold artwork decoding after the scene response has already arrived. This is
     // independent of request cancellation: refresh must reject the old adoption.
     await evaluate(
-      "document.getElementById('status').textContent='Loading replacement';history.replaceState(history.state,'','/');window.__mounted=window.__module.mountProjectEditor()",
+      "history.replaceState(history.state,'','/');window.__mounted=window.__module.mountProjectEditor()",
     );
     await editorReady(page);
     await evaluate(`window.__decode=HTMLImageElement.prototype.decode;
@@ -137,7 +139,7 @@ print(p.catalog()['project']['scenes'][0]['id'])
     await wait('window.__decoding');
     await evaluate(`window.__mounted.dispose();
     HTMLImageElement.prototype.decode=window.__decode;
-    document.getElementById('status').textContent='Loading replacement';history.replaceState(history.state,'','/');window.__mounted=window.__module.mountProjectEditor()`);
+    history.replaceState(history.state,'','/');window.__mounted=window.__module.mountProjectEditor()`);
     await editorReady(page);
     await evaluate(`const scenes=document.getElementById('scenes');
     window.__replacementScene=[...scenes.options].find(option=>option.value && option.value!==${JSON.stringify(scene)}).value;
@@ -194,7 +196,7 @@ print(p.catalog()['project']['scenes'][0]['id'])
       await evaluate('window.__mounted.dispose()');
       assert.deepEqual(await evaluate(controlStates), before);
       await evaluate(`window.fetch=window.__fetch;
-      document.getElementById('status').textContent='Loading replacement';
+
       history.replaceState(history.state,'','/');window.__mounted=window.__module.mountProjectEditor()`);
       await editorReady(page);
       await evaluate("document.getElementById('manage-definitions').click()");
@@ -243,7 +245,7 @@ print(p.catalog()['project']['scenes'][0]['id'])
       await wait('window.__cleanupHeld');
       const path = forge.url;
       await evaluate(`window.__mounted.dispose();window.fetch=window.__fetch;
-      document.getElementById('status').textContent='Loading replacement';
+
       history.replaceState(history.state,'','/');window.__mounted=window.__module.mountProjectEditor()`);
       await editorReady(page);
       await evaluate(

@@ -1,3 +1,4 @@
+import type { Feedback } from '../editor/editor-notifications.mts';
 import type { EditorLifetime } from '../editor/editor-lifetime.mts';
 import { array, record, string } from '../shared/decode.mts';
 import { DraftWriter } from './drafts.mts';
@@ -40,7 +41,7 @@ export function createRecoveryController({
     SceneSession,
     'baseline' | 'committed' | 'dirty' | 'editor' | 'loaded' | 'serialize'
   >;
-  status: HTMLElement;
+  status: Feedback;
   ports: Ports;
 }) {
   let draftWriter: DraftWriter | null = null;
@@ -52,14 +53,20 @@ export function createRecoveryController({
   lifetime.cleanup(() => draftWriter?.stop());
   function newDraftWriter() {
     draftWriter?.stop();
-    draftWriter = new DraftWriter(
+    const writer = new DraftWriter(
       (route, payload) => api(route, record, payload),
       (message) => {
-        if (!lifetime.disposed) {
+        if (!lifetime.disposed && draftWriter === writer) {
           element('draft-status', HTMLElement).textContent = message;
+          if (message.startsWith('Draft recovery unavailable:')) {
+            status.error(message, 'checkpoint');
+          } else {
+            status.clear('checkpoint');
+          }
         }
       },
     );
+    draftWriter = writer;
   }
 
   function checkpoint(dirty?: boolean) {
@@ -100,12 +107,15 @@ export function createRecoveryController({
       lifetime.signal.throwIfAborted();
       recoveredDraft = null;
       element('draft-status', HTMLElement).textContent = '';
+      status.clear('checkpoint');
+      status.clear('checkpoint-cleanup');
     } catch (error) {
       if (lifetime.disposed) {
         throw error;
       }
-      element('draft-status', HTMLElement).textContent =
-        `Draft cleanup failed; the checkpoint was retained. ${String(error)}`;
+      const message = `Draft cleanup failed; the checkpoint was retained. ${String(error)}`;
+      element('draft-status', HTMLElement).textContent = message;
+      status.error(message, 'checkpoint-cleanup');
     }
   }
 
@@ -175,7 +185,7 @@ export function createRecoveryController({
       void ports.run(async () => {
         await showRecovery();
         if (!recoveryItems.length) {
-          status.textContent = 'No recoverable drafts.';
+          status.show('No recoverable drafts.');
         }
       }),
   );
@@ -226,8 +236,9 @@ export function createRecoveryController({
         recoveredDraft = guard;
         element('recovery-dialog', HTMLDialogElement).close();
         ports.draw();
-        status.textContent =
-          'Draft restored as unsaved edits. Save scene to commit them; Revert discards them.';
+        status.show(
+          'Draft restored as unsaved edits. Save scene to commit them; Revert discards them.',
+        );
       }),
   );
 
@@ -249,7 +260,7 @@ export function createRecoveryController({
         link.download = `forge-draft-${string(item.id)}.json`;
         link.click();
         lifetime.revokeLater(url);
-        status.textContent = 'Draft downloaded. The checkpoint is still available.';
+        status.show('Draft downloaded. The checkpoint is still available.');
       }),
   );
 
@@ -270,7 +281,7 @@ export function createRecoveryController({
         await api('delete-draft', record, { id: item.id, revision: item.revision });
         element('recovery-dialog', HTMLDialogElement).close();
         await showRecovery();
-        status.textContent = 'Draft discarded. Saved scenes are unchanged.';
+        status.show('Draft discarded. Saved scenes are unchanged.');
       }),
   );
   return { clearDraft, showRecovery, newDraftWriter, checkpoint };

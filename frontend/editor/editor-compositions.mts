@@ -1,3 +1,4 @@
+import type { Feedback } from '../editor/editor-notifications.mts';
 import type { EditorLifetime } from './editor-lifetime.mts';
 import type { createAnimationPreview } from '../preview/animation-preview.mts';
 import type { CompositionSelection } from '../compositions/compositions.mts';
@@ -51,7 +52,7 @@ export function createCompositionsController({
   gestures: Pick<GestureState, 'anchor' | 'hover'>;
   animationPreview: ReturnType<typeof createAnimationPreview>;
   brushes: Pick<BrushState, 'clipboard' | 'definitionBrush' | 'stampBrush'>;
-  status: HTMLElement;
+  status: Feedback;
   api: ProjectApi['json'];
   editorLayout: ReturnType<typeof createEditorLayout>;
   canvas: HTMLCanvasElement;
@@ -96,10 +97,11 @@ export function createCompositionsController({
           sceneSelection.selectedObject = null;
           sceneSelection.selectedObjects.clear();
         }
-        status.textContent =
+        status.show(
           action === 'copy'
             ? 'Selection copied. Paste into a compatible scene in this project.'
-            : 'Selection cut.';
+            : 'Selection cut.',
+        );
       } else if (action === 'paste' || action === 'duplicate') {
         const copied =
           action === 'duplicate'
@@ -131,7 +133,7 @@ export function createCompositionsController({
         sceneSelection.selection = value.scene.layers.some((l) => l.type === 'tilelayer')
           ? { x, y, w: value.scene.width, h: value.scene.height }
           : null;
-        status.textContent = 'Composition placed. Undo reverses the entire placement.';
+        status.show('Composition placed. Undo reverses the entire placement.');
       } else {
         const copied = capture(sceneSession.editor, choice, workspaceState.project.id);
         const transformed = transform(copied.composition, action);
@@ -164,11 +166,11 @@ export function createCompositionsController({
         };
         sceneSelection.selectedObject = null;
         sceneSelection.selectedObjects.clear();
-        status.textContent = 'Selection transformed around its top-left grid origin.';
+        status.show('Selection transformed around its top-left grid origin.');
       }
       ports.draw();
     } catch (error) {
-      status.textContent = String(error instanceof Error ? error.message : error);
+      status.warning(error);
     }
   }
 
@@ -222,10 +224,10 @@ export function createCompositionsController({
         }
         ports.draw();
         editorLayout.showLibrary('stamps');
-        status.textContent = 'Reusable stamp saved in the project.';
+        status.show('Reusable stamp saved in the project.');
       });
     } catch (error) {
-      status.textContent = String(error);
+      status.warning(error);
     }
   });
 
@@ -235,9 +237,11 @@ export function createCompositionsController({
       ? null
       : (workspaceState.project?.stamps.find((s) => s.id === select('stamps').value)?.composition ??
         null);
-    status.textContent = brushes.stampBrush
-      ? 'Click the canvas to place the stamp repeatedly. Escape or choose a tool to stop.'
-      : 'Stamp placement stopped.';
+    status.show(
+      brushes.stampBrush
+        ? 'Click the canvas to place the stamp repeatedly. Escape or choose a tool to stop.'
+        : 'Stamp placement stopped.',
+    );
     ports.update();
     canvas.focus({ preventScroll: true });
   });

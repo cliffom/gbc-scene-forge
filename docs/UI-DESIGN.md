@@ -54,7 +54,19 @@ system; hierarchy comes from grouping, spacing and clear labels.
   Opening a command must not
   steal focus from a modal; pointer-only canvas focus restoration skips popover
   triggers.
-- **Feedback:** secondary placement must not hide important status. Keep save
+- **Feedback:** transient artwork, scene and project messages use shared
+  dismissible cards at the top-right of the workbench, below its toolbars. Routine
+  notices expire after five seconds, pausing while hovered, focused or the tab is
+  hidden; repeated messages refresh one card. Save, conflict and checkpoint
+  failures persist until dismissed or resolved by their operation. Dismissal
+  acknowledges feedback and never changes the underlying save/recovery state.
+  Document changes retire routine notices; unresolved artwork failures belong to
+  their document. Cards use text severity labels and screen-reader announcements,
+  preserve editing focus and remain keyboard reachable inside modal dialogs.
+  Card bodies let canvas gestures pass through; dismissal buttons remain interactive.
+  Field validation remains beside the relevant input. Passive notification
+  popovers do not count as open command menus for editing or refresh guards.
+  Secondary placement must not hide important status. Keep save
   state in the document bar and palette failure feedback on Project tools even
   when its command panel is closed. Color supplements text or symbols.
 
@@ -121,6 +133,9 @@ show the delivered layout; the [earlier polish evaluation](evaluations/editor-po
 historical scope and captures.
 
 ## Visual comparison
+
+[Desktop notification](screenshots/notifications/desktop.png) ·
+[Compact notification](screenshots/notifications/compact.png)
 
 [Before](screenshots/ui-cleanup/before.png) ·
 [After](screenshots/ui-cleanup/after.png) ·

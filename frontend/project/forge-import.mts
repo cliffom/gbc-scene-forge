@@ -1,3 +1,4 @@
+import type { Feedback } from '../editor/editor-notifications.mts';
 /** Selected scene transfer with explicit, invalidated preflight confirmation. */
 import type { EditorLifetime } from '../editor/editor-lifetime.mts';
 import { button, element, input } from '../editor/editor-dom.mts';
@@ -17,7 +18,7 @@ export function createForgeImport({
   api: ProjectApi['json'];
   ports: Ports;
   revision: () => string;
-  status: HTMLElement;
+  status: Feedback;
 }) {
   const file = input('forge-zip');
   const rows = element('forge-scenes', HTMLElement);
@@ -134,7 +135,7 @@ export function createForgeImport({
         ports.open(loaded);
       }
       element('import-atlas-dialog', HTMLDialogElement).close();
-      status.textContent = 'Imported selected Forge scenes as new copies.';
+      status.show('Imported selected Forge scenes as new copies.');
     });
   });
   return { invalidate };

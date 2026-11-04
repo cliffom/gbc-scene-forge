@@ -1,3 +1,4 @@
+import type { Feedback } from '../editor/editor-notifications.mts';
 import { paintTerrain, terrainRules } from '../artwork/terrain.mts';
 import type { EditorLifetime } from './editor-lifetime.mts';
 import type { createAnimationPreview } from '../preview/animation-preview.mts';
@@ -70,7 +71,7 @@ export function createGesturesController({
     BrushState,
     'brush' | 'definitionBrush' | 'objectBrush' | 'spriteBrush' | 'stampBrush'
   >;
-  status: HTMLElement;
+  status: Feedback;
   workspaceState: Pick<WorkspaceState, 'project'>;
   animationPreview: ReturnType<typeof createAnimationPreview>;
   ports: Ports;
@@ -162,9 +163,11 @@ export function createGesturesController({
           p.y,
           tool === 'erase',
         );
-        status.textContent = warnings.length
-          ? warnings.join(' ')
-          : `Terrain ${tool === 'erase' ? 'erased' : 'painted'} with neighbor updates.`;
+        status.show(
+          warnings.length
+            ? warnings.join(' ')
+            : `Terrain ${tool === 'erase' ? 'erased' : 'painted'} with neighbor updates.`,
+        );
       } else if (tool === 'erase') {
         const hit = ports.hitObject(p.px, p.py);
         if (hit) {
@@ -243,7 +246,7 @@ export function createGesturesController({
         sceneSession.editor.fill(p.x, p.y, brushes.brush[0][0]);
       }
     } catch (error) {
-      status.textContent = error instanceof Error ? error.message : String(error);
+      status.warning(error);
     }
     ports.draw();
   }
@@ -401,7 +404,7 @@ export function createGesturesController({
         event.ctrlKey ||
         event.metaKey ||
         event.altKey ||
-        document.querySelector('dialog[open], [popover]:popover-open') ||
+        document.querySelector('dialog[open], [popover]:popover-open:not(.notifications)') ||
         panShortcutBlocked(event.target)
       ) {
         return;
@@ -530,13 +533,13 @@ export function createGesturesController({
         sceneSelection.selection = null;
         ports.draw();
       } catch (error) {
-        status.textContent = String(error);
+        status.warning(error);
       }
       return;
     }
     if (brushes.stampBrush && workspaceState.project) {
       if (!ports.allVisible()) {
-        status.textContent = 'Show all scene view categories before placing a stamp.';
+        status.show('Show all scene view categories before placing a stamp.');
         return;
       }
       try {
@@ -551,7 +554,7 @@ export function createGesturesController({
         );
         ports.draw();
       } catch (error) {
-        status.textContent = String(error);
+        status.warning(error);
       }
       return;
     }
