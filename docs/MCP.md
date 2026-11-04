@@ -551,9 +551,9 @@ keeps its original saved base; every changed revision requires a fresh review.
 ordered by decreasing use then RGBA, 256/page with `next_offset`. Up to 65,536
 distinct colors are counted; narrow the rectangle if exceeded. Matching includes
 alpha and hidden RGB. Remaps allow 1..1,024 unique source-color pairs; targets may
-collide. These literal operations do not impose a palette profile. Near-duplicate,
-isolated-pixel and texture diagnostics are deferred: no thresholds are shipped,
-and intentional stars/glints are never automatically removed.
+collide. These literal operations do not impose a palette profile. Opt-in
+[island cleanup](#selective-pixel-cleanup) is separate; near-duplicate-color and
+texture diagnostics remain deferred.
 
 `edit_artwork_layers(candidate,layers)` sets an explicit bottom-to-top list of
 `{id:<UUID>,name,visible,opacity:0..255,locked}`. First migration preserves flat
@@ -568,8 +568,9 @@ ImageContent blocks / 4 MiB decoded total** (base64 ≤5,592,408 characters). En
 views are preferred; oversized images remain resource-only. Resource limits and
 session expiration still apply; regenerate review with the retained candidate
 after reconnecting. Native candidate overview/crops and before/after resources
-already existed; inline transport is additional. Changed-pixel overlays are deferred;
-exact reads/counts reveal hidden RGB that visible previews cannot.
+already existed; inline transport is additional. Explicit contact inspection and
+cleanup previews offer change maps; exact reads/counts reveal hidden RGB that
+visible previews cannot.
 
 ### Unpublished exchange and saved cleanup
 
@@ -1121,5 +1122,99 @@ rectangle. This compares composite RGBA, so edits confined to invisible layer
 sources do not highlight pixels; inspect native sources for those differences.
 Magenta is an inspection marker, not a pixel mutation. The contact artifact is
 bound to the same exact receipt as ordinary review; stale bases/receipts reject.
-Isolated-pixel, fragmented-cluster and near-color heuristics remain deferred;
-intentional stars, glints or highlights are never removed automatically.
+Contact inspection does not alter pixels. Use the separate opt-in cleanup
+workflow below for selected small-island suggestions. Fragmented-plane and
+near-color consolidation remain deferred.
+
+### Selective pixel cleanup
+
+`analyze_artwork_cleanup(candidate,profile,layer_id?,offset?)` returns read-only
+small-color-island findings, a normalized profile-bound `proposal`, and current
+constraint validation. Layered artwork requires an explicit source `layer_id`;
+flat artwork omits it. Findings have stable IDs within that exact candidate,
+profile, layer and algorithm version, native coordinates, original/replacement
+RGBA, squared RGB distance, matching/total boundary edges and a reason. Pages
+contain at most 256 of at most 4,096 findings; follow `next_offset`. Each page
+recomputes the same bounded analysis. Excess findings reject; narrow the region.
+
+`profile:{}` selects these defaults. Unknown rules and out-of-range values reject.
+
+| Field | Default / contract |
+| --- | --- |
+| `rectangle` | Whole canvas; explicit in-bounds `{x,y,width,height}` limits editable cells and the scan |
+| `protected_pixels` | `[]`; at most 4,096 explicit `[x,y]` points |
+| `protected_rectangles` | `[]`; at most 128 in-bounds rectangles; union with protected points |
+| `max_island_size` | 4; integer 1..16 pixels |
+| `connectivity` | 8; either 4 edge neighbors or 8 edge/diagonal neighbors |
+| `max_color_distance` | 48; integer 0..441 Euclidean distance in encoded sRGB |
+| `min_boundary_percent` | 75; integer 50..100, tested without rounding |
+| `allowed_palette` | Optional 1..256 exact RGBA8 colors, checked on the full target source **and** full composite |
+| `color_budget` | Optional 1..256 distinct exact RGBA colors on each of the full target source and full composite, including hidden transparent colors |
+
+Findings are exact-RGBA connected components, considered in row-major seed order.
+Components touching the scan boundary or any protected pixel are excluded in
+their entirety, so cropped line fragments are never treated as complete islands.
+Transparent components are excluded. The replacement is the most frequent
+different color along four-neighbor boundary **edges**, with ties resolved by
+smallest squared RGB distance then lexicographic RGBA. Same-color diagonal
+connections join components but do not add boundary votes. The winning color
+must have the same alpha, meet the distance threshold and receive the required
+fraction of all boundary votes. Hidden transparent RGB and every source alpha
+remain exact. This is one simultaneous pass over unchanged source pixels, with
+no dithering, palette generation, smoothing or implicit iteration.
+
+`preview_artwork_cleanup(candidate,proposal,selected,compact?)` recomputes findings
+against the exact source and applies **only** the caller's explicit list of up to
+256 distinct finding IDs. `selected:[]` previews no edits. Stale/mismatched plans,
+unknown IDs, locked targets or unsatisfied output constraints reject before
+retaining a candidate or publishing previews. Changing a profile or source
+requires new analysis. A returned candidate preserves its original saved base;
+compact input/output uses existing recoverable sidecars. No saved artwork changes.
+
+The result includes `changes` (at most 4,096 native pixels, each with coordinates,
+before/after RGBA and finding ID), `changed_pixels`, selected IDs and validation.
+Three PNG resources show the **target source** before, after and magenta edits,
+including edits to invisible layers. Whole-source previews use nearest-floor
+overview sampling with a ceiling of 1,024 per axis. Each change-map overview
+block is marked if it contains any changed cell, even when the edited pixel was
+not sampled for the image. `changes` remains the authoritative exact map. The
+normal inline limit includes the first two PNGs; the map stays resource-readable.
+Review the composite with `review_artwork_candidate` before `commit_artwork`.
+
+`validate_artwork_cleanup(candidate,before_candidate,proposal)` independently
+checks actual before/after content. It returns `passed`, `hard_checks`, artistic
+`warnings`, `unsupported_checks`, exact candidate revisions and proposal revision.
+Hard checks cover identity/geometry/metadata/base, editable region, protected
+pixels, alpha/hidden RGB, target locks, other layers and optional source/composite
+palette/count constraints. A geometry/base mismatch returns a failed check
+without pretending remaining checks ran. Analysis can report existing palette
+violations; preview succeeds only when the selected output satisfies all checks.
+Validation issues no commit receipt and does not change ordinary save semantics:
+profiles constrain this cleanup operation, not future unrelated edits or exports.
+
+Scan area is at most 1,048,576 pixels. Profile JSON is at most 128 KiB. Admission
+work units are `9 × scan area + aggregate source/composite area + sum(protected
+rectangle areas)` ≤16,777,216; duplicate protection coverage still counts. This
+bounds scan neighbor visits and protection painting, not total interpreter/codec
+work or process memory. Visited/scan-stack storage is linear in scan area, the
+protection mask in canvas area, and finding storage is capped at 4,096 ×16 cells.
+Existing native aggregate/candidate limits, 26 MiB tool inputs, resource cache and
+review budgets still apply; use handles for large before/after pairs.
+
+Small islands can be intentional glints, stars or texture. Diagonal connectivity
+helps retain thin lines but does not recognize features. Outline repair,
+silhouette scoring, semantic protection and color-plane consolidation are
+explicitly unsupported. Use protected regions and inspect edits; counts are
+suggestions, not detected-defect or artistic-quality scores.
+
+Run the [official-SDK example](../examples/mcp/pixel_cleanup.py) from a source
+checkout with the MCP extra to exercise selected edits, PNG resource reads,
+validation, stale-receipt rejection, fresh review/commit and exact layer reopen:
+
+```sh
+python examples/mcp/pixel_cleanup.py --output /tmp/forge-pixel-cleanup
+```
+
+It uses an original MIT [synthetic motif](../tests/fixtures/pixel-cleanup/motif.json)
+and requires a fresh output directory. See the [bounded evaluation](evaluations/pixel-cleanup.md)
+for results, intentional-detail failures and measurement limits.

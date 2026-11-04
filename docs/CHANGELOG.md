@@ -6,6 +6,14 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.36.0 — Selective MCP pixel cleanup
+
+[Release notes](RELEASE-0.36.0.md). Analyze small color islands, preview only
+selected suggestions and validate exact protected-pixel, layer, alpha and palette
+constraints. Review source PNGs and native change maps before the existing guarded
+commit. Artistic intent, outline repair and plane consolidation remain unverified
+or unsupported. Publication is separate.
+
 ## 0.35.0 — MCP illustration iteration and review
 
 [Release notes](RELEASE-0.35.0.md). Compare explicit artwork drafts, request

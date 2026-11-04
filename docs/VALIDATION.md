@@ -15,6 +15,37 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Selective MCP pixel cleanup (#218)
+
+- **Scope:** Prepared 0.36.0 working tree based on `decbee7`, checked locally on
+  2026-11-04 with macOS arm64, Python 3.13.13, Node 24.22.1, bundled Chromium and
+  official MCP SDK 1.30.0. No tag or package publication was performed.
+- **Method:** Run `make lint test`, production `make build check-dist test-browser`,
+  installed-wheel first-use acceptance and `make test-mcp` against a fresh optional-
+  MCP wheel install. Exercise selected cleanup through the official stdio SDK,
+  source/change PNG resources, independent actual-output validation, old-receipt
+  rejection, fresh review/commit and exact saved-layer reopen. Reproduce the
+  [synthetic comparison and bounded timing](evaluations/pixel-cleanup.md), and
+  run the final implementation on a temporary copy of the user's grid-free card.
+- **Result:** Lint, documentation checks, 486 Python tests and all frontend suites
+  pass. Production distributions and seven installed-wheel smoke cases pass;
+  118 installed-wheel MCP tests pass. All 159 regular browser cases and the
+  installed-wheel first-use case pass, along with all six mixed MCP/browser
+  refresh, handoff and conflict cases. The original MIT motif removes its two
+  declared noise cells while preserving protected glint/diagonal pixels; removing
+  protection loses the intentional glint, and four-connectivity removes the thin
+  diagonal. A single maximum-area uniform scan took about 2.4 seconds. The user's
+  temporary card produces 195 suggestions changing 232 cells with all hard checks
+  passing and saved artwork untouched; scan-boundary exclusion leaves three
+  prototype edits unapplied. Counts do not establish that edits improve the art.
+- **Limits:** Twelve opt-in browser profile cases were skipped. Synthetic source
+  PNGs, exact changes and implementation hash are archived with the evaluation;
+  the private card and local command logs are not committed CI evidence. No
+  independent-human quality assessment, adversarial worst-case latency or total-
+  process memory measurement is claimed. Outline repair, semantic recognition
+  and plane consolidation remain unsupported. Tiled/rasterizer applications
+  were unavailable; existing interoperability and human checks remain below.
+
 ## Runtime policy ownership and boundaries (#172)
 
 - **Scope:** Behavior-preserving working tree based on `9fd65ef`, checked locally
@@ -2324,6 +2355,13 @@ Dates, revisions and environments missing from the originals remain unknown.
   claim is made by this local record.
 
 ## Remaining checks
+
+### Selective pixel cleanup (#218)
+
+- [ ] Assess cleanup suggestions with independent users on varied generated art,
+  including intentional glints, diagonal outlines, textured regions and protected
+  details. The [synthetic comparison](evaluations/pixel-cleanup.md) and agent card
+  inspection establish bounded behavior, not general artistic quality.
 
 ### Human–agent artwork iteration (milestone 21)
 

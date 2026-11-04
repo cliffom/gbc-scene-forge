@@ -59,12 +59,18 @@ the table also retains inherited source coverage.
 
 | Outcome | Browser route | MCP route | Boundary / evidence |
 | --- | --- | --- | --- |
-| Literal raster editing and recoloring | Draw tools, selections, exact RGBA | `edit_artwork_raster`, `artwork_colors`; existing exact writes/patches retained | Atomic batches, explicit rectangles and layer targets; simultaneous remaps. [Equivalent measurements](evaluations/artwork-iteration.md); optional noise/near-color diagnostics deferred |
+| Literal raster editing and recoloring | Draw tools, selections, exact RGBA | `edit_artwork_raster`, `artwork_colors`; existing exact writes/patches retained | Atomic batches, explicit rectangles and layer targets; simultaneous remaps. [Equivalent measurements](evaluations/artwork-iteration.md); opt-in island cleanup below, near-color consolidation deferred |
 | Named illustration layers | Artwork layers controls and per-document Undo | `edit_artwork_layers` and explicit `layer_id` | Eight sources, aggregate pixel limit including composite; exact source preservation across recovery/export. [Domain/SDK](../tests/backend/adapters/test_mcp_iteration.py), [browser](../tests/playwright/artwork/iteration.spec.ts) |
 | Immediately visible bounded review | Existing comparison and detail panels | Inline PNG blocks plus resource links; scene overview without camera | Two inline images / 4 MiB decoded; resources/session lifetime retained. [SDK checks](../tests/backend/adapters/test_mcp_iteration.py); changed-pixel overlay deferred |
 | Unpublished handoff | Agent candidates inspect/adopt, Return candidate to agent | Retain/list/export immutable candidates | Separate owner/local history; original saved base remains fixed; review before commit. [Real SDK/browser exchange](../tests/playwright/mcp/iteration-mcp.spec.ts) |
 | Saved artwork discovery and deletion | Library/source choices update while Artwork stays open; existing atlas deletion | `delete_artwork` dry-run/exact plan/current revision | Whole atlas; references block; independent work retained, stale saves reject. [SDK/browser discovery/deletion](../tests/playwright/mcp/iteration-mcp.spec.ts) |
 | Pointer wheel navigation | Ordinary wheel zoom, existing panning controls | Interactive navigation intentionally browser-only | Preserves pixels/dirty/history, scoped to viewport. [Browser coverage](../tests/playwright/artwork/iteration.spec.ts) |
+
+## Selective cleanup addition (0.36.0)
+
+| Outcome | Browser route | MCP route | Boundary / evidence |
+| --- | --- | --- | --- |
+| Analyze and selectively clean small color islands | Inspect/adopt an unpublished candidate; literal manual edits remain available | `analyze_artwork_cleanup`, `preview_artwork_cleanup`, `validate_artwork_cleanup`, existing review/commit | MCP-specific suggestions and exact constraints; no new browser cleanup UI or Undo transfer. Explicit layer/regions/protection, immutable proposals, source previews and exact coordinate map. [Synthetic evaluation](evaluations/pixel-cleanup.md), [SDK/source fidelity regressions](../tests/backend/adapters/test_mcp_cleanup.py). Artistic intent remains unverified. |
 
 ## Representative equivalence method
 

@@ -52,6 +52,14 @@ the SDK-only test when the extra is absent. `packaging/package_smoke.py` is
 explicitly run with `python -I` after wheel installation, outside unit discovery.
 It imports only the installed application, never test helpers.
 
+`fixtures/pixel-cleanup/motif.json` is an original MIT synthetic motif with
+independently declared noise coordinates and intentional glint/diagonal failures.
+`support/measure_cleanup.py` reproduces the archived PNGs/results; the
+[cleanup evaluation](../docs/evaluations/pixel-cleanup.md) records its limits.
+Domain and MCP cleanup suites cover selection, exact constraints and official-SDK
+review/commit/reopen. The SDK example reads this source-tree fixture explicitly;
+the installed product has no dependency on test data.
+
 `backend/adapters/test_mcp_native_artwork.py` covers client-held artwork candidates,
 strict schemas, exact RGBA/resource reads, reviewed commits, contention and a
 complete official-SDK new-tile and selected-variation review/commit/placement workflow. Run it against

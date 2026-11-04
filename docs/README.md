@@ -65,6 +65,8 @@ Test ownership and commands are in [test organization](../tests/README.md).
 - [Valibot response-contract adoption](evaluations/valibot-pilot.md)
 - [Wide scene limits and measurements (#99)](evaluations/wide-scenes.md)
 
+- [Selective pixel cleanup (#218)](evaluations/pixel-cleanup.md)
+
 ## Historical design and compatibility
 
 - [Standalone projects and saved scenes](ISSUE-13-PLAN.md)
@@ -76,6 +78,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Release notes
 
+- [Scene Forge 0.36.0](RELEASE-0.36.0.md) — MCP selective pixel cleanup and constraint validation.
 - [Scene Forge 0.35.0](RELEASE-0.35.0.md) — MCP draft comparison, PNG inspection and archive plans.
 - [Scene Forge 0.34.0](RELEASE-0.34.0.md) — MCP illustration preparation and lifecycle.
 

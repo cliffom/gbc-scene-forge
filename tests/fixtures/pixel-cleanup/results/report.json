@@ -1,0 +1,314 @@
+{
+  "python": "3.13.13",
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "implementation_sha256": "13daf712b8f333e3293022a80640a82b05947b5f1cc9125003cb993bdb45b5a2",
+  "motif_rgba_sha256": "fb5e312c60d6655385e13ed849a9147c77ada2bf97a67ff51c641d67e06a4818",
+  "results": {
+    "protected": {
+      "changed_pixels": 2,
+      "changes": [
+        {
+          "x": 3,
+          "y": 11,
+          "before": [
+            55,
+            35,
+            52,
+            255
+          ],
+          "after": [
+            48,
+            32,
+            48,
+            255
+          ],
+          "finding_id": "island-179"
+        },
+        {
+          "x": 9,
+          "y": 12,
+          "before": [
+            55,
+            35,
+            52,
+            255
+          ],
+          "after": [
+            48,
+            32,
+            48,
+            255
+          ],
+          "finding_id": "island-201"
+        }
+      ],
+      "hard_checks": {
+        "identity_geometry_metadata_and_base": true,
+        "alpha": true,
+        "hidden_transparent_rgb": true,
+        "editable_region": true,
+        "protected_pixels": true,
+        "target_layer_lock": true,
+        "other_layers": true
+      }
+    },
+    "unprotected": {
+      "changed_pixels": 3,
+      "changes": [
+        {
+          "x": 3,
+          "y": 11,
+          "before": [
+            55,
+            35,
+            52,
+            255
+          ],
+          "after": [
+            48,
+            32,
+            48,
+            255
+          ],
+          "finding_id": "island-179"
+        },
+        {
+          "x": 9,
+          "y": 12,
+          "before": [
+            55,
+            35,
+            52,
+            255
+          ],
+          "after": [
+            48,
+            32,
+            48,
+            255
+          ],
+          "finding_id": "island-201"
+        },
+        {
+          "x": 12,
+          "y": 4,
+          "before": [
+            240,
+            240,
+            235,
+            255
+          ],
+          "after": [
+            220,
+            220,
+            210,
+            255
+          ],
+          "finding_id": "island-76"
+        }
+      ],
+      "hard_checks": {
+        "identity_geometry_metadata_and_base": true,
+        "alpha": true,
+        "hidden_transparent_rgb": true,
+        "editable_region": true,
+        "protected_pixels": true,
+        "target_layer_lock": true,
+        "other_layers": true
+      }
+    },
+    "four-connected": {
+      "changed_pixels": 10,
+      "changes": [
+        {
+          "x": 6,
+          "y": 6,
+          "before": [
+            24,
+            16,
+            24,
+            255
+          ],
+          "after": [
+            48,
+            32,
+            48,
+            255
+          ],
+          "finding_id": "island-102"
+        },
+        {
+          "x": 7,
+          "y": 7,
+          "before": [
+            24,
+            16,
+            24,
+            255
+          ],
+          "after": [
+            48,
+            32,
+            48,
+            255
+          ],
+          "finding_id": "island-119"
+        },
+        {
+          "x": 8,
+          "y": 8,
+          "before": [
+            24,
+            16,
+            24,
+            255
+          ],
+          "after": [
+            48,
+            32,
+            48,
+            255
+          ],
+          "finding_id": "island-136"
+        },
+        {
+          "x": 3,
+          "y": 11,
+          "before": [
+            55,
+            35,
+            52,
+            255
+          ],
+          "after": [
+            48,
+            32,
+            48,
+            255
+          ],
+          "finding_id": "island-179"
+        },
+        {
+          "x": 9,
+          "y": 12,
+          "before": [
+            55,
+            35,
+            52,
+            255
+          ],
+          "after": [
+            48,
+            32,
+            48,
+            255
+          ],
+          "finding_id": "island-201"
+        },
+        {
+          "x": 2,
+          "y": 2,
+          "before": [
+            24,
+            16,
+            24,
+            255
+          ],
+          "after": [
+            48,
+            32,
+            48,
+            255
+          ],
+          "finding_id": "island-34"
+        },
+        {
+          "x": 3,
+          "y": 3,
+          "before": [
+            24,
+            16,
+            24,
+            255
+          ],
+          "after": [
+            48,
+            32,
+            48,
+            255
+          ],
+          "finding_id": "island-51"
+        },
+        {
+          "x": 4,
+          "y": 4,
+          "before": [
+            24,
+            16,
+            24,
+            255
+          ],
+          "after": [
+            48,
+            32,
+            48,
+            255
+          ],
+          "finding_id": "island-68"
+        },
+        {
+          "x": 12,
+          "y": 4,
+          "before": [
+            240,
+            240,
+            235,
+            255
+          ],
+          "after": [
+            220,
+            220,
+            210,
+            255
+          ],
+          "finding_id": "island-76"
+        },
+        {
+          "x": 5,
+          "y": 5,
+          "before": [
+            24,
+            16,
+            24,
+            255
+          ],
+          "after": [
+            48,
+            32,
+            48,
+            255
+          ],
+          "finding_id": "island-85"
+        }
+      ],
+      "hard_checks": {
+        "identity_geometry_metadata_and_base": true,
+        "alpha": true,
+        "hidden_transparent_rgb": true,
+        "editable_region": true,
+        "protected_pixels": true,
+        "target_layer_lock": true,
+        "other_layers": true
+      }
+    }
+  },
+  "uniform_scan": {
+    "width": 1024,
+    "height": 1024,
+    "findings": 0,
+    "seconds": 2.3728098329156637,
+    "samples": 1,
+    "includes": "candidate validation and analysis"
+  },
+  "limits": "Original synthetic opaque flat motif and one uniform maximum-area scan, one timing sample. No general artistic quality, worst-case latency or total-process memory claim. Generated art from the discussion is not redistributed."
+}
