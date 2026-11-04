@@ -95,9 +95,17 @@ p.artwork.documents.save(c)
   await page.locator('[data-asset="picture/artwork"]').click();
   await revealArtworkControl(page, 'art-layer');
   await expect(page.locator('#art-layer option')).toHaveText(['Base', 'Glow']);
+  const red = page.locator('#art-swatches button[data-rgba="255,0,0,255"]');
+  await expect(red).toHaveCount(0);
   await page.locator('#art-layer').selectOption({ label: 'Glow' });
+  await expect(red).toHaveCount(1);
+  await page.locator('#art-layer').selectOption({ label: 'Base' });
+  await expect(red).toHaveCount(0);
+  await page.locator('#art-layer').selectOption({ label: 'Glow' });
+  await expect(red).toHaveCount(1);
   await expect(page.locator('#art-layer-opacity')).toHaveValue('128');
   await expect(page.locator('#art-document-state')).toHaveText('Saved');
+  await expect(page.locator('#art-undo')).toBeDisabled();
   await page.setViewportSize({ width: 760, height: 800 });
   await expect(page.locator('#art-layer-update')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(

@@ -9,6 +9,7 @@ export function createArtworkLayerControls(
     busy: () => boolean;
     cancelGesture: () => void;
     draw: () => void;
+    refreshPalette: () => void;
     operation: (work: () => void) => void;
     opening: () => void;
   },
@@ -30,6 +31,7 @@ export function createArtworkLayerControls(
     () => {
       ports.cancelGesture();
       ports.current()?.selectLayer(select('art-layer').value);
+      ports.refreshPalette();
       ports.draw();
     },
     { signal: lifetime.signal },

@@ -178,3 +178,145 @@ print(base64.b64encode(encode(16,16,bytes([71,72,73,0])*256)).decode())
   await expect(page.locator('#art-undo')).toBeEnabled();
   await page.screenshot({ path: info.outputPath('unpublished-and-saved-handoff.png') });
 });
+
+test('mcp: adopting saved edits retains the saved baseline through navigation, recovery and save', async ({
+  page,
+  workspace,
+}, info) => {
+  const root = join(workspace.folder, 'project');
+  const python = process.env.FORGE_MCP_PYTHON || workspace.python;
+  execFileSync(python, [
+    '-I',
+    '-c',
+    `
+import sys
+from pathlib import Path
+from gbc_scene_forge.project.application import Project
+p=Project.create(Path(sys.argv[1]),'Adopt edits')
+c=p.artwork.documents.create('picture','Picture','sprite',8,8,p.catalog()['revision'])
+p.artwork.documents.save(c)
+`,
+    root,
+  ]);
+  const call = (tool: string, args: Record<string, unknown>) =>
+    record(
+      JSON.parse(
+        execFileSync(python, ['tests/support/mcp_call.py', root, tool], {
+          input: JSON.stringify({ project: 'project', ...args }),
+          encoding: 'utf8',
+        }),
+      ),
+    );
+  const url = await workspace.start(root);
+  const catalog = record(await (await page.request.get(new URL('api/project', url).href)).json());
+  const inventory = call('list_artwork', { project_revision: catalog.revision });
+  const item = array(inventory.documents, record)[0];
+  let candidate = call('open_artwork', {
+    target: item.target,
+    artwork_revision: item.artwork_revision,
+    project_revision: catalog.revision,
+  });
+  const layers = ['Red', 'Blue'].map((name) => ({
+    id: crypto.randomUUID(),
+    name,
+    visible: true,
+    opacity: 255,
+    locked: false,
+  }));
+  candidate = call('edit_artwork_layers', { candidate, layers });
+  for (const [index, rgba] of [
+    [255, 0, 0, 255],
+    [0, 0, 255, 255],
+  ].entries()) {
+    candidate = call('edit_artwork_pixels', {
+      candidate,
+      layer_id: layers[index].id,
+      writes: [{ x: index, y: 0, rgba }],
+    });
+  }
+  const report = call('review_artwork_candidate', { candidate });
+  const ack = call('commit_artwork', { candidate, receipt: report.receipt });
+  candidate = call('open_artwork', {
+    target: item.target,
+    artwork_revision: ack.artwork_revision,
+    project_revision: ack.project_revision,
+  });
+  const original = decodeCandidate(call('export_artwork_candidate', { candidate }));
+  candidate = call('edit_artwork_pixels', {
+    candidate,
+    layer_id: layers[1].id,
+    writes: [{ x: 2, y: 0, rgba: [0, 255, 0, 255] }],
+    compact: true,
+  });
+  const edited = decodeCandidate(call('export_artwork_candidate', { candidate }));
+  await page.goto(url);
+  await page.locator('#show-artwork').click();
+  await (await revealArtworkControl(page, 'art-handoff-list')).click();
+  await page
+    .locator('#art-handoff-candidates section')
+    .filter({ hasText: string(candidate.revision) })
+    .getByRole('button', { name: 'Adopt a copy', exact: true })
+    .click();
+  await expect(page.locator('#art-document-state')).toHaveText('Modified');
+  await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
+  await expect(page.locator('#art-undo')).toBeDisabled();
+  let writes = 0;
+  page.on('request', (request) => {
+    if (request.url().endsWith('/api/artwork-draft-write')) {
+      writes++;
+    }
+  });
+  const palette = page.locator('#art-swatches button');
+  const colors = () =>
+    palette.evaluateAll((nodes) => nodes.map((n) => n.getAttribute('data-rgba')));
+  const layerSelect = await revealArtworkControl(page, 'art-layer');
+  expect(await colors()).toContain('255,0,0,255');
+  expect(await colors()).not.toContain('0,0,255,255');
+  await layerSelect.selectOption({ label: 'Blue' });
+  expect(await colors()).toContain('0,0,255,255');
+  expect(await colors()).toContain('0,255,0,255');
+  expect(await colors()).not.toContain('255,0,0,255');
+  await layerSelect.selectOption({ label: 'Red' });
+  expect(await colors()).toContain('255,0,0,255');
+  expect(await colors()).not.toContain('0,0,255,255');
+  await expect(page.locator('#art-undo')).toBeDisabled();
+  expect(writes).toBe(0);
+  await page.locator('#art-palette-toggle').click();
+  await page.screenshot({ path: info.outputPath('adopted-edit-palette.png') });
+  await page.locator('#art-palette-toggle').click();
+  await page.locator('#art-close').click();
+  const post = async (action: string, data = {}) => {
+    const response = await page.request.post(new URL('api/artwork-' + action, url).href, {
+      data,
+      headers: { 'X-Scene-Token': string(catalog.token) },
+    });
+    expect(response.status(), await response.text()).toBe(200);
+    return record(await response.json());
+  };
+  const drafts = array((await post('draft-list')).drafts, record);
+  expect(drafts).toHaveLength(1);
+  const checkpoint = await post('draft-download', drafts[0]);
+  expect(decodeCandidate(checkpoint.original).layer_rgba).toEqual(original.layer_rgba);
+  expect(decodeCandidate(checkpoint.candidate).layer_rgba).toEqual(edited.layer_rgba);
+  await page.reload();
+  await page.locator('#show-artwork').click();
+  await revealArtworkControl(page, 'art-drafts');
+  await page.getByRole('button', { name: 'Recover copy', exact: true }).click();
+  await expect(page.locator('#art-document-state')).toHaveText('Modified');
+  await saveArtwork(page);
+  const savedCatalog = record(
+    await (await page.request.get(new URL('api/project', url).href)).json(),
+  );
+  const savedItem = array(
+    call('list_artwork', { project_revision: savedCatalog.revision }).documents,
+    record,
+  )[0];
+  const saved = decodeCandidate(
+    call('open_artwork', {
+      target: savedItem.target,
+      artwork_revision: savedItem.artwork_revision,
+      project_revision: savedCatalog.revision,
+    }),
+  );
+  expect(saved.layer_rgba).toEqual(edited.layer_rgba);
+});

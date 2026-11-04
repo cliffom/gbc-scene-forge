@@ -15,6 +15,31 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## PR #193 adopted-edit recovery and layer palette corrections
+
+- **Scope:** Prepared 0.32.0 working tree based on
+  `37ede339ed741df35af10cb558694032b98cc4c6`, checked 2026-11-03 in the local
+  macOS/Python/Node/Chromium environment recorded under milestone 21 below.
+- **Method:** The [real MCP/browser regressions](../tests/playwright/mcp/iteration-mcp.spec.ts)
+  adopt new artwork and edits to saved layered artwork. The saved-edit case checks
+  Modified state, separate saved and edited checkpoint sources after returning to
+  Scene, recovery after reload, and exact saved layer pixels. Palette assertions
+  switch sources in both directions without Undo or checkpoint writes; the
+  [artwork regression](../tests/playwright/artwork/iteration.spec.ts) also switches
+  sources after saving and reopening. Agent screenshot inspection covers the
+  adopted Modified document, selected Red layer and its palette at 1440×1000.
+- **Result:** Both production MCP/browser cases and all eleven focused
+  artwork/navigation cases pass. `make lint test` passes with 448 Python tests
+  and all TypeScript suites; final ESLint, formatting and documentation checks
+  pass. The initial new test fixture
+  supplied an inline candidate without retaining it, so it could not appear in
+  candidate discovery; retaining it with compact mode corrected the fixture.
+  Adopted saved edits retain their actual saved original and survive recovery;
+  switching layers immediately shows the selected source's colors.
+- **Limits:** These are local automated checks and agent desktop inspection;
+  they do not establish a new CI result or complete the independent-human,
+  physical-device and external-tool checks below.
+
 ## PR #193 MCP refresh harness correction
 
 - **Scope:** Prepared 0.32.0 working tree based on

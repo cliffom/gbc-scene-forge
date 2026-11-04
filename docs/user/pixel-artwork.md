@@ -16,6 +16,8 @@ Open **Layers** above the drawing viewport to add a layer, choose the
 active layer, rename, reorder, hide, set opacity (0..255) or lock it. First **Add
 layer** retains flat artwork as **Base** and adds a transparent layer. Draw tools
 edit the selected source; the canvas and scenes show the visible composite.
+Choosing a layer immediately updates the color palette to that source's colors
+without adding an Undo step or changing the document.
 Updating a layer trims its name; an empty name is rejected before changing the
 document.
 Unlock a layer before changing its pixels or structure. Layer changes and pixels
@@ -31,6 +33,8 @@ MCP snapshots. **Inspect snapshot** shows/downloads the selected revision withou
 saving. **Adopt a copy** checks its artwork and selected-scene bases and opens
 separately owned local work with a new Undo history; other open documents keep
 their history/checkpoints.
+Adopted edits to saved artwork remain **Modified** against the actual saved
+original until saved. Returning to Scene retains their recovery checkpoint.
 **Document actions → Return candidate to agent** checkpoints and downloads an immutable handle that
 the agent can list/export and edit against its actual saved base. It does not
 publish. A later browser/MCP save still needs fresh review and guards. Stale work

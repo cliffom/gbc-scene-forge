@@ -1225,6 +1225,7 @@ export function createPixelEditor({
     busy: () => busy,
     cancelGesture,
     draw,
+    refreshPalette: swatches,
     operation,
   });
   button('art-handoff-list').addEventListener(
@@ -1286,7 +1287,19 @@ export function createPixelEditor({
               const value = await api('artwork-candidate-export', decodeCandidate, {
                 candidate: adopted,
               });
-              start(value);
+              const original =
+                value.operation === 'edit'
+                  ? await api('artwork-open', decodeCandidate, {
+                      target: {
+                        document_id: value.document_id,
+                        atlas_id: value.atlas_id,
+                        region: value.descriptor.region,
+                      },
+                      project_revision: value.project_revision,
+                      artwork_revision: value.artwork_revision,
+                    })
+                  : value;
+              start(value, original);
               await session?.checkpoint();
               message(
                 'Adopted a separate unpublished copy with a new Undo history. Original candidate retained.',
