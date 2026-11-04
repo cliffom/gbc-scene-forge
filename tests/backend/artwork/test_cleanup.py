@@ -2,6 +2,7 @@
 
 import base64
 import copy
+import json
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -73,6 +74,28 @@ class CleanupTests(unittest.TestCase):
             page = cleanup.analyze(self.candidate, {})
             self.assertEqual(page["next_offset"], 1)
             self.assertEqual(len(page["findings"]), 1)
+
+    def test_proposal_survives_reordered_json_keys(self):
+        for profile in (
+            {},
+            {
+                "rectangle": dict(x=0, y=0, width=16, height=16),
+                "protected_rectangles": [dict(x=11, y=3, width=3, height=3)],
+            },
+        ):
+            with self.subTest(profile=profile):
+                analysis = cleanup.analyze(self.candidate, profile)
+                proposal = analysis["proposal"]
+                reordered = json.loads(json.dumps(proposal, sort_keys=True))
+                self.assertEqual(proposal, reordered)
+                self.assertEqual(
+                    cleanup.analyze(self.candidate, reordered["profile"])["proposal"], proposal
+                )
+                selected = [f["id"] for f in analysis["findings"]]
+                self.assertEqual(
+                    cleanup.preview(self.candidate, reordered, selected),
+                    cleanup.preview(self.candidate, proposal, selected),
+                )
 
     def test_scope_and_partial_components_are_never_clipped(self):
         profile = {"rectangle": dict(x=2, y=10, width=3, height=3)}

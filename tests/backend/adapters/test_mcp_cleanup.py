@@ -58,6 +58,7 @@ class MCPCleanupTests(unittest.TestCase):
             profile=self.spec["protected_profile"],
         )
         self.assertEqual(store.list(), inventory)
+        analysis["proposal"] = json.loads(json.dumps(analysis["proposal"], sort_keys=True))
         result = self.call(
             "preview_artwork_cleanup",
             candidate=candidate,

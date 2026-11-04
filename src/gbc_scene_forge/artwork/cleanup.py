@@ -141,7 +141,7 @@ def proposal_for(candidate, profile, layer_id):
     body = dict(
         version=1, candidate_revision=candidate["revision"], layer_id=layer_id, profile=profile
     )
-    return {**body, "revision": digest(record_bytes(body))}
+    return {**body, "revision": digest(editable.canonical_bytes(body))}
 
 
 def check_proposal(candidate, proposal):
