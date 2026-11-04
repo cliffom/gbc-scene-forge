@@ -52,23 +52,26 @@ export class ArtworkRaster {
         .getContext('2d')
         ?.putImageData(this.data, 0, 0, left, top, right - left + 1, bottom - top + 1);
     }
-    if (model.descriptor.version === 2) {
-      const live = new Set(model.descriptor.frames.map((frame) => frame.id));
-      for (const id of this.frames.keys()) {
-        if (!live.has(id)) {
-          this.frames.delete(id);
-        }
+    // Single-document previews need the same pixel/model invalidation as sheets.
+    const frames =
+      model.descriptor.version === 2
+        ? model.descriptor.frames
+        : [{ ...model.descriptor, x: 0, y: 0 }];
+    const live = new Set(frames.map((frame) => frame.id));
+    for (const id of this.frames.keys()) {
+      if (!live.has(id)) {
+        this.frames.delete(id);
       }
-      for (const frame of model.descriptor.frames) {
-        if (
-          !this.frames.has(frame.id) ||
-          (right >= frame.x &&
-            bottom >= frame.y &&
-            left < frame.x + frame.width &&
-            top < frame.y + frame.height)
-        ) {
-          this.frames.set(frame.id, ++this.serial);
-        }
+    }
+    for (const frame of frames) {
+      if (
+        !this.frames.has(frame.id) ||
+        (right >= frame.x &&
+          bottom >= frame.y &&
+          left < frame.x + frame.width &&
+          top < frame.y + frame.height)
+      ) {
+        this.frames.set(frame.id, ++this.serial);
       }
     }
   }

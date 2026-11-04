@@ -177,6 +177,8 @@ p=Project.create(Path(sys.argv[1]),'Tile panels')
 a=p.artwork.documents
 c=a.create('tile','Tile','tile',8,8,p.catalog()['revision'])
 a.save(a.edit(c,[dict(x=0,y=0,rgba=[17,34,51,255])]))
+c=a.create('other','Other tile','tile',8,8,p.catalog()['revision'])
+a.save(a.edit(c,[dict(x=0,y=0,rgba=[68,85,102,255])]))
 `,
     root,
   ]);
@@ -186,18 +188,31 @@ a.save(a.edit(c,[dict(x=0,y=0,rgba=[17,34,51,255])]))
   await page.locator('#art-properties-toggle').click();
   const repeat = page.locator('#art-repeat-canvas');
   await expect(repeat).toBeVisible();
-  expect(
-    await repeat.evaluate((node) => {
-      if (!(node instanceof HTMLCanvasElement)) {
-        throw Error('Expected repeat canvas');
-      }
-      const context = node.getContext('2d');
-      return [0, 64, 128].map((x) => [...(context?.getImageData(x, 0, 1, 1).data ?? [])]);
-    }),
-  ).toEqual([
-    [17, 34, 51, 255],
-    [17, 34, 51, 255],
-    [17, 34, 51, 255],
-  ]);
+  async function expectRepeated(color: number[]) {
+    expect(
+      await repeat.evaluate((node) => {
+        if (!(node instanceof HTMLCanvasElement)) {
+          throw Error('Expected repeat canvas');
+        }
+        const context = node.getContext('2d');
+        return [0, 64, 128].map((x) => [...(context?.getImageData(x, 0, 1, 1).data ?? [])]);
+      }),
+    ).toEqual([color, color, color]);
+  }
+  await expectRepeated([17, 34, 51, 255]);
   await expect(page.locator('#undo')).toBeDisabled();
+  await page.locator('#art-color').fill('#cc7733');
+  await page.locator('#art-canvas').click({ position: { x: 8, y: 8 } });
+  await expectRepeated([204, 119, 51, 255]);
+  await page.locator('#undo').click();
+  await expectRepeated([17, 34, 51, 255]);
+  await page.locator('#redo').click();
+  await expectRepeated([204, 119, 51, 255]);
+  await page.locator('[data-asset="other/artwork"]').click();
+  await page.locator('#art-properties-toggle').click();
+  await expectRepeated([68, 85, 102, 255]);
+  await page.locator('#document-switcher').click();
+  await page.locator('#artwork-documents button').filter({ hasText: /^Tile · Artwork/ }).click();
+  await page.locator('#art-properties-toggle').click();
+  await expectRepeated([204, 119, 51, 255]);
 });

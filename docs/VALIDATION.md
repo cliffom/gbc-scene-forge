@@ -15,6 +15,25 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Single-tile repetition preview cache (PR #200)
+
+- **Scope:** Prepared 0.33.0 working tree based on `1e6dfab`, checked
+  2026-11-03 local time (2026-11-04 UTC), macOS arm64, local production bundle
+  and Playwright Chromium; disposable projects.
+- **Method:** Extend contextual-panel acceptance to inspect all three repeated
+  copies after painting, Undo, Redo and switching between equal-sized single
+  tiles. Run the pixel and raster suites, including unaffected sheet frame stamps
+  and the contextual dock's unchanged-thumbnail work counts.
+- **Result:** The regression failed before the fix with the original color still
+  visible after painting. An intermediate run reached document restoration but
+  exposed an ambiguous test name selector, which was corrected. The final pixel
+  and contextual-panel run passed all 44 cases; both direct raster cases passed.
+  The production frontend build and `make lint test` passed (448 Python tests
+  and all TypeScript suites).
+- **Limits:** Scoped local automation; no full-browser, installed-wheel, MCP or
+  CI rerun is claimed for this follow-up. Earlier broader checks retain their
+  revision boundary below; human verification of this fix remains unreported.
+
 ## Consolidated editor workflows (milestone 22)
 
 - **Scope:** Prepared 0.33.0 product source at `0269aae` on `milestone/22`,

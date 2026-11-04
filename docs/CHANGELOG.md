@@ -16,7 +16,8 @@ retains exact review and explicit confirmation.
 [Release notes](RELEASE-0.33.0.md). Share the Library, workbench, collapsible
 Inspector and optional frame/animation dock. Contextual source actions distinguish
 shared edits, independent copies and selected-placement variations; disappeared
-copy sources stay unavailable without clearing entered fields. Preserve exact
+copy sources stay unavailable without clearing entered fields. Single-tile
+repetition previews update with painting, history and document switching. Preserve exact
 review, independent histories and browser/MCP recovery guards. Publication is separate.
 
 ## 0.32.0 — Human–agent artwork iteration
