@@ -6,6 +6,14 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.34.0 — MCP illustration preparation and lifecycle
+
+[Release notes](RELEASE-0.34.0.md). Add storage visibility and durable explicit
+candidate archiving, independent native resize/canvas preparation, opt-in palette
+conversion, aligned layer intake, portable artwork output, atomic candidate edit
+batches and revision-bound coordinate contact sheets. Preserve native envelopes,
+exact layers and separate reviewed commits. Publication is separate.
+
 ## 0.33.3 — Faster artwork opening and layer changes
 
 [Release notes](RELEASE-0.33.3.md). Reduce repeated raster comparisons and native

@@ -1,11 +1,27 @@
 """Thin native-artwork routing for full candidates and recoverable compact handles."""
 
-from gbc_scene_forge.artwork import dimensions, editable, layers, raster, review
+from gbc_scene_forge.artwork import (
+    dimensions,
+    editable,
+    inspection,
+    layers,
+    raster,
+    review,
+    workshop,
+)
 from gbc_scene_forge.artwork.candidates import ArtworkCandidates
 from gbc_scene_forge.artwork.conversion import ArtworkConversion
 from gbc_scene_forge.core.validation import require
 
 NAMES = {
+    "archive_artwork_candidates",
+    "read_artwork_archive",
+    "prepare_artwork_document",
+    "convert_artwork_palette",
+    "import_artwork_layers",
+    "export_artwork_bundle",
+    "edit_artwork_batch",
+    "inspect_artwork_candidate",
     "delete_artwork",
     "edit_artwork_layers",
     "import_artwork_png",
@@ -85,6 +101,13 @@ def capabilities():
         "inline_previews": "At most 2 PNG ImageContent blocks / 4 MiB decoded per response; resource links retained with existing session lifetime. Scene artwork overview does not require a camera.",
         "handoff": "Browser Agent candidates: inspect/download, explicitly adopt separately owned copy, return immutable candidate. No saved publication or Undo transfer; original saved bases remain fixed.",
         "saved_deletion": "delete_artwork: whole atlas/document, required current project revision, optional dry_run then exact plan. Blocks saved scene/definition/stamp references, retains independent candidates/checkpoints with original bases.",
+        "illustration": {
+            "preparation": "Independent static sprite; nearest-floor scaling or anchored crop/pad. Explicit sheet flattening; original saved references stay untouched.",
+            "palette": "Opt-in RGB palette or 1..256 exact RGBA budget, weighted median cut, no dithering. Literal alpha and transparent hidden RGB retained.",
+            "batch": "1..128 operations, 1 MiB JSON, 16777216 pixel work; caller-supplied layer UUIDs refer to new layers. Only final compact candidate retained.",
+            "archives": "Explicit durable selected export before release; 1..32 handles/64 MiB input. Read restart-safe archive in 1 MiB chunks; not included in project exports.",
+            "contact_sheets": "1..8 native rectangles, 1..8 scale, 512 pixels per cell axis, 4194304 image pixels. Exact receipt, coordinates and optional RGBA change overlay.",
+        },
     }
 
 
@@ -111,6 +134,10 @@ def call(adapter, project, name, a):
     candidates = ArtworkCandidates(project.artwork.documents)
     if name == "list_artwork_candidates":
         return candidates.list()
+    if name == "archive_artwork_candidates":
+        return candidates.archive(a["candidates"], release=a.get("release", False))
+    if name == "read_artwork_archive":
+        return candidates.read_archive(a["archive"], a.get("offset", 0))
     a = dict(a)
     value = a.get("candidate")
     handle = isinstance(value, dict) and "handle" in value
@@ -121,8 +148,16 @@ def call(adapter, project, name, a):
     if name == "release_artwork_candidate":
         return candidates.release(value)
     if name == "retain_artwork_candidate":
-        return candidates.retain(a["candidate"])
+        return candidates.retain(
+            a["candidate"], owner=a.get("owner", value.get("owner") if handle else None)
+        )
     result = _call(adapter, project, name, a)
+    if name in {"prepare_artwork_document", "convert_artwork_palette"}:
+        if handle or a.get("compact", False):
+            result["candidate"] = candidates.retain(
+                result["candidate"], owner=value.get("owner") if handle else None
+            )
+        return result
     if (
         (handle or a.get("compact", False))
         and isinstance(result, dict)
@@ -135,6 +170,16 @@ def call(adapter, project, name, a):
 
 def _call(adapter, project, name, a):
     documents = project.artwork.documents
+    if name == "import_artwork_layers":
+        return workshop.intake_layers(
+            documents,
+            a["atlas_id"],
+            a["name"],
+            a["width"],
+            a["height"],
+            a["project_revision"],
+            a["layers"],
+        )
     if name == "import_artwork_png":
         return documents.intake(a["atlas_id"], a["name"], a["png"], a["project_revision"])
     if name == "list_artwork":
@@ -178,6 +223,25 @@ def _call(adapter, project, name, a):
         return documents.open(a["target"], a["project_revision"], a["artwork_revision"])
     candidate = a["candidate"]
     editable.check_candidate(candidate)
+    if name == "export_artwork_bundle":
+        resource = adapter.artifact(workshop.bundle(candidate), "application/zip", "artwork.zip")
+        return {
+            "candidate_revision": candidate["revision"],
+            "project_revision": candidate["project_revision"],
+            "recovery": "Extract candidate.json; retain the exact envelope. Original saved bases remain fixed.",
+            "resource": resource,
+            "resources": [resource],
+        }
+    if name == "inspect_artwork_candidate":
+        result = inspection.contact_sheet(
+            project.artwork.reviews,
+            candidate,
+            a["rectangles"],
+            scale=a.get("scale", 4),
+            changed_overlay=a.get("changed_overlay", False),
+        )
+        resource = adapter.artifact(result.pop("contact_svg"), "image/svg+xml", "contact.svg")
+        return {**result, "resource": resource, "resources": [resource]}
     if name in (
         "read_artwork_pixels",
         "edit_artwork_pixels",
@@ -185,12 +249,33 @@ def _call(adapter, project, name, a):
         "edit_artwork_raster",
         "artwork_colors",
         "edit_artwork_layers",
+        "edit_artwork_batch",
+        "prepare_artwork_document",
+        "convert_artwork_palette",
     ):
         # Pure candidate operations retain their original base; never silently rebase.
         with project.store.read_session(
             candidate["project_revision"], verify_assets=True
         ) as session:
             documents.validate_base(candidate, session.document)
+        if name == "edit_artwork_batch":
+            return workshop.batch(candidate, a["operations"])
+        if name == "prepare_artwork_document":
+            return workshop.prepare(
+                documents,
+                candidate,
+                a["atlas_id"],
+                a["name"],
+                a["width"],
+                a["height"],
+                a["mode"],
+                a["anchor"],
+                a.get("flatten_sheet", False),
+            )
+        if name == "convert_artwork_palette":
+            return workshop.convert_palette(
+                candidate, palette=a.get("palette"), budget=a.get("budget")
+            )
         if name == "edit_artwork_layers":
             return layers.edit(candidate, a["layers"])
         if "layers" in candidate["descriptor"] and name != "edit_artwork_layout":

@@ -47,6 +47,12 @@ the installed optional-MCP wheel through `make test-mcp`.
 `backend/adapters/test_mcp_artwork_workshop.py` runs the example over the actual SDK,
 checking normal placement and conflicts with a competing saved scene or external map edit.
 
+`backend/adapters/test_mcp_illustration.py` covers illustration preparation, palette
+conversion, atomic batches, exact bundle/reopen preservation, archive interruption
+and partial release recovery. The [SDK example](../examples/mcp/illustration_workflow.py)
+exercises the full static workflow; `support/measure_illustration_batch.py` compares
+identical full/compact/batched edits over measured stdio JSON-RPC messages.
+
 Milestone 21 adds `backend/adapters/test_mcp_iteration.py` for PNG intake, bounded
 raster/color operations, layered persistence/recovery, previews and saved deletion.
 `playwright/artwork/iteration.spec.ts` owns layer controls and wheel navigation;

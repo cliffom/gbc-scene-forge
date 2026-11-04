@@ -989,3 +989,152 @@ TOOLS.append(
         ("dry_run", "plan"),
     )
 )
+
+# Illustration production reuses the native envelope, layer UUIDs and raster schemas.
+_PIXEL_TOOL = next(t for t in TOOLS if t["name"] == "edit_artwork_pixels")["inputSchema"][
+    "properties"
+]
+BATCH_OPERATION = {
+    "oneOf": [
+        schema({"op": {"const": "layers"}, "layers": {**LAYERS, "minItems": 0}}),
+        *[
+            schema({"op": {"const": kind}, "layer_id": {"anyOf": [UUID, NULL]}, field: shape})
+            for kind, field, shape in (
+                ("pixels", "writes", _PIXEL_TOOL["writes"]),
+                ("patch", "patch", _PIXEL_TOOL["patch"]),
+                (
+                    "raster",
+                    "operations",
+                    {"type": "array", "minItems": 1, "maxItems": 128, "items": RASTER_OPERATION},
+                ),
+            )
+        ],
+    ]
+}
+_RGB = {
+    "type": "array",
+    "minItems": 3,
+    "maxItems": 3,
+    "items": {"type": "integer", "minimum": 0, "maximum": 255},
+}
+_PNG_UPLOAD = {"type": "string", "maxLength": 4 * ((dimensions.MAX_IMAGE_BYTES + 2) // 3)}
+TOOLS.extend(
+    [
+        tool(
+            "edit_artwork_batch",
+            "Atomic candidate edits: layer list, explicit layer UUID pixel writes/patches/raster, final locks. Later operations use UUIDs declared earlier. 128 operations/1 MiB/16777216 pixel work; invalid batch retains no prefix. Review/commit separately.",
+            {
+                **ARTWORK_CANDIDATE,
+                "operations": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 128,
+                    "items": BATCH_OPERATION,
+                },
+            },
+            read=True,
+        ),
+        tool(
+            "prepare_artwork_document",
+            "Create an independent static sprite from exact candidate sources: nearest-floor document scaling or anchored crop/pad. All layers must be unlocked. Origin scales/translates; crop removing origin rejects. New identity, no reference replacements; sheet frames/timing require explicit flatten_sheet=true and are omitted. Returns candidate and before/after report.",
+            {
+                **ARTWORK_CANDIDATE,
+                "atlas_id": ASSET_ID,
+                "name": TEXT,
+                "width": DIMENSION,
+                "height": DIMENSION,
+                "mode": {"enum": ["nearest", "canvas"]},
+                "anchor": {"enum": ["top-left", "center", "bottom-right"]},
+                "flatten_sheet": {"type": "boolean"},
+            },
+            ("flatten_sheet",),
+            read=True,
+        ),
+        tool(
+            "convert_artwork_palette",
+            "Opt-in no-dither palette conversion on unlocked sources. Choose RGB palette or exact RGBA budget 1..256. Weighted median cut then nearest squared sRGB, lexicographic ties. Alpha and hidden transparent RGB unchanged; impossible budgets reject. Returns candidate and counts/choices report. Review again.",
+            {
+                **ARTWORK_CANDIDATE,
+                "palette": {"type": "array", "minItems": 1, "maxItems": 256, "items": _RGB},
+                "budget": {"type": "integer", "minimum": 1, "maximum": 256},
+            },
+            ("palette", "budget"),
+            read=True,
+        ),
+        tool(
+            "import_artwork_layers",
+            "Import 1..8 PNGs in bottom-to-top order into one unpublished sprite. Explicit layer UUID/name/visibility/opacity/lock and nonnegative offsets. Each PNG must fit, transparent padding, no crop or quantization. Existing native layer aggregate and input bounds apply.",
+            {
+                **GUARD,
+                "atlas_id": ASSET_ID,
+                "name": TEXT,
+                "width": DIMENSION,
+                "height": DIMENSION,
+                "layers": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 8,
+                    "items": schema(
+                        {
+                            "layer": LAYER,
+                            "png": _PNG_UPLOAD,
+                            "offset": {
+                                "type": "array",
+                                "minItems": 2,
+                                "maxItems": 2,
+                                "items": {"type": "integer", "minimum": 0, "maximum": 4095},
+                            },
+                        }
+                    ),
+                },
+            },
+            read=True,
+        ),
+        tool(
+            "export_artwork_bundle",
+            "Read-only artwork ZIP resource: authoritative unchanged candidate.json, document.json, composite/layer PNGs and exact composite palette. Recover candidate.json with retain_artwork_candidate; saved bases remain fixed. 16 MiB artifact limit; archive candidates for larger recoverable transfers.",
+            ARTWORK_CANDIDATE,
+            read=True,
+        ),
+        tool(
+            "archive_artwork_candidates",
+            "Explicitly archive 1..32 selected handles (64 MiB total) as unchanged full envelopes in a durable project-local ZIP before optional release=true. Reports per-candidate partial release failures. Archives survive restart, retain owner in filenames and are excluded from project exports. Download using read_artwork_archive; restore envelopes with retain_artwork_candidate and original owner.",
+            {
+                **PROJECT,
+                "candidates": {"type": "array", "minItems": 1, "maxItems": 32, "items": HANDLE},
+                "release": {"type": "boolean"},
+            },
+            ("release",),
+        ),
+        tool(
+            "read_artwork_archive",
+            "Download durable archive in base64 chunks of up to 1 MiB; follow next_offset and verify assembled SHA-256. List archives through list_artwork_candidates after restart or interrupted response.",
+            {**PROJECT, "archive": REVISION, "offset": {"type": "integer", "minimum": 0}},
+            ("offset",),
+            read=True,
+        ),
+        tool(
+            "inspect_artwork_candidate",
+            "Review coordinate-labelled before/after contact SVG with optional magenta exact-RGBA changed-pixel overlay. 1..8 rectangles, explicit nearest-neighbor scale 1..8, <=512 per cell axis/4194304 image pixels/8388608 layout pixels. Exact candidate/base receipt, rectangles and completeness; no automatic cleanup.",
+            {
+                **ARTWORK_CANDIDATE,
+                "rectangles": {"type": "array", "minItems": 1, "maxItems": 8, "items": RECTANGLE},
+                "scale": {"type": "integer", "minimum": 1, "maximum": 8},
+                "changed_overlay": {"type": "boolean"},
+            },
+            ("scale", "changed_overlay"),
+            read=True,
+        ),
+    ]
+)
+for definition in TOOLS:
+    if definition["name"] in {
+        "edit_artwork_batch",
+        "prepare_artwork_document",
+        "convert_artwork_palette",
+        "import_artwork_layers",
+    }:
+        definition["inputSchema"]["properties"]["compact"] = {"type": "boolean"}
+        definition["annotations"].update(readOnlyHint=False, destructiveHint=False)
+    if definition["name"] == "retain_artwork_candidate":
+        definition["inputSchema"]["properties"]["owner"] = UUID

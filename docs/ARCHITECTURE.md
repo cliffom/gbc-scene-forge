@@ -46,6 +46,12 @@ owned checkpoints remain outside committed project inventory.
 Within artwork, `raster.py` owns bounded literal drawing/transforms/counts;
 `layers.py` owns the optional source-layer contract and integer compositing;
 `deletion.py` owns guarded reference-aware saved deletion and exact acknowledgments.
+Illustration preparation, intake, atomic candidate batches and native-envelope bundle
+views belong to `artwork/workshop.py`; coordinate contact sheets belong to
+`artwork/inspection.py`. `artwork/candidates.py` owns quota visibility, exact current
+saved-content evidence and durable archive-before-release recovery. These operations
+reuse native candidates and layer sources. MCP adapters only map arguments and
+session resources; publication still uses reviewed document saves.
 Document services persist sources and derived scene assets in one transaction.
 Both transports use those rules; adapters do not implement a second raster model.
 
