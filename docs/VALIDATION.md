@@ -42,13 +42,14 @@ Dates, revisions and environments missing from the originals remain unknown.
   142 regular cases and skipped 11 optional profiles. Six real MCP/browser scenarios
   passed, including concurrent saved writes and refresh. Production build, strict
   distribution metadata, seven installed-wheel smoke tests and installed-wheel
-  first-use authoring passed. Documentation checks passed.
+  first-use authoring passed. Documentation checks passed. The user reported
+  “Verified” for the shared-command and Save walkthrough at local revision
+  `d494519`; this records acceptance of that increment. 
 - **Limits:** Synthetic automation and agent screenshot inspection do not establish
-  the user's acceptance of this increment, independent usability, prolonged drawing
+  independent usability, prolonged drawing
   comfort, physical-device scaling, Windows/non-Chromium support or official Tiled
   interoperability. Optional profiling matrices were not run. No CI or publication
-  claim is made for this local increment; the requested user verification remains
-  in the single checklist below.
+  claim is made for this local increment.
 
 ## Shared document navigation (#195, milestone 22)
 
@@ -1990,7 +1991,7 @@ Dates, revisions and environments missing from the originals remain unknown.
 
 ### Shared editor consolidation (milestone 22)
 
-- [ ] Obtain the user's manual verification of #196's shared-command and Save increment before pushing it to `milestone/22` and proceeding to #197, following the requested issue-by-issue gate.
+- [ ] Obtain combined user verification of the completed #197–#199 increments; the user authorized completing all three before the next verification pause.
 
 ### Human–agent artwork iteration (milestone 21)
 
