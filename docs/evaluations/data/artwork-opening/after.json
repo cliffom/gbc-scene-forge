@@ -1,0 +1,453 @@
+{
+  "environment": {
+    "browser": "156.0.8078.4",
+    "platform": "darwin",
+    "release": "27.0.0",
+    "cpu": "Apple M4 Max"
+  },
+  "bundleSha256": "0390ab0da2fceaa14c5e87f871754ac8cd2c5c7974512c5e88b420f0fe8ee428",
+  "buildInfo": {
+    "version": "0.33.3"
+  },
+  "requests": [
+    {
+      "path": "/api/project",
+      "milliseconds": 3.553
+    },
+    {
+      "path": "/api/choices",
+      "milliseconds": 3.048
+    },
+    {
+      "path": "/api/project",
+      "milliseconds": 3.055
+    },
+    {
+      "path": "/api/list-drafts",
+      "milliseconds": 1.46
+    },
+    {
+      "path": "/api/project",
+      "milliseconds": 2.95
+    },
+    {
+      "path": "/api/artwork-list",
+      "milliseconds": 307.25
+    },
+    {
+      "path": "/api/artwork-open",
+      "milliseconds": 11.306
+    },
+    {
+      "path": "/api/choices",
+      "milliseconds": 1.756
+    },
+    {
+      "path": "/api/revisions",
+      "milliseconds": 2.712
+    },
+    {
+      "path": "/api/project",
+      "milliseconds": 2.925
+    },
+    {
+      "path": "/api/artwork-list",
+      "milliseconds": 10.223
+    },
+    {
+      "path": "/api/artwork-open",
+      "milliseconds": 10.342
+    },
+    {
+      "path": "/api/choices",
+      "milliseconds": 1.408
+    },
+    {
+      "path": "/api/revisions",
+      "milliseconds": 1.06
+    },
+    {
+      "path": "/api/project",
+      "milliseconds": 2.914
+    },
+    {
+      "path": "/api/artwork-list",
+      "milliseconds": 10.266
+    },
+    {
+      "path": "/api/artwork-open",
+      "milliseconds": 10.294
+    },
+    {
+      "path": "/api/project",
+      "milliseconds": 2.709
+    },
+    {
+      "path": "/api/choices",
+      "milliseconds": 1.164
+    },
+    {
+      "path": "/api/project",
+      "milliseconds": 3.091
+    },
+    {
+      "path": "/api/list-drafts",
+      "milliseconds": 2.176
+    },
+    {
+      "path": "/api/project",
+      "milliseconds": 2.906
+    },
+    {
+      "path": "/api/artwork-list",
+      "milliseconds": 10.081
+    },
+    {
+      "path": "/api/artwork-open",
+      "milliseconds": 55.778
+    },
+    {
+      "path": "/api/choices",
+      "milliseconds": 1.507
+    },
+    {
+      "path": "/api/revisions",
+      "milliseconds": 1.222
+    },
+    {
+      "path": "/api/project",
+      "milliseconds": 2.818
+    },
+    {
+      "path": "/api/artwork-list",
+      "milliseconds": 10.907
+    },
+    {
+      "path": "/api/artwork-open",
+      "milliseconds": 54.629
+    },
+    {
+      "path": "/api/choices",
+      "milliseconds": 1.506
+    },
+    {
+      "path": "/api/revisions",
+      "milliseconds": 1.18
+    },
+    {
+      "path": "/api/project",
+      "milliseconds": 2.745
+    },
+    {
+      "path": "/api/artwork-list",
+      "milliseconds": 10.718
+    },
+    {
+      "path": "/api/artwork-open",
+      "milliseconds": 49.784
+    },
+    {
+      "path": "/api/choices",
+      "milliseconds": 1.305
+    },
+    {
+      "path": "/api/revisions",
+      "milliseconds": 1.189
+    },
+    {
+      "path": "/api/project",
+      "milliseconds": 2.491
+    },
+    {
+      "path": "/api/choices",
+      "milliseconds": 1.076
+    },
+    {
+      "path": "/api/project",
+      "milliseconds": 2.58
+    },
+    {
+      "path": "/api/list-drafts",
+      "milliseconds": 1.243
+    },
+    {
+      "path": "/api/project",
+      "milliseconds": 2.948
+    },
+    {
+      "path": "/api/artwork-list",
+      "milliseconds": 10.745
+    },
+    {
+      "path": "/api/artwork-open",
+      "milliseconds": 673.335
+    },
+    {
+      "path": "/api/choices",
+      "milliseconds": 1.551
+    },
+    {
+      "path": "/api/revisions",
+      "milliseconds": 1.077
+    },
+    {
+      "path": "/api/project",
+      "milliseconds": 2.819
+    },
+    {
+      "path": "/api/artwork-list",
+      "milliseconds": 10.767
+    },
+    {
+      "path": "/api/artwork-open",
+      "milliseconds": 670.331
+    },
+    {
+      "path": "/api/choices",
+      "milliseconds": 1.443
+    },
+    {
+      "path": "/api/revisions",
+      "milliseconds": 1.164
+    },
+    {
+      "path": "/api/project",
+      "milliseconds": 3.058
+    },
+    {
+      "path": "/api/artwork-list",
+      "milliseconds": 9.995
+    },
+    {
+      "path": "/api/artwork-open",
+      "milliseconds": 652.861
+    },
+    {
+      "path": "/api/choices",
+      "milliseconds": 1.613
+    },
+    {
+      "path": "/api/revisions",
+      "milliseconds": 1.106
+    },
+    {
+      "path": "/api/project",
+      "milliseconds": 3.078
+    },
+    {
+      "path": "/api/artwork-list",
+      "milliseconds": 10.373
+    },
+    {
+      "path": "/api/artwork-open",
+      "milliseconds": 644.364
+    },
+    {
+      "path": "/api/project",
+      "milliseconds": 4.443
+    },
+    {
+      "path": "/api/artwork-layers",
+      "milliseconds": 739.851
+    },
+    {
+      "path": "/api/artwork-layer-sync",
+      "milliseconds": 637.645
+    },
+    {
+      "path": "/api/artwork-draft-write",
+      "milliseconds": 567.098
+    },
+    {
+      "path": "/api/project",
+      "milliseconds": 85.927
+    },
+    {
+      "path": "/api/artwork-layers",
+      "milliseconds": 853.805
+    },
+    {
+      "path": "/api/artwork-layer-sync",
+      "milliseconds": 973.42
+    },
+    {
+      "path": "/api/project",
+      "milliseconds": 519.978
+    },
+    {
+      "path": "/api/artwork-draft-write",
+      "milliseconds": 1208.997
+    },
+    {
+      "path": "/api/project",
+      "milliseconds": 3.143
+    },
+    {
+      "path": "/api/artwork-layers",
+      "milliseconds": 730.755
+    },
+    {
+      "path": "/api/artwork-layer-sync",
+      "milliseconds": 627.333
+    },
+    {
+      "path": "/api/project",
+      "milliseconds": 51.25
+    },
+    {
+      "path": "/api/artwork-draft-write",
+      "milliseconds": 1200.23
+    },
+    {
+      "path": "/api/artwork-layers",
+      "milliseconds": 863.543
+    },
+    {
+      "path": "/api/project",
+      "milliseconds": 582.167
+    },
+    {
+      "path": "/api/artwork-layer-sync",
+      "milliseconds": 978.185
+    },
+    {
+      "path": "/api/artwork-draft-write",
+      "milliseconds": 1226.964
+    },
+    {
+      "path": "/api/project",
+      "milliseconds": 819.993
+    },
+    {
+      "path": "/api/artwork-layers",
+      "milliseconds": 782.615
+    },
+    {
+      "path": "/api/project",
+      "milliseconds": 519.255
+    },
+    {
+      "path": "/api/artwork-layer-sync",
+      "milliseconds": 672.85
+    },
+    {
+      "path": "/api/artwork-draft-write",
+      "milliseconds": 1239.712
+    },
+    {
+      "path": "/api/project",
+      "milliseconds": 464.237
+    },
+    {
+      "path": "/api/artwork-layers",
+      "milliseconds": 889.108
+    },
+    {
+      "path": "/api/project",
+      "milliseconds": 269.426
+    },
+    {
+      "path": "/api/artwork-layer-sync",
+      "milliseconds": 987.483
+    },
+    {
+      "path": "/api/artwork-draft-write",
+      "milliseconds": 1227.233
+    },
+    {
+      "path": "/api/project",
+      "milliseconds": 516.428
+    }
+  ],
+  "openings": [
+    {
+      "asset": "small",
+      "attempt": 0,
+      "feedbackMs": 3.299999952316284,
+      "editableMs": 369,
+      "chooser": false
+    },
+    {
+      "asset": "small",
+      "attempt": 1,
+      "feedbackMs": 8.200000047683716,
+      "editableMs": 74.60000014305115,
+      "chooser": false
+    },
+    {
+      "asset": "small",
+      "attempt": 2,
+      "feedbackMs": 13,
+      "editableMs": 79.30000019073486,
+      "chooser": false
+    },
+    {
+      "asset": "large",
+      "attempt": 0,
+      "feedbackMs": 2.299999952316284,
+      "editableMs": 170.79999995231628,
+      "chooser": false
+    },
+    {
+      "asset": "large",
+      "attempt": 1,
+      "feedbackMs": 10.200000047683716,
+      "editableMs": 167.20000004768372,
+      "chooser": false
+    },
+    {
+      "asset": "large",
+      "attempt": 2,
+      "feedbackMs": 9.199999809265137,
+      "editableMs": 167.19999980926514,
+      "chooser": false
+    },
+    {
+      "asset": "layered",
+      "attempt": 0,
+      "feedbackMs": 12.399999856948853,
+      "editableMs": 811.2000000476837,
+      "chooser": false
+    },
+    {
+      "asset": "layered",
+      "attempt": 1,
+      "feedbackMs": 10.200000047683716,
+      "editableMs": 794.3999998569489,
+      "chooser": false
+    },
+    {
+      "asset": "layered",
+      "attempt": 2,
+      "feedbackMs": 9.599999904632568,
+      "editableMs": 771.7999999523163,
+      "chooser": false
+    }
+  ],
+  "toggles": [
+    {
+      "handlerMs": 58.40000009536743,
+      "frameProxyMs": 59.40000009536743
+    },
+    {
+      "handlerMs": 73.29999995231628,
+      "frameProxyMs": 74.10000014305115
+    },
+    {
+      "handlerMs": 64.09999990463257,
+      "frameProxyMs": 64.89999985694885
+    },
+    {
+      "handlerMs": 70.10000014305115,
+      "frameProxyMs": 70.90000009536743
+    },
+    {
+      "handlerMs": 64.70000004768372,
+      "frameProxyMs": 65.70000004768372
+    },
+    {
+      "handlerMs": 76,
+      "frameProxyMs": 76.89999985694885
+    }
+  ]
+}

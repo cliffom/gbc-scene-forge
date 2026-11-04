@@ -15,7 +15,7 @@ The runner configuration is `tests/playwright/playwright.config.ts`. It discover
 | --- | --- | ---: |
 | `editor/` | standalone editor workflow (including cross-domain persistence/export), layout and chooser, editor lifecycle, review mode, middle-button pan, scene links, wide scenes, canvas repaint profiling | 65 |
 | `project/` | first use, discovery, draft recovery and server-log ownership | 12 |
-| `artwork/` | PNG/Tiled imports, terrain brushes, artwork editing, navigation, layers, ownership and responsiveness | 83 |
+| `artwork/` | PNG/Tiled imports, terrain brushes, artwork editing, navigation, layers, ownership and responsiveness | 88 |
 | `objects/` | compositions and definitions | 2 |
 | `planning/` | blockout, world and diagnostics | 3 |
 | `mcp/` | optional real SDK authoring, layered exchange and external refresh | 6 |
@@ -36,7 +36,7 @@ FORGE_MCP_ONLY=1 npm run test:playwright -- --list
 npm run test:playwright -- editor/review.spec.ts --list
 ```
 
-Regular discovery includes 165 cases in 43 files, including optional profiling
+Regular discovery includes 170 cases in 45 files, including optional profiling
 cases skipped by default; optional discovery includes six MCP/refresh cases in
 four files. Basename selectors such as `first-use.spec.ts`
 and all existing Make/npm entry points remain supported. Reports resolve from the

@@ -51,6 +51,14 @@ discovery; a missing selected source stays an explicit unavailable choice instea
 of adopting an unrelated source. Shared source edits and captured-placement copies
 continue to use the existing guarded domain operations.
 
+Library opening paints a named, cancellable loading state before suspension and
+decoding. Read-only waits have an operation/mount fence; outgoing checkpoint
+writes complete before replacement and are not cancelled with the read. Late
+responses cannot adopt inventory or documents after cancellation/supersession.
+Dirty layer reads check descriptors first and compare live sources without
+cloning/compositing; decoded baseline bytes use a 32 MiB / 18-entry session LRU. Equality
+is never cached across reads because buffers permit direct mutation.
+
 Illustration-layer UI belongs to `artwork/artwork-layer-controls.mts`; exact sources,
 active layer and history belong to `PixelModel`, and `artwork/artwork-layers.mts`
 owns integer compositing. Layer snapshots share the existing history budget.

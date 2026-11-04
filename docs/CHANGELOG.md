@@ -6,6 +6,13 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.33.3 — Faster artwork opening and layer changes
+
+[Release notes](RELEASE-0.33.3.md). Reduce repeated raster comparisons and native
+verification during artwork opening and visibility changes. Library opens show
+a named, cancellable loading state; failed reads can be retried without losing
+retained documents. Publication is separate.
+
 ## 0.33.2 — Dismissible editor notifications
 
 [Release notes](RELEASE-0.33.2.md). Replace transient artwork, scene and project

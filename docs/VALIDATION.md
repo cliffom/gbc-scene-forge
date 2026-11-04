@@ -15,6 +15,40 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Artwork opening and layered visibility (#202, #207)
+
+- **Scope:** Prepared 0.33.3 working tree based on `4058c30`, checked on
+  2026-11-04 with macOS 27.0.0 arm64 / Apple M4 Max, Python 3.13.13,
+  Node 24.22.1 and Chromium 156.0.8078.4. This is local agent evidence.
+- **Method:** Compare production 0.33.2 and candidate bundles using disposable
+  small, large and three-layer artwork; record first/repeated opens, visible
+  feedback and synchronous visibility handlers. Inspect desktop/compact loading
+  captures. Run `make lint test`, final production `make build check-dist`,
+  full browser acceptance and installed-wheel first use. Check fresh optional-MCP
+  installation, seven package smoke cases, 94 service cases and six browser cases.
+  See the [evaluation and exact samples](evaluations/artwork-opening.md).
+- **Result:** Required lint, documentation, 450 Python tests and TypeScript suites
+  passed. Final regular browser acceptance passed 158 cases with 12 opt-in profile
+  skips; the separate final profile passed. Visibility handlers fell from
+  769–792 ms to 58–76 ms (about 91% at the median), layered opens from
+  3,857–3,887 ms to 772–811 ms, and loading feedback appeared within 2–13 ms
+  without the chooser in all nine candidate opens. Exact-source/direct-buffer
+  checks, new-manifest verification, cancellation, superseding, retry and failed
+  outgoing checkpoint coverage passed. Source/wheel metadata, seven plain-wheel
+  smoke cases and installed first use passed; optional-MCP package/service/browser
+  checks passed. The first complete browser run had 157 passes and one Documents
+  keyboard failure: focusing a disabled control raced the loading transition.
+  Waiting for the same control to become enabled fixed the test; the complete
+  rerun passed. Final optional-MCP wheel smoke was repeated after the last frontend
+  cancellation/cache-bound refinements; its service/browser matrix preceded those
+  refinements, which the final source browser run covers.
+- **Limits:** Synthetic fixtures and animation-frame proxies establish neither
+  independent-user comfort nor physical display latency. First small opening
+  includes cold server verification; larger fixtures reuse that proof. Ignored
+  local build reports/CPU profiles are not archived CI evidence. No Windows,
+  non-Chromium, maximum-budget artwork, official Tiled or human acceptance claim
+  is made. Version 0.33.3 is prepared, not published.
+
 ## Browser worker concurrency (#206)
 
 - **Scope:** Test infrastructure based on production 0.33.2 at `3b0cc3f`, checked

@@ -4,6 +4,12 @@ import { record, string, array } from '../shared/decode.mts';
 import { bytes, encoded, PixelModel } from './pixel-model.mts';
 import { decodeCandidate, type Candidate } from './artwork-contracts.mts';
 
+// Two aggregate document baselines (saved and checkpoint), <=16 MiB each.
+// This bounds decoded bytes, independently of document count or raster count.
+const MAX_BASELINE_BYTES = 32 * 1024 * 1024;
+// Two sets of up to eight sources plus a composite; also bound small-entry overhead.
+const MAX_BASELINE_ENTRIES = 18;
+
 export class ArtworkSession {
   readonly model: PixelModel;
   original: Candidate;
@@ -20,18 +26,30 @@ export class ArtworkSession {
   private checkpointUncertain = false;
   private pendingCheckpoints = 0;
   private queue: Promise<unknown> = Promise.resolve();
-  // At most the saved base and acknowledged checkpoint. Cache decoded baselines,
+  // Saved/checkpoint layer sources share a byte-bounded LRU. Cache baselines,
   // never dirty state: callers may mutate bytes directly or replace history.
   private pixelBases = new Map<string, Uint8ClampedArray>();
+  private pixelBaseBytes = 0;
   private matches(pixels: Uint8ClampedArray, rgba: string) {
     let previous = this.pixelBases.get(rgba);
     if (!previous) {
       previous = bytes(rgba);
-      if (this.pixelBases.size === 2) {
-        this.pixelBases.delete(this.pixelBases.keys().next().value ?? '');
+      while (
+        (this.pixelBaseBytes + previous.byteLength > MAX_BASELINE_BYTES ||
+          this.pixelBases.size >= MAX_BASELINE_ENTRIES) &&
+        this.pixelBases.size
+      ) {
+        const oldest = this.pixelBases.entries().next().value;
+        if (!oldest) {
+          break;
+        }
+        this.pixelBaseBytes -= oldest[1].byteLength;
+        this.pixelBases.delete(oldest[0]);
       }
-      this.pixelBases.set(rgba, previous);
+      this.pixelBaseBytes += previous.byteLength;
     }
+    this.pixelBases.delete(rgba);
+    this.pixelBases.set(rgba, previous);
     if (previous.length !== pixels.length) {
       return false;
     }
@@ -74,18 +92,15 @@ export class ArtworkSession {
     if (!value) {
       return false;
     }
-    const rasters = this.model.layerData();
-    return (
-      rasters.size === Object.keys(value).length &&
-      [...rasters].every(([id, pixels]) => value[id] && this.matches(pixels, value[id]))
-    );
+    return this.model.layersMatch(value, (pixels, raw) => this.matches(pixels, raw));
   }
   get changed() {
     return (
       this.original.operation !== 'edit' ||
+      JSON.stringify(this.model.descriptor) !== JSON.stringify(this.original.descriptor) ||
       !this.layersMatch(this.original.layer_rgba) ||
-      !this.matches(this.model.composite(), this.original.rgba) ||
-      JSON.stringify(this.model.descriptor) !== JSON.stringify(this.original.descriptor)
+      // Layer sources plus their descriptor fully determine the canonical composite.
+      (!this.model.descriptor.layers && !this.matches(this.model.pixels, this.original.rgba))
     );
   }
   get uncheckpointed() {
@@ -93,9 +108,10 @@ export class ArtworkSession {
       this.pendingCheckpoints > 0 ||
       this.checkpointUncertain ||
       ((this.changed || this.checkpointAttempted) &&
-        (!this.layersMatch(this.checkpointLayers) ||
-          !this.matches(this.model.composite(), this.checkpointPixels) ||
-          JSON.stringify(this.model.descriptor) !== this.checkpointLayout))
+        (JSON.stringify(this.model.descriptor) !== this.checkpointLayout ||
+          !this.layersMatch(this.checkpointLayers) ||
+          (!this.model.descriptor.layers &&
+            !this.matches(this.model.pixels, this.checkpointPixels))))
     );
   }
   invalidate() {

@@ -1,5 +1,11 @@
 # Create and edit pixel artwork
 
+Opening Library artwork shows the selected asset in a loading surface. Cancel
+opening to return to your retained document, or select another Library asset.
+Failed reads offer Retry opening; saved-base or checkpoint conflicts preserve
+your local work and history. Use the Library source actions or Browse when you
+want the explicit open/copy chooser.
+
 Before confirming a save, check whether you are adding **new independent artwork**,
 editing a **shared original**, or replacing **selected placements**. New artwork is
 added to the Library and must be placed separately. Shared edits affect every saved

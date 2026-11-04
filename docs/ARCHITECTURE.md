@@ -83,6 +83,12 @@ can retain stale local work; restoration must validate the original saved base.
 Neither a transport nor a report may bypass these rules by reaching into private
 storage internals.
 
+Guarded asset verification hashes every declared file on every check. A store
+retains a native-decoding/composition proof for one exact manifest revision;
+a matching revision plus freshly verified file digests permits reuse. New
+manifest bytes require full semantic verification; failures never establish a
+proof. This cache does not replace transaction guards or post-computation checks.
+
 ## Maintenance and validation
 
 Put a new rule in its domain, a use case in that domain's service, and request
