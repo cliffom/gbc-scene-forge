@@ -177,3 +177,64 @@ p.artwork.documents.save(c)
   await expect(page.locator('#artwork-heading')).toHaveText('Agent');
   await expect(page.locator('#art-document-state')).toHaveText('Saved');
 });
+
+test('discovery enables the first saved source and disables it after manual deletion refresh', async ({
+  page,
+  workspace,
+}, info) => {
+  const root = join(workspace.folder, 'project');
+  const update = (code: string) => execFileSync(workspace.python, ['-I', '-c', code, root]);
+  update(`
+import sys
+from pathlib import Path
+from gbc_scene_forge.project.application import Project
+Project.create(Path(sys.argv[1]),'First artwork')
+`);
+  await page.goto(await workspace.start(root));
+  await page.locator('#show-artwork').click();
+  await page.locator('#art-existing-mode').click();
+  await expect(page.locator('#art-source')).toBeDisabled();
+  await expect(page.locator('#art-open')).toBeDisabled();
+  await page.locator('#art-name').fill('My independent copy');
+  await (await revealArtworkControl(page, 'art-id')).fill('my_copy');
+  await page.locator('#artwork-heading').click();
+  update(`
+import sys
+from pathlib import Path
+from gbc_scene_forge.project.application import Project
+p=Project(Path(sys.argv[1]))
+c=p.artwork.documents.create('agent','Agent','sprite',16,16,p.catalog()['revision'])
+p.artwork.documents.save(c)
+`);
+  await expect(page.locator('[data-asset="agent/artwork"]')).toBeVisible();
+  await expect(page.locator('#art-source option')).toHaveText(['agent / artwork (editable)']);
+  await expect(page.locator('#art-source')).toBeEnabled();
+  await expect(page.locator('#art-open')).toBeEnabled();
+  await expect(page.locator('#art-duplicate')).toBeEnabled();
+  await expect(page.locator('#art-name')).toHaveValue('My independent copy');
+  await expect(page.locator('#art-id')).toHaveValue('my_copy');
+  await expect(page.locator('#art-source-help')).toContainText('Edit the shared original');
+  await page.screenshot({ path: info.outputPath('first-source-discovered.png') });
+  await page.locator('#art-open').click();
+  await expect(page.locator('#artwork-heading')).toHaveText('Agent');
+  await expect(page.locator('#art-document-state')).toHaveText('Saved');
+  await page.locator('#art-close').click();
+  await page.locator('#project-commands').click();
+  await page.locator('#auto-refresh').uncheck();
+  await page.locator('#show-artwork').click();
+  await page.locator('#art-existing-mode').click();
+  await expect(page.locator('#art-open')).toBeEnabled();
+  update(`
+import sys
+from pathlib import Path
+from gbc_scene_forge.project.application import Project
+p=Project(Path(sys.argv[1]))
+p.artwork.delete_atlas('agent',p.catalog()['revision'])
+`);
+  await page.locator('#project-commands').click();
+  await page.locator('#check-external').click();
+  await expect(page.locator('[data-asset="agent/artwork"]')).toHaveCount(0);
+  await expect(page.locator('#art-source')).toBeDisabled();
+  await expect(page.locator('#art-open')).toBeDisabled();
+  await expect(page.locator('#art-duplicate')).toBeDisabled();
+});

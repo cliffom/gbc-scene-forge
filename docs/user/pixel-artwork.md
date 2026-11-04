@@ -48,6 +48,8 @@ and deletion while Artwork remains open. This updates discovery, preserving the
 open document's pixels, saved base, selection, view and Undo. Real modal dialogs,
 active gestures, pending writes, editing a form or hidden windows pause discovery.
 Interrupted discovery retries once the editor is idle, including source choices.
+Source controls become available when the first saved artwork arrives and disable
+when no sources remain; discovery keeps the copy name and asset ID you entered.
 Use **Project tools → Check for external changes** when automatic refresh is off.
 To adopt another saved revision of an already-open document, retain/download its
 local work, explicitly close it and reopen the saved artwork; discovery never

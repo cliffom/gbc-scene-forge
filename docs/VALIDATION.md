@@ -15,6 +15,27 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## PR #193 first-source discovery controls
+
+- **Scope:** Prepared 0.32.0 working tree based on
+  `5bf80a5a94a3fe6da413ef08df6e7784d39c34e2`, checked 2026-11-03 in the local
+  macOS/Python/Node/Chromium environment recorded under milestone 21 below.
+- **Method:** The [discovery regression](../tests/playwright/artwork/iteration.spec.ts)
+  opens Existing artwork in an empty project, saves the first artwork externally,
+  checks enabled source/open/copy controls and preserved copy identity fields,
+  then opens the saved source. It also deletes that source externally with
+  auto-refresh disabled and checks manual refresh disables unavailable controls.
+  Agent screenshot inspection covers the enabled source controls and retained
+  copy name/asset ID at 1440×1000.
+- **Result:** The regression fails before correction because the discovered
+  source selector remains disabled. It passes after setup controls refresh when
+  the eligible inventory is applied. All twelve focused production
+  artwork/navigation browser cases pass. `make lint test` passes with 448 Python
+  tests and all TypeScript suites; production build and documentation checks pass.
+- **Limits:** These are local automated checks and agent desktop inspection,
+  not a new CI result or a full browser suite rerun. Existing independent-human,
+  physical-device and external-tool gaps remain in the single list below.
+
 ## PR #193 adopted-edit recovery and layer palette corrections
 
 - **Scope:** Prepared 0.32.0 working tree based on

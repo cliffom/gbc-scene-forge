@@ -1738,6 +1738,9 @@ export function createPixelEditor({
       if (!eligible()) {
         return;
       }
+      if (!session) {
+        controls();
+      }
       discoveredRevision = string(data.revision);
     } catch (error) {
       if (!lifetime.disposed) {
