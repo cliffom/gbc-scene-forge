@@ -8,6 +8,7 @@ from gbc_scene_forge.core.errors import Conflict, TransactionBusy
 BUSY_MESSAGE = "Another scene editor is applying changes. Try again when it finishes."
 BUSY_ERROR = {"error": {"code": "invalid_request", "message": BUSY_MESSAGE}}
 COMMIT_BUSY_ERROR = {"error": {"code": "conflict", "message": BUSY_MESSAGE}}
+ARTWORK_BUSY_ERROR = {"error": {"code": "busy", "message": BUSY_MESSAGE}}
 
 
 async def call_tool(client, name, arguments, *, attempts=20, delay=0.05):
@@ -16,11 +17,12 @@ async def call_tool(client, name, arguments, *, attempts=20, delay=0.05):
         raise ValueError("Use at least one attempt")
     for attempt in range(attempts):
         result = await client.call_tool(name, arguments)
-        # Commit wraps TransactionBusy in Conflict; both exact responses mean
+        # Artwork has an explicit busy code; older scene/commit responses wrap
+        # TransactionBusy in invalid_request/Conflict. These exact responses mean
         # the lock was never acquired, so the original guarded call is safe to retry.
         if (
             not result.isError
-            or result.structuredContent not in (BUSY_ERROR, COMMIT_BUSY_ERROR)
+            or result.structuredContent not in (BUSY_ERROR, COMMIT_BUSY_ERROR, ARTWORK_BUSY_ERROR)
             or attempt == attempts - 1
         ):
             return result

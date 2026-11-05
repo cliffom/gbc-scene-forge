@@ -154,7 +154,7 @@ test('one document bar retains dirty scene, layers, selection, tools and sheet c
   await page.screenshot({ path: info.outputPath('documents-compact.png') });
 });
 
-test('external saved-base changes remain distinct from local pixels and history', async ({
+test('external artwork preserves dirty history, then follows when Undo returns to the saved base', async ({
   page,
   workspace,
 }) => {
@@ -177,13 +177,14 @@ c=a.edit(c,[dict(x=0,y=0,rgba=[255,0,0,255])]);a.save(c)
     project,
   ]);
   await page.locator('#art-canvas').focus();
-  await expect(page.locator('#document-base-state')).toHaveText('Saved base changed externally');
+  await expect(page.locator('#document-base-state')).toHaveText(
+    'Live updates paused · unsaved edits',
+  );
   await expect(page.locator('#document-state')).toHaveText('Modified');
   await page.locator('#undo').click();
   await expect(page.locator('#document-state')).toHaveText('Saved');
-  await expect(page.locator('#document-base-state')).toBeVisible();
-  await page.locator('#redo').click();
-  await expect(page.locator('#document-state')).toHaveText('Modified');
+  await expect(page.locator('#document-base-state')).toBeHidden();
+  await expect(page.locator('#redo')).toBeDisabled();
 });
 
 test('failed and delayed checkpoints guard scene and project departures and preserve recovery', async ({

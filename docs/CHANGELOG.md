@@ -6,6 +6,14 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.36.1 — Follow saved artwork updates
+
+[Release notes](RELEASE-0.36.1.md). Clean open artwork follows committed MCP
+updates automatically, retaining valid review context and clearing old history.
+Manual edits pause replacement with download and explicit load-latest actions.
+Background refresh failures retry quietly before surfacing inline. Publication
+is separate.
+
 ## 0.36.0 — Selective MCP pixel cleanup
 
 [Release notes](RELEASE-0.36.0.md). Analyze small color islands, preview only

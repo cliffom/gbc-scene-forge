@@ -500,6 +500,8 @@
 #editor-layout[data-document=scene] [data-document-owner=artwork],
 #editor-layout[data-document=artwork] [data-document-owner=scene] {display:none!important}
 #artwork-surface {gap:6px;padding:0;background:var(--bg)}
+.art-sync {display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;border-bottom:1px solid var(--line);color:var(--accent)}
+.art-sync span {flex:1;min-width:180px;overflow-wrap:anywhere}
 #artwork-surface [hidden] {display:none!important}
 #artwork-heading {margin:0;font-size:13px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .editing-artwork #dirty {display:none}

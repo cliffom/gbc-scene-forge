@@ -64,6 +64,37 @@ An empty-root creation form retains unfinished input when projects arrive; use
 
 ## While you are editing
 
+### Reviewing artwork changed through MCP
+
+Open saved artwork from the Library and leave it open while an agent commits
+changes. With Automatically refresh enabled, a clean artwork document loads each
+new saved version through the two-second check cycle. No separate review toggle
+or document/browser reload is needed. Unpublished candidates are not streamed.
+Zoom, viewport center and valid frame/layer choices survive. External adoption
+clears the document's old Undo/Redo history; your own saves retain it.
+
+See the saved-review layout at [desktop](../screenshots/external-refresh/live-artwork-review.png)
+and [compact](../screenshots/external-refresh/live-artwork-review-compact.png) sizes.
+
+Manual edits pause replacement. **Live updates paused · unsaved edits** offers
+**Download work** and **Load latest…**. Loading latest requires confirmation before
+discarding manual edits, history and the document's checkpoint. Cancel keeps your
+work. Undoing back to the saved base lets automatic following resume once pending
+checkpoint work settles. Other retained documents and scene edits stay unchanged.
+
+![Paused artwork review with download and load-latest actions](../screenshots/external-refresh/paused-artwork-review-compact.png)
+
+Editing is briefly guarded while the old checkpoint is retired and the saved
+version is adopted, so a new edit cannot race checkpoint cleanup.
+Temporary read/write contention retries quietly. Persistent refresh failures show
+an inline explanation and **Retry**; successful checks clear that notice. Removed
+artwork keeps its open version with a download action. Modal dialogs, focused
+fields, active gestures and hidden tabs pause adoption; a local interaction during
+a fetch prevents that response from replacing the document. **Check for external
+changes** also follows a clean artwork document when automatic refresh is off.
+
+### Editing scenes
+
 Full snapshot checks pause while the scene has unsaved edits; inventory checks continue. They also pause
 while a dialog or popover is open, an input has focus, a gesture or layer drag is
 active, movement preview is running, or the tab is hidden. A refresh already being
@@ -82,7 +113,9 @@ open and retain your changes:
 3. Reconcile those changes with the latest saved scene. Use **Revert** only when
    you intend to discard local edits; refreshing will then adopt the external save.
 
-Automatic refresh does not clear saved recovery checkpoints. Existing save-time
+Scene refresh does not clear saved recovery checkpoints. Artwork adoption retires
+only that clean document's checkpoint (or its explicitly discarded checkpoint).
+Existing save-time
 revision checks and conflict-aware recovery continue to protect local work.
 
 ## Cost and boundaries
