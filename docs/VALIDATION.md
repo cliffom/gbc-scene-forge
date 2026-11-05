@@ -60,15 +60,22 @@ Dates, revisions and environments missing from the originals remain unknown.
   tab selection/focus order, transparent source colors and keyboard switching.
   All eight focused palette, shared-shell and editor-lifecycle browser cases
   pass with the rebuilt production frontend; follow-up `make lint test` and
-  documentation checks also pass.
+  documentation checks also pass. [CI at `ef7ed78`](https://github.com/cliffom/gbc-scene-forge/actions/runs/42117111327)
+  passes 192 browser cases, including the remount regression, but fails the
+  Library keyboard test: its document-wide count includes the palette's separate
+  tab stop. The failure reproduces locally; scoping the assertion to Library
+  categories retains its keyboard checks. All five focused layout and palette
+  browser cases then pass locally.
 - **Limits:** Synthetic automation and agent screenshot inspection do not
   establish independent-user discovery, accessibility conformance or physical-device
   comfort. The timing is one uniform Node scan, not layered browser latency or a
   worst-case performance claim. The palette deliberately bounds membership to
   the first 1,024 colors; usage ordering then covers that subset. Other optional
   performance profiles, official Tiled tools, non-Chromium browsers, Windows and
-  Python 3.14 were not locally run. The review remount fix has only local
-  validation; the linked CI pass precedes it. No publication result is claimed.
+  Python 3.14 were not locally run. The remount CI run stops at the Library
+  assertion, so its installed-wheel first-use, MCP and Python compatibility jobs
+  do not run; the linked complete CI pass precedes the remount fix. The scoped
+  Library assertion has only local validation. No publication result is claimed.
 
 ## Focused artwork setup and From agent (#237)
 
