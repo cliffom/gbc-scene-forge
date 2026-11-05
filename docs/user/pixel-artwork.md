@@ -243,8 +243,9 @@ choice returns focus to the canvas. History, clipboard and transforms use the
 same icon style as scene commands; gold marks the selected drawing tool.
 
 The shared strip holds history, clipboard and transforms. The contextual toolbar
-groups drawing tools, Color/Opacity and Pan/Fit/Zoom beside the canvas. Groups wrap
-together at smaller widths; the **Colors ▾**
+groups drawing tools, Color/Opacity and Pan/Fit/Zoom beside the canvas. Pan uses
+the hand icon and Fit uses the same fit-to-view icon as the scene editor; hover
+for tooltips. Groups wrap together at smaller widths; the **Colors ▾**
 button in the Inspector opens a scrollable 12-column swatch grid. The Inspector identifies shared
 artwork, new artwork and selected-placement variations; the document bar shows
 local Saved/Modified/New state. Save stays in the document bar. **Document actions**
