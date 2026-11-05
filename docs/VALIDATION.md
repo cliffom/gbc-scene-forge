@@ -15,6 +15,23 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Release browser synchronization (#235)
+
+- **Scope:** Prepared 0.38.0 at `7c20ee4`, GitHub Actions Ubuntu production build,
+  and its test-only correction checked locally on 2026-11-04 (2026-11-05 UTC),
+  macOS arm64 with bundled Playwright Chromium.
+- **Method:** Inspect the failed
+  [CI run](https://github.com/cliffom/gbc-scene-forge/actions/runs/41968986923)
+  and its browser trace. Run the five discovery/scope acceptance cases against
+  the production bundle after waiting for visible scene/artwork readiness before
+  source selection and pixel download.
+- **Result:** CI passed 172 browser cases and skipped 12 optional cases, but failed
+  the named-pose case because source selection raced scene loading and its scope
+  assertion matched a hidden retained control. All five corrected cases passed
+  locally; their exact-pixel and retained-scope assertions remain intact.
+- **Limits:** The local result covers the focused suite. Full CI must pass on the
+  corrected revision before merging; this correction changes only test sequencing.
+
 ## Source metadata targeting (#235 review)
 
 - **Scope:** Prepared 0.38.0 review-fix working tree based on `b1ac1c2`, checked

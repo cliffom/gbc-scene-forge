@@ -24,8 +24,10 @@ a.save(a.create_sheet('player','Player poses','sprite',32,16,p.catalog()['revisi
 `;
 
 async function pixels(page: Page) {
+  await expect(page.locator('#art-canvas')).toBeVisible();
+  const control = await revealArtworkControl(page, 'art-download');
   const download = page.waitForEvent('download');
-  await (await revealArtworkControl(page, 'art-download')).click();
+  await control.click();
   const path = await (await download).path();
   if (!path) {
     throw Error('Expected downloaded work');
@@ -125,14 +127,19 @@ test('named pose constrains exact pixels; explicit sheet view and retained view 
   expected.set([204, 119, 68, 255], (32 + 1) * 4);
   expect(await pixels(page)).toEqual(expected);
   await chooseSavedScene(page, { label: 'Riverside' });
+  await expect(page.locator('#scene-name')).toContainText('Riverside ·');
+  await expect(page.locator('#scene-surface')).toBeVisible();
   await page.locator('[data-asset="player/f1"]').click();
   await page.locator('#library-source-actions').click();
+  await expect(page.locator('#library-edit-artwork')).toHaveAttribute('title', 'Edit player/f1');
   await page.locator('#library-edit-artwork').click();
+  await expect(page.locator('#art-canvas')).toBeVisible();
   await expect(page.locator('#art-sheet-view')).toHaveAttribute('aria-pressed', 'true');
   expect(await pixels(page)).toEqual(expected);
   await saveArtwork(page);
   await page.locator('#close-document').click();
   await activateScene(page);
+  await expect(page.locator('#scene-surface')).toBeVisible();
   // In a scene the Library card selects a brush; open the selected native source explicitly.
   await page.locator('[data-asset="player/f1"]').click();
   await page.locator('#library-source-actions').click();
