@@ -59,13 +59,13 @@ print(json.dumps(ids))
   const url = await workspace.start(projects ? root : project, false, !projects);
   await page.goto(projects ? new URL('projects/one/', url).href : url);
   await chooseSavedScene(page, ids[0]);
-  await expect(page.locator('#document-switcher')).toHaveText('Workshop · Scene ▾');
+  await expect(page.locator('#document-switcher')).toHaveText('Documents · Workshop · Scene ▾');
   return { project, ids, url };
 }
 async function openGrass(page: Page) {
   await page.locator('#edit-placement-artwork').click();
   await page.locator('#art-open').click();
-  await expect(page.locator('#document-switcher')).toHaveText('Grass · Artwork ▾');
+  await expect(page.locator('#document-switcher')).toHaveText('Documents · Grass · Artwork ▾');
 }
 async function pixel(page: Page, x: number, y: number) {
   const bounds = await page.locator('#art-canvas').boundingBox();
@@ -204,7 +204,7 @@ test('failed and delayed checkpoints guard scene and project departures and pres
   await page.locator('#art-canvas').click({ position: { x: 24, y: 24 } });
   await chooseSavedScene(page, ids[1]);
   await expect(page.locator('#art-message')).toContainText('disk full');
-  await expect(page.locator('#document-switcher')).toHaveText('Grass · Artwork ▾');
+  await expect(page.locator('#document-switcher')).toHaveText('Documents · Grass · Artwork ▾');
   await page.locator('#switch-project').selectOption('/projects/two');
   await expect(page.locator('#status')).toContainText('disk full');
   await expect(page).toHaveURL(new URL(`projects/one/scenes/${ids[0]}`, url).href);
@@ -224,12 +224,17 @@ test('failed and delayed checkpoints guard scene and project departures and pres
   // Duplicate navigation while a write is pending cannot start another transition.
   await page.locator('#scene-document').dispatchEvent('click');
   release();
-  await expect(page.locator('#document-switcher')).toHaveText('Workshop · Scene ▾');
+  await expect(page.locator('#document-switcher')).toHaveText('Documents · Workshop · Scene ▾');
   await chooseArtwork(page, 'Grass');
   await expect(page.locator('#document-state')).toHaveText('Modified');
   await page.locator('#switch-project').selectOption('/projects/two');
   await expect(page).toHaveURL(new URL('projects/two/', url).href);
   await page.goto(new URL('projects/one/', url).href);
+  await page.locator('#library-options').evaluate((node) => {
+    if (node instanceof HTMLDetailsElement) {
+      node.open = true;
+    }
+  });
   await page.locator('#art-browse').click();
   await expect(page.locator('#art-recovery')).toContainText('Grass');
   await page.locator('#art-recovery button').filter({ hasText: 'Recover copy' }).first().click();
@@ -311,13 +316,13 @@ test('Close document releases clean scenes and artwork, preserves assets and res
   await page.locator('#art-frame').selectOption('f1');
   await page.locator('#close-document').focus();
   await page.keyboard.press('Enter');
-  await expect(page.locator('#document-switcher')).toHaveText('Grass · Artwork ▾');
+  await expect(page.locator('#document-switcher')).toHaveText('Documents · Grass · Artwork ▾');
   await expect(page.locator('#art-canvas')).toBeFocused();
   await expect(page.locator('#artwork-documents button')).toHaveCount(1);
   await activateScene(page);
   await page.locator('#close-document').click();
   await expect(page).toHaveURL(url);
-  await expect(page.locator('#document-switcher')).toHaveText('Grass · Artwork ▾');
+  await expect(page.locator('#document-switcher')).toHaveText('Documents · Grass · Artwork ▾');
   await page.locator('#close-document').click();
   await expect(page.locator('#empty-scene')).toBeVisible();
   await expect(page.locator('#close-document')).toBeDisabled();
@@ -330,11 +335,11 @@ test('Close document releases clean scenes and artwork, preserves assets and res
   await openGrass(page);
   await expect(page.locator('#document-state')).toHaveText('Saved');
   await page.locator('#close-document').click();
-  await expect(page.locator('#document-switcher')).toHaveText('Workshop · Scene ▾');
+  await expect(page.locator('#document-switcher')).toHaveText('Documents · Workshop · Scene ▾');
   await page.goBack();
   await expect(page.locator('#empty-scene')).toBeVisible();
   await page.goForward();
-  await expect(page.locator('#document-switcher')).toHaveText('Workshop · Scene ▾');
+  await expect(page.locator('#document-switcher')).toHaveText('Documents · Workshop · Scene ▾');
 });
 
 test('dirty scene close protects cancel, failed save/checkpoint and recoverable drafts', async ({
@@ -405,16 +410,21 @@ test('artwork close keeps recoverable work and unrelated dirty scene and artwork
   await page.locator('#close-document').click();
   await page.locator('#close-document-keep').click();
   await expect(page.locator('#art-message')).toContainText('checkpoint unavailable');
-  await expect(page.locator('#document-switcher')).toHaveText('Player · Artwork ▾');
+  await expect(page.locator('#document-switcher')).toHaveText('Documents · Player · Artwork ▾');
   await page.unroute('**/api/artwork-draft-write');
   await page.locator('#close-document').click();
   await page.locator('#close-document-keep').click();
-  await expect(page.locator('#document-switcher')).toHaveText('Grass · Artwork ▾');
+  await expect(page.locator('#document-switcher')).toHaveText('Documents · Grass · Artwork ▾');
   await expect(page.locator('#document-state')).toHaveText('Modified');
   await expect(page.locator('#undo')).toBeEnabled();
   await activateScene(page);
   await expect(page.locator('#document-state')).toHaveText('Modified');
   await expect(page.locator('#undo')).toBeEnabled();
+  await page.locator('#library-options').evaluate((node) => {
+    if (node instanceof HTMLDetailsElement) {
+      node.open = true;
+    }
+  });
   await page.locator('#art-browse').click();
   await expect(page.locator('#art-recovery')).toContainText('Player');
   await page.locator('#art-recovery button').filter({ hasText: 'Recover copy' }).first().click();
@@ -451,13 +461,13 @@ test('artwork Save and close requires exact review and successful save; cancelli
   await expect(page.locator('#save')).toHaveText('Confirm save');
   await page.locator('#save').click();
   await expect(page.locator('#document-state')).toHaveText('Saved');
-  await expect(page.locator('#document-switcher')).toHaveText('Grass · Artwork ▾');
+  await expect(page.locator('#document-switcher')).toHaveText('Documents · Grass · Artwork ▾');
   await page.locator('#art-canvas').click({ position: { x: 36, y: 36 } });
   await page.locator('#close-document').click();
   await page.locator('#close-document-save').click();
   await expect(page.locator('#save')).toHaveText('Confirm save and close');
   await page.locator('#save').click();
-  await expect(page.locator('#document-switcher')).toHaveText('Workshop · Scene ▾');
+  await expect(page.locator('#document-switcher')).toHaveText('Documents · Workshop · Scene ▾');
   await expect(page.locator('#artwork-documents button')).toHaveCount(0);
   await openGrass(page);
   await expect(page.locator('#document-state')).toHaveText('Saved');
@@ -474,7 +484,7 @@ test('artwork Save and close requires exact review and successful save; cancelli
   await expect(page.locator('#save')).toHaveText('Confirm save');
   await page.locator('#save').click();
   await expect(page.locator('#document-state')).toHaveText('Saved');
-  await expect(page.locator('#document-switcher')).toHaveText('Grass · Artwork ▾');
+  await expect(page.locator('#document-switcher')).toHaveText('Documents · Grass · Artwork ▾');
 });
 
 test('scene save and close retains the confirmed revision if checkpoint cleanup fails', async ({

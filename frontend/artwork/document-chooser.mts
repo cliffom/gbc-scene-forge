@@ -11,11 +11,16 @@ export function createDocumentChooser(lifetime: EditorLifetime, opening: () => v
     }
     trigger.setAttribute('aria-expanded', 'false');
   }
-  lifetime.assign(trigger, 'onclick', () => {
+  function open(savedScene = false) {
     opening();
     dialog.showModal();
     trigger.setAttribute('aria-expanded', 'true');
-  });
+    if (savedScene) {
+      element('scenes', HTMLSelectElement).focus();
+    }
+  }
+  lifetime.assign(trigger, 'onclick', () => open());
+  lifetime.assign(button('empty-open'), 'onclick', () => open(true));
   lifetime.assign(button('document-chooser-close'), 'onclick', close);
   dialog.addEventListener(
     'cancel',

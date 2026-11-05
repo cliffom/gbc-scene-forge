@@ -151,14 +151,17 @@ export function createPixelEditor({
       signal: lifetime.signal,
     });
   }
-  function focusFrame(region: string) {
+  function focusFrame(region: string, fresh = false) {
     const d = session?.model.descriptor;
     if (session && d?.version === 2 && d.frames.some((f) => f.id === region)) {
       if (select('art-frame').value !== region) {
         session.model.selection = null;
       }
       select('art-frame').value = region;
-      // Keep the collection visible while highlighting the requested pose.
+      // Fresh named-pose navigation constrains drawing; retained documents keep their scope.
+      if (fresh) {
+        input('art-edit-frame').checked = true;
+      }
       sheetEditor.sync();
       draw();
     }
@@ -1241,7 +1244,7 @@ export function createPixelEditor({
             signal.throwIfAborted();
             loading = null;
             start(candidate);
-            focusFrame(string(detail.region));
+            focusFrame(string(detail.region), true);
           } else {
             loading = null;
             setup('existing');

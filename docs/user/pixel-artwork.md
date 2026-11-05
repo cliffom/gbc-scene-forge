@@ -1,5 +1,13 @@
 # Create and edit pixel artwork
 
+The Library puts search and thumbnail cards first. **New…** and **Import** are
+compact entry points; **Source…** groups Edit artwork, shared editing/copies,
+source update, terrain/collision and deletion for the selected asset.
+**Filters & recovery** reveals atlas/kind filters and the browser for recoverable
+drafts and agent candidates. Filters persist when collapsed; the result count
+shows matching assets. Long names wrap to two lines and keep their full identifier
+in the tooltip.
+
 Opening Library artwork shows the selected asset in a loading surface. Cancel
 opening to return to your retained document, or select another Library asset.
 Failed reads offer Retry opening; saved-base or checkpoint conflicts preserve
@@ -40,13 +48,14 @@ separate atomic save and scene-history behavior described below.
 The document bar has one Save location for either document. The shared command
 strip above the contextual drawing tools contains history, clipboard, deselection
 and transforms. The bounded frame/animation dock sits below the canvas. Collapse
-**Frames & animation** to reclaim drawing space; reopen it for the frame selector,
-thumbnails, Sheet/Frame scope, onion skin and animation controls. The dock scrolls
+**Frames & animation** to reclaim drawing space; reopen it for thumbnails and
+animation controls. The frame selector, Sheet/Frame scope, onion skin and current
+drawing boundary stay beside the tools even when the dock is collapsed. The dock scrolls
 independently in short windows. **Properties** shows document dimensions and, for
 sheets, frame names, geometry and representations. **Layers** remains independently
 collapsible in the same Inspector. These pane changes do not enter Undo history.
 
-Use **Library → Source actions… → Shared editing / copies…** for the selected source's shared-edit and
+Use **Library → Source… → Shared editing / copies…** for the selected source's shared-edit and
 copy choices. **Edit artwork…** opens native artwork directly; clicking a named
 pose while editing artwork opens that sheet with the requested frame selected.
 Scene Library clicks keep their placement behavior. Source actions lets you name
@@ -117,7 +126,7 @@ Pan-tool dragging, Space-drag and middle-button panning remain available.
 Saved artwork appears in both interfaces; an unpublished agent candidate is separate
 from browser local documents and recovery checkpoints.
 
-Choose **New artwork…** in the Artwork Library to create a tile or sprite.
+Choose **New…** in the Artwork Library to create a tile or sprite.
 To edit existing artwork, select it and choose **Edit artwork…**, or double-click
 its thumbnail. With no scene open, a thumbnail opens artwork directly. A scene
 placement's **Edit artwork…** action opens its selected source and variation
@@ -138,7 +147,7 @@ For example, one 375 × 525 or 1,500 × 2,100 card stays in one document. Check 
 sheet with multiple frames** for a tile or character sheet; the layout summary
 shows its rows, columns and frame count.
 
-**Browse / recover → Existing artwork** opens source-specific options.
+**Filters & recovery → Browse / recover / candidates… → Existing artwork** opens source-specific options.
 Native artwork offers **Edit shared artwork**: saving changes every placement
 that refers to that asset. **Create editable sheet copy** makes an independent
 copy of the complete source. Imported artwork must be copied before pixel editing.
@@ -294,7 +303,8 @@ If a checkpoint response is lost, the warning remains active until Forge checks
 the owned checkpoint's stored revision and pixels. A later checkpoint or explicit
 discard performs that check before writing or deleting; failed checks retain local work.
 
-Choose **Browse / recover** in the Library or document switcher to see recoverable records. **Recover copy** checks the
+Choose **Filters & recovery → Browse / recover / candidates…** in the Library,
+or **Browse / recover artwork…** in the document switcher, to see recoverable records. **Recover copy** checks the
 original saved base and opens unsaved pixels under a fresh draft identity; it
 retains the original record. **Delete checkpoint** explicitly removes a listed
 record. **Close document** (or **Document actions → Close artwork**) closes a saved
@@ -328,8 +338,8 @@ for the exercised tasks, evidence and limits.
 
 ## Sheets, animations and the shared workbench
 
-Scenes and artwork share one document-name button in the context bar. It shows
-the name and **Scene** or **Artwork** kind; the adjacent **Saved**, **Modified** or
+Scenes and artwork share a **Documents** button in the context bar. It shows
+the active name and **Scene** or **Artwork** kind; the adjacent **Saved**, **Modified** or
 **New** label describes local work. **Saved base changed externally** is a separate
 warning when discovery or a manual scene check detects a different saved revision.
 Undoing to your own saved base does not remove that warning or adopt external edits.
@@ -371,13 +381,17 @@ sheet copy** migrates existing artwork without resampling: complete source pixel
 frames, origins and sequence timing are copied. Unsupported dimensions/layouts
 reject the copy rather than changing artwork.
 
-The frame strip sits below the canvas. Opening a Library frame selects and
-highlights that pose, including when its sheet is already open. **Sheet** shows
+The frame strip sits below the canvas. Opening a named Library pose in a fresh
+artwork document selects that pose and starts in **Frame** scope. Reopening an
+already retained sheet selects the requested pose while preserving its drawing
+scope, tools and zoom. The tools explicitly show **Editing frame: Pose 1** or
+**Editing entire sheet**, separate from shared-source or independent-copy save
+scope. Selecting a frame in Sheet scope highlights it without limiting drawing. **Sheet** shows
 the collection with frame boundaries and origin crosses; **Frame** constrains
 drawing to the selected rectangle. **Properties** contains frame names, geometry,
 origin and tile repetition preview. Rename poses there. Switch back to Sheet to
-work across the collection. Short windows retain the frame selector and thumbnails
-inside the bounded dock. Scroll the dock to reach animation/timing controls, or
+work across the collection. Short windows retain the frame selector beside the
+tools and thumbnails inside the bounded dock. Scroll the dock to reach animation/timing controls, or
 collapse **Frames & animation** to restore drawing height. The dock scrolls
 independently of drawing and Save.
 

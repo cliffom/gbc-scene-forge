@@ -43,6 +43,8 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Evaluations
 
+- [Editor usability: discovery, scope and working space (2026-11)](evaluations/usability-review-2026-11.md)
+
 - [MCP illustration preparation, lifecycle and batch measurements (#201)](evaluations/illustration-production.md)
 
 - [Human–agent artwork iteration (#189)](evaluations/artwork-iteration.md)
@@ -78,6 +80,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Release notes
 
+- [Scene Forge 0.38.0](RELEASE-0.38.0.md) — discover saved scenes, browse artwork and target named poses.
 - [Scene Forge 0.37.0](RELEASE-0.37.0.md) — close active scenes and artwork safely.
 - [Scene Forge 0.36.1](RELEASE-0.36.1.md) — follow committed updates in clean open artwork.
 - [Scene Forge 0.36.0](RELEASE-0.36.0.md) — MCP selective pixel cleanup and constraint validation.

@@ -6,7 +6,7 @@ layer. PNG sheets and gbc-atlas artwork both work.
 
 ## Configure the transitions
 
-1. Choose a tile in **Library → Artwork**, then **Terrain & collision…**.
+1. Choose a tile in **Library → Artwork**, then **Source… → Terrain & collision…**.
    For a region containing several cells, choose the cell at the top of the dialog.
 2. Enter a **Terrain classification**, such as `road`. Names are case sensitive;
    use the same name for every variant of that terrain.
@@ -23,6 +23,12 @@ Sixteen combinations cover the complete four-neighbor model. You can start with
 fewer: the brush explicitly reports missing masks. Draft Undo/Redo in the dialog
 changes the rule draft; Save writes shared metadata with the existing revision guard.
 
+Terrain/collision edits target the artwork named by the Source menu, including
+when search or filters change that source. Filtering and editing metadata keep
+the current scene brush. An open scene supplies the tile grid; tile regions that
+do not fit that grid cannot be configured there. Sprite collision metadata uses
+the sprite's native dimensions.
+
 The collision controls remain independent. Rule setup never edits Solid or collision
 shapes. Give automatic variants consistent collision metadata. A brush with variants
 that differ is rejected when painting; an existing neighbor with incompatible
@@ -32,7 +38,7 @@ possible through the existing controls.
 
 ## Paint and erase
 
-1. Expand **Terrain brush** below **Terrain & collision…** in the Artwork library.
+1. Expand **Terrain brush** in the Artwork library.
    This section appears once the current grid has at least one transition rule.
 2. Choose a terrain. This selects **Paint** and clears individual tile, sprite,
    object and stamp brushes. Paint on a visible tile layer.

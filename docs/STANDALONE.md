@@ -233,9 +233,9 @@ The message below the tools names the active layer; a hidden layer offers
 
 **Modified** appears beside the Documents button, and **Save scene** gains
 an accent when edits need saving. The asset library contains **Import** for
-artwork, Tiled maps and Forge export ZIPs. **New artwork…** opens the
+artwork, Tiled maps and Forge export ZIPs. **New…** opens the
 [native artwork editor](user/pixel-artwork.md) for creating tiles and sprites, with optional sheet layout. **Edit artwork…** and
-**Browse / recover** open existing artwork, editable copies and recovery. Artwork
+**Filters & recovery → Browse / recover / candidates…** open existing artwork, editable copies and recovery. Artwork
 uses separate undo, drafts and guarded scene-context review. **Edit artwork…** in the Selection inspector opens the
 selected placement's source.
 Selecting an object or tiles brings the Selection section to the top of the
@@ -417,7 +417,7 @@ changed since review produces a conflict instead of silently deleting newer data
 Scene deletion cannot be undone with the editor's Undo button; interrupted
 deletion uses the same conflict-aware transaction recovery as other project writes.
 
-Choose artwork in Library, then use **Source actions… → Update source…** or
+Choose artwork in Library, then use **Source… → Update source…** or
 **Delete source…** to manage its atlas. The menu names the source being managed.
 Deleting confirms the atlas ID and removes only its managed project copies;
 original source files and undeclared files in its asset folder stay untouched.

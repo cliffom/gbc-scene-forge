@@ -7,14 +7,14 @@ These generic inputs need no gbc-atlas installation, manifest or GBC palette set
 Library artwork rows lead with the source name beside a thumbnail. Distinct region
 names appear underneath; the generic “artwork” region and kind labels are omitted.
 Long names wrap to two lines; hover a row for its full source/region ID and dimensions.
-Choose artwork in Library, then use **Source actions…** to update or delete its
+Choose artwork in Library, then use **Source…** to update or delete its
 source, or open shared editing and copy options. Deleting a source affects all its
 regions and requires confirmation; sources used by saved scenes cannot be deleted.
 Imports copy artwork into the project and leave the original source files unchanged.
 
 ## Editing imported sources
 
-Select a Library source and choose **Source actions… → Shared editing / copies…** for shared editing or
+Select a Library source and choose **Source… → Shared editing / copies…** for shared editing or
 independent copies. Native artwork can open directly with **Edit artwork…**;
 imported artwork keeps its explicit copy flow. A sheet copy preserves compatible
 frames/timing and native layers; imported sheets must fit the editable sheet

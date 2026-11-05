@@ -10,6 +10,7 @@ import type { createEditorLayout } from '../editor/editor-layout.mts';
 import type {
   BrushState,
   EditorActivity,
+  GestureState,
   SceneSelection,
   SceneSession,
   WorkspaceState,
@@ -19,6 +20,7 @@ import type { ProjectApi } from '../project/project-api.mts';
 import type { Loaded, Region } from '../project/project-contracts.mts';
 import { decodeLoaded, decodeProject } from '../project/project-contracts.mts';
 import type { TileMetadata } from './tile-metadata.mts';
+import type { TileChoice } from './tile-inspector.mts';
 import { tileParts, transformMetadata } from './tile-transform.mts';
 
 export interface Ports {
@@ -40,6 +42,7 @@ export function createArtworkController({
   sceneSession,
   brushes,
   activity,
+  gestures,
   editorLayout,
   sceneSelection,
   status,
@@ -54,6 +57,7 @@ export function createArtworkController({
     'brush' | 'definitionBrush' | 'objectBrush' | 'spriteBrush' | 'stampBrush'
   >;
   activity: EditorActivity;
+  gestures: Pick<GestureState, 'anchor'>;
   editorLayout: ReturnType<typeof createEditorLayout>;
   sceneSelection: Pick<SceneSelection, 'selectedObject' | 'selectedObjects' | 'selection'>;
   status: Feedback;
@@ -62,6 +66,57 @@ export function createArtworkController({
 }) {
   let atlasFolder: AtlasFolder | null = null;
   let editAsset = '';
+  function metadataSource() {
+    const [atlas, name] = editAsset.split('/');
+    const region = workspaceState.project?.atlases[atlas]?.regions.find((r) => r.name === name);
+    const image = images.get(atlas);
+    const grid = sceneSession.loaded?.grid;
+    if (
+      !region ||
+      !image ||
+      !grid ||
+      (region.kind !== 'sprite' && (region.width % grid !== 0 || region.height % grid !== 0))
+    ) {
+      return null;
+    }
+    return { atlas, region, image, grid };
+  }
+  function sourceMetadataChoices(): TileChoice[] {
+    const source = metadataSource();
+    if (!source) {
+      return [];
+    }
+    const { atlas, region, image, grid } = source;
+    const common = { atlas, image };
+    if (region.kind === 'sprite') {
+      return [
+        {
+          ...common,
+          group: 'sprites',
+          asset: editAsset,
+          sx: region.x,
+          sy: region.y,
+          width: region.width,
+          height: region.height,
+        },
+      ];
+    }
+    const choices: TileChoice[] = [];
+    for (let y = 0; y < region.height / grid; y++) {
+      for (let x = 0; x < region.width / grid; x++) {
+        choices.push({
+          ...common,
+          group: String(grid),
+          asset: `${editAsset}/${x}/${y}`,
+          sx: region.x + x * grid,
+          sy: region.y + y * grid,
+          width: grid,
+          height: grid,
+        });
+      }
+    }
+    return choices;
+  }
   function syncSourceActions() {
     for (const id of [
       'library-edit-artwork',
@@ -72,6 +127,7 @@ export function createArtworkController({
     ]) {
       button(id).disabled = activity.busy || !editAsset;
     }
+    button('edit-tile').disabled = activity.busy || gestures.anchor !== null || !metadataSource();
     button('library-edit-artwork').title = editAsset ? `Edit ${editAsset}` : 'Choose artwork first';
     button('library-source-actions').title = editAsset
       ? `Actions for ${editAsset}`
@@ -683,6 +739,7 @@ export function createArtworkController({
   return {
     regions,
     syncSourceActions,
+    sourceMetadataChoices,
     updateTerrain,
     tileMetadata,
     sprites,

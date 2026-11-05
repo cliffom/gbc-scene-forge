@@ -1,7 +1,9 @@
 /** Source-specific Library actions preserve local work and require explicit copy choice. */
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
-import { test, expect, activateScene } from '../support/browser-fixtures.ts';
+import { decodeProject } from '../../../frontend/project/project-contracts.mts';
+import { record } from '../../../frontend/shared/decode.mts';
+import { test, expect, activateScene, chooseSavedScene } from '../support/browser-fixtures.ts';
 import { revealArtworkControl } from '../support/artwork-controls.ts';
 
 const create = `
@@ -15,6 +17,82 @@ for name in ('first','other'):
 frames=[dict(id=f'f{i}',name=f'Pose {i}',kind='sprite',x=i*16,y=0,width=16,height=16,origin=[4,8]) for i in range(2)]
 a.save(a.create_sheet('player','Player','sprite',32,16,p.catalog()['revision'],frames=frames,sequences=[]))
 `;
+
+test('source metadata follows filtered artwork without changing the scene brush', async ({
+  page,
+  workspace,
+}, info) => {
+  const root = join(workspace.folder, 'project');
+  execFileSync(workspace.python, [
+    '-I',
+    '-c',
+    `${create}
+a.save(a.create('tiles','Tile cells','tile',16,16,p.catalog()['revision']))
+p.scenes.create('Metadata scene',8,6,8,p.catalog()['revision'])
+p.scenes.create('Larger grid',8,6,32,p.catalog()['revision'])
+`,
+    root,
+  ]);
+  await page.setViewportSize({ width: 800, height: 640 });
+  const url = await workspace.start(root);
+  await page.goto(url);
+  await chooseSavedScene(page, { label: 'Metadata scene' });
+  async function catalog() {
+    const response = await page.request.get(new URL('api/project', url).href);
+    expect(response.ok()).toBe(true);
+    return decodeProject(record(await response.json()).project);
+  }
+  const before = await catalog();
+  await page.locator('[data-asset="tiles/artwork"]').click();
+  const tileBrush = await page.locator('#selected-brush').textContent();
+  await page.locator('#search').fill('player');
+  await page.locator('#library-source-actions').click();
+  await expect(page.locator('#library-source-name')).toHaveText('player');
+  await page.locator('#edit-tile').click();
+  await expect(page.locator('#tile-cell option')).toHaveText(['player/f0']);
+  await expect(page.locator('#tile-transition-fields')).toBeHidden();
+  await page.screenshot({ path: info.outputPath('filtered-source-metadata.png') });
+  await page.locator('#tile-terrain').fill('actor');
+  await page.locator('#tile-solid').check();
+  await page.locator('#tile-save').click();
+  await expect(page.locator('#tile-dialog')).toBeHidden();
+  let saved = await catalog();
+  expect(saved.atlases.player.metadata.sprites['player/f0'].terrain).toBe('actor');
+  expect(saved.atlases.player.metadata.sprites['player/f0'].solid).toBe(true);
+  expect(saved.atlases.tiles.metadata).toEqual(before.atlases.tiles.metadata);
+  await expect(page.locator('#selected-brush')).toHaveText(tileBrush ?? '');
+
+  await page.locator('#search').fill('first');
+  await page.locator('[data-asset="first/artwork"]').click();
+  const spriteBrush = await page.locator('#selected-brush').textContent();
+  await page.locator('#search').fill('tiles');
+  await page.locator('#library-source-actions').click();
+  await expect(page.locator('#library-source-name')).toHaveText('tiles');
+  await page.locator('#edit-tile').click();
+  await expect(page.locator('#tile-cell option')).toHaveText([
+    'tiles/artwork/0/0',
+    'tiles/artwork/1/0',
+    'tiles/artwork/0/1',
+    'tiles/artwork/1/1',
+  ]);
+  await expect(page.locator('#tile-transition-fields')).toBeVisible();
+  await page.locator('#tile-cell').selectOption('1');
+  await page.locator('#tile-terrain').fill('path');
+  await page.locator('#tile-save').click();
+  await expect(page.locator('#tile-dialog')).toBeHidden();
+  saved = await catalog();
+  expect(saved.atlases.tiles.metadata['8']['tiles/artwork/1/0'].terrain).toBe('path');
+  expect(saved.atlases.first.metadata).toEqual(before.atlases.first.metadata);
+  await expect(page.locator('#selected-brush')).toHaveText(spriteBrush ?? '');
+
+  await chooseSavedScene(page, { label: 'Larger grid' });
+  await page.locator('#library-source-actions').click();
+  await expect(page.locator('#edit-tile')).toBeDisabled();
+  await page.keyboard.press('Escape');
+  await page.locator('#search').fill('no matching source');
+  await expect(page.locator('#library-source-actions')).toBeDisabled();
+  await expect(page.locator('#edit-tile')).toBeDisabled();
+});
 
 test('long artwork names and Library source actions fit supported pane widths', async ({
   page,
@@ -128,6 +206,11 @@ test('no-scene artwork creation restores the scene Library category and opens th
   await expect(page.locator('#objects-tab')).toHaveAttribute('aria-selected', 'true');
   await page.locator('#artwork-tab').click();
   await page.locator('#search').fill('player');
+  await page.locator('#library-options').evaluate((node) => {
+    if (node instanceof HTMLDetailsElement) {
+      node.open = true;
+    }
+  });
   await page.locator('#kind-filter').selectOption('sprite');
   await page.locator('[data-asset="player/f1"]').click();
   await expect(page.locator('#art-frame')).toHaveValue('f1');

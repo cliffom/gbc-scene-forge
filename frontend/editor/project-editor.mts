@@ -248,11 +248,6 @@ export function mountProjectEditor() {
     button('delete-stamp').disabled = activity.busy || !select('stamps').value;
     input('select-all-layers').disabled =
       activity.busy || !sceneSession.editor || gestures.anchor !== null;
-    button('edit-tile').disabled =
-      activity.busy ||
-      !sceneSession.loaded ||
-      (!brushes.brush && !brushes.spriteBrush) ||
-      gestures.anchor !== null;
     button('edit-object').disabled =
       activity.busy ||
       !sceneSession.editor ||
@@ -287,6 +282,8 @@ export function mountProjectEditor() {
         activity.busy ||
         (['generic-apply', 'forge-apply'].includes(control.id) && control.dataset.ready !== 'true');
     }
+    button('empty-open').hidden = !workspaceState.sceneChoices.length;
+    button('empty-open').disabled = activity.busy || gestures.anchor !== null;
     select('scenes').disabled =
       activity.busy || gestures.anchor !== null || !workspaceState.sceneChoices.length;
     for (const id of ['show-rename', 'show-duplicate-scene', 'show-resize']) {
@@ -431,12 +428,7 @@ export function mountProjectEditor() {
       tileMetadata: (...args) => artworkController.tileMetadata(...args),
       update: (...args) => update(...args),
 
-      get sprites() {
-        return artworkController.sprites;
-      },
-      get regions() {
-        return artworkController.regions;
-      },
+      sourceMetadataChoices: (...args) => artworkController.sourceMetadataChoices(...args),
       layerAction: (...args) => layersController.layerAction(...args),
       syncPanCursor: (...args) => gesturesController.syncPanCursor(...args),
       requestSceneOpen: (...args) => sceneActionsController.requestSceneOpen(...args),
@@ -503,6 +495,7 @@ export function mountProjectEditor() {
     sceneSession,
     brushes,
     activity,
+    gestures,
     editorLayout,
     sceneSelection,
     status,

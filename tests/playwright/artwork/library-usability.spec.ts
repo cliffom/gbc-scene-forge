@@ -68,13 +68,33 @@ for (const viewport of [
       await expect(visible).toHaveAttribute('data-asset', 'sample/hero_idle');
       await expect(page.locator('#asset-count')).toHaveText(`1 / ${total}`);
     }
+    await page.locator('#library-options').evaluate((node) => {
+      if (node instanceof HTMLDetailsElement) {
+        node.open = true;
+      }
+    });
     await page.locator('#atlas-filter').selectOption('sample');
+    await page.locator('#library-options').evaluate((node) => {
+      if (node instanceof HTMLDetailsElement) {
+        node.open = true;
+      }
+    });
     await page.locator('#kind-filter').selectOption('sprite');
     await expect(visible).toHaveCount(1);
+    await page.locator('#library-options').evaluate((node) => {
+      if (node instanceof HTMLDetailsElement) {
+        node.open = true;
+      }
+    });
     await page.locator('#kind-filter').selectOption('tile');
     await expect(visible).toHaveCount(0);
     await expect(page.locator('#library-hint')).toContainText('No matching assets');
     await expect(page.locator('#asset-count')).toHaveText(`0 / ${total}`);
+    await page.locator('#library-options').evaluate((node) => {
+      if (node instanceof HTMLDetailsElement) {
+        node.open = true;
+      }
+    });
     await page.locator('#kind-filter').selectOption('sprite');
     await search.fill('no such asset');
     await expect(visible).toHaveCount(0);
@@ -82,7 +102,17 @@ for (const viewport of [
     await search.press('Backspace');
     await expect(visible).toHaveCount(2);
     await expect(page.locator('#asset-count')).toHaveText(`2 / ${total}`);
+    await page.locator('#library-options').evaluate((node) => {
+      if (node instanceof HTMLDetailsElement) {
+        node.open = true;
+      }
+    });
     await page.locator('#atlas-filter').selectOption('');
+    await page.locator('#library-options').evaluate((node) => {
+      if (node instanceof HTMLDetailsElement) {
+        node.open = true;
+      }
+    });
     await page.locator('#kind-filter').selectOption('');
     await expect(visible).toHaveCount(total);
     expect(await state()).toEqual(before);
