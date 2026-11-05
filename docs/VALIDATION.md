@@ -40,7 +40,11 @@ Dates, revisions and environments missing from the originals remain unknown.
   All 118 MCP tests and 16 real-MCP browser cases pass. Distribution metadata,
   seven installed-wheel smoke cases, installed-wheel first use and strict lock
   consistency pass. Setup opens on creation despite seven drafts; preview and
-  downloads preserve publication guards, and editing restores commands.
+  downloads preserve publication guards, and editing restores commands. Final
+  screenshot review exposed inherited no-wrap clipping on long card names; the
+  corrected CSS, layout assertion and refreshed captures pass all 17 focused
+  setup/working-space cases, lint and rebuilt distribution checks. The full browser
+  and MCP results above precede this final CSS-only presentation correction.
 - **Limits:** Synthetic local automation and agent screenshot inspection do not
   establish independent-user discovery, accessibility conformance or physical-device
   comfort; #165/#166 remain outstanding below. Other optional profiles, official

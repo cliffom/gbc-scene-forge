@@ -85,6 +85,11 @@ for (const viewport of [
     await page.screenshot({ path: info.outputPath('agent-gallery.png') });
     const galleryBox = await page.locator('#art-handoff-candidates').boundingBox();
     expect(galleryBox && galleryBox.x + galleryBox.width).toBeLessThanOrEqual(viewport.width);
+    const longTitle = page
+      .locator('#art-handoff-candidates strong')
+      .filter({ hasText: 'Courtyard' });
+    expect(await longTitle.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+    expect(await longTitle.evaluate((node) => getComputedStyle(node).whiteSpace)).toBe('normal');
     await card.click();
     await expect(page.locator('#art-agent-image canvas')).toBeVisible();
     await expect(page.locator('#art-agent-details')).not.toHaveAttribute('open');
