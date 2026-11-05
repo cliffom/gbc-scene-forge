@@ -239,6 +239,10 @@ export function mountProjectEditor() {
     button('revert').disabled = activity.busy || !unsaved;
     button('save-stamp').disabled =
       activity.busy || !sceneSession.editor || !hasSceneSelection() || gestures.anchor !== null;
+    button('library-save-stamp').disabled = button('save-stamp').disabled;
+    element('stamp-prerequisite', HTMLElement).textContent = hasSceneSelection()
+      ? 'Save the selected arrangement, then choose Place stamp to reuse it.'
+      : 'Open a scene and select tiles or objects first. Use Select (S); enable Across layers to include multiple layers.';
     button('place-stamp').disabled =
       activity.busy || !sceneSession.editor || !select('stamps').value;
     button('place-stamp').setAttribute('aria-pressed', String(brushes.stampBrush !== null));
@@ -924,13 +928,24 @@ export function mountProjectEditor() {
         : workspaceState.choosingProject
           ? 'Choose a project or create a new one.'
           : 'Name your project to get started.',
+      { quiet: Boolean(workspaceState.project) },
     );
     if (workspaceState.project) {
       await sceneActionsController.openInitialScene();
       if (new URLSearchParams(location.search).get('blockout') === '1') {
+        status.clear();
         history.replaceState(history.state, '', location.pathname);
         editorLayout.showLibrary('blockout');
         panelsController.blockoutView.showCreate();
+      } else if (
+        ['artwork', 'import'].includes(new URLSearchParams(location.search).get('start') ?? '')
+      ) {
+        status.clear();
+        const goal = new URLSearchParams(location.search).get('start');
+        history.replaceState(history.state, '', location.pathname);
+        lifetime.frame(() =>
+          button(goal === 'artwork' ? 'show-artwork' : 'library-import').click(),
+        );
       } else if (new URLSearchParams(location.search).get('guide') === '1') {
         history.replaceState(history.state, '', location.pathname);
         firstSceneGuide.continueInProject();

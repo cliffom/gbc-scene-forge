@@ -15,6 +15,60 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Automatic candidate actions (#236 review correction)
+
+- **Scope:** Prepared 0.39.0 review-fix working tree based on `0db3a40`, checked
+  on 2026-11-05 UTC, macOS 27.0.1 arm64, Python 3.13.13, Node 24.22.1 and
+  Playwright 1.64.1 / Chromium 156.0.8078.4 with the production frontend.
+- **Method:** Reproduce the empty automatically opened candidate disclosure;
+  run `make docs-check lint test`, rebuild with `FORGE_BUILD_MODE=production make
+  frontend`, and run all ten working-space browser cases. The new cases cover
+  initial candidate actions, inspection/download, refresh replacement/count,
+  adoption and clearing stale cards on reentry. Inspect the
+  [desktop and compact captures](evaluations/working-space.md#candidate-discovery-review-correction-236).
+- **Result:** Required checks pass, including 487 Python tests, all TypeScript
+  suites and 20 documentation-checker tests. All ten focused browser cases pass;
+  available candidates have immediate Inspect/Adopt actions at 1440 × 800 and
+  800 × 800. The list, count and availability indicator follow current inventory.
+- **Limits:** Synthetic local coverage and agent UI inspection. The full browser,
+  MCP, wheel and external-tool suites were not rerun for this focused frontend
+  correction. Earlier broader results retain their original revision boundaries
+  below; this entry makes no independent-user or accessibility claim.
+
+## Drawing space and native PNG downloads (#228–#234)
+
+- **Scope:** Prepared 0.39.0 working tree on `feat/milestone-24-p2`, based on
+  `a9df2dc`, checked locally on 2026-11-04 (2026-11-05 UTC), macOS 27.0.1 arm64,
+  Python 3.13.13, Node 24.22.1 and Playwright 1.64.1 / Chromium 156.0.8078.4,
+  production frontend. Release preparation is separate from publication.
+- **Method:** Run `make docs-check lint test`, production `make build check-dist
+  test-browser`, installed-wheel first-use acceptance, `make test-mcp` and
+  production `make test-mcp-browser`. Inspect desktop/laptop/compact captures,
+  measure four contextual-panel sizes and exercise the integrated #224 routes.
+  The [evaluation](evaluations/working-space.md) links archived raw bounds and
+  screenshots, exact layered PNG decoding, state preservation and task methods.
+- **Result:** Lint, all frontend suites, 487 Python tests, 20 documentation-checker
+  tests, distribution metadata and seven installed-wheel smoke tests pass. The
+  regular production browser run passes 181 cases (12 optional profiles skipped);
+  installed-wheel first use, 118 optional MCP tests and 16 real-stdio MCP/browser
+  cases pass. Both strengthened long-name Inspector cases pass separately.
+  After the final startup-hint cleanup, a production rebuild, wheel smoke/first-use
+  checks and all eight working-space cases pass; the full run precedes that cleanup.
+  Initial runs exposed compact overflow and footer-induced viewport movement,
+  corrected by PNG placement and stable footer geometry. Remaining failures were
+  obsolete captions, recovery timing, hidden-dock profile assumptions and incorrect
+  new fixture fields; focused reruns pass. Drawing/animation heights are 452/254px
+  at 1440 × 900, 352/160px at 1280 × 800 and 158.5/150px at 800 × 640 with both
+  panes visible. Compact space remains constrained; this is not a universal
+  canvas-space improvement over the original review's manually collapsed states.
+- **Limits:** Local scripted/service evidence and agent UI inspection, not a new
+  independent-user, accessibility or CI claim. The optional MCP checks use the
+  source environment; the first-use and smoke checks use the plain installed
+  wheel. Full optional profiling, official Tiled/rasterizer, other browsers,
+  physical devices, OS scaling and Python 3.14 were not checked locally.
+  Maximum-size PNG memory/latency is unmeasured. The combined synthetic #224
+  follow-up is complete within this scope; independent #165/#166 remain open.
+
 ## Release browser synchronization (#235)
 
 - **Scope:** Prepared 0.38.0 at `7c20ee4`, GitHub Actions Ubuntu production build,
@@ -2543,10 +2597,9 @@ Dates, revisions and environments missing from the originals remain unknown.
 
 ### Editor discovery, scope and working space (#224)
 
-- [ ] After milestone 24 P2 work, complete the combined workflow assessment in
-  #224, including animation-to-drawing, tool shortcuts, stamp creation/reuse and
-  compact navigation. The P1 evidence above covers its scoped routes only;
-  independent participant observations remain under #165/#166 below.
+- [x] Complete the combined synthetic workflow assessment after P2 work: see
+  [methods, bounds and captures](evaluations/working-space.md). Independent
+  participant observations remain under #165/#166 below.
 
 
 ### Selective pixel cleanup (#218)

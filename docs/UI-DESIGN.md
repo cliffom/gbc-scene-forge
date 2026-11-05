@@ -162,3 +162,12 @@ The [pane acceptance tests](../tests/playwright/editor/panes.spec.ts) check all 
 combinations at 1440×900, 1024×768 and 760×640, including actual viewport width,
 keyboard reopening, focus, camera/pointer geometry, retained authored state and
 checkpoints, continued editing, guided reveal and Review scene transitions.
+
+## Drawing workspace refinements
+
+Routine open/save feedback uses the status area; actionable warnings and persistent
+failures keep prominent cards and dismissal controls. Keyboard help is visible above
+the workbench. Artwork starts with a collapsed dock and persistent adjacent frame/scope
+controls; Edit animation explicitly reveals timing. The Stamps Library exposes the
+existing save-selection command with prerequisites. Selection prioritizes editing
+and preview before the Convert or remove selection disclosure.

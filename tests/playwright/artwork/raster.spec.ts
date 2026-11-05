@@ -108,8 +108,7 @@ p.artwork.documents.save(c)
   await page.goto(await workspace.start(root));
   await page.locator('[data-asset="player/idle"]').click();
   const timeline = page.locator('#art-timeline');
-  const summary = timeline.locator(':scope > summary');
-  await summary.click();
+  await page.locator('#art-show-animation').click();
   await expect(page.locator('#art-animation-review')).toBeEnabled();
 
   let release = () => {};
@@ -134,9 +133,9 @@ p.artwork.documents.save(c)
         element.setAttribute('data-toggled-open', String(element.hasAttribute('open')));
       });
     });
-    await summary.click();
+    await timeline.locator(':scope > summary').click();
     await expect(timeline).toHaveAttribute('data-toggled-open', 'false');
-    await summary.click();
+    await timeline.locator(':scope > summary').click();
     await expect(timeline).toHaveAttribute('data-toggled-open', 'true');
     for (const control of await timeline.locator('button,input,select').all()) {
       await expect(control).toBeDisabled();

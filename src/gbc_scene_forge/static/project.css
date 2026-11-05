@@ -777,3 +777,25 @@
   #document-switcher>span:first-child {grid-column:1/-1;font-size:9px;color:var(--muted)}
   #document-switcher>.document-name {grid-column:1}
 }
+
+/* Routine acknowledgments share the status area, clear of the drawing surface. */
+.routine-notifications {min-width:0;flex:1;max-width:100%;overflow:auto;max-height:26px}
+.routine-notifications .notification {display:flex;align-items:center;gap:8px;margin:0;padding:2px 6px;border:0;border-radius:0;background:transparent;box-shadow:none;font-size:12px;pointer-events:auto}
+.routine-notifications .notification-severity {display:none}
+.routine-notifications .notification-message {min-width:0;overflow-wrap:anywhere}
+.routine-notifications .notification-dismiss {min-width:24px;min-height:24px;font-size:18px}
+.art-png-export {width:300px;max-width:calc(100vw - 24px)}
+.art-png-export .hint {margin:0}
+#keyboard-help {margin-left:auto;font-size:12px;padding:4px 8px}
+#selection-secondary {margin:8px 0}
+#selection-secondary button {margin:4px 0;max-width:100%}
+
+/* Feedback arrival/expiry must not resize either document viewport. */
+.standalone .status-bar {height:32px;min-height:32px;padding:2px 16px;align-items:center}
+@media (max-width:1100px) {
+  .command-full-label {display:none}
+}
+#art-setup {display:flex;flex-direction:column;gap:8px}
+#art-start {order:1}
+#art-handoff {order:2}
+#art-handoff.has-candidates,#art-recovery:not([hidden]) {order:0}

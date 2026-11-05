@@ -532,7 +532,12 @@ export function createArtworkController({
       empty.className = 'library-empty';
       const title = document.createElement('strong');
       title.textContent = 'Your asset library is empty';
-      empty.append(title, document.createTextNode('Import artwork or a map to get started.'));
+      empty.append(
+        title,
+        document.createTextNode(
+          'Create artwork with New, import artwork or a map with Import, or choose Plan a blockout in the workspace.',
+        ),
+      );
       paletteElement.append(empty);
     }
     filterPalette();

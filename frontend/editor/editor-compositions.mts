@@ -186,6 +186,7 @@ export function createCompositionsController({
     ports.update();
   });
 
+  lifetime.assign(button('library-save-stamp'), 'onclick', () => button('save-stamp').click());
   lifetime.assign(button('save-stamp'), 'onclick', () => {
     if (!sceneSession.editor || !workspaceState.project || activity.busy || gestures.anchor) {
       return;

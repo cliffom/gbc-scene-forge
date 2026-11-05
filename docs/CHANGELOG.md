@@ -6,6 +6,14 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.39.0 — Drawing space and native PNG downloads
+
+[Release notes](RELEASE-0.39.0.md). Start with drawing space, retain deliberate
+pane/dock choices, carry tool letters across scenes and artwork, and download
+current artwork or a selected frame as native PNG. Add goal-based starts and
+Library stamp creation; prioritize Inspector editing/preview and keep routine
+open/save feedback below the canvas. Publication is separate.
+
 ## 0.38.0 — Editor discovery and drawing scope
 
 [Release notes](RELEASE-0.38.0.md). Put artwork search and browsing ahead of

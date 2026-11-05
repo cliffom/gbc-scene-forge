@@ -1,4 +1,5 @@
 /** Artwork composition: document transitions, review/save and recovery with typed ports. */
+import { artworkPng } from './artwork-png.mts';
 import { MAX_PLACEMENTS } from './placement-limits.mts';
 import { createArtworkLayerControls } from './artwork-layer-controls.mts';
 import { paletteColors } from './artwork-palette.mts';
@@ -539,7 +540,7 @@ export function createPixelEditor({
     if (error) {
       feedback.error(text);
     } else {
-      feedback.show(text);
+      feedback.show(text, { quiet: text.startsWith('Artwork saved.') });
     }
   }
   function blocked(error: unknown) {
@@ -566,6 +567,12 @@ export function createPixelEditor({
       }
     }
     const active = session !== null && !loading;
+    button('art-download-png').disabled =
+      busy ||
+      !active ||
+      gestures.active ||
+      (select('art-png-scope').value === 'frame' && !sheetEditor.selectedFrame());
+    select('art-png-scope').options[1].disabled = !sheetEditor.selectedFrame();
     inspector.hidden = !active;
     element('art-setup', HTMLElement).hidden = active || loading !== null;
     element('art-editor', HTMLElement).hidden = !active;
@@ -919,6 +926,7 @@ export function createPixelEditor({
     const result = await api('artwork-draft-list', record, {});
     const drafts = array(result.drafts, record);
     element('art-recovery', HTMLElement).hidden = drafts.length === 0;
+    element('art-recovery', HTMLDetailsElement).open = drafts.length > 0;
     element('art-drafts', HTMLElement).replaceChildren(
       ...drafts.map((d) => {
         const row = document.createElement('div'),
@@ -1049,7 +1057,6 @@ export function createPixelEditor({
     paletteSignature = '';
     describe(candidate);
     presentation.resetPanels();
-    element('art-timeline', HTMLDetailsElement).open = false;
     input('art-review-detail').checked = false;
     input('art-review-x').value = '0';
     input('art-review-y').value = '0';
@@ -1127,6 +1134,7 @@ export function createPixelEditor({
       tabs();
       await inventory();
       await recoveries();
+      await refreshCandidates(true);
       controls();
       presentation.prepareIdentity();
     });
@@ -1591,6 +1599,35 @@ export function createPixelEditor({
     controls();
     message('Closing cancelled. Continue editing or save normally.');
   });
+  lifetime.assign(select('art-png-scope'), 'onchange', controls);
+  lifetime.assign(button('art-download-png'), 'onclick', () => {
+    if (!session || busy || gestures.active) {
+      return;
+    }
+    const model = session.model;
+    const frame = select('art-png-scope').value === 'frame' ? sheetEditor.selectedFrame() : null;
+    if (select('art-png-scope').value === 'frame' && !frame) {
+      return;
+    }
+    const bounds = frame ?? { x: 0, y: 0, width: model.width, height: model.height };
+    const safe = (value: string) =>
+      value.replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-|-$/g, '') || 'artwork';
+    const name = `${safe(model.descriptor.atlas_id)}-${frame ? safe(frame.id) : 'sheet'}.png`;
+    const acknowledgment = feedback.capture();
+    void artworkPng(model.composite(), model.width, bounds)
+      .then((blob) => {
+        if (lifetime.disposed) {
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = name;
+        anchor.click();
+        lifetime.revokeLater(url);
+      })
+      .catch((error: unknown) => acknowledgment.error(error));
+  });
   lifetime.assign(button('art-download'), 'onclick', () => {
     if (session) {
       download(session.downloadWork(), 'artwork-work.json');
@@ -1619,89 +1656,96 @@ export function createPixelEditor({
     refreshPalette: swatches,
     operation,
   });
-  button('art-handoff-list').addEventListener(
-    'click',
-    () =>
-      void execute(async () => {
-        const listing = await api('artwork-candidate-list', record, {});
-        const container = element('art-handoff-candidates', HTMLElement);
-        container.replaceChildren();
-        for (const handle of array(listing.candidates, record)) {
-          if (handle.error) {
-            continue;
+  async function refreshCandidates(reveal = false) {
+    const listing = await api('artwork-candidate-list', record, {});
+    const handles = array(listing.candidates, record).filter((item) => !item.error);
+    const handoff = element('art-handoff', HTMLDetailsElement);
+    const summary = handoff.querySelector('summary');
+    if (summary) {
+      summary.textContent = handles.length
+        ? `Agent candidates (${handles.length} available)`
+        : 'Agent candidates';
+    }
+    if (reveal) {
+      handoff.open = handles.length > 0;
+    }
+    handoff.classList.toggle('has-candidates', handles.length > 0);
+    const container = element('art-handoff-candidates', HTMLElement);
+    container.replaceChildren();
+    for (const handle of handles) {
+      const row = document.createElement('section');
+      const title = document.createElement('p');
+      title.textContent = `${string(handle.name)} · ${string(handle.handle)}`;
+      const inspect = document.createElement('button');
+      inspect.type = 'button';
+      inspect.textContent = 'Inspect snapshot';
+      const adopt = document.createElement('button');
+      adopt.type = 'button';
+      adopt.textContent = 'Adopt a copy';
+      const candidateHandle = {
+        handle: handle.handle,
+        project_id: handle.project_id,
+        project_revision: handle.project_revision,
+        revision: handle.revision,
+        ...(handle.owner ? { owner: handle.owner } : {}),
+      };
+      inspect.onclick = () =>
+        void execute(async () => {
+          const value = await api('artwork-candidate-export', decodeCandidate, {
+            candidate: candidateHandle,
+          });
+          const preview = document.createElement('canvas');
+          preview.width = value.descriptor.width;
+          preview.height = value.descriptor.height;
+          preview.style.maxWidth = '256px';
+          preview.style.maxHeight = '256px';
+          preview.style.imageRendering = 'pixelated';
+          const raw = Uint8ClampedArray.from(atob(value.rgba), (c) => c.charCodeAt(0));
+          preview
+            .getContext('2d')
+            ?.putImageData(new ImageData(raw, preview.width, preview.height), 0, 0);
+          row.querySelector('canvas')?.remove();
+          row.append(preview);
+          download(value, `${value.atlas_id}-candidate.json`);
+        });
+      adopt.onclick = () =>
+        void execute(async () => {
+          if (documents.size >= MAX_OPEN_ARTWORK_DOCUMENTS) {
+            throw Error('Close an artwork document first (limit 16).');
           }
-          const row = document.createElement('section');
-          const title = document.createElement('p');
-          title.textContent = `${string(handle.name)} · ${string(handle.handle)}`;
-          const inspect = document.createElement('button');
-          inspect.type = 'button';
-          inspect.textContent = 'Inspect snapshot';
-          const adopt = document.createElement('button');
-          adopt.type = 'button';
-          adopt.textContent = 'Adopt a copy';
-          const candidateHandle = {
-            handle: handle.handle,
-            project_id: handle.project_id,
-            project_revision: handle.project_revision,
-            revision: handle.revision,
-            ...(handle.owner ? { owner: handle.owner } : {}),
-          };
-          inspect.onclick = () =>
-            void execute(async () => {
-              const value = await api('artwork-candidate-export', decodeCandidate, {
-                candidate: candidateHandle,
-              });
-              const preview = document.createElement('canvas');
-              preview.width = value.descriptor.width;
-              preview.height = value.descriptor.height;
-              preview.style.maxWidth = '256px';
-              preview.style.maxHeight = '256px';
-              preview.style.imageRendering = 'pixelated';
-              const raw = Uint8ClampedArray.from(atob(value.rgba), (c) => c.charCodeAt(0));
-              preview
-                .getContext('2d')
-                ?.putImageData(new ImageData(raw, preview.width, preview.height), 0, 0);
-              row.querySelector('canvas')?.remove();
-              row.append(preview);
-              download(value, `${value.atlas_id}-candidate.json`);
-            });
-          adopt.onclick = () =>
-            void execute(async () => {
-              if (documents.size >= MAX_OPEN_ARTWORK_DOCUMENTS) {
-                throw Error('Close an artwork document first (limit 16).');
-              }
-              await suspend();
-              const adopted = await api('artwork-candidate-adopt', record, {
-                candidate: candidateHandle,
-                owner: crypto.randomUUID(),
-              });
-              const value = await api('artwork-candidate-export', decodeCandidate, {
-                candidate: adopted,
-              });
-              const original =
-                value.operation === 'edit'
-                  ? await api('artwork-open', decodeCandidate, {
-                      target: {
-                        document_id: value.document_id,
-                        atlas_id: value.atlas_id,
-                        region: value.descriptor.region,
-                      },
-                      project_revision: value.project_revision,
-                      artwork_revision: value.artwork_revision,
-                    })
-                  : value;
-              start(value, original);
-              await session?.checkpoint();
-              message(
-                'Adopted a separate unpublished copy with a new Undo history. Original candidate retained.',
-              );
-            });
-          row.append(title, inspect, adopt);
-          container.append(row);
-        }
-      }),
-    { signal: lifetime.signal },
-  );
+          await suspend();
+          const adopted = await api('artwork-candidate-adopt', record, {
+            candidate: candidateHandle,
+            owner: crypto.randomUUID(),
+          });
+          const value = await api('artwork-candidate-export', decodeCandidate, {
+            candidate: adopted,
+          });
+          const original =
+            value.operation === 'edit'
+              ? await api('artwork-open', decodeCandidate, {
+                  target: {
+                    document_id: value.document_id,
+                    atlas_id: value.atlas_id,
+                    region: value.descriptor.region,
+                  },
+                  project_revision: value.project_revision,
+                  artwork_revision: value.artwork_revision,
+                })
+              : value;
+          start(value, original);
+          await session?.checkpoint();
+          message(
+            'Adopted a separate unpublished copy with a new Undo history. Original candidate retained.',
+          );
+        });
+      row.append(title, inspect, adopt);
+      container.append(row);
+    }
+  }
+  button('art-handoff-list').addEventListener('click', () => void execute(refreshCandidates), {
+    signal: lifetime.signal,
+  });
   button('art-handoff-return').addEventListener(
     'click',
     () =>
@@ -1755,7 +1799,11 @@ export function createPixelEditor({
   surface.addEventListener(
     'keydown',
     (event) => {
-      if (element('art-palette', HTMLElement).matches(':popover-open')) {
+      if (
+        event.defaultPrevented ||
+        event.isComposing ||
+        document.querySelector('dialog[open], [popover]:popover-open:not(.notifications)')
+      ) {
         return;
       }
       if (event.key === 'Escape' && gestures.active) {
@@ -1778,6 +1826,46 @@ export function createPixelEditor({
         event.target instanceof HTMLTextAreaElement
       ) {
         return;
+      }
+      if (
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.altKey &&
+        !gestures.active &&
+        !(
+          event.target instanceof Element &&
+          event.target.closest('button, a, [contenteditable]:not([contenteditable="false"])')
+        )
+      ) {
+        const tools: Record<string, string> = {
+          p: 'pencil',
+          e: 'erase',
+          f: 'fill',
+          s: 'select',
+          i: 'pick',
+          l: 'line',
+          r: 'rectangle',
+          m: 'move',
+        };
+        const key = event.key.toLowerCase();
+        if (key === 'h') {
+          event.preventDefault();
+          if (button('art-pan').getAttribute('aria-pressed') !== 'true') {
+            button('art-pan').click();
+          }
+          return;
+        }
+        if (tools[key]) {
+          const control = surface.querySelector<HTMLInputElement>(
+            `input[name="art-tool"][value="${tools[key]}"]`,
+          );
+          if (control && !control.disabled) {
+            event.preventDefault();
+            control.checked = true;
+            control.dispatchEvent(new Event('change'));
+          }
+          return;
+        }
       }
       if (
         ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key) &&

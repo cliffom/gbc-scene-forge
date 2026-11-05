@@ -114,6 +114,11 @@ export function createArtworkWorkspace(
       input(id).max = String(grid ? MAX_GRID_AXIS : MAX_ARTWORK_AXIS);
       input(id).step = grid ? String(GRID_UNIT) : '1';
     }
+    element('art-size-guidance', HTMLElement).textContent = multiple
+      ? 'Sheets: 8–256 pixels per axis in multiples of eight; frame sizes must divide the sheet.'
+      : select('art-kind').value === 'tile'
+        ? 'Single tiles: 8, 16 or 32 pixels square.'
+        : 'Sprites / illustrations: 1–4,096 pixels per axis, up to 4,194,304 pixels total.';
     element('art-sheet-layout', HTMLElement).hidden = !multiple;
     const w = Number(input('art-width').value),
       h = Number(input('art-height').value),

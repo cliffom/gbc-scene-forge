@@ -53,6 +53,19 @@ export function createCommandsController({
   animationPreview: ReturnType<typeof createAnimationPreview>;
   ports: Ports;
 }) {
+  lifetime.assign(button('keyboard-help'), 'onclick', () =>
+    element('keyboard-help-dialog', HTMLDialogElement).showModal(),
+  );
+  lifetime.assign(button('keyboard-help-close'), 'onclick', () =>
+    element('keyboard-help-dialog', HTMLDialogElement).close(),
+  );
+  for (const [entry, command] of [
+    ['start-artwork', 'show-artwork'],
+    ['start-import', 'library-import'],
+    ['start-blockout', 'show-blockout-create'],
+  ]) {
+    lifetime.assign(button(entry), 'onclick', () => button(command).click());
+  }
   function exportDetails() {
     const projectScope = select('export-scope').value === 'project';
     element('export-details', HTMLElement).textContent = projectScope
@@ -218,7 +231,9 @@ export function createCommandsController({
           Boolean(event.target.closest('a, [contenteditable]:not([contenteditable="false"])'))) ||
         (event.target instanceof HTMLButtonElement && !event.ctrlKey && !event.metaKey) ||
         document.querySelector('dialog[open], [popover]:popover-open:not(.notifications)') ||
-        activity.busy
+        activity.busy ||
+        event.isComposing ||
+        event.defaultPrevented
       ) {
         return;
       }

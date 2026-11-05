@@ -27,11 +27,11 @@ start polling, or acquire canvas resources. No frontend framework is required.
 | `editor/editor-rendering.mts` | Canvas drawing, coordinate conversion, object hit bounds and preview collision queries. `draw(false)` updates transient display without authored checkpoints or rebuilding controls. Backing and CSS dimensions change only when needed; each synchronous repaint isolates drawing styles and starts a fresh path. Owns a 16 MiB LRU of transparent tile chunks with content/region invalidation and viewport clipping; scroll/resize redraw through the mounted lifetime. `drawOverview` renders full authored layers directly to the resize preview without display clipping or transient feedback. See [rendering/history contracts and measurements](evaluations/scene-scalability.md). |
 | `editor/editor-gestures.mts`, `editor/editor-viewport.mts`, `editor/editor-commands.mts` | Pointer authoring/cancellation and pan capture; zoom/fit/wheel and resize; keyboard/toolbar/export commands. The scene/pixel tool radio groups and zoom selectors are the single current tool/zoom values; do not add a second mutable copy. |
 | `editor/editor-layers.mts`, `editor/editor-compositions.mts` | Layer/selection inspectors and layer actions; copy/cut/paste/transforms/stamp controls. |
-| `editor/editor-layout.mts` | Mounted Library/Inspector visibility, accessible pane toggles, Library categories, guided reveal, responsive toolbar disclosure and command popovers. The active document selects artwork Library content while retaining the scene category. Pane/toolbar preferences are transient UI state; viewport transitions redraw without authored checkpoints. Disposal resets visibility. |
+| `editor/editor-layout.mts` | Mounted Library/Inspector visibility, accessible pane toggles, Library categories, guided reveal, responsive toolbar disclosure and command popovers. The active document selects artwork Library content while retaining the scene category. Pane/toolbar preferences are mounted-editor UI state; viewport transitions redraw without authored checkpoints. Disposal resets visibility. |
 | `editor/editor-review.mts` | Transient review mode in `EditorActivity.reviewing`, layout/focus and camera transition; gestures enforce Pan and commands block authoring shortcuts. The existing tool/brush/selection remain owned by their usual controllers. |
 | `editor/editor-panels.mts` | Wire existing tile/object inspectors, definitions, world, diagnostics, palette and blockout views to scene/project operations. Each feature view continues to own its dialog and validation state. Pending cross-scene navigation is owned here. |
 | `preview/animation-preview.mts`, `preview/movement-preview.mts` | Playback, input state and preview positions/preferences. They receive preview contracts and redraw callbacks, never scene writers. |
-| `editor/editor-notifications.mts` | Mounted feedback channels own document/operation identity, coalescing cards, live announcements, dismiss/expiry and paused timers. Explicit warnings expire; errors persist. Captured acknowledgments only resolve the notices they captured. Passive top-layer cards follow modal ownership without entering command-menu interaction guards. |
+| `editor/editor-notifications.mts` | Mounted feedback channels own document/operation identity, coalescing cards, live announcements, dismiss/expiry and paused timers. Routine open/save notices use an inline status host with the same ownership/dismiss/timer rules. Explicit warnings expire; errors persist. Captured acknowledgments only resolve the notices they captured. Passive top-layer cards follow modal ownership without entering command-menu interaction guards. |
 | `editor/editor-lifetime.mts`, `editor/editor-dom.mts` | Mounted resource ownership and checked, deferred DOM lookup. |
 
 Controllers depend on models, JSON primitives and feature views, with explicit
@@ -379,3 +379,15 @@ confirmation; Cancel closing removes that intent. Another retained artwork is
 activated last-insertion-first, otherwise the scene/empty workspace receives focus.
 Saved assets are not deleted, unrelated document histories stay owned by their
 controllers, and scene closure commits the project URL through existing navigation.
+
+## Presentation and image downloads
+
+The frame dock defaults closed. Dock/timeline details are shared presentation for
+the mounted editor and excluded from retained per-document control snapshots.
+An explicit animation entry expands both; closing either stops playback.
+Per-document frame scope, viewport and authored history retain their existing owners.
+`artwork/artwork-png.mts` encodes copied native RGBA rows with standard browser
+CompressionStream and PNG CRCs; it never reads the decorated display canvas.
+The pixel controller snapshots composited pixels/frame bounds before compression,
+downloads through a temporary URL and releases it through the mounted lifetime.
+PNG export has no save/checkpoint/history callbacks.

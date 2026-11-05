@@ -218,6 +218,7 @@ export function createEditorLayout(
     ['project-commands', 'project-command-panel'],
     ['transform-commands', 'transform-command-panel'],
     ['library-source-actions', 'source-command-panel'],
+    ['art-png-menu', 'art-png-options'],
   ]) {
     const trigger = element(triggerId, HTMLButtonElement);
     const panel = element(panelId, HTMLElement);

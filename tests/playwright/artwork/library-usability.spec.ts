@@ -140,7 +140,7 @@ for (const viewport of [
     await expect(entry).toBeEnabled();
     await expect(page.locator('#library-hint')).toContainText('PNG tilesheets');
     await expect(page.locator('#library-hint')).toContainText('Tiled JSON maps');
-    await expect(page.locator('#palette .library-empty')).toContainText('Import artwork or a map');
+    await expect(page.locator('#palette .library-empty')).toContainText('Create artwork with New');
     await page.screenshot({ path: testInfo.outputPath(`entry-${viewport.width}.png`) });
     await entry.click();
     await expect(

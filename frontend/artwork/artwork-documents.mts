@@ -56,6 +56,9 @@ export function createArtworkDocuments(
           'input[id],select[id],details[id]',
         ),
       ]) {
+        if (['art-dock', 'art-timeline'].includes(control.id)) {
+          continue;
+        }
         const key =
           control.id ||
           `input[name="art-tool"][value="${control instanceof HTMLInputElement ? control.value : ''}"]`;

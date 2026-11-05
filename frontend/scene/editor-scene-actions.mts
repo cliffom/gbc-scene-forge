@@ -123,7 +123,7 @@ export function createSceneActionsController({
       } else {
         await ports.clearDraft();
         closeScene();
-        status.show('Choose a scene, or import artwork or a map to get started.');
+        status.show('Choose a scene, or import artwork or a map to get started.', { quiet: true });
         opened = true;
       }
     });
@@ -256,7 +256,7 @@ export function createSceneActionsController({
       return;
     }
     open(data);
-    status.show('Scene opened.');
+    status.show('Scene opened.', { quiet: true });
     await ports.showRecovery(id);
     if (lifetime.disposed) {
       return;
@@ -383,7 +383,7 @@ export function createSceneActionsController({
     workspaceState.revision = string(result.project_revision);
     await ports.clearDraft(strictCleanup);
     ports.newDraftWriter();
-    status.show('Scene saved.');
+    status.show('Scene saved.', { quiet: true });
   }
 
   async function navigateProject() {
