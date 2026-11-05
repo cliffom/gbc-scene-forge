@@ -15,6 +15,46 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Composed artwork palette (#240)
+
+- **Scope:** Prepared 0.41.0 working tree on `issue-240-composed-palette`, based
+  on `a5ec90a`, checked 2026-11-05 UTC on macOS arm64, Python 3.13.13,
+  Node 24.22.1, Playwright 1.64.1 and Chromium 156.0.8078.4. Production bundles
+  and the installed 0.41.0 wheel were checked; publication is separate.
+- **Method:** Run `make lint test`, production `make build check-dist test-browser`,
+  strict Poetry lock validation, `make test-mcp`, real MCP/browser handoff and
+  refresh acceptance, and installed-wheel palette/first-use acceptance. Exercise
+  visible composition/source scope, occlusion, opacity, exact partial alpha,
+  transparent RGB, frame rectangles, sorting, limits, history, keyboard selection
+  and empty states. Count shared-raster reads to verify closed/cached panels do
+  not collect colors. Agent-inspect and archive [desktop composition](screenshots/composed-palette/composition-desktop.png),
+  [compact composition](screenshots/composed-palette/composition-compact.png) and
+  [selected layer](screenshots/composed-palette/selected-layer.png) at 1440 × 900
+  and 800 × 640. Measure one uniform 4,194,304-pixel collector call in Node.
+- **Result:** Lint, type checks, 490 Python tests, all TypeScript suites,
+  documentation checks and lock consistency pass. Regular browser acceptance
+  passes 192 cases with 12 optional-profile skips. All 121 MCP tests and 16
+  real-MCP browser cases pass. Both distribution metadata checks, seven wheel
+  smoke tests and four installed-wheel palette/first-use cases pass. Collection
+  reads the shared snapshot once on opening and zero additional times for twenty
+  unchanged redraws; closed panels also perform zero reads. The single uniform
+  maximum-area Node scan took 38.4 ms. An initial focused resize assertion sampled
+  before settled layout; bounded-layout polling passes. The first full run failed
+  three older tests that assumed eagerly collected source colors; they now open
+  the panel and select source scope explicitly, retaining their original checks.
+  MCP acceptance then exposed the taller popover covering its own invoker;
+  available-space placement and scroll bounds correct that failure. Full regular
+  and MCP browser passes precede a final weak-reference-only cache ownership
+  cleanup; final lint, rebuilt distributions and the four installed-wheel cases
+  cover that cleanup and the archived captures.
+- **Limits:** Synthetic automation and agent screenshot inspection do not
+  establish independent-user discovery, accessibility conformance or physical-device
+  comfort. The timing is one uniform Node scan, not layered browser latency or a
+  worst-case performance claim. The palette deliberately bounds membership to
+  the first 1,024 colors; usage ordering then covers that subset. Other optional
+  performance profiles, official Tiled tools, non-Chromium browsers, Windows and
+  Python 3.14 were not locally run. No CI or publication result is claimed here.
+
 ## Focused artwork setup and From agent (#237)
 
 - **Scope:** Prepared 0.40.0 working tree on `issue-237-artwork-setup`, based on

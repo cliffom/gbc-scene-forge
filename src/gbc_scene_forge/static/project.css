@@ -553,7 +553,7 @@
 .pixel-view-controls {align-items:flex-end;margin-left:auto}
 .art-tools .pixel-view-controls {gap:6px;flex-wrap:nowrap}
 .pixel-view-controls>label:last-child {height:32px;font-size:11px}
-#art-palette {position:fixed;inset:auto;margin:0;width:min(334px,calc(100vw - 16px));max-height:380px;overflow:auto;padding:12px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 24px #0008}
+#art-palette {position:fixed;inset:auto;margin:0;width:min(334px,calc(100vw - 16px));max-height:min(480px,calc(100dvh - 16px));overflow:auto;padding:12px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 24px #0008}
 #art-palette-toggle::before {content:"";display:inline-block;width:14px;height:14px;margin-right:6px;vertical-align:middle;border:1px solid var(--line);background:var(--swatch,#000)}
 .art-swatches button[aria-pressed=true] {outline:2px solid var(--accent);outline-offset:1px}
 #art-palette::backdrop {background:transparent}
@@ -844,3 +844,15 @@
   .art-start-tabs [role=tab] {padding-left:10px;padding-right:10px}
   .art-agent-cards {gap:12px}
 }
+
+.art-palette-tabs {display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:3px;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
+.art-palette-tabs button {font-size:12px;background:transparent;border-color:transparent}
+.art-palette-tabs button[aria-selected=true] {background:#3a3d2c;border-color:var(--accent);color:var(--accent)}
+.art-palette-heading {display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.art-palette-heading p {margin:0;flex:1}
+.art-palette-heading label {display:flex;align-items:center;gap:4px;font-size:11px}
+.art-palette-heading select {font-size:11px;max-width:100px}
+.art-palette-selected {display:flex;align-items:center;gap:10px;border-top:1px solid var(--line);padding-top:12px;margin-top:14px;font-size:12px}
+.art-palette-selected small {display:block;color:var(--muted);font-size:10px}
+#art-palette-chip {width:30px;height:30px;flex:none;border:1px solid var(--line);border-radius:4px;background:linear-gradient(var(--swatch),var(--swatch)),repeating-conic-gradient(#aaa 0% 25%,#555 0% 50%) 0/8px 8px}
+#art-palette-help,#art-palette-limits {font-size:11px;line-height:1.5;margin-bottom:0}

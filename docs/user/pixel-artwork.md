@@ -115,7 +115,8 @@ Open **Layers** in the Inspector to add a layer, choose the
 active layer, rename, reorder, hide, set opacity (0..255) or lock it. First **Add
 layer** retains flat artwork as **Base** and adds a transparent layer. Draw tools
 edit the selected source; the canvas and scenes show the visible composite.
-Choosing a layer immediately updates the color palette to that source's colors
+The Colors panel starts with the visible **Composition**. Choose **Selected
+layer** to inspect the active source's colors; switching layers updates that view
 without adding an Undo step or changing the document.
 **Visible** and **Locked** apply immediately and each change has its own Undo step.
 Locked layers disable visibility and other editing controls; uncheck **Locked**
@@ -278,14 +279,29 @@ Opacity supports exact alpha values from 0 (transparent) to 255 (opaque), includ
 partial transparency for PNG compositing. **Transparent** toggles alpha to zero
 and changes its accessible name to **Resume color**; click again to restore the previous nonzero
 opacity. Choosing a color also resumes painting at that opacity. Eraser writes
-transparent black. The eyedropper and palette swatches preserve exact RGBA, including
-hidden RGB beneath transparency. The dropdown sorts neutral colors first, then
-colors by hue, lightness and saturation. Alpha variants remain separate. Arrow
-keys navigate the grid; Enter selects, and Escape closes it and restores focus.
-Choosing a swatch sets both Color and Opacity without recoloring existing pixels.
-The palette shows up to 1,024 distinct source colors; an explicit notice appears
-when more exist, and Eyedropper can select any other pixel. GBC target profiles do not restrict these colors. Zoom uses
-nearest-neighbor pixels; toggle the pixel grid as needed.
+transparent black. Open **Colors ▾** to inspect **Composition** or **Selected layer**.
+Both follow the drawing scope: **Current frame**, **Entire sheet**, or **Entire
+image** for a static document. Composition shows exact visible RGBA after layer
+visibility, opacity and source-over blending; fully transparent pixels, the
+checkerboard, grid and onion-skin overlays do not contribute colors. Partially
+transparent colors retain their straight RGB and alpha, displayed over a
+checkerboard. **Selected layer** shows exact source RGBA, including hidden RGB
+beneath transparency, without applying that layer's visibility or opacity.
+
+Sort neutral colors first then by hue, lightness and saturation, or choose
+**Most used** to sort by pixel frequency with hue order breaking ties. Alpha
+variants remain separate. Use Left/Right on the scope tabs; arrow keys navigate
+the swatch grid, Enter selects, and Escape closes the panel and restores focus.
+Choosing a swatch sets both Color and Opacity, keeps the active editing layer/tool,
+and does not recolor pixels or add Undo history. The drawing-color preview shows
+its exact RGBA. The palette updates after edits, Undo/Redo and view/layer changes.
+
+The palette shows the first 1,024 distinct colors encountered in row order within
+the scope. If more exist, an explicit notice appears; ordering, including usage,
+applies only to shown colors. The eyedropper can select other source colors.
+Inspection never quantizes artwork or imposes a GBC profile. Collection runs only
+when the panel needs it, without scanning again during drawing pointer movement.
+Zoom uses nearest-neighbor pixels; toggle the pixel grid as needed.
 
 Large artwork uses a bounded whole-image review overview. Expand **Artwork detail
 view**, select **Review detail region**, and enter a rectangle up to 1,024 pixels

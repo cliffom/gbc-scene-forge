@@ -214,7 +214,7 @@ a.save(c)
   await trigger.click();
   await expect(page.locator('#art-palette')).toBeVisible();
   const swatches = page.locator('#art-swatches button');
-  await expect(swatches).toHaveCount(98);
+  await expect(swatches).toHaveCount(97);
   await expect(page.locator('#art-palette-count')).toContainText('sorted by hue');
   const first = await swatches.nth(0).boundingBox(),
     second = await swatches.nth(1).boundingBox(),
@@ -229,10 +229,17 @@ a.save(c)
   await expect(trigger).toBeFocused();
   await expect(page.locator('#artwork-surface')).toBeVisible();
   await trigger.click();
+  await page.getByRole('tab', { name: 'Selected layer', exact: true }).click();
+  await expect(swatches).toHaveCount(98);
   await page.getByRole('button', { name: 'RGBA 17, 34, 51, 0', exact: true }).click();
   await expect(page.locator('#art-color')).toHaveValue('#112233');
   await expect(page.locator('#art-alpha')).toHaveValue('0');
   await expect(page.locator('#art-document-state')).toHaveText('Saved');
+  await page.locator('#art-alpha').fill('999');
+  await trigger.click();
+  await expect(page.locator('#art-palette-color')).toHaveText('Choose an opacity within 0–255');
+  await page.getByRole('button', { name: 'RGBA 17, 34, 51, 128', exact: true }).click();
+  await expect(page.locator('#art-alpha')).toHaveValue('128');
   for (const width of [1440, 760]) {
     await page.setViewportSize({ width, height: 900 });
     await trigger.click();

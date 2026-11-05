@@ -743,7 +743,10 @@ test('dense variation controls scroll while reviewed save actions remain clickab
   await (await revealArtworkControl(page, 'art-id')).fill('dense_variation');
   await (await revealArtworkControl(page, 'art-variation')).click();
   await expect(page.locator('#art-shared')).toContainText('7 selected placements');
+  await page.locator('#art-palette-toggle').click();
+  await page.getByRole('tab', { name: 'Selected layer', exact: true }).click();
   await expect(page.locator('#art-swatches button')).toHaveCount(64);
+  await page.keyboard.press('Escape');
   await revealArtworkControl(page, 'art-download');
   await page.locator('.art-help summary').click();
   await page.locator('#art-selection-details summary').click();
@@ -809,6 +812,7 @@ test('transparent drawing restores opacity and preserves partial alpha in saved 
   await expect(transparent).toHaveAttribute('aria-pressed', 'false');
   await expect(transparent).toHaveAccessibleName('Transparent');
   await page.locator('#art-palette-toggle').click();
+  await page.getByRole('tab', { name: 'Selected layer', exact: true }).click();
   await page.getByRole('button', { name: 'RGBA 204, 136, 51, 0', exact: true }).click();
   await expect(transparent).toHaveAttribute('aria-pressed', 'true');
   await expect(transparent).toHaveAccessibleName('Resume color');

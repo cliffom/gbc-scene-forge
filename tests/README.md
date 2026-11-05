@@ -39,6 +39,11 @@ browser check compares actual Canvas2D backing bytes with the renderer estimate
 at and above the cache ceiling for all supported grids. See
 [runtime policy ownership](../docs/FRONTEND-ARCHITECTURE.md#runtime-policy-ownership).
 
+The artwork palette suites cover composition/source scope, exact blending and
+transparency, frame rectangles, bounded color membership and usage ordering.
+Browser cases verify layer/history/frame refresh, color selection without history,
+empty states, keyboard navigation, compact layout and on-demand raster collection.
+
 Python discovery remains `python -m unittest discover -s tests -p 'test_*.py'`
 (`make test-python`). Empty `__init__.py` markers in `backend/` and each domain
 allow discovery to recurse on supported Python versions. Imports use

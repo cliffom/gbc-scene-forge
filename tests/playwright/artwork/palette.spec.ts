@@ -1,0 +1,274 @@
+/** Composition inspection remains independent of the selected source and history. */
+import { execFileSync } from 'node:child_process';
+import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { build } from 'esbuild';
+import { test, expect } from '../support/browser-fixtures.ts';
+import { revealArtworkControl } from '../support/artwork-controls.ts';
+
+test('palette scopes follow layers, blending, history and frame/sheet views', async ({
+  page,
+  workspace,
+}, info) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const root = join(workspace.folder, 'project');
+  execFileSync(workspace.python, [
+    '-I',
+    '-c',
+    `
+from pathlib import Path
+import sys
+from gbc_scene_forge.project.application import Project
+from gbc_scene_forge.artwork import layers
+p=Project.create(Path(sys.argv[1]),'Composition palette')
+a=p.artwork.documents
+frames=[dict(id=name,name=name,x=x,y=0,width=8,height=8,kind='sprite',origin=[0,0]) for name,x in [('left',0),('right',8)]]
+c=a.create_sheet('picture','Forest study','sprite',16,8,p.catalog()['revision'],frames=frames,sequences=[])
+items=[layers.item('Base'),layers.item('Overlay'),{**layers.item('Hidden'),'visible':False}]
+c=layers.edit(c,items)
+base=bytearray(bytes([255,0,0,255])*128)
+for y in range(8):
+    for x in range(8,16): base[(y*16+x)*4:(y*16+x+1)*4]=bytes([0,0,255,255])
+base[12:16]=bytes([66,55,44,0])
+overlay=bytearray(512)
+overlay[:12]=bytes([0,255,0,255,0,255,0,128,7,8,9,0])
+overlay[12:16]=bytes([9,20,30,128])
+c=layers.reseal(c,{items[0]['id']:bytes(base),items[1]['id']:bytes(overlay),items[2]['id']:bytes([255,255,0,255])*128})
+a.save(c)
+`,
+    root,
+  ]);
+  await page.goto(await workspace.start(root));
+  await page.locator('[data-asset="picture/left"]').click();
+  await revealArtworkControl(page, 'art-layer');
+  const layer = page.locator('#art-layer');
+  const trigger = page.locator('#art-palette-toggle');
+  const panel = page.locator('#art-palette');
+  const swatch = (rgba: string) => page.locator(`#art-swatches button[data-rgba="${rgba}"]`);
+  const open = async () => {
+    if (!(await panel.isVisible())) {
+      await trigger.click();
+    }
+  };
+  await page.locator('#art-sheet-view').click();
+  await open();
+  await expect(page.getByRole('tab', { name: 'Composition', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await expect(page.locator('#art-palette-scope')).toHaveText('Entire sheet · visible composition');
+  await expect(page.locator('#art-swatches button')).toHaveCount(5);
+  for (const c of ['255,0,0,255', '0,0,255,255', '0,255,0,255', '127,128,0,255', '9,20,30,128']) {
+    await expect(swatch(c)).toBeVisible();
+  }
+  await expect(swatch('255,255,0,255')).toHaveCount(0);
+  await expect(swatch('7,8,9,0')).toHaveCount(0);
+  await page.getByRole('tab', { name: 'Selected layer', exact: true }).click();
+  await expect(page.locator('#art-swatches button')).toHaveCount(3);
+  await expect(swatch('66,55,44,0')).toBeVisible();
+  await page.screenshot({ path: info.outputPath('source-layer-palette.png') });
+  await page.keyboard.press('ArrowLeft');
+  await expect(page.getByRole('tab', { name: 'Composition', exact: true })).toBeFocused();
+  await expect(page.locator('#art-palette-content')).toHaveAttribute(
+    'aria-labelledby',
+    'art-palette-composition',
+  );
+  await page.locator('#art-palette-sort').selectOption('usage');
+  await expect(page.locator('#art-swatches button').first()).toHaveAttribute(
+    'data-rgba',
+    '0,0,255,255',
+  );
+  await expect(page.locator('#undo')).toBeDisabled();
+  const active = await layer.inputValue();
+  await swatch('9,20,30,128').click();
+  await expect(layer).toHaveValue(active);
+  await expect(page.locator('#art-color')).toHaveValue('#09141e');
+  await expect(page.locator('#art-alpha')).toHaveValue('128');
+  await expect(page.locator('#undo')).toBeDisabled();
+  await layer.selectOption({ label: 'Overlay' });
+  await page.locator('#art-layer-visible').uncheck();
+  await open();
+  await expect(page.locator('#art-swatches button')).toHaveCount(2);
+  await page.keyboard.press('Escape');
+  await page.locator('#undo').click();
+  await open();
+  await expect(swatch('0,255,0,255')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.locator('#redo').click();
+  await open();
+  await expect(swatch('0,255,0,255')).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await page.locator('#art-layer-visible').check();
+  await page.locator('#art-layer-opacity').fill('128');
+  await page.locator('#art-layer-update').click();
+  await open();
+  await expect(swatch('191,64,0,255')).toBeVisible();
+  await expect(swatch('9,20,30,64')).toBeVisible();
+  await expect(swatch('0,255,0,255')).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await page.locator('#art-frame-view').click();
+  await open();
+  await expect(page.locator('#art-palette-scope')).toHaveText(
+    'Current frame · visible composition',
+  );
+  await expect(swatch('0,0,255,255')).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await (await revealArtworkControl(page, 'art-frame')).selectOption('right');
+  await open();
+  await expect(page.locator('#art-swatches button')).toHaveCount(1);
+  await expect(swatch('0,0,255,255')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.locator('#art-sheet-view').click();
+  await layer.selectOption({ label: 'Base' });
+  await page.locator('#art-color').fill('#0c2238');
+  await page.locator('#art-alpha').fill('255');
+  const canvas = await page.locator('#art-canvas').boundingBox();
+  if (!canvas) {
+    throw Error('Expected artwork canvas');
+  }
+  await page.mouse.click(
+    canvas.x + (canvas.width * 9.5) / 16,
+    canvas.y + (canvas.height * 2.5) / 8,
+  );
+  await open();
+  await expect(swatch('12,34,56,255')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.locator('#undo').click();
+  await open();
+  await expect(swatch('12,34,56,255')).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await page.locator('#redo').click();
+  await open();
+  await expect(swatch('12,34,56,255')).toBeVisible();
+  await page.locator('#art-palette-sort').selectOption('hue');
+  for (const [width, height] of [
+    [1440, 900],
+    [800, 640],
+  ]) {
+    await page.setViewportSize({ width, height });
+    await expect
+      .poll(async () => {
+        const bounds = await panel.boundingBox();
+        return (
+          !!bounds &&
+          bounds.x >= 0 &&
+          bounds.y >= 0 &&
+          bounds.x + bounds.width <= width &&
+          bounds.y + bounds.height <= height
+        );
+      })
+      .toBe(true);
+    await page.screenshot({ path: info.outputPath(`composition-palette-${width}.png`) });
+    const paletteBounds = await panel.boundingBox();
+    const triggerBounds = await trigger.boundingBox();
+    if (!paletteBounds || !triggerBounds) {
+      throw Error('Expected palette and invoker bounds');
+    }
+    expect(
+      paletteBounds.y + paletteBounds.height <= triggerBounds.y ||
+        paletteBounds.y >= triggerBounds.y + triggerBounds.height,
+    ).toBe(true);
+  }
+  await page.keyboard.press('Escape');
+  await page.locator('#art-layer-visible').uncheck();
+  await layer.selectOption({ label: 'Overlay' });
+  await page.locator('#art-layer-visible').uncheck();
+  await open();
+  await expect(page.locator('#art-palette-empty')).toBeVisible();
+  await expect(page.locator('#art-swatches button')).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(trigger).toBeFocused();
+});
+
+test('palette collection is lazy, cached, and reads exact shared raster bytes', async ({
+  page,
+}) => {
+  await page.goto('about:blank');
+  // Mount the real markup without loading the complete editor or adding a test-only API.
+  await page.evaluate(
+    (html) => {
+      const parsed = new DOMParser().parseFromString(html, 'text/html');
+      for (const id of ['art-palette-toggle', 'art-palette']) {
+        const element = parsed.getElementById(id);
+        if (!element) {
+          throw Error('Missing palette markup');
+        }
+        document.body.append(element);
+      }
+    },
+    readFileSync('src/gbc_scene_forge/static/project.html', 'utf8'),
+  );
+  const bundle = await build({
+    stdin: {
+      resolveDir: process.cwd(),
+      contents: `
+import { createArtworkPaletteControls } from './frontend/artwork/artwork-palette-controls.mts';
+import { ArtworkRaster } from './frontend/artwork/artwork-raster.mts';
+import { PixelModel } from './frontend/artwork/pixel-model.mts';
+import { EditorLifetime } from './frontend/editor/editor-lifetime.mts';
+const model = new PixelModel({descriptor:{version:1,width:512,height:512},rgba:btoa('\\0'.repeat(512*512*4))});
+const raster = new ArtworkRaster();
+raster.refresh(model);
+const snapshot = raster.pixels;
+let reads = 0;
+Object.defineProperty(raster,'pixels',{get:()=>{reads++;return snapshot}});
+const lifetime = new EditorLifetime();
+let drawingColor = [0,0,0,255];
+const palette = createArtworkPaletteControls(lifetime,raster,{current:()=>model,view:()=>null,busy:()=>false,color:()=>drawingColor,chooseColor:()=>{}});
+palette.sync();
+model.apply(()=>model.put({x:1,y:1},[90,80,70,128]));
+raster.refresh(model);
+palette.invalidate();
+for(let i=0;i<20;i++) palette.sync();
+const closed = reads;
+const panel = document.getElementById('art-palette');
+panel.showPopover();
+const opened = reads;
+for(let i=0;i<20;i++) palette.sync();
+drawingColor=[11,22,33,128];palette.sync();
+const drawingLabel=document.getElementById('art-palette-color').textContent;
+const cached = reads;
+const exact = document.querySelector('#art-swatches button').dataset.rgba;
+model.undo();raster.refresh(model);palette.invalidate();palette.sync();
+const undone = document.querySelectorAll('#art-swatches button').length;
+model.redo();raster.refresh(model);palette.invalidate();palette.sync();
+const redone = document.querySelector('#art-swatches button').dataset.rgba;
+panel.hidePopover();
+palette.invalidate();for(let i=0;i<20;i++) palette.sync();
+const final = reads;
+model.apply(()=>{for(let i=0;i<1025;i++) model.pixels.set([i%256,Math.floor(i/256),1,255],i*4)});
+raster.refresh(model);palette.invalidate();panel.showPopover();
+const capped = document.querySelectorAll('#art-swatches button').length;
+const limited = !document.getElementById('art-palette-limits').hidden;
+const count = document.getElementById('art-palette-count').textContent;
+lifetime.dispose();raster.dispose();
+document.body.dataset.result=JSON.stringify({closed,opened,cached,drawingLabel,exact,undone,redone,final,capped,limited,count,disposed:panel.matches(':popover-open')});
+`,
+    },
+    bundle: true,
+    write: false,
+    format: 'esm',
+    platform: 'browser',
+    target: 'es2022',
+  });
+  await page.addScriptTag({ type: 'module', content: bundle.outputFiles[0].text });
+  await expect(page.locator('body')).toHaveAttribute('data-result', /closed/);
+  const result = await page.locator('body').getAttribute('data-result');
+  if (!result) {
+    throw Error('Missing palette results');
+  }
+  expect(JSON.parse(result)).toEqual({
+    closed: 0,
+    opened: 1,
+    cached: 1,
+    drawingLabel: 'RGBA 11, 22, 33, 128',
+    exact: '90,80,70,128',
+    undone: 0,
+    redone: '90,80,70,128',
+    final: 3,
+    capped: 1024,
+    limited: true,
+    count: 'First 1,024 colors shown · additional colors available.',
+    disposed: false,
+  });
+});
