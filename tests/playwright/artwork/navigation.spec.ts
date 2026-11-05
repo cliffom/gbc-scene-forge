@@ -566,6 +566,7 @@ test('artwork toolbar overflows into a keyboard-accessible popover without addin
   await expect(more).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(more).toHaveAttribute('aria-expanded', 'true');
+  await expect(more.locator('svg')).toHaveCSS('transform', 'matrix(0, 1, -1, 0, 0, 0)');
   await expect(panel).toBeVisible();
   await expect(page.locator('#art-png-menu')).toBeFocused();
   await page.locator('#art-color').fill('#cc7744');
@@ -575,6 +576,7 @@ test('artwork toolbar overflows into a keyboard-accessible popover without addin
   await page.keyboard.press('Escape');
   await expect(panel).toBeHidden();
   await expect(more).toBeFocused();
+  await expect(more.locator('svg')).toHaveCSS('transform', 'none');
   await more.click();
   await page.locator('#art-pan').click();
   await expect(panel).toBeHidden();

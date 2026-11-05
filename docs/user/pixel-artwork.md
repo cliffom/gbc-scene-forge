@@ -247,7 +247,8 @@ groups drawing tools, Color/Opacity and Pan/Fit/Zoom beside the canvas. Pan uses
 the hand icon and Fit uses the same fit-to-view icon as the scene editor; hover
 for tooltips. The toolbar stays on one row. When space is tight, **>** (More artwork
 tools) opens controls that do not fit, starting with Download PNG, then drawing
-color and navigation. Escape or clicking outside closes the popover. The **Colors ▾**
+color and navigation. The arrow points down while the popover is open and returns
+to pointing right when it closes. Escape or clicking outside closes the popover. The **Colors ▾**
 button in the Inspector opens a scrollable 12-column swatch grid. The Inspector identifies shared
 artwork, new artwork and selected-placement variations; the document bar shows
 local Saved/Modified/New state. Save stays in the document bar. **Document actions**

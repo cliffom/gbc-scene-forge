@@ -19,6 +19,7 @@ Dates, revisions and environments missing from the originals remain unknown.
 
 - **Scope:** PR #243 working tree based on `d5f15df`, checked 2026-11-05 on
   macOS arm64 with Python 3.13.13, Node 24.22.1 and Playwright 1.64.1 Chromium.
+  Arrow-state follow-up uses `3146bbd` as its base on the same environment.
 - **Method:** Run `make lint test`, `make test-browser` and frontend compilation.
   Exercise one-row bounds from 760 to 1920 px, keyboard opening/Escape, outside
   dismissal, resize focus transfer, Pan/Fit, retained settings and document
@@ -26,16 +27,20 @@ Dates, revisions and environments missing from the originals remain unknown.
   [compact](images/artwork-pan-fit-compact.png) and
   [open overflow](images/artwork-toolbar-overflow.png) captures at 1440 × 900
   and 800 × 640. Rerun navigation and working-space suites after the final
-  nested PNG popover resize cleanup.
+  nested PNG popover resize cleanup. For the arrow-state follow-up, rerun
+  `make lint test`, the toolbar overflow browser case with open/closed arrow
+  assertions and agent inspection of the refreshed 800 × 640 open capture.
 - **Result:** Lint, documentation checks, 490 Python tests and all TypeScript
   suites pass. Regular browser acceptance passes 194 cases with 12 optional
   profile skips; the final focused run passes all 19 cases. Initial runs failed
   tests that assumed always-visible controls, sampled before resize layout, or
   clicked pixels covered by the open popover. Tests now reveal overflow controls,
   await layout and dismiss the popover before drawing in its covered area.
+  The arrow-state browser case passes and the open capture shows a downward arrow.
 - **Limits:** Local Chromium evidence only. The final nested PNG cleanup has
   focused browser coverage after the full-suite run. Installed-wheel, optional
-  MCP and external Tiled checks were not rerun.
+  MCP and external Tiled checks were not rerun. The full browser suite was not
+  repeated for the arrow-state styling change.
 
 ## Composed artwork palette (#240)
 
