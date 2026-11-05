@@ -2,6 +2,7 @@
 
 from gbc_scene_forge.artwork import (
     atlas,
+    cleanup,
     dimensions,
     editable,
     inspection,
@@ -16,6 +17,9 @@ from gbc_scene_forge.artwork.conversion import ArtworkConversion
 from gbc_scene_forge.core.validation import require
 
 NAMES = {
+    "analyze_artwork_cleanup",
+    "preview_artwork_cleanup",
+    "validate_artwork_cleanup",
     "archive_artwork_candidates",
     "plan_artwork_candidate_archive",
     "read_artwork_archive",
@@ -97,6 +101,16 @@ def capabilities():
             "coordinates": "top-left integer points; rectangles in bounds, resize transforms a region, not canvas; sequential batch, simultaneous remap",
         },
         "literal_colors": "artwork_colors: exact RGBA including hidden RGB; 256/page; at most 65536 distinct colors, narrow rectangle if exceeded. No automatic cleanup or hardware profile conversion.",
+        "cleanup": {
+            "workflow": "analyze_artwork_cleanup → preview_artwork_cleanup with explicit finding IDs → validate_artwork_cleanup → existing review_artwork_candidate/commit_artwork. No implicit saved edits or browser Undo.",
+            "max_scan_pixels": cleanup.MAX_SCAN_PIXELS,
+            "max_pixel_work": cleanup.MAX_WORK,
+            "max_findings": cleanup.MAX_FINDINGS,
+            "findings_per_page_and_selection": cleanup.PAGE_SIZE,
+            "max_island_pixels": cleanup.MAX_ISLAND,
+            "constraints": "Exact RGBA palette/count on full target source and full composite, protected pixels/rectangles, editable rectangle, geometry/base/metadata, source alpha/hidden RGB, locks and other layers.",
+            "unsupported": cleanup.UNSUPPORTED,
+        },
         "layers": {
             "version": 1,
             "max_layers": layers.MAX_LAYERS,
@@ -166,7 +180,7 @@ def call(adapter, project, name, a):
     if isinstance(before, dict) and "handle" in before:
         a["before_candidate"] = candidates.resolve(before)
     result = _call(adapter, project, name, a)
-    if name in {"prepare_artwork_document", "convert_artwork_palette"}:
+    if name in {"prepare_artwork_document", "convert_artwork_palette", "preview_artwork_cleanup"}:
         if handle or a.get("compact", False):
             result["candidate"] = candidates.retain(
                 result["candidate"], owner=value.get("owner") if handle else None
@@ -270,12 +284,39 @@ def _call(adapter, project, name, a):
         "edit_artwork_batch",
         "prepare_artwork_document",
         "convert_artwork_palette",
+        "analyze_artwork_cleanup",
+        "preview_artwork_cleanup",
+        "validate_artwork_cleanup",
     ):
         # Pure candidate operations retain their original base; never silently rebase.
         with project.store.read_session(
             candidate["project_revision"], verify_assets=True
         ) as session:
             documents.validate_base(candidate, session.document)
+            if name == "validate_artwork_cleanup":
+                documents.validate_base(a["before_candidate"], session.document)
+        if name == "analyze_artwork_cleanup":
+            return cleanup.analyze(candidate, a["profile"], a.get("layer_id"), a.get("offset", 0))
+        if name == "validate_artwork_cleanup":
+            profile = cleanup.check_proposal(a["before_candidate"], a["proposal"])
+            return cleanup.validate(
+                a["before_candidate"], candidate, profile, a["proposal"]["layer_id"]
+            )
+        if name == "preview_artwork_cleanup":
+            result = cleanup.preview(candidate, a["proposal"], a["selected"])
+            previews = cleanup.images(
+                candidate, result["candidate"], a["proposal"]["layer_id"], result["changes"]
+            )
+            resources = []
+            for key, data in previews.items():
+                resource = adapter.artifact(data, "image/png", f"cleanup-{key}.png")
+                result[f"{key}_resource"] = resource
+                resources.append(resource)
+            return {
+                **result,
+                "resources": resources,
+                "view": "Target source, nearest-floor overview <=1024 per axis. Magenta marks any changed cell in each overview block; changes lists exact native coordinates. Review composite separately before commit.",
+            }
         if name == "edit_artwork_batch":
             return workshop.batch(candidate, a["operations"])
         if name == "prepare_artwork_document":

@@ -2,6 +2,7 @@
 
 from gbc_scene_forge.artwork import (
     atlas,
+    cleanup,
     dimensions,
     editable,
     layers,
@@ -409,6 +410,7 @@ TOOLS = [
 ]
 
 DEFERRED = [
+    "Semantic pixel-art recognition, automatic outline repair, silhouette scoring and color-plane consolidation",
     "Semantic terrain brushes (use browser or canonical save_scene)",
     "Interactive playback control, browser selection/Undo, browser draft inspection/mutation",
     "Palette profile editing, tile metadata editing and sprite preview preference editing",
@@ -1214,3 +1216,107 @@ for definition in TOOLS:
         definition["annotations"].update(readOnlyHint=False, destructiveHint=False)
     if definition["name"] == "retain_artwork_candidate":
         definition["inputSchema"]["properties"]["owner"] = UUID
+
+# Explicit profiles describe supported mechanical constraints, never artistic quality.
+CLEANUP_PROFILE = schema(
+    {
+        "rectangle": RECTANGLE,
+        "protected_pixels": {
+            "type": "array",
+            "maxItems": cleanup.MAX_PROTECTED_PIXELS,
+            "items": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {"type": "integer", "minimum": 0, "maximum": dimensions.MAX_AXIS - 1},
+            },
+        },
+        "protected_rectangles": {
+            "type": "array",
+            "maxItems": cleanup.MAX_PROTECTED_RECTANGLES,
+            "items": RECTANGLE,
+        },
+        "max_island_size": {"type": "integer", "minimum": 1, "maximum": cleanup.MAX_ISLAND},
+        "connectivity": {"type": "integer", "enum": [4, 8]},
+        "max_color_distance": {"type": "integer", "minimum": 0, "maximum": 441},
+        "min_boundary_percent": {"type": "integer", "minimum": 50, "maximum": 100},
+        "allowed_palette": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 256,
+            "items": {
+                "type": "array",
+                "minItems": 4,
+                "maxItems": 4,
+                "items": {"type": "integer", "minimum": 0, "maximum": 255},
+            },
+        },
+        "color_budget": {"type": "integer", "minimum": 1, "maximum": 256},
+    },
+    (
+        "rectangle",
+        "protected_pixels",
+        "protected_rectangles",
+        "max_island_size",
+        "connectivity",
+        "max_color_distance",
+        "min_boundary_percent",
+        "allowed_palette",
+        "color_budget",
+    ),
+)
+CLEANUP_PROPOSAL = schema(
+    {
+        "version": {"const": 1},
+        "candidate_revision": REVISION,
+        "layer_id": {"anyOf": [UUID, NULL]},
+        "profile": CLEANUP_PROFILE,
+        "revision": REVISION,
+    }
+)
+CLEANUP_INPUT = {**PROJECT, "candidate": {"oneOf": [CANDIDATE, HANDLE]}}
+TOOLS.extend(
+    [
+        tool(
+            "analyze_artwork_cleanup",
+            "Read-only small-color-island suggestions with normalized profile-bound proposal and paged native coordinates. Default 8-connectivity; no semantic intent guarantee. Explicit layer_id for layered sources. 1048576 scan pixels, 4096 findings, 256/page. Unsupported rules reject. No saved changes.",
+            {
+                **CLEANUP_INPUT,
+                "profile": CLEANUP_PROFILE,
+                "layer_id": UUID,
+                "offset": {"type": "integer", "minimum": 0, "maximum": cleanup.MAX_FINDINGS},
+            },
+            ("layer_id", "offset"),
+            read=True,
+        ),
+        tool(
+            "preview_artwork_cleanup",
+            "Recompute exact proposal and preview only explicitly selected finding IDs. Returns unsaved candidate, exact change map, target-source before/after/change PNG resources and actual hard-constraint validation. Preserves alpha/hidden RGB, protected pixels and other layers; rejects locks, stale plans or failed constraints. Review composite and commit separately.",
+            {
+                **CLEANUP_INPUT,
+                "proposal": CLEANUP_PROPOSAL,
+                "selected": {
+                    "type": "array",
+                    "maxItems": cleanup.PAGE_SIZE,
+                    "uniqueItems": True,
+                    "items": {"type": "string", "pattern": "^island-[0-9]+$"},
+                },
+                "compact": {"type": "boolean"},
+            },
+            ("compact",),
+            read=True,
+        ),
+        tool(
+            "validate_artwork_cleanup",
+            "Read-only validation of actual candidate against exact before_candidate and its cleanup proposal. Reports hard constraints separately from artistic warnings/unsupported checks. Full target source and composite palette/count; original base, geometry, layers, alpha and protected regions. Does not grant a commit receipt.",
+            {
+                **CLEANUP_INPUT,
+                "before_candidate": {"oneOf": [CANDIDATE, HANDLE]},
+                "proposal": CLEANUP_PROPOSAL,
+            },
+            read=True,
+        ),
+    ]
+)
+# Preview can retain a recoverable candidate sidecar; no saved artwork is published.
+TOOLS[-2]["annotations"].update(readOnlyHint=False, destructiveHint=False)

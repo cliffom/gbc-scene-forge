@@ -7,7 +7,8 @@ artwork-free blockouts, optional MCP and conflict-aware recovery. See
 
 Open issue state was checked on 2026-11-04. Remaining work centers on independent-user
 evaluation and findings-based usability fixes (milestone 17), plus constrained
-palette-reduction design (#214 in milestone 23). No next release is assigned.
+palette-reduction design (#214 in milestone 23). Version 0.36.0 is prepared for
+selective MCP pixel cleanup (#218); publication is separate.
 Validation gaps live in the [single remaining-check list](VALIDATION.md#remaining-checks).
 
 ## Constrained palette reduction (milestone 23)

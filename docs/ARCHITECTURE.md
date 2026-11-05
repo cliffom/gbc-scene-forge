@@ -61,6 +61,12 @@ selected identity resolution and durable archive writing share one lock; later
 candidate releases report failures per record. These operations
 reuse native candidates and layer sources. MCP adapters only map arguments and
 session resources; publication still uses reviewed document saves.
+`artwork/cleanup.py` owns bounded structural island suggestions, deterministic
+selection replay and exact before/after cleanup constraints. Profiles and
+proposals bind candidate revision and explicit source layer. These opt-in
+heuristics do not recognize artistic intent; they return unsaved candidates,
+source previews and change maps through thin MCP routing. Ordinary reviewed
+saves remain the publication path; no transport-specific raster model is added.
 Document services persist sources and derived scene assets in one transaction.
 Both transports use those rules; adapters do not implement a second raster model.
 
