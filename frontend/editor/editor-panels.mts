@@ -21,7 +21,7 @@ import { describeFinding, resolveDefinition } from '../objects/object-definition
 import { createObjectInspector } from '../objects/object-inspector.mts';
 import { createPalettePanel } from '../diagnostics/palette-budget.mts';
 import type { ProjectApi } from '../project/project-api.mts';
-import type { Loaded, Region } from '../project/project-contracts.mts';
+import type { Loaded } from '../project/project-contracts.mts';
 import { decodeLoaded, decodeProject } from '../project/project-contracts.mts';
 import type { TileChoice } from '../artwork/tile-inspector.mts';
 import { createTileInspector } from '../artwork/tile-inspector.mts';
@@ -36,8 +36,7 @@ export interface Ports {
   sceneZoom: () => number;
   tileMetadata: (group: string, asset: string) => TileMetadata | undefined;
   update: () => void;
-  sprites: ReadonlyMap<string, { image: HTMLImageElement; region: Region }>;
-  regions: ReadonlyMap<string, { image: HTMLImageElement; x: number; y: number }>;
+  sourceMetadataChoices: () => TileChoice[];
   layerAction: (work: (editor: LayerEditor) => void, clearSelection?: boolean) => void;
   syncPanCursor: () => void;
   requestSceneOpen: (id: string) => void;
@@ -188,42 +187,10 @@ export function createPanelsController({
   );
 
   lifetime.assign(button('edit-tile'), 'onclick', () => {
-    if (!sceneSession.loaded || activity.busy) {
+    if (!sceneSession.loaded || activity.busy || gestures.anchor !== null) {
       return;
     }
-    const choices: TileChoice[] = [];
-    if (brushes.spriteBrush) {
-      const sprite = ports.sprites.get(brushes.spriteBrush);
-      if (sprite) {
-        choices.push({
-          atlas: brushes.spriteBrush.split('/')[0],
-          group: 'sprites',
-          asset: brushes.spriteBrush,
-          image: sprite.image,
-          sx: sprite.region.x,
-          sy: sprite.region.y,
-          width: sprite.region.width,
-          height: sprite.region.height,
-        });
-      }
-    } else if (brushes.brush) {
-      for (const asset of brushes.brush.flat()) {
-        const region = ports.regions.get(asset);
-        if (region) {
-          choices.push({
-            atlas: asset.split('/')[0],
-            group: String(sceneSession.loaded.grid),
-            asset,
-            image: region.image,
-            sx: region.x,
-            sy: region.y,
-            width: sceneSession.loaded.grid,
-            height: sceneSession.loaded.grid,
-          });
-        }
-      }
-    }
-    tileInspector.open(choices);
+    tileInspector.open(ports.sourceMetadataChoices());
   });
 
   const objectInspector = createObjectInspector(

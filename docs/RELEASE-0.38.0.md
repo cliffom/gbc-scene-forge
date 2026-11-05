@@ -11,6 +11,8 @@ Make existing work and drawing boundaries easier to find for
   **New…**, **Import** and **Source…** entries keep common actions reachable.
   Source editing, copy/update/delete and terrain/collision share one menu;
   **Filters & recovery** exposes filters, draft recovery and agent candidates.
+  Terrain/collision targets the source named by that menu even when filters
+  change the source while a different scene brush remains selected.
 - The empty workspace offers **Open scene…** beside **Create scene** when saved
   scenes exist. The switcher visibly says **Documents**, retaining the active
   name, kind and adjacent save/external-change state.

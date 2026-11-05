@@ -248,11 +248,6 @@ export function mountProjectEditor() {
     button('delete-stamp').disabled = activity.busy || !select('stamps').value;
     input('select-all-layers').disabled =
       activity.busy || !sceneSession.editor || gestures.anchor !== null;
-    button('edit-tile').disabled =
-      activity.busy ||
-      !sceneSession.loaded ||
-      (!brushes.brush && !brushes.spriteBrush) ||
-      gestures.anchor !== null;
     button('edit-object').disabled =
       activity.busy ||
       !sceneSession.editor ||
@@ -433,12 +428,7 @@ export function mountProjectEditor() {
       tileMetadata: (...args) => artworkController.tileMetadata(...args),
       update: (...args) => update(...args),
 
-      get sprites() {
-        return artworkController.sprites;
-      },
-      get regions() {
-        return artworkController.regions;
-      },
+      sourceMetadataChoices: (...args) => artworkController.sourceMetadataChoices(...args),
       layerAction: (...args) => layersController.layerAction(...args),
       syncPanCursor: (...args) => gesturesController.syncPanCursor(...args),
       requestSceneOpen: (...args) => sceneActionsController.requestSceneOpen(...args),
@@ -505,6 +495,7 @@ export function mountProjectEditor() {
     sceneSession,
     brushes,
     activity,
+    gestures,
     editorLayout,
     sceneSelection,
     status,

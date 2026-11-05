@@ -15,6 +15,26 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Source metadata targeting (#235 review)
+
+- **Scope:** Prepared 0.38.0 review-fix working tree based on `b1ac1c2`, checked
+  locally on 2026-11-04 (2026-11-05 UTC), macOS arm64, Python 3.13, Node 24 and
+  bundled Playwright Chromium, development frontend.
+- **Method:** Run `make lint test`, rebuild the frontend and run the Library
+  sources, discovery/scope, terrain and standalone browser suites. The new
+  [regression](../tests/playwright/editor/library-sources.spec.ts) changes the
+  filtered source while retaining a different scene brush, saves sprite and
+  individual tile-cell metadata, then reads the project catalog. Inspect the
+  resulting metadata dialog at 800 × 640.
+- **Result:** Lint, documentation checks, 487 Python tests, all frontend suites
+  and 16 browser cases pass. Metadata reaches the source named in the menu;
+  unrelated metadata and the previous scene brush remain unchanged. Incompatible
+  grids and empty results disable the command. The first new fixture rejected
+  an unsupported rectangular tile; the corrected square fixture passes.
+- **Limits:** Synthetic local browser/service evidence and agent UI inspection;
+  no independent participant evidence. The full browser suite, installed-wheel
+  checks, other browsers and Python 3.14 were not rerun locally for this fix.
+
 ## Editor discovery and drawing scope (#225–#227)
 
 - **Scope:** Prepared 0.38.0 working tree based on `66b98c4`, checked locally on
