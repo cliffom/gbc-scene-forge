@@ -14,6 +14,10 @@ export function createDocumentClose(lifetime: EditorLifetime) {
   dialog.addEventListener(
     'close',
     () => {
+      // Disposal can queue a close event before a replacement reopens this dialog.
+      if (dialog.open) {
+        return;
+      }
       const resolve = finish;
       finish = null;
       const choice = dialog.returnValue;

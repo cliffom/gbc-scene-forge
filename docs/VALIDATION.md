@@ -15,6 +15,24 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Document-close queued-event review fix (#223)
+
+- **Scope:** Review-fix working tree based on `78b53df`, checked on 2026-11-04
+  (2026-11-05 UTC), macOS arm64, Python 3.13.13, Node 24.22.1 and bundled Chromium.
+- **Method:** Bundle the actual close controller and editor lifetime into an
+  isolated browser harness; dispose and reopen the static dialog in one task
+  before the browser dispatches its native close event. Rebuild the frontend and
+  run close, document-navigation and editor-lifetime browser suites, plus
+  `make docs-check lint test`.
+- **Result:** The regression fails before the fix: the visible replacement
+  confirmation has already resolved to null. With the guard, it remains pending
+  until Discard resolves it correctly. All 13 selected browser cases, documentation
+  checks, lint, 487 Python tests and all frontend suites pass.
+- **Limits:** The race reproduction exercises the controller's native browser
+  events, rather than a full editor remount. Full browser, installed-wheel and
+  MCP checks were not repeated for this fix; prior results below retain their
+  original scope. Non-Chromium behavior was not checked.
+
 ## Explicit document closure (#222)
 
 - **Scope:** Prepared 0.37.0 working tree based on `6d586e1`, checked locally on
