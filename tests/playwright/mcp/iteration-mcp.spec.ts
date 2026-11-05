@@ -263,15 +263,22 @@ p.artwork.documents.save(c)
   const colors = () =>
     palette.evaluateAll((nodes) => nodes.map((n) => n.getAttribute('data-rgba')));
   const layerSelect = await revealArtworkControl(page, 'art-layer');
+  await page.locator('#art-palette-toggle').click();
+  await page.getByRole('tab', { name: 'Selected layer', exact: true }).click();
   expect(await colors()).toContain('255,0,0,255');
   expect(await colors()).not.toContain('0,0,255,255');
+  await page.keyboard.press('Escape');
   await layerSelect.selectOption({ label: 'Blue' });
+  await page.locator('#art-palette-toggle').click();
   expect(await colors()).toContain('0,0,255,255');
   expect(await colors()).toContain('0,255,0,255');
   expect(await colors()).not.toContain('255,0,0,255');
+  await page.keyboard.press('Escape');
   await layerSelect.selectOption({ label: 'Red' });
+  await page.locator('#art-palette-toggle').click();
   expect(await colors()).toContain('255,0,0,255');
   expect(await colors()).not.toContain('0,0,255,255');
+  await page.keyboard.press('Escape');
   await expect(page.locator('#undo')).toBeDisabled();
   expect(writes).toBe(0);
   await page.locator('#art-palette-toggle').click();

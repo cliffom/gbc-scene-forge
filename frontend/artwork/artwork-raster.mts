@@ -9,6 +9,14 @@ export class ArtworkRaster {
   private serial = 0;
   private frames = new Map<string, number>();
 
+  /** Borrow the exact upload bytes; consumers must not mutate this owned snapshot. */
+  get pixels() {
+    return this.data?.data ?? null;
+  }
+  get revision() {
+    return this.serial;
+  }
+
   refresh(model: PixelModel) {
     const pixels = model.composite();
     const replaced = this.model !== model;

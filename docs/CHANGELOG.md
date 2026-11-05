@@ -6,6 +6,14 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.41.0 — Composed artwork palettes
+
+[Release notes](RELEASE-0.41.0.md). Inspect colors from the visible composition
+or selected layer, following the current Frame or Sheet scope. Sort by hue or
+usage, choose exact RGBA without changing the editing layer, and distinguish
+blended visible colors from source transparency. Palette scans run on demand
+using the shared raster. Publication is separate.
+
 ## 0.40.0 — Focused artwork setup and agent drafts
 
 [Release notes](RELEASE-0.40.0.md). Separate New artwork, Existing artwork and

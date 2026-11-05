@@ -3,7 +3,7 @@ import { createAgentDrafts } from './agent-drafts.mts';
 import { artworkPng } from './artwork-png.mts';
 import { MAX_PLACEMENTS } from './placement-limits.mts';
 import { createArtworkLayerControls } from './artwork-layer-controls.mts';
-import { paletteColors } from './artwork-palette.mts';
+import { createArtworkPaletteControls } from './artwork-palette-controls.mts';
 import { button, element, input, select } from '../editor/editor-dom.mts';
 import type { EditorLifetime } from '../editor/editor-lifetime.mts';
 import { feedbackText, type createNotifications } from '../editor/editor-notifications.mts';
@@ -106,7 +106,6 @@ export function createPixelEditor({
   let unavailableSource: Source | null = null;
   let inventoryRevision = workspaceState.revision;
   let timer: ReturnType<typeof setTimeout> | undefined;
-  let paletteSignature = '';
   let discoveryError = '';
   let discoveryFailures = 0;
   let savedDocumentIds: Set<string> | null = null;
@@ -312,9 +311,8 @@ export function createPixelEditor({
     }
     describe(current.candidate, preservePanels);
     element('artwork-heading', HTMLElement).textContent = current.model.descriptor.name;
-    paletteSignature = '';
+    palette.invalidate();
     draw();
-    swatches();
     artworkViewport.restore(saved.view);
     tabs();
     if (focus) {
@@ -357,6 +355,13 @@ export function createPixelEditor({
         message('Animation review ready. Save commits this exact artwork and timing.');
       });
     },
+  });
+  const palette = createArtworkPaletteControls(lifetime, raster, {
+    current: () => session?.model ?? null,
+    view: () => sheetEditor.view(),
+    busy: () => busy,
+    color: () => (input('art-alpha').validity.valid ? color() : null),
+    chooseColor,
   });
   const artworkViewport = createArtworkViewport(lifetime, canvas, {
     zoom: (direction) => {
@@ -753,9 +758,7 @@ export function createPixelEditor({
       '--swatch',
       `rgba(${c[0]},${c[1]},${c[2]},${c[3] / 255})`,
     );
-    for (const swatch of element('art-swatches', HTMLElement).querySelectorAll('button')) {
-      swatch.setAttribute('aria-pressed', String(swatch.dataset.rgba === c.join(',')));
-    }
+    palette.reflectColor(c);
     reflectOpacity();
   }
   function draw(gestureOnly = false) {
@@ -770,6 +773,9 @@ export function createPixelEditor({
       sheetEditor.sync();
     }
     rendering.draw();
+    if (!gestureOnly) {
+      palette.sync();
+    }
     if (gestureOnly) {
       dirtyControls();
     } else {
@@ -777,110 +783,6 @@ export function createPixelEditor({
     }
     artworkViewport.layout();
   }
-  function swatches() {
-    const pixels = session?.model.pixels;
-    if (!pixels) {
-      return;
-    }
-    const { colors, limited } = paletteColors(pixels);
-    const signature = JSON.stringify({ colors, limited });
-    if (signature === paletteSignature) {
-      return;
-    }
-    paletteSignature = signature;
-    element('art-palette-count', HTMLElement).textContent = limited
-      ? `${colors.length} colors shown · use the eyedropper for additional colors.`
-      : `${colors.length} colors · sorted by hue`;
-    element('art-swatches', HTMLElement).replaceChildren(
-      ...colors.map((c) => {
-        const swatch = document.createElement('button');
-        swatch.type = 'button';
-        swatch.title = `RGBA ${c.join(', ')}`;
-        swatch.setAttribute('aria-label', swatch.title);
-        swatch.style.setProperty('--swatch', `rgba(${c[0]},${c[1]},${c[2]},${c[3] / 255})`);
-        swatch.dataset.rgba = c.join(',');
-        swatch.onclick = () => {
-          if (busy) {
-            return;
-          }
-          chooseColor(c);
-          element('art-palette', HTMLElement).hidePopover();
-          button('art-palette-toggle').focus();
-        };
-        return swatch;
-      }),
-    );
-  }
-  const palettePanel = element('art-palette', HTMLElement);
-  palettePanel.addEventListener(
-    'keydown',
-    (event) => {
-      const buttons = [...palettePanel.querySelectorAll('button')];
-      const index = buttons.findIndex((button) => button === document.activeElement);
-      const step: Record<string, number> = {
-        ArrowRight: 1,
-        ArrowLeft: -1,
-        ArrowDown: 12,
-        ArrowUp: -12,
-      };
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        event.stopPropagation();
-        palettePanel.hidePopover();
-        button('art-palette-toggle').focus();
-      } else if (event.key in step || event.key === 'Home' || event.key === 'End') {
-        event.preventDefault();
-        event.stopPropagation();
-        const next =
-          event.key === 'Home'
-            ? 0
-            : event.key === 'End'
-              ? buttons.length - 1
-              : Math.max(0, Math.min(buttons.length - 1, index + step[event.key]));
-        buttons[next]?.focus();
-      }
-    },
-    { signal: lifetime.signal },
-  );
-  function positionPalette(height = palettePanel.offsetHeight) {
-    const trigger = button('art-palette-toggle').getBoundingClientRect();
-    palettePanel.style.left = `${Math.max(8, Math.min(trigger.left, window.innerWidth - 350))}px`;
-    palettePanel.style.top = `${Math.max(8, Math.min(trigger.bottom + 5, window.innerHeight - Math.min(380, height) - 8))}px`;
-  }
-  palettePanel.addEventListener(
-    'beforetoggle',
-    (event) => {
-      if (event.newState === 'open') {
-        // Native toggle fires after visibility changes. Bound the first visible
-        // frame too, including after a viewport resize while the popover was closed.
-        positionPalette(380);
-      }
-    },
-    { signal: lifetime.signal },
-  );
-  palettePanel.addEventListener(
-    'toggle',
-    () => {
-      if (palettePanel.matches(':popover-open')) {
-        positionPalette();
-        palettePanel.querySelector('button')?.focus();
-      }
-    },
-    { signal: lifetime.signal },
-  );
-  window.addEventListener(
-    'resize',
-    () => {
-      if (palettePanel.matches(':popover-open')) {
-        positionPalette();
-      }
-    },
-    { signal: lifetime.signal },
-  );
-  lifetime.cleanup(() => {
-    palettePanel.hidePopover();
-    element('art-swatches', HTMLElement).replaceChildren();
-  });
   function invalidate() {
     session?.invalidate();
     element('art-comparison', HTMLElement).hidden = true;
@@ -939,7 +841,7 @@ export function createPixelEditor({
     closingAfterSave = null;
     feedback.clear('message');
     invalidate();
-    swatches();
+    palette.invalidate();
     draw();
     checkpointSoon();
     tabs();
@@ -1089,7 +991,6 @@ export function createPixelEditor({
     artworkViewport.authoringTool();
     tabs();
     input('art-use-scene').checked = sceneSession.loaded !== null;
-    paletteSignature = '';
     describe(candidate);
     presentation.resetPanels();
     input('art-review-detail').checked = false;
@@ -1100,7 +1001,7 @@ export function createPixelEditor({
     documentState();
     input('art-edit-frame').checked = false;
     invalidate();
-    swatches();
+    palette.invalidate();
     controls();
     draw();
     if (candidate.descriptor.width > 256 || candidate.descriptor.height > 256) {
@@ -1689,7 +1590,7 @@ export function createPixelEditor({
     busy: () => busy,
     cancelGesture,
     draw,
-    refreshPalette: swatches,
+    refreshPalette: () => palette.invalidate(),
     operation,
   });
   button('art-handoff-return').addEventListener(

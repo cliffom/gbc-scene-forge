@@ -123,7 +123,7 @@ print(p.catalog()['project']['scenes'][0]['id'])
     "document.getElementById('scene-name').textContent.startsWith('Riverside ·')",
   );
   await click('artwork-tab');
-  // Tabs follow the WAI keyboard pattern and keep a single Tab stop.
+  // Library tabs follow the WAI keyboard pattern and keep a single Tab stop.
   await page.locator('#artwork-tab').focus();
   await key('ArrowRight');
   assert.equal(await evaluate('document.activeElement.id'), 'objects-tab');
@@ -132,7 +132,9 @@ print(p.catalog()['project']['scenes'][0]['id'])
   assert.equal(await evaluate('document.activeElement.id'), 'stamps-tab');
   await key('Home');
   assert.equal(await evaluate('document.activeElement.id'), 'artwork-tab');
-  assert.equal(await evaluate('document.querySelectorAll(\'[role=tab][tabindex="0"]\').length'), 1);
+  await expect(
+    page.getByRole('tablist', { name: 'Library categories' }).locator('[role=tab][tabindex="0"]'),
+  ).toHaveCount(1);
   // Native popover dismissal and keyboard focus, then a command's modal autofocus.
   await page.locator('#scene-commands').focus();
   await key('Enter');
