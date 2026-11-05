@@ -9,6 +9,13 @@ with pip. Development dependencies are locked in `poetry.lock` and
 uses `poetry env use` to create/select `.venv`, installs locked dependencies, and
 compiles the frontend. `make check-deps` checks prerequisites without installing.
 
+The npm `minimatch` override pins 11.0.1 to address
+[Dependabot alert #2](https://github.com/cliffom/gbc-scene-forge/security/dependabot/2)
+([GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249)).
+ESLint, `@eslint/config-array` and `@typescript-eslint/typescript-estree` still
+request affected 10.x versions. Remove the override once their dependency ranges
+resolve to patched versions, then regenerate the lockfile and run lint and tests.
+
 ```sh
 make setup PYTHON=python3.13
 make lint test
