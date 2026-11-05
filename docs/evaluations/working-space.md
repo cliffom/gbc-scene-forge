@@ -83,6 +83,21 @@ these images do not establish prolonged drawing comfort. The fixed footer keeps
 routine feedback arrival/expiry from changing viewport geometry. Existing native
 pane toggles and the explicit animation action remain keyboard reachable.
 
+## Candidate discovery review correction (#236)
+
+The follow-up browser cases seed a retained candidate before opening New artwork.
+Automatic discovery renders Inspect snapshot and Adopt a copy immediately; manual
+refresh replaces the cards and count after candidate replacement. Inspect downloads
+the snapshot and adoption opens independent local work. Reopening setup after all
+candidates are released clears the cards and availability indicator. All ten
+working-space cases pass against the rebuilt production frontend on the review-fix
+working tree based on `0db3a40`, on 2026-11-05 UTC in the environment above.
+Agent inspection of [1440 × 800](../screenshots/working-space/candidates-1440.png)
+and [800 × 800](../screenshots/working-space/candidates-800.png) captures confirms
+the available actions are visible and the candidate identity wraps at compact width.
+This verifies the reported empty-disclosure regression, not independent discovery
+or accessibility conformance.
+
 ## Failures and limits
 
 Initial broad checks exposed compact toolbar overflow and footer-driven viewport

@@ -15,6 +15,26 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Automatic candidate actions (#236 review correction)
+
+- **Scope:** Prepared 0.39.0 review-fix working tree based on `0db3a40`, checked
+  on 2026-11-05 UTC, macOS 27.0.1 arm64, Python 3.13.13, Node 24.22.1 and
+  Playwright 1.64.1 / Chromium 156.0.8078.4 with the production frontend.
+- **Method:** Reproduce the empty automatically opened candidate disclosure;
+  run `make docs-check lint test`, rebuild with `FORGE_BUILD_MODE=production make
+  frontend`, and run all ten working-space browser cases. The new cases cover
+  initial candidate actions, inspection/download, refresh replacement/count,
+  adoption and clearing stale cards on reentry. Inspect the
+  [desktop and compact captures](evaluations/working-space.md#candidate-discovery-review-correction-236).
+- **Result:** Required checks pass, including 487 Python tests, all TypeScript
+  suites and 20 documentation-checker tests. All ten focused browser cases pass;
+  available candidates have immediate Inspect/Adopt actions at 1440 × 800 and
+  800 × 800. The list, count and availability indicator follow current inventory.
+- **Limits:** Synthetic local coverage and agent UI inspection. The full browser,
+  MCP, wheel and external-tool suites were not rerun for this focused frontend
+  correction. Earlier broader results retain their original revision boundaries
+  below; this entry makes no independent-user or accessibility claim.
+
 ## Drawing space and native PNG downloads (#228–#234)
 
 - **Scope:** Prepared 0.39.0 working tree on `feat/milestone-24-p2`, based on

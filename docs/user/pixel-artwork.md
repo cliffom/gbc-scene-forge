@@ -121,11 +121,12 @@ region/cell copies use visible flattened pixels. The [native contract](../EDITAB
 defines limits and older-version rejection. Hidden source RGB is preserved even
 when it cannot appear in the composite.
 
-**New artwork → Agent candidates → Refresh candidates** lists retained unpublished
-MCP snapshots. **Inspect snapshot** shows/downloads the selected revision without
-saving. **Adopt a copy** checks its artwork and selected-scene bases and opens
-separately owned local work with a new Undo history; other open documents keep
-their history/checkpoints.
+**New artwork → Agent candidates** automatically lists retained unpublished
+MCP snapshots and expands when candidates are available. **Refresh candidates**
+updates the count and available actions. **Inspect snapshot** shows/downloads the
+selected revision without saving. **Adopt a copy** checks its artwork and
+selected-scene bases and opens separately owned local work with a new Undo
+history; other open documents keep their history/checkpoints.
 Adopted edits to saved artwork remain **Modified** against the actual saved
 original until saved. Choosing the scene in Documents retains their recovery checkpoint.
 **Document actions → Return candidate to agent** checkpoints and downloads an immutable handle that

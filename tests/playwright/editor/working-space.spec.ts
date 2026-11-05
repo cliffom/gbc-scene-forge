@@ -46,6 +46,81 @@ async function png(page: Page, scope: string) {
   }
   return { path, name: download.suggestedFilename() };
 }
+
+for (const width of [1440, 800]) {
+  test(`candidate discovery renders current actions at ${width}`, async ({
+    page,
+    workspace,
+  }, info) => {
+    const root = join(workspace.folder, 'project');
+    execFileSync(workspace.python, [
+      '-I',
+      '-c',
+      seed +
+        `
+from gbc_scene_forge.artwork.candidates import ArtworkCandidates
+c=a.create('agent_asset','Agent artwork','sprite',16,16,p.catalog()['revision'])
+ArtworkCandidates(a).retain(c)
+`,
+      root,
+    ]);
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto(await workspace.start(root));
+    await page.locator('#show-artwork').click();
+    const handoff = page.locator('#art-handoff');
+    const cards = page.locator('#art-handoff-candidates > section');
+    await expect(handoff).toHaveAttribute('open');
+    await expect(handoff.locator('summary')).toHaveText('Agent candidates (1 available)');
+    await expect(cards).toHaveCount(1);
+    await expect(cards.getByRole('button', { name: 'Adopt a copy' })).toBeEnabled();
+    await page.screenshot({ path: info.outputPath('available-candidate.png') });
+    const download = page.waitForEvent('download');
+    await cards.getByRole('button', { name: 'Inspect snapshot' }).click();
+    expect((await download).suggestedFilename()).toBe('agent_asset-candidate.json');
+    await expect(cards.locator('canvas')).toHaveAttribute('width', '16');
+
+    const replaceCandidates = (count: number) => {
+      execFileSync(workspace.python, [
+        '-I',
+        '-c',
+        `
+import sys
+from gbc_scene_forge.project.application import Project
+from gbc_scene_forge.artwork.candidates import ArtworkCandidates
+p=Project(sys.argv[1]); candidates=ArtworkCandidates(p.artwork.documents)
+for handle in candidates.list()['candidates']:
+ candidates.release({k:handle[k] for k in ('handle','project_id','project_revision','revision','owner') if k in handle})
+for i in range(int(sys.argv[2])):
+ candidates.retain(p.artwork.documents.create(f'replacement_{i}',f'Replacement {i}','sprite',16,16,p.catalog()['revision']))
+`,
+        root,
+        String(count),
+      ]);
+    };
+    replaceCandidates(2);
+    await page.locator('#art-handoff-list').click();
+    await expect(handoff.locator('summary')).toHaveText('Agent candidates (2 available)');
+    await expect(cards).toHaveCount(2);
+    await expect(cards.filter({ hasText: 'Agent artwork' })).toHaveCount(0);
+    await cards
+      .filter({ hasText: 'Replacement 0' })
+      .getByRole('button', { name: 'Adopt a copy' })
+      .click();
+    await expect(page.locator('#artwork-heading')).toHaveText('Replacement 0');
+    await expect(page.locator('#art-canvas')).toBeVisible();
+    await expect(page.locator('#document-state')).toHaveText('New');
+
+    await activateScene(page);
+    replaceCandidates(0);
+    await page.locator('#show-artwork').click();
+    await expect(page.locator('#art-handoff-list')).toBeEnabled();
+    await expect(handoff).not.toHaveAttribute('open');
+    await expect(handoff.locator('summary')).toHaveText('Agent candidates');
+    await expect(cards).toHaveCount(0);
+    await expect(handoff).not.toHaveClass(/has-candidates/);
+  });
+}
+
 for (const viewport of [
   { width: 1440, height: 900 },
   { width: 1280, height: 800 },
