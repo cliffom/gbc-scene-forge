@@ -180,6 +180,63 @@ a.save(c)
   await expect(trigger).toBeFocused();
 });
 
+test('remounting resets palette tabs and their contents to the same scope', async ({
+  page,
+  workspace,
+}) => {
+  const root = join(workspace.folder, 'project');
+  execFileSync(workspace.python, [
+    '-I',
+    '-c',
+    `
+from pathlib import Path
+import sys
+from gbc_scene_forge.project.application import Project
+p=Project.create(Path(sys.argv[1]),'Palette remount')
+a=p.artwork.documents
+c=a.create('picture','Transparent source','sprite',8,8,p.catalog()['revision'],origin=[0,0])
+c=a.edit(c,[dict(x=0,y=0,rgba=[66,55,44,0])])
+a.save(c)
+`,
+    root,
+  ]);
+  await page.goto(await workspace.start(root));
+  const composition = page.getByRole('tab', { name: 'Composition', exact: true });
+  const layer = page.getByRole('tab', { name: 'Selected layer', exact: true });
+  const source = page.locator('#art-swatches button[data-rgba="66,55,44,0"]');
+  const open = async () => {
+    await page.locator('[data-asset="picture/artwork"]').click();
+    await expect(page.locator('#art-canvas')).toBeVisible();
+    await page.locator('#art-palette-toggle').click();
+  };
+  await open();
+  await layer.click();
+  await expect(source).toBeVisible();
+  await page.evaluate(`(async () => {
+    const module = await import('/project.js');
+    module.editor.dispose();
+    module.mountProjectEditor();
+  })()`);
+  await expect(page.locator('#show-artwork')).toBeEnabled();
+  await open();
+  await expect(composition).toHaveAttribute('aria-selected', 'true');
+  await expect(composition).toHaveAttribute('tabindex', '0');
+  await expect(layer).toHaveAttribute('aria-selected', 'false');
+  await expect(layer).toHaveAttribute('tabindex', '-1');
+  await expect(page.locator('#art-palette-content')).toHaveAttribute(
+    'aria-labelledby',
+    'art-palette-composition',
+  );
+  await expect(page.locator('#art-palette-scope')).toHaveText('Entire image · visible composition');
+  await expect(page.locator('#art-swatches button')).toHaveCount(0);
+  await expect(page.locator('#art-palette-empty')).toBeVisible();
+  await expect(composition).toBeFocused();
+  await page.keyboard.press('ArrowRight');
+  await expect(layer).toBeFocused();
+  await expect(layer).toHaveAttribute('aria-selected', 'true');
+  await expect(source).toBeVisible();
+});
+
 test('palette collection is lazy, cached, and reads exact shared raster bytes', async ({
   page,
 }) => {

@@ -21,6 +21,7 @@ Dates, revisions and environments missing from the originals remain unknown.
   on `a5ec90a`, checked 2026-11-05 UTC on macOS arm64, Python 3.13.13,
   Node 24.22.1, Playwright 1.64.1 and Chromium 156.0.8078.4. Production bundles
   and the installed 0.41.0 wheel were checked; publication is separate.
+  Review follow-up checks use `676c962` as their base on the same local environment.
 - **Method:** Run `make lint test`, production `make build check-dist test-browser`,
   strict Poetry lock validation, `make test-mcp`, real MCP/browser handoff and
   refresh acceptance, and installed-wheel palette/first-use acceptance. Exercise
@@ -51,13 +52,23 @@ Dates, revisions and environments missing from the originals remain unknown.
   Library click raced the scene transition's recovery checkpoint and was ignored.
   The shared navigation helper now waits for the scene workspace and enabled
   document controls before returning. Ten local repetitions of that case pass.
+  [CI at `676c962`](https://github.com/cliffom/gbc-scene-forge/actions/runs/42113226828)
+  passes all main and Python 3.13/3.14 compatibility checks. Review then reproduced
+  a stale Selected layer tab after editor remount; initialization now reflects
+  the new controller's Composition scope into the reused tab markup. A browser
+  regression fails before that fix and passes after it, including scope labels,
+  tab selection/focus order, transparent source colors and keyboard switching.
+  All eight focused palette, shared-shell and editor-lifecycle browser cases
+  pass with the rebuilt production frontend; follow-up `make lint test` and
+  documentation checks also pass.
 - **Limits:** Synthetic automation and agent screenshot inspection do not
   establish independent-user discovery, accessibility conformance or physical-device
   comfort. The timing is one uniform Node scan, not layered browser latency or a
   worst-case performance claim. The palette deliberately bounds membership to
   the first 1,024 colors; usage ordering then covers that subset. Other optional
   performance profiles, official Tiled tools, non-Chromium browsers, Windows and
-  Python 3.14 were not locally run. No CI or publication result is claimed here.
+  Python 3.14 were not locally run. The review remount fix has only local
+  validation; the linked CI pass precedes it. No publication result is claimed.
 
 ## Focused artwork setup and From agent (#237)
 

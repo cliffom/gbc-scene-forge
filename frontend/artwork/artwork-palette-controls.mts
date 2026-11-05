@@ -119,13 +119,19 @@ export function createArtworkPaletteControls(
       position();
     }
   }
-  function changeScope(index: number) {
-    scope = index === 0 ? 'composition' : 'layer';
+  function reflectScope() {
+    const index = scope === 'composition' ? 0 : 1;
     element('art-palette-content', HTMLElement).setAttribute('aria-labelledby', tabs[index].id);
     tabs.forEach((tab, i) => {
       tab.setAttribute('aria-selected', String(i === index));
       tab.tabIndex = i === index ? 0 : -1;
     });
+  }
+  // The markup survives editor disposal; reset attributes left by the old mount.
+  reflectScope();
+  function changeScope(index: number) {
+    scope = index === 0 ? 'composition' : 'layer';
+    reflectScope();
     sync();
     position();
   }
