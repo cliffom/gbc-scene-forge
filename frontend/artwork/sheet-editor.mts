@@ -260,6 +260,7 @@ export function createSheetEditor(
     }
     const d = descriptor();
     element('art-sheet-controls', HTMLElement).hidden = !d;
+    element('art-drawing-boundary', HTMLElement).hidden = !d;
     if (!d) {
       boundDescriptor = null;
       stop();
@@ -351,6 +352,9 @@ export function createSheetEditor(
     button('art-frame-view').setAttribute('aria-pressed', String(Boolean(view())));
     input('art-onion').disabled = !view() || selectedFrame()?.kind !== 'sprite';
     const selected = selectedFrame();
+    element('art-drawing-scope', HTMLElement).textContent = view()
+      ? `Editing frame: ${selected?.name ?? ''}`
+      : 'Editing entire sheet';
     input('art-frame-name').value = selected?.name ?? '';
     element('art-frame-geometry', HTMLElement).textContent = selected
       ? `${selected.width} × ${selected.height} · origin ${selected.origin.join(', ')}`

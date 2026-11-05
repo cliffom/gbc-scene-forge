@@ -128,6 +128,11 @@ test('no-scene artwork creation restores the scene Library category and opens th
   await expect(page.locator('#objects-tab')).toHaveAttribute('aria-selected', 'true');
   await page.locator('#artwork-tab').click();
   await page.locator('#search').fill('player');
+  await page.locator('#library-options').evaluate((node) => {
+    if (node instanceof HTMLDetailsElement) {
+      node.open = true;
+    }
+  });
   await page.locator('#kind-filter').selectOption('sprite');
   await page.locator('[data-asset="player/f1"]').click();
   await expect(page.locator('#art-frame')).toHaveValue('f1');

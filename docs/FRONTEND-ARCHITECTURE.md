@@ -43,8 +43,8 @@ Keep ports limited to each consumer's needs; do not replace these owners with a
 shared miscellaneous state object or global event bus.
 
 `artwork/artwork-workspace.mts` contributes layer/property/review sections and
-color assistance to the one Inspector. `artwork/sheet-editor.mts` owns the bounded
-bottom frame/animation dock, stops playback on collapse and reuses raster stamps
+color assistance to the one Inspector. `artwork/sheet-editor.mts` owns the drawing-boundary controls beside the tools and
+the bounded bottom frame/animation dock, stops playback on collapse and reuses raster stamps
 for unchanged thumbnails. Panel/dock disclosure is transient UI state, outside
 pixel history. Source setup in `pixel-editor.mts` preserves entered fields during
 discovery; a missing selected source stays an explicit unavailable choice instead

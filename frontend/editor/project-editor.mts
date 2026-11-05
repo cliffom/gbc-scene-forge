@@ -287,6 +287,8 @@ export function mountProjectEditor() {
         activity.busy ||
         (['generic-apply', 'forge-apply'].includes(control.id) && control.dataset.ready !== 'true');
     }
+    button('empty-open').hidden = !workspaceState.sceneChoices.length;
+    button('empty-open').disabled = activity.busy || gestures.anchor !== null;
     select('scenes').disabled =
       activity.busy || gestures.anchor !== null || !workspaceState.sceneChoices.length;
     for (const id of ['show-rename', 'show-duplicate-scene', 'show-resize']) {

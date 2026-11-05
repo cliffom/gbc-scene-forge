@@ -71,6 +71,11 @@ test('first scene: sample, guide, paint, save/reopen, preview and export', async
   await expect(page.locator('#guide-title')).toHaveText('Save and reopen');
   await click('guide-next');
   await click('guide-close');
+  await page.locator('#library-options').evaluate((node) => {
+    if (node instanceof HTMLDetailsElement) {
+      node.open = true;
+    }
+  });
   await page.locator('#kind-filter').selectOption('sprite');
   await page.locator('#palette button.asset:not([hidden])').first().click();
   await paint(page, 32, 32);

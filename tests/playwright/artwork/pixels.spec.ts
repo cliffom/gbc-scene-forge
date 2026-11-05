@@ -956,6 +956,7 @@ a.save(c,receipt=p.artwork.reviews.animation(c,'walk',scale=1)['receipt'])
   await page.locator('[data-asset="player/idle"]').click();
   await expect(page.locator('#art-canvas')).toBeVisible();
   await expect(page.locator('#art-frame option')).toHaveCount(2);
+  await page.locator('#art-sheet-view').click();
   await page.locator('#art-color').fill('#ddaa77');
   await draw(page, 9, 2);
   await activateScene(page);

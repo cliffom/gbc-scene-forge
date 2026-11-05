@@ -6,6 +6,13 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.38.0 — Editor discovery and drawing scope
+
+[Release notes](RELEASE-0.38.0.md). Put artwork search and browsing ahead of
+source management, expose Open scene in the empty workspace, and keep drawing
+scope beside the tools. Fresh named poses open in Frame scope; retained artwork
+keeps its deliberate scope. Publication is separate.
+
 ## 0.37.0 — Close active documents
 
 [Release notes](RELEASE-0.37.0.md). Close the active scene or artwork from the

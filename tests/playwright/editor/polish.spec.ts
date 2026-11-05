@@ -545,8 +545,11 @@ test.describe('editor polish', () => {
     await editorReady(page);
     for (const [width, height] of sizes) {
       await page.setViewportSize({ width, height });
+      if (!(await page.locator('#art-browse').isVisible())) {
+        await page.locator('#library-options > summary').click();
+      }
       const browse = page.locator('#art-browse');
-      await expect(browse).toHaveText('Browse / recover');
+      await expect(browse).toHaveText('Browse / recover / candidates…');
       expect(
         await browse.evaluate((node) => {
           const range = document.createRange();
@@ -585,9 +588,13 @@ test.describe('editor polish', () => {
     await name.fill("Player's Artwork");
     await expect(id).toHaveValue('my_player');
     await page.locator('#art-create').click();
-    await expect(page.locator('#document-switcher')).toHaveText("Player's Artwork · Artwork ▾");
+    await expect(page.locator('#document-switcher')).toHaveText(
+      "Documents · Player's Artwork · Artwork ▾",
+    );
     await page.locator('#show-artwork').click();
-    await expect(page.locator('#document-switcher')).toHaveText('New artwork · Artwork ▾');
+    await expect(page.locator('#document-switcher')).toHaveText(
+      'Documents · New artwork · Artwork ▾',
+    );
     await expect(await revealArtworkControl(page, 'art-id')).toHaveValue('new_artwork');
   });
 

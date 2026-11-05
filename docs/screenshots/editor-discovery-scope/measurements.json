@@ -1,0 +1,68 @@
+{
+  "version": "0.38.0",
+  "baseline": "98a33d8a8e7c7c57ff0112685a2e9a7c8e6b2ed5",
+  "working_tree_base": "66b98c4",
+  "mode": "production",
+  "measurements": [
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "totalCards": 16,
+      "fullyVisibleCards": 6,
+      "firstAsset": {
+        "x": 14,
+        "y": 365.5,
+        "width": 231,
+        "height": 72
+      },
+      "drawingViewport": {
+        "x": 260,
+        "y": 245.5,
+        "width": 910,
+        "height": 526.5
+      }
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "totalCards": 16,
+      "fullyVisibleCards": 5,
+      "firstAsset": {
+        "x": 14,
+        "y": 365.5,
+        "width": 231,
+        "height": 72
+      },
+      "drawingViewport": {
+        "x": 260,
+        "y": 245.5,
+        "width": 750,
+        "height": 398.90625
+      }
+    },
+    {
+      "viewport": {
+        "width": 800,
+        "height": 640
+      },
+      "totalCards": 16,
+      "fullyVisibleCards": 3,
+      "firstAsset": {
+        "x": 10,
+        "y": 359,
+        "width": 175,
+        "height": 72
+      },
+      "drawingViewport": {
+        "x": 196,
+        "y": 243,
+        "width": 392,
+        "height": 242
+      }
+    }
+  ]
+}

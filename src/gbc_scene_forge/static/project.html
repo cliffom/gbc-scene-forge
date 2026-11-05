@@ -140,27 +140,29 @@
         </div>
         <section id="artwork-panel" class="library-panel" role="tabpanel" aria-labelledby="artwork-tab">
           <div class="panel-heading"><h3>Tiles &amp; sprites</h3><span id="asset-count" class="muted">0</span></div>
-          <div class="library-art-actions"><button id="show-artwork" disabled>New artwork…</button><button id="library-import">Import</button></div>
-          <div class="library-art-actions"><button id="library-edit-artwork" disabled title="Edit the selected artwork">Edit artwork…</button><button id="library-source-actions" disabled popovertarget="source-command-panel" title="Actions for the selected artwork source">Source actions…</button></div>
+          <input id="search" type="search" placeholder="Search artwork…" aria-label="Search assets">
+          <div class="library-art-actions library-primary-actions"><button id="show-artwork" disabled>New…</button><button id="library-import">Import</button><button id="library-source-actions" disabled popovertarget="source-command-panel" title="Actions for the selected artwork source">Source…</button></div>
           <div id="source-command-panel" class="command-panel" popover aria-label="Artwork source actions">
             <p id="library-source-name" class="command-heading"></p>
+            <button id="library-edit-artwork" disabled title="Edit the selected artwork">Edit artwork…</button>
             <button id="library-copy-source" disabled>Shared editing / copies…</button>
             <button id="library-update-source" disabled>Update source…</button>
+            <button id="edit-tile" disabled>Terrain &amp; collision…</button>
             <button id="library-delete-source" class="destructive-command" disabled>Delete source…</button>
           </div>
-          <div class="library-art-actions"><button id="art-browse" title="Browse artwork and recover drafts">Browse / recover</button></div>
-          <input id="search" type="search" placeholder="Search artwork…" aria-label="Search assets">
+          <details id="library-options"><summary>Filters &amp; recovery</summary>
           <div class="filters">
             <select id="atlas-filter" aria-label="Filter atlas"><option value="">All atlases</option></select>
             <select id="kind-filter" aria-label="Filter asset kind"><option value="">All kinds</option><option value="tile">Tiles</option><option value="sprite">Sprites</option></select>
           </div>
-          <button id="edit-tile" disabled>Terrain &amp; collision…</button>
+          <button id="art-browse" title="Browse artwork, recover drafts and open agent candidates">Browse / recover / candidates…</button>
+          <p id="library-hint" class="hint">Choose a tile to paint or a sprite to place. Imported artwork keeps its native size.</p>
+          </details>
           <details id="terrain-tools" hidden><summary>Terrain brush</summary>
             <label class="field">Terrain<select id="terrain-brush"><option value="">Paint individual tiles</option></select></label>
             <p class="hint">Paint and Erase update four connected neighbors on the active tile layer. Fill uses individual tiles.</p>
             <p id="terrain-report" class="hint" role="status"></p>
           </details>
-          <p id="library-hint" class="hint">Choose a tile to paint or a sprite to place. Imported artwork keeps its native size.</p>
           <details id="import-results" hidden><summary id="import-result-summary">Last import</summary><p id="import-report" class="hint"></p></details>
           <div id="palette" class="assets" tabindex="-1" aria-label="Available assets"></div>
         </section>
@@ -227,7 +229,7 @@
         </div>
         <div id="layer-context" class="layer-context" hidden><span id="layer-context-text"></span><button id="context-show-layer" class="small" hidden>Show layer</button></div>
         <div id="viewport" class="viewport" tabindex="0" aria-label="Scene workspace">
-          <div id="empty-scene"><h2>No scene open</h2><p>Create a scene to start building, or choose a saved scene and open it.</p><button id="empty-create" class="primary">Create scene</button></div>
+          <div id="empty-scene"><h2>No scene open</h2><p>Create a scene to start building, or choose a saved scene and open it.</p><div class="empty-scene-actions"><button id="empty-open" class="primary" hidden>Open scene…</button><button id="empty-create">Create scene</button></div></div>
           <div id="canvas-surround" class="canvas-surround" hidden><canvas id="scene" hidden tabindex="0" aria-label="Editable scene on a tile grid"></canvas></div>
         </div>
         <div class="canvas-footer"><span id="coordinates" title="Cell column and row, followed by pixel X and Y. All coordinates start at zero.">Cell —, — · Pixel —, —</span><span id="scene-name">No scene open</span><span id="selected-brush">Select a brush</span></div>
@@ -432,7 +434,7 @@
       <div class="art-controls">
       <p id="art-shared" class="hint"></p><details class="art-help"><summary>Drawing &amp; keyboard help</summary><p class="hint">Drag to draw or select. The outlined pixel is your target; Move selection uses a move cursor. <span id="art-navigation-help">Pan with middle drag, Space+drag on the canvas, or Pan then drag/arrow keys. Fit centers the artwork; frame/sheet changes reframe it.</span> Move selections by dragging or arrow keys. Escape cancels a gesture. ⌘/Ctrl Z undoes, C/V copies/pastes. Opacity ranges from 0 (transparent) to 255 (opaque). Toggle Transparent again or choose a color to resume painting.</p></details>
       <section id="art-sheet-controls" aria-label="Frames and animation dock" hidden><details id="art-dock" open><summary>Frames &amp; animation</summary>
-        <div class="art-frame-bar"><label class="field">Frame<select id="art-frame"></select></label><div class="art-scope" role="group" aria-label="Drawing scope"><button id="art-sheet-view" aria-pressed="true">Sheet</button><button id="art-frame-view" aria-pressed="false">Frame</button></div><input id="art-edit-frame" type="checkbox" hidden><label><input id="art-onion" type="checkbox"> Onion skin</label></div>
+
         <div id="art-frame-strip" aria-label="Sheet frames"></div>
         <details id="art-timeline"><summary>Animation</summary><div class="art-animation-layout"><div class="art-animation-edit">
           <div class="art-row"><label class="field">Animation<select id="art-sequence"></select></label><label><input id="art-loop" type="checkbox" checked> Loop</label><button id="art-play">Play</button><button id="art-step">Step</button><button id="art-add-animation-frame">Append frame</button></div>
@@ -441,6 +443,7 @@
         </div><div class="art-playback"><canvas id="art-animation-canvas" aria-label="Animation preview"></canvas><p id="art-animation-status" role="status"></p><button id="art-animation-review">Generate animation review</button><figure id="art-animation-result" hidden><figcaption>Animation review</figcaption><img id="art-animation-image" alt="Timed animation review"></figure></div></div></details></details>
       </section>
       <details id="art-selection-details" hidden><summary>Placements this variation will replace</summary><ul id="art-selection-list"></ul></details>
+        <div id="art-drawing-boundary" class="art-frame-bar" hidden><label class="field">Frame<select id="art-frame"></select></label><div class="art-scope" role="group" aria-label="Drawing scope"><button id="art-sheet-view" aria-pressed="true">Sheet</button><button id="art-frame-view" aria-pressed="false">Frame</button></div><span id="art-drawing-scope" role="status"></span><input id="art-edit-frame" type="checkbox" hidden><label><input id="art-onion" type="checkbox"> Onion skin</label></div>
 <div class="art-toolbar">
 <div class="pixel-toolbar" aria-label="Pixel editing commands">
 <div class="tool-group" role="group" aria-label="Pixel tools"><label class="tool" title="Pencil"><input type="radio" name="art-tool" value="pencil" checked><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-pencil"/></svg><span class="tool-label">Pencil</span></label><label class="tool" title="Eraser"><input type="radio" name="art-tool" value="erase"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-erase"/></svg><span class="tool-label">Eraser</span></label><label class="tool" title="Flood fill"><input type="radio" name="art-tool" value="fill"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-fill"/></svg><span class="tool-label">Flood fill</span></label><label class="tool" title="Eyedropper"><input type="radio" name="art-tool" value="pick"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-pick"/></svg><span class="tool-label">Eyedropper</span></label><label class="tool" title="Line"><input type="radio" name="art-tool" value="line"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-line"/></svg><span class="tool-label">Line</span></label><label class="tool" title="Rectangle outline"><input type="radio" name="art-tool" value="rectangle"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-rectangle"/></svg><span class="tool-label">Rectangle outline</span></label><label class="tool" title="Select rectangle"><input type="radio" name="art-tool" value="select"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-select"/></svg><span class="tool-label">Select rectangle</span></label><label class="tool" title="Move selection"><input type="radio" name="art-tool" value="move"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-move"/></svg><span class="tool-label">Move selection</span></label></div>

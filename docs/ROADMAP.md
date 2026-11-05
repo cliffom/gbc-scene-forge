@@ -6,10 +6,18 @@ artwork-free blockouts, optional MCP and conflict-aware recovery. See
 [usage](STANDALONE.md) and the [changelog](CHANGELOG.md) for supported behavior.
 
 Open issue state was checked on 2026-11-04. Remaining work centers on independent-user
-evaluation and findings-based usability fixes (milestone 17), plus constrained
-palette-reduction design (#214 in milestone 23). The shared Close document action
-(#222) is prepared for review in 0.37.0; publication is separate.
+evaluation and findings-based usability fixes (milestone 17), plus focused editor usability improvements (milestone 24) and constrained
+palette-reduction design (#214 in milestone 23).
 Validation gaps live in the [single remaining-check list](VALIDATION.md#remaining-checks).
+
+## Editor discovery, scope and working space (milestone 24)
+
+[Milestone 24](https://github.com/cliffom/gbc-scene-forge/milestone/24) follows the
+[November baseline](evaluations/usability-review-2026-11.md). The P1 increment
+(#225–#227) addresses browsing, saved-scene discovery and named-pose scope.
+P2 work (#228–#234) covers retained dock/layout choices, tool shortcuts, routine
+feedback, goal-based starts, stamp creation, Inspector priorities and PNG download.
+Integrated follow-up remains #224; participant work remains #165/#166.
 
 ## Constrained palette reduction (milestone 23)
 

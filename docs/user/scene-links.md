@@ -1,5 +1,11 @@
 # Open a scene from a link
 
+When no scene is open, **Open scene…** appears beside **Create scene** if the
+project contains saved scenes. It opens Documents with focus on **Saved scenes**.
+Choose the intended scene there; the **Documents** button also remains available
+while editing artwork. Existing unsaved-work confirmations and retained artwork
+apply to this route. No additional recent-document storage is introduced.
+
 Opening a scene adds its stable scene ID to the address bar:
 
 - Project root launcher: `/projects/<project>/scenes/<scene-id>`.

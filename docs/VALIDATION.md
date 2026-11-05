@@ -15,6 +15,50 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Editor discovery and drawing scope (#225–#227)
+
+- **Scope:** Prepared 0.38.0 working tree based on `66b98c4`, checked locally on
+  2026-11-04 (2026-11-05 UTC), macOS 27.0.1 arm64, Python 3.13.13,
+  Node 24.22.1 and bundled Playwright Chromium, production frontend.
+  The separately committed [baseline](https://github.com/cliffom/gbc-scene-forge/blob/66b98c4/docs/evaluations/usability-review-2026-11.md)
+  retains its original `98a33d8a` environment and observations.
+- **Method:** Run `make lint test`, production `make build check-dist`, all regular
+  browser acceptance, then 17 focused layout/polish/discovery cases after the
+  compact document-name adjustment and five final P1 evidence cases. Inspect
+  desktop/laptop/compact captures. Reuse the demo plus the same two-pose 32 × 16
+  native sheet (16 cards total); separately exercise 64 long-named poses, keyboard
+  opening/source actions, filter retention, exact downloaded RGBA, Undo/Redo,
+  reviewed save/reopen and retained scope. Existing regular cases exercise
+  shared/copy, checkpoint, conflict, token/path and navigation guards.
+- **Result:** Lint, all frontend suites, 487 Python tests, 172 regular browser
+  cases (12 optional cases skipped), the 17 focused cases and five final evidence
+  cases pass. Both distribution metadata checks and seven installed-wheel smoke
+  checks pass. Same-fixture fully visible cards change from 4 → 6 at 1440 × 900,
+  2 → 5 at 1280 × 800 and 0 → 3 at 800 × 640. Scene drawing bounds remain
+  910 × 526.5 and 750 × 398.90625 at the two larger sizes; compact bounds change
+  from 392 × 243.5 to 392 × 242 with the two-line Documents caption. Keep the
+  existing 72px thumbnail cards and two-line names: disclosure recovers browsing
+  space without another density mode. [Raw measurements](screenshots/editor-discovery-scope/measurements.json),
+  [desktop](screenshots/editor-discovery-scope/scene-1440.png),
+  [laptop](screenshots/editor-discovery-scope/scene-1280.png),
+  [compact](screenshots/editor-discovery-scope/scene-800.png),
+  [Open scene](screenshots/editor-discovery-scope/entry-1280.png),
+  [frame scope](screenshots/editor-discovery-scope/frame-800.png) and
+  [long-name source actions](screenshots/editor-discovery-scope/large-library-source.png)
+  archive inspected states. Exact RGBA checks isolate Pose 1, then deliberately
+  edit both poses in Sheet mode and preserve those pixels/identities on reopen.
+  Earlier runs failed on old captions, an implicit Sheet assumption, compact
+  recovery-label overflow and mixed version/assets; updated routes, explicit
+  Sheet selection, wrapping and a production rebuild resolve them. New fixture
+  drafts also required correcting an unsupported 1024px sheet and brush ID.
+- **Limits:** These are synthetic browser/service checks and agent visual
+  inspection, not participant discovery, prolonged comfort or accessibility
+  conformance evidence. The 64-pose fixture is bounded, not a maximum-library
+  benchmark. Real-stdio MCP/browser suites, optional profiling, external Tiled,
+  other browsers and Python 3.14 were not run locally. The complete #224
+  integrated follow-up after P2 work remains below; #165/#166 remain independent.
+  Publication is separate; local logs are not archived CI evidence.
+
 ## Document-close queued-event review fix (#223)
 
 - **Scope:** Review-fix working tree based on `78b53df`, checked on 2026-11-04
@@ -2459,6 +2503,14 @@ Dates, revisions and environments missing from the originals remain unknown.
   claim is made by this local record.
 
 ## Remaining checks
+
+### Editor discovery, scope and working space (#224)
+
+- [ ] After milestone 24 P2 work, complete the combined workflow assessment in
+  #224, including animation-to-drawing, tool shortcuts, stamp creation/reuse and
+  compact navigation. The P1 evidence above covers its scoped routes only;
+  independent participant observations remain under #165/#166 below.
+
 
 ### Selective pixel cleanup (#218)
 

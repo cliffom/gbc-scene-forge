@@ -18,7 +18,17 @@ import {
 async function deleteSource(page: Page, id: string) {
   await page.locator('#artwork-tab').click();
   await page.locator('#search').fill('');
+  await page.locator('#library-options').evaluate((node) => {
+    if (node instanceof HTMLDetailsElement) {
+      node.open = true;
+    }
+  });
   await page.locator('#kind-filter').selectOption('');
+  await page.locator('#library-options').evaluate((node) => {
+    if (node instanceof HTMLDetailsElement) {
+      node.open = true;
+    }
+  });
   await page.locator('#atlas-filter').selectOption(id);
   await clickControl(page, 'library-delete-source');
 }

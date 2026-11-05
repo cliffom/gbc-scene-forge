@@ -34,14 +34,23 @@ function externalLabel(document: DocumentSummary) {
 
 export function createDocumentBar() {
   const trigger = button('document-switcher');
+  const prefix = document.createElement('span');
+  prefix.textContent = 'Documents · ';
+  const name = document.createElement('span');
+  name.className = 'document-name';
+  const kind = document.createElement('span');
+  trigger.replaceChildren(prefix, name, kind);
   const state = element('document-state', HTMLElement);
   const base = element('document-base-state', HTMLElement);
   return {
     render(document: DocumentSummary, disabled: boolean) {
       const caption = documentCaption(document);
-      const label = `${caption} ▾`;
-      if (trigger.textContent !== label) {
-        trigger.textContent = label;
+      if (name.textContent !== document.name) {
+        name.textContent = document.name;
+      }
+      const kindLabel = ` · ${document.kind} ▾`;
+      if (kind.textContent !== kindLabel) {
+        kind.textContent = kindLabel;
       }
       trigger.title = `Documents: ${caption}`;
       trigger.disabled = disabled;
