@@ -1,5 +1,5 @@
 /** One command surface; each active domain supplies its own capabilities. */
-import { button } from './editor-dom.mts';
+import { button, element } from './editor-dom.mts';
 import type { EditorLifetime } from './editor-lifetime.mts';
 
 export const commandButtons = {
@@ -115,6 +115,7 @@ export function createDocumentCommands(
         return;
       }
       const capabilities = current();
+      element('document-command-toolbar', HTMLElement).hidden = !capabilities.copy;
       for (const command of commandNames) {
         const id = commandButtons[command];
         const capability = capabilities[command];

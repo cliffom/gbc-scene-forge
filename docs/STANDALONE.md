@@ -77,9 +77,12 @@ The optional first-scene guide remains available from the header.
 The empty scene workspace also exposes **Create artwork…**, **Import artwork or
 map…**, **Plan a blockout…**. To use sample content, choose Sample artwork and scenes
 when creating a project; this makes a separate editable copy.
-New artwork shows dimensions for the selected type, with **All artwork limits**
-for the complete bounds. Recoverable artwork and available agent candidates are
-highlighted when present; both remain accessible in the artwork setup.
+New artwork shows dimensions for the selected type, with **More options → All
+artwork limits** for the complete bounds and sheet configuration. **Existing
+artwork** opens saved sources or copies; **From agent** shows available unpublished
+drafts as thumbnail cards. Its count never displaces the New artwork form.
+Recoverable artwork remains accessible below setup. Editing commands appear when
+an editable document opens, rather than in setup/browsing views.
 
 In **Stamps**, choose **Create stamp from selection…** after selecting tiles or
 objects. The prerequisite text explains Select and Across layers when unavailable.

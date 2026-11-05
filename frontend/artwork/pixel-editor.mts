@@ -1,4 +1,5 @@
 /** Artwork composition: document transitions, review/save and recovery with typed ports. */
+import { createAgentDrafts } from './agent-drafts.mts';
 import { artworkPng } from './artwork-png.mts';
 import { MAX_PLACEMENTS } from './placement-limits.mts';
 import { createArtworkLayerControls } from './artwork-layer-controls.mts';
@@ -141,6 +142,40 @@ export function createPixelEditor({
     },
   );
   const { setup } = presentation;
+  const agentDrafts = createAgentDrafts(lifetime, api, {
+    available: () => presentationSlot.active && !session && !busy && !loading,
+    run: execute,
+    download,
+    focusEditor: () => canvas.focus({ preventScroll: true }),
+    adopt: async (candidateHandle) => {
+      if (documents.size >= MAX_OPEN_ARTWORK_DOCUMENTS) {
+        throw Error('Close an artwork document first (limit 16).');
+      }
+      await suspend();
+      const adopted = await api('artwork-candidate-adopt', record, {
+        candidate: candidateHandle,
+        owner: crypto.randomUUID(),
+      });
+      const value = await api('artwork-candidate-export', decodeCandidate, { candidate: adopted });
+      const original =
+        value.operation === 'edit'
+          ? await api('artwork-open', decodeCandidate, {
+              target: {
+                document_id: value.document_id,
+                atlas_id: value.atlas_id,
+                region: value.descriptor.region,
+              },
+              project_revision: value.project_revision,
+              artwork_revision: value.artwork_revision,
+            })
+          : value;
+      start(value, original);
+      await session?.checkpoint();
+      message(
+        'Opened a separate editable copy with a new Undo history. Original agent draft retained.',
+      );
+    },
+  });
   function reviewPanel(open: boolean) {
     presentation.reviewPanel(open);
     if (open) {
@@ -1134,7 +1169,7 @@ export function createPixelEditor({
       tabs();
       await inventory();
       await recoveries();
-      await refreshCandidates(true);
+      await agentDrafts.refresh();
       controls();
       presentation.prepareIdentity();
     });
@@ -1526,6 +1561,7 @@ export function createPixelEditor({
     workspace(false);
     tabs();
   }
+  lifetime.assign(button('art-setup-close'), 'onclick', () => void execute(close));
   lifetime.assign(button('scene-document'), 'onclick', () => {
     void execute(close);
   });
@@ -1655,96 +1691,6 @@ export function createPixelEditor({
     draw,
     refreshPalette: swatches,
     operation,
-  });
-  async function refreshCandidates(reveal = false) {
-    const listing = await api('artwork-candidate-list', record, {});
-    const handles = array(listing.candidates, record).filter((item) => !item.error);
-    const handoff = element('art-handoff', HTMLDetailsElement);
-    const summary = handoff.querySelector('summary');
-    if (summary) {
-      summary.textContent = handles.length
-        ? `Agent candidates (${handles.length} available)`
-        : 'Agent candidates';
-    }
-    if (reveal) {
-      handoff.open = handles.length > 0;
-    }
-    handoff.classList.toggle('has-candidates', handles.length > 0);
-    const container = element('art-handoff-candidates', HTMLElement);
-    container.replaceChildren();
-    for (const handle of handles) {
-      const row = document.createElement('section');
-      const title = document.createElement('p');
-      title.textContent = `${string(handle.name)} · ${string(handle.handle)}`;
-      const inspect = document.createElement('button');
-      inspect.type = 'button';
-      inspect.textContent = 'Inspect snapshot';
-      const adopt = document.createElement('button');
-      adopt.type = 'button';
-      adopt.textContent = 'Adopt a copy';
-      const candidateHandle = {
-        handle: handle.handle,
-        project_id: handle.project_id,
-        project_revision: handle.project_revision,
-        revision: handle.revision,
-        ...(handle.owner ? { owner: handle.owner } : {}),
-      };
-      inspect.onclick = () =>
-        void execute(async () => {
-          const value = await api('artwork-candidate-export', decodeCandidate, {
-            candidate: candidateHandle,
-          });
-          const preview = document.createElement('canvas');
-          preview.width = value.descriptor.width;
-          preview.height = value.descriptor.height;
-          preview.style.maxWidth = '256px';
-          preview.style.maxHeight = '256px';
-          preview.style.imageRendering = 'pixelated';
-          const raw = Uint8ClampedArray.from(atob(value.rgba), (c) => c.charCodeAt(0));
-          preview
-            .getContext('2d')
-            ?.putImageData(new ImageData(raw, preview.width, preview.height), 0, 0);
-          row.querySelector('canvas')?.remove();
-          row.append(preview);
-          download(value, `${value.atlas_id}-candidate.json`);
-        });
-      adopt.onclick = () =>
-        void execute(async () => {
-          if (documents.size >= MAX_OPEN_ARTWORK_DOCUMENTS) {
-            throw Error('Close an artwork document first (limit 16).');
-          }
-          await suspend();
-          const adopted = await api('artwork-candidate-adopt', record, {
-            candidate: candidateHandle,
-            owner: crypto.randomUUID(),
-          });
-          const value = await api('artwork-candidate-export', decodeCandidate, {
-            candidate: adopted,
-          });
-          const original =
-            value.operation === 'edit'
-              ? await api('artwork-open', decodeCandidate, {
-                  target: {
-                    document_id: value.document_id,
-                    atlas_id: value.atlas_id,
-                    region: value.descriptor.region,
-                  },
-                  project_revision: value.project_revision,
-                  artwork_revision: value.artwork_revision,
-                })
-              : value;
-          start(value, original);
-          await session?.checkpoint();
-          message(
-            'Adopted a separate unpublished copy with a new Undo history. Original candidate retained.',
-          );
-        });
-      row.append(title, inspect, adopt);
-      container.append(row);
-    }
-  }
-  button('art-handoff-list').addEventListener('click', () => void execute(refreshCandidates), {
-    signal: lifetime.signal,
   });
   button('art-handoff-return').addEventListener(
     'click',
@@ -2437,10 +2383,19 @@ export function createPixelEditor({
   return {
     activateRetained,
     commands(): CommandCapabilities {
-      const model = session?.model;
+      if (!session || loading) {
+        return {
+          close: {
+            enabled: presentationSlot.active && !busy && !ports.presentation.unavailable(),
+            run: () => void requestClose(),
+          },
+        };
+      }
+      const model = session.model;
       const ready =
         presentationSlot.active &&
         !!model &&
+        !loading &&
         !busy &&
         !ports.presentation.unavailable() &&
         !gestures.active;

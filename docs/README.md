@@ -81,6 +81,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Release notes
 
+- [Scene Forge 0.40.0](RELEASE-0.40.0.md) — focused artwork setup and visual agent drafts.
 - [Scene Forge 0.39.0](RELEASE-0.39.0.md) — drawing space, consistent tools and native PNG downloads.
 
 - [Scene Forge 0.38.0](RELEASE-0.38.0.md) — discover saved scenes, browse artwork and target named poses.

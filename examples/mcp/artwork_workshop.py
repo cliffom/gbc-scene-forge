@@ -43,6 +43,21 @@ def layers(model):
     return model["layers"]
 
 
+async def call_tool(client, tool, arguments):
+    """Allow brief browser contention during read-only review; never replay saved writes."""
+    for attempt in range(20):
+        response = await client.call_tool(tool, arguments)
+        error = (response.structuredContent or {}).get("error", {})
+        if (
+            tool != "review_artwork_candidate"
+            or not response.isError
+            or error.get("code") != "busy"
+            or attempt == 19
+        ):
+            return response
+        await asyncio.sleep(0.05)
+
+
 async def workshop(args):
     args.output.mkdir(parents=True, exist_ok=True)
     state_path = args.output / "workshop.json"
@@ -56,7 +71,7 @@ async def workshop(args):
         await client.initialize()
 
         async def call(tool, **arguments):
-            response = await client.call_tool(tool, arguments)
+            response = await call_tool(client, tool, arguments)
             if response.isError:
                 raise RuntimeError(response.content)
             transcript.append(

@@ -549,7 +549,7 @@ test.describe('editor polish', () => {
         await page.locator('#library-options > summary').click();
       }
       const browse = page.locator('#art-browse');
-      await expect(browse).toHaveText('Browse / recover / candidates…');
+      await expect(browse).toHaveText('Browse & recover…');
       expect(
         await browse.evaluate((node) => {
           const range = document.createRange();

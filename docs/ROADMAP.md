@@ -5,17 +5,19 @@ editable tile and sprite sheets, native animation, scene/artwork documents,
 artwork-free blockouts, optional MCP and conflict-aware recovery. See
 [usage](STANDALONE.md) and the [changelog](CHANGELOG.md) for supported behavior.
 
-Open issue state was checked on 2026-11-04. Remaining work centers on independent-user
-evaluation and findings-based usability fixes (milestone 17), plus focused editor usability improvements (milestone 24) and constrained
-palette-reduction design (#214 in milestone 23).
+Open issue state was checked on 2026-11-05. Remaining work centers on independent-user
+evaluation and findings-based usability fixes (milestone 17), focused artwork setup
+and agent-draft presentation (#237), and constrained palette-reduction design
+(#214 in milestone 23).
 Validation gaps live in the [single remaining-check list](VALIDATION.md#remaining-checks).
 
 ## Editor discovery, scope and working space (milestone 24)
 
 [Milestone 24](https://github.com/cliffom/gbc-scene-forge/milestone/24) follows the
-[November baseline](evaluations/usability-review-2026-11.md). The prepared combined
-increment covers P2 #228–#234. Integrated synthetic validation belongs to #224;
-independent discovery observations and participant-supported follow-up remain
+[November baseline](evaluations/usability-review-2026-11.md). The focused #237
+follow-up separates creation, saved artwork and unpublished agent drafts after
+direct feedback on the current setup presentation. Integrated synthetic validation
+belongs to #224; independent discovery observations and participant-supported follow-up remain
 #165/#166. See the [validation record](VALIDATION.md) for measured scope and limits.
 
 ## Constrained palette reduction (milestone 23)

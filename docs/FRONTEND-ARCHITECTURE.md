@@ -382,6 +382,17 @@ controllers, and scene closure commits the project URL through existing navigati
 
 ## Presentation and image downloads
 
+`artwork/agent-drafts.mts` owns read-only agent listing, on-demand thumbnails and
+modal preview/download state. IntersectionObserver and a two-request queue bound
+full-envelope thumbnail exports; only small canvases remain in the gallery.
+Listing/preview generations fence superseded responses and disposal. Native
+snapshot export remains separate from flattened PNG. Guarded adoption stays in
+`pixel-editor.mts` through its operation gate and creates an independently owned
+session against the actual saved original. `artwork-workspace.mts` owns the three
+setup tabs and their keyboard focus; command capabilities omit editing operations
+throughout setup/loading, so the shared command owner hides that row and keyboard
+routing cannot mutate a retained document.
+
 The frame dock defaults closed. Dock/timeline details are shared presentation for
 the mounted editor and excluded from retained per-document control snapshots.
 An explicit animation entry expands both; closing either stops playback.

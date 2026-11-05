@@ -48,7 +48,7 @@ async function png(page: Page, scope: string) {
 }
 
 for (const width of [1440, 800]) {
-  test(`candidate discovery renders current actions at ${width}`, async ({
+  test(`agent gallery discovery, preview and adoption at ${width}`, async ({
     page,
     workspace,
   }, info) => {
@@ -69,15 +69,31 @@ ArtworkCandidates(a).retain(c)
     await page.locator('#show-artwork').click();
     const handoff = page.locator('#art-handoff');
     const cards = page.locator('#art-handoff-candidates > section');
-    await expect(handoff).toHaveAttribute('open');
-    await expect(handoff.locator('summary')).toHaveText('Agent candidates (1 available)');
+    await expect(page.locator('#art-new-mode')).toHaveAttribute('aria-selected', 'true');
+    await expect(handoff).toBeHidden();
+    await expect(page.locator('#art-agent-count')).toHaveText('1');
+    await expect(page.locator('#document-command-toolbar')).toBeHidden();
+    await page.screenshot({ path: info.outputPath('new-artwork.png') });
+    await page.locator('#art-agent-mode').click();
     await expect(cards).toHaveCount(1);
-    await expect(cards.getByRole('button', { name: 'Adopt a copy' })).toBeEnabled();
-    await page.screenshot({ path: info.outputPath('available-candidate.png') });
-    const download = page.waitForEvent('download');
-    await cards.getByRole('button', { name: 'Inspect snapshot' }).click();
-    expect((await download).suggestedFilename()).toBe('agent_asset-candidate.json');
     await expect(cards.locator('canvas')).toHaveAttribute('width', '16');
+    await page.screenshot({ path: info.outputPath('agent-gallery.png') });
+    let downloads = 0;
+    page.on('download', () => downloads++);
+    await cards.getByRole('button', { name: /Agent artwork/ }).click();
+    await expect(page.locator('#art-agent-image canvas')).toBeVisible();
+    await expect(page.locator('#art-agent-adopt')).toBeEnabled();
+    expect(downloads).toBe(0);
+    await page.screenshot({ path: info.outputPath('agent-preview.png') });
+    const pngDownload = page.waitForEvent('download');
+    await page.locator('#art-agent-png').click();
+    expect((await pngDownload).suggestedFilename()).toBe('agent_asset-draft.png');
+    await page.locator('#art-agent-details > summary').click();
+    const download = page.waitForEvent('download');
+    await page.locator('#art-agent-json').click();
+    expect((await download).suggestedFilename()).toBe('agent_asset-candidate.json');
+    await page.keyboard.press('Escape');
+    await expect(cards.getByRole('button', { name: /Agent artwork/ })).toBeFocused();
 
     const replaceCandidates = (count: number) => {
       execFileSync(workspace.python, [
@@ -99,25 +115,28 @@ for i in range(int(sys.argv[2])):
     };
     replaceCandidates(2);
     await page.locator('#art-handoff-list').click();
-    await expect(handoff.locator('summary')).toHaveText('Agent candidates (2 available)');
+    await expect(page.locator('#art-agent-count')).toHaveText('2');
     await expect(cards).toHaveCount(2);
     await expect(cards.filter({ hasText: 'Agent artwork' })).toHaveCount(0);
     await cards
       .filter({ hasText: 'Replacement 0' })
-      .getByRole('button', { name: 'Adopt a copy' })
+      .getByRole('button', { name: /Replacement 0/ })
       .click();
+    await page.locator('#art-agent-adopt').click();
     await expect(page.locator('#artwork-heading')).toHaveText('Replacement 0');
+    await expect(page.locator('#document-command-toolbar')).toBeVisible();
     await expect(page.locator('#art-canvas')).toBeVisible();
     await expect(page.locator('#document-state')).toHaveText('New');
 
     await activateScene(page);
     replaceCandidates(0);
     await page.locator('#show-artwork').click();
+    await expect(page.locator('#art-agent-count')).toBeHidden();
+    await page.locator('#art-agent-mode').click();
     await expect(page.locator('#art-handoff-list')).toBeEnabled();
-    await expect(handoff).not.toHaveAttribute('open');
-    await expect(handoff.locator('summary')).toHaveText('Agent candidates');
+    await expect(page.locator('#art-agent-status')).toContainText('No agent drafts yet');
     await expect(cards).toHaveCount(0);
-    await expect(handoff).not.toHaveClass(/has-candidates/);
+    await expect(page.locator('#document-command-toolbar')).toBeHidden();
   });
 }
 

@@ -63,19 +63,29 @@ export function createArtworkWorkspace(
   lifetime.assign(input('art-id'), 'oninput', () => {
     automaticIdentity = input('art-id').value === identityFromName();
   });
-  let setupMode: 'new' | 'existing' = 'new';
-  function setup(mode: 'new' | 'existing') {
+  let setupMode: 'new' | 'existing' | 'agent' = 'new';
+  const modes = ['new', 'existing', 'agent'] as const;
+  function setup(mode: (typeof modes)[number]) {
     setupMode = mode;
     element('artwork-heading', HTMLElement).textContent =
-      mode === 'new' ? 'New artwork' : 'Open artwork';
+      mode === 'new' ? 'New artwork' : mode === 'agent' ? 'From agent' : 'Open artwork';
     element('art-recovery', HTMLDetailsElement).open = mode === 'existing';
     element('art-source-panel', HTMLElement).hidden = mode !== 'existing';
     element('art-new-panel', HTMLElement).hidden = mode !== 'new';
-    element(mode === 'new' ? 'art-new-fields' : 'art-copy-fields', HTMLElement).prepend(
-      element('art-identity', HTMLElement),
-    );
-    button('art-new-mode').setAttribute('aria-pressed', String(mode === 'new'));
-    button('art-existing-mode').setAttribute('aria-pressed', String(mode === 'existing'));
+    element('art-handoff', HTMLElement).hidden = mode !== 'agent';
+    if (mode !== 'agent') {
+      element(mode === 'new' ? 'art-new-fields' : 'art-copy-fields', HTMLElement).prepend(
+        element('art-identity', HTMLElement),
+      );
+      element(mode === 'new' ? 'art-new-identity' : 'art-identity', HTMLElement).append(
+        element('art-identity-options', HTMLDetailsElement),
+      );
+    }
+    for (const key of modes) {
+      const tab = button(`art-${key}-mode`);
+      tab.setAttribute('aria-selected', String(mode === key));
+      tab.tabIndex = mode === key ? 0 : -1;
+    }
     changed();
   }
   function reviewPanel(open: boolean) {
@@ -104,8 +114,33 @@ export function createArtworkWorkspace(
     }
     button('art-properties-toggle').setAttribute('aria-expanded', String(!panel.hidden));
   });
-  lifetime.assign(button('art-new-mode'), 'onclick', () => setup('new'));
-  lifetime.assign(button('art-existing-mode'), 'onclick', () => setup('existing'));
+  for (const mode of modes) {
+    lifetime.assign(button(`art-${mode}-mode`), 'onclick', () => setup(mode));
+  }
+  surface.querySelector('.art-start-tabs')?.addEventListener(
+    'keydown',
+    (event) => {
+      if (!(event instanceof KeyboardEvent)) {
+        return;
+      }
+      let index = modes.indexOf(setupMode);
+      if (event.key === 'ArrowRight') {
+        index = (index + 1) % modes.length;
+      } else if (event.key === 'ArrowLeft') {
+        index = (index + modes.length - 1) % modes.length;
+      } else if (event.key === 'Home') {
+        index = 0;
+      } else if (event.key === 'End') {
+        index = modes.length - 1;
+      } else {
+        return;
+      }
+      event.preventDefault();
+      setup(modes[index]);
+      button(`art-${modes[index]}-mode`).focus();
+    },
+    { signal: lifetime.signal },
+  );
   function layoutPreview() {
     const multiple = input('art-multiple').checked;
     const grid = multiple || select('art-kind').value === 'tile';

@@ -155,7 +155,7 @@
             <select id="atlas-filter" aria-label="Filter atlas"><option value="">All atlases</option></select>
             <select id="kind-filter" aria-label="Filter asset kind"><option value="">All kinds</option><option value="tile">Tiles</option><option value="sprite">Sprites</option></select>
           </div>
-          <button id="art-browse" title="Browse artwork, recover drafts and open agent candidates">Browse / recover / candidates…</button>
+          <button id="art-browse" title="Browse artwork, recover drafts and open agent drafts">Browse &amp; recover…</button>
           <p id="library-hint" class="hint">Choose a tile to paint or a sprite to place. Imported artwork keeps its native size.</p>
           </details>
           <details id="terrain-tools" hidden><summary>Terrain brush</summary>
@@ -388,6 +388,15 @@
     <div id="conversion-images" hidden><div id="conversion-views"></div><ul id="conversion-mapping" aria-label="Reviewed replacements; tile coordinates start at zero"></ul></div>
     <div class="dialog-actions"><button id="conversion-close">Cancel</button><button id="conversion-review">Review mapping</button><button id="conversion-save" disabled>Replace reviewed placements</button></div>
   </dialog>
+  <dialog id="art-agent-preview" aria-labelledby="art-agent-title">
+    <div class="art-agent-heading"><div><h2 id="art-agent-title">Agent draft</h2><p id="art-agent-meta" class="hint"></p></div><button id="art-agent-close" class="quiet" aria-label="Close preview">×</button></div>
+    <div id="art-agent-image" class="art-agent-image"></div>
+    <p id="art-agent-preview-status" role="status" aria-live="polite"></p>
+    <button id="art-agent-retry" hidden>Retry preview</button>
+    <p id="art-agent-save-help" class="hint"></p>
+    <details id="art-agent-details"><summary>Draft details</summary><pre id="art-agent-identifiers"></pre><button id="art-agent-json">Download snapshot JSON</button></details>
+    <div class="dialog-actions"><button id="art-agent-png">Download PNG</button><span class="spacer"></span><button id="art-agent-cancel">Cancel</button><button id="art-agent-adopt" class="primary">Edit a copy</button></div>
+  </dialog>
   <section id="artwork-surface" class="editor-surface" aria-labelledby="artwork-heading" hidden>
     <div id="art-sync" class="art-sync" hidden>
       <span id="art-sync-status" role="status" aria-live="polite"></span>
@@ -403,8 +412,9 @@
     <header id="art-inspector-actions" class="art-heading"><span id="art-scope-label" class="muted"></span><div class="art-heading-actions"><button id="art-layers-toggle" aria-expanded="false" aria-controls="art-layer-panel">Layers</button><button id="art-properties-toggle" aria-expanded="false" aria-controls="art-properties">Properties</button></div></header>
     <div id="art-setup">
     <div id="art-start">
-      <div class="art-start-tabs"><button id="art-new-mode" aria-pressed="true">New artwork</button><button id="art-existing-mode" aria-pressed="false">Existing artwork</button></div>
-      <section id="art-source-panel" hidden><h3>Open or copy artwork</h3>
+      <div class="art-setup-heading"><h2>Artwork</h2><button id="art-setup-close" class="quiet">Close ×</button></div>
+      <div class="art-start-tabs" role="tablist" aria-label="Artwork source"><button id="art-new-mode" role="tab" aria-selected="true" aria-controls="art-new-panel">New artwork</button><button id="art-existing-mode" role="tab" aria-selected="false" aria-controls="art-source-panel" tabindex="-1">Existing artwork</button><button id="art-agent-mode" role="tab" aria-selected="false" aria-controls="art-handoff" tabindex="-1">From agent<span id="art-agent-count" class="art-agent-count" hidden></span></button></div>
+      <section id="art-source-panel" role="tabpanel" aria-labelledby="art-existing-mode" hidden><h3>Open or copy artwork</h3>
         <label class="field">Source artwork<select id="art-source"></select></label>
         <button id="art-open" class="primary" aria-describedby="art-source-help">Edit shared artwork</button>
         <p id="art-source-help" class="hint"></p>
@@ -416,18 +426,23 @@
           <p id="art-variation-help" class="hint">Variations capture 1–256 matching placements from one active layer of a saved, unmodified scene. Review then Save commits the new source and replacements together. Other placements keep the original.</p>
         </details>
       </section>
-      <section id="art-new-panel"><h3>Create artwork</h3><div id="art-new-fields">
-        <div id="art-identity"><label class="field">Name<input id="art-name" value="New artwork" maxlength="100"></label><details><summary>Asset identity</summary><label class="field">Asset ID<input id="art-id" pattern="[a-z][a-z0-9_]{0,63}" maxlength="64"></label></details></div>
+      <section id="art-new-panel" role="tabpanel" aria-labelledby="art-new-mode"><h3>Create artwork</h3><p class="muted art-start-intro">Start with a blank canvas.</p><div id="art-new-fields">
+        <div id="art-identity"><label class="field">Name<input id="art-name" value="New artwork" maxlength="100"></label><details id="art-identity-options"><summary>Asset identity</summary><label class="field">Asset ID<input id="art-id" pattern="[a-z][a-z0-9_]{0,63}" maxlength="64"></label></details></div>
         <div class="art-row"><label class="field">Artwork type<select id="art-kind"><option value="tile">Tile</option><option value="sprite">Sprite / illustration</option></select></label><label class="field">Width (px)<input id="art-width" type="number" min="8" max="256" step="8" value="16"></label><label class="field">Height (px)<input id="art-height" type="number" min="8" max="256" step="8" value="16"></label></div>
-        <p id="art-size-guidance" class="hint"></p><details><summary>All artwork limits</summary><p class="hint">Static sprites/illustrations: 1–4,096 pixels per axis, at most 4,194,304 pixels. Single tiles are 8, 16 or 32 pixels square; sheets use multiples of eight within 8–256.</p></details>
+        <p id="art-size-guidance" class="hint"></p><details id="art-new-options"><summary>More options</summary><div id="art-new-identity"></div><details><summary>All artwork limits</summary><p class="hint">Static sprites/illustrations: 1–4,096 pixels per axis, at most 4,194,304 pixels. Single tiles are 8, 16 or 32 pixels square; sheets use multiples of eight within 8–256.</p></details>
         <label><input id="art-multiple" type="checkbox"> Create a sheet with multiple frames</label>
         <div id="art-sheet-layout" hidden><div class="art-row"><label class="field">Frame width<input id="art-frame-width" type="number" min="8" max="256" step="8" value="8"></label><label class="field">Frame height<input id="art-frame-height" type="number" min="8" max="256" step="8" value="8"></label></div>
         <p id="art-layout-preview" class="hint"></p>
         <details><summary>Sprite origin</summary><div class="art-row"><label class="field">Origin X<input id="art-origin-x" type="number" min="0" value="0"></label><label class="field">Origin Y<input id="art-origin-y" type="number" min="0" value="0"></label></div></details></div>
-        <button id="art-create" class="primary">Create artwork</button>
+        </details><div class="art-create-actions"><button id="art-create" class="primary">Create artwork</button><span class="hint">You can edit pixels before saving.</span></div>
       </div></section>
+      <section id="art-handoff" role="tabpanel" aria-labelledby="art-agent-mode" hidden>
+        <div class="art-agent-heading"><div><h3>Artwork from your agent</h3><p class="muted">Preview a draft, then open a copy to continue editing.</p></div><button id="art-handoff-list" class="quiet" type="button">Refresh</button></div>
+        <p id="art-agent-status" class="hint" role="status" aria-live="polite"></p>
+        <div id="art-handoff-candidates" class="art-agent-cards"></div>
+        <p class="hint art-agent-footnote">These drafts haven’t been saved to your project’s artwork library.</p>
+      </section>
     </div>
-    <details id="art-handoff"><summary>Agent candidates</summary><p>Inspect unpublished snapshots, then adopt a separate editable copy. Saved artwork is unchanged. Existing documents and their Undo histories are retained.</p><button id="art-handoff-list" type="button">Refresh candidates</button><div id="art-handoff-candidates"></div></details>
     <details id="art-recovery" hidden><summary>Recoverable artwork</summary><p>Recover a copy after checking its saved base. The original checkpoint remains available.</p><div id="art-drafts"></div></details>
     </div>
     <div id="art-editor" hidden>

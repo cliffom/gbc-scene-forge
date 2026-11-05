@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 from gbc_scene_forge.formats import tiled
 from gbc_scene_forge.project.application import Project
@@ -21,7 +21,43 @@ class ArtworkWorkshopTests(unittest.TestCase):
         self.addCleanup(temporary.cleanup)
         self.folder = Path(temporary.name)
         example = Path(__file__).resolve().parents[3] / "examples/mcp/artwork_workshop.py"
-        self.workshop = runpy.run_path(str(example))["workshop"]
+        functions = runpy.run_path(str(example))
+        self.workshop = functions["workshop"]
+        self.call_tool = functions["call_tool"]
+
+    def test_busy_review_retries_the_same_snapshot_and_saved_bases(self):
+        busy = SimpleNamespace(isError=True, structuredContent={"error": {"code": "busy"}})
+        success = SimpleNamespace(isError=False, structuredContent={"receipt": "reviewed"})
+        client = SimpleNamespace(call_tool=AsyncMock(side_effect=[busy, success]))
+        arguments = {"candidate": {"revision": "original"}, "scene": {"revision": "saved"}}
+        with patch("asyncio.sleep", new_callable=AsyncMock) as sleep:
+            result = asyncio.run(self.call_tool(client, "review_artwork_candidate", arguments))
+        self.assertIs(result, success)
+        self.assertEqual(client.call_tool.await_count, 2)
+        for call in client.call_tool.await_args_list:
+            self.assertIs(call.args[1], arguments)
+        sleep.assert_awaited_once_with(0.05)
+
+    def test_busy_review_exhaustion_remains_an_error(self):
+        busy = SimpleNamespace(isError=True, structuredContent={"error": {"code": "busy"}})
+        client = SimpleNamespace(call_tool=AsyncMock(return_value=busy))
+        with patch("asyncio.sleep", new_callable=AsyncMock) as sleep:
+            result = asyncio.run(self.call_tool(client, "review_artwork_candidate", {}))
+        self.assertIs(result, busy)
+        self.assertEqual(client.call_tool.await_count, 20)
+        self.assertEqual(sleep.await_count, 19)
+
+    def test_conflicts_saved_writes_and_transport_failures_are_not_retried(self):
+        for tool, code in (("review_artwork_candidate", "conflict"), ("commit_artwork", "busy")):
+            with self.subTest(tool=tool, code=code):
+                error = SimpleNamespace(isError=True, structuredContent={"error": {"code": code}})
+                client = SimpleNamespace(call_tool=AsyncMock(return_value=error))
+                self.assertIs(asyncio.run(self.call_tool(client, tool, {})), error)
+                self.assertEqual(client.call_tool.await_count, 1)
+        client = SimpleNamespace(call_tool=AsyncMock(side_effect=OSError("connection lost")))
+        with self.assertRaisesRegex(OSError, "connection lost"):
+            asyncio.run(self.call_tool(client, "review_artwork_candidate", {}))
+        self.assertEqual(client.call_tool.await_count, 1)
 
     def args(self, name):
         return SimpleNamespace(

@@ -6,6 +6,15 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.40.0 — Focused artwork setup and agent drafts
+
+[Release notes](RELEASE-0.40.0.md). Separate New artwork, Existing artwork and
+From agent into padded keyboard tabs. Keep creation first, browse agent drafts
+visually, preview without downloading, and explicitly edit an independent copy.
+Hide editing commands until an editable document opens; keep PNG and snapshot
+JSON downloads separate. Saved bases, review, histories and recovery remain guarded.
+Publication is separate.
+
 ## 0.39.0 — Drawing space and native PNG downloads
 
 [Release notes](RELEASE-0.39.0.md). Start with drawing space, retain deliberate

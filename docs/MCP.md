@@ -574,8 +574,10 @@ visible previews cannot.
 
 ### Unpublished exchange and saved cleanup
 
-Use the browser's **New artwork → Agent candidates → Refresh candidates** to
-inspect/download a specific retained revision or **Adopt a copy**. Adoption requires
+Use the browser's **Artwork → From agent → Refresh** to browse retained drafts.
+Select a thumbnail for read-only preview; **Download PNG** and **Draft details →
+Download snapshot JSON** are separate actions. Choose **Edit a copy** to adopt a
+specific revision. Adoption requires
 a current saved base and creates a separate owner UUID and local Undo history.
 Existing documents/history/checkpoints remain retained. **Return candidate to agent**
 checkpoints and retains an immutable handle with project/document identity, candidate
@@ -638,8 +640,10 @@ python examples/mcp/artwork_workshop.py --root /tmp/workshop/projects --output /
 ```
 
 Write files contain a JSON list such as `[{"x":7,"y":7,"rgba":[100,210,220,255]}]`.
-The example saves PNG resources and call transcripts, and stops on errors without
-replaying writes. Initial placement retains the reviewed scene base, advancing
+The example saves PNG resources and call transcripts. Read-only artwork review
+retries explicit busy responses at most 20 times with 50 ms delays, keeping the
+same candidate and scene bases. Conflicts, transport errors and saved writes are
+never retried. Initial placement retains the reviewed scene base, advancing
 guards only to the artwork commit's acknowledged revisions; a competing scene
 save or external map edit causes a conflict instead of being overwritten.
 Inspect the previews before deciding the next revision. It is
