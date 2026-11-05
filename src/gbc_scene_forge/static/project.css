@@ -527,8 +527,9 @@
 #art-editor {display:flex;flex-direction:column;gap:8px;min-height:0;flex:1}
 #art-editor>* {flex:none;min-width:0}
 #art-editor>.art-controls {display:flex;flex-direction:column;gap:4px;overflow:visible;min-height:0;padding:3px;scroll-padding:3px}
-.art-toolbar {display:flex;flex-wrap:wrap;align-items:center;gap:4px}
-.art-toolbar .pixel-toolbar,.art-toolbar .art-tools {display:contents}
+.art-toolbar {display:flex;flex-wrap:nowrap;align-items:center;gap:4px}
+.art-toolbar>.art-row.art-tools {display:contents}
+.art-toolbar>.pixel-toolbar {flex:none;overflow:visible}
 .art-toolbar .tool-group,.art-toolbar .color-controls,.art-toolbar .pixel-view-controls {flex:none}
 .art-toolbar .color-controls,.art-toolbar .pixel-view-controls {border-left:1px solid var(--line);padding-left:8px}
 .art-controls>* {flex:none;min-width:0}
@@ -552,6 +553,11 @@
 #art-transparency-label {display:none}
 .pixel-view-controls {align-items:flex-end;margin-left:auto}
 .art-tools .pixel-view-controls {gap:6px;flex-wrap:nowrap}
+#art-more-tools {margin-left:auto}
+#art-tool-overflow {position:fixed;inset:auto;margin:0;padding:12px;width:max-content;max-width:calc(100vw - 16px);max-height:calc(100dvh - 16px);overflow:auto;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 24px #0008}
+#art-tool-overflow:popover-open {display:flex;flex-direction:column;align-items:flex-start;gap:12px}
+#art-tool-overflow .color-controls,#art-tool-overflow .pixel-view-controls {margin:0;padding:0;border:0;flex-wrap:nowrap}
+#art-tool-overflow::backdrop {background:transparent}
 .pixel-view-controls>label:last-child {height:32px;font-size:11px}
 #art-palette {position:fixed;inset:auto;margin:0;width:min(334px,calc(100vw - 16px));max-height:min(480px,calc(100dvh - 16px));overflow:auto;padding:12px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 24px #0008}
 #art-palette-toggle::before {content:"";display:inline-block;width:14px;height:14px;margin-right:6px;vertical-align:middle;border:1px solid var(--line);background:var(--swatch,#000)}

@@ -176,8 +176,8 @@ for (const [width, height] of [
       { width: 760, height: 600 },
     ]) {
       await page.setViewportSize(viewport);
-      await page.locator('#art-zoom').selectOption('32');
-      await page.locator('#art-fit').click();
+      await (await revealArtworkControl(page, 'art-zoom')).selectOption('32');
+      await (await revealArtworkControl(page, 'art-fit')).click();
       await expectFitted();
     }
     await page.screenshot({ path: info.outputPath('maximum-axis-fit.png') });

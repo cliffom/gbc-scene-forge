@@ -527,6 +527,88 @@ test('artwork layout keeps commands and drawing reachable across window sizes', 
   );
 });
 
+test('artwork toolbar overflows into a keyboard-accessible popover without adding rows', async ({
+  page,
+  workspace,
+}, info) => {
+  await setup(page, workspace);
+  const more = page.getByRole('button', { name: 'More artwork tools', exact: true });
+  const panel = page.locator('#art-tool-overflow');
+  for (const width of [1440, 1280, 1024, 800, 760, 1920]) {
+    await page.setViewportSize({ width, height: width <= 800 ? 640 : 900 });
+    await expect(async () => {
+      const bounds = await page.locator('#art-toolbar').evaluate((toolbar) => {
+        const row = toolbar.getBoundingClientRect();
+        const controls = [
+          ...toolbar.querySelectorAll<HTMLElement>('.tool,button,input,select'),
+        ].filter((node) => node.checkVisibility() && !node.closest('[popover]'));
+        return {
+          height: row.height,
+          fits: controls.every((node) => {
+            const r = node.getBoundingClientRect();
+            return (
+              r.left >= row.left &&
+              r.right <= row.right &&
+              r.top >= row.top &&
+              r.bottom <= row.bottom
+            );
+          }),
+        };
+      });
+      expect(bounds.height).toBeLessThanOrEqual(36);
+      expect(bounds.fits).toBe(true);
+    }).toPass();
+    await page.screenshot({ path: info.outputPath(`toolbar-${width}.png`) });
+  }
+  await expect(more).toBeHidden();
+  await page.locator('#art-alpha').focus();
+  await page.setViewportSize({ width: 800, height: 640 });
+  await expect(more).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(more).toHaveAttribute('aria-expanded', 'true');
+  await expect(panel).toBeVisible();
+  await expect(page.locator('#art-png-menu')).toBeFocused();
+  await page.locator('#art-color').fill('#cc7744');
+  await page.locator('#art-alpha').fill('73');
+  await page.locator('#art-zoom').selectOption('8');
+  await page.screenshot({ path: info.outputPath('toolbar-overflow-open.png') });
+  await page.keyboard.press('Escape');
+  await expect(panel).toBeHidden();
+  await expect(more).toBeFocused();
+  await more.click();
+  await page.locator('#art-pan').click();
+  await expect(panel).toBeHidden();
+  await expect(page.locator('#art-pan')).toHaveAttribute('aria-pressed', 'true');
+  await more.click();
+  await page.locator('#art-fit').click();
+  await expect(panel).toBeHidden();
+  await more.click();
+  await page.locator('#app-version').click();
+  await expect(panel).toBeHidden();
+  await more.click();
+  await page.locator('#art-png-menu').click();
+  await expect(page.locator('#art-png-options')).toBeVisible();
+  await page.setViewportSize({ width: 1920, height: 1000 });
+  await expect(panel).toBeHidden();
+  await expect(page.locator('#art-png-options')).toBeHidden();
+  await expect(more).toBeHidden();
+  await expect(page.locator('#art-color')).toHaveValue('#cc7744');
+  await expect(page.locator('#art-alpha')).toHaveValue('73');
+  await expect(page.locator('#art-document-state')).toHaveText('Saved');
+  // A focused invoker also needs a visible destination when overflow disappears.
+  await page.setViewportSize({ width: 800, height: 640 });
+  await more.focus();
+  await page.setViewportSize({ width: 1920, height: 1000 });
+  await expect(page.locator('#art-png-menu')).toBeFocused();
+  await page.setViewportSize({ width: 800, height: 640 });
+  await more.click();
+  await activateScene(page);
+  await expect(panel).toBeHidden();
+  await page.locator('[data-asset="player/f0"]').click();
+  await expect(more).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator('#art-color')).toHaveValue('#cc7744');
+});
+
 test('retained artwork count rejects the next document, permits revisiting and frees a closed slot', async ({
   page,
   workspace,

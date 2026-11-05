@@ -34,7 +34,7 @@ async function work(page: Page) {
   return result;
 }
 async function png(page: Page, scope: string) {
-  await page.locator('#art-png-menu').click();
+  await (await revealArtworkControl(page, 'art-png-menu')).click();
   await page.locator('#art-png-scope').selectOption(scope);
   const waiting = page.waitForEvent('download');
   await page.locator('#art-download-png').focus();
@@ -172,8 +172,8 @@ for (const viewport of [
     await page.locator('#art-dock > summary').click();
     await (await revealArtworkControl(page, 'art-layer')).selectOption({ label: 'Overlay' });
     await page.locator('#art-layers-toggle').click();
-    await page.locator('#art-color').fill('#cc7744');
-    await page.locator('#art-alpha').fill('127');
+    await (await revealArtworkControl(page, 'art-color')).fill('#cc7744');
+    await (await revealArtworkControl(page, 'art-alpha')).fill('127');
     await page.locator('#art-canvas').click({ position: { x: 24, y: 24 } });
     await page.keyboard.press('e');
     await expect(page.locator('input[name="art-tool"][value="erase"]')).toBeChecked();

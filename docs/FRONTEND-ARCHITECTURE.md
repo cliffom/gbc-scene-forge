@@ -42,6 +42,12 @@ used for current resources/state, not captured copies of mutable primitives.
 Keep ports limited to each consumer's needs; do not replace these owners with a
 shared miscellaneous state object or global event bus.
 
+`editor/editor-toolbar-overflow.mts` keeps artwork tools on one row by moving
+existing control groups into a native popover when they do not fit. It owns resize
+measurement, focus transfer and restoration of the original DOM positions on
+disposal; control state stays with the existing artwork owners. The layout owner
+closes the popover on document transitions.
+
 `artwork/artwork-workspace.mts` contributes layer/property/review sections and
 color assistance to the one Inspector. `artwork/sheet-editor.mts` owns the drawing-boundary controls beside the tools and
 the bounded bottom frame/animation dock, stops playback on collapse and reuses raster stamps

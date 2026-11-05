@@ -9,7 +9,7 @@ import {
   chooseSavedScene,
   activateScene,
 } from '../support/browser-fixtures.ts';
-import { reviewArtwork, saveArtwork } from '../support/artwork-controls.ts';
+import { reviewArtwork, saveArtwork, revealArtworkControl } from '../support/artwork-controls.ts';
 
 for (const [width, height] of [
   [1440, 900],
@@ -67,7 +67,10 @@ print(s['id'])
     await expect(page.locator('#inspector-pane #art-inspector-actions')).toBeVisible();
     await expect(page.locator('#scene-panel')).toBeHidden();
     await expect(page.locator('#art-canvas')).toBeFocused();
-    await page.locator('#art-color').fill('#cc8833');
+    await (await revealArtworkControl(page, 'art-color')).fill('#cc8833');
+    if (await page.locator('#art-tool-overflow').isVisible()) {
+      await page.keyboard.press('Escape');
+    }
     const bounds = await page.locator('#art-canvas').boundingBox();
     if (!bounds) {
       throw Error('Expected artwork canvas');

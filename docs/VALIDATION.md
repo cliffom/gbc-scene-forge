@@ -15,6 +15,28 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Artwork toolbar overflow (#242 / PR #243)
+
+- **Scope:** PR #243 working tree based on `d5f15df`, checked 2026-11-05 on
+  macOS arm64 with Python 3.13.13, Node 24.22.1 and Playwright 1.64.1 Chromium.
+- **Method:** Run `make lint test`, `make test-browser` and frontend compilation.
+  Exercise one-row bounds from 760 to 1920 px, keyboard opening/Escape, outside
+  dismissal, resize focus transfer, Pan/Fit, retained settings and document
+  switches. Agent-inspect [desktop](images/artwork-pan-fit-desktop.png),
+  [compact](images/artwork-pan-fit-compact.png) and
+  [open overflow](images/artwork-toolbar-overflow.png) captures at 1440 × 900
+  and 800 × 640. Rerun navigation and working-space suites after the final
+  nested PNG popover resize cleanup.
+- **Result:** Lint, documentation checks, 490 Python tests and all TypeScript
+  suites pass. Regular browser acceptance passes 194 cases with 12 optional
+  profile skips; the final focused run passes all 19 cases. Initial runs failed
+  tests that assumed always-visible controls, sampled before resize layout, or
+  clicked pixels covered by the open popover. Tests now reveal overflow controls,
+  await layout and dismiss the popover before drawing in its covered area.
+- **Limits:** Local Chromium evidence only. The final nested PNG cleanup has
+  focused browser coverage after the full-suite run. Installed-wheel, optional
+  MCP and external Tiled checks were not rerun.
+
 ## Composed artwork palette (#240)
 
 - **Scope:** Prepared 0.41.0 working tree on `issue-240-composed-palette`, based

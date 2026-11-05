@@ -362,7 +362,7 @@ test('new artwork, duplicate imported pixels, compact UI and recoverable draft c
   await page.locator('#art-name').fill('Copied tile');
   await (await revealArtworkControl(page, 'art-duplicate')).click();
   await expect(page.locator('#art-canvas')).toBeVisible();
-  await page.locator('#art-color').fill('#eeaa44');
+  await (await revealArtworkControl(page, 'art-color')).fill('#eeaa44');
   await page.locator('input[name=art-tool][value=pencil]').check();
   await draw(page, 1, 1);
   await expect(page.locator('#art-draft-status')).toContainText('checkpointed');

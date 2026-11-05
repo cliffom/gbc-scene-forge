@@ -4,6 +4,29 @@ import { expect } from '@playwright/test';
 
 export async function revealArtworkControl(page: Page, id: string) {
   const control = page.locator('#' + id);
+  if (
+    id === 'art-png-menu' ||
+    (await control
+      .locator('xpath=ancestor::*[@id="art-color-controls" or @id="art-view-controls"]')
+      .count())
+  ) {
+    // Resizing can move the group after the caller changes the viewport.
+    await page.evaluate(
+      () =>
+        new Promise<void>((done) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => done())),
+        ),
+    );
+    await expect(async () => {
+      if (
+        !(await control.isVisible()) &&
+        (await control.locator('xpath=ancestor::*[@id="art-tool-overflow"]').count())
+      ) {
+        await page.getByRole('button', { name: 'More artwork tools', exact: true }).click();
+      }
+      expect(await control.isVisible()).toBe(true);
+    }).toPass({ timeout: 5000 });
+  }
   if (id === 'art-handoff-list') {
     await page.locator('#art-agent-mode').click();
   }
