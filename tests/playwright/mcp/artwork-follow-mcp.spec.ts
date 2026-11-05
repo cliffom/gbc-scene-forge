@@ -255,6 +255,7 @@ test('background contention retries quietly, persistent errors recover inline, s
   await expect(page.locator('#document-state')).toHaveText('Modified');
   await expect(page.locator('#undo')).toBeEnabled();
   await (await revealArtworkControl(page, 'art-discard')).click();
+  await page.locator('#close-document-discard').click();
 });
 
 test('sheet updates retain the selected frame and source layer', async ({ page, workspace }) => {

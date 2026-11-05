@@ -67,6 +67,7 @@ export function createRecoveryController({
       },
     );
     draftWriter = writer;
+    return writer;
   }
 
   function checkpoint(dirty?: boolean) {
@@ -94,7 +95,7 @@ export function createRecoveryController({
     );
   }
 
-  async function clearDraft() {
+  async function clearDraft(strict = false) {
     lifetime.signal.throwIfAborted();
     const writer = draftWriter;
     draftWriter = null;
@@ -116,6 +117,11 @@ export function createRecoveryController({
       const message = `Draft cleanup failed; the checkpoint was retained. ${String(error)}`;
       element('draft-status', HTMLElement).textContent = message;
       status.error(message, 'checkpoint-cleanup');
+      if (strict) {
+        writer?.resume();
+        draftWriter = writer;
+        throw error;
+      }
     }
   }
 
@@ -284,5 +290,29 @@ export function createRecoveryController({
         status.show('Draft discarded. Saved scenes are unchanged.');
       }),
   );
-  return { clearDraft, showRecovery, newDraftWriter, checkpoint };
+  async function closeDraft(keep: boolean) {
+    if (!keep) {
+      await clearDraft(true);
+      return;
+    }
+    lifetime.signal.throwIfAborted();
+    if (!workspaceState.project || !sceneSession.loaded || !sceneSession.editor) {
+      throw Error('No scene to checkpoint.');
+    }
+    const writer = draftWriter ?? newDraftWriter();
+    writer.observe({
+      project_id: workspaceState.project.id,
+      scene_id: sceneSession.loaded.id,
+      name: sceneSession.loaded.name,
+      scene_revision: sceneSession.loaded.revision,
+      project_revision: workspaceState.revision,
+      scene: sceneSession.serialize(),
+    });
+    await writer.keep();
+    lifetime.signal.throwIfAborted();
+    draftWriter = null;
+    recoveredDraft = null;
+    element('draft-status', HTMLElement).textContent = '';
+  }
+  return { closeDraft, clearDraft, showRecovery, newDraftWriter, checkpoint };
 }

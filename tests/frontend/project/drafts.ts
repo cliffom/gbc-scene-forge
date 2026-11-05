@@ -240,3 +240,48 @@ try {
   JSON.stringify = stringifyBefore;
   counting.stop();
 }
+
+// Keeping a scene replays an uncertain old write, then confirms the latest edit.
+const keptCalls: { route: string; data: Record<string, unknown> }[] = [];
+let keepOffline = true;
+const kept = new DraftWriter(
+  (route, data) => {
+    keptCalls.push({ route, data });
+    if (keepOffline) {
+      return Promise.reject(Error('offline'));
+    }
+    return Promise.resolve({ revision: `kept-${keptCalls.length}` });
+  },
+  () => {},
+);
+kept.observe({ scene: 'old uncertain bytes' });
+await kept.flush();
+kept.observe({ scene: 'latest bytes' });
+await assert.rejects(kept.keep(), /Could not confirm/);
+keepOffline = false;
+await kept.keep();
+assert.equal(keptCalls.at(-2)?.data.scene, 'old uncertain bytes');
+assert.equal(keptCalls.at(-1)?.data.scene, 'latest bytes');
+assert(!keptCalls.some((call) => call.route === 'delete-draft'));
+const keptCount = keptCalls.length;
+kept.observe({ scene: 'released editor' });
+await kept.flush();
+assert.equal(keptCalls.length, keptCount);
+
+// A later cleanup failure can occur after our checkpoint was already deleted.
+// Resuming must persist subsequent work, including identical authored bytes.
+const resumedCalls: string[] = [];
+const resumed = new DraftWriter(
+  (route) => {
+    resumedCalls.push(route);
+    return Promise.resolve({ revision: `resumed-${resumedCalls.length}` });
+  },
+  () => {},
+);
+resumed.observe({ scene: 'retained' });
+await resumed.flush();
+await resumed.clear();
+resumed.resume();
+resumed.observe({ scene: 'retained' });
+await resumed.keep();
+assert.deepEqual(resumedCalls, ['checkpoint-draft', 'delete-draft', 'checkpoint-draft']);

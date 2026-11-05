@@ -32,6 +32,7 @@ import {
   type DocumentSummary,
 } from '../editor/document-bar.mts';
 import { createDocumentChooser } from './document-chooser.mts';
+import type { CloseChoice } from '../editor/document-close.mts';
 import type { CommandCapabilities } from '../editor/document-commands.mts';
 import type { DocumentContribution } from '../editor/editor-shell.mts';
 
@@ -67,6 +68,7 @@ export function createPixelEditor({
   sceneSelection: SceneSelection;
   brushes: BrushState;
   ports: {
+    confirmClose: (name: string, artwork: boolean) => Promise<CloseChoice | null>;
     presentation: {
       contribute: (contribution: DocumentContribution) => {
         readonly active: boolean;
@@ -93,6 +95,7 @@ export function createPixelEditor({
     () => presentationSlot.active,
   );
   let busy = false;
+  let closingAfterSave: ArtworkSession | null = null;
   let loading: { label: string; failed: boolean } | null = null;
   let libraryOpen: { controller: AbortController; done: Promise<void> } | null = null;
   let retryOpen: (() => void) | null = null;
@@ -128,7 +131,13 @@ export function createPixelEditor({
       controls();
       tabs();
     },
-    () => ports.presentation.commandsChanged(),
+    () => {
+      if (!busy && !surface.classList.contains('show-art-review')) {
+        closingAfterSave = null;
+        dirtyControls();
+      }
+      ports.presentation.commandsChanged();
+    },
   );
   const { setup } = presentation;
   function reviewPanel(open: boolean) {
@@ -171,6 +180,7 @@ export function createPixelEditor({
           : 'Modified · local changes';
   }
   function workspace(active: boolean) {
+    closingAfterSave = null;
     artworkViewport.suspend();
     if (active) {
       ports.presentation.prepareSceneDeparture();
@@ -620,7 +630,8 @@ export function createPixelEditor({
   function dirtyControls() {
     const modified = session?.changed ?? false;
     const discard = button('art-discard');
-    const label = modified ? 'Discard draft…' : 'Close artwork';
+    const label = modified ? 'Close artwork…' : 'Close artwork';
+    button('art-cancel-close').hidden = !closingAfterSave;
     if (discard.textContent !== label) {
       discard.textContent = label;
     }
@@ -880,6 +891,7 @@ export function createPixelEditor({
     }, ARTWORK_CHECKPOINT_DEBOUNCE_MS);
   }
   function changed() {
+    closingAfterSave = null;
     feedback.clear('message');
     invalidate();
     swatches();
@@ -1506,23 +1518,75 @@ export function createPixelEditor({
   lifetime.assign(button('scene-document'), 'onclick', () => {
     void execute(close);
   });
-  lifetime.assign(button('art-discard'), 'onclick', () => {
-    void execute(async () => {
-      cancelGesture();
-      lifetime.cancelTimeout(timer);
-      timer = undefined;
-      await session?.removeCheckpoint();
-      if (session) {
-        feedback.clear();
-        documents.remove(session);
-      }
-      session = null;
-      raster.dispose();
-      rendering.clear();
+  function activateRetained() {
+    const next = documents.sessions().at(-1);
+    if (!next) {
+      return false;
+    }
+    restore(next);
+    return true;
+  }
+  async function releaseDocument(keep: boolean) {
+    cancelGesture();
+    lifetime.cancelTimeout(timer);
+    timer = undefined;
+    sheetEditor.stop();
+    const current = session;
+    if (keep) {
+      await current?.checkpoint();
+    } else {
+      await current?.removeCheckpoint();
+    }
+    lifetime.signal.throwIfAborted();
+    feedback.clear();
+    if (current) {
+      documents.remove(current);
+    }
+    session = null;
+    closingAfterSave = null;
+    raster.dispose();
+    rendering.clear();
+    if (!activateRetained()) {
       workspace(false);
       tabs();
-      message('Artwork document closed.');
-    });
+    }
+    message(
+      keep
+        ? 'Artwork closed. Draft available in Browse / recover artwork.'
+        : 'Artwork document closed.',
+    );
+  }
+  async function requestClose() {
+    if (busy || ports.presentation.unavailable() || lifetime.disposed) {
+      return;
+    }
+    cancelGesture();
+    sheetEditor.stop();
+    const current = session;
+    const choice =
+      current && (current.changed || current.uncheckpointed)
+        ? await ports.confirmClose(current.model.descriptor.name, true)
+        : 'discard';
+    if (!choice || lifetime.disposed || current !== session || !presentationSlot.active) {
+      return;
+    }
+    if (choice === 'save' && current) {
+      closingAfterSave = current;
+      if (current.receipt && surface.classList.contains('show-art-review')) {
+        controls();
+        button('save').focus();
+      } else {
+        save();
+      }
+    } else {
+      await execute(() => releaseDocument(choice === 'keep'));
+    }
+  }
+  lifetime.assign(button('art-discard'), 'onclick', () => void requestClose());
+  lifetime.assign(button('art-cancel-close'), 'onclick', () => {
+    closingAfterSave = null;
+    controls();
+    message('Closing cancelled. Continue editing or save normally.');
   });
   lifetime.assign(button('art-download'), 'onclick', () => {
     if (session) {
@@ -1892,8 +1956,18 @@ export function createPixelEditor({
         return;
       }
       if (!current.receipt || !surface.classList.contains('show-art-review')) {
-        await reviewCurrent();
+        try {
+          await reviewCurrent();
+        } catch (error) {
+          closingAfterSave = null;
+          throw error;
+        }
         button('save').focus();
+        if (closingAfterSave === current) {
+          message(
+            'Review artwork, then Confirm save to close. Cancel closing keeps this document open.',
+          );
+        }
         return;
       }
       cancelGesture();
@@ -1937,7 +2011,11 @@ export function createPixelEditor({
         describe(saved);
         draw();
         tabs();
-        message('Artwork saved. Continue editing or return to the scene.');
+        if (closingAfterSave === current) {
+          await releaseDocument(false);
+        } else {
+          message('Artwork saved. Continue editing or return to the scene.');
+        }
       } catch (error) {
         // The exact save already succeeded. Cleanup/adoption failures must not
         // turn this document back into a stale editable candidate.
@@ -2266,6 +2344,7 @@ export function createPixelEditor({
     },
   );
   return {
+    activateRetained,
     commands(): CommandCapabilities {
       const model = session?.model;
       const ready =
@@ -2278,12 +2357,22 @@ export function createPixelEditor({
         ready &&
         !model?.descriptor.layers?.items.find((layer) => layer.id === model.activeLayer)?.locked;
       return {
+        close: {
+          enabled:
+            presentationSlot.active &&
+            !busy &&
+            !ports.presentation.unavailable() &&
+            !gestures.active,
+          run: () => void requestClose(),
+        },
         save: {
           enabled: ready,
           run: save,
           label:
             session?.receipt && surface.classList.contains('show-art-review')
-              ? 'Confirm save'
+              ? closingAfterSave === session
+                ? 'Confirm save and close'
+                : 'Confirm save'
               : 'Save artwork…',
         },
         undo: {

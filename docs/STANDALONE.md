@@ -22,6 +22,14 @@ Open the printed local URL. Use the **Project** dropdown beside the document but
 to change projects, or choose **Choose or create project…** to return to the
 selector. Unsaved scene edits offer **Save and switch**, **Discard and switch**,
 or **Keep editing**.
+**Close document**, beside Save, closes the active Scene or Artwork without deleting
+its saved asset. Modified work offers Save, Keep draft and close, Discard and close,
+or Cancel. Artwork still requires review and Confirm save and close; Cancel closing keeps
+it open. Failed saves or checkpoint operations retain the document. Closing selects
+the last retained artwork, then the open scene, or an empty scene workspace; use
+Documents or the Library to open content again. Recover kept scene drafts from
+Project tools → Recover drafts, and artwork from Browse / recover.
+
 Failed saves keep the current workspace and edits. Opening a project reloads the
 workspace, clears undo/redo and selections, and resets previews. Requests are
 scoped to the project's URL, so another tab cannot change their destination.

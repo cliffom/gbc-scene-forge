@@ -4,6 +4,7 @@ import type { EditorLifetime } from './editor-lifetime.mts';
 
 export const commandButtons = {
   save: 'save',
+  close: 'close-document',
   undo: 'undo',
   redo: 'redo',
   copy: 'copy-selection',
@@ -18,6 +19,7 @@ export const commandButtons = {
 export type DocumentCommand = keyof typeof commandButtons;
 const commandNames: readonly DocumentCommand[] = [
   'save',
+  'close',
   'undo',
   'redo',
   'copy',
@@ -64,7 +66,12 @@ export function createDocumentCommands(
     const id = commandButtons[command];
     lifetime.assign(button(id), 'onclick', (event) => {
       invoke(command);
-      if (event.detail > 0 && command !== 'save' && !document.querySelector('dialog[open]')) {
+      if (
+        event.detail > 0 &&
+        command !== 'save' &&
+        command !== 'close' &&
+        !document.querySelector('dialog[open]')
+      ) {
         focus();
       }
     });

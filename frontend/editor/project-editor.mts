@@ -1,3 +1,4 @@
+import { createDocumentClose } from './document-close.mts';
 import { createDocumentCommands, type CommandCapabilities } from './document-commands.mts';
 import { createPixelEditor } from '../artwork/pixel-editor.mts';
 import { createNotifications, feedbackText } from './editor-notifications.mts';
@@ -44,6 +45,7 @@ export function mountProjectEditor() {
     versionLabel.textContent = __FORGE_BUILD_LABEL__;
   }
   const lifetime = new EditorLifetime();
+  const confirmClose = createDocumentClose(lifetime);
   // Static modal UI belongs to this mount, just like its handlers and state.
   const dialogs = [...document.querySelectorAll('dialog')];
   const popovers = [...document.querySelectorAll<HTMLElement>('[popover]')];
@@ -619,6 +621,14 @@ export function mountProjectEditor() {
     sceneSelection,
     animationPreview,
     ports: {
+      confirmClose,
+      closeDraft: (keep) => recoveryController.closeDraft(keep),
+      afterClose: () => {
+        gesturesController.cancelEditing();
+        if (!pixelEditor.activateRetained()) {
+          scenePresentation.activate(true);
+        }
+      },
       beforeSceneChange: () => pixelEditor.activateScene(),
       beforeProjectChange: () => pixelEditor.prepareDeparture(),
       discard: (...args) => discard(...args),
@@ -726,6 +736,7 @@ export function mountProjectEditor() {
     sceneSelection,
     brushes,
     ports: {
+      confirmClose,
       presentation: {
         contribute: (contribution) => shell.contribute('artwork', contribution),
         scene: () => {
@@ -850,6 +861,7 @@ export function mountProjectEditor() {
       () =>
         compositionsController.compositionAction(action);
     return {
+      close: { enabled: ready, run: () => void sceneActionsController.requestClose() },
       save: {
         enabled: ready && sceneModified,
         run: sceneActionsController.save,
