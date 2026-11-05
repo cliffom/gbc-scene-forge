@@ -120,7 +120,7 @@ def capabilities():
             "target": "Explicit layer_id for reads/edits/counts; unlock before writes or structural changes",
         },
         "inline_previews": "At most 2 PNG ImageContent blocks / 4 MiB decoded per response; resource links retained with existing session lifetime. Scene artwork overview does not require a camera.",
-        "handoff": "Browser Agent candidates: inspect/download, explicitly adopt separately owned copy, return immutable candidate. No saved publication or Undo transfer; original saved bases remain fixed.",
+        "handoff": "Browser From agent: inspect/download, explicitly adopt separately owned copy, return immutable candidate. No saved publication or Undo transfer; original saved bases remain fixed.",
         "saved_deletion": "delete_artwork: whole atlas/document, required current project revision, optional dry_run then exact plan. Blocks saved scene/definition/stamp references, retains independent candidates/checkpoints with original bases.",
         "illustration": {
             "preparation": "Independent static sprite; nearest-floor scaling or anchored crop/pad. Explicit sheet flattening; original saved references stay untouched.",

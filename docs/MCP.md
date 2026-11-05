@@ -574,8 +574,10 @@ visible previews cannot.
 
 ### Unpublished exchange and saved cleanup
 
-Use the browser's **New artwork → Agent candidates → Refresh candidates** to
-inspect/download a specific retained revision or **Adopt a copy**. Adoption requires
+Use the browser's **Artwork → From agent → Refresh** to browse retained drafts.
+Select a thumbnail for read-only preview; **Download PNG** and **Draft details →
+Download snapshot JSON** are separate actions. Choose **Edit a copy** to adopt a
+specific revision. Adoption requires
 a current saved base and creates a separate owner UUID and local Undo history.
 Existing documents/history/checkpoints remain retained. **Return candidate to agent**
 checkpoints and retains an immutable handle with project/document identity, candidate

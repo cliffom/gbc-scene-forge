@@ -15,6 +15,40 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Focused artwork setup and From agent (#237)
+
+- **Scope:** Prepared 0.40.0 working tree on `issue-237-artwork-setup`, based on
+  `961fb3c`, checked 2026-11-05 UTC on macOS 27.0.1 arm64, Python 3.13.13,
+  Node 24.22.1 and Playwright 1.64.1 / Chromium 156.0.8078.4 with the production
+  frontend. Release preparation is separate from publication.
+- **Method:** Run `make lint test`, production `make build check-dist test-browser`,
+  installed-wheel first-use acceptance, `poetry check --lock --strict`,
+  `make test-mcp` and the real-MCP iteration/refresh browser profile. Focused setup
+  cases cover keyboard tabs, side-effect-free preview/export, stale adoption,
+  failure/retry, delayed dismissal, retained history, lazy thumbnails and refresh
+  fencing. Agent-inspect captures at 1440 × 900, 1280 × 800 and 800 × 640;
+  archive [creation](screenshots/artwork-setup/desktop-new-artwork.png),
+  [existing artwork](screenshots/artwork-setup/desktop-existing-artwork.png),
+  [gallery](screenshots/artwork-setup/desktop-agent-gallery.png),
+  [preview](screenshots/artwork-setup/desktop-agent-preview.png),
+  [compact gallery](screenshots/artwork-setup/compact-agent-gallery.png) and
+  [compact preview](screenshots/artwork-setup/compact-agent-preview.png).
+- **Result:** Lint, type checks, 487 Python tests, all TypeScript suites and
+  20 documentation-checker tests pass. The final regular browser run passes
+  190 cases with 12 optional-profile skips. An earlier full run failed one obsolete
+  browse-label assertion; the label assertion was corrected before the final run.
+  All 118 MCP tests and 16 real-MCP browser cases pass. Distribution metadata,
+  seven installed-wheel smoke cases, installed-wheel first use and strict lock
+  consistency pass. Setup opens on creation despite seven drafts; preview and
+  downloads preserve publication guards, and editing restores commands.
+- **Limits:** Synthetic local automation and agent screenshot inspection do not
+  establish independent-user discovery, accessibility conformance or physical-device
+  comfort; #165/#166 remain outstanding below. Other optional profiles, official
+  Tiled tools, non-Chromium browsers, Windows and Python 3.14 were not locally run.
+  Worst-case candidate memory and latency were not measured. MCP used the source
+  environment; plain-wheel checks used an isolated installation. No CI-pass claim
+  is made by this local record.
+
 ## Automatic candidate actions (#236 review correction)
 
 - **Scope:** Prepared 0.39.0 review-fix working tree based on `0db3a40`, checked

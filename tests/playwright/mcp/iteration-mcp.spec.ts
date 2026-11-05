@@ -2,7 +2,7 @@
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { test, expect, activateScene } from '../support/browser-fixtures.ts';
-import { revealArtworkControl, saveArtwork } from '../support/artwork-controls.ts';
+import { revealArtworkControl, saveArtwork, adoptAgentDraft } from '../support/artwork-controls.ts';
 import { record, string, array } from '../../../frontend/shared/decode.mts';
 import { decodeCandidate } from '../../../frontend/artwork/artwork-contracts.mts';
 import { PixelModel } from '../../../frontend/artwork/pixel-model.mts';
@@ -81,12 +81,8 @@ print(base64.b64encode(encode(16,16,bytes([71,72,73,0])*256)).decode())
   const original = call('export_artwork_candidate', { candidate });
   await page.locator('#show-artwork').click();
   await (await revealArtworkControl(page, 'art-handoff-list')).click();
-  await page
-    .locator('#art-handoff-candidates section')
-    .filter({ hasText: string(candidate.revision) })
-    .getByRole('button', { name: 'Adopt a copy', exact: true })
-    .click();
-  await expect(page.locator('#art-message')).toContainText('Adopted a separate unpublished copy');
+  await adoptAgentDraft(page, string(candidate.revision));
+  await expect(page.locator('#art-message')).toContainText('Opened a separate editable copy');
   await expect(page.locator('#undo')).toBeDisabled();
   await (await revealArtworkControl(page, 'art-layer')).selectOption({ label: 'Glow' });
   await page.locator('#art-layer-opacity').fill('96');
@@ -253,11 +249,7 @@ p.artwork.documents.save(c)
   await page.goto(url);
   await page.locator('#show-artwork').click();
   await (await revealArtworkControl(page, 'art-handoff-list')).click();
-  await page
-    .locator('#art-handoff-candidates section')
-    .filter({ hasText: string(candidate.revision) })
-    .getByRole('button', { name: 'Adopt a copy', exact: true })
-    .click();
+  await adoptAgentDraft(page, string(candidate.revision));
   await expect(page.locator('#art-document-state')).toHaveText('Modified');
   await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
   await expect(page.locator('#undo')).toBeDisabled();

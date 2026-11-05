@@ -26,6 +26,13 @@ system; hierarchy comes from grouping, spacing and clear labels.
   above cards or generic region/kind labels.
   Source actions keeps shared editing, copies, updates and deletion with the
   chosen Library source; the Inspector does not repeat the project asset inventory.
+- **Artwork setup:** New artwork, Existing artwork and From agent are peer tabs
+  with padded hover targets and native keyboard navigation. New begins with the
+  creation form; available agent drafts contribute a count without promoting
+  themselves above it. Use visual draft cards and a read-only modal preview with
+  explicit Edit a copy, separate PNG/native JSON downloads and collapsed revision
+  details. Hide the shared editing-command row and disable its capabilities until
+  an editable document opens; preserve independent histories and save guards.
 - **Canvas:** group drawing tools, history, clipboard and selection commands in one
   compact toolbar. Keep zoom, review and fit on the first row; use a container-width
   disclosure for secondary commands instead of automatically adding rows. At the

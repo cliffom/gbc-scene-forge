@@ -4,7 +4,7 @@ The Library puts search and thumbnail cards first. **New…** and **Import** are
 compact entry points; **Source…** groups Edit artwork, shared editing/copies,
 source update, terrain/collision and deletion for the selected asset.
 **Filters & recovery** reveals atlas/kind filters and the browser for recoverable
-drafts and agent candidates. Filters persist when collapsed; the result count
+drafts and agent drafts. Filters persist when collapsed; the result count
 shows matching assets. Long names wrap to two lines and keep their full identifier
 in the tooltip.
 
@@ -13,6 +13,16 @@ opening to return to your retained document, or select another Library asset.
 Failed reads offer Retry opening; saved-base or checkpoint conflicts preserve
 your local work and history. Use the Library source actions or Browse when you
 want the explicit open/copy chooser.
+
+**New…** opens **New artwork**, even when agent drafts are available. Name the
+artwork, choose its type and dimensions, then **Create artwork** to draw before
+saving. **More options** contains asset identity, full limits and multi-frame
+sheet setup. **Existing artwork** retains shared editing, independent copies and
+selected-placement variations; **Recoverable artwork** remains available below
+setup when checkpoints exist. **From agent** has a count when unpublished drafts
+are available. Left/Right and Home/End navigate these tabs. Undo/Redo, clipboard
+and transform commands appear only once an editable document is open; setup
+shortcuts cannot modify a suspended artwork document.
 
 Before confirming a save, check whether you are adding **new independent artwork**,
 editing a **shared original**, or replacing **selected placements**. New artwork is
@@ -121,12 +131,20 @@ region/cell copies use visible flattened pixels. The [native contract](../EDITAB
 defines limits and older-version rejection. Hidden source RGB is preserved even
 when it cannot appear in the composite.
 
-**New artwork → Agent candidates** automatically lists retained unpublished
-MCP snapshots and expands when candidates are available. **Refresh candidates**
-updates the count and available actions. **Inspect snapshot** shows/downloads the
-selected revision without saving. **Adopt a copy** checks its artwork and
-selected-scene bases and opens separately owned local work with a new Undo
-history; other open documents keep their history/checkpoints.
+**From agent** shows unpublished MCP drafts as thumbnail cards with names,
+dimensions and artwork kinds. **Refresh** updates the list/count without changing
+the selected setup tab. Thumbnails load when visible; thumbnail exports use at most
+two concurrent full snapshots and retain small canvases rather than envelopes.
+Select a card to preview a revision without downloading or saving. **Download
+PNG** exports flattened pixels; **Draft details → Download snapshot JSON** retains
+the native layered envelope and remains available if a preview fails. Failed
+reads offer retry; stale drafts remain previewable/downloadable.
+
+**Edit a copy** checks artwork and selected-scene bases and opens separately
+owned local work with a new Undo history. Other open documents retain their
+histories/checkpoints. The preview explains whether a later reviewed save adds
+new artwork, updates an existing shared source, or replaces selected placements.
+Cancelling or closing the preview has no adoption or save effect.
 Adopted edits to saved artwork remain **Modified** against the actual saved
 original until saved. Choosing the scene in Documents retains their recovery checkpoint.
 **Document actions → Return candidate to agent** checkpoints and downloads an immutable handle that
