@@ -159,7 +159,10 @@ print(json.dumps(ids))
   })();
   // Save an authored mixed composition to the library, then place it twice.
   await evaluate("window.prompt = () => 'Doorway'");
-  await click('save-stamp');
+  await click('stamps-tab');
+  await expect(page.locator('#library-save-stamp')).toBeEnabled();
+  await page.locator('#library-save-stamp').focus();
+  await page.keyboard.press('Enter');
   await wait(
     "document.getElementById('status').textContent === 'Reusable stamp saved in the project.'",
   );

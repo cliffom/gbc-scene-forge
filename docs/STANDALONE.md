@@ -67,6 +67,32 @@ copying; if clipboard access is unavailable, the popover offers manual copying. 
 **Projects folder** in the chooser and **Project folder** inside a project.
 Long names are truncated in the header; full paths wrap inside the popover.
 
+## Choose a starting goal
+
+Project creation offers sample artwork/scenes, native pixel artwork, importing
+existing artwork/maps, an artwork-free blockout, or an empty project. Artwork and
+import goals create an empty project and open the existing authoring/import flow.
+The optional first-scene guide remains available from the header.
+
+The empty scene workspace also exposes **Create artwork…**, **Import artwork or
+map…**, **Plan a blockout…**. To use sample content, choose Sample artwork and scenes
+when creating a project; this makes a separate editable copy.
+New artwork shows dimensions for the selected type, with **All artwork limits**
+for the complete bounds. Recoverable artwork and available agent candidates are
+highlighted when present; both remain accessible in the artwork setup.
+
+In **Stamps**, choose **Create stamp from selection…** after selecting tiles or
+objects. The prerequisite text explains Select and Across layers when unavailable.
+It uses the same save operation as the toolbar stamp icon. Name the stamp, choose
+**Place stamp**, then click repeatedly; Escape returns to ordinary editing.
+
+The selected-object Inspector keeps identity, placement editing and sprite preview
+above **Convert or remove selection**. Expand that disclosure for conversion
+preflight or explicit removal. Selection remains above scene properties; Layers
+and the Inspector scroll independently of the canvas.
+
+See [artwork controls, shortcuts and PNG download](user/pixel-artwork.md#drawing-space-shortcuts-and-png-downloads).
+
 ## First scene guide
 
 Choose **Sample artwork and scenes** in project creation for a named, user-owned

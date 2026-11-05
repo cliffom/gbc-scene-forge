@@ -100,6 +100,9 @@ p.artwork.documents.save(c)
       };
       await open();
       const coldOpenMs = performance.now() - coldStart;
+      // These phases compare timeline disclosure with the frame dock visible.
+      // Drawing now starts with the outer dock collapsed.
+      await page.locator('#art-dock > summary').click();
       const phases = [];
       for (const view of ['frame', 'sheet']) {
         await page.locator(`#art-${view}-view`).click();

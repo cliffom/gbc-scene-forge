@@ -531,6 +531,16 @@ export function createSheetEditor(
     }),
   );
   const dock = element('art-dock', HTMLDetailsElement);
+  lifetime.assign(button('art-show-animation'), 'onclick', () => {
+    dock.open = true;
+    element('art-timeline', HTMLDetailsElement).open = true;
+    select('art-sequence').focus();
+    paint();
+  });
+  lifetime.cleanup(() => {
+    dock.open = false;
+    element('art-timeline', HTMLDetailsElement).open = false;
+  });
   dock.addEventListener(
     'toggle',
     () => {
@@ -546,6 +556,9 @@ export function createSheetEditor(
   timeline?.addEventListener(
     'toggle',
     () => {
+      if (!timeline.open) {
+        stop();
+      }
       if (timeline.open) {
         // Revealing deferred images must preserve the owner's busy controls.
         paint();

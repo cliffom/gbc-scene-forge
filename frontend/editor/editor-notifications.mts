@@ -3,7 +3,7 @@ import type { EditorLifetime } from './editor-lifetime.mts';
 
 type Severity = 'info' | 'warning' | 'error';
 type FeedbackKey = string | object;
-type Options = { key?: FeedbackKey; severity?: Severity; persistent?: boolean };
+type Options = { key?: FeedbackKey; severity?: Severity; persistent?: boolean; quiet?: boolean };
 type Notice = {
   owner: unknown;
   key: FeedbackKey;
@@ -42,11 +42,20 @@ export function createNotifications(lifetime: EditorLifetime, workbench: HTMLEle
   region.setAttribute('aria-label', 'Notifications');
   region.popover = 'manual';
   document.body.append(region);
+  const routine = document.createElement('section');
+  routine.className = 'routine-notifications';
+  routine.setAttribute('aria-label', 'Document status');
+  const routineHost = document.querySelector('.status-bar') ?? document.body;
+  routineHost.prepend(routine);
   const channels: Feedback[] = [];
 
   function position() {
     const modal = document.querySelector<HTMLDialogElement>('dialog[open]:modal');
     const host = modal ?? document.body;
+    const quietHost = modal ?? routineHost;
+    if (routine.parentElement !== quietHost) {
+      quietHost.prepend(routine);
+    }
     if (region.parentElement !== host) {
       region.hidePopover();
       host.append(region);
@@ -90,7 +99,10 @@ export function createNotifications(lifetime: EditorLifetime, workbench: HTMLEle
     layoutObserver.observe(viewport);
   }
   window.addEventListener('resize', position, { signal: lifetime.signal });
-  lifetime.cleanup(() => region.remove());
+  lifetime.cleanup(() => {
+    region.remove();
+    routine.remove();
+  });
 
   return {
     channel(
@@ -261,7 +273,7 @@ export function createNotifications(lifetime: EditorLifetime, workbench: HTMLEle
         card.addEventListener('pointerleave', () => schedule(notice));
         card.addEventListener('focusin', () => pause(notice));
         card.addEventListener('focusout', () => queueMicrotask(() => schedule(notice)));
-        region.append(card);
+        (options.quiet && severity === 'info' ? routine : region).append(card);
         sync();
         position();
         const announcement = text;

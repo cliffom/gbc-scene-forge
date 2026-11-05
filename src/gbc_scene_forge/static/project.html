@@ -66,7 +66,7 @@
     <form id="project-form" class="welcome" hidden>
       <h2>Create a project</h2>
       <label class="field">Project name<input id="project-title" required maxlength="100" autocomplete="off" placeholder="My world" autofocus></label>
-      <label class="field">Start with<select id="project-starter"><option value="empty">Empty project</option><option value="sample">Sample artwork and scenes</option><option value="blockout">Blockout — no artwork needed</option></select></label>
+      <label class="field">Start with<select id="project-starter"><option value="empty">Empty project</option><option value="artwork">Create pixel artwork</option><option value="import">Import artwork or maps</option><option value="sample">Sample artwork and scenes</option><option value="blockout">Blockout — no artwork needed</option></select></label>
       <p class="hint">The sample includes original MIT-licensed tiles, sprites and two scenes. A private editable copy stays in your project folder and works offline.</p>
       <label><input id="continue-guide" type="checkbox"> Continue first-scene guide after creation</label>
       <p class="form-error error" role="alert"></p>
@@ -186,7 +186,7 @@
         </section>
         <section id="stamps-panel" class="library-panel" role="tabpanel" aria-labelledby="stamps-tab" hidden>
           <h3>Reusable stamps</h3>
-          <p class="hint">Select tiles or objects, then use <strong>Save stamp…</strong> above the canvas to keep a reusable arrangement.</p>
+          <button id="library-save-stamp" disabled aria-describedby="stamp-prerequisite">Create stamp from selection…</button><p id="stamp-prerequisite" class="hint">Open a scene and select tiles or objects first. Use Select (S); enable Across layers to include multiple layers.</p>
           <label class="field">Stamp<select id="stamps"><option value="">Choose stamp…</option></select></label>
           <p id="stamp-description" class="hint">Choose a stamp to place it more than once. Press Escape to return to editing.</p>
           <button id="place-stamp" disabled aria-describedby="stamp-description" aria-pressed="false">Place stamp</button>
@@ -209,7 +209,7 @@
             </div>
 
           </div>
-</div></div>
+</div><button id="keyboard-help" type="button" title="Keyboard shortcuts and workspace help" aria-label="Keyboard help"><span class="command-full-label">Keyboard </span>help</button></div>
         <div id="scene-surface" class="editor-surface">
         <div class="canvas-toolbar">
           <span class="review-mode-label">Review · Pan</span>
@@ -229,7 +229,7 @@
         </div>
         <div id="layer-context" class="layer-context" hidden><span id="layer-context-text"></span><button id="context-show-layer" class="small" hidden>Show layer</button></div>
         <div id="viewport" class="viewport" tabindex="0" aria-label="Scene workspace">
-          <div id="empty-scene"><h2>No scene open</h2><p>Create a scene to start building, or choose a saved scene and open it.</p><div class="empty-scene-actions"><button id="empty-open" class="primary" hidden>Open scene…</button><button id="empty-create">Create scene</button></div></div>
+          <div id="empty-scene"><h2>No scene open</h2><p>Create a scene to start building, or choose a saved scene and open it.</p><div class="empty-scene-actions"><button id="start-artwork">Create artwork…</button><button id="start-import">Import artwork or map…</button><button id="start-blockout">Plan a blockout…</button><button id="empty-open" class="primary" hidden>Open scene…</button><button id="empty-create">Create scene</button></div></div>
           <div id="canvas-surround" class="canvas-surround" hidden><canvas id="scene" hidden tabindex="0" aria-label="Editable scene on a tile grid"></canvas></div>
         </div>
         <div class="canvas-footer"><span id="coordinates" title="Cell column and row, followed by pixel X and Y. All coordinates start at zero.">Cell —, — · Pixel —, —</span><span id="scene-name">No scene open</span><span id="selected-brush">Select a brush</span></div>
@@ -275,9 +275,9 @@
           <p id="selection-name" class="selection-name muted">Nothing selected</p>
           <p id="selection-detail" class="hint">Select an object on the canvas or in the list to edit it, or select tiles on a tile layer.</p>
           <p id="selection-note" class="hint" hidden></p>
-          <div class="selection-actions"><button id="edit-placement-artwork" disabled>Edit artwork…</button><button id="convert-sprites">Convert selected sprites to tiles…</button>
+          <div class="selection-actions"><button id="edit-placement-artwork" disabled>Edit artwork…</button>
           <button id="edit-object" class="selection-remove" disabled>Edit selected object</button>
-          <button id="remove-sprite" class="selection-remove" disabled>Remove selected object</button></div>
+          </div>
           <section id="animation-preview" aria-label="Sprite animation preview" hidden>
             <div class="property-grid">
               <label class="field">Preview action<select id="preview-action"><option value="manual">Manual</option><option value="idle">Idle</option><option value="walk">Walk</option></select></label>
@@ -320,7 +320,7 @@
             <p class="hint">Save mappings, choices, speeds, footprint and collision preference in this project. Playback progress and temporary positions are never saved.</p>
             <p class="hint">Preview only. Playback does not edit the scene or its starting positions.</p>
           </section>
-          <select id="object-list" size="3" aria-label="Objects in active layer" disabled></select>
+          <details id="selection-secondary"><summary>Convert or remove selection</summary><button id="convert-sprites">Convert selected sprites to tiles…</button><button id="remove-sprite" class="destructive-command" disabled>Remove selected object</button></details><select id="object-list" size="3" aria-label="Objects in active layer" disabled></select>
         </section>
         <section class="inspector-panel" aria-label="Object validation"><h3>Object validation</h3><p id="object-validation-summary" class="hint"></p><div id="object-findings"></div></section>
         <section class="inspector-panel" aria-label="Draft recovery">
@@ -340,7 +340,7 @@
     <p class="form-error" role="alert"></p>
     <div class="dialog-actions"><button id="recovery-later" type="button">Later</button><button id="recovery-download" type="button">Download draft</button><button id="recovery-discard" type="button">Discard draft…</button><button id="recovery-restore" class="primary" type="button">Restore draft</button></div>
   </dialog>
-  <dialog id="palette-dialog" aria-labelledby="palette-heading">
+  <dialog id="keyboard-help-dialog" aria-labelledby="keyboard-help-heading"><h2 id="keyboard-help-heading">Keyboard &amp; workspace help</h2><p>P: Paint / Pencil · E: Erase · F: Fill · S: Select · H: Pan. These shortcuts act on the active scene or artwork canvas.</p><p>Artwork only: I: Eyedropper · L: Line · R: Rectangle · M: Move selection. Use arrow keys within tool radio groups. Scene movement preview uses its own keys while active.</p><p>⌘/Ctrl S: Save (artwork requires review then confirmation) · Z: Undo · Shift Z / Y: Redo · C/X/V: Copy/Cut/Paste · D: Duplicate. Text entry, dialogs and command popovers keep their own keyboard controls.</p><p>Use Hide Library and Hide Inspector at the pane edges for drawing room. Show them again with the same edge buttons. Frames &amp; animation expands timing controls; the active frame and drawing scope remain above artwork.</p><button id="keyboard-help-close" autofocus>Close</button></dialog><dialog id="palette-dialog" aria-labelledby="palette-heading">
     <h2 id="palette-heading">GBC budgets</h2>
     <p class="hint">Checks the current canvas against 8 background/window slots and 8 sprite slots. Includes hidden layers and all frames of animations linked to placed artwork.</p>
     <label><input id="palette-enabled" type="checkbox"> Enable GBC palette checks for this project</label>
@@ -402,8 +402,6 @@
     </div>
     <header id="art-inspector-actions" class="art-heading"><span id="art-scope-label" class="muted"></span><div class="art-heading-actions"><button id="art-layers-toggle" aria-expanded="false" aria-controls="art-layer-panel">Layers</button><button id="art-properties-toggle" aria-expanded="false" aria-controls="art-properties">Properties</button></div></header>
     <div id="art-setup">
-    <details id="art-handoff"><summary>Agent candidates</summary><p>Inspect unpublished snapshots, then adopt a separate editable copy. Saved artwork is unchanged. Existing documents and their Undo histories are retained.</p><button id="art-handoff-list" type="button">Refresh candidates</button><div id="art-handoff-candidates"></div></details>
-    <details id="art-recovery" hidden><summary>Recoverable artwork</summary><p>Recover a copy after checking its saved base. The original checkpoint remains available.</p><div id="art-drafts"></div></details>
     <div id="art-start">
       <div class="art-start-tabs"><button id="art-new-mode" aria-pressed="true">New artwork</button><button id="art-existing-mode" aria-pressed="false">Existing artwork</button></div>
       <section id="art-source-panel" hidden><h3>Open or copy artwork</h3>
@@ -421,7 +419,7 @@
       <section id="art-new-panel"><h3>Create artwork</h3><div id="art-new-fields">
         <div id="art-identity"><label class="field">Name<input id="art-name" value="New artwork" maxlength="100"></label><details><summary>Asset identity</summary><label class="field">Asset ID<input id="art-id" pattern="[a-z][a-z0-9_]{0,63}" maxlength="64"></label></details></div>
         <div class="art-row"><label class="field">Artwork type<select id="art-kind"><option value="tile">Tile</option><option value="sprite">Sprite / illustration</option></select></label><label class="field">Width (px)<input id="art-width" type="number" min="8" max="256" step="8" value="16"></label><label class="field">Height (px)<input id="art-height" type="number" min="8" max="256" step="8" value="16"></label></div>
-        <p class="hint">Static sprites/illustrations: 1–4,096 pixels per axis, at most 4,194,304 pixels. Single tiles are 8, 16 or 32 pixels square; sheets use multiples of eight within 8–256.</p>
+        <p id="art-size-guidance" class="hint"></p><details><summary>All artwork limits</summary><p class="hint">Static sprites/illustrations: 1–4,096 pixels per axis, at most 4,194,304 pixels. Single tiles are 8, 16 or 32 pixels square; sheets use multiples of eight within 8–256.</p></details>
         <label><input id="art-multiple" type="checkbox"> Create a sheet with multiple frames</label>
         <div id="art-sheet-layout" hidden><div class="art-row"><label class="field">Frame width<input id="art-frame-width" type="number" min="8" max="256" step="8" value="8"></label><label class="field">Frame height<input id="art-frame-height" type="number" min="8" max="256" step="8" value="8"></label></div>
         <p id="art-layout-preview" class="hint"></p>
@@ -429,11 +427,13 @@
         <button id="art-create" class="primary">Create artwork</button>
       </div></section>
     </div>
+    <details id="art-handoff"><summary>Agent candidates</summary><p>Inspect unpublished snapshots, then adopt a separate editable copy. Saved artwork is unchanged. Existing documents and their Undo histories are retained.</p><button id="art-handoff-list" type="button">Refresh candidates</button><div id="art-handoff-candidates"></div></details>
+    <details id="art-recovery" hidden><summary>Recoverable artwork</summary><p>Recover a copy after checking its saved base. The original checkpoint remains available.</p><div id="art-drafts"></div></details>
     </div>
     <div id="art-editor" hidden>
       <div class="art-controls">
       <p id="art-shared" class="hint"></p><details class="art-help"><summary>Drawing &amp; keyboard help</summary><p class="hint">Drag to draw or select. The outlined pixel is your target; Move selection uses a move cursor. <span id="art-navigation-help">Pan with middle drag, Space+drag on the canvas, or Pan then drag/arrow keys. Fit centers the artwork; frame/sheet changes reframe it.</span> Move selections by dragging or arrow keys. Escape cancels a gesture. ⌘/Ctrl Z undoes, C/V copies/pastes. Opacity ranges from 0 (transparent) to 255 (opaque). Toggle Transparent again or choose a color to resume painting.</p></details>
-      <section id="art-sheet-controls" aria-label="Frames and animation dock" hidden><details id="art-dock" open><summary>Frames &amp; animation</summary>
+      <section id="art-sheet-controls" aria-label="Frames and animation dock" hidden><details id="art-dock"><summary title="Expand frame navigation and animation timing; layout stays until this editor is closed">Frames &amp; animation</summary>
 
         <div id="art-frame-strip" aria-label="Sheet frames"></div>
         <details id="art-timeline"><summary>Animation</summary><div class="art-animation-layout"><div class="art-animation-edit">
@@ -443,12 +443,12 @@
         </div><div class="art-playback"><canvas id="art-animation-canvas" aria-label="Animation preview"></canvas><p id="art-animation-status" role="status"></p><button id="art-animation-review">Generate animation review</button><figure id="art-animation-result" hidden><figcaption>Animation review</figcaption><img id="art-animation-image" alt="Timed animation review"></figure></div></div></details></details>
       </section>
       <details id="art-selection-details" hidden><summary>Placements this variation will replace</summary><ul id="art-selection-list"></ul></details>
-        <div id="art-drawing-boundary" class="art-frame-bar" hidden><label class="field">Frame<select id="art-frame"></select></label><div class="art-scope" role="group" aria-label="Drawing scope"><button id="art-sheet-view" aria-pressed="true">Sheet</button><button id="art-frame-view" aria-pressed="false">Frame</button></div><span id="art-drawing-scope" role="status"></span><input id="art-edit-frame" type="checkbox" hidden><label><input id="art-onion" type="checkbox"> Onion skin</label></div>
+        <div id="art-drawing-boundary" class="art-frame-bar" hidden><label class="field">Frame<select id="art-frame"></select></label><div class="art-scope" role="group" aria-label="Drawing scope"><button id="art-sheet-view" aria-pressed="true">Sheet</button><button id="art-frame-view" aria-pressed="false">Frame</button></div><span id="art-drawing-scope" role="status"></span><input id="art-edit-frame" type="checkbox" hidden><button id="art-show-animation" type="button">Edit animation…</button><label><input id="art-onion" type="checkbox"> Onion skin</label></div>
 <div class="art-toolbar">
 <div class="pixel-toolbar" aria-label="Pixel editing commands">
-<div class="tool-group" role="group" aria-label="Pixel tools"><label class="tool" title="Pencil"><input type="radio" name="art-tool" value="pencil" checked><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-pencil"/></svg><span class="tool-label">Pencil</span></label><label class="tool" title="Eraser"><input type="radio" name="art-tool" value="erase"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-erase"/></svg><span class="tool-label">Eraser</span></label><label class="tool" title="Flood fill"><input type="radio" name="art-tool" value="fill"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-fill"/></svg><span class="tool-label">Flood fill</span></label><label class="tool" title="Eyedropper"><input type="radio" name="art-tool" value="pick"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-pick"/></svg><span class="tool-label">Eyedropper</span></label><label class="tool" title="Line"><input type="radio" name="art-tool" value="line"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-line"/></svg><span class="tool-label">Line</span></label><label class="tool" title="Rectangle outline"><input type="radio" name="art-tool" value="rectangle"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-rectangle"/></svg><span class="tool-label">Rectangle outline</span></label><label class="tool" title="Select rectangle"><input type="radio" name="art-tool" value="select"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-select"/></svg><span class="tool-label">Select rectangle</span></label><label class="tool" title="Move selection"><input type="radio" name="art-tool" value="move"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-move"/></svg><span class="tool-label">Move selection</span></label></div>
+<div class="tool-group" role="group" aria-label="Pixel tools"><label class="tool" title="Pencil (P)"><input type="radio" name="art-tool" value="pencil" checked><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-pencil"/></svg><span class="tool-label">Pencil</span></label><label class="tool" title="Eraser (E)"><input type="radio" name="art-tool" value="erase"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-erase"/></svg><span class="tool-label">Eraser</span></label><label class="tool" title="Flood fill (F)"><input type="radio" name="art-tool" value="fill"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-fill"/></svg><span class="tool-label">Flood fill</span></label><label class="tool" title="Eyedropper (I)"><input type="radio" name="art-tool" value="pick"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-pick"/></svg><span class="tool-label">Eyedropper</span></label><label class="tool" title="Line (L)"><input type="radio" name="art-tool" value="line"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-line"/></svg><span class="tool-label">Line</span></label><label class="tool" title="Rectangle outline (R)"><input type="radio" name="art-tool" value="rectangle"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-rectangle"/></svg><span class="tool-label">Rectangle outline</span></label><label class="tool" title="Select rectangle (S)"><input type="radio" name="art-tool" value="select"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-select"/></svg><span class="tool-label">Select rectangle</span></label><label class="tool" title="Move selection (M)"><input type="radio" name="art-tool" value="move"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-move"/></svg><span class="tool-label">Move selection</span></label></div>
 </div>
-<div class="art-row art-tools"><div class="art-row color-controls" role="group" aria-label="Drawing color"><label class="field">Color<input id="art-color" type="color" value="#729b4f"></label><label class="field">Opacity<input title="0 = transparent, 255 = opaque" id="art-alpha" type="number" min="0" max="255" value="255"></label><button id="art-transparent" class="icon-button" aria-pressed="false" title="Toggle transparent drawing; click again to restore opacity"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-transparent"/></svg><span id="art-transparency-label">Transparent</span></button></div><div class="art-row pixel-view-controls" role="group" aria-label="Pixel view"><button id="art-pan" aria-pressed="false" title="Pan artwork: drag, or use arrow keys on the canvas. Also middle drag or Space+drag.">Pan</button><button id="art-fit" title="Center and fit artwork in the drawing area">Fit</button><label class="field">Zoom<select id="art-zoom"><option value="0.03125">¹⁄₃₂×</option><option value="0.0625">¹⁄₁₆×</option><option value="0.125">⅛×</option><option value="0.25">¼×</option><option value="0.5">½×</option><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option><option value="8">8×</option><option value="16" selected>16×</option><option value="32">32×</option></select></label><label><input id="art-grid" type="checkbox" checked> Pixel grid</label></div></div>
+<button id="art-png-menu" popovertarget="art-png-options" aria-controls="art-png-options" aria-expanded="false" aria-label="Download PNG…" title="Download current artwork as PNG"><span class="command-full-label">Download </span>PNG…</button><div id="art-png-options" class="command-panel art-png-export" popover aria-label="Download PNG"><label class="field">PNG scope<select id="art-png-scope"><option value="sheet">Whole artwork / sheet</option><option value="frame">Selected frame</option></select></label><button id="art-download-png">Download PNG</button><span id="art-png-help" class="hint">Current composited pixels, including unsaved edits; native size and transparency.</span></div><div class="art-row art-tools"><div class="art-row color-controls" role="group" aria-label="Drawing color"><label class="field">Color<input id="art-color" type="color" value="#729b4f"></label><label class="field">Opacity<input title="0 = transparent, 255 = opaque" id="art-alpha" type="number" min="0" max="255" value="255"></label><button id="art-transparent" class="icon-button" aria-pressed="false" title="Toggle transparent drawing; click again to restore opacity"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-transparent"/></svg><span id="art-transparency-label">Transparent</span></button></div><div class="art-row pixel-view-controls" role="group" aria-label="Pixel view"><button id="art-pan" aria-pressed="false" title="Pan artwork (H): drag, or use arrow keys on the canvas. Also middle drag or Space+drag.">Pan</button><button id="art-fit" title="Center and fit artwork in the drawing area">Fit</button><label class="field">Zoom<select id="art-zoom"><option value="0.03125">¹⁄₃₂×</option><option value="0.0625">¹⁄₁₆×</option><option value="0.125">⅛×</option><option value="0.25">¼×</option><option value="0.5">½×</option><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option><option value="8">8×</option><option value="16" selected>16×</option><option value="32">32×</option></select></label><label><input id="art-grid" type="checkbox" checked> Pixel grid</label></div></div>
 <button id="art-palette-toggle" type="button" popovertarget="art-palette">Colors ▾</button>
 <div id="art-palette" popover="auto" aria-label="Artwork palette"><p id="art-palette-count" class="hint"></p><div id="art-swatches" class="art-swatches" aria-label="Artwork colors sorted by hue"></div></div>
 </div>
@@ -477,7 +477,7 @@
       <p id="art-draft-status" role="status"></p>
       <div class="dialog-actions"><details class="art-document-actions"><summary>Document actions</summary><div>      <button id="art-handoff-return" type="button">Return candidate to agent</button>
       <pre id="art-handoff-result" hidden></pre>
-<button id="art-download">Download work</button><button id="art-discard" class="destructive-command">Close / discard draft</button></div></details></div>
+<button id="art-download">Download work JSON</button><p class="hint">JSON preserves editable work for inspection/reconciliation. Project ZIP exports saved portable project files.</p><button id="art-discard" class="destructive-command">Close / discard draft</button></div></details></div>
     </div>
   </section>
   <section id="art-inspector-content" hidden></section>

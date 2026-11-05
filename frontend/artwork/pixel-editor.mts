@@ -1,4 +1,5 @@
 /** Artwork composition: document transitions, review/save and recovery with typed ports. */
+import { artworkPng } from './artwork-png.mts';
 import { MAX_PLACEMENTS } from './placement-limits.mts';
 import { createArtworkLayerControls } from './artwork-layer-controls.mts';
 import { paletteColors } from './artwork-palette.mts';
@@ -539,7 +540,7 @@ export function createPixelEditor({
     if (error) {
       feedback.error(text);
     } else {
-      feedback.show(text);
+      feedback.show(text, { quiet: text.startsWith('Artwork saved.') });
     }
   }
   function blocked(error: unknown) {
@@ -566,6 +567,12 @@ export function createPixelEditor({
       }
     }
     const active = session !== null && !loading;
+    button('art-download-png').disabled =
+      busy ||
+      !active ||
+      gestures.active ||
+      (select('art-png-scope').value === 'frame' && !sheetEditor.selectedFrame());
+    select('art-png-scope').options[1].disabled = !sheetEditor.selectedFrame();
     inspector.hidden = !active;
     element('art-setup', HTMLElement).hidden = active || loading !== null;
     element('art-editor', HTMLElement).hidden = !active;
@@ -919,6 +926,7 @@ export function createPixelEditor({
     const result = await api('artwork-draft-list', record, {});
     const drafts = array(result.drafts, record);
     element('art-recovery', HTMLElement).hidden = drafts.length === 0;
+    element('art-recovery', HTMLDetailsElement).open = drafts.length > 0;
     element('art-drafts', HTMLElement).replaceChildren(
       ...drafts.map((d) => {
         const row = document.createElement('div'),
@@ -1049,7 +1057,6 @@ export function createPixelEditor({
     paletteSignature = '';
     describe(candidate);
     presentation.resetPanels();
-    element('art-timeline', HTMLDetailsElement).open = false;
     input('art-review-detail').checked = false;
     input('art-review-x').value = '0';
     input('art-review-y').value = '0';
@@ -1127,6 +1134,15 @@ export function createPixelEditor({
       tabs();
       await inventory();
       await recoveries();
+      const candidates = await api('artwork-candidate-list', record, {});
+      const count = array(candidates.candidates, record).filter((item) => !item.error).length;
+      const handoff = element('art-handoff', HTMLDetailsElement);
+      const summary = handoff.querySelector('summary');
+      if (summary) {
+        summary.textContent = count ? `Agent candidates (${count} available)` : 'Agent candidates';
+      }
+      handoff.open = count > 0;
+      handoff.classList.toggle('has-candidates', count > 0);
       controls();
       presentation.prepareIdentity();
     });
@@ -1591,6 +1607,35 @@ export function createPixelEditor({
     controls();
     message('Closing cancelled. Continue editing or save normally.');
   });
+  lifetime.assign(select('art-png-scope'), 'onchange', controls);
+  lifetime.assign(button('art-download-png'), 'onclick', () => {
+    if (!session || busy || gestures.active) {
+      return;
+    }
+    const model = session.model;
+    const frame = select('art-png-scope').value === 'frame' ? sheetEditor.selectedFrame() : null;
+    if (select('art-png-scope').value === 'frame' && !frame) {
+      return;
+    }
+    const bounds = frame ?? { x: 0, y: 0, width: model.width, height: model.height };
+    const safe = (value: string) =>
+      value.replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-|-$/g, '') || 'artwork';
+    const name = `${safe(model.descriptor.atlas_id)}-${frame ? safe(frame.id) : 'sheet'}.png`;
+    const acknowledgment = feedback.capture();
+    void artworkPng(model.composite(), model.width, bounds)
+      .then((blob) => {
+        if (lifetime.disposed) {
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = name;
+        anchor.click();
+        lifetime.revokeLater(url);
+      })
+      .catch((error: unknown) => acknowledgment.error(error));
+  });
   lifetime.assign(button('art-download'), 'onclick', () => {
     if (session) {
       download(session.downloadWork(), 'artwork-work.json');
@@ -1755,7 +1800,11 @@ export function createPixelEditor({
   surface.addEventListener(
     'keydown',
     (event) => {
-      if (element('art-palette', HTMLElement).matches(':popover-open')) {
+      if (
+        event.defaultPrevented ||
+        event.isComposing ||
+        document.querySelector('dialog[open], [popover]:popover-open:not(.notifications)')
+      ) {
         return;
       }
       if (event.key === 'Escape' && gestures.active) {
@@ -1778,6 +1827,46 @@ export function createPixelEditor({
         event.target instanceof HTMLTextAreaElement
       ) {
         return;
+      }
+      if (
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.altKey &&
+        !gestures.active &&
+        !(
+          event.target instanceof Element &&
+          event.target.closest('button, a, [contenteditable]:not([contenteditable="false"])')
+        )
+      ) {
+        const tools: Record<string, string> = {
+          p: 'pencil',
+          e: 'erase',
+          f: 'fill',
+          s: 'select',
+          i: 'pick',
+          l: 'line',
+          r: 'rectangle',
+          m: 'move',
+        };
+        const key = event.key.toLowerCase();
+        if (key === 'h') {
+          event.preventDefault();
+          if (button('art-pan').getAttribute('aria-pressed') !== 'true') {
+            button('art-pan').click();
+          }
+          return;
+        }
+        if (tools[key]) {
+          const control = surface.querySelector<HTMLInputElement>(
+            `input[name="art-tool"][value="${tools[key]}"]`,
+          );
+          if (control && !control.disabled) {
+            event.preventDefault();
+            control.checked = true;
+            control.dispatchEvent(new Event('change'));
+          }
+          return;
+        }
       }
       if (
         ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key) &&

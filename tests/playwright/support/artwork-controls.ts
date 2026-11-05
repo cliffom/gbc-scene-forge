@@ -4,6 +4,10 @@ import { expect } from '@playwright/test';
 
 export async function revealArtworkControl(page: Page, id: string) {
   const control = page.locator('#' + id);
+  if (id === 'art-drafts') {
+    // Recovery may open automatically after the async inventory has arrived.
+    await expect(page.locator('#document-switcher')).toBeEnabled();
+  }
   if (await control.locator('xpath=ancestor::*[@id="art-layer-panel"]').count()) {
     if (!(await control.isVisible())) {
       await page.locator('#art-layers-toggle').click();

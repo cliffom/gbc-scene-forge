@@ -34,6 +34,39 @@ reported problem before leaving the document.
 Artwork review and save retries share their feedback across keyboard shortcuts
 and buttons: repeated failures keep one card, and a successful retry clears it.
 
+## Drawing space, shortcuts and PNG downloads
+
+The frame dock starts collapsed for drawing. The frame selector and **Sheet / Frame**
+drawing scope stay above the canvas. Choose **Edit animation…** to expand frame and
+timing controls, then collapse **Frames & animation** to return to drawing.
+Deliberate dock/timeline and Library/Inspector visibility choices last for this
+mounted editor, across scene/artwork and retained-document transitions; reloading
+resets them. They do not enter Undo history. Review explicitly reveals the Inspector.
+Closing the dock or animation disclosure stops playback.
+
+**Keyboard help** above the workbench lists commands and pane controls.
+With canvas focus, **P** selects Paint/Pencil, **E** Erase, **F** Fill,
+**S** Select and **H** Pan in either domain. Artwork also supports **I** Eyedropper,
+**L** Line, **R** Rectangle and **M** Move selection. Native tool-radio arrows,
+text fields, dialogs and popovers retain their own keys; movement preview owns
+its input while active. Tooltips show the letters.
+
+Open **Download PNG…** beside the drawing tools, choose **PNG scope → Whole
+artwork / sheet** or **Selected frame**, then **Download PNG**. The frame option requires a native
+sheet frame selection; a single image offers whole artwork only. This downloads
+current composited RGBA, including unsaved edits and visible native layers, at
+native dimensions with transparency. It excludes viewport decorations, grids,
+onion skins and selection outlines. Filenames use the asset identity plus
+`sheet` or the frame identity. This is a static PNG, not animation or layered
+interchange. Downloading leaves pixels, history, review, saved revisions and
+recovery state intact.
+
+**Document actions → Download work JSON** retains editable descriptors and pixels
+for inspection/reconciliation. **Project tools → Export → Whole project** downloads
+saved portable project files as ZIP. Neither is required for PNG download.
+Routine open/save acknowledgments appear in the status area below the editor;
+warnings and persistent errors keep their prominent notification controls.
+
 ## Shared editor workspace
 
 Artwork opens in the same central workbench as scenes. Its name appears in the

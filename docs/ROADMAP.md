@@ -13,11 +13,10 @@ Validation gaps live in the [single remaining-check list](VALIDATION.md#remainin
 ## Editor discovery, scope and working space (milestone 24)
 
 [Milestone 24](https://github.com/cliffom/gbc-scene-forge/milestone/24) follows the
-[November baseline](evaluations/usability-review-2026-11.md). The P1 increment
-(#225–#227) addresses browsing, saved-scene discovery and named-pose scope.
-P2 work (#228–#234) covers retained dock/layout choices, tool shortcuts, routine
-feedback, goal-based starts, stamp creation, Inspector priorities and PNG download.
-Integrated follow-up remains #224; participant work remains #165/#166.
+[November baseline](evaluations/usability-review-2026-11.md). The prepared combined
+increment covers P2 #228–#234. Integrated synthetic validation belongs to #224;
+independent discovery observations and participant-supported follow-up remain
+#165/#166. See the [validation record](VALIDATION.md) for measured scope and limits.
 
 ## Constrained palette reduction (milestone 23)
 

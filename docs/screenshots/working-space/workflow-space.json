@@ -1,0 +1,35 @@
+{
+  "1440": {
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "heights": {
+      "drawing": 452,
+      "animation": 254,
+      "review": 491.5
+    }
+  },
+  "1280": {
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "heights": {
+      "drawing": 352,
+      "animation": 160,
+      "review": 391.5
+    }
+  },
+  "800": {
+    "viewport": {
+      "width": 800,
+      "height": 640
+    },
+    "heights": {
+      "drawing": 158.5,
+      "animation": 150,
+      "review": 208
+    }
+  }
+}

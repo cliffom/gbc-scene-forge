@@ -213,7 +213,7 @@ p.scenes.save(sys.argv[2],loaded['scene'],loaded['revision'],p.catalog()['revisi
         await expect(page.locator('#artwork-heading')).toHaveText(`Library ${index}`);
         await expect(page.locator('#art-canvas')).toBeVisible();
         await page.locator('#art-frame-view').click();
-        await page.locator('#art-timeline summary').first().click();
+        await page.locator('#art-show-animation').click();
         await page.locator('#art-play').click();
         await expect(page.locator('#art-animation-status')).toContainText('frame');
         await page.locator('#art-play').click();

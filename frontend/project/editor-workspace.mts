@@ -442,15 +442,17 @@ export function createWorkspaceController({
     event.preventDefault();
     void ports.run(async () => {
       const continuingGuide = input('continue-guide').checked;
-      const startingBlockout = select('project-starter').value === 'blockout';
+      const goal = select('project-starter').value;
+      const startingBlockout = goal === 'blockout';
+      const startingAction = goal === 'artwork' || goal === 'import' ? goal : '';
       const result = await api('create-project', record, {
         name: input('project-title').value,
-        starter: select('project-starter').value,
+        starter: startingAction ? 'empty' : goal,
       });
       if (workspaceState.choosingProject) {
         workspaceState.navigating = true;
         location.assign(
-          `/projects/${encodeURIComponent(string(result.directory))}/${startingBlockout ? '?blockout=1' : continuingGuide ? '?guide=1' : ''}`,
+          `/projects/${encodeURIComponent(string(result.directory))}/${startingBlockout ? '?blockout=1' : startingAction ? `?start=${startingAction}` : continuingGuide ? '?guide=1' : ''}`,
         );
         return;
       }
@@ -461,6 +463,10 @@ export function createWorkspaceController({
       if (startingBlockout) {
         editorLayout.showLibrary('blockout');
         ports.blockoutView.showCreate();
+      } else if (startingAction) {
+        lifetime.frame(() =>
+          button(startingAction === 'artwork' ? 'show-artwork' : 'library-import').click(),
+        );
       } else if (continuingGuide) {
         firstSceneGuide.continueInProject();
       }

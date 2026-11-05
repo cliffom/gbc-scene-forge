@@ -43,6 +43,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Evaluations
 
+- [Drawing space, task entry and native PNG downloads (#228–#234)](evaluations/working-space.md)
 - [Editor usability: discovery, scope and working space (2026-11)](evaluations/usability-review-2026-11.md)
 
 - [MCP illustration preparation, lifecycle and batch measurements (#201)](evaluations/illustration-production.md)
@@ -79,6 +80,8 @@ Test ownership and commands are in [test organization](../tests/README.md).
 - [Artwork opening and layered visibility (#202, #207)](evaluations/artwork-opening.md)
 
 ## Release notes
+
+- [Scene Forge 0.39.0](RELEASE-0.39.0.md) — drawing space, consistent tools and native PNG downloads.
 
 - [Scene Forge 0.38.0](RELEASE-0.38.0.md) — discover saved scenes, browse artwork and target named poses.
 - [Scene Forge 0.37.0](RELEASE-0.37.0.md) — close active scenes and artwork safely.

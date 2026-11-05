@@ -1073,6 +1073,7 @@ p.scenes.save(s['id'],s['scene'],s['revision'],p.catalog()['revision'])
   await page.locator('input[name=tool][value=select]').check();
   await page.locator('.layer-choice').filter({ hasText: 'Sprites' }).click();
   await paint(page, 38, 30);
+  await page.locator('#selection-secondary > summary').click();
   await page.locator('#convert-sprites').click();
   await expect(page.locator('#conversion-dialog')).toBeVisible();
   await page.locator('#conversion-target').selectOption('scenery_actor/artwork_tiles');
@@ -1138,6 +1139,7 @@ p.scenes.save(s['id'],s['scene'],s['revision'],p.catalog()['revision'])
   await paint(page, 792, 792);
   await page.keyboard.up('Shift');
   await expect(page.locator('#selection-name')).toHaveText('2 objects selected');
+  await page.locator('#selection-secondary > summary').click();
   await page.locator('#convert-sprites').click();
   await page.locator('#conversion-target').selectOption('scenery/tiles');
   await page.locator('#conversion-static').check();
