@@ -15,7 +15,7 @@ def result(error=None):
 
 class ToolBusyRetryTests(unittest.IsolatedAsyncioTestCase):
     async def test_busy_retries_keep_identical_arguments_and_revision_fences(self):
-        for code in ("invalid_request", "conflict"):
+        for code in ("invalid_request", "conflict", "busy"):
             with self.subTest(code=code):
                 busy = {"error": {**BUSY_ERROR["error"], "code": code}}
                 saved = result()
@@ -35,6 +35,7 @@ class ToolBusyRetryTests(unittest.IsolatedAsyncioTestCase):
             {"error": {"code": "invalid_request", "message": "Invalid object"}},
             {"error": {"code": "conflict", "message": BUSY_ERROR["error"]["message"] + "?"}},
             {"error": {"code": "unknown", "message": BUSY_ERROR["error"]["message"]}},
+            {"error": {"code": "busy", "message": "Scene changed"}},
             None,
         ):
             with self.subTest(error=error):
@@ -44,7 +45,7 @@ class ToolBusyRetryTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(client.call_tool.await_count, 1)
 
     async def test_busy_exhaustion_remains_an_error(self):
-        for code in ("invalid_request", "conflict"):
+        for code in ("invalid_request", "conflict", "busy"):
             with self.subTest(code=code):
                 response = result({"error": {**BUSY_ERROR["error"], "code": code}})
                 client = SimpleNamespace(call_tool=AsyncMock(return_value=response))

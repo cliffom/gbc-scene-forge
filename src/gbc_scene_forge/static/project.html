@@ -381,6 +381,12 @@
     <div class="dialog-actions"><button id="conversion-close">Cancel</button><button id="conversion-review">Review mapping</button><button id="conversion-save" disabled>Replace reviewed placements</button></div>
   </dialog>
   <section id="artwork-surface" class="editor-surface" aria-labelledby="artwork-heading" hidden>
+    <div id="art-sync" class="art-sync" hidden>
+      <span id="art-sync-status" role="status" aria-live="polite"></span>
+      <button id="art-sync-load" hidden>Load latest…</button>
+      <button id="art-sync-download" hidden>Download work</button>
+      <button id="art-sync-retry" hidden>Retry</button>
+    </div>
     <div id="art-loading" class="art-loading" hidden>
       <p id="art-loading-status" role="status" aria-live="polite"></p>
       <p id="art-loading-help" class="hint">Your open documents are retained.</p>
@@ -685,6 +691,11 @@
       <p class="form-error error" role="alert"></p>
       <div class="dialog-actions"><button type="button" data-close="resize-scene-dialog">Cancel</button><button id="resize-confirm" class="primary">Apply resize</button></div>
     </form>
+  </dialog>
+  <dialog id="art-reload-dialog" aria-labelledby="art-reload-heading">
+    <h2 id="art-reload-heading">Load latest artwork?</h2>
+    <p>This discards this document’s manual edits, Undo/Redo history and recovery checkpoint, then loads its latest saved version. Download work first to keep a copy.</p>
+    <div class="dialog-actions"><button id="art-reload-download">Download work</button><button id="art-reload-cancel" autofocus>Keep editing</button><button id="art-reload-confirm" class="danger">Discard edits and load latest</button></div>
   </dialog>
   <dialog id="delete-scene-dialog" aria-labelledby="delete-heading">
     <form id="delete-scene-form">

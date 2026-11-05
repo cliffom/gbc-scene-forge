@@ -172,8 +172,8 @@ print(base64.b64encode(encode(16,16,bytes([71,72,73,0])*256)).decode())
   await expect(page.locator('[data-asset="agent/artwork"]')).toHaveCount(1);
   await page.locator('#project-commands').click();
   await page.locator('#check-external').click();
-  await page.locator('#art-canvas').focus();
   await expect(page.locator('[data-asset="agent/artwork"]')).toHaveCount(0);
+  await page.locator('#art-canvas').focus();
   await expect(page.locator('#art-document-state')).toHaveText('Modified');
   await expect(page.locator('#undo')).toBeEnabled();
   await page.screenshot({ path: info.outputPath('unpublished-and-saved-handoff.png') });

@@ -13,9 +13,23 @@ export function documentCaption(document: DocumentSummary) {
 }
 
 export function documentStateLabel(document: DocumentSummary) {
-  return [document.state, document.externalChanged ? 'Saved base changed externally' : '']
-    .filter(Boolean)
-    .join(' · ');
+  return [localLabel(document), externalLabel(document)].filter(Boolean).join(' · ');
+}
+
+function localLabel(document: DocumentSummary) {
+  return document.kind === 'Artwork' && document.externalChanged && document.state === 'Saved'
+    ? ''
+    : document.state;
+}
+
+function externalLabel(document: DocumentSummary) {
+  return !document.externalChanged
+    ? ''
+    : document.kind === 'Artwork'
+      ? document.state === 'Modified'
+        ? 'Live updates paused · unsaved edits'
+        : 'Update available'
+      : 'Saved base changed externally';
 }
 
 export function createDocumentBar() {
@@ -31,10 +45,10 @@ export function createDocumentBar() {
       }
       trigger.title = `Documents: ${caption}`;
       trigger.disabled = disabled;
-      state.textContent = document.state;
+      state.textContent = localLabel(document);
       state.dataset.modified = String(document.state === 'Modified' || document.state === 'New');
       base.hidden = !document.externalChanged;
-      base.textContent = document.externalChanged ? 'Saved base changed externally' : '';
+      base.textContent = externalLabel(document);
     },
   };
 }

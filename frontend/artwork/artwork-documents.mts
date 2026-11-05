@@ -75,7 +75,11 @@ export function createArtworkDocuments(
       }
       for (const [id, value] of saved.values) {
         const control = document.getElementById(id) ?? surface.querySelector(id);
-        if (control instanceof HTMLInputElement || control instanceof HTMLSelectElement) {
+        if (
+          control instanceof HTMLInputElement ||
+          (control instanceof HTMLSelectElement &&
+            [...control.options].some((option) => option.value === value.value))
+        ) {
           control.value = value.value;
         }
         if (control instanceof HTMLInputElement) {

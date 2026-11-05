@@ -46,6 +46,8 @@ type Source = {
 export const ARTWORK_CHECKPOINT_DEBOUNCE_MS = 350;
 /** Saved artwork inventory discovery; adoption still checks activity and revision fences. */
 export const ARTWORK_DISCOVERY_INTERVAL_MS = 2000;
+/** Suppress brief writer contention; three failed eligible checks surface inline. */
+const ARTWORK_DISCOVERY_FAILURES_BEFORE_NOTICE = 3;
 
 export function createPixelEditor({
   notifications,
@@ -100,6 +102,9 @@ export function createPixelEditor({
   let inventoryRevision = workspaceState.revision;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let paletteSignature = '';
+  let discoveryError = '';
+  let discoveryFailures = 0;
+  let savedDocumentIds: Set<string> | null = null;
   const inspector = element('art-inspector-content', HTMLElement);
   const presentationSlot = ports.presentation.contribute({
     surface,
@@ -196,6 +201,7 @@ export function createPixelEditor({
     };
   }
   function syncNavigation(sceneModified?: boolean) {
+    syncArtworkUpdates();
     const summary = presentationSlot.active
       ? session
         ? artworkSummary(session)
@@ -232,7 +238,7 @@ export function createPixelEditor({
       }),
     );
   }
-  function restore(current: ArtworkSession) {
+  function restore(current: ArtworkSession, { focus = true, preservePanels = false } = {}) {
     if (lifetime.disposed) {
       return;
     }
@@ -249,16 +255,22 @@ export function createPixelEditor({
     sheetEditor.sync(true);
     invalidate();
     message('');
-    workspace(true);
-    presentation.resetPanels();
-    describe(current.candidate);
+    if (!preservePanels) {
+      workspace(true);
+      presentation.resetPanels();
+    } else {
+      presentation.reviewPanel(false);
+    }
+    describe(current.candidate, preservePanels);
     element('artwork-heading', HTMLElement).textContent = current.model.descriptor.name;
     paletteSignature = '';
     draw();
     swatches();
     artworkViewport.restore(saved.view);
     tabs();
-    canvas.focus({ preventScroll: true });
+    if (focus) {
+      canvas.focus({ preventScroll: true });
+    }
   }
   async function suspend() {
     cancelGesture();
@@ -523,6 +535,7 @@ export function createPixelEditor({
   }
   function controls() {
     feedback.sync();
+    syncArtworkUpdates();
     if (busy) {
       element('art-palette', HTMLElement).hidePopover();
       artworkViewport.suspend();
@@ -952,6 +965,7 @@ export function createPixelEditor({
     }
     inventoryRevision = revision;
     const docs = array(result.documents, record);
+    savedDocumentIds = new Set(docs.map((d) => string(record(d.target).document_id)));
     sources = array(result.sources, record).flatMap((source) =>
       array(source.regions, record).map((region) => ({
         atlas_id: string(source.atlas_id),
@@ -1042,9 +1056,11 @@ export function createPixelEditor({
     tabs();
     canvas.focus();
   }
-  function describe(candidate: Candidate) {
-    element('art-layer-panel', HTMLElement).hidden = true;
-    button('art-layers-toggle').setAttribute('aria-expanded', 'false');
+  function describe(candidate: Candidate, preservePanels = false) {
+    if (!preservePanels) {
+      element('art-layer-panel', HTMLElement).hidden = true;
+      button('art-layers-toggle').setAttribute('aria-expanded', 'false');
+    }
     element('art-handoff-result', HTMLElement).hidden = true;
     element('art-recovery', HTMLElement).hidden = true;
     element('artwork-heading', HTMLElement).textContent = candidate.descriptor.name;
@@ -1913,6 +1929,7 @@ export function createPixelEditor({
           project_revision: ack.project_revision,
         });
         current.adoptSaved(saved);
+        savedDocumentIds?.add(saved.document_id);
         session = current;
         documents.add(current, retained);
         reviewPanel(false);
@@ -1967,7 +1984,8 @@ export function createPixelEditor({
   let discovering = false;
   let discoveredRevision = '';
   let interaction = 0;
-  for (const event of ['pointerdown', 'keydown', 'input']) {
+  const pointers = new Set<number>();
+  for (const event of ['pointerdown', 'keydown', 'input', 'change', 'wheel', 'focusin']) {
     window.addEventListener(
       event,
       () => {
@@ -1976,6 +1994,171 @@ export function createPixelEditor({
       { signal: lifetime.signal, capture: true },
     );
   }
+  window.addEventListener('pointerdown', (event) => pointers.add(event.pointerId), {
+    signal: lifetime.signal,
+    capture: true,
+  });
+  for (const event of ['pointerup', 'pointercancel'] as const) {
+    window.addEventListener(event, (event) => pointers.delete(event.pointerId), {
+      signal: lifetime.signal,
+      capture: true,
+    });
+  }
+  window.addEventListener(
+    'blur',
+    () => {
+      interaction++;
+      pointers.clear();
+    },
+    {
+      signal: lifetime.signal,
+    },
+  );
+
+  function syncArtworkUpdates() {
+    const saved = session?.original.operation === 'edit';
+    const missing =
+      saved && session && savedDocumentIds && !savedDocumentIds.has(session.original.document_id);
+    const stale = saved && session?.externalChanged;
+    const text =
+      discoveryError ||
+      (missing
+        ? 'This artwork is no longer available. Your open version is preserved; download work to keep a copy.'
+        : stale
+          ? session?.changed
+            ? 'Live updates paused · unsaved edits. Download work to keep a copy, or load the latest saved version.'
+            : input('auto-refresh').checked
+              ? ''
+              : 'A newer version is available. Load the latest saved version.'
+          : '');
+    element('art-sync', HTMLElement).hidden = !text;
+    element('art-sync-status', HTMLElement).textContent = text;
+    button('art-sync-load').hidden = !stale || !!missing;
+    button('art-sync-load').disabled = busy;
+    button('art-sync-load').textContent = session?.changed ? 'Load latest…' : 'Load latest';
+    button('art-sync-download').hidden = !session || (!stale && !discoveryError && !missing);
+    button('art-sync-download').disabled = busy;
+    button('art-sync-retry').hidden = !discoveryError;
+    button('art-sync-retry').disabled = busy;
+  }
+
+  async function loadLatest(current: ArtworkSession, eligible: () => boolean, discard = false) {
+    if (current.original.operation !== 'edit') {
+      return;
+    }
+    const canApply = () => eligible() && (discard || (!current.changed && !current.uncheckpointed));
+    if (!canApply()) {
+      return;
+    }
+    const project = await api('project', record);
+    if (!canApply()) {
+      return;
+    }
+    const listing = await api('artwork-list', record, { project_revision: project.revision });
+    if (!canApply()) {
+      return;
+    }
+    const entry = array(listing.documents, record).find(
+      (d) =>
+        record(d.target).document_id === current.original.document_id &&
+        record(d.target).atlas_id === current.original.atlas_id,
+    );
+    if (!entry) {
+      savedDocumentIds?.delete(current.original.document_id);
+      syncArtworkUpdates();
+      return;
+    }
+    const next = await api('artwork-open', decodeCandidate, {
+      target: entry.target,
+      project_revision: project.revision,
+      artwork_revision: entry.artwork_revision,
+    });
+    if (!canApply()) {
+      return;
+    }
+    const latest = await api('revisions', record);
+    if (!canApply() || latest.revision !== next.project_revision) {
+      return;
+    }
+    // Retire only this session's checkpoint after staging and revalidating all
+    // reads. A clean automatic refresh never races uncertain/queued local work.
+    const alreadyBusy = busy;
+    busy = true;
+    controls();
+    // Stop the debounce before removeCheckpoint drains already-queued writes;
+    // otherwise it can enqueue a new write while checkpoint deletion awaits.
+    lifetime.cancelTimeout(timer);
+    timer = undefined;
+    try {
+      await current.removeCheckpoint();
+    } finally {
+      busy = alreadyBusy;
+      if (!lifetime.disposed) {
+        controls();
+      }
+    }
+    if (!canApply()) {
+      return;
+    }
+    // There are no awaits between the final fence and replacement. External
+    // content gets a fresh model/history; old Undo/Redo cannot replay over it.
+    remember();
+    const retained = documents.get(current);
+    const replacement = new ArtworkSession(next, api);
+    if (
+      current.model.activeLayer &&
+      next.descriptor.layers?.items.some((l) => l.id === current.model.activeLayer)
+    ) {
+      replacement.model.selectLayer(current.model.activeLayer);
+    }
+    documents.remove(current);
+    documents.add(replacement, retained ? { ...retained, session: replacement } : undefined);
+    restore(replacement, { focus: false, preservePanels: true });
+    discoveryError = '';
+    discoveryFailures = 0;
+    syncArtworkUpdates();
+  }
+
+  const reloadDialog = element('art-reload-dialog', HTMLDialogElement);
+  let reloadSession: ArtworkSession | null = null;
+  for (const id of ['art-sync-download', 'art-reload-download']) {
+    lifetime.assign(button(id), 'onclick', () => {
+      if (session) {
+        download(session.downloadWork(), 'artwork-work.json');
+      }
+    });
+  }
+  function reloadArtwork() {
+    const current = session;
+    if (!current) {
+      return;
+    }
+    void execute(async () => {
+      await loadLatest(
+        current,
+        () => !lifetime.disposed && session === current && presentationSlot.active,
+        true,
+      );
+    }, 'reload-artwork');
+  }
+  lifetime.assign(button('art-sync-load'), 'onclick', () => {
+    if (session?.changed || session?.uncheckpointed) {
+      reloadSession = session;
+      reloadDialog.showModal();
+    } else {
+      reloadArtwork();
+    }
+  });
+  lifetime.assign(button('art-reload-cancel'), 'onclick', () => reloadDialog.close());
+  lifetime.assign(button('art-reload-confirm'), 'onclick', () => {
+    reloadDialog.close();
+    if (session === reloadSession) {
+      reloadArtwork();
+    }
+    reloadSession = null;
+  });
+  lifetime.cleanup(() => reloadDialog.close());
+  lifetime.assign(button('art-sync-retry'), 'onclick', () => void discover(true));
   async function discover(manual = false) {
     const generation = interaction;
     const current = session;
@@ -1985,7 +2168,9 @@ export function createPixelEditor({
       !lifetime.disposed &&
       presentationSlot.active &&
       !busy &&
+      !ports.presentation.unavailable() &&
       !gestures.active &&
+      !pointers.size &&
       (manual || input('auto-refresh').checked) &&
       document.visibilityState === 'visible' &&
       !document.querySelector('dialog:modal, [popover]:popover-open:not(.notifications)') &&
@@ -1997,24 +2182,51 @@ export function createPixelEditor({
     try {
       const data = await api('project', record);
       // The composition loads its initial catalog after mounting this controller.
-      if (!eligible() || data.revision === (discoveredRevision || workspaceState.revision)) {
-        return;
-      }
-      await ports.discovered(data, eligible);
       if (!eligible()) {
         return;
       }
-      await inventory(true, eligible);
+      if (
+        data.revision !== (discoveredRevision || workspaceState.revision) ||
+        data.revision !== inventoryRevision
+      ) {
+        await ports.discovered(data, eligible);
+        if (!eligible()) {
+          return;
+        }
+        await inventory(true, eligible);
+        if (!eligible()) {
+          return;
+        }
+        discoveredRevision = string(data.revision);
+      }
+      if (
+        current?.externalChanged &&
+        !current.changed &&
+        savedDocumentIds?.has(current.original.document_id)
+      ) {
+        await loadLatest(current, eligible);
+        if (session !== current) {
+          return;
+        }
+      }
       if (!eligible()) {
         return;
       }
+      discoveryFailures = 0;
+      discoveryError = '';
+      syncArtworkUpdates();
       if (!session) {
         controls();
       }
-      discoveredRevision = string(data.revision);
     } catch (error) {
-      if (!lifetime.disposed) {
-        message(`Library refresh unavailable. Local work kept. ${String(error)}`, true);
+      if (eligible()) {
+        // A writer may briefly hold the lock. Retry quietly before surfacing a
+        // persistent problem inline; background checks never create error toasts.
+        discoveryFailures++;
+        if (manual || discoveryFailures >= ARTWORK_DISCOVERY_FAILURES_BEFORE_NOTICE) {
+          discoveryError = `Couldn’t check for updates. Your work is preserved. ${feedbackText(error)}`;
+          syncArtworkUpdates();
+        }
       }
     } finally {
       discovering = false;
@@ -2022,6 +2234,27 @@ export function createPixelEditor({
   }
   lifetime.interval(() => void discover(), ARTWORK_DISCOVERY_INTERVAL_MS);
   window.addEventListener('focus', () => void discover(), { signal: lifetime.signal });
+  window.addEventListener('online', () => void discover(), { signal: lifetime.signal });
+  document.addEventListener(
+    'visibilitychange',
+    () => {
+      interaction++;
+      if (document.visibilityState === 'visible') {
+        void discover();
+      }
+    },
+    { signal: lifetime.signal },
+  );
+  input('auto-refresh').addEventListener(
+    'change',
+    () => {
+      syncArtworkUpdates();
+      void discover();
+    },
+    {
+      signal: lifetime.signal,
+    },
+  );
   button('check-external').addEventListener(
     'click',
     () => {

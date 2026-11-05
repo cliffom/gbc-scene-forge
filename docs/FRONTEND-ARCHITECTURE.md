@@ -315,6 +315,14 @@ retained deliberately and the bounds of current measurements.
 
 ## Artwork viewport and document navigation
 
+Artwork saved discovery also follows a clean active saved document. Reads stage a
+fresh candidate and revalidate the saved project revision and interaction/session
+fence before adoption. Replacement creates a new model/history, retires only that
+document's checkpoint and transfers retained view/control state without focusing
+the canvas. Dirty or uncertain local work blocks automatic adoption. Explicit
+Load latest confirms discard and uses the existing operation gate; background
+failure/retry status stays inline rather than entering the toast channel.
+
 `artwork/artwork-viewport.mts` owns padded scrolling, normalized per-document view
 centers, Pan/Space/middle-button input and a coalesced DOM pixel-target overlay.
 Its coordinate conversion is shared by hover and authored pointer gestures;
