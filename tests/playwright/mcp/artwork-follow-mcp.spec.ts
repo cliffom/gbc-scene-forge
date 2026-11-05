@@ -4,7 +4,7 @@ import { promisify } from 'node:util';
 import { join } from 'node:path';
 import type { Page } from '@playwright/test';
 import { test, expect } from '../support/browser-fixtures.ts';
-import { record, array } from '../../../frontend/shared/decode.mts';
+import { record, array, string } from '../../../frontend/shared/decode.mts';
 import { revealArtworkControl } from '../support/artwork-controls.ts';
 
 const execute = promisify(execFile);
@@ -325,6 +325,70 @@ test('checkpoint retirement briefly guards edits before replacing a clean docume
   await expect(page.locator('#document-state')).toHaveText('Saved');
   await expect(page.locator('#art-color')).toBeEnabled();
   await expect(page.locator('#redo')).toBeDisabled();
+});
+
+test('load latest cancels a pending checkpoint before delayed retirement', async ({
+  page,
+  workspace,
+}) => {
+  const { commit, url } = await setup(page, workspace);
+  await page.locator('#art-canvas').click({ position: { x: 10, y: 10 } });
+  await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
+  await commit([255, 0, 0, 255]);
+  await expect(page.locator('#art-sync-status')).toContainText('Live updates paused');
+  await page.clock.install();
+  await page.clock.pauseAt(new Date());
+
+  let releaseDelete!: () => void;
+  let releaseEdit!: () => void;
+  let deleting!: () => void;
+  const deleteStarted = new Promise<void>((resolve) => {
+    deleting = resolve;
+  });
+  const deleteGate = new Promise<void>((resolve) => {
+    releaseDelete = resolve;
+  });
+  const editGate = new Promise<void>((resolve) => {
+    releaseEdit = resolve;
+  });
+  let edits = 0;
+  await page.route('**/api/artwork-draft-delete', async (route) => {
+    const response = await route.fetch();
+    deleting();
+    await deleteGate;
+    await route.fulfill({ response });
+  });
+  await page.route('**/api/artwork-edit', async (route) => {
+    edits++;
+    await editGate;
+    await route.continue();
+  });
+  try {
+    await page.locator('#art-canvas').click({ position: { x: 20, y: 20 } });
+    await page.locator('#art-sync-load').click();
+    await page.locator('#art-reload-confirm').click();
+    await deleteStarted;
+    // The debounce must not start old-session work while deletion is in flight.
+    await page.clock.runFor(400);
+    releaseDelete();
+    await expect(page.locator('#document-state')).toHaveText('Saved');
+    releaseEdit();
+    await page.clock.runFor(1000);
+    expect(edits).toBe(0);
+    expect(await pixel(page)).toEqual([255, 0, 0, 255]);
+    const catalog = record(await (await page.request.get(new URL('api/project', url).href)).json());
+    const response = await page.request.post(new URL('api/artwork-draft-list', url).href, {
+      data: {},
+      headers: { 'X-Scene-Token': string(catalog.token) },
+    });
+    expect(response.ok()).toBe(true);
+    expect(record(await response.json()).drafts).toEqual([]);
+    await expect(page.locator('#undo')).toBeDisabled();
+    await expect(page.locator('#art-sync')).toBeHidden();
+  } finally {
+    releaseDelete();
+    releaseEdit();
+  }
 });
 
 test('a later MCP commit overtakes a delayed snapshot without adopting stale pixels', async ({

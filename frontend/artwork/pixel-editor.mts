@@ -1929,6 +1929,7 @@ export function createPixelEditor({
           project_revision: ack.project_revision,
         });
         current.adoptSaved(saved);
+        savedDocumentIds?.add(saved.document_id);
         session = current;
         documents.add(current, retained);
         reviewPanel(false);
@@ -2084,6 +2085,10 @@ export function createPixelEditor({
     const alreadyBusy = busy;
     busy = true;
     controls();
+    // Stop the debounce before removeCheckpoint drains already-queued writes;
+    // otherwise it can enqueue a new write while checkpoint deletion awaits.
+    lifetime.cancelTimeout(timer);
+    timer = undefined;
     try {
       await current.removeCheckpoint();
     } finally {
@@ -2106,8 +2111,6 @@ export function createPixelEditor({
     ) {
       replacement.model.selectLayer(current.model.activeLayer);
     }
-    lifetime.cancelTimeout(timer);
-    timer = undefined;
     documents.remove(current);
     documents.add(replacement, retained ? { ...retained, session: replacement } : undefined);
     restore(replacement, { focus: false, preservePanels: true });

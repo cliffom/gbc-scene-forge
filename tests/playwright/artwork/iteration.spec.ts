@@ -4,6 +4,36 @@ import { join } from 'node:path';
 import { test, expect, activateScene } from '../support/browser-fixtures.ts';
 import { revealArtworkControl, saveArtwork } from '../support/artwork-controls.ts';
 
+test('saving new artwork with automatic refresh disabled keeps its saved status', async ({
+  page,
+  workspace,
+}, info) => {
+  const root = join(workspace.folder, 'project');
+  execFileSync(workspace.python, [
+    '-I',
+    '-c',
+    'from pathlib import Path; import sys; from gbc_scene_forge.project.application import Project; Project.create(Path(sys.argv[1]), "Local artwork save")',
+    root,
+  ]);
+  await page.goto(await workspace.start(root));
+  await page.locator('#project-commands').click();
+  await page.locator('#auto-refresh').uncheck();
+  await page.locator('#project-command-panel').evaluate((node) => {
+    if (node instanceof HTMLElement) {
+      node.hidePopover();
+    }
+  });
+  await page.locator('#show-artwork').click();
+  await page.locator('#art-name').fill('Local picture');
+  await page.locator('#art-create').click();
+  await page.locator('#art-canvas').click({ position: { x: 10, y: 10 } });
+  await saveArtwork(page);
+  await expect(page.locator('#document-state')).toHaveText('Saved');
+  await expect(page.locator('#art-sync')).toBeHidden();
+  await expect(page.locator('#undo')).toBeEnabled();
+  await page.screenshot({ path: info.outputPath('local-save-refresh-disabled.png') });
+});
+
 test('layer flags preserve pending fields without applying them or leaking between layers and documents', async ({
   page,
   workspace,

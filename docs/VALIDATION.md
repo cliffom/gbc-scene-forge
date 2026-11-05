@@ -15,6 +15,26 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Artwork save status and checkpoint retirement (#221)
+
+- **Scope:** Uncommitted 0.36.1 review fixes based on `832a5a4`, checked locally
+  on 2026-11-04 with macOS arm64, Python 3.13.13, Node 24.22.1 and bundled
+  Chromium. No publication was performed.
+- **Method:** Reproduce both review findings with browser regressions before
+  applying fixes. Run `make lint test`, rebuild the frontend and exercise local
+  artwork saves, recovery, navigation and real-stdio MCP/browser acceptance.
+  Inspect the saved-artwork UI at 1440×1000 with automatic refresh disabled.
+- **Result:** Both regressions fail on the original code and pass with the fixes.
+  New artwork remains Saved without a false deletion notice and retains Undo.
+  A held checkpoint deletion response no longer allows the pending debounce to
+  recreate discarded recovery work. Lint, 487 Python tests, frontend suites,
+  53 focused artwork/recovery/navigation browser cases and all 16 MCP/browser
+  cases pass.
+- **Limits:** These are local synthetic checks and agent UI inspection. No
+  package rebuild, installed-wheel checks, non-Chromium browsers or prolonged
+  review sessions were exercised for these fixes. Existing outstanding checks
+  remain below.
+
 ## Follow saved artwork updates (#220)
 
 - **Scope:** Prepared 0.36.1 working tree based on `9d8951f`, checked locally on

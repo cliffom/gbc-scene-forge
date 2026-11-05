@@ -72,6 +72,8 @@ new saved version through the two-second check cycle. No separate review toggle
 or document/browser reload is needed. Unpublished candidates are not streamed.
 Zoom, viewport center and valid frame/layer choices survive. External adoption
 clears the document's old Undo/Redo history; your own saves retain it.
+New artwork saved in the editor is recognized immediately, including when
+Automatically refresh is off.
 
 See the saved-review layout at [desktop](../screenshots/external-refresh/live-artwork-review.png)
 and [compact](../screenshots/external-refresh/live-artwork-review-compact.png) sizes.
@@ -85,7 +87,8 @@ checkpoint work settles. Other retained documents and scene edits stay unchanged
 ![Paused artwork review with download and load-latest actions](../screenshots/external-refresh/paused-artwork-review-compact.png)
 
 Editing is briefly guarded while the old checkpoint is retired and the saved
-version is adopted, so a new edit cannot race checkpoint cleanup.
+version is adopted, so a new edit cannot race checkpoint cleanup. Discarded edits
+do not reappear in recovery after loading latest.
 Temporary read/write contention retries quietly. Persistent refresh failures show
 an inline explanation and **Retry**; successful checks clear that notice. Removed
 artwork keeps its open version with a download action. Modal dialogs, focused
