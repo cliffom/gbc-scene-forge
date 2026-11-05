@@ -1,3 +1,4 @@
+import type { CloseChoice } from '../editor/document-close.mts';
 import type { Feedback } from '../editor/editor-notifications.mts';
 import { MAX_SCENE_PIXELS, checkDimensions } from './dimensions.mts';
 import { createSceneNavigation, sceneFromPath } from './scene-navigation.mts';
@@ -24,11 +25,14 @@ import { resizeScene } from './scene-size.mts';
 import type { Endpoint } from '../world/world.mts';
 
 export interface Ports {
+  confirmClose: (name: string) => Promise<CloseChoice | null>;
+  closeDraft: (keep: boolean) => Promise<void>;
+  afterClose: () => void;
   beforeSceneChange: () => Promise<boolean>;
   beforeProjectChange: () => Promise<void>;
   discard: () => Promise<boolean>;
   run: (work: () => Promise<void> | void) => Promise<void>;
-  clearDraft: () => Promise<void>;
+  clearDraft: (strict?: boolean) => Promise<void>;
   refresh: (
     supplied?: Record<string, unknown>,
     canApply?: () => Promise<boolean>,
@@ -331,7 +335,7 @@ export function createSceneActionsController({
     }
   });
 
-  async function saveScene() {
+  async function saveScene(strictCleanup = false) {
     if (!sceneSession.editor || !sceneSession.loaded) {
       return;
     }
@@ -368,16 +372,17 @@ export function createSceneActionsController({
       confirm_broken_links: broken.length > 0,
     });
     const data = decodeLoaded(result);
-    await ports.clearDraft();
+    // Saving is already committed. Retain its revision even if checkpoint cleanup fails.
     sceneSession.loaded = data;
     brushes.stampBrush = null;
     brushes.definitionBrush = null;
     sceneSession.externalChanged = false;
     sceneSession.committed = data;
     sceneSession.baseline = sceneSession.snapshot();
-    ports.newDraftWriter();
     // A later writer's manifest must not be acknowledged without adopting it.
     workspaceState.revision = string(result.project_revision);
+    await ports.clearDraft(strictCleanup);
+    ports.newDraftWriter();
     status.show('Scene saved.');
   }
 
@@ -717,6 +722,7 @@ export function createSceneActionsController({
     sceneSession.loaded = null;
     sceneSession.editor = null;
     sceneSession.baseline = '';
+    sceneSession.externalChanged = false;
     sceneSelection.selection = null;
     sceneSelection.selectedObject = null;
     sceneSelection.selectedObjects.clear();
@@ -743,6 +749,36 @@ export function createSceneActionsController({
     ports.draw();
   }
 
+  async function requestClose() {
+    if (activity.busy || !sceneSession.loaded || gestures.anchor) {
+      return;
+    }
+    const current = sceneSession.loaded;
+    const editor = sceneSession.editor;
+    const choice = sceneSession.dirty() ? await ports.confirmClose(current.name) : 'discard';
+    if (
+      !choice ||
+      lifetime.disposed ||
+      sceneSession.editor !== editor ||
+      sceneSession.loaded?.id !== current.id ||
+      activity.busy
+    ) {
+      return;
+    }
+    await ports.run(async () => {
+      if (choice === 'save') {
+        await saveScene(true);
+      }
+      await ports.closeDraft(choice === 'keep');
+      lifetime.signal.throwIfAborted();
+      closeScene();
+      ports.afterClose();
+      status.show(
+        choice === 'keep' ? 'Scene closed. Draft available in Recover drafts.' : 'Scene closed.',
+      );
+    });
+  }
+
   function showCreate() {
     if (activity.busy) {
       return;
@@ -755,6 +791,7 @@ export function createSceneActionsController({
 
   lifetime.assign(button('empty-create'), 'onclick', showCreate);
   return {
+    requestClose,
     save: () => void ports.run(saveScene),
     requestSceneOpen,
     openInitialScene,

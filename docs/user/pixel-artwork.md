@@ -285,8 +285,8 @@ overwriting newer scene content.
 
 Completed edits checkpoint after a short debounce into the project's
 `.forge/artwork-drafts/` directory, separately from scene checkpoints. Checkpoints
-capture completed edits; unfinished or canceled gestures are excluded. Close waits
-for the current checkpoint; a failed checkpoint keeps the document open and offers
+capture completed edits; unfinished or canceled gestures are excluded. Switching or
+Keep draft and close waits for the current checkpoint; a failed checkpoint keeps the document open and offers
 **Download work**. Leaving before a checkpoint finishes prompts the browser's
 unsaved-work warning, including after Undo returns to the saved pixels while an
 older checkpoint still needs updating. Disposing an editor preserves completed checkpoints.
@@ -297,7 +297,9 @@ discard performs that check before writing or deleting; failed checks retain loc
 Choose **Browse / recover** in the Library or document switcher to see recoverable records. **Recover copy** checks the
 original saved base and opens unsaved pixels under a fresh draft identity; it
 retains the original record. **Delete checkpoint** explicitly removes a listed
-record; **Document actions → Close artwork** closes a saved document; **Discard draft…** removes a modified working record and closes it. Save and discard
+record. **Close document** (or **Document actions → Close artwork**) closes a saved
+document. Modified work offers Save, Keep draft and close, Discard and close, or
+Cancel. Discard removes the current working checkpoint. Save and discard
 of a recovered copy leave its original record available until explicitly deleted.
 Recovery restores pixels and bases, without claiming a durable undo stack.
 
@@ -349,9 +351,16 @@ existing unsaved-work confirmation; changing projects checkpoints artwork and
 retains scene Save/Discard/Keep editing choices. Reload recovery restores checkpoints,
 not the in-memory Undo stack. Up to 16 artwork documents can remain open at once.
 
-Saving retains an artwork document; **Document actions → Close artwork** closes a
-saved document and **Discard draft…** confirms removal of a modified one. Switching
-does neither. Returning clears comparison images, reference summaries and animation
+Saving normally retains an artwork document. **Close document**, beside Save,
+closes the active Scene or Artwork without deleting its saved asset. Clean documents
+close directly; modified work offers Save, Keep draft and close, Discard and close,
+or Cancel. Artwork Save and close opens the existing review: **Confirm save and close** commits
+and closes; Cancel closing or dismissing the review keeps editing open. Failed save/checkpoint operations
+leave the document open. A closed artwork leaves the retained-document chooser;
+Keep draft preserves a recoverable record, without retaining its in-memory history.
+The last retained artwork becomes active, otherwise the open scene or an empty
+scene workspace receives focus. Documents and Library entry points remain available.
+Switching does not close or discard work. Returning clears comparison images, reference summaries and animation
 reviews; Save requires a fresh review. New/Browse remain available in the chooser
 when the Library is collapsed.
 

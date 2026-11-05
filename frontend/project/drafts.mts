@@ -127,11 +127,32 @@ export class DraftWriter {
     });
     return this.pending;
   }
+  /** Confirm the latest desired snapshot before releasing an open scene. */
+  async keep() {
+    await this.flush();
+    // An uncertain older write may have been replayed first; now persist the latest edit.
+    if (this.retryValue === undefined && this.saved !== this.desired) {
+      await this.flush();
+    }
+    if (this.retryValue !== undefined || this.saved !== this.desired) {
+      throw Error(
+        'Could not confirm the recovery draft. The scene remains open; retry or save it.',
+      );
+    }
+    this.stop();
+  }
   /** Stop background work without deleting a recoverable checkpoint. */
   stop() {
     clearTimeout(this.timer);
     this.timer = undefined;
     this.stopped = true;
+  }
+  /** A failed close retains this writer, even if its own checkpoint was removed. */
+  resume() {
+    this.stopped = false;
+    if (!this.revision) {
+      this.saved = '';
+    }
   }
   async clear() {
     clearTimeout(this.timer);

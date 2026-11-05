@@ -78,6 +78,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Release notes
 
+- [Scene Forge 0.37.0](RELEASE-0.37.0.md) — close active scenes and artwork safely.
 - [Scene Forge 0.36.1](RELEASE-0.36.1.md) — follow committed updates in clean open artwork.
 - [Scene Forge 0.36.0](RELEASE-0.36.0.md) — MCP selective pixel cleanup and constraint validation.
 - [Scene Forge 0.35.0](RELEASE-0.35.0.md) — MCP draft comparison, PNG inspection and archive plans.

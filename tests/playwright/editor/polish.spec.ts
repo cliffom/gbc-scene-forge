@@ -66,6 +66,7 @@ test.describe('editor polish', () => {
     await expect(page.locator('#scene-save-state')).toHaveText('Saved');
     await expect(page.locator('.document-actions > button')).toHaveText([
       'Save scene',
+      'Close document',
       'Scene actions',
       'Project tools!',
     ]);

@@ -362,3 +362,20 @@ per mount and use the same lifetime; callback forwarding avoids sibling runtime
 controller imports. Rendering remains synchronous, resets context state and
 retains geometry checks, exact RGBA comparisons and bounded thumbnail work from
 the [responsiveness measurements](evaluations/editor-responsiveness.md).
+
+## Explicit document closure
+
+`editor/document-close.mts` owns one native confirmation and resolves a domain-neutral
+Save/Keep/Discard/Cancel choice. The shared command routes to the active domain;
+controllers recheck document identity and mounted lifetime before mutation. Scene
+closure uses strict checkpoint cleanup or confirms the latest desired snapshot
+through `DraftWriter.keep()` before stopping its writer. Failed cleanup restores
+writer ownership for retry. An acknowledged scene save updates the saved baseline
+and scene/project revisions before cleanup, so cleanup failure retains a safely
+editable saved scene. Artwork closure cancels gestures/playback, awaits its
+serialized checkpoint writer, removes only the active retained session and releases
+its raster. Save-and-close retains the existing review receipt and explicit
+confirmation; Cancel closing removes that intent. Another retained artwork is
+activated last-insertion-first, otherwise the scene/empty workspace receives focus.
+Saved assets are not deleted, unrelated document histories stay owned by their
+controllers, and scene closure commits the project URL through existing navigation.

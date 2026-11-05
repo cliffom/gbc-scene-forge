@@ -15,6 +15,59 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Document-close queued-event review fix (#223)
+
+- **Scope:** Review-fix working tree based on `78b53df`, checked on 2026-11-04
+  (2026-11-05 UTC), macOS arm64, Python 3.13.13, Node 24.22.1 and bundled Chromium.
+- **Method:** Bundle the actual close controller and editor lifetime into an
+  isolated browser harness; dispose and reopen the static dialog in one task
+  before the browser dispatches its native close event. Rebuild the frontend and
+  run close, document-navigation and editor-lifetime browser suites, plus
+  `make docs-check lint test`.
+- **Result:** The regression fails before the fix: the visible replacement
+  confirmation has already resolved to null. With the guard, it remains pending
+  until Discard resolves it correctly. All 13 selected browser cases, documentation
+  checks, lint, 487 Python tests and all frontend suites pass.
+- **Limits:** The race reproduction exercises the controller's native browser
+  events, rather than a full editor remount. Full browser, installed-wheel and
+  MCP checks were not repeated for this fix; prior results below retain their
+  original scope. Non-Chromium behavior was not checked.
+
+## Explicit document closure (#222)
+
+- **Scope:** Prepared 0.37.0 working tree based on `6d586e1`, checked locally on
+  2026-11-04 (2026-11-05 UTC) with macOS arm64, Python 3.13.13, Node 24.22.1 and
+  bundled Chromium. No tag or package publication was performed.
+- **Method:** Run `make docs-check lint test`, production `make build check-dist`,
+  regular browser acceptance and real-stdio MCP/browser acceptance. Inject failed
+  saves, checkpoint writes and deletion responses; check recovery, retained
+  histories, review confirmation, URL history, focus and final-document closure.
+  Inspect and archive the close confirmation at
+  [1440×1000](screenshots/document-close/close-confirm-desktop.png) and
+  [800×640](screenshots/document-close/close-confirm-compact.png), artwork review at
+  [1440×1000](screenshots/document-close/close-artwork-review-desktop.png) and
+  [800×640](screenshots/document-close/close-artwork-review-compact.png), and the
+  empty workspace at
+  [1440×1000](screenshots/document-close/close-empty-desktop.png) and
+  [800×640](screenshots/document-close/close-empty-compact.png).
+- **Result:** Lint, 487 Python tests and all frontend suites pass. Regular browser
+  acceptance passes 165 cases and all 16 MCP/browser cases pass. Initial checks exposed a hidden Cancel closing
+  control and a scene wrapper-identity check that ignored valid close choices;
+  both were corrected. Existing document-bar and dirty artwork-discard browser
+  expectations were updated for the new controls. A separate regression reproduced
+  stale scene save state after successful persistence followed by failed checkpoint
+  cleanup; the editor now adopts the confirmed save revision before cleanup.
+  After that fix and the already-reviewed artwork-confirmation guard, final lint,
+  production distributions and seven installed-wheel smoke cases pass. All 23
+  installed-wheel browser cases pass, including all 11 document-navigation cases,
+  scene URL history, standalone save/reopen, recovery and first use.
+- **Limits:** Twelve opt-in profiling cases were skipped. These are local synthetic
+  checks and agent UI inspection, not independent-user usability evidence. The
+  archived screenshots and full regular-browser pass precede the final save-revision
+  and already-reviewed artwork-confirmation fixes. Python 3.14, Windows,
+  non-Chromium browsers and official Tiled/rasterizer applications were not checked
+  locally. Existing outstanding checks remain below.
+
 ## Artwork save status and checkpoint retirement (#221)
 
 - **Scope:** Uncommitted 0.36.1 review fixes based on `832a5a4`, checked locally

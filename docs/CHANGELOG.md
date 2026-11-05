@@ -6,6 +6,13 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.37.0 — Close active documents
+
+[Release notes](RELEASE-0.37.0.md). Close the active scene or artwork from the
+shared document bar. Save, retain a recovery draft, explicitly discard or cancel
+modified work; artwork keeps its review-and-confirm flow. Closing preserves saved
+assets and unrelated retained documents. Publication is separate.
+
 ## 0.36.1 — Follow saved artwork updates
 
 [Release notes](RELEASE-0.36.1.md). Clean open artwork follows committed MCP

@@ -133,6 +133,7 @@ print(base64.b64encode(encode(16,16,bytes([71,72,73,0])*256)).decode())
   // Open the saved revision explicitly; discovery never rebases the old candidate.
   await page.locator('[data-asset="agent/artwork"]').click();
   await (await revealArtworkControl(page, 'art-discard')).click();
+  await page.locator('#close-document-discard').click();
   await page.locator('[data-asset="agent/artwork"]').click();
   await expect(page.locator('#art-document-state')).toHaveText('Saved');
   await page.locator('#art-color').fill('#0000ff');

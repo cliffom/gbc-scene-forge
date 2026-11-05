@@ -220,6 +220,7 @@ test('failed and delayed checkpoints guard scene and project departures and pres
   await page.locator('#document-switcher').click();
   await page.locator('#scene-document').click();
   await expect(page.locator('#document-switcher')).toBeDisabled();
+  await expect(page.locator('#close-document')).toBeDisabled();
   // Duplicate navigation while a write is pending cannot start another transition.
   await page.locator('#scene-document').dispatchEvent('click');
   release();
@@ -298,4 +299,250 @@ test('Documents releases a captured scene pan and stops outgoing artwork playbac
   await chooseArtwork(page, 'Player');
   await (await revealArtworkControl(page, 'art-play')).waitFor({ state: 'visible' });
   await expect(page.locator('#art-play')).toHaveText('Play');
+});
+
+test('Close document releases clean scenes and artwork, preserves assets and restores retained context', async ({
+  page,
+  workspace,
+}, info) => {
+  const { ids, url } = await setup(page, workspace);
+  await openGrass(page);
+  await page.locator('[data-asset="player/f0"]').click();
+  await page.locator('#art-frame').selectOption('f1');
+  await page.locator('#close-document').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#document-switcher')).toHaveText('Grass · Artwork ▾');
+  await expect(page.locator('#art-canvas')).toBeFocused();
+  await expect(page.locator('#artwork-documents button')).toHaveCount(1);
+  await activateScene(page);
+  await page.locator('#close-document').click();
+  await expect(page).toHaveURL(url);
+  await expect(page.locator('#document-switcher')).toHaveText('Grass · Artwork ▾');
+  await page.locator('#close-document').click();
+  await expect(page.locator('#empty-scene')).toBeVisible();
+  await expect(page.locator('#close-document')).toBeDisabled();
+  await expect(page.locator('#artwork-documents button')).toHaveCount(0);
+  await expect(page.locator('#viewport')).toBeFocused();
+  await page.screenshot({ path: info.outputPath('close-empty-desktop.png') });
+  await page.setViewportSize({ width: 800, height: 640 });
+  await page.screenshot({ path: info.outputPath('close-empty-compact.png') });
+  await chooseSavedScene(page, ids[0]);
+  await openGrass(page);
+  await expect(page.locator('#document-state')).toHaveText('Saved');
+  await page.locator('#close-document').click();
+  await expect(page.locator('#document-switcher')).toHaveText('Workshop · Scene ▾');
+  await page.goBack();
+  await expect(page.locator('#empty-scene')).toBeVisible();
+  await page.goForward();
+  await expect(page.locator('#document-switcher')).toHaveText('Workshop · Scene ▾');
+});
+
+test('dirty scene close protects cancel, failed save/checkpoint and recoverable drafts', async ({
+  page,
+  workspace,
+}, info) => {
+  const { ids } = await setup(page, workspace);
+  await paint(page, 20, 20);
+  await page.locator('#close-document').click();
+  await expect(page.locator('#close-document-cancel')).toBeFocused();
+  await page.screenshot({ path: info.outputPath('close-confirm-desktop.png') });
+  await page.setViewportSize({ width: 800, height: 640 });
+  await page.screenshot({ path: info.outputPath('close-confirm-compact.png') });
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#document-state')).toHaveText('Modified');
+  await expect(page.locator('#close-document')).toBeFocused();
+  await page.route('**/api/save-scene', (route) =>
+    route.fulfill({ status: 400, json: { error: 'save unavailable' } }),
+  );
+  await page.locator('#close-document').click();
+  await page.locator('#close-document-save').click();
+  await expect(page.locator('#status')).toContainText('save unavailable');
+  await expect(page.locator('#document-state')).toHaveText('Modified');
+  await page.unroute('**/api/save-scene');
+  await page.route('**/api/checkpoint-draft', (route) =>
+    route.fulfill({ status: 400, json: { error: 'disk full' } }),
+  );
+  await page.locator('#close-document').click();
+  await page.locator('#close-document-keep').click();
+  await expect(
+    page.locator('.notification-message').filter({ hasText: 'Could not confirm' }),
+  ).toBeVisible();
+  await expect(page.locator('#document-state')).toHaveText('Modified');
+  await page.unroute('**/api/checkpoint-draft');
+  await page.locator('#close-document').click();
+  await page.locator('#close-document-keep').click();
+  await expect(page.locator('#empty-scene')).toBeVisible();
+  await chooseSavedScene(page, ids[0]);
+  await expect(page.locator('#recovery-dialog')).toBeVisible();
+  await page.locator('#recovery-restore').click();
+  await expect(page.locator('#document-state')).toHaveText('Modified');
+  await page.locator('#close-document').click();
+  await page.locator('#close-document-save').click();
+  await expect(page.locator('#empty-scene')).toBeVisible();
+  await chooseSavedScene(page, ids[0]);
+  await expect(page.locator('#document-state')).toHaveText('Saved');
+  await expect(page.locator('#recovery-dialog')).not.toBeVisible();
+});
+
+test('artwork close keeps recoverable work and unrelated dirty scene and artwork histories', async ({
+  page,
+  workspace,
+}) => {
+  await setup(page, workspace);
+  await paint(page, 20, 20);
+  await openGrass(page);
+  await page.locator('#art-color').fill('#cc7744');
+  await page.locator('#art-canvas').click({ position: { x: 24, y: 24 } });
+  await page.locator('[data-asset="player/f0"]').click();
+  await page.locator('#art-color').fill('#00aa55');
+  await page.locator('#art-canvas').click({ position: { x: 24, y: 24 } });
+  await page.locator('#close-document').click();
+  await page.locator('#close-document-cancel').click();
+  await expect(page.locator('#document-state')).toHaveText('Modified');
+  await page.route('**/api/artwork-draft-write', (route) =>
+    route.fulfill({ status: 400, json: { error: 'checkpoint unavailable' } }),
+  );
+  await page.locator('#close-document').click();
+  await page.locator('#close-document-keep').click();
+  await expect(page.locator('#art-message')).toContainText('checkpoint unavailable');
+  await expect(page.locator('#document-switcher')).toHaveText('Player · Artwork ▾');
+  await page.unroute('**/api/artwork-draft-write');
+  await page.locator('#close-document').click();
+  await page.locator('#close-document-keep').click();
+  await expect(page.locator('#document-switcher')).toHaveText('Grass · Artwork ▾');
+  await expect(page.locator('#document-state')).toHaveText('Modified');
+  await expect(page.locator('#undo')).toBeEnabled();
+  await activateScene(page);
+  await expect(page.locator('#document-state')).toHaveText('Modified');
+  await expect(page.locator('#undo')).toBeEnabled();
+  await page.locator('#art-browse').click();
+  await expect(page.locator('#art-recovery')).toContainText('Player');
+  await page.locator('#art-recovery button').filter({ hasText: 'Recover copy' }).first().click();
+  await expect(page.locator('#document-state')).toHaveText('Modified');
+  await page.locator('#close-document').click();
+  await page.locator('#close-document-discard').click();
+  await expect(page.locator('#artwork-documents button')).toHaveCount(1);
+});
+
+test('artwork Save and close requires exact review and successful save; cancelling closing retains work', async ({
+  page,
+  workspace,
+}, info) => {
+  await setup(page, workspace);
+  await openGrass(page);
+  await page.locator('#art-color').fill('#cc7744');
+  await page.locator('#art-canvas').click({ position: { x: 24, y: 24 } });
+  await page.locator('#close-document').click();
+  await page.locator('#close-document-save').click();
+  await expect(page.locator('#save')).toHaveText('Confirm save and close');
+  await expect(page.locator('#art-cancel-close')).toBeVisible();
+  await page.screenshot({ path: info.outputPath('close-artwork-review-desktop.png') });
+  await page.setViewportSize({ width: 800, height: 640 });
+  await page.screenshot({ path: info.outputPath('close-artwork-review-compact.png') });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.route('**/api/artwork-save', (route) =>
+    route.fulfill({ status: 409, json: { error: 'revision conflict' } }),
+  );
+  await page.locator('#save').click();
+  await expect(page.locator('#art-message')).toContainText('revision conflict');
+  await expect(page.locator('#document-state')).toHaveText('Modified');
+  await page.unroute('**/api/artwork-save');
+  await page.locator('#art-cancel-close').click();
+  await expect(page.locator('#save')).toHaveText('Confirm save');
+  await page.locator('#save').click();
+  await expect(page.locator('#document-state')).toHaveText('Saved');
+  await expect(page.locator('#document-switcher')).toHaveText('Grass · Artwork ▾');
+  await page.locator('#art-canvas').click({ position: { x: 36, y: 36 } });
+  await page.locator('#close-document').click();
+  await page.locator('#close-document-save').click();
+  await expect(page.locator('#save')).toHaveText('Confirm save and close');
+  await page.locator('#save').click();
+  await expect(page.locator('#document-switcher')).toHaveText('Workshop · Scene ▾');
+  await expect(page.locator('#artwork-documents button')).toHaveCount(0);
+  await openGrass(page);
+  await expect(page.locator('#document-state')).toHaveText('Saved');
+  await page.locator('#art-color').fill('#112233');
+  await page.locator('#art-canvas').click({ position: { x: 48, y: 48 } });
+  await page.locator('#save').click();
+  await expect(page.locator('#save')).toHaveText('Confirm save');
+  await page.locator('#close-document').click();
+  await page.locator('#close-document-save').click();
+  await expect(page.locator('#save')).toHaveText('Confirm save and close');
+  await expect(page.locator('#document-state')).toHaveText('Modified');
+  await page.locator('#art-review-close').click();
+  await page.locator('#save').click();
+  await expect(page.locator('#save')).toHaveText('Confirm save');
+  await page.locator('#save').click();
+  await expect(page.locator('#document-state')).toHaveText('Saved');
+  await expect(page.locator('#document-switcher')).toHaveText('Grass · Artwork ▾');
+});
+
+test('scene save and close retains the confirmed revision if checkpoint cleanup fails', async ({
+  page,
+  workspace,
+}) => {
+  await setup(page, workspace);
+  await paint(page, 20, 20);
+  await expect(page.locator('#draft-status')).toContainText('checkpoint saved');
+  await page.route('**/api/delete-draft', (route) =>
+    route.fulfill({ status: 400, json: { error: 'cannot remove scene checkpoint' } }),
+  );
+  await page.locator('#close-document').click();
+  await page.locator('#close-document-save').click();
+  await expect(
+    page
+      .locator('.notification-message')
+      .filter({ hasText: 'cannot remove scene checkpoint' })
+      .first(),
+  ).toBeVisible();
+  await expect(page.locator('#document-state')).toHaveText('Saved');
+  await page.unroute('**/api/delete-draft');
+  await page.locator('#layer-name').fill('Continue after successful save');
+  await page.locator('#layer-name').press('Tab');
+  await expect(page.locator('#document-state')).toHaveText('Modified');
+  await page.locator('#close-document').click();
+  await page.locator('#close-document-save').click();
+  await expect(page.locator('#empty-scene')).toBeVisible();
+});
+
+test('failed checkpoint cleanup keeps Scene and Artwork open until explicit retry succeeds', async ({
+  page,
+  workspace,
+}) => {
+  await setup(page, workspace);
+  await paint(page, 20, 20);
+  await expect(page.locator('#draft-status')).toContainText('checkpoint saved');
+  await page.route('**/api/delete-draft', (route) =>
+    route.fulfill({ status: 400, json: { error: 'cannot remove scene checkpoint' } }),
+  );
+  await page.locator('#close-document').click();
+  await page.locator('#close-document-discard').click();
+  await expect(
+    page
+      .locator('.notification-message')
+      .filter({ hasText: 'cannot remove scene checkpoint' })
+      .first(),
+  ).toBeVisible();
+  await expect(page.locator('#document-state')).toHaveText('Modified');
+  await page.unroute('**/api/delete-draft');
+  await page.locator('#close-document').click();
+  await page.locator('#close-document-discard').click();
+  await expect(page.locator('#empty-scene')).toBeVisible();
+  await page.locator('[data-asset="grass/artwork"]').click();
+  await page.locator('#art-color').fill('#cc7744');
+  const checkpoint = page.waitForResponse('**/api/artwork-draft-write');
+  await page.locator('#art-canvas').click({ position: { x: 24, y: 24 } });
+  await checkpoint;
+  await page.route('**/api/artwork-draft-delete', (route) =>
+    route.fulfill({ status: 400, json: { error: 'cannot remove artwork checkpoint' } }),
+  );
+  await page.locator('#close-document').click();
+  await page.locator('#close-document-discard').click();
+  await expect(page.locator('#art-message')).toContainText('cannot remove artwork checkpoint');
+  await expect(page.locator('#document-state')).toHaveText('Modified');
+  await page.unroute('**/api/artwork-draft-delete');
+  await page.locator('#close-document').click();
+  await page.locator('#close-document-discard').click();
+  await expect(page.locator('#empty-scene')).toBeVisible();
+  await expect(page.locator('#close-document')).toBeDisabled();
 });
