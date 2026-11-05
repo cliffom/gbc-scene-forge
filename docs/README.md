@@ -81,6 +81,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Release notes
 
+- [Scene Forge 0.42.0](RELEASE-0.42.0.md) — single-row artwork tools with an overflow menu.
 - [Scene Forge 0.41.0](RELEASE-0.41.0.md) — composed artwork palettes with explicit scope.
 - [Scene Forge 0.40.0](RELEASE-0.40.0.md) — focused artwork setup and visual agent drafts.
 - [Scene Forge 0.39.0](RELEASE-0.39.0.md) — drawing space, consistent tools and native PNG downloads.

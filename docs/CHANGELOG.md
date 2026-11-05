@@ -6,6 +6,12 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.42.0 — Compact artwork toolbar
+
+[Release notes](RELEASE-0.42.0.md). Keep artwork tools on one row and move controls
+that do not fit into a keyboard-accessible overflow menu. Match Pan and Fit icons
+to scene commands and point the overflow arrow down while open. Publication is separate.
+
 ## 0.41.0 — Composed artwork palettes
 
 [Release notes](RELEASE-0.41.0.md). Inspect colors from the visible composition

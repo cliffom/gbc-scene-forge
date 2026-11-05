@@ -15,6 +15,25 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## 0.42.0 release candidate (#242 / PR #243)
+
+- **Scope:** Release preparation based on `957ff48`, checked 2026-11-05 on
+  macOS arm64 with Python 3.13.13, Node 24.22.1 and Playwright 1.64.1 Chromium.
+- **Method:** Run `make docs-check lint test`, production `make build check-dist
+  test-browser`, installed-wheel first-use acceptance, and fresh optional-MCP
+  wheel installation, package smoke, protocol tests and MCP/browser acceptance.
+  Rerun lint after updating the compact MCP test to reveal Fit through overflow.
+- **Result:** Documentation checks, lint, 490 Python tests, all TypeScript suites,
+  package metadata and seven plain installed-wheel smoke cases pass. Production
+  browser acceptance passes 194 cases with 12 optional-profile skips; installed
+  first-use passes one case. The MCP wheel passes seven smoke and 121 protocol
+  cases. Initial MCP/browser acceptance failed one compact Fit click because it
+  assumed the control stayed inline; the updated test uses the shared reveal
+  helper and all 16 cases pass.
+- **Limits:** Local Chromium evidence only. Tiled and its rasterizer are
+  unavailable on this host. Publication and fresh PyPI installation verification
+  are separate from these release-candidate checks.
+
 ## Artwork toolbar overflow (#242 / PR #243)
 
 - **Scope:** PR #243 working tree based on `d5f15df`, checked 2026-11-05 on
