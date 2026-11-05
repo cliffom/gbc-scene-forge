@@ -45,6 +45,14 @@ Dates, revisions and environments missing from the originals remain unknown.
   corrected CSS, layout assertion and refreshed captures pass all 17 focused
   setup/working-space cases, lint and rebuilt distribution checks. The full browser
   and MCP results above precede this final CSS-only presentation correction.
+  The [first CI run on that correction](https://github.com/cliffom/gbc-scene-forge/actions/runs/42056662144)
+  passed regular browsers and installed-wheel first use, then failed one MCP
+  browser case when workshop read-only review encountered a transient busy response;
+  compatibility jobs were consequently skipped. A bounded review-only retry now
+  preserves the submitted candidate/scene bases; focused regression tests confirm
+  exhaustion, unchanged arguments and no saved-write, conflict or transport retry.
+  After that correction, local lint/documentation checks, all 121 MCP tests and
+  all 16 real-MCP browser cases pass on the same macOS environment above.
 - **Limits:** Synthetic local automation and agent screenshot inspection do not
   establish independent-user discovery, accessibility conformance or physical-device
   comfort; #165/#166 remain outstanding below. Other optional profiles, official

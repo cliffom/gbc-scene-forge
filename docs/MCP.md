@@ -640,8 +640,10 @@ python examples/mcp/artwork_workshop.py --root /tmp/workshop/projects --output /
 ```
 
 Write files contain a JSON list such as `[{"x":7,"y":7,"rgba":[100,210,220,255]}]`.
-The example saves PNG resources and call transcripts, and stops on errors without
-replaying writes. Initial placement retains the reviewed scene base, advancing
+The example saves PNG resources and call transcripts. Read-only artwork review
+retries explicit busy responses at most 20 times with 50 ms delays, keeping the
+same candidate and scene bases. Conflicts, transport errors and saved writes are
+never retried. Initial placement retains the reviewed scene base, advancing
 guards only to the artwork commit's acknowledged revisions; a competing scene
 save or external map edit causes a conflict instead of being overwritten.
 Inspect the previews before deciding the next revision. It is

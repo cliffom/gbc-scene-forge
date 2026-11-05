@@ -16,6 +16,8 @@ feedback on the 0.39.0 New artwork screen.
   technical identities under **Draft details**, with retry and stale-base guidance.
 - Hide the shared editing toolbar during setup and browsing. Restore contextual
   commands when an editable document opens, preserving retained histories.
+- Let the SDK artwork workshop tolerate brief busy responses during read-only
+  review, without replaying saved writes or refreshing revision guards.
 
 ## Upgrade and compatibility
 
