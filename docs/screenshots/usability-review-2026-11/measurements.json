@@ -1,0 +1,393 @@
+{
+  "revision": "98a33d8a8e7c7c57ff0112685a2e9a7c8e6b2ed5",
+  "browser": "156.0.8078.4",
+  "deviceScaleFactor": 1,
+  "measurements": [
+    {
+      "name": "project-entry-desktop",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "drawingViewport": {
+        "x": 260,
+        "y": 211.5,
+        "width": 910,
+        "height": 560.5
+      },
+      "library": {
+        "x": 0,
+        "y": 117.5,
+        "width": 260,
+        "height": 750.5
+      },
+      "visibleAssetRows": 4,
+      "totalAssetCards": 16,
+      "firstAsset": {
+        "x": 14,
+        "y": 552.6875,
+        "width": 231,
+        "height": 72
+      },
+      "document": "Scene workspace · Scene ▾",
+      "save": "Save scene",
+      "pageOverflow": false
+    },
+    {
+      "name": "scene-chooser-desktop",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "drawingViewport": {
+        "x": 260,
+        "y": 211.5,
+        "width": 910,
+        "height": 560.5
+      },
+      "library": {
+        "x": 0,
+        "y": 117.5,
+        "width": 260,
+        "height": 750.5
+      },
+      "visibleAssetRows": 4,
+      "totalAssetCards": 16,
+      "firstAsset": {
+        "x": 14,
+        "y": 552.6875,
+        "width": 231,
+        "height": 72
+      },
+      "document": "Scene workspace · Scene ▾",
+      "save": "Save scene",
+      "pageOverflow": false
+    },
+    {
+      "name": "scene-desktop",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "drawingViewport": {
+        "x": 260,
+        "y": 245.5,
+        "width": 910,
+        "height": 526.5
+      },
+      "library": {
+        "x": 0,
+        "y": 117.5,
+        "width": 260,
+        "height": 750.5
+      },
+      "visibleAssetRows": 4,
+      "totalAssetCards": 16,
+      "firstAsset": {
+        "x": 14,
+        "y": 552.6875,
+        "width": 231,
+        "height": 72
+      },
+      "document": "Riverside · Scene ▾",
+      "save": "Save scene",
+      "pageOverflow": false
+    },
+    {
+      "name": "scene-laptop",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "drawingViewport": {
+        "x": 260,
+        "y": 245.5,
+        "width": 750,
+        "height": 398.90625
+      },
+      "library": {
+        "x": 0,
+        "y": 117.5,
+        "width": 260,
+        "height": 650.5
+      },
+      "visibleAssetRows": 2,
+      "totalAssetCards": 16,
+      "firstAsset": {
+        "x": 14,
+        "y": 552.6875,
+        "width": 231,
+        "height": 72
+      },
+      "document": "Riverside · Scene ▾",
+      "save": "Save scene",
+      "pageOverflow": false
+    },
+    {
+      "name": "scene-compact",
+      "viewport": {
+        "width": 800,
+        "height": 640
+      },
+      "drawingViewport": {
+        "x": 196,
+        "y": 241.5,
+        "width": 392,
+        "height": 243.5
+      },
+      "library": {
+        "x": 0,
+        "y": 113.5,
+        "width": 196,
+        "height": 494.5
+      },
+      "visibleAssetRows": 0,
+      "totalAssetCards": 16,
+      "firstAsset": {
+        "x": 10,
+        "y": 585.65625,
+        "width": 175,
+        "height": 72
+      },
+      "document": "Riverside · Scene ▾",
+      "save": "Save scene",
+      "pageOverflow": false
+    },
+    {
+      "name": "source-actions-laptop",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "drawingViewport": {
+        "x": 260,
+        "y": 245.5,
+        "width": 750,
+        "height": 398.90625
+      },
+      "library": {
+        "x": 0,
+        "y": 117.5,
+        "width": 260,
+        "height": 650.5
+      },
+      "visibleAssetRows": 2,
+      "totalAssetCards": 16,
+      "firstAsset": {
+        "x": 14,
+        "y": 552.6875,
+        "width": 231,
+        "height": 72
+      },
+      "document": "Riverside · Scene ▾",
+      "save": "Save scene",
+      "pageOverflow": false
+    },
+    {
+      "name": "new-artwork-laptop",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "drawingViewport": {
+        "x": 260,
+        "y": 162.5,
+        "width": 750,
+        "height": 605.5
+      },
+      "library": {
+        "x": 0,
+        "y": 117.5,
+        "width": 260,
+        "height": 650.5
+      },
+      "visibleAssetRows": 4,
+      "totalAssetCards": 16,
+      "firstAsset": {
+        "x": 14,
+        "y": 456.6875,
+        "width": 231,
+        "height": 72
+      },
+      "document": "New artwork · Artwork ▾",
+      "save": "Save artwork…",
+      "pageOverflow": false
+    },
+    {
+      "name": "artwork-laptop-default",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "drawingViewport": {
+        "x": 260,
+        "y": 255,
+        "width": 750,
+        "height": 271.5
+      },
+      "library": {
+        "x": 0,
+        "y": 117.5,
+        "width": 260,
+        "height": 650.5
+      },
+      "visibleAssetRows": 8,
+      "totalAssetCards": 16,
+      "firstAsset": {
+        "x": 14,
+        "y": -488.3125,
+        "width": 231,
+        "height": 72
+      },
+      "document": "Player poses · Artwork ▾",
+      "save": "Save artwork…",
+      "pageOverflow": false
+    },
+    {
+      "name": "artwork-laptop-dock-collapsed",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "drawingViewport": {
+        "x": 260,
+        "y": 255,
+        "width": 750,
+        "height": 399.5
+      },
+      "library": {
+        "x": 0,
+        "y": 117.5,
+        "width": 260,
+        "height": 650.5
+      },
+      "visibleAssetRows": 8,
+      "totalAssetCards": 16,
+      "firstAsset": {
+        "x": 14,
+        "y": -488.3125,
+        "width": 231,
+        "height": 72
+      },
+      "document": "Player poses · Artwork ▾",
+      "save": "Save artwork…",
+      "pageOverflow": false
+    },
+    {
+      "name": "artwork-laptop-animation",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "drawingViewport": {
+        "x": 260,
+        "y": 255,
+        "width": 750,
+        "height": 201.5
+      },
+      "library": {
+        "x": 0,
+        "y": 117.5,
+        "width": 260,
+        "height": 650.5
+      },
+      "visibleAssetRows": 8,
+      "totalAssetCards": 16,
+      "firstAsset": {
+        "x": 14,
+        "y": -488.3125,
+        "width": 231,
+        "height": 72
+      },
+      "document": "Player poses · Artwork ▾",
+      "save": "Save artwork…",
+      "pageOverflow": false
+    },
+    {
+      "name": "artwork-laptop-review",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "drawingViewport": {
+        "x": 260,
+        "y": 255,
+        "width": 750,
+        "height": 399.5
+      },
+      "library": {
+        "x": 0,
+        "y": 117.5,
+        "width": 260,
+        "height": 650.5
+      },
+      "visibleAssetRows": 8,
+      "totalAssetCards": 16,
+      "firstAsset": {
+        "x": 14,
+        "y": -488.3125,
+        "width": 231,
+        "height": 72
+      },
+      "document": "Player poses · Artwork ▾",
+      "save": "Confirm save",
+      "pageOverflow": false
+    },
+    {
+      "name": "artwork-compact",
+      "viewport": {
+        "width": 800,
+        "height": 640
+      },
+      "drawingViewport": {
+        "x": 196,
+        "y": 283,
+        "width": 392,
+        "height": 244
+      },
+      "library": {
+        "x": 0,
+        "y": 113.5,
+        "width": 196,
+        "height": 494.5
+      },
+      "visibleAssetRows": 5,
+      "totalAssetCards": 16,
+      "firstAsset": {
+        "x": 10,
+        "y": -455.34375,
+        "width": 175,
+        "height": 72
+      },
+      "document": "Player poses · Artwork ▾",
+      "save": "Save artwork…",
+      "pageOverflow": false
+    },
+    {
+      "name": "artwork-compact-panes-hidden",
+      "viewport": {
+        "width": 800,
+        "height": 640
+      },
+      "drawingViewport": {
+        "x": 24,
+        "y": 247,
+        "width": 752,
+        "height": 280
+      },
+      "library": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0
+      },
+      "visibleAssetRows": 0,
+      "totalAssetCards": 0,
+      "firstAsset": null,
+      "document": "Player poses · Artwork ▾",
+      "save": "Save artwork…",
+      "pageOverflow": false
+    }
+  ],
+  "errors": []
+}

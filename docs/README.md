@@ -43,6 +43,8 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Evaluations
 
+- [Editor usability: discovery, scope and working space (2026-11)](evaluations/usability-review-2026-11.md)
+
 - [MCP illustration preparation, lifecycle and batch measurements (#201)](evaluations/illustration-production.md)
 
 - [Human–agent artwork iteration (#189)](evaluations/artwork-iteration.md)
