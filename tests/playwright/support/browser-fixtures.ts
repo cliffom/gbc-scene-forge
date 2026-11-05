@@ -304,4 +304,8 @@ export async function activateScene(page: Page) {
     await page.locator('#document-switcher').click();
   }
   await page.locator('#scene-document').click();
+  // Switching documents checkpoints artwork asynchronously. A click completing
+  // does not mean that subsequent Library actions can run yet.
+  await expect(page.locator('#editor-layout')).toHaveAttribute('data-document', 'scene');
+  await expect(page.locator('#document-switcher')).toBeEnabled();
 }

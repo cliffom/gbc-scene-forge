@@ -504,7 +504,9 @@ test('clean close removes an older checkpoint; failed checkpoint retains local w
     }),
   );
   await draw(page, 0, 0);
-  await activateScene(page);
+  // This transition must fail, so invoke it without the successful-navigation helper.
+  await page.locator('#document-switcher').click();
+  await page.locator('#scene-document').click();
   await expect(page.locator('#artwork-surface')).toBeVisible();
   await expect(page.locator('#art-message')).toContainText('simulated disk full');
   const [download] = await Promise.all([

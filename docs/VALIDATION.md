@@ -46,7 +46,11 @@ Dates, revisions and environments missing from the originals remain unknown.
   available-space placement and scroll bounds correct that failure. Full regular
   and MCP browser passes precede a final weak-reference-only cache ownership
   cleanup; final lint, rebuilt distributions and the four installed-wheel cases
-  cover that cleanup and the archived captures.
+  cover that cleanup and the archived captures. The [first CI run](https://github.com/cliffom/gbc-scene-forge/actions/runs/42099185491)
+  passed 191 regular browser cases, then failed the retained-sheet case: its
+  Library click raced the scene transition's recovery checkpoint and was ignored.
+  The shared navigation helper now waits for the scene workspace and enabled
+  document controls before returning. Ten local repetitions of that case pass.
 - **Limits:** Synthetic automation and agent screenshot inspection do not
   establish independent-user discovery, accessibility conformance or physical-device
   comfort. The timing is one uniform Node scan, not layered browser latency or a
