@@ -19,6 +19,35 @@ export function createEditorLayout(
   const artworkOverflow = createArtworkToolbarOverflow(lifetime);
   const inspector = element('inspector-pane', HTMLElement);
   const inspectorHeading = element('inspector-heading', HTMLElement);
+  for (const section of document.querySelectorAll<HTMLDetailsElement>('.inspector-section')) {
+    const initiallyOpen = section.open;
+    section.addEventListener(
+      'toggle',
+      () => {
+        if (!section.open && section.contains(document.activeElement)) {
+          section.querySelector('summary')?.focus({ preventScroll: true });
+        }
+      },
+      { signal: lifetime.signal },
+    );
+    lifetime.cleanup(() => {
+      section.open = initiallyOpen;
+    });
+  }
+  // Mirror recovery status without introducing a second writer or failure policy.
+  const recoveryStatus = element('draft-status', HTMLElement);
+  function reflectRecovery() {
+    const text = recoveryStatus.textContent?.trim() || 'No checkpoint';
+    const summary = element('draft-recovery-summary', HTMLElement);
+    summary.textContent = text;
+    summary.title = text;
+  }
+  lifetime.observe(new MutationObserver(reflectRecovery)).observe(recoveryStatus, {
+    childList: true,
+    characterData: true,
+    subtree: true,
+  });
+  reflectRecovery();
   function inspectorScrollOffset() {
     inspector.style.scrollPaddingTop = `${inspectorHeading.offsetHeight + 8}px`;
   }
@@ -310,6 +339,14 @@ export function createEditorLayout(
       }
       if (target.closest('#inspector-pane')) {
         showPane('inspector', true);
+        for (let parent = target.parentElement; parent; parent = parent.parentElement) {
+          if (parent instanceof HTMLDetailsElement) {
+            parent.open = true;
+          }
+        }
+        if (target instanceof HTMLDetailsElement) {
+          target.open = true;
+        }
       }
       const panel = target.closest('[role=tabpanel]');
       const category = categories.find((name) => panel?.id === `${name}-panel`);

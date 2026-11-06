@@ -1,5 +1,5 @@
 import { expect, type Page } from '@playwright/test';
-import { test, editorReady, chooseSavedScene } from '../support/browser-fixtures.ts';
+import { revealControl, test, editorReady, chooseSavedScene } from '../support/browser-fixtures.ts';
 
 // The sample at 8x leaves scroll room on both axes in editing and review layouts.
 test.use({ projectMode: 'sample', viewport: { width: 1440, height: 900 } });
@@ -97,7 +97,7 @@ test('middle-button pan preserves tools, clean/dirty content and history in edit
 
   await page.locator('input[name=tool][value=paint]').check();
   const originalName = await page.locator('#layer-name').inputValue();
-  await page.locator('#layer-name').fill('Middle pan keeps my edits');
+  await (await revealControl(page, 'layer-name')).fill('Middle pan keeps my edits');
   await page.locator('#layer-name').press('Tab');
   await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
   const dirty = await authoredState(page);

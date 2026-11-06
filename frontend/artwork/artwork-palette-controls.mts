@@ -1,5 +1,5 @@
 /** Mounted palette inspection. Uses the shared raster and scans only on demand. */
-import { button, element, select } from '../editor/editor-dom.mts';
+import { button, element, input, select } from '../editor/editor-dom.mts';
 import type { EditorLifetime } from '../editor/editor-lifetime.mts';
 import { paletteColors } from './artwork-palette.mts';
 import type { ArtworkRaster } from './artwork-raster.mts';
@@ -17,9 +17,10 @@ export function createArtworkPaletteControls(
   },
 ) {
   const panel = element('art-palette', HTMLElement);
+  const section = element('art-palette-section', HTMLDetailsElement);
+  const heading = element('art-palette-toggle', HTMLElement);
   const grid = element('art-swatches', HTMLElement);
   const tabs = [button('art-palette-composition'), button('art-palette-layer')];
-  let scope: 'composition' | 'layer' = 'composition';
   let dirty = true;
   let previousModel: WeakRef<PixelModel> | null = null;
   let previousKey = '';
@@ -36,15 +37,25 @@ export function createArtworkPaletteControls(
     element('art-palette-color', HTMLElement).textContent = c
       ? `RGBA ${c.join(', ')}`
       : 'Choose an opacity within 0–255';
+    element('art-palette-summary', HTMLElement).textContent = c
+      ? '#' +
+        c
+          .slice(0, 3)
+          .map((v) => v.toString(16).padStart(2, '0'))
+          .join('')
+          .toUpperCase()
+      : 'Invalid color';
     for (const swatch of grid.querySelectorAll('button')) {
       swatch.setAttribute('aria-pressed', String(swatch.dataset.rgba === signature));
     }
   }
-  function sync(opening = false) {
+  function sync() {
     const model = ports.current();
-    if (!model || (!opening && !panel.matches(':popover-open'))) {
+    reflectScope();
+    if (!model || !section.open || !panel.checkVisibility() || ports.busy()) {
       return;
     }
+    const scope = input('art-palette-mode').value;
     const view = ports.view();
     const layer = model.descriptor.layers?.items.find((item) => item.id === model.activeLayer);
     const key = JSON.stringify([
@@ -102,8 +113,6 @@ export function createArtworkPaletteControls(
             return;
           }
           ports.chooseColor(c);
-          panel.hidePopover();
-          button('art-palette-toggle').focus();
         };
         return swatch;
       }),
@@ -115,12 +124,9 @@ export function createArtworkPaletteControls(
         [...grid.querySelectorAll('button')].find((b) => b.dataset.rgba === focused) ?? tabs[0]
       ).focus();
     }
-    if (panel.matches(':popover-open')) {
-      position();
-    }
   }
   function reflectScope() {
-    const index = scope === 'composition' ? 0 : 1;
+    const index = input('art-palette-mode').value === 'composition' ? 0 : 1;
     element('art-palette-content', HTMLElement).setAttribute('aria-labelledby', tabs[index].id);
     tabs.forEach((tab, i) => {
       tab.setAttribute('aria-selected', String(i === index));
@@ -130,10 +136,9 @@ export function createArtworkPaletteControls(
   // The markup survives editor disposal; reset attributes left by the old mount.
   reflectScope();
   function changeScope(index: number) {
-    scope = index === 0 ? 'composition' : 'layer';
+    input('art-palette-mode').value = index === 0 ? 'composition' : 'layer';
     reflectScope();
     sync();
-    position();
   }
   tabs.forEach((tab, index) => {
     tab.addEventListener('click', () => changeScope(index), { signal: lifetime.signal });
@@ -159,8 +164,8 @@ export function createArtworkPaletteControls(
       if (event.key === 'Escape') {
         event.preventDefault();
         event.stopPropagation();
-        panel.hidePopover();
-        button('art-palette-toggle').focus();
+        section.open = false;
+        heading.focus();
         return;
       }
       const buttons = [...grid.querySelectorAll('button')];
@@ -168,11 +173,12 @@ export function createArtworkPaletteControls(
       if (index < 0) {
         return;
       }
+      const columns = getComputedStyle(grid).gridTemplateColumns.split(' ').length;
       const step: Record<string, number> = {
         ArrowRight: 1,
         ArrowLeft: -1,
-        ArrowDown: 12,
-        ArrowUp: -12,
+        ArrowDown: columns,
+        ArrowUp: -columns,
       };
       if (event.key in step || event.key === 'Home' || event.key === 'End') {
         event.preventDefault();
@@ -188,52 +194,10 @@ export function createArtworkPaletteControls(
     },
     { signal: lifetime.signal },
   );
-  function position(height = Math.min(480, panel.scrollHeight + 2)) {
-    const trigger = button('art-palette-toggle').getBoundingClientRect();
-    const gap = 5,
-      margin = 8;
-    const below = Math.max(0, window.innerHeight - margin - trigger.bottom - gap);
-    const above = Math.max(0, trigger.top - gap - margin);
-    const useBelow = below >= height || below >= above;
-    const available = Math.min(480, window.innerHeight - margin * 2, useBelow ? below : above);
-    // Keep the invoker clickable. Large palettes scroll in the available space
-    // instead of being clamped across their own Colors button.
-    panel.style.maxHeight = `${Math.max(0, available)}px`;
-    panel.style.left = `${Math.max(8, Math.min(trigger.left, window.innerWidth - 350))}px`;
-    const top = useBelow ? trigger.bottom + gap : trigger.top - Math.min(height, available) - gap;
-    panel.style.top = `${Math.max(margin, Math.min(top, window.innerHeight - Math.min(height, available) - margin))}px`;
-  }
-  panel.addEventListener(
-    'beforetoggle',
-    (event) => {
-      if (event.newState === 'open') {
-        sync(true);
-        position(480);
-      }
-    },
-    { signal: lifetime.signal },
-  );
-  panel.addEventListener(
-    'toggle',
-    () => {
-      if (panel.matches(':popover-open')) {
-        position();
-        tabs[scope === 'composition' ? 0 : 1].focus();
-      }
-    },
-    { signal: lifetime.signal },
-  );
-  window.addEventListener(
-    'resize',
-    () => {
-      if (panel.matches(':popover-open')) {
-        position();
-      }
-    },
-    { signal: lifetime.signal },
-  );
+  section.addEventListener('toggle', sync, { signal: lifetime.signal });
+  // Revealing a hidden Inspector must refresh an already-open palette as well.
+  lifetime.observe(new ResizeObserver(sync)).observe(panel);
   lifetime.cleanup(() => {
-    panel.hidePopover();
     grid.replaceChildren();
     previousModel = null;
   });

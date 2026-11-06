@@ -48,10 +48,9 @@ measurement, focus transfer and restoration of the original DOM positions on
 disposal; control state stays with the existing artwork owners. The layout owner
 closes the popover on document transitions.
 
-`artwork/artwork-workspace.mts` contributes layer/property/review sections and
-color assistance to the one Inspector. Layer/property sections use native
+`artwork/artwork-workspace.mts` contributes Properties/Palette/Layers and Review sections to the one Inspector. The three ordinary sections use native
 `details`/`summary` disclosures; `artwork-documents.mts` retains their open state
-alongside each document's controls. Review collapses both; reopening either exits
+alongside each document's controls. Review collapses all three; reopening any exits
 review. Restoring disclosure state does not reveal a deliberately hidden Inspector.
 `artwork/sheet-editor.mts` owns the drawing-boundary controls beside the tools and
 the bounded bottom frame/animation dock, stops playback on collapse and reuses raster stamps
@@ -357,12 +356,13 @@ frame and ResizeObserver; disposal releases them together.
 
 The pure `artwork/artwork-palette.mts` collector bounds exact RGBA colors to
 1,024 entries and sorts by hue or exact pixel frequency within a frame/sheet
-rectangle. `artwork/artwork-palette-controls.mts` owns scope, sort, native popover,
+rectangle. `artwork/artwork-palette-controls.mts` owns scope, sort, inline disclosure,
 keyboard focus and lazy invalidation. It borrows the raster's exact RGBA snapshot
 for composition colors, excluding alpha-zero pixels; selected-layer colors use
 source bytes, including hidden RGB. Completed mutations invalidate the cache;
 model identity, raster stamps, frame geometry and layer selection fence reuse.
-Closed panels and in-progress gestures never trigger collection. No canvas
+Closed panels, hidden Inspectors and in-progress gestures never trigger collection.
+A ResizeObserver refreshes an open Palette when the Inspector becomes visible. No canvas
 readback, additional composition or pixel mutation is needed for palette inspection.
 Main artwork backing surfaces stay within 4,194,304 pixels and 4,096 per axis,
 independently of CSS zoom; a CSS overlay draws the zoomed grid when needed.
@@ -373,7 +373,7 @@ independently of CSS zoom; a CSS overlay draws the zoomed grid when needed.
 | --- | --- | --- |
 | `pixel-editor.mts` | Current session, busy gate, source inventory, checkpoint debounce and conversion plan. | Composes owners with fresh getters for current session/model, sheet view and selected frame. Owns API calls, error presentation, authored-change/checkpoint notification and exact save adoption. |
 | `artwork-documents.mts` | Retained session identities, input/radio/select/details snapshots and normalized viewport/Pan snapshots. Cleared on mounted disposal. | Receives the dialog and lifetime; remembers only measurable views. Creates no model, writer or timer. The composition creates sheet options, restores controls, then forces sheet callback rebinding before drawing/restoring the viewport. Save retirement removes the submitted entry before fallible adoption; successful adoption reuses its snapshot. |
-| `artwork-palette-controls.mts` | Scope/sort preference, bounded swatches and cache, popover focus/listeners. | Reads current model/view/color and the shared raster; completed edits invalidate it. Scope and color selection have no mutation port. Disposal clears the grid and model reference. |
+| `artwork-palette-controls.mts` | Scope/sort preference, bounded swatches and cache, disclosure focus/listeners. | Reads current model/view/color and the shared raster; completed edits invalidate it. Scope and color selection have no mutation port. Disposal clears the grid and model reference. |
 | `artwork-gestures.mts` | One captured pointer, start/last points, tool and original model identity. Tool values remain in the native radio group. | Receives current-model/availability getters, clamped coordinate conversion, color and narrow mutation/paint/cancellation callbacks. Pointer segments synchronously paint through the composition; completion alone notifies authored changes. Cancellation rolls back the original model and releases capture, including replacement/disposal. Listeners and captures belong to the lifetime. |
 | `artwork-rendering.mts` | Main canvas/context, dimensions and raster/overlay drawing. Disposal releases its backing surface. | Reads current model, frame view/selection, zoom and grid/onion preferences through getters. Receives the shared raster; never synchronizes sheets, checkpoints or controls itself. |
 | `artwork-raster.mts`, `sheet-editor.mts` | Exact reusable RGBA upload/cache; weak thumbnail stamps, frame/sequence binding, playback position and owned timer. | The composition synchronizes controls before rendering. During a stroke it uses pixel/thumbnail painting only; completion/cancellation performs full synchronization. Sheet mutation still enters PixelModel history through its existing port. |

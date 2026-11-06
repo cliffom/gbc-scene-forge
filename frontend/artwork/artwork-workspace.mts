@@ -11,18 +11,24 @@ export function createArtworkWorkspace(
 ) {
   const inspector = element('art-inspector-content', HTMLElement);
   for (const node of [
-    element('art-inspector-actions', HTMLElement),
-    element('art-shared', HTMLElement),
-    element('art-selection-details', HTMLElement),
-    element('art-layer-section', HTMLDetailsElement),
     element('art-properties-section', HTMLDetailsElement),
-    button('art-palette-toggle'),
-    element('art-palette', HTMLElement),
+    element('art-palette-section', HTMLDetailsElement),
+    element('art-layer-section', HTMLDetailsElement),
     element('art-review-panel', HTMLElement),
   ]) {
     const marker = document.createComment('artwork panel');
     node.before(marker);
     inspector.append(node);
+    lifetime.cleanup(() => marker.replaceWith(node));
+  }
+  for (const id of ['art-inspector-actions', 'art-shared', 'art-selection-details']) {
+    const node = element(id, HTMLElement);
+    const marker = document.createComment('artwork context');
+    node.before(marker);
+    element('art-properties', HTMLElement).insertBefore(
+      node,
+      element('art-frame-details', HTMLDetailsElement),
+    );
     lifetime.cleanup(() => marker.replaceWith(node));
   }
   element('art-editor', HTMLElement).insertBefore(
@@ -98,9 +104,10 @@ export function createArtworkWorkspace(
     if (open) {
       element('art-layer-section', HTMLDetailsElement).open = false;
       element('art-properties-section', HTMLDetailsElement).open = false;
+      element('art-palette-section', HTMLDetailsElement).open = false;
     }
   }
-  for (const id of ['art-layer-section', 'art-properties-section']) {
+  for (const id of ['art-layer-section', 'art-properties-section', 'art-palette-section']) {
     const section = element(id, HTMLDetailsElement);
     section.addEventListener(
       'toggle',
@@ -188,6 +195,9 @@ export function createArtworkWorkspace(
       if (defaultSections) {
         element('art-layer-section', HTMLDetailsElement).open = true;
         element('art-properties-section', HTMLDetailsElement).open = true;
+        element('art-palette-section', HTMLDetailsElement).open = true;
+        input('art-palette-mode').value = 'composition';
+        select('art-palette-sort').value = 'hue';
       }
     },
     get mode() {

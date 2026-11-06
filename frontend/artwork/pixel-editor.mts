@@ -181,7 +181,7 @@ export function createPixelEditor({
       ports.presentation.revealInspector();
     }
   }
-  for (const id of ['art-properties-toggle', 'art-layers-toggle']) {
+  for (const id of ['art-properties-toggle', 'art-palette-toggle', 'art-layers-toggle']) {
     element(id, HTMLElement).addEventListener(
       'click',
       () => {
@@ -365,7 +365,7 @@ export function createPixelEditor({
   const palette = createArtworkPaletteControls(lifetime, raster, {
     current: () => session?.model ?? null,
     view: () => sheetEditor.view(),
-    busy: () => busy,
+    busy: () => busy || gestures.active,
     color: () => (input('art-alpha').validity.valid ? color() : null),
     chooseColor,
   });
@@ -597,7 +597,6 @@ export function createPixelEditor({
     feedback.sync();
     syncArtworkUpdates();
     if (busy) {
-      element('art-palette', HTMLElement).hidePopover();
       artworkViewport.suspend();
     }
     const controls = [surface, inspector].flatMap((root) => [
@@ -655,10 +654,23 @@ export function createPixelEditor({
       element('art-variation-help', HTMLElement).textContent = variation;
       button('art-variation').title = variation;
     }
-    button('art-palette-toggle').hidden = !active;
-    element('art-document-geometry', HTMLElement).textContent = session
-      ? `${session.model.descriptor.width} × ${session.model.descriptor.height} pixels · ${session.model.descriptor.name}`
-      : '';
+    const descriptor = session?.model.descriptor;
+    element('art-document-name', HTMLElement).textContent = descriptor?.name ?? '';
+    element('art-document-name', HTMLElement).title = descriptor?.name ?? '';
+    element('art-document-name', HTMLElement).setAttribute(
+      'aria-label',
+      `Artwork name: ${descriptor?.name ?? ''}`,
+    );
+    element('art-document-width', HTMLElement).textContent = descriptor
+      ? `${descriptor.width} px`
+      : '—';
+    element('art-document-height', HTMLElement).textContent = descriptor
+      ? `${descriptor.height} px`
+      : '—';
+    element('art-document-pixels', HTMLElement).textContent = descriptor
+      ? (descriptor.width * descriptor.height).toLocaleString()
+      : '—';
+    element('art-frame-details', HTMLDetailsElement).hidden = descriptor?.version !== 2;
     element('art-frame-properties', HTMLElement).hidden = session?.model.descriptor.version !== 2;
     if (!active && presentation.mode === 'existing') {
       element('art-source-help', HTMLElement).textContent = sources[
@@ -740,6 +752,7 @@ export function createPixelEditor({
     if (Number.isInteger(alpha) && alpha > 0 && alpha <= 255) {
       drawingAlpha = alpha;
     }
+    palette.reflectColor(input('art-alpha').validity.valid ? color() : null);
     const transparent = alpha === 0;
     button('art-transparent').setAttribute('aria-pressed', String(transparent));
     button('art-transparent').setAttribute(
@@ -758,10 +771,6 @@ export function createPixelEditor({
         .map((v) => v.toString(16).padStart(2, '0'))
         .join('');
     input('art-alpha').value = String(c[3]);
-    button('art-palette-toggle').style.setProperty(
-      '--swatch',
-      `rgba(${c[0]},${c[1]},${c[2]},${c[3] / 255})`,
-    );
     palette.reflectColor(c);
     reflectOpacity();
   }

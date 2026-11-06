@@ -238,7 +238,7 @@ export async function setControl(page: Page, id: string, value: string): Promise
     }
     const details = control.locator('xpath=ancestor::details[not(@open)]');
     for (const detail of await details.all()) {
-      await detail.locator('summary').click();
+      await detail.locator(':scope > summary').click();
     }
   }
   const tag = await control.evaluate((element) => element.tagName);
@@ -268,8 +268,8 @@ export async function scenePoint(page: Page, x: number, y: number) {
   );
 }
 
-/** Commands live in native popovers; enter through their visible trigger. */
-export async function clickControl(page: Page, id: string): Promise<void> {
+/** Expand the same disclosures a person uses before reaching a nested control. */
+export async function revealControl(page: Page, id: string) {
   const control = page.locator('#' + id);
   const panel = await control.evaluate((element) => element.closest('[role=tabpanel]')?.id);
   if (panel && !(await control.isVisible())) {
@@ -277,13 +277,18 @@ export async function clickControl(page: Page, id: string): Promise<void> {
   }
   const details = control.locator('xpath=ancestor::details[not(@open)]');
   for (const detail of await details.all()) {
-    await detail.locator('summary').click();
+    await detail.locator(':scope > summary').click();
   }
   const popover = await control.evaluate((element) => element.closest('[popover]')?.id);
   if (popover && !(await control.isVisible())) {
     await page.locator(`[popovertarget="${popover}"]`).click();
   }
-  await control.click();
+  return control;
+}
+
+/** Commands live in native popovers; enter through their visible trigger. */
+export async function clickControl(page: Page, id: string): Promise<void> {
+  await (await revealControl(page, id)).click();
 }
 
 export { expect };

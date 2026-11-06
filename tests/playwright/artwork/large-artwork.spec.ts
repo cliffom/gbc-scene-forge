@@ -184,7 +184,7 @@ for (const [width, height] of [
   });
 }
 
-test('palette dropdown exposes hue-sorted exact colors, keyboard selection and light dismissal', async ({
+test('inline palette exposes exact colors, keyboard selection and independent collapse', async ({
   page,
   workspace,
 }, info) => {
@@ -211,24 +211,27 @@ a.save(c)
   await page.goto(await workspace.start(root));
   await page.locator('[data-asset="spectrum/artwork"]').click();
   const trigger = page.locator('#art-palette-toggle');
-  await trigger.click();
+  await revealArtworkControl(page, 'art-palette');
   await expect(page.locator('#art-palette')).toBeVisible();
   const swatches = page.locator('#art-swatches button');
   await expect(swatches).toHaveCount(97);
   await expect(page.locator('#art-palette-count')).toContainText('sorted by hue');
+  const columns = await page
+    .locator('#art-swatches')
+    .evaluate((e) => getComputedStyle(e).gridTemplateColumns.split(' ').length);
   const first = await swatches.nth(0).boundingBox(),
     second = await swatches.nth(1).boundingBox(),
-    nextRow = await swatches.nth(12).boundingBox();
+    nextRow = await swatches.nth(columns).boundingBox();
   expect(first?.y).toBe(second?.y);
   expect(nextRow?.y).toBeGreaterThan(first?.y ?? 0);
   await swatches.nth(0).focus();
   await page.keyboard.press('ArrowDown');
-  await expect(swatches.nth(12)).toBeFocused();
+  await expect(swatches.nth(columns)).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(page.locator('#art-palette')).toBeHidden();
   await expect(trigger).toBeFocused();
   await expect(page.locator('#artwork-surface')).toBeVisible();
-  await trigger.click();
+  await revealArtworkControl(page, 'art-palette');
   await page.getByRole('tab', { name: 'Selected layer', exact: true }).click();
   await expect(swatches).toHaveCount(98);
   await page.getByRole('button', { name: 'RGBA 17, 34, 51, 0', exact: true }).click();
@@ -236,23 +239,25 @@ a.save(c)
   await expect(page.locator('#art-alpha')).toHaveValue('0');
   await expect(page.locator('#art-document-state')).toHaveText('Saved');
   await page.locator('#art-alpha').fill('999');
-  await trigger.click();
+  await revealArtworkControl(page, 'art-palette');
   await expect(page.locator('#art-palette-color')).toHaveText('Choose an opacity within 0–255');
   await page.getByRole('button', { name: 'RGBA 17, 34, 51, 128', exact: true }).click();
   await expect(page.locator('#art-alpha')).toHaveValue('128');
   for (const width of [1440, 760]) {
     await page.setViewportSize({ width, height: 900 });
-    await trigger.click();
+    await revealArtworkControl(page, 'art-palette');
     await expect(page.locator('#art-palette')).toBeVisible();
     const bounds = await page.locator('#art-palette').boundingBox();
     expect(bounds?.x).toBeGreaterThanOrEqual(0);
     expect((bounds?.x ?? 0) + (bounds?.width ?? 0)).toBeLessThanOrEqual(width);
     await page.screenshot({ path: info.outputPath(`palette-${width}.png`) });
     await page.locator('#project-name').click();
-    await expect(page.locator('#art-palette')).toBeHidden();
+    await expect(page.locator('#art-palette')).toBeVisible();
+    await page.locator('#art-palette-toggle').click();
   }
-  await trigger.click();
+  await revealArtworkControl(page, 'art-palette');
   await page.setViewportSize({ width: 800, height: 640 });
+  await page.locator('#art-palette').scrollIntoViewIfNeeded();
   await expect(page.locator('#art-palette')).toBeVisible();
   await expect
     .poll(async () => {
@@ -266,8 +271,9 @@ a.save(c)
       );
     })
     .toBe(true);
+  await page.screenshot({ path: info.outputPath('palette-compact.png') });
   await page.locator('#project-name').click();
-  await expect(page.locator('#art-palette')).toBeHidden();
+  await expect(page.locator('#art-palette')).toBeVisible();
 });
 
 test('detail review initializes new document bounds and restores retained document settings', async ({

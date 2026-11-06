@@ -15,6 +15,56 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## 0.45.0 release candidate (#248)
+
+- **Scope:** Implementation on `issue-248-inspector-organization`, based on
+  `e607d61`, checked 2026-11-06 on macOS arm64, Python 3.13.13,
+  Node 24.22.1, Playwright 1.64.1 and Chromium 156.0.8078.4. Production
+  checkout assets and fresh plain/optional-MCP 0.45.0 wheels were exercised;
+  the fresh optional install used MCP 1.30.0.
+- **Method:** Run `make lint test docs-check`, strict Poetry lock validation,
+  production build/metadata and installed-wheel smoke. Run broad browser
+  acceptance and targeted corrections, plus installed-wheel Inspector, palette,
+  large-artwork and first-use acceptance. Exercise independent keyboard/pointer
+  disclosure state, long names, eight-layer scrolling, exact RGBA, empty/limited
+  palettes, frame scope, retained documents, hidden Inspector, Review, sprite,
+  point, rectangle, group and tile selection, collapsed recovery errors and
+  unchanged history. The isolated collector checks cache reuse and excludes
+  closed, hidden and busy collection. Run optional-MCP protocol and real
+  MCP/browser acceptance. Agent-inspect and archive installed-wheel
+  [Artwork desktop](images/inspector-artwork-desktop.png),
+  [compact scrolled Palette](images/inspector-artwork-compact.png),
+  [long name/stack](images/inspector-artwork-long-name.png),
+  [Scene desktop](images/inspector-scene-desktop.png),
+  [Scene compact](images/inspector-scene-compact.png),
+  [Selection desktop](images/inspector-selection-desktop.png) and
+  [Selection compact](images/inspector-selection-compact.png).
+  Inspector regressions exercise 1440 × 900, 1280 × 800, 800 × 640 and
+  1440 × 600; dense palettes also exercise 760 × 900.
+- **Result:** Lint, 490 Python cases, TypeScript suites, documentation checks,
+  lock consistency and production metadata pass. Plain and optional-MCP wheel
+  smoke each pass seven cases. Installed-wheel browser acceptance passes 16
+  cases; optional-MCP protocol passes 121 cases in both development and fresh
+  wheel environments. MCP/browser acceptance passes 15 cases initially; its
+  asynchronous palette assertion fails, then both iteration cases pass after
+  waiting for refreshed swatches. The final broad checkout run passes 197 cases
+  with 12 optional-profile skips; its remaining object-definition test fails
+  on a collapsed list and passes after explicit reveal. The earlier broad run
+  passed 177 cases, with 21 failures caused by obsolete reveal/heading assumptions.
+  Earlier focused runs exposed toolbar nesting/startup, stale invalid-opacity
+  feedback and a Space/Pan shortcut conflict; all were corrected. New fixture
+  setup failures and a Review readiness race were also corrected. Disclosure
+  changes preserve saved state and authored history in the checked workflows.
+- **Limits:** Broad checkout and MCP acceptance results combine their broad run
+  and focused corrections, rather than one uninterrupted all-pass run. These
+  synthetic local Chromium checks and agent image inspection do not establish
+  independent-user discovery, physical-device comfort or accessibility
+  conformance. The compact Palette capture demonstrates Inspector scrolling;
+  section contents need not all fit simultaneously. Optional profiling modes,
+  official Tiled/rasterizer, non-Chromium browsers and Windows were not exercised.
+  Publication and fresh PyPI verification remain separate; existing Remaining
+  checks below retain their scope.
+
 ## 0.44.0 release candidate (#246)
 
 - **Scope:** Option A implementation on `issue-246-inspector-sections`, based on

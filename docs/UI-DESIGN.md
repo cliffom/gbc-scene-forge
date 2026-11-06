@@ -44,10 +44,10 @@ system; hierarchy comes from grouping, spacing and clear labels.
   command popover. Keep view overlays and coordinate feedback beside the canvas.
 - **Inspector:** scene, layers and contextual selection properties belong here.
   Maintain independent scrolling so a long inspector does not move the canvas.
-  Artwork layers and Properties use independent native disclosures with headings
+  Artwork Properties, Palette and Layers use independent native disclosures with headings
   next to their content. Right/down chevrons indicate closed/open state; the layer
-  count stays visible. Both start open, with per-retained-document state for this
-  mounted editor. Review collapses both; reopening either exits review. Keep the
+  count stays visible. All three start open, with per-retained-document state for this
+  mounted editor. Review collapses all three; reopening any exits review. Keep the
   summary keyboard reachable and return focus there when its contents collapse.
   Artwork uses a bounded stack with frontmost rows first, grip/eye/name/lock per
   row, gold active selection, and compact plus/trash controls in the heading.
@@ -122,7 +122,7 @@ context and independent history; failed checkpoints block departure. The artwork
 frame/animation dock can be collapsed using its Frames & animation disclosure. Save occupies the document bar and shared history,
 clipboard, deselection and transform commands occupy a stable strip above contextual
 tools. Raster layers and document/frame properties use shared Inspector sections;
-color assistance is launched from the Inspector. Setup is a focused
+Palette is an inline Inspector section. Setup is a focused
 surface in the workbench; dialogs remain appropriate for modal confirmations and document choice.
 
 Library opening shows the selected asset in a dedicated loading surface before
@@ -162,6 +162,36 @@ show the delivered layout; the [earlier polish evaluation](evaluations/editor-po
 historical scope and captures.
 
 ## Visual comparison
+
+### Inspector organization (#248)
+
+The user-approved [interactive mockup](mockups/inspector-organization.html) and
+[static preview](mockups/inspector-organization.png) preserve the design provenance
+for [#248](https://github.com/cliffom/gbc-scene-forge/issues/248). Sample values and
+mockup editing actions are illustrative.
+
+Artwork puts compact Properties first: an unlabeled display name, Width, Height
+and Total pixels (whole-document width × height, without multiplying by layers
+or frames). Shared editing scope and frame/representation controls remain within
+Properties. Palette is an inline disclosure before Layers, retaining
+Composition/Selected layer scope and Hue/Most used ordering. Each section opens
+independently and retains state per document. Palette content and swatches scroll
+within bounded areas; choosing a color keeps the section open.
+
+Scene uses matching headings and compact geometry, with Grid and cell dimensions
+as additional context. Properties leads with no selection; Selection rises and
+opens for a changed selection, keeping editing and animation preview prominent.
+Object validation and Draft recovery start collapsed with live status summaries.
+Ordinary redraws preserve section choices. Pane visibility and section state remain
+presentation choices outside authored history and saved files.
+
+Implemented 0.45.0 wheel captures: [Artwork desktop](images/inspector-artwork-desktop.png),
+[Artwork compact scrolled Palette](images/inspector-artwork-compact.png),
+[long artwork name and stack](images/inspector-artwork-long-name.png),
+[Scene desktop](images/inspector-scene-desktop.png),
+[Scene compact](images/inspector-scene-compact.png),
+[Selection desktop](images/inspector-selection-desktop.png) and
+[Selection compact](images/inspector-selection-compact.png).
 
 [Desktop notification](screenshots/notifications/desktop.png) ·
 [Compact notification](screenshots/notifications/compact.png)

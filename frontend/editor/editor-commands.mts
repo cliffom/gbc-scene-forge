@@ -229,7 +229,10 @@ export function createCommandsController({
         event.target instanceof HTMLTextAreaElement ||
         (event.target instanceof Element &&
           Boolean(event.target.closest('a, [contenteditable]:not([contenteditable="false"])'))) ||
-        (event.target instanceof HTMLButtonElement && !event.ctrlKey && !event.metaKey) ||
+        (event.target instanceof Element &&
+          event.target.closest('button, summary') &&
+          !event.ctrlKey &&
+          !event.metaKey) ||
         document.querySelector('dialog[open], [popover]:popover-open:not(.notifications)') ||
         activity.busy ||
         event.isComposing ||

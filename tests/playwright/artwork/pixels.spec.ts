@@ -131,7 +131,7 @@ test('selected tile variation recovers, reviews exact replacements and preserves
   const original = await opened(page, url);
   await page.locator('input[name=tool][value=select]').check();
   await paint(page, 12, 12);
-  await page.locator('#edit-placement-artwork').click();
+  await clickControl(page, 'edit-placement-artwork');
   await (await revealArtworkControl(page, 'art-id')).fill('autumn_grass');
   await page.locator('#art-name').fill('Autumn grass');
   await (await revealArtworkControl(page, 'art-variation')).click();
@@ -196,13 +196,13 @@ test('variation refuses dirty scene work and stale selected scene without losing
   await paint(page, 20, 20);
   await page.locator('input[name=tool][value=select]').check();
   await paint(page, 4, 4);
-  await page.locator('#edit-placement-artwork').click();
+  await clickControl(page, 'edit-placement-artwork');
   await (await revealArtworkControl(page, 'art-variation')).click();
   await expect(page.locator('#art-message')).toContainText('Save the scene before');
   await activateScene(page);
   await clickControl(page, 'save');
   await expect(page.locator('#scene-save-state')).toHaveText('Saved');
-  await page.locator('#edit-placement-artwork').click();
+  await clickControl(page, 'edit-placement-artwork');
   await (await revealArtworkControl(page, 'art-id')).fill('stale_variation');
   await (await revealArtworkControl(page, 'art-variation')).click();
   await draw(page, 0, 0);
@@ -233,7 +233,7 @@ test('selected sprite variation preserves its origin and keeps original artwork 
   await page.locator('input[name=tool][value=select]').check();
   await page.locator('.layer-choice').filter({ hasText: 'Sprites' }).click();
   await paint(page, 34, 30);
-  await page.locator('#edit-placement-artwork').click();
+  await clickControl(page, 'edit-placement-artwork');
   await (await revealArtworkControl(page, 'art-id')).fill('actor_warm');
   await (await revealArtworkControl(page, 'art-variation')).click();
   await page.locator('#art-color').fill('#f0b050');
@@ -435,7 +435,7 @@ test('placed sprite editing preserves origin and references; blank sprites previ
   await page.locator('input[name=tool][value=select]').check();
   await page.locator('.layer-choice').filter({ hasText: 'Sprites' }).click();
   await paint(page, 34, 30);
-  await page.locator('#edit-placement-artwork').click();
+  await clickControl(page, 'edit-placement-artwork');
   await expect(page.locator('#art-source option:checked')).toContainText('actor / artwork');
   await page.locator('#art-open').click();
   await page.locator('input[name=art-tool][value=erase]').check();
@@ -741,11 +741,11 @@ test('dense variation controls scroll while reviewed save actions remain clickab
   await page.mouse.down();
   await page.mouse.move(points.end, points.y, { steps: 7 });
   await page.mouse.up();
-  await page.locator('#edit-placement-artwork').click();
+  await clickControl(page, 'edit-placement-artwork');
   await (await revealArtworkControl(page, 'art-id')).fill('dense_variation');
   await (await revealArtworkControl(page, 'art-variation')).click();
   await expect(page.locator('#art-shared')).toContainText('7 selected placements');
-  await page.locator('#art-palette-toggle').click();
+  await revealArtworkControl(page, 'art-palette');
   await page.getByRole('tab', { name: 'Selected layer', exact: true }).click();
   await expect(page.locator('#art-swatches button')).toHaveCount(64);
   await page.keyboard.press('Escape');
@@ -813,12 +813,12 @@ test('transparent drawing restores opacity and preserves partial alpha in saved 
   await expect(page.locator('#art-alpha')).toHaveValue('128');
   await expect(transparent).toHaveAttribute('aria-pressed', 'false');
   await expect(transparent).toHaveAccessibleName('Transparent');
-  await page.locator('#art-palette-toggle').click();
+  await revealArtworkControl(page, 'art-palette');
   await page.getByRole('tab', { name: 'Selected layer', exact: true }).click();
   await page.getByRole('button', { name: 'RGBA 204, 136, 51, 0', exact: true }).click();
   await expect(transparent).toHaveAttribute('aria-pressed', 'true');
   await expect(transparent).toHaveAccessibleName('Resume color');
-  await page.locator('#art-palette-toggle').click();
+  await revealArtworkControl(page, 'art-palette');
   await page.getByRole('button', { name: 'RGBA 204, 136, 51, 128', exact: true }).click();
   await expect(transparent).toHaveAttribute('aria-pressed', 'false');
   await expect(transparent).toHaveAccessibleName('Transparent');
@@ -1606,8 +1606,7 @@ for (const [label, name, expectedPrefix] of [
     await page.locator('[data-asset="player/idle"]').click();
     await (await revealArtworkControl(page, 'art-frame-name')).fill(name);
     await page.locator('#art-rename-frame').click();
-    await page.locator('#art-properties summary').click();
-    await page.locator('#art-tile-representation').click();
+    await (await revealArtworkControl(page, 'art-tile-representation')).click();
     await expect(page.locator('#art-frame option')).toHaveCount(3);
     await expect(page.locator('#art-draft-status')).toHaveText(
       'Unsaved artwork checkpointed in this project.',
@@ -1708,8 +1707,7 @@ test('oversized layout edits preserve valid history, checkpoints and document na
   await (await revealArtworkControl(page, 'art-frame-name')).fill('Tree 🌲'.repeat(12));
   await page.locator('#art-rename-frame').click();
   await expect(page.locator('#art-frame-name')).toHaveValue('Pose');
-  await page.locator('#art-properties summary').click();
-  await page.locator('#art-tile-representation').click();
+  await (await revealArtworkControl(page, 'art-tile-representation')).click();
   await expect(page.locator('#art-frame option')).toHaveCount(1);
   await revealArtworkControl(page, 'art-play');
   await page.locator('#art-sequence').selectOption('seq_3');
@@ -1857,8 +1855,7 @@ test('offline Download work includes live layout after failed synchronization', 
   await duration.press('Tab');
   await (await revealArtworkControl(page, 'art-frame-name')).fill('Offline pose');
   await page.locator('#art-rename-frame').click();
-  await page.locator('#art-properties summary').click();
-  await page.locator('#art-tile-representation').click();
+  await (await revealArtworkControl(page, 'art-tile-representation')).click();
   await expect(page.locator('#art-message')).toContainText('Checkpoint failed');
   const pending = page.waitForEvent('download');
   await (await revealArtworkControl(page, 'art-download')).click();

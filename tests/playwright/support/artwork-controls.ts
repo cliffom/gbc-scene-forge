@@ -64,6 +64,8 @@ export async function reviewArtwork(page: Page) {
     await page.locator('#save').click();
   }
   await expect(page.locator('#art-comparison')).toBeVisible();
+  await expect(page.locator('#art-message')).toContainText('Review ready.');
+  await expect(page.locator('#save')).toBeEnabled();
   await expect(page.locator('#save')).toHaveText('Confirm save');
 }
 

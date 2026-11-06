@@ -2,6 +2,7 @@ import { revealArtworkControl, reviewArtwork, saveArtwork } from '../support/art
 /** Bounds and real input acceptance for the shared scene/pixel command hierarchy. */
 import { expect, type Page } from '@playwright/test';
 import {
+  revealControl,
   test,
   clickControl,
   editorReady,
@@ -72,7 +73,7 @@ test.describe('editor polish', () => {
     ]);
     await expect(page.locator('#save')).toBeVisible();
     await expect(page.locator('#show-export')).toBeHidden();
-    await page.locator('#layer-name').fill('Save through the document bar');
+    await (await revealControl(page, 'layer-name')).fill('Save through the document bar');
     await page.locator('#layer-name').press('Tab');
     await page.locator('#save').focus();
     await expect(page.locator('#save')).toBeFocused();
@@ -83,14 +84,14 @@ test.describe('editor polish', () => {
     await expect(page.locator('#scene-save-state')).toHaveText('Saved');
     await expect(page.locator('#save')).toBeVisible();
     for (const shortcut of ['Control+s', 'Meta+s']) {
-      await page.locator('#layer-name').fill(`Save through ${shortcut}`);
+      await (await revealControl(page, 'layer-name')).fill(`Save through ${shortcut}`);
       await page.locator('#scene').focus();
       await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
       await page.keyboard.press(shortcut);
       await expect(page.locator('#scene-save-state')).toHaveText('Saved');
       await expect(page.locator('#save')).toBeVisible();
     }
-    await page.locator('#layer-name').fill('Save through the guide');
+    await (await revealControl(page, 'layer-name')).fill('Save through the guide');
     await page.locator('#layer-name').press('Tab');
     await page.locator('#show-first-scene-guide').click();
     await page.locator('#guide-restart').click();

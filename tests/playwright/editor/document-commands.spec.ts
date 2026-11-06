@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import type { Page } from '@playwright/test';
 import {
   test,
+  clickControl,
   expect,
   chooseSavedScene,
   activateScene,
@@ -75,7 +76,7 @@ print(s['id'])
   await page.locator('[data-asset="grass/artwork"]').click();
   await paint(page, 20, 20);
   const before = await snapshot(page, 'scene');
-  await page.locator('#edit-placement-artwork').click();
+  await clickControl(page, 'edit-placement-artwork');
   await page.locator('#art-open').click();
   await expect(page.locator('#art-canvas')).toBeFocused();
   return before;

@@ -2,7 +2,13 @@
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { readFile, writeFile } from 'node:fs/promises';
-import { test, expect, chooseSavedScene, activateScene } from '../support/browser-fixtures.ts';
+import {
+  revealControl,
+  test,
+  expect,
+  chooseSavedScene,
+  activateScene,
+} from '../support/browser-fixtures.ts';
 import { revealArtworkControl, selectArtworkLayer } from '../support/artwork-controls.ts';
 import { record, string, number, array } from '../../../frontend/shared/decode.mts';
 import type { Page } from '@playwright/test';
@@ -333,7 +339,7 @@ p.scenes.save(loaded['id'],loaded['scene'],loaded['revision'],p.catalog()['revis
     await chooseSavedScene(page, { label: 'Riverside' });
     await expect(page.locator('#scene')).toBeVisible();
     await page.locator('.layer-choice').filter({ hasText: 'Objects' }).click();
-    const objects = page.locator('#object-list');
+    const objects = await revealControl(page, 'object-list');
     await objects.selectOption({ index: 0 });
     await expect(page.locator('#selection-name')).toContainText('long named placement');
     await expect(page.locator('#animation-preview')).toBeVisible();

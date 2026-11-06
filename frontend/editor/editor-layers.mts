@@ -102,6 +102,9 @@ export function createLayersController({
       list.textContent = 'Open a scene to view its layers.';
     }
     list.setAttribute('aria-disabled', String(disabled));
+    element('scene-layer-count', HTMLElement).textContent = String(
+      sceneSession.editor?.layers.length ?? 0,
+    );
     input('layer-name').disabled = disabled;
     if (document.activeElement !== input('layer-name')) {
       input('layer-name').value = sceneSession.editor?.active.name || '';
@@ -221,8 +224,20 @@ export function createLayersController({
   );
 
   let objectOptions = '';
+  let previousSelection = '';
   function inspect() {
     input('inspector-name').value = sceneSession.loaded?.name || '';
+    input('inspector-name').title = sceneSession.loaded?.name || '';
+    const width = sceneSession.loaded ? sceneSession.loaded.width * sceneSession.loaded.grid : 0;
+    const height = sceneSession.loaded ? sceneSession.loaded.height * sceneSession.loaded.grid : 0;
+    element('inspector-width', HTMLElement).textContent = width ? `${width} px` : '—';
+    element('inspector-height', HTMLElement).textContent = height ? `${height} px` : '—';
+    element('inspector-pixels', HTMLElement).textContent = width
+      ? (width * height).toLocaleString()
+      : '—';
+    element('scene-properties-summary', HTMLElement).textContent = width
+      ? `${width} × ${height} px`
+      : 'No scene';
     input('inspector-size').value = sceneSession.loaded
       ? `${sceneSession.loaded.width} × ${sceneSession.loaded.height} cells`
       : '';
@@ -234,7 +249,7 @@ export function createLayersController({
       ) || 0;
     element('scene-summary', HTMLElement).textContent =
       sceneSession.loaded && sceneSession.editor
-        ? `${sceneSession.loaded.width * sceneSession.loaded.grid} × ${sceneSession.loaded.height * sceneSession.loaded.grid} pixels · ${objectCount} ${objectCount === 1 ? 'object' : 'objects'}`
+        ? `${objectCount} ${objectCount === 1 ? 'object' : 'objects'} · ${sceneSession.editor.layers.length} layers`
         : 'Open a scene to inspect its dimensions and placed sprites.';
     const inspectedObjects =
       sceneSession.editor?.active.type === 'objectgroup' ? sceneSession.editor.active.objects : [];
@@ -248,13 +263,22 @@ export function createLayersController({
     const hasSelection = Boolean(
       item || sceneSelection.selection || sceneSelection.selectedObjects.size,
     );
+    const selectionKey = hasSelection
+      ? JSON.stringify([
+          sceneSession.loaded?.id,
+          item?.id,
+          sceneSelection.selection,
+          [...sceneSelection.selectedObjects],
+        ])
+      : '';
     if (inspector instanceof HTMLElement) {
-      const wasSelected = inspector.classList.contains('has-selection');
       inspector.classList.toggle('has-selection', hasSelection);
-      if (hasSelection && !wasSelected) {
+      if (hasSelection && selectionKey !== previousSelection) {
+        element('selection-panel', HTMLDetailsElement).open = true;
         inspector.scrollTop = 0;
       }
     }
+    previousSelection = selectionKey;
     const choices = inspectedObjects.map((item) => [
       `${item.name || item.class || item.kind} · #${item.id}`,
       item.id,

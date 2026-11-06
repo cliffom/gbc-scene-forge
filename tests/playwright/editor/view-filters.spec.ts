@@ -3,6 +3,7 @@ import { promisify } from 'node:util';
 import { expect } from '@playwright/test';
 import { record, string } from '../../../frontend/shared/decode.mts';
 import {
+  revealControl,
   test,
   editorReady,
   paint,
@@ -128,7 +129,7 @@ print(json.dumps(dict(id=loaded['id'])))
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.locator('#review-mode').click();
   // Filters also preserve an existing authored edit, Undo and Redo.
-  await page.locator('#layer-name').fill('Renamed artwork');
+  await (await revealControl(page, 'layer-name')).fill('Renamed artwork');
   await page.locator('#layer-name').press('Tab');
   await page.locator('#view-gameplay').uncheck();
   await page.locator('#undo').click();

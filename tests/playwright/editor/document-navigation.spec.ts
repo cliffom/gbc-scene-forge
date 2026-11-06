@@ -5,7 +5,9 @@ import { array, string } from '../../../frontend/shared/decode.mts';
 import { revealArtworkControl, activeArtworkLayer } from '../support/artwork-controls.ts';
 import type { Page } from '@playwright/test';
 import {
+  revealControl,
   test,
+  clickControl,
   expect,
   chooseSavedScene,
   activateScene,
@@ -63,7 +65,7 @@ print(json.dumps(ids))
   return { project, ids, url };
 }
 async function openGrass(page: Page) {
-  await page.locator('#edit-placement-artwork').click();
+  await clickControl(page, 'edit-placement-artwork');
   await page.locator('#art-open').click();
   await expect(page.locator('#document-switcher')).toHaveText('Documents · Grass · Artwork ▾');
 }
@@ -507,7 +509,7 @@ test('scene save and close retains the confirmed revision if checkpoint cleanup 
   ).toBeVisible();
   await expect(page.locator('#document-state')).toHaveText('Saved');
   await page.unroute('**/api/delete-draft');
-  await page.locator('#layer-name').fill('Continue after successful save');
+  await (await revealControl(page, 'layer-name')).fill('Continue after successful save');
   await page.locator('#layer-name').press('Tab');
   await expect(page.locator('#document-state')).toHaveText('Modified');
   await page.locator('#close-document').click();

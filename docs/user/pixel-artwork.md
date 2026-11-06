@@ -94,16 +94,19 @@ and transforms. The bounded frame/animation dock sits below the canvas. Collapse
 **Frames & animation** to reclaim drawing space; reopen it for thumbnails and
 animation controls. The frame selector, Sheet/Frame scope, onion skin and current
 drawing boundary stay beside the tools even when the dock is collapsed. The dock scrolls
-independently in short windows. **Properties** shows document dimensions and, for
-sheets, frame names, geometry and representations. **Artwork layers** and
-**Properties** are independent collapsible sections: click their headings or use
-Tab then Enter/Space. Right-facing chevrons mean closed; down-facing chevrons mean
-open. The layer count stays visible when closed. Both sections start open for a
-newly opened document and remember their state for each retained artwork document
-while this editor remains mounted. Hiding/showing the Inspector retains those
-choices. Review collapses both sections; opening either returns to editing.
-Closing Review leaves the sections collapsed. Reloading resets these choices.
-These pane changes do not enter Undo history.
+independently in short windows. The Inspector starts with **Properties**: the artwork
+name, Width, Height and Total pixels (whole-document width × height, independent
+of transparency, layers or frames). Shared editing scope stays here; expand
+**Frame & representations** for frame names, geometry and representation commands.
+**Palette** follows Properties, then **Layers**. These three sections collapse
+independently: click a heading or use Tab then Enter/Space. Right-facing chevrons
+mean closed; down-facing chevrons mean open. The layer count and drawing color
+remain visible when collapsed. All three start open for newly opened artwork and
+remember their state per retained document during this editor session, including
+Inspector hide/show and Scene transitions. Palette scope and sort are retained too.
+Review collapses all three; opening any returns to editing. Closing Review leaves
+them collapsed. Reloading resets these choices. Section changes do not enter Undo
+history.
 
 Use **Library → Source… → Shared editing / copies…** for the selected source's shared-edit and
 copy choices. **Edit artwork…** opens native artwork directly; clicking a named
@@ -118,7 +121,7 @@ your entered name and identity are retained until you explicitly choose another.
 
 ## Layers, agent exchange and navigation
 
-Open **Artwork layers** in the Inspector to see the artwork stack, with the frontmost
+Open **Layers** in the Inspector to see the artwork stack, with the frontmost
 layer at the top. Click a name to select its source; double-click the name or
 press **F2** while its row is focused to rename it inline. **Enter** or leaving
 the field commits a trimmed, nonempty name; **Escape** cancels. Selecting a layer
@@ -148,7 +151,7 @@ See the [desktop stack](../images/artwork-layer-stack-desktop.png),
 In short windows, scroll the Inspector to reach controls below the bounded list.
 
 Draw tools edit the selected source; the canvas and scenes show the visible
-composite. The Colors panel starts with **Composition**. Choose **Selected layer**
+composite. The Palette section starts with **Composition**. Choose **Selected layer**
 to inspect the active source's colors; switching layers updates that view without
 adding an Undo step or changing the document.
 Unlock a layer before changing its pixels or structure. Layer changes and pixels
@@ -275,8 +278,10 @@ the hand icon and Fit uses the same fit-to-view icon as the scene editor; hover
 for tooltips. The toolbar stays on one row. When space is tight, **>** (More artwork
 tools) opens controls that do not fit, starting with Download PNG, then drawing
 color and navigation. The arrow points down while the popover is open and returns
-to pointing right when it closes. Escape or clicking outside closes the popover. The **Colors ▾**
-button in the Inspector opens a scrollable 12-column swatch grid. The Inspector identifies shared
+to pointing right when it closes. Escape or clicking outside closes the popover. The inline **Palette**
+section in the Inspector has a responsive swatch grid with bounded scrolling.
+Selecting a swatch or clicking outside keeps it open; Escape from its controls
+collapses Palette and returns focus to its heading. The Inspector identifies shared
 artwork, new artwork and selected-placement variations; the document bar shows
 local Saved/Modified/New state. Save stays in the document bar. **Document actions**
 contains download, close/discard and **Drawing & keyboard help**. **Fit** chooses
@@ -310,7 +315,7 @@ Opacity supports exact alpha values from 0 (transparent) to 255 (opaque), includ
 partial transparency for PNG compositing. **Transparent** toggles alpha to zero
 and changes its accessible name to **Resume color**; click again to restore the previous nonzero
 opacity. Choosing a color also resumes painting at that opacity. Eraser writes
-transparent black. Open **Colors ▾** to inspect **Composition** or **Selected layer**.
+transparent black. Open **Palette** to inspect **Composition** or **Selected layer**.
 Both follow the drawing scope: **Current frame**, **Entire sheet**, or **Entire
 image** for a static document. Composition shows exact visible RGBA after layer
 visibility, opacity and source-over blending; fully transparent pixels, the

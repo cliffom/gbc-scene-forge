@@ -81,6 +81,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Release notes
 
+- [Scene Forge 0.45.0](RELEASE-0.45.0.md) — organized Artwork and Scene Inspectors.
 - [Scene Forge 0.44.0](RELEASE-0.44.0.md) — independent artwork Inspector disclosures.
 
 - [Scene Forge 0.43.0](RELEASE-0.43.0.md) — draggable artwork layers, inline names and percentage opacity.

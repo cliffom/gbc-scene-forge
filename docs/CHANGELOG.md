@@ -6,6 +6,12 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.45.0 — Organized Artwork and Scene Inspectors
+
+[Release notes](RELEASE-0.45.0.md). Lead Artwork with compact Properties and an
+inline Palette before Layers. Give Scene matching independent disclosures,
+Selection-first editing and useful collapsed validation/recovery status.
+
 ## 0.44.0 — Collapsible artwork Inspector sections
 
 [Release notes](RELEASE-0.44.0.md). Replace the ambiguous Layers/Properties

@@ -89,6 +89,15 @@ objects. The prerequisite text explains Select and Across layers when unavailabl
 It uses the same save operation as the toolbar stamp icon. Name the stamp, choose
 **Place stamp**, then click repeatedly; Escape returns to ordinary editing.
 
+The Scene Inspector uses independent **Properties**, **Layers**, **Selection**,
+**Object validation** and **Draft recovery** disclosures. Properties starts first
+and shows the scene name, pixel dimensions, Total pixels, grid size and dimensions
+in cells. Properties and Layers start open; validation and recovery start collapsed
+with live status summaries. Selection opens and rises to the top when a different
+object or tile selection is made. Otherwise section choices survive redraws,
+Scene/Artwork switching, Inspector hide/show and Review during this editor session;
+reload resets them. Expanding or collapsing a section does not author changes.
+
 The selected-object Inspector keeps identity, placement editing and sprite preview
 above **Convert or remove selection**. Expand that disclosure for conversion
 preflight or explicit removal. Selection remains above scene properties; Layers
