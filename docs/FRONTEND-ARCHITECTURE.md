@@ -427,3 +427,9 @@ CompressionStream and PNG CRCs; it never reads the decorated display canvas.
 The pixel controller snapshots composited pixels/frame bounds before compression,
 downloads through a temporary URL and releases it through the mounted lifetime.
 PNG export has no save/checkpoint/history callbacks.
+`artwork/artwork-png-controls.mts` owns native scope radios and derives filename,
+dimensions and frame availability from the current model. Retained-document
+snapshots preserve radio choices; new artwork starts with whole-document export.
+Gesture redraws disable export once without running full control synchronization.
+The layout owner positions the overlay, focuses its chosen radio and dismisses
+only that overlay on Escape, retaining the enclosing overflow and its invoker.

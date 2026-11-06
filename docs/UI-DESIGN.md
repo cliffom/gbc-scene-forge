@@ -163,6 +163,19 @@ historical scope and captures.
 
 ## Visual comparison
 
+### Artwork download options (#250)
+
+The **Download artwork** icon beside the drawing tools opens a native anchored
+overlay. Whole artwork/sheet and Selected frame are ordinary radio choices with
+native keyboard navigation. Show frame availability, filename and output dimensions
+before the explicit **Download PNG** action. Keep compact overflow open when Escape
+or Close dismisses the download overlay and returns to its invoker. Export uses
+current native composited pixels, leaving authored state intact.
+
+Implemented 0.46.0 production captures:
+[Desktop](images/download-options/download-1440.png) ·
+[Compact toolbar overflow](images/download-options/download-760.png).
+
 ### Inspector organization (#248)
 
 The user-approved [interactive mockup](mockups/inspector-organization.html) and

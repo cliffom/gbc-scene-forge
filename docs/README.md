@@ -81,6 +81,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Release notes
 
+- [Scene Forge 0.46.0](RELEASE-0.46.0.md) — artwork download icon and options overlay.
 - [Scene Forge 0.45.0](RELEASE-0.45.0.md) — organized Artwork and Scene Inspectors.
 - [Scene Forge 0.44.0](RELEASE-0.44.0.md) — independent artwork Inspector disclosures.
 

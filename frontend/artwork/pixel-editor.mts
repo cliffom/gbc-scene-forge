@@ -1,6 +1,7 @@
 /** Artwork composition: document transitions, review/save and recovery with typed ports. */
 import { createAgentDrafts } from './agent-drafts.mts';
 import { artworkPng } from './artwork-png.mts';
+import { artworkPngFilename, createArtworkPngControls } from './artwork-png-controls.mts';
 import { MAX_PLACEMENTS } from './placement-limits.mts';
 import { createArtworkLayerControls } from './artwork-layer-controls.mts';
 import { createArtworkPaletteControls } from './artwork-palette-controls.mts';
@@ -362,6 +363,7 @@ export function createPixelEditor({
       });
     },
   });
+  const pngControls = createArtworkPngControls(lifetime, controls);
   const palette = createArtworkPaletteControls(lifetime, raster, {
     current: () => session?.model ?? null,
     view: () => sheetEditor.view(),
@@ -612,12 +614,11 @@ export function createPixelEditor({
       }
     }
     const active = session !== null && !loading;
-    button('art-download-png').disabled =
-      busy ||
-      !active ||
-      gestures.active ||
-      (select('art-png-scope').value === 'frame' && !sheetEditor.selectedFrame());
-    select('art-png-scope').options[1].disabled = !sheetEditor.selectedFrame();
+    pngControls.sync(
+      active ? (session?.model ?? null) : null,
+      sheetEditor.selectedFrame(),
+      busy || gestures.active,
+    );
     inspector.hidden = !active;
     element('art-setup', HTMLElement).hidden = active || loading !== null;
     element('art-editor', HTMLElement).hidden = !active;
@@ -789,6 +790,7 @@ export function createPixelEditor({
     }
     rendering.draw();
     if (gestureOnly) {
+      pngControls.block();
       dirtyControls();
     } else {
       controls();
@@ -1000,6 +1002,7 @@ export function createPixelEditor({
     loading = null;
     session = new ArtworkSession(candidate, api, original);
     documents.add(session);
+    pngControls.reset();
     artworkViewport.authoringTool();
     tabs();
     input('art-use-scene').checked = sceneSession.loaded !== null;
@@ -1544,20 +1547,17 @@ export function createPixelEditor({
     controls();
     message('Closing cancelled. Continue editing or save normally.');
   });
-  lifetime.assign(select('art-png-scope'), 'onchange', controls);
   lifetime.assign(button('art-download-png'), 'onclick', () => {
     if (!session || busy || gestures.active) {
       return;
     }
     const model = session.model;
-    const frame = select('art-png-scope').value === 'frame' ? sheetEditor.selectedFrame() : null;
-    if (select('art-png-scope').value === 'frame' && !frame) {
+    const frame = pngControls.frameSelected() ? sheetEditor.selectedFrame() : null;
+    if (pngControls.frameSelected() && !frame) {
       return;
     }
     const bounds = frame ?? { x: 0, y: 0, width: model.width, height: model.height };
-    const safe = (value: string) =>
-      value.replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-|-$/g, '') || 'artwork';
-    const name = `${safe(model.descriptor.atlas_id)}-${frame ? safe(frame.id) : 'sheet'}.png`;
+    const name = artworkPngFilename(model.descriptor.atlas_id, frame);
     const acknowledgment = feedback.capture();
     void artworkPng(model.composite(), model.width, bounds)
       .then((blob) => {

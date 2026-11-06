@@ -6,6 +6,12 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.46.0 — Artwork download options
+
+[Release notes](RELEASE-0.46.0.md). Replace the labeled PNG toolbar button with a
+download icon and an anchored overlay showing scope, filename and native output
+dimensions. Preserve current PNG pixels, transparency, history and recovery.
+
 ## 0.45.0 — Organized Artwork and Scene Inspectors
 
 [Release notes](RELEASE-0.45.0.md). Lead Artwork with compact Properties and an
