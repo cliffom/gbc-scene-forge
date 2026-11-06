@@ -61,9 +61,12 @@ With canvas focus, **P** selects Paint/Pencil, **E** Erase, **F** Fill,
 text fields, dialogs and popovers retain their own keys; movement preview owns
 its input while active. Tooltips show the letters.
 
-Open **Download PNG…** beside the drawing tools, choose **PNG scope → Whole
-artwork / sheet** or **Selected frame**, then **Download PNG**. The frame option requires a native
-sheet frame selection; a single image offers whole artwork only. This downloads
+Open the **Download artwork** icon beside the drawing tools, choose **Include →
+Whole artwork / sheet** (or **Whole artwork** for a single image) or **Selected frame**,
+then **Download PNG**. The overlay previews the filename and native output dimensions.
+Escape or its close button dismisses it and returns focus to the download icon.
+The frame option requires a native sheet frame selection; a single image offers
+whole artwork only. This downloads
 current composited RGBA, including unsaved edits and visible native layers, at
 native dimensions with transparency. It excludes viewport decorations, grids,
 onion skins and selection outlines. Filenames use the asset identity plus
@@ -276,8 +279,8 @@ The shared strip holds history, clipboard and transforms. The contextual toolbar
 groups drawing tools, Color/Opacity and Pan/Fit/Zoom beside the canvas. Pan uses
 the hand icon and Fit uses the same fit-to-view icon as the scene editor; hover
 for tooltips. The toolbar stays on one row. When space is tight, **>** (More artwork
-tools) opens controls that do not fit, starting with Download PNG, then drawing
-color and navigation. The arrow points down while the popover is open and returns
+tools) opens controls that do not fit, starting with the Download artwork icon,
+then drawing color and navigation. The arrow points down while the popover is open and returns
 to pointing right when it closes. Escape or clicking outside closes the popover. The inline **Palette**
 section in the Inspector has a responsive swatch grid with bounded scrolling.
 Selecting a swatch or clicking outside keeps it open; Escape from its controls

@@ -261,7 +261,8 @@ export function createEditorLayout(
       }
       const anchor = trigger.getBoundingClientRect();
       const bounds = panel.getBoundingClientRect();
-      panel.style.left = `${Math.max(12, Math.min(anchor.right - bounds.width, innerWidth - bounds.width - 12))}px`;
+      const left = panelId === 'art-png-options' ? anchor.left : anchor.right - bounds.width;
+      panel.style.left = `${Math.max(12, Math.min(left, innerWidth - bounds.width - 12))}px`;
       const below = anchor.bottom + 6;
       const top =
         below + bounds.height <= innerHeight - 12 ? below : anchor.top - bounds.height - 6;
@@ -270,8 +271,16 @@ export function createEditorLayout(
     panel.addEventListener(
       'toggle',
       () => {
-        trigger.setAttribute('aria-expanded', String(panel.matches(':popover-open')));
+        const open = panel.matches(':popover-open');
+        trigger.setAttribute('aria-expanded', String(open));
         position();
+        if (open && panelId === 'art-png-options' && !panel.contains(document.activeElement)) {
+          // A delayed native toggle must not override a choice or command already focused.
+          const choice =
+            panel.querySelector<HTMLInputElement>('input:checked:not(:disabled)') ??
+            panel.querySelector<HTMLInputElement>('input:not(:disabled)');
+          choice?.focus({ preventScroll: true });
+        }
       },
       { signal: lifetime.signal },
     );
@@ -282,11 +291,30 @@ export function createEditorLayout(
         const button = event.target instanceof Element ? event.target.closest('button') : null;
         if (button && !button.disabled && panel.matches(':popover-open')) {
           panel.hidePopover();
+          if (panelId === 'art-png-options') {
+            trigger.focus({ preventScroll: true });
+          }
         }
       },
       { capture: true, signal: lifetime.signal },
     );
     window.addEventListener('resize', position, { signal: lifetime.signal });
+    if (panelId === 'art-png-options') {
+      panel.addEventListener(
+        'keydown',
+        (event) => {
+          if (event.key === 'Escape') {
+            // Dismiss only the download panel, keeping its overflow invoker reachable.
+            event.preventDefault();
+            event.stopPropagation();
+            panel.hidePopover();
+            trigger.focus({ preventScroll: true });
+          }
+        },
+        { signal: lifetime.signal },
+      );
+      lifetime.observe(new ResizeObserver(position)).observe(panel);
+    }
   }
   const palette = element('show-palettes', HTMLButtonElement);
   const project = element('project-commands', HTMLButtonElement);

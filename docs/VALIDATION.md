@@ -15,6 +15,45 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## 0.46.0 release candidate (#250)
+
+- **Scope:** Download icon and options implementation on
+  `issue-250-download-overlay`, based on `e1e3b58`, checked 2026-11-06 on
+  macOS arm64, Python 3.13.13, Node 24.22.1, Playwright 1.64.1 and
+  Chromium 156.0.8078.4. Production checkout assets and a fresh plain 0.46.0
+  wheel were exercised with synthetic native artwork fixtures.
+- **Method:** Run required lint, Python/TypeScript and documentation checks,
+  strict Poetry lock validation, production distribution/metadata builds and
+  installed-wheel smoke. Run full regular Chromium acceptance and final-wheel
+  download, working-space, navigation and first-use suites. Verify keyboard
+  radio choices, rapid command focus before native toggle delivery, nested
+  overflow dismissal, retained scopes, frame availability and gesture/busy
+  guards. Decode sheet/frame PNG bytes to compare dimensions, transparent and
+  layered unsaved RGBA, unchanged work/review and Undo/Redo. Inspect final-wheel
+  [desktop](images/download-options/download-1440.png) and
+  [compact overflow](images/download-options/download-760.png) captures at
+  1440 × 900 and 760 × 640; navigation coverage also exercises 1280, 1024,
+  800 and 1920-pixel widths.
+- **Result:** Lint, 490 Python cases, TypeScript suites, lock validation and
+  documentation checks pass. Final regular browser acceptance passes 202 cases
+  with 12 optional-profile skips; final-wheel acceptance passes 23 cases and
+  installed-package smoke passes seven. Both distribution metadata checks pass.
+  Early focused runs exposed chosen-radio and nested-dismissal focus problems,
+  gesture availability and a fixture assumption about unopened documents; these
+  were corrected. The first broad run passed 200 cases with two PNG-download
+  timeouts caused by a delayed native toggle replacing command focus. Preserving
+  already-focused panel controls fixes that race; the full rerun and explicit
+  rapid-focus wheel regressions pass. The new regression's lint/type errors were
+  corrected before final checks. Opening, dismissing and downloading preserve
+  authored state in the checked workflows.
+- **Limits:** Local synthetic Chromium checks and agent image inspection do not
+  establish independent-user discovery or accessibility conformance. Optional
+  profiling, MCP/browser and official Tiled interoperability were not rerun for
+  this PNG presentation change. The full rerun precedes the final rapid-focus
+  test addition; the final-wheel suite includes it. The existing remaining-check
+  list continues to own broader validation gaps. Release publication and fresh
+  PyPI installation have not occurred.
+
 ## 0.45.0 release candidate (#248)
 
 - **Scope:** Implementation on `issue-248-inspector-organization`, based on

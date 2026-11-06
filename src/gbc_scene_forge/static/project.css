@@ -776,8 +776,27 @@
 .routine-notifications .notification-severity {display:none}
 .routine-notifications .notification-message {min-width:0;overflow-wrap:anywhere}
 .routine-notifications .notification-dismiss {min-width:24px;min-height:24px;font-size:18px}
-.art-png-export {width:300px;max-width:calc(100vw - 24px)}
-.art-png-export .hint {margin:0}
+.art-png-export {width:348px;max-width:calc(100vw - 24px);padding:16px 18px 18px}
+.art-png-heading {display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+.art-png-heading h2 {font-size:16px;margin:0}
+.standalone .art-png-heading .icon-button {width:28px;height:28px;min-height:28px;color:var(--muted)}
+.art-png-intro {margin:0 0 16px;font-size:12px;color:var(--muted)}
+.art-png-choices {display:grid;gap:8px;min-width:0;margin:0;padding:0;border:0}
+.art-png-choices legend {padding:0;margin-bottom:8px;font-size:12px;font-weight:600}
+.art-png-choice {display:flex;align-items:center;gap:11px;padding:11px 12px;border:1px solid var(--line);border-radius:6px;cursor:pointer}
+.art-png-choice:has(input:checked) {border-color:var(--accent);background:#373729}
+.art-png-choice:has(input:focus-visible) {outline:2px solid var(--accent);outline-offset:2px}
+.art-png-choice:has(input:disabled) {opacity:.5;cursor:default}
+.art-png-choice input {flex:none;margin:0;accent-color:var(--accent)}
+.art-png-choice span {min-width:0}
+.art-png-choice strong {display:block;font-size:13px;font-weight:550}
+.art-png-choice small {display:block;margin-top:2px;font-size:11px;color:var(--muted);overflow-wrap:anywhere}
+.art-png-file {margin:17px 0 12px;padding:10px 12px;border-radius:5px;background:var(--bg);overflow-wrap:anywhere}
+.art-png-file span {display:block;font-size:12px}
+.art-png-export .hint {margin:0;font-size:11px}
+.art-png-export #art-download-png {display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px;padding:8px 10px;background:var(--accent);border-color:var(--accent);color:var(--ink);font-size:13px;font-weight:650}
+.art-png-export #art-download-png:hover:not(:disabled) {background:#e3c779}
+.standalone #art-png-menu[aria-expanded=true] {background:#373729;border-color:var(--accent);color:var(--accent)}
 #keyboard-help {margin-left:auto;font-size:12px;padding:4px 8px}
 #selection-secondary {margin:8px 0}
 #selection-secondary button {margin:4px 0;max-width:100%}

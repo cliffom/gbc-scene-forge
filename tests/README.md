@@ -44,6 +44,12 @@ transparency, frame rectangles, bounded color membership and usage ordering.
 Browser cases verify layer/history/frame refresh, color selection without history,
 empty states, keyboard navigation, compact layout and on-demand raster collection.
 
+`playwright/artwork/download-options.spec.ts` covers PNG icon discovery, keyboard
+scope choices, output details, nested overflow dismissal, per-document restoration
+and missing-frame/gesture/busy guards. `playwright/editor/working-space.spec.ts`
+decodes downloaded sheet and frame PNGs to verify unsaved composited RGBA,
+transparency, dimensions and unchanged work, review and Undo/Redo state.
+
 Python discovery remains `python -m unittest discover -s tests -p 'test_*.py'`
 (`make test-python`). Empty `__init__.py` markers in `backend/` and each domain
 allow discovery to recurse on supported Python versions. Imports use

@@ -40,8 +40,10 @@ async function work(page: Page) {
   return result;
 }
 async function png(page: Page, scope: string) {
-  await (await revealArtworkControl(page, 'art-png-menu')).click();
-  await page.locator('#art-png-scope').selectOption(scope);
+  const trigger = await revealArtworkControl(page, 'art-png-menu');
+  await trigger.click();
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  await page.locator(`#art-png-${scope}`).check();
   const waiting = page.waitForEvent('download');
   await page.locator('#art-download-png').focus();
   await page.keyboard.press('Enter');
@@ -293,7 +295,7 @@ for (const goal of ['artwork', 'import', 'blockout']) {
       await page.locator('#art-create').focus();
       await page.keyboard.press('Enter');
       await expect(page.locator('#art-canvas')).toBeVisible();
-      await expect(page.locator('#art-png-scope option[value=frame]')).toHaveAttribute('disabled');
+      await expect(page.locator('#art-png-frame')).toHaveAttribute('disabled');
       await page.locator('#keyboard-help').click();
       await page.keyboard.press('e');
       await expect(page.locator('input[name=art-tool][value=pencil]')).toBeChecked();
