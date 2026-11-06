@@ -123,7 +123,7 @@
 .form-error {color:#f19b82}
 .form-error:empty {display:none}
 .standalone button.danger {background:#713b30;border-color:#ad6752;color:#ffe5da}
-.standalone button.danger:hover:not(:disabled) {background:#8b493b}
+.standalone button.danger:hover:where(:not(:disabled)) {background:#8b493b}
 .standalone dialog {width:440px;max-width:calc(100vw - 40px)}
 .standalone dialog h2 {font-size:18px}
 .dimensions {display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
@@ -265,7 +265,7 @@
 .folder-button {display:flex;align-items:center;gap:7px;max-width:min(220px,25vw);padding:6px 8px;font-size:12px;letter-spacing:0;background:transparent;color:var(--muted);border-color:transparent}
 .folder-button svg {flex:none}
 #folder-name {min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.folder-button:hover:not(:disabled) {color:var(--text);border-color:var(--line)}
+.folder-button:hover:where(:not(:disabled)) {color:var(--text);border-color:var(--line)}
 .folder-popover {position:fixed;inset:auto;margin:0;width:min(360px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;padding:16px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--text);box-shadow:0 8px 30px #0006;font-size:12px;letter-spacing:0}
 .folder-path {margin:12px 0;white-space:pre-wrap;overflow-wrap:anywhere;user-select:text;font:12px/1.7 ui-monospace,SFMono-Regular,monospace}
 .folder-path-row {display:flex;align-items:flex-start;gap:8px;margin:12px 0}

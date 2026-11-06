@@ -47,6 +47,28 @@ Dates, revisions and environments missing from the originals remain unknown.
   busy transition. Local optional MCP, profiling and Tiled interoperability
   checks were not rerun for this CSS patch. Tagging and publication are separate.
 
+## 0.46.1 hover specificity review fix (#253)
+
+- **Scope:** Hover-guard follow-up changes based on `a8ac609` on
+  `fix/252-disabled-buttons-0.46.1`, checked 2026-11-06 on the macOS arm64
+  environment above. Production checkout assets and a rebuilt plain 0.46.1
+  installed wheel use disposable native projects.
+- **Method:** Compare native hover styles before and after selecting the Artwork
+  and Objects Library tabs. Run button-state, shared-command, Library-usability
+  and Library-source browser suites in the checkout and installed wheel. Rebuild
+  production distributions and run installed-package smoke, lint,
+  Python/TypeScript and documentation checks. Inspect the final-wheel empty
+  workspace capture at 1440 × 900.
+- **Result:** The new tab test initially failed because the generic hover guard
+  overrode selected backgrounds and borders. Zero-specificity guards preserve
+  those styles while suppressing disabled hover. All 17 browser cases pass in
+  both environments; distribution metadata and seven installed-package smoke
+  cases pass. Lint, 490 Python cases, TypeScript suites and documentation checks
+  pass; the inspected empty workspace retains matching inactive Save and Close.
+- **Limits:** The full browser suite above predates this follow-up; only affected
+  suites were rerun. No additional independent-user, optional MCP, profiling or
+  Tiled interoperability checks were performed.
+
 ## 0.46.0 release candidate (#250)
 
 - **Scope:** Download icon and options implementation on

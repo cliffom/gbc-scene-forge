@@ -112,6 +112,26 @@ for (const [width, height] of [
   });
 }
 
+test('Library tabs retain their selected styling on hover', async ({ page, workspace }) => {
+  await createProject(page, workspace);
+  for (const id of ['artwork-tab', 'objects-tab']) {
+    const selected = page.locator('#' + id);
+    await selected.click();
+    await expect(selected).toHaveAttribute('aria-selected', 'true');
+    await page.mouse.move(0, 0);
+    const before = await appearance(selected);
+    const other = page.locator(id === 'artwork-tab' ? '#objects-tab' : '#artwork-tab');
+    expect(before.background).not.toBe((await appearance(other)).background);
+    expect(before.border).not.toBe((await appearance(other)).border);
+    await selected.hover();
+    expect(await appearance(selected)).toEqual(before);
+    await other.hover();
+    expect(await appearance(selected)).toEqual(before);
+    expect((await appearance(other)).background).not.toBe(before.background);
+    expect((await appearance(other)).border).not.toBe(before.border);
+  }
+});
+
 test('native text, primary, destructive and folder variants suppress disabled hover only', async ({
   page,
   workspace,
