@@ -2,18 +2,18 @@ import { EditorLifetime } from './editor-lifetime.mts';
 /** Pointer-driven layer reordering; the model changes only when a drag is dropped. */
 export function layerDragging(
   list: HTMLElement,
-  move: (id: number, beforeId: number | null) => void,
+  move: (id: string, beforeId: string | null) => void,
   lifetime: EditorLifetime = new EditorLifetime(),
 ) {
   let drag: {
     pointer: number;
-    id: number;
+    id: string;
     startX: number;
     startY: number;
     x: number;
     y: number;
     active: boolean;
-    before: number | null;
+    before: string | null;
   } | null = null;
   let frame = 0;
   function clear() {
@@ -35,12 +35,12 @@ export function layerDragging(
     }
     const rows = Array.from(list.querySelectorAll<HTMLElement>('.layer-row'));
     rows.forEach((row) => delete row.dataset.drop);
-    const remaining = rows.filter((row) => Number(row.dataset.layerId) !== drag?.id);
+    const remaining = rows.filter((row) => row.dataset.layerId !== drag?.id);
     const next = remaining.find((row) => {
       const rect = row.getBoundingClientRect();
       return drag && drag.y < rect.top + rect.height / 2;
     });
-    drag.before = next ? Number(next.dataset.layerId) : null;
+    drag.before = next?.dataset.layerId ?? null;
     const target = next || remaining.at(-1);
     if (target) {
       target.dataset.drop = next ? 'before' : 'after';
@@ -63,13 +63,19 @@ export function layerDragging(
     (event) => {
       const grip = event.target instanceof Element ? event.target.closest('.layer-grip') : null;
       const row = grip?.closest<HTMLElement>('.layer-row');
-      if (!row || !event.isPrimary || event.button !== 0 || row.querySelector('input')?.disabled) {
+      if (
+        !row ||
+        !event.isPrimary ||
+        event.button !== 0 ||
+        row.querySelector<HTMLInputElement>('input:not([hidden])')?.disabled ||
+        grip?.matches(':disabled')
+      ) {
         return;
       }
       event.preventDefault();
       drag = {
         pointer: event.pointerId,
-        id: Number(row.dataset.layerId),
+        id: row.dataset.layerId ?? '',
         startX: event.clientX,
         startY: event.clientY,
         x: event.clientX,
@@ -137,4 +143,5 @@ export function layerDragging(
     },
     { capture: true, signal: lifetime.signal },
   );
+  return { cancel: clear };
 }

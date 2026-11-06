@@ -16,7 +16,7 @@ Your projects stay on your computer.
 Install the release with Python 3.10 or newer:
 
 ```sh
-python -m pip install gbc-scene-forge==0.42.0
+python -m pip install gbc-scene-forge==0.43.0
 gbc-scene-forge
 ```
 
@@ -331,7 +331,7 @@ at grid 16, within 65,536 cells and 8,192 pixels per axis.
 
 Copy the scene URL to reopen its saved state directly; see [scene links](docs/user/scene-links.md).
 
-See [the 0.42.0 release notes](docs/RELEASE-0.42.0.md) and
+See [the 0.43.0 release notes](docs/RELEASE-0.43.0.md) and
 [building and releasing](docs/RELEASING.md) for release validation and publication.
 
 ## License

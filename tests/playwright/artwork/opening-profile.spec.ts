@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { cpus, platform, release } from 'node:os';
 import { join } from 'node:path';
 import { test, expect } from '../support/browser-fixtures.ts';
-import { revealArtworkControl } from '../support/artwork-controls.ts';
+import { revealArtworkControl, activeArtworkLayer } from '../support/artwork-controls.ts';
 import { createOpeningFixture } from '../support/artwork-opening-fixture.ts';
 
 test('measure Library opening and three-layer visibility', async ({
@@ -87,31 +87,35 @@ test('measure Library opening and three-layer visibility', async ({
     }
   }
   await page.locator('[data-asset="layered/artwork"]').click();
-  await revealArtworkControl(page, 'art-layer-visible');
+  await revealArtworkControl(page, 'art-layer-list');
   const toggles = [];
   for (let i = 0; i < 6; i++) {
     toggles.push(
-      await page.locator('#art-layer-visible').evaluate(async (node) => {
-        if (!(node instanceof HTMLInputElement)) {
-          throw Error('Expected visibility checkbox');
-        }
-        const start = performance.now();
-        node.click();
-        const handlerMs = performance.now() - start;
-        await new Promise<void>((resolve) =>
-          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-        );
-        return { handlerMs, frameProxyMs: performance.now() - start };
-      }),
+      await activeArtworkLayer(page)
+        .locator('.art-layer-visible')
+        .evaluate(async (node) => {
+          if (!(node instanceof HTMLButtonElement)) {
+            throw Error('Expected visibility button');
+          }
+          const start = performance.now();
+          node.click();
+          const handlerMs = performance.now() - start;
+          await new Promise<void>((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+          );
+          return { handlerMs, frameProxyMs: performance.now() - start };
+        }),
     );
     await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
   }
   await cdp.send('Profiler.start');
-  await page.locator('#art-layer-visible').evaluate((node) => {
-    if (node instanceof HTMLElement) {
-      node.click();
-    }
-  });
+  await activeArtworkLayer(page)
+    .locator('.art-layer-visible')
+    .evaluate((node) => {
+      if (node instanceof HTMLElement) {
+        node.click();
+      }
+    });
   const profile = await cdp.send('Profiler.stop');
   await info.attach('cpu-profile.json', {
     body: JSON.stringify(profile),

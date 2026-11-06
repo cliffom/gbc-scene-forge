@@ -2,7 +2,7 @@
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { array, string } from '../../../frontend/shared/decode.mts';
-import { revealArtworkControl } from '../support/artwork-controls.ts';
+import { revealArtworkControl, activeArtworkLayer } from '../support/artwork-controls.ts';
 import type { Page } from '@playwright/test';
 import {
   test,
@@ -97,7 +97,7 @@ test('one document bar retains dirty scene, layers, selection, tools and sheet c
   await expect(page.locator('#document-state')).toHaveText('Saved');
   await page.locator('#art-layers-toggle').click();
   await page.locator('#art-layer-add').click();
-  const layer = await page.locator('#art-layer').inputValue();
+  const layer = await activeArtworkLayer(page).getAttribute('data-layer-id');
   await page.locator('#art-color').fill('#cc7744');
   await page.locator('#art-canvas').click({ position: { x: 24, y: 24 } });
   await page.locator('#art-zoom').selectOption('32');
@@ -134,7 +134,7 @@ test('one document bar retains dirty scene, layers, selection, tools and sheet c
   await expect(page.locator('#art-color')).toHaveValue('#cc7744');
   await expect(page.locator('#art-zoom')).toHaveValue('32');
   await page.locator('#art-layers-toggle').click();
-  await expect(page.locator('#art-layer')).toHaveValue(layer);
+  await expect(activeArtworkLayer(page)).toHaveAttribute('data-layer-id', layer ?? '');
   await chooseArtwork(page, 'Player');
   await expect(page.locator('#art-frame')).toHaveValue('f1');
   await expect(page.locator('#art-sequence')).toHaveValue('walk');

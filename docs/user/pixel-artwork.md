@@ -111,19 +111,39 @@ your entered name and identity are retained until you explicitly choose another.
 
 ## Layers, agent exchange and navigation
 
-Open **Layers** in the Inspector to add a layer, choose the
-active layer, rename, reorder, hide, set opacity (0..255) or lock it. First **Add
-layer** retains flat artwork as **Base** and adds a transparent layer. Draw tools
-edit the selected source; the canvas and scenes show the visible composite.
-The Colors panel starts with the visible **Composition**. Choose **Selected
-layer** to inspect the active source's colors; switching layers updates that view
-without adding an Undo step or changing the document.
-**Visible** and **Locked** apply immediately and each change has its own Undo step.
-Locked layers disable visibility and other editing controls; uncheck **Locked**
-to enable them. Name and opacity use **Apply name / opacity**; applying trims the
-name and rejects an empty name before changing the document.
-Toggling visibility or locking keeps pending name and opacity entries without
-applying them; use **Apply name / opacity** when those entries are ready.
+Open **Layers** in the Inspector to see the artwork stack, with the frontmost
+layer at the top. Click a name to select its source; double-click the name or
+press **F2** while its row is focused to rename it inline. **Enter** or leaving
+the field commits a trimmed, nonempty name; **Escape** cancels. Selecting a layer
+alone does not change the document or add an Undo step.
+
+Drag a row's grip to reorder it. The gold insertion line shows the destination;
+release inside the list to commit one Undo step, or use **Escape**, pointer cancel
+or release outside the list to cancel. On a focused grip, **Alt + Up/Down** moves
+one row. The list scrolls independently; dragging near its edges scrolls it.
+Locked layers retain their position, so unlock them before moving layers across
+them. **+** adds a layer and opens its name for editing; the trash icon removes
+the active layer. Removal is undoable, and the last layer cannot be removed.
+First **+** retains flat artwork as **Base** and adds a transparent layer.
+
+The eye and padlock icons show each row's visibility and lock state. Click the
+padlock to unlock a layer before changing it. Below the stack, set the active
+layer's **Opacity** with the slider or type a whole percentage from **0 to 100**.
+Numeric edits commit with **Enter** or blur; **Escape** cancels. The slider commits
+on release, as one Undo step. Invalid percentages keep the previous value. There
+is no separate Apply button. Existing native opacity bytes (0..255) remain exact
+until you deliberately change opacity, even when their displayed percentage is
+rounded. Visibility, locking, renaming and opacity each have their own Undo step.
+
+See the [desktop stack](../images/artwork-layer-stack-desktop.png),
+[compact stack](../images/artwork-layer-stack-compact.png) and
+[compact opacity controls](../images/artwork-layer-opacity-compact.png).
+In short windows, scroll the Inspector to reach controls below the bounded list.
+
+Draw tools edit the selected source; the canvas and scenes show the visible
+composite. The Colors panel starts with **Composition**. Choose **Selected layer**
+to inspect the active source's colors; switching layers updates that view without
+adding an Undo step or changing the document.
 Unlock a layer before changing its pixels or structure. Layer changes and pixels
 share this document's Undo/Redo; checkpoints retain exact source pixels but do not
 contain the local Undo stack. Save → review → Confirm save publishes all sources

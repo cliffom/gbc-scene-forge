@@ -44,13 +44,23 @@ system; hierarchy comes from grouping, spacing and clear labels.
   command popover. Keep view overlays and coordinate feedback beside the canvas.
 - **Inspector:** scene, layers and contextual selection properties belong here.
   Maintain independent scrolling so a long inspector does not move the canvas.
+  Artwork uses a bounded stack with frontmost rows first, grip/eye/name/lock per
+  row, gold active selection, and compact plus/trash controls in the heading.
+  Click selects; double-click or F2 opens an inline name. Percentage opacity below
+  the stack combines a slider with exact numeric entry. Retain the distinct scene
+  and raster models. The list follows familiar [Aseprite layer](https://www.aseprite.org/docs/layers/)
+  and [Krita layer docker](https://docs.krita.org/en/reference_manual/dockers/layers.html)
+  conventions for visible stacks, ordering and per-layer state. Forge keeps its
+  existing single-layer selection and lock protections; these references do not
+  imply support for groups, blending modes or other tools' full feature sets.
 - **Controls:** use consistent 32px command heights, with at least 28px for dense
   layer controls. Let groups wrap as units; do not squeeze labels beneath arrows.
   Use recognizable 18px SVG tool icons
   in 32px targets for frequent spatial commands, with accessible names and tooltips
   including shortcuts where supported. Gold, a border and an inset underline identify
   selected tools; unavailable actions remain visibly disabled. Keep text for
-  management, save/review and destructive commands. Single-value dropdowns
+  management, save/review and destructive commands, except the contextual artwork
+  layer trash icon, which has an explicit tooltip and accessible name. Single-value dropdowns
   reserve 32px for their arrow (28px in dense preview tables). Bound long user
   names with ellipses; expose the full selected stamp name in its tooltip.
 - **Keyboard:** preserve native buttons, selects, dialogs and popovers. Command

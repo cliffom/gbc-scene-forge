@@ -479,16 +479,13 @@
 </div>
 </div>
       </div>
-      <div class="art-workspace"><div id="art-viewport" class="art-canvas-scroll"><div id="art-stage"><canvas id="art-canvas" tabindex="0" aria-label="Pixel artwork canvas" aria-describedby="art-navigation-help"></canvas><div id="art-pixel-grid" aria-hidden="true" hidden></div><div id="art-target" aria-hidden="true" hidden></div></div></div>      <aside id="art-layer-panel" class="inspector-panel" hidden><h3>Artwork layers</h3>
-        <label>Layer <select id="art-layer"></select></label>
-        <button id="art-layer-add" type="button">Add layer</button>
-        <button id="art-layer-up" type="button">Move up</button><button id="art-layer-down" type="button">Move down</button>
-        <button id="art-layer-remove" type="button">Remove layer</button>
-        <label>Name <input id="art-layer-name" maxlength="100"></label>
-        <label><input id="art-layer-visible" type="checkbox" checked>Visible</label>
-        <label>Opacity <input id="art-layer-opacity" type="number" min="0" max="255" value="255"></label>
-        <label><input id="art-layer-locked" type="checkbox">Locked</label>
-        <button id="art-layer-update" type="button">Apply name / opacity</button>
+      <div class="art-workspace"><div id="art-viewport" class="art-canvas-scroll"><div id="art-stage"><canvas id="art-canvas" tabindex="0" aria-label="Pixel artwork canvas" aria-describedby="art-navigation-help"></canvas><div id="art-pixel-grid" aria-hidden="true" hidden></div><div id="art-target" aria-hidden="true" hidden></div></div></div>      <aside id="art-layer-panel" class="inspector-panel" hidden>
+        <div class="art-layer-heading"><h3>Artwork layers <span id="art-layer-count"></span></h3><div class="art-layer-actions"><button id="art-layer-add" type="button" class="art-layer-icon" title="Add layer" aria-label="Add layer"></button><button id="art-layer-remove" type="button" class="art-layer-icon" title="Remove selected layer" aria-label="Remove selected layer"></button></div></div>
+        <div id="art-layer-list" role="group" aria-label="Artwork layers" aria-describedby="art-layer-help"></div>
+        <p class="art-layer-order">Front ↑ <span>↓ Back</span></p>
+        <div class="art-layer-opacity"><label for="art-layer-opacity-range">Opacity</label><input id="art-layer-opacity-range" type="range" min="0" max="100" step="1" value="100"><span class="art-layer-percent"><input id="art-layer-opacity" type="number" min="0" max="100" step="1" value="100" aria-label="Opacity percentage"><span aria-hidden="true">%</span></span></div>
+        <p id="art-layer-help" class="hint">Double-click name / F2 to rename<br>Drag grip / Alt + ↑ / ↓ to reorder</p>
+        <p id="art-layer-status" class="hint" role="status"></p>
       </aside>
 <aside id="art-properties" class="inspector-panel" hidden><h3>Document &amp; frame properties</h3><p id="art-document-geometry" class="hint"></p><div id="art-frame-properties"><label class="field">Frame name<input id="art-frame-name" maxlength="100"></label><button id="art-rename-frame">Rename frame</button><p id="art-frame-geometry"></p><details><summary>Representations</summary><p class="hint">Tile representations share pixels with this sprite. Adding one does not replace placements.</p><button id="art-tile-representation">Add tile representation</button></details></div><canvas id="art-repeat-canvas" aria-label="Tile repetition preview" hidden></canvas></aside><aside id="art-review-panel" class="art-review inspector-panel" hidden><div class="art-review-heading"><h3>Review changes</h3><button id="art-review-close">Close review</button></div><button id="art-cancel-close" hidden>Cancel closing</button>
         <label><input id="art-use-scene" type="checkbox" checked> Preview in the open scene</label>
