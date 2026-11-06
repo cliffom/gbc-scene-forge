@@ -182,9 +182,15 @@ export function createPixelEditor({
     }
   }
   for (const id of ['art-properties-toggle', 'art-layers-toggle']) {
-    button(id).addEventListener('click', () => ports.presentation.revealInspector(), {
-      signal: lifetime.signal,
-    });
+    element(id, HTMLElement).addEventListener(
+      'click',
+      () => {
+        if (presentationSlot.active) {
+          ports.presentation.revealInspector();
+        }
+      },
+      { signal: lifetime.signal },
+    );
   }
   function focusFrame(region: string, fresh = false) {
     const d = session?.model.descriptor;
@@ -309,7 +315,7 @@ export function createPixelEditor({
     } else {
       presentation.reviewPanel(false);
     }
-    describe(current.candidate, preservePanels);
+    describe(current.candidate);
     element('artwork-heading', HTMLElement).textContent = current.model.descriptor.name;
     palette.invalidate();
     draw();
@@ -649,13 +655,11 @@ export function createPixelEditor({
       element('art-variation-help', HTMLElement).textContent = variation;
       button('art-variation').title = variation;
     }
-    button('art-properties-toggle').hidden = !active;
     button('art-palette-toggle').hidden = !active;
     element('art-document-geometry', HTMLElement).textContent = session
       ? `${session.model.descriptor.width} × ${session.model.descriptor.height} pixels · ${session.model.descriptor.name}`
       : '';
     element('art-frame-properties', HTMLElement).hidden = session?.model.descriptor.version !== 2;
-    button('art-layers-toggle').hidden = !active;
     if (!active && presentation.mode === 'existing') {
       element('art-source-help', HTMLElement).textContent = sources[
         Number(select('art-source').value)
@@ -992,7 +996,7 @@ export function createPixelEditor({
     tabs();
     input('art-use-scene').checked = sceneSession.loaded !== null;
     describe(candidate);
-    presentation.resetPanels();
+    presentation.resetPanels(true);
     input('art-review-detail').checked = false;
     input('art-review-x').value = '0';
     input('art-review-y').value = '0';
@@ -1014,11 +1018,7 @@ export function createPixelEditor({
     tabs();
     canvas.focus();
   }
-  function describe(candidate: Candidate, preservePanels = false) {
-    if (!preservePanels) {
-      element('art-layer-panel', HTMLElement).hidden = true;
-      button('art-layers-toggle').setAttribute('aria-expanded', 'false');
-    }
+  function describe(candidate: Candidate) {
     element('art-handoff-result', HTMLElement).hidden = true;
     element('art-recovery', HTMLElement).hidden = true;
     element('artwork-heading', HTMLElement).textContent = candidate.descriptor.name;
@@ -1583,9 +1583,6 @@ export function createPixelEditor({
     }
   }
   const layerControls = createArtworkLayerControls(lifetime, {
-    opening: () => {
-      reviewPanel(false);
-    },
     current: () => session?.model ?? null,
     busy: () => busy,
     cancelGesture,

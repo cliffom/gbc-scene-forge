@@ -15,6 +15,39 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## 0.44.0 release candidate (#246)
+
+- **Scope:** Option A implementation on `issue-246-inspector-sections`, based on
+  `984754f`, checked 2026-11-05 on macOS arm64 with Python 3.13.13,
+  Node 24.22.1, Playwright 1.64.1 and local Chrome. Production bundles and
+  freshly installed plain/optional-MCP 0.44.0 wheels were exercised.
+- **Method:** Run `make lint test`, strict Poetry lock validation, production
+  build/metadata and plain-wheel smoke checks. Exercise the full browser suite
+  from the checkout and final installed wheel, installed-wheel first use,
+  optional-MCP smoke/protocol tests and real MCP/browser acceptance. Check
+  independent disclosures, Enter/Space, focus leaving hidden content,
+  per-document state, hidden Inspector retention, scene/Review transitions,
+  unchanged history and bounded eight-layer lists at 1440 × 900, 1280 × 800,
+  800 × 640 and 1440 × 600. Agent-inspect these states and archive four-layer
+  [desktop expanded](images/inspector-sections-expanded.png) and
+  [compact collapsed](images/inspector-sections-collapsed.png) wheel captures.
+- **Result:** Lint, Python/TypeScript suites, lock consistency and metadata pass.
+  Plain and optional-MCP wheel smoke checks each pass seven cases; optional MCP
+  passes 121 protocol and 16 browser cases. The checkout browser run passes
+  197 cases with 12 optional-profile skips before the final hidden-Inspector
+  retention adjustment. The final installed-wheel run passes 195 cases,
+  including the new retention regression, with 12 skips; two build-label
+  assertions fail because the test invocation omitted production mode. Both
+  pass with the correct mode, together with installed-wheel first use. The
+  initial new regression also entered scene placement instead of artwork
+  editing; its corrected setup passes. All checked section changes leave
+  authored history and saved state untouched.
+- **Limits:** Synthetic local Chrome checks and agent image inspection do not
+  establish independent-user discovery or accessibility conformance. The final
+  installed browser result combines the broad run and targeted mode-corrected
+  rerun; it is not one uninterrupted all-pass run. Official Tiled/rasterizer
+  tools were not exercised. Publication and fresh PyPI verification are separate.
+
 ## 0.43.0 release candidate (#244)
 
 - **Scope:** Release preparation on `issue-244-layer-inspector`, based on

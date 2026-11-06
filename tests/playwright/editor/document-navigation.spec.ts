@@ -95,7 +95,7 @@ test('one document bar retains dirty scene, layers, selection, tools and sheet c
   const sceneView = await page.locator('#viewport').evaluate((n) => [n.scrollLeft, n.scrollTop]);
   await openGrass(page);
   await expect(page.locator('#document-state')).toHaveText('Saved');
-  await page.locator('#art-layers-toggle').click();
+  await revealArtworkControl(page, 'art-layer-list');
   await page.locator('#art-layer-add').click();
   const layer = await activeArtworkLayer(page).getAttribute('data-layer-id');
   await page.locator('#art-color').fill('#cc7744');
@@ -133,7 +133,7 @@ test('one document bar retains dirty scene, layers, selection, tools and sheet c
   await page.locator('#artwork-documents button').filter({ hasText: 'Grass' }).click();
   await expect(page.locator('#art-color')).toHaveValue('#cc7744');
   await expect(page.locator('#art-zoom')).toHaveValue('32');
-  await page.locator('#art-layers-toggle').click();
+  await revealArtworkControl(page, 'art-layer-list');
   await expect(activeArtworkLayer(page)).toHaveAttribute('data-layer-id', layer ?? '');
   await chooseArtwork(page, 'Player');
   await expect(page.locator('#art-frame')).toHaveValue('f1');

@@ -49,7 +49,11 @@ disposal; control state stays with the existing artwork owners. The layout owner
 closes the popover on document transitions.
 
 `artwork/artwork-workspace.mts` contributes layer/property/review sections and
-color assistance to the one Inspector. `artwork/sheet-editor.mts` owns the drawing-boundary controls beside the tools and
+color assistance to the one Inspector. Layer/property sections use native
+`details`/`summary` disclosures; `artwork-documents.mts` retains their open state
+alongside each document's controls. Review collapses both; reopening either exits
+review. Restoring disclosure state does not reveal a deliberately hidden Inspector.
+`artwork/sheet-editor.mts` owns the drawing-boundary controls beside the tools and
 the bounded bottom frame/animation dock, stops playback on collapse and reuses raster stamps
 for unchanged thumbnails. Panel/dock disclosure is transient UI state, outside
 pixel history. Source setup in `pixel-editor.mts` preserves entered fields during

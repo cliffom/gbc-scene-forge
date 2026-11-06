@@ -44,6 +44,11 @@ system; hierarchy comes from grouping, spacing and clear labels.
   command popover. Keep view overlays and coordinate feedback beside the canvas.
 - **Inspector:** scene, layers and contextual selection properties belong here.
   Maintain independent scrolling so a long inspector does not move the canvas.
+  Artwork layers and Properties use independent native disclosures with headings
+  next to their content. Right/down chevrons indicate closed/open state; the layer
+  count stays visible. Both start open, with per-retained-document state for this
+  mounted editor. Review collapses both; reopening either exits review. Keep the
+  summary keyboard reachable and return focus there when its contents collapse.
   Artwork uses a bounded stack with frontmost rows first, grip/eye/name/lock per
   row, gold active selection, and compact plus/trash controls in the heading.
   Click selects; double-click or F2 opens an inline name. Percentage opacity below

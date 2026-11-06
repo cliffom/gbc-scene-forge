@@ -34,10 +34,8 @@ export function createArtworkLayerControls(
     draw: () => void;
     refreshPalette: () => void;
     operation: (work: () => void) => void;
-    opening: () => void;
   },
 ) {
-  const panel = element('art-layer-panel', HTMLElement);
   const list = element('art-layer-list', HTMLElement);
   const number = input('art-layer-opacity');
   const range = input('art-layer-opacity-range');
@@ -137,13 +135,6 @@ export function createArtworkLayerControls(
   const dragging = layerDragging(list, reorder, lifetime);
   button('art-layer-add').innerHTML = icon(icons.add);
   button('art-layer-remove').innerHTML = icon(icons.remove);
-  lifetime.assign(button('art-layers-toggle'), 'onclick', () => {
-    panel.hidden = !panel.hidden;
-    if (!panel.hidden) {
-      ports.opening();
-    }
-    button('art-layers-toggle').setAttribute('aria-expanded', String(!panel.hidden));
-  });
   lifetime.assign(button('art-layer-add'), 'onclick', () => {
     let added: string | null = null;
     mutate((model) => {
@@ -371,7 +362,6 @@ export function createArtworkLayerControls(
     }
     displayedOpacity = { id: layer?.id ?? null, value };
     number.disabled = range.disabled = disabled || !layer || layer.locked;
-    button('art-layers-toggle').disabled = disabled;
     button('art-layer-add').disabled = disabled || !model || layers.length >= MAX_LAYERS;
     button('art-layer-remove').disabled = disabled || !layer || layer.locked || layers.length < 2;
     element('art-layer-count', HTMLElement).textContent = String(layers.length);
