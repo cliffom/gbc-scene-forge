@@ -15,6 +15,60 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## 0.46.1 inactive button release candidate (#252)
+
+- **Scope:** Button styling on `fix/252-disabled-buttons-0.46.1`, based on
+  `052c21d`, checked 2026-11-06 on macOS arm64, Python 3.13.13,
+  Node 24.22.1, Playwright 1.64.1 and Chromium 156.0.8078.4. Production
+  checkout assets and a fresh plain 0.46.1 wheel use disposable native projects.
+- **Method:** Run lint, Python/TypeScript, documentation and strict Poetry lock
+  checks; build production distributions, check metadata and run installed-wheel
+  smoke. Run the full regular browser suite and installed-wheel button, shared
+  command, document navigation/closure and first-use suites. Compare computed
+  opacity, background, border, color and cursor before/after native hover;
+  exercise saved, modified and held review/write requests in Scene and Artwork.
+  Native button probes isolate primary, danger, destructive, folder and icon
+  variants from dialog busy gates. Inspect final-wheel captures of the empty
+  workspace at [1440 × 900](images/button-states/empty-1440.png) and
+  [800 × 640](images/button-states/empty-800.png), plus modified
+  [Scene](images/button-states/scene-modified.png) and
+  [Artwork](images/button-states/artwork-modified.png) at 1440 × 1000.
+- **Result:** Lint, 490 Python cases, TypeScript suites, documentation and lock
+  checks pass. Production wheel/source metadata and seven installed-package
+  smoke cases pass. Regular browser acceptance passes 206 cases with 12
+  optional-profile skips; all 20 final-wheel browser cases pass. Disabled Save
+  and Close match in the empty workspace, inactive hover leaves styles unchanged,
+  and enabled hover/Save emphasis remains. An initial test incorrectly expected
+  saved Artwork's existing review entry to be disabled; the corrected test
+  preserves that capability and verifies its review/write busy states.
+- **Limits:** These are synthetic browser checks and agent image inspection,
+  not independent-user testing or an exhaustive control/state matrix. Variant
+  probes verify the production CSS cascade without exercising every dialog's
+  busy transition. Local optional MCP, profiling and Tiled interoperability
+  checks were not rerun for this CSS patch. Tagging and publication are separate.
+
+## 0.46.1 hover specificity review fix (#253)
+
+- **Scope:** Hover-guard follow-up changes based on `a8ac609` on
+  `fix/252-disabled-buttons-0.46.1`, checked 2026-11-06 on the macOS arm64
+  environment above. Production checkout assets and a rebuilt plain 0.46.1
+  installed wheel use disposable native projects.
+- **Method:** Compare native hover styles before and after selecting the Artwork
+  and Objects Library tabs. Run button-state, shared-command, Library-usability
+  and Library-source browser suites in the checkout and installed wheel. Rebuild
+  production distributions and run installed-package smoke, lint,
+  Python/TypeScript and documentation checks. Inspect the final-wheel empty
+  workspace capture at 1440 × 900.
+- **Result:** The new tab test initially failed because the generic hover guard
+  overrode selected backgrounds and borders. Zero-specificity guards preserve
+  those styles while suppressing disabled hover. All 17 browser cases pass in
+  both environments; distribution metadata and seven installed-package smoke
+  cases pass. Lint, 490 Python cases, TypeScript suites and documentation checks
+  pass; the inspected empty workspace retains matching inactive Save and Close.
+- **Limits:** The full browser suite above predates this follow-up; only affected
+  suites were rerun. No additional independent-user, optional MCP, profiling or
+  Tiled interoperability checks were performed.
+
 ## 0.46.0 release candidate (#250)
 
 - **Scope:** Download icon and options implementation on

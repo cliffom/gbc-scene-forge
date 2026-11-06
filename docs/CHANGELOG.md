@@ -6,6 +6,12 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.46.1 — Consistent inactive buttons
+
+[Release notes](RELEASE-0.46.1.md). Match Save and Close document's disabled
+appearance and suppress hover feedback on unavailable buttons. Preserve enabled
+hover feedback and modified-document Save emphasis.
+
 ## 0.46.0 — Artwork download options
 
 [Release notes](RELEASE-0.46.0.md). Replace the labeled PNG toolbar button with a
