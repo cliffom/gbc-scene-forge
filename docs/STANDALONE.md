@@ -151,6 +151,10 @@ not included. A browser remains necessary even when Python runs headlessly.
 The document bar keeps the project selector, active Documents button, local state
 and one contextual **Save scene** / **Save artwork…** button (Ctrl/⌘ S).
 Artwork Save opens review, then **Confirm save** commits the reviewed pixels.
+When no document is open, Save and Close document share the same dimmed,
+disabled appearance.
+Disabled buttons keep that appearance when hovered; enabled actions retain their
+hover feedback and modified documents retain the accented Save action.
 **Scene actions** contains create, rename, duplicate, resize/crop, revert and delete. **Project tools** starts with
 **Export…**, followed by World view, Diagnostics and optional GBC palette checks.
 The shared strip above the contextual drawing tools routes Undo/Redo, clipboard,

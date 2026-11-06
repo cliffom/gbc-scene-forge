@@ -63,7 +63,9 @@ system; hierarchy comes from grouping, spacing and clear labels.
   Use recognizable 18px SVG tool icons
   in 32px targets for frequent spatial commands, with accessible names and tooltips
   including shortcuts where supported. Gold, a border and an inset underline identify
-  selected tools; unavailable actions remain visibly disabled. Keep text for
+  selected tools; unavailable actions share dimmed disabled styling and do not
+  highlight on hover. Save and Close document use the same inactive treatment
+  in an empty workspace. Keep text for
   management, save/review and destructive commands, except the contextual artwork
   layer trash icon, which has an explicit tooltip and accessible name. Single-value dropdowns
   reserve 32px for their arrow (28px in dense preview tables). Bound long user
@@ -162,6 +164,19 @@ show the delivered layout; the [earlier polish evaluation](evaluations/editor-po
 historical scope and captures.
 
 ## Visual comparison
+
+### Inactive buttons (#252)
+
+Save and Close document share the standard disabled appearance in the empty
+workspace. Disabled buttons retain their background, border and text colors on
+hover; enabled actions keep their existing feedback and Save emphasis.
+
+Implemented 0.46.1 installed-wheel captures:
+[Desktop empty workspace](images/button-states/empty-1440.png) ·
+[Compact empty workspace](images/button-states/empty-800.png) ·
+[Modified Scene](images/button-states/scene-modified.png) ·
+[Modified Artwork](images/button-states/artwork-modified.png).
+See [validation scope and limits](VALIDATION.md#0461-inactive-button-release-candidate-252).
 
 ### Artwork download options (#250)
 
