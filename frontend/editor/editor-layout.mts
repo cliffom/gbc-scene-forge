@@ -1,4 +1,5 @@
 import { EditorLifetime } from './editor-lifetime.mts';
+import { createArtworkToolbarOverflow } from './editor-toolbar-overflow.mts';
 /** Native command popovers and keyboard-operable authoring library tabs. */
 export type LibraryCategory = 'artwork' | 'objects' | 'stamps' | 'blockout';
 
@@ -15,6 +16,7 @@ export function createEditorLayout(
   changeLayout: (apply: () => void) => void = (apply) => apply(),
 ) {
   const main = element('editor-layout', HTMLElement);
+  const artworkOverflow = createArtworkToolbarOverflow(lifetime);
   const inspector = element('inspector-pane', HTMLElement);
   const inspectorHeading = element('inspector-heading', HTMLElement);
   function inspectorScrollOffset() {
@@ -286,6 +288,7 @@ export function createEditorLayout(
         sceneCategory = selectedCategory;
       }
       artworkContext = next;
+      artworkOverflow.close();
       selectLibrary(next ? 'artwork' : sceneCategory);
     },
     showInspector() {

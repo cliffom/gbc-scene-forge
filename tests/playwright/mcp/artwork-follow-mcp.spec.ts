@@ -142,7 +142,7 @@ test('clean artwork follows repeated MCP commits, preserves view and retires old
   await page.locator('#art-fit').click();
   await page.screenshot({ path: info.outputPath('live-artwork-review.png') });
   await page.setViewportSize({ width: 800, height: 640 });
-  await page.locator('#art-fit').click();
+  await (await revealArtworkControl(page, 'art-fit')).click();
   await page.screenshot({ path: info.outputPath('live-artwork-review-compact.png') });
 });
 
