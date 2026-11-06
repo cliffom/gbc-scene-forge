@@ -45,7 +45,8 @@ Dates, revisions and environments missing from the originals remain unknown.
   lock consistency and production metadata pass. Plain and optional-MCP wheel
   smoke each pass seven cases. Installed-wheel browser acceptance passes 16
   cases initially and 17 on the final rebuilt wheel; optional-MCP protocol passes
-  121 cases in both development and fresh wheel environments. MCP/browser acceptance passes 15 cases initially; its
+  121 cases in both development and fresh wheel environments. MCP/browser
+  acceptance passes 15 cases initially; its
   asynchronous palette assertion fails, then both iteration cases pass after
   waiting for refreshed swatches. The final rebuilt optional-MCP wheel passes
   all 16 browser cases in one run. The broad checkout run passes 197 cases
@@ -60,8 +61,10 @@ Dates, revisions and environments missing from the originals remain unknown.
   fixes it; all 17 targeted palette/Inspector/navigation cases pass, followed
   by repeated lint/tests, package and installed-wheel checks. Disclosure
   changes preserve saved state and authored history in the checked workflows.
-- **Limits:** Broad checkout and MCP acceptance results combine their broad run
-  and focused corrections, rather than one uninterrupted all-pass run. These
+- **Limits:** The broad checkout result precedes the final retained-Palette
+  refresh fix and combines its broad run with the object-definition correction.
+  Final lifecycle and installed-wheel suites cover that fix. Archived captures
+  precede the refresh fix and retain the same visible layout. These
   synthetic local Chromium checks and agent image inspection do not establish
   independent-user discovery, physical-device comfort or accessibility
   conformance. The compact Palette capture demonstrates Inspector scrolling;
