@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { record, string } from '../../../frontend/shared/decode.mts';
 import {
+  revealControl,
   clickControl,
   scenePoint,
   test,
@@ -98,7 +99,12 @@ print(json.dumps(ids))
       await control.dispatchEvent('change');
     }
   };
-  const chooseValue = (id: string, value: string) => set('#' + id, value);
+  const chooseValue = async (id: string, value: string) => {
+    if (id === 'object-list') {
+      await revealControl(page, id);
+    }
+    await set('#' + id, value);
+  };
   const field = (index: number, control: string) =>
     `#definition-fields > :nth-child(${index + 1}) .field-${control}`;
   await click('manage-definitions');
@@ -155,6 +161,7 @@ print(json.dumps(ids))
     "document.getElementById('object-validation-summary').textContent.includes('0 linked instances')",
   );
   await click('redo');
+  await revealControl(page, 'object-findings');
   await page.locator('#object-findings button').first().click();
   await click('edit-object');
   await wait("document.getElementById('object-dialog').open");

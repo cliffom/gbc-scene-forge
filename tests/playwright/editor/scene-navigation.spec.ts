@@ -1,6 +1,6 @@
 import { cp, mkdir } from 'node:fs/promises';
 import { expect } from '@playwright/test';
-import { test, editorReady, chooseSavedScene } from '../support/browser-fixtures.ts';
+import { revealControl, test, editorReady, chooseSavedScene } from '../support/browser-fixtures.ts';
 
 for (const single of [true, false]) {
   test(`scene links and guarded history (${single ? 'direct' : 'workspace'})`, async ({
@@ -40,7 +40,7 @@ for (const single of [true, false]) {
     await page.evaluate(() => history.forward());
     await expect(page.locator('#scenes')).toHaveValue(ids[1]);
     await expect(page).toHaveURL(base + 'scenes/' + ids[1]);
-    await page.locator('#layer-name').fill('Unsaved navigation test');
+    await (await revealControl(page, 'layer-name')).fill('Unsaved navigation test');
     await page.locator('#layer-name').dispatchEvent('change');
     await expect(page.locator('#dirty')).toHaveText('UNSAVED');
     await expect(page.locator('#scenes')).toBeEnabled();

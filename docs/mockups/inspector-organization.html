@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Scene Forge · Inspector organization · #248</title>
+  <style>
+    :root { color-scheme:dark; --bg:#1b1d1b; --panel:#242723; --line:#3a3d35; --text:#e5e4d7; --muted:#a4a897; --accent:#d4b767; --pane-width:320px; --pane-height:820px; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    main { max-width:1152px; margin:auto; padding:32px 32px 24px; }
+    h1 { font-size:28px; font-weight:600; letter-spacing:-.7px; margin:6px 0 8px; }
+    h2 { font-size:15px; font-weight:600; margin:0 0 4px; }
+    p { margin:0; }
+    .eyebrow { color:var(--accent); font-size:10px; text-transform:uppercase; letter-spacing:1.8px; }
+    .intro { color:var(--muted); max-width:760px; margin-bottom:20px; }
+    .study-controls { display:flex; flex-wrap:wrap; align-items:center; gap:12px 24px; border-top:1px solid var(--line); padding:14px 0 22px; }
+    .study-controls label { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:12px; }
+    button,select,input { font:inherit; color:inherit; background:#20231e; border:1px solid #515746; border-radius:4px; min-height:32px; padding:5px 9px; }
+    button,summary,select { cursor:pointer; }
+    button:hover { border-color:var(--accent); }
+    button:disabled { opacity:.55; cursor:default; }
+    :is(button,select,input,summary):focus-visible { outline:2px solid var(--accent); outline-offset:-2px; }
+    .views { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px; }
+    .view { min-width:0; }
+    .caption { color:var(--muted); font-size:12px; min-height:44px; margin-bottom:12px; }
+    .pane { width:min(100%,var(--pane-width)); height:var(--pane-height); border:1px solid var(--line); border-radius:6px; background:var(--panel); display:flex; flex-direction:column; overflow:hidden; }
+    .pane-head { display:flex; align-items:center; gap:10px; height:52px; flex:none; padding:0 16px; border-bottom:1px solid var(--line); }
+    .pane-head strong { font-size:15px; }
+    .badge { color:var(--muted); font-size:10px; border:1px solid var(--line); border-radius:4px; padding:2px 6px; margin-left:auto; }
+    .pane-head svg { color:var(--muted); }
+    .pane-scroll { overflow:auto; min-height:0; flex:1; scrollbar-color:#515746 var(--panel); scroll-padding-top:10px; }
+    svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+    details.section { border-bottom:1px solid var(--line); }
+    details.section>summary { list-style:none; display:flex; align-items:center; gap:9px; min-height:44px; padding:10px 16px; font-weight:600; }
+    summary::-webkit-details-marker { display:none; }
+    summary:hover { background:#2d3129; }
+    .chevron { width:12px; height:12px; color:var(--muted); }
+    details[open]>summary>.chevron { transform:rotate(90deg); }
+    .summary-tail { margin-left:auto; font-size:10px; color:var(--muted); font-weight:400; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; max-width:130px; }
+    .content { padding:0 16px 16px; }
+    .identity { font-size:14px; font-weight:600; overflow-wrap:anywhere; margin:0 0 12px; }
+    .metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:0; }
+    .metrics dt { color:var(--muted); font-size:10px; margin-bottom:3px; }
+    .metrics dd { margin:0; font-size:14px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .metrics dd small { font-size:10px; color:var(--muted); }
+    .context-line { display:flex; justify-content:space-between; gap:10px; margin-top:13px; padding-top:10px; border-top:1px solid var(--line); font-size:11px; color:var(--muted); }
+    .scope-note { color:var(--muted); font-size:11px; margin-top:9px; }
+    .secondary { margin-top:10px; color:var(--muted); font-size:11px; }
+    .secondary>summary { min-height:30px; }
+    .secondary p { margin-top:7px; }
+    .tabs { display:grid; grid-template-columns:1fr 1fr; gap:3px; padding:3px; border:1px solid var(--line); border-radius:5px; background:var(--bg); }
+    .tabs button { min-width:0; font-size:11px; border-color:transparent; padding:5px 3px; }
+    .tabs button[aria-selected=true] { background:#3a3d2c; color:var(--accent); border-color:#766944; }
+    .palette-scope { color:var(--muted); font-size:10px; margin:9px 0; }
+    .palette-heading { display:flex; align-items:center; justify-content:space-between; gap:5px; font-size:11px; margin-bottom:10px; }
+    .palette-heading label { color:var(--muted); display:flex; align-items:center; gap:5px; font-size:10px; }
+    .palette-heading select { font-size:10px; min-height:28px; padding:3px; max-width:88px; }
+    .swatches { display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:5px; max-height:132px; overflow:auto; padding:2px; }
+    .swatch { min-height:26px; aspect-ratio:1; padding:0; border:1px solid #73796b; background:linear-gradient(var(--swatch),var(--swatch)),repeating-conic-gradient(#aaa 0% 25%,#555 0% 50%) 0/8px 8px; border-radius:3px; }
+    .swatch[aria-pressed=true] { outline:2px solid var(--accent); outline-offset:1px; position:relative; }
+    .swatch[aria-pressed=true]::after { content:'✓'; color:#fff; text-shadow:0 1px 2px #000; font-size:14px; }
+    .drawing-color { display:flex; gap:9px; align-items:center; margin-top:13px; border-top:1px solid var(--line); padding-top:10px; }
+    .color-chip { width:30px; height:30px; background:var(--swatch); border:1px solid #73796b; border-radius:4px; flex:none; }
+    .drawing-color output { display:block; font:12px ui-monospace,SFMono-Regular,monospace; }
+    .drawing-color small { display:block; color:var(--muted); font-size:10px; }
+    .layer-toolbar { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
+    .layer-toolbar span { color:var(--muted); font-size:10px; }
+    .layer-toolbar div { display:flex; gap:4px; }
+    .icon-button { width:28px; min-height:28px; padding:5px; display:grid; place-items:center; }
+    .stack { max-height:148px; overflow:auto; display:flex; flex-direction:column; gap:4px; }
+    .layer { display:flex; align-items:center; gap:7px; min-height:32px; padding:6px 8px; border:1px solid transparent; border-radius:4px; background:#20231e; font-size:11px; }
+    .layer.selected { background:#373729; border-color:#8b7946; box-shadow:inset 2px 0 var(--accent); }
+    .layer svg { width:13px; height:13px; color:var(--muted); }
+    .layer .name { flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .opacity { display:flex; align-items:center; gap:8px; margin-top:12px; font-size:11px; color:var(--muted); }
+    .opacity input { min-width:0; flex:1; width:0; accent-color:var(--accent); padding:0; }
+    .opacity span { color:var(--text); }
+    .actions { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+    .actions button { font-size:11px; }
+    .hint { color:var(--muted); font-size:11px; }
+    .selection-id { display:flex; gap:10px; align-items:center; margin-bottom:12px; }
+    .thumbnail { flex:none; display:grid; place-items:center; width:40px; height:40px; background:#20231e; border:1px solid var(--line); border-radius:4px; }
+    .thumbnail svg { width:27px; height:27px; color:var(--accent); }
+    .selection-id .identity { margin:0; }
+    .selection-id small { color:var(--muted); font-size:10px; }
+    .placement { display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:11px; }
+    .placement span { color:var(--muted); }
+    .placement strong { color:var(--text); margin-left:6px; font-weight:400; }
+    .preview { margin-top:12px; border-top:1px solid var(--line); padding-top:10px; }
+    .preview>strong { font-size:11px; font-weight:500; }
+    .plain-props { display:flex; justify-content:space-between; color:var(--muted); font-size:11px; padding:8px 0; }
+    .plain-props span:last-child { color:var(--text); }
+    .notes { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px; border-top:1px solid var(--line); margin-top:24px; padding-top:17px; }
+    .notes strong { font-size:12px; font-weight:500; }
+    .notes p { color:var(--muted); font-size:11px; margin-top:4px; }
+    footer { color:var(--muted); font-size:10px; margin-top:18px; }
+    a { color:var(--accent); }
+    @media(max-width:900px) { .views { grid-template-columns:1fr; } .view { max-width:480px; margin:auto; width:100%; } .pane { width:100%; max-width:var(--pane-width); margin:auto; } .caption { min-height:0; } .notes { grid-template-columns:1fr; gap:12px; } main { padding:24px 20px; } h1 { font-size:24px; } }
+  </style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">Scene Forge / Design proposal / #248</div>
+  <h1>One Inspector. A clearer order.</h1>
+  <p class="intro">Put identity and dimensions first. Keep colors inside the pane. Give Artwork and Scene the same compact, independent section headings.</p>
+  <div class="study-controls" aria-label="Mockup display controls">
+    <label>Pane width <select id="study-width"><option value="320">320 px</option><option value="280">280 px</option></select></label>
+    <label>Pane height <select id="study-height"><option value="820">820 px</option><option value="480">480 px · short window</option></select></label>
+    <button id="reset">Reset mockup</button>
+    <span class="hint">Try the headings, palette scopes, sort order and swatches.</span>
+  </div>
+  <div class="views">
+    <section class="view"><h2>A · Artwork</h2><p class="caption">Properties → Palette → Layers<br>Drawing colors stay beside your artwork.</p><aside class="pane" aria-label="Artwork Inspector"><div class="pane-head"><strong>Inspector</strong><span class="badge">ARTWORK</span><span class="edge-icon"></span></div><div class="pane-scroll" id="artwork"></div></aside></section>
+    <section class="view"><h2>B · Scene</h2><p class="caption">Properties → Layers → Selection<br>Document details lead when nothing is selected.</p><aside class="pane" aria-label="Scene Inspector"><div class="pane-head"><strong>Inspector</strong><span class="badge">SCENE</span><span class="edge-icon"></span></div><div class="pane-scroll" id="scene"></div></aside></section>
+    <section class="view"><h2>C · Scene with selection</h2><p class="caption">Selection → Properties → Layers<br>The object you are editing stays prominent.</p><aside class="pane" aria-label="Selected object Inspector"><div class="pane-head"><strong>Inspector</strong><span class="badge">SCENE</span><span class="edge-icon"></span></div><div class="pane-scroll" id="selected"></div></aside></section>
+  </div>
+  <div class="notes">
+    <div><strong>01 · Identity without repetition</strong><p>An unlabeled name above Width, Height and Total pixels. Frame-specific details and shared editing scope stay in Properties.</p></div>
+    <div><strong>02 · Palette is a real section</strong><p>Composition and Selected layer keep their distinct meaning. Swatches scroll inside the pane; choosing a color updates the drawing-color preview.</p></div>
+    <div><strong>03 · Same structure, useful context</strong><p>Selection rises when active. Validation and recovery remain reachable as quiet disclosures. Scene uses its own layers and selection controls.</p></div>
+  </div>
+  <footer>Isolated interactive mockup for <a href="https://github.com/cliffom/gbc-scene-forge/issues/248">issue #248</a> · Sample values. Only disclosures and palette/display controls are interactive. Editing actions are illustrative.</footer>
+</main>
+<script>
+  const paths = {
+    chevron:'<path d="m5 3 5 5-5 5"/>',
+    eye:'<path d="M1 8s2.5-4 7-4 7 4 7 4-2.5 4-7 4-7-4-7-4Z"/><circle cx="8" cy="8" r="2"/>',
+    lock:'<rect x="4" y="7" width="8" height="7" rx="1"/><path d="M5.5 7V4a2.5 2.5 0 0 1 5 0v3"/>',
+    grip:'<path d="M5 4h.1M10 4h.1M5 8h.1M10 8h.1M5 12h.1M10 12h.1"/>',
+    plus:'<path d="M8 2v12M2 8h12"/>',
+    trash:'<path d="M2 4h12M6 4V2h4v2M4 4l1 10h6l1-10M7 7v4M9 7v4"/>',
+    sprite:'<path d="M4 7V4h2V2h4v2h2v3h2v6h-3v-3H5v3H2V7Z"/><path d="M6 6h.1M10 6h.1M6 8h4"/>'
+  };
+  const icon = (name, cls='') => `<svg class="${cls}" viewBox="0 0 16 16" aria-hidden="true">${paths[name]}</svg>`;
+  const section = (title, tail, content, open=true, id='') => `<details class="section" ${id ? `id="${id}"` : ''} ${open ? 'open' : ''}><summary>${icon('chevron','chevron')}<span>${title}</span><span class="summary-tail">${tail}</span></summary><div class="content">${content}</div></details>`;
+  const metrics = (width,height) => `<dl class="metrics"><div><dt>Width</dt><dd>${width} <small>px</small></dd></div><div><dt>Height</dt><dd>${height} <small>px</small></dd></div><div><dt>Total pixels</dt><dd>${(width*height).toLocaleString('en-US')}</dd></div></dl>`;
+  const props = (art) => section('Properties','',`<div class="identity" aria-label="${art ? 'Artwork' : 'Scene'} name">${art ? 'Vee – A Place to Belong' : 'Autumn clearing'}</div>${metrics(art ? 384 : 640,art ? 544 : 480)}<div class="context-line"><span>${art ? 'Whole artwork' : 'Grid · 16 × 16 px'}</span><span>${art ? 'Shared artwork' : '40 × 30 cells'}</span></div>${art ? '<p class="scope-note">Edits update every placement of this artwork.</p><details class="secondary"><summary>Frame & representations</summary><p>Selected frame · Whole artwork · 384 × 544 px</p><div class="actions"><button disabled>Rename frame</button><button disabled>Add tile representation</button></div></details>' : '<p class="scope-note">12 objects · 4 layers</p>'}`);
+  function layers(art,id) {
+    const names = art ? ['Owlbert crest','Vee autumn illustration','Card lettering','Grimoire frame'] : ['Guides','Characters','Canopy','Ground'];
+    return section('Layers','4',`<div class="layer-toolbar"><span>Frontmost first</span>${art ? `<div><button class="icon-button" disabled aria-label="Add layer (illustrative)">${icon('plus')}</button><button class="icon-button" disabled aria-label="Delete layer (illustrative)">${icon('trash')}</button></div>` : ''}</div><div class="stack">${names.map((name,i)=>`<div class="layer ${i===1 ? 'selected' : ''}">${icon('grip')}${icon('eye')}<span class="name" title="${name}">${name}</span>${art ? icon('lock') : `<small class="hint">${i<2 ? 'Objects' : 'Tiles'}</small>`}</div>`).join('')}</div>${art ? `<label class="opacity" for="${id}-opacity">Opacity<input id="${id}-opacity" type="range" value="100" disabled><span>100%</span></label>` : '<div class="actions"><button disabled>+ Tile layer</button><button disabled>+ Object layer</button></div><details class="secondary"><summary>Active layer actions</summary><div class="actions"><button disabled>Rename layer</button><button disabled>Hide layer</button><button disabled>Delete layer</button></div></details>'}`);
+  }
+  const colors = ['#2b211b','#4b2d28','#6a3930','#8c4c3b','#b26343','#d78855','#e9ad72','#f2d4a1','#342d20','#51432a','#736036','#998047','#b9a456','#d8c880','#ded5b1','#ebe3c8','#273021','#38452a','#4d6035','#6f8244','#8d9c5c','#b6bd80','#27353a','#435964'];
+  const palette = () => section('Palette','24 colors',`<div class="tabs" role="tablist" aria-label="Palette scope"><button id="composition-tab" role="tab" aria-selected="true" aria-controls="palette-content">Composition</button><button id="layer-tab" role="tab" aria-selected="false" aria-controls="palette-content" tabindex="-1">Selected layer</button></div><div id="palette-content" role="tabpanel" aria-labelledby="composition-tab" tabindex="0"><p id="palette-scope" class="palette-scope">Visible composite · whole artwork</p><div class="palette-heading"><span id="color-count">24 colors</span><label>Sort<select id="palette-sort"><option value="hue">Hue</option><option value="usage">Most used</option></select></label></div><div class="swatches" aria-label="Sample artwork colors"></div><div class="drawing-color"><span class="color-chip" style="--swatch:#b26343" aria-hidden="true"></span><div><output id="drawing-color" aria-live="polite">#B26343</output><small>Drawing color · 100% opacity</small></div></div><p class="scope-note">Drawing stays on the active layer.</p></div>`,true,'palette-section');
+  const selection = (active) => section('Selection',active ? 'Sprite' : 'None',active ? `<div class="selection-id"><span class="thumbnail">${icon('sprite')}</span><div><div class="identity">Forest keeper</div><small>On Characters</small></div></div><div class="placement"><span>X<strong>224 px</strong></span><span>Y<strong>160 px</strong></span><span>Width<strong>32 px</strong></span><span>Height<strong>48 px</strong></span></div><div class="actions"><button disabled>Edit selected object</button><button disabled>Edit artwork…</button></div><div class="preview"><strong>Animation preview</strong><div class="plain-props"><span>Animation</span><span>Idle · Down</span></div><div class="actions"><button disabled>Previous</button><button disabled>Play</button><button disabled>Next</button></div><p class="scope-note">Preview only · saved position stays unchanged.</p><details class="secondary"><summary>More preview settings</summary><p>Action, direction, speed, sequence mappings and movement preview.</p></details></div><details class="secondary"><summary>Convert or remove selection</summary><div class="actions"><button disabled>Convert to tiles…</button><button disabled>Remove object</button></div></details>` : '<p class="hint">Select an object or tiles on the canvas to inspect and edit them.</p>',active);
+  const utilities = () => section('Object validation','No findings','<p class="hint">No object validation findings in this sample scene.</p>',false)+section('Draft recovery','Up to date','<p class="hint">Local draft checkpoint is up to date.</p><div class="actions"><button disabled>Recover unsaved work…</button></div>',false);
+  let scope = 0;
+  let chosen = '#b26343';
+  function drawPalette() {
+    const tabs = [...document.querySelectorAll('[role=tab]')];
+    tabs.forEach((tab,i)=> { tab.setAttribute('aria-selected',String(scope===i)); tab.tabIndex=scope===i ? 0 : -1; });
+    document.getElementById('palette-content').setAttribute('aria-labelledby',tabs[scope].id);
+    let shown = scope===0 ? [...colors] : colors.slice(8,24);
+    // Stable sample ordering; the mockup does not scan actual artwork.
+    if (document.getElementById('palette-sort').value==='usage') shown.reverse();
+    document.getElementById('palette-scope').textContent = scope===0 ? 'Visible composite · whole artwork' : 'Vee autumn illustration · whole layer';
+    document.getElementById('color-count').textContent = `${shown.length} colors`;
+    document.querySelector('#palette-section .summary-tail').textContent = `${shown.length} colors`;
+    document.querySelector('.swatches').innerHTML = shown.map(c=>`<button class="swatch" style="--swatch:${c}" data-color="${c}" aria-label="Use ${c.toUpperCase()} as drawing color" title="${c.toUpperCase()}" aria-pressed="${c===chosen}"></button>`).join('');
+    document.querySelectorAll('.swatch').forEach(swatch=>swatch.addEventListener('click',()=> {
+      chosen=swatch.dataset.color;
+      document.querySelectorAll('.swatch').forEach(s=>s.setAttribute('aria-pressed',String(s.dataset.color===chosen)));
+      document.getElementById('drawing-color').value=chosen.toUpperCase();
+      document.querySelector('.color-chip').style.setProperty('--swatch',chosen);
+    }));
+  }
+  function render() {
+    scope=0; chosen='#b26343';
+    document.getElementById('artwork').innerHTML=props(true)+palette()+layers(true,'art');
+    document.getElementById('scene').innerHTML=props(false)+layers(false,'scene')+selection(false)+utilities();
+    document.getElementById('selected').innerHTML=selection(true)+props(false)+layers(false,'selected')+utilities();
+    document.querySelectorAll('.edge-icon').forEach(node=>node.innerHTML=icon('chevron'));
+    const tabs = [...document.querySelectorAll('[role=tab]')];
+    tabs.forEach((tab,i)=> {
+      tab.addEventListener('click',()=> { scope=i; drawPalette(); });
+      tab.addEventListener('keydown',event=> {
+        if (!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
+        event.preventDefault(); scope=event.key==='Home' ? 0 : event.key==='End' ? 1 : 1-scope; drawPalette(); tabs[scope].focus();
+      });
+    });
+    document.getElementById('palette-sort').addEventListener('change',drawPalette);
+    drawPalette();
+    document.querySelectorAll('.pane-scroll').forEach(node=>node.scrollTop=0);
+  }
+  document.getElementById('study-width').addEventListener('change',event=>document.documentElement.style.setProperty('--pane-width',`${event.target.value}px`));
+  document.getElementById('study-height').addEventListener('change',event=>document.documentElement.style.setProperty('--pane-height',`${event.target.value}px`));
+  document.getElementById('reset').addEventListener('click',()=> {
+    document.getElementById('study-width').value='320'; document.getElementById('study-height').value='820';
+    document.documentElement.style.removeProperty('--pane-width'); document.documentElement.style.removeProperty('--pane-height'); render();
+  });
+  render();
+</script>
+</body>
+</html>

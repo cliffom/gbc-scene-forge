@@ -58,7 +58,7 @@ print(s['id'])
     }
     await page.locator('input[name=tool][value=select]').check();
     await paint(page, 4, 4);
-    await page.locator('#edit-placement-artwork').click();
+    await clickControl(page, 'edit-placement-artwork');
     await page.locator('#art-open').click();
     await expect(page.locator('#editor-layout')).toHaveAttribute('data-document', 'artwork');
     await expect(page.locator('#editor-workbench > #artwork-surface')).toBeVisible();

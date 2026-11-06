@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { array, record, string } from '../../../frontend/shared/decode.mts';
 import { expect, type Page } from '@playwright/test';
 import {
+  revealControl,
   test,
   clickControl,
   editorReady,
@@ -145,7 +146,7 @@ test('pane transitions preserve dirty content, selection, brush, category, histo
   await openScene(page, forge.url);
   await page.locator('#zoom').selectOption('2');
   const originalName = await page.locator('#layer-name').inputValue();
-  await page.locator('#layer-name').fill('Pane state regression');
+  await (await revealControl(page, 'layer-name')).fill('Pane state regression');
   await page.locator('#layer-name').press('Tab');
   await page.locator('[data-asset="sample/grass"]').first().click();
   await page.locator('input[name=tool][value=select]').check();
@@ -233,7 +234,7 @@ test('pane focus is safe, hidden controls leave Tab order, and guided reveal reo
     node.click();
   });
   await expect(page.locator('#toggle-library')).toBeFocused();
-  await page.locator('#layer-name').focus();
+  await (await revealControl(page, 'layer-name')).focus();
   await page.locator('#toggle-inspector').evaluate((node) => {
     if (!(node instanceof HTMLButtonElement)) {
       throw Error('Expected pane toggle');

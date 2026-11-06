@@ -533,7 +533,7 @@
 .art-toolbar .tool-group,.art-toolbar .color-controls,.art-toolbar .pixel-view-controls {flex:none}
 .art-toolbar .color-controls,.art-toolbar .pixel-view-controls {border-left:1px solid var(--line);padding-left:8px}
 .art-controls>* {flex:none;min-width:0}
-#art-shared {display:none}
+#art-shared {font-size:11px;line-height:1.5}
 .art-help {font-size:11px;color:var(--muted)}
 .art-help summary {cursor:pointer;width:fit-content}
 .art-help p {margin:6px 0;max-height:48px;overflow:auto}
@@ -560,11 +560,9 @@
 #art-tool-overflow .color-controls,#art-tool-overflow .pixel-view-controls {margin:0;padding:0;border:0;flex-wrap:nowrap}
 #art-tool-overflow::backdrop {background:transparent}
 .pixel-view-controls>label:last-child {height:32px;font-size:11px}
-#art-palette {position:fixed;inset:auto;margin:0;width:min(334px,calc(100vw - 16px));max-height:min(480px,calc(100dvh - 16px));overflow:auto;padding:12px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 24px #0008}
-#art-palette-toggle::before {content:"";display:inline-block;width:14px;height:14px;margin-right:6px;vertical-align:middle;border:1px solid var(--line);background:var(--swatch,#000)}
+#art-palette {min-width:0;max-height:min(320px,40vh);overflow:auto;padding:0 0 16px}
 .art-swatches button[aria-pressed=true] {outline:2px solid var(--accent);outline-offset:1px}
-#art-palette::backdrop {background:transparent}
-.art-swatches {display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:4px}
+.art-swatches {display:grid;grid-template-columns:repeat(auto-fill,minmax(24px,1fr));gap:4px;max-height:min(164px,25vh);overflow:auto;padding:3px;scroll-padding:3px}
 .art-swatches button {width:100%;min-height:22px;aspect-ratio:1;border:1px solid var(--line);padding:0;background:linear-gradient(var(--swatch),var(--swatch)),repeating-conic-gradient(#aaa 0% 25%,#555 0% 50%) 0/8px 8px}
 .art-swatches button:focus-visible {outline:2px solid var(--accent);outline-offset:1px}
 #art-pixel-grid {position:absolute;pointer-events:none;background-image:linear-gradient(to right,#0005 1px,transparent 1px),linear-gradient(to bottom,#0005 1px,transparent 1px)}
@@ -717,7 +715,6 @@
 
 /* Contextual artwork controls use the shared Inspector; the optional dock owns
    its own scrolling and gives drawing space back when collapsed. */
-#art-inspector-content #art-palette-toggle {margin:12px 0;width:100%;text-align:left}
 #art-inspector-content .inspector-panel {border-top:1px solid var(--line);margin-top:8px}
 #art-inspector-content .art-review {border-top:1px solid var(--line)}
 #art-editor>#art-sheet-controls {max-height:min(230px,32vh);flex:0 1 auto;min-height:28px;overflow:auto}
@@ -888,13 +885,37 @@
 #art-layer-help,#art-layer-status {font-size:10px;margin:12px 0 0}
 #art-layer-status:empty {display:none}
 
-/* Native disclosures keep section state beside the content it controls. */
-#art-inspector-content .art-inspector-section {border-top:1px solid var(--line);margin-top:8px}
-.art-inspector-section>summary {display:flex;align-items:center;gap:10px;min-height:44px;padding:12px 0;list-style:none;cursor:pointer;font-size:13px;font-weight:650}
-.art-inspector-section>summary::-webkit-details-marker {display:none}
-.art-inspector-section>summary::before {content:'';flex:none;width:7px;height:7px;margin:0 3px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(-45deg)}
-.art-inspector-section[open]>summary::before {transform:rotate(45deg)}
-.art-inspector-section>summary:hover {background:#2d3129}
-.art-inspector-section>summary:focus-visible {outline:2px solid var(--accent);outline-offset:-2px}
-#art-layers-toggle #art-layer-count {margin-left:auto;border:1px solid #4b5043;border-radius:12px;padding:0 7px}
-#art-inspector-content .art-inspector-section>aside {padding-top:0}
+/* Shared Inspector organization; disclosures never change authored state. */
+.inspector-section {flex:none;min-width:0;border-bottom:1px solid var(--line)}
+.inspector-section.inspector-panel {padding:0;margin:0}
+.inspector-section>summary {display:flex;align-items:center;gap:10px;min-height:44px;padding:12px 0;list-style:none;cursor:pointer;font-size:13px;font-weight:650}
+.inspector-section>summary::-webkit-details-marker {display:none}
+.inspector-section>summary::before {content:'';flex:none;width:7px;height:7px;margin:0 3px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(-45deg)}
+.inspector-section[open]>summary::before {transform:rotate(45deg)}
+.inspector-section>summary:hover {background:#2d3129}
+.inspector-section>summary:focus-visible {outline:2px solid var(--accent);outline-offset:-2px}
+.inspector-summary {margin-left:auto;min-width:0;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;font-weight:400;color:var(--muted)}
+.inspector-summary[data-warning=true] {color:var(--accent)}
+#scene-panel[open] .inspector-summary {display:none}
+.inspector-section-content {padding-bottom:16px}
+#art-inspector-content .inspector-section>aside {padding:0 0 16px}
+.inspector-identity {margin:0 0 12px;font-size:14px;font-weight:600;overflow-wrap:anywhere}
+input.inspector-identity {width:100%;padding:0;border:0;background:transparent;color:var(--text);text-overflow:ellipsis;min-height:24px}
+.inspector-metrics {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0 0 12px}
+.inspector-metrics dt {color:var(--muted);font-size:10px;margin-bottom:3px}
+.inspector-metrics dd {margin:0;font-size:13px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.inspector-context {display:flex;gap:8px;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--line);font-size:11px;color:var(--muted)}
+.inspector-context label {display:flex;gap:5px;align-items:center;flex:none}
+.inspector-context input {padding:0;min-height:22px;border:0;background:transparent;color:var(--muted);font-size:11px;text-align:right;min-width:0;width:100%}
+.inspector-context #inspector-grid {width:44px}
+.inspector-secondary {font-size:11px;color:var(--muted);margin-top:10px}
+.inspector-secondary>summary {min-height:30px;cursor:pointer}
+#art-properties .art-heading {padding:8px 0 0;border-top:1px solid var(--line)}
+#art-properties #art-shared {margin:7px 0 0}
+#art-frame-details .field {margin:8px 0}
+#art-layer-count {border:1px solid #4b5043;border-radius:12px;padding:0 7px}
+#scene-panel .hint {font-size:11px;margin:9px 0 0}
+.inspector-section #layers {margin:8px 0 0;max-height:min(220px,30vh)}
+.inspector-section .layer-row {padding:6px}
+.inspector-section .layer-hint {font-size:10px}
+#object-findings {max-height:min(300px,40vh);overflow:auto}

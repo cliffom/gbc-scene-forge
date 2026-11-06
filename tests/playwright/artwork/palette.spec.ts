@@ -51,8 +51,9 @@ a.save(c)
   const swatch = (rgba: string) => page.locator(`#art-swatches button[data-rgba="${rgba}"]`);
   const open = async () => {
     if (!(await panel.isVisible())) {
-      await trigger.click();
+      await revealArtworkControl(page, 'art-palette');
     }
+    await panel.locator('[role=tab][aria-selected=true]').focus();
   };
   await page.locator('#art-sheet-view').click();
   await open();
@@ -150,6 +151,7 @@ a.save(c)
     [800, 640],
   ]) {
     await page.setViewportSize({ width, height });
+    await panel.scrollIntoViewIfNeeded();
     await expect
       .poll(async () => {
         const bounds = await panel.boundingBox();
@@ -164,14 +166,11 @@ a.save(c)
       .toBe(true);
     await page.screenshot({ path: info.outputPath(`composition-palette-${width}.png`) });
     const paletteBounds = await panel.boundingBox();
-    const triggerBounds = await trigger.boundingBox();
-    if (!paletteBounds || !triggerBounds) {
-      throw Error('Expected palette and invoker bounds');
-    }
-    expect(
-      paletteBounds.y + paletteBounds.height <= triggerBounds.y ||
-        paletteBounds.y >= triggerBounds.y + triggerBounds.height,
-    ).toBe(true);
+    const inspectorBounds = await page.locator('#inspector-pane').boundingBox();
+    expect(paletteBounds?.x).toBeGreaterThanOrEqual(inspectorBounds?.x ?? 0);
+    expect((paletteBounds?.x ?? 0) + (paletteBounds?.width ?? 0)).toBeLessThanOrEqual(
+      (inspectorBounds?.x ?? 0) + (inspectorBounds?.width ?? 0),
+    );
   }
   await page.keyboard.press('Escape');
   await activeArtworkLayer(page).locator('.art-layer-visible').click();
@@ -211,7 +210,7 @@ a.save(c)
   const open = async () => {
     await page.locator('[data-asset="picture/artwork"]').click();
     await expect(page.locator('#art-canvas')).toBeVisible();
-    await page.locator('#art-palette-toggle').click();
+    await revealArtworkControl(page, 'art-palette');
   };
   await open();
   await layer.click();
@@ -234,7 +233,7 @@ a.save(c)
   await expect(page.locator('#art-palette-scope')).toHaveText('Entire image · visible composition');
   await expect(page.locator('#art-swatches button')).toHaveCount(0);
   await expect(page.locator('#art-palette-empty')).toBeVisible();
-  await expect(composition).toBeFocused();
+  await composition.focus();
   await page.keyboard.press('ArrowRight');
   await expect(layer).toBeFocused();
   await expect(layer).toHaveAttribute('aria-selected', 'true');
@@ -249,7 +248,7 @@ test('palette collection is lazy, cached, and reads exact shared raster bytes', 
   await page.evaluate(
     (html) => {
       const parsed = new DOMParser().parseFromString(html, 'text/html');
-      for (const id of ['art-palette-toggle', 'art-palette']) {
+      for (const id of ['art-palette-section']) {
         const element = parsed.getElementById(id);
         if (!element) {
           throw Error('Missing palette markup');
@@ -275,16 +274,22 @@ let reads = 0;
 Object.defineProperty(raster,'pixels',{get:()=>{reads++;return snapshot}});
 const lifetime = new EditorLifetime();
 let drawingColor = [0,0,0,255];
-const palette = createArtworkPaletteControls(lifetime,raster,{current:()=>model,view:()=>null,busy:()=>false,color:()=>drawingColor,chooseColor:()=>{}});
+let busy=false;
+document.getElementById('art-palette-section').open=false;
+const palette = createArtworkPaletteControls(lifetime,raster,{current:()=>model,view:()=>null,busy:()=>busy,color:()=>drawingColor,chooseColor:()=>{}});
 palette.sync();
 model.apply(()=>model.put({x:1,y:1},[90,80,70,128]));
 raster.refresh(model);
 palette.invalidate();
 for(let i=0;i<20;i++) palette.sync();
 const closed = reads;
-const panel = document.getElementById('art-palette');
-panel.showPopover();
+const panel = document.getElementById('art-palette-section');
+panel.open=true;palette.sync();
 const opened = reads;
+palette.invalidate();busy=true;for(let i=0;i<20;i++) palette.sync();
+const busyReads=reads;busy=false;
+panel.hidden=true;for(let i=0;i<20;i++) palette.sync();
+const hiddenReads=reads;panel.hidden=false;palette.sync();
 for(let i=0;i<20;i++) palette.sync();
 drawingColor=[11,22,33,128];palette.sync();
 const drawingLabel=document.getElementById('art-palette-color').textContent;
@@ -294,16 +299,16 @@ model.undo();raster.refresh(model);palette.invalidate();palette.sync();
 const undone = document.querySelectorAll('#art-swatches button').length;
 model.redo();raster.refresh(model);palette.invalidate();palette.sync();
 const redone = document.querySelector('#art-swatches button').dataset.rgba;
-panel.hidePopover();
+panel.open=false;
 palette.invalidate();for(let i=0;i<20;i++) palette.sync();
 const final = reads;
 model.apply(()=>{for(let i=0;i<1025;i++) model.pixels.set([i%256,Math.floor(i/256),1,255],i*4)});
-raster.refresh(model);palette.invalidate();panel.showPopover();
+raster.refresh(model);palette.invalidate();panel.open=true;palette.sync();
 const capped = document.querySelectorAll('#art-swatches button').length;
 const limited = !document.getElementById('art-palette-limits').hidden;
 const count = document.getElementById('art-palette-count').textContent;
 lifetime.dispose();raster.dispose();
-document.body.dataset.result=JSON.stringify({closed,opened,cached,drawingLabel,exact,undone,redone,final,capped,limited,count,disposed:panel.matches(':popover-open')});
+document.body.dataset.result=JSON.stringify({closed,opened,busyReads,hiddenReads,cached,drawingLabel,exact,undone,redone,final,capped,limited,count,disposed:document.querySelectorAll('#art-swatches button').length>0});
 `,
     },
     bundle: true,
@@ -321,15 +326,51 @@ document.body.dataset.result=JSON.stringify({closed,opened,cached,drawingLabel,e
   expect(JSON.parse(result)).toEqual({
     closed: 0,
     opened: 1,
-    cached: 1,
+    busyReads: 1,
+    hiddenReads: 1,
+    cached: 2,
     drawingLabel: 'RGBA 11, 22, 33, 128',
     exact: '90,80,70,128',
     undone: 0,
     redone: '90,80,70,128',
-    final: 3,
+    final: 4,
     capped: 1024,
     limited: true,
     count: 'First 1,024 colors shown · additional colors available.',
     disposed: false,
   });
+});
+
+test('an open palette refreshes when returning to a retained document with unchanged geometry', async ({
+  page,
+  workspace,
+}) => {
+  const root = join(workspace.folder, 'project');
+  execFileSync(workspace.python, [
+    '-I',
+    '-c',
+    `
+from pathlib import Path
+import sys
+from gbc_scene_forge.project.application import Project
+p=Project.create(Path(sys.argv[1]),'Retained palettes')
+for key,color in [('red',[255,0,0,255]),('blue',[0,0,255,255])]:
+    c=p.artwork.documents.create(key,key.title(),'sprite',8,8,p.catalog()['revision'])
+    c=p.artwork.documents.edit(c,[dict(x=0,y=0,rgba=color)])
+    p.artwork.documents.save(c)
+`,
+    root,
+  ]);
+  await page.goto(await workspace.start(root));
+  const colors = page.locator('#art-swatches button');
+  await page.locator('[data-asset="red/artwork"]').click();
+  await expect(colors).toHaveCount(1);
+  await expect(colors.first()).toHaveAttribute('data-rgba', '255,0,0,255');
+  await page.locator('[data-asset="blue/artwork"]').click();
+  await expect(colors.first()).toHaveAttribute('data-rgba', '0,0,255,255');
+  await page.locator('#document-switcher').click();
+  await page.locator('#artwork-documents button').filter({ hasText: 'Red' }).click();
+  await expect(page.locator('#art-palette-section')).toHaveAttribute('open');
+  await expect(colors.first()).toHaveAttribute('data-rgba', '255,0,0,255');
+  await expect(page.locator('#undo')).toBeDisabled();
 });

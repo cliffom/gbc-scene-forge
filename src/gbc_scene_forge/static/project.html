@@ -250,27 +250,33 @@
       <div id="inspector-rail" class="pane-rail inspector-rail" hidden></div>
       <aside id="inspector-pane" class="inspector" aria-label="Scene inspector">
         <div id="inspector-heading" class="panel-heading pane-heading"><h2>Inspector</h2><span id="dirty" class="tag">NO SCENE</span><button id="toggle-inspector" class="pane-toggle" aria-label="Hide Inspector" title="Hide Inspector" aria-controls="inspector-pane" aria-expanded="true"><svg class="command-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div>
-        <section id="scene-panel" class="inspector-panel" aria-label="Scene properties">
-          <h3>Scene properties</h3>
-          <label class="field">Scene name<input id="inspector-name" readonly placeholder="No scene open"></label>
-          <div class="property-grid scene-dimensions"><label class="field">Dimensions<input id="inspector-size" readonly placeholder="—"></label><label class="field">Grid<input id="inspector-grid" readonly placeholder="—"></label></div>
+        <details id="scene-panel" class="inspector-panel inspector-section" open>
+          <summary id="scene-properties-toggle">Properties <span id="scene-properties-summary" class="inspector-summary"></span></summary>
+          <div class="inspector-section-content">
+          <input id="inspector-name" class="inspector-identity" aria-label="Scene name" readonly placeholder="No scene open">
+          <dl class="inspector-metrics"><div><dt>Width</dt><dd id="inspector-width">—</dd></div><div><dt>Height</dt><dd id="inspector-height">—</dd></div><div><dt>Total pixels</dt><dd id="inspector-pixels">—</dd></div></dl>
+          <div class="inspector-context"><label>Grid <input id="inspector-grid" readonly placeholder="—"></label><input id="inspector-size" aria-label="Scene dimensions in cells" readonly placeholder="—"></div>
           <p id="scene-summary" class="hint">Open a scene to inspect its dimensions and placed sprites.</p>
-        </section>
-        <section id="layers-panel" class="inspector-panel" aria-labelledby="layers-heading">
-          <div class="panel-heading"><h3 id="layers-heading">Layers</h3><span class="layer-order">Top first</span></div>
+          </div>
+        </details>
+        <details id="layers-panel" class="inspector-panel inspector-section" open>
+          <summary id="layers-heading">Layers <span id="scene-layer-count" class="inspector-summary"></span></summary>
+          <div class="inspector-section-content"><span class="layer-order">Frontmost first</span>
           <div id="layers" role="radiogroup" aria-labelledby="layers-heading"></div>
-          <label class="field">Layer name<input id="layer-name" maxlength="100" disabled></label>
+          <details class="inspector-secondary"><summary>Active layer actions</summary><label class="field">Layer name<input id="layer-name" maxlength="100" disabled></label>
           <div class="layer-controls">
             <button id="layer-up" class="small" title="Move active layer toward the top" disabled>↑ Move up</button><button id="layer-down" class="small" title="Move active layer toward the bottom" disabled>↓ Move down</button><button id="layer-visible" class="small" disabled>Hide layer</button>
             <button id="layer-remove" class="small" disabled>Delete layer</button>
           </div>
-          <div class="layer-add">
+          </details><div class="layer-add">
             <button id="layer-tile" class="small" disabled>+ Tile layer</button><button id="layer-object" class="small" disabled>+ Object layer</button>
           </div>
           <p class="hint layer-hint">Drag the grips to reorder layers. Select a layer to edit it. Hidden layers cannot be edited. All layer changes can be undone.</p>
-        </section>
-        <section id="selection-panel" class="inspector-panel" aria-label="Selection properties">
-          <div class="panel-heading"><h3>Selection</h3><span id="selection-kind" class="muted">—</span></div>
+          </div>
+        </details>
+        <details id="selection-panel" class="inspector-panel inspector-section">
+          <summary id="selection-toggle">Selection <span id="selection-kind" class="inspector-summary">—</span></summary>
+          <div class="inspector-section-content">
           <div id="selection-preview" class="selection-preview" hidden><canvas id="selection-image"></canvas></div>
           <p id="selection-name" class="selection-name muted">Nothing selected</p>
           <p id="selection-detail" class="hint">Select an object on the canvas or in the list to edit it, or select tiles on a tile layer.</p>
@@ -321,13 +327,15 @@
             <p class="hint">Preview only. Playback does not edit the scene or its starting positions.</p>
           </section>
           <details id="selection-secondary"><summary>Convert or remove selection</summary><button id="convert-sprites">Convert selected sprites to tiles…</button><button id="remove-sprite" class="destructive-command" disabled>Remove selected object</button></details><select id="object-list" size="3" aria-label="Objects in active layer" disabled></select>
-        </section>
-        <section class="inspector-panel" aria-label="Object validation"><h3>Object validation</h3><p id="object-validation-summary" class="hint"></p><div id="object-findings"></div></section>
-        <section class="inspector-panel" aria-label="Draft recovery">
-          <h3>Draft recovery</h3>
+          </div>
+        </details>
+        <details id="object-validation-section" class="inspector-panel inspector-section"><summary>Object validation <span id="object-validation-count" class="inspector-summary">No scene</span></summary><div class="inspector-section-content"><p id="object-validation-summary" class="hint"></p><div id="object-findings"></div></div></details>
+        <details id="draft-recovery-section" class="inspector-panel inspector-section">
+          <summary>Draft recovery <span id="draft-recovery-summary" class="inspector-summary">No checkpoint</span></summary><div class="inspector-section-content">
           <p id="draft-status" class="hint" role="status" aria-live="polite"></p>
           <button id="show-recovery" type="button">Recover unsaved work…</button>
-        </section>
+          </div>
+        </details>
       </aside>
     </main>
   </div>
@@ -466,8 +474,8 @@
 <button id="art-png-menu" popovertarget="art-png-options" aria-controls="art-png-options" aria-expanded="false" aria-label="Download PNG…" title="Download current artwork as PNG"><span class="command-full-label">Download </span>PNG…</button><div id="art-png-options" class="command-panel art-png-export" popover aria-label="Download PNG"><label class="field">PNG scope<select id="art-png-scope"><option value="sheet">Whole artwork / sheet</option><option value="frame">Selected frame</option></select></label><button id="art-download-png">Download PNG</button><span id="art-png-help" class="hint">Current composited pixels, including unsaved edits; native size and transparency.</span></div><div class="art-row art-tools"><div id="art-color-controls" class="art-row color-controls" role="group" aria-label="Drawing color"><label class="field">Color<input id="art-color" type="color" value="#729b4f"></label><label class="field">Opacity<input title="0 = transparent, 255 = opaque" id="art-alpha" type="number" min="0" max="255" value="255"></label><button id="art-transparent" class="icon-button" aria-pressed="false" title="Toggle transparent drawing; click again to restore opacity"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-transparent"/></svg><span id="art-transparency-label">Transparent</span></button></div><div id="art-view-controls" class="art-row pixel-view-controls" role="group" aria-label="Pixel view"><button id="art-pan" class="icon-button" aria-label="Pan artwork" aria-pressed="false" title="Pan artwork (H): drag, or use arrow keys on the canvas. Also middle drag or Space+drag."><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-pan"/></svg></button><button id="art-fit" class="icon-button" aria-label="Fit artwork" title="Center and fit artwork in the drawing area"><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-fit"/></svg></button><label class="field">Zoom<select id="art-zoom"><option value="0.03125">¹⁄₃₂×</option><option value="0.0625">¹⁄₁₆×</option><option value="0.125">⅛×</option><option value="0.25">¼×</option><option value="0.5">½×</option><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option><option value="8">8×</option><option value="16" selected>16×</option><option value="32">32×</option></select></label><label><input id="art-grid" type="checkbox" checked> Pixel grid</label></div></div>
 <button id="art-more-tools" class="icon-button" type="button" popovertarget="art-tool-overflow" aria-controls="art-tool-overflow" aria-expanded="false" aria-label="More artwork tools" title="More artwork tools" hidden><svg class="command-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
 <div id="art-tool-overflow" class="art-tools" popover aria-label="More artwork tools"></div>
-<button id="art-palette-toggle" type="button" popovertarget="art-palette">Colors ▾</button>
-<div id="art-palette" popover="auto" aria-label="Artwork palette">
+<details id="art-palette-section" class="inspector-section" open><summary id="art-palette-toggle">Palette <span id="art-palette-summary" class="inspector-summary" aria-label="Drawing color"></span></summary>
+<div id="art-palette" aria-label="Artwork palette"><input id="art-palette-mode" type="hidden" value="composition">
   <div class="art-palette-tabs" role="tablist" aria-label="Palette scope"><button id="art-palette-composition" type="button" role="tab" aria-selected="true" aria-controls="art-palette-content">Composition</button><button id="art-palette-layer" type="button" role="tab" aria-selected="false" aria-controls="art-palette-content" tabindex="-1">Selected layer</button></div>
   <div id="art-palette-content" role="tabpanel" aria-labelledby="art-palette-composition" tabindex="0">
     <p id="art-palette-scope" class="hint"></p>
@@ -476,10 +484,10 @@
     <div class="art-palette-selected"><span id="art-palette-chip" aria-hidden="true"></span><span><span id="art-palette-color"></span><small>Drawing color · edits stay on the active layer</small></span></div>
     <p id="art-palette-help" class="hint"></p><p id="art-palette-limits" class="hint" hidden>Ordering applies to the shown colors. Use the eyedropper for additional colors.</p>
   </div>
-</div>
+</div></details>
 </div>
       </div>
-      <div class="art-workspace"><div id="art-viewport" class="art-canvas-scroll"><div id="art-stage"><canvas id="art-canvas" tabindex="0" aria-label="Pixel artwork canvas" aria-describedby="art-navigation-help"></canvas><div id="art-pixel-grid" aria-hidden="true" hidden></div><div id="art-target" aria-hidden="true" hidden></div></div></div>      <details id="art-layer-section" class="art-inspector-section" open><summary id="art-layers-toggle">Artwork layers <span id="art-layer-count"></span></summary><aside id="art-layer-panel">
+      <div class="art-workspace"><div id="art-viewport" class="art-canvas-scroll"><div id="art-stage"><canvas id="art-canvas" tabindex="0" aria-label="Pixel artwork canvas" aria-describedby="art-navigation-help"></canvas><div id="art-pixel-grid" aria-hidden="true" hidden></div><div id="art-target" aria-hidden="true" hidden></div></div></div>      <details id="art-layer-section" class="inspector-section" open><summary id="art-layers-toggle">Layers <span id="art-layer-count" class="inspector-summary"></span></summary><aside id="art-layer-panel">
         <div class="art-layer-heading"><span class="hint">Frontmost layer first</span><div class="art-layer-actions"><button id="art-layer-add" type="button" class="art-layer-icon" title="Add layer" aria-label="Add layer"></button><button id="art-layer-remove" type="button" class="art-layer-icon" title="Remove selected layer" aria-label="Remove selected layer"></button></div></div>
         <div id="art-layer-list" role="group" aria-label="Artwork layers" aria-describedby="art-layer-help"></div>
         <p class="art-layer-order">Front ↑ <span>↓ Back</span></p>
@@ -487,7 +495,7 @@
         <p id="art-layer-help" class="hint">Double-click name / F2 to rename<br>Drag grip / Alt + ↑ / ↓ to reorder</p>
         <p id="art-layer-status" class="hint" role="status"></p>
       </aside></details>
-<details id="art-properties-section" class="art-inspector-section" open><summary id="art-properties-toggle">Properties</summary><aside id="art-properties"><h3>Document &amp; frame</h3><p id="art-document-geometry" class="hint"></p><div id="art-frame-properties"><label class="field">Frame name<input id="art-frame-name" maxlength="100"></label><button id="art-rename-frame">Rename frame</button><p id="art-frame-geometry"></p><details><summary>Representations</summary><p class="hint">Tile representations share pixels with this sprite. Adding one does not replace placements.</p><button id="art-tile-representation">Add tile representation</button></details></div><canvas id="art-repeat-canvas" aria-label="Tile repetition preview" hidden></canvas></aside></details><aside id="art-review-panel" class="art-review inspector-panel" hidden><div class="art-review-heading"><h3>Review changes</h3><button id="art-review-close">Close review</button></div><button id="art-cancel-close" hidden>Cancel closing</button>
+<details id="art-properties-section" class="inspector-section" open><summary id="art-properties-toggle">Properties</summary><aside id="art-properties"><h3 id="art-document-name" class="inspector-identity" aria-label="Artwork name"></h3><dl id="art-document-geometry" class="inspector-metrics"><div><dt>Width</dt><dd id="art-document-width">—</dd></div><div><dt>Height</dt><dd id="art-document-height">—</dd></div><div><dt>Total pixels</dt><dd id="art-document-pixels">—</dd></div></dl><details id="art-frame-details" class="inspector-secondary"><summary>Frame &amp; representations</summary><div id="art-frame-properties"><label class="field">Frame name<input id="art-frame-name" maxlength="100"></label><button id="art-rename-frame">Rename frame</button><p id="art-frame-geometry"></p><details><summary>Representations</summary><p class="hint">Tile representations share pixels with this sprite. Adding one does not replace placements.</p><button id="art-tile-representation">Add tile representation</button></details></div></details><canvas id="art-repeat-canvas" aria-label="Tile repetition preview" hidden></canvas></aside></details><aside id="art-review-panel" class="art-review inspector-panel" hidden><div class="art-review-heading"><h3>Review changes</h3><button id="art-review-close">Close review</button></div><button id="art-cancel-close" hidden>Cancel closing</button>
         <label><input id="art-use-scene" type="checkbox" checked> Preview in the open scene</label>
         <button id="art-review">Update review</button>
         <details><summary>Artwork detail view</summary><p class="hint">The default review shows the whole artwork. Review any region at native resolution.</p><label><input id="art-review-detail" type="checkbox"> Review detail region</label><div class="property-grid"><label class="field">X<input id="art-review-x" type="number" min="0" value="0"></label><label class="field">Y<input id="art-review-y" type="number" min="0" value="0"></label><label class="field">Width<input id="art-review-width" type="number" min="1" max="1024" value="256"></label><label class="field">Height<input id="art-review-height" type="number" min="1" max="1024" value="256"></label></div></details><p id="art-review-view" class="hint"></p>

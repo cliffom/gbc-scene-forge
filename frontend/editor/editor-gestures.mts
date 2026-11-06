@@ -294,7 +294,7 @@ export function createGesturesController({
       target instanceof Element &&
       Boolean(
         target.closest(
-          'input, select, textarea, button, a, [contenteditable]:not([contenteditable="false"]), dialog, #animation-preview',
+          'input, select, textarea, button, summary, a, [contenteditable]:not([contenteditable="false"]), dialog, #animation-preview',
         ),
       )
     );

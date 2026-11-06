@@ -556,6 +556,13 @@ export function createPanelsController({
     element('object-validation-summary', HTMLElement).textContent = sceneSession.editor
       ? `${instances} linked instances · ${count} findings${count > 100 ? ' (first 100 shown)' : ''}. Checks include hidden layers and current unsaved edits.`
       : 'Open a scene to validate its objects.';
+    const summary = element('object-validation-count', HTMLElement);
+    summary.textContent = sceneSession.editor
+      ? count
+        ? `${count} findings`
+        : 'No findings'
+      : 'No scene';
+    summary.dataset.warning = String(count > 0);
   }
 
   lifetime.assign(select('object-list'), 'onchange', () => {

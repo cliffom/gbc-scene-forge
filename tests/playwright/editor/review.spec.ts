@@ -2,7 +2,13 @@ import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { expect } from '@playwright/test';
-import { test, clickControl, editorReady, chooseSavedScene } from '../support/browser-fixtures.ts';
+import {
+  revealControl,
+  test,
+  clickControl,
+  editorReady,
+  chooseSavedScene,
+} from '../support/browser-fixtures.ts';
 
 test.use({ projectMode: 'sample' });
 
@@ -57,7 +63,7 @@ test('review mode expands the canvas and preserves edits, selection and history'
 
   // An authored edit and tile selection must survive every blocked authoring shortcut.
   const originalName = await page.locator('#layer-name').inputValue();
-  await page.locator('#layer-name').fill('Review keeps my edits');
+  await (await revealControl(page, 'layer-name')).fill('Review keeps my edits');
   await page.locator('#layer-name').press('Tab');
   await expect(page.locator('#scene-save-state')).toHaveText('Unsaved changes');
   await page.locator('input[name=tool][value=select]').check();

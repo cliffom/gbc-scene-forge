@@ -268,27 +268,27 @@ p.artwork.documents.save(c)
   const colors = () =>
     palette.evaluateAll((nodes) => nodes.map((n) => n.getAttribute('data-rgba')));
   await revealArtworkControl(page, 'art-layer-list');
-  await page.locator('#art-palette-toggle').click();
+  await revealArtworkControl(page, 'art-palette');
   await page.getByRole('tab', { name: 'Selected layer', exact: true }).click();
-  expect(await colors()).toContain('255,0,0,255');
-  expect(await colors()).not.toContain('0,0,255,255');
+  await expect.poll(colors).toContain('255,0,0,255');
+  await expect.poll(colors).not.toContain('0,0,255,255');
   await page.keyboard.press('Escape');
   await selectArtworkLayer(page, 'Blue');
-  await page.locator('#art-palette-toggle').click();
-  expect(await colors()).toContain('0,0,255,255');
-  expect(await colors()).toContain('0,255,0,255');
-  expect(await colors()).not.toContain('255,0,0,255');
+  await revealArtworkControl(page, 'art-palette');
+  await expect.poll(colors).toContain('0,0,255,255');
+  await expect.poll(colors).toContain('0,255,0,255');
+  await expect.poll(colors).not.toContain('255,0,0,255');
   await page.keyboard.press('Escape');
   await selectArtworkLayer(page, 'Red');
-  await page.locator('#art-palette-toggle').click();
-  expect(await colors()).toContain('255,0,0,255');
-  expect(await colors()).not.toContain('0,0,255,255');
+  await revealArtworkControl(page, 'art-palette');
+  await expect.poll(colors).toContain('255,0,0,255');
+  await expect.poll(colors).not.toContain('0,0,255,255');
   await page.keyboard.press('Escape');
   await expect(page.locator('#undo')).toBeDisabled();
   expect(writes).toBe(0);
-  await page.locator('#art-palette-toggle').click();
+  await revealArtworkControl(page, 'art-palette');
   await page.screenshot({ path: info.outputPath('adopted-edit-palette.png') });
-  await page.locator('#art-palette-toggle').click();
+  await revealArtworkControl(page, 'art-palette');
   await activateScene(page);
   const post = async (action: string, data = {}) => {
     const response = await page.request.post(new URL('api/artwork-' + action, url).href, {
