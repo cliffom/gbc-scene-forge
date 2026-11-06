@@ -44,16 +44,21 @@ Dates, revisions and environments missing from the originals remain unknown.
 - **Result:** Lint, 490 Python cases, TypeScript suites, documentation checks,
   lock consistency and production metadata pass. Plain and optional-MCP wheel
   smoke each pass seven cases. Installed-wheel browser acceptance passes 16
-  cases; optional-MCP protocol passes 121 cases in both development and fresh
-  wheel environments. MCP/browser acceptance passes 15 cases initially; its
+  cases initially and 17 on the final rebuilt wheel; optional-MCP protocol passes
+  121 cases in both development and fresh wheel environments. MCP/browser acceptance passes 15 cases initially; its
   asynchronous palette assertion fails, then both iteration cases pass after
-  waiting for refreshed swatches. The final broad checkout run passes 197 cases
+  waiting for refreshed swatches. The final rebuilt optional-MCP wheel passes
+  all 16 browser cases in one run. The broad checkout run passes 197 cases
   with 12 optional-profile skips; its remaining object-definition test fails
   on a collapsed list and passes after explicit reveal. The earlier broad run
   passed 177 cases, with 21 failures caused by obsolete reveal/heading assumptions.
   Earlier focused runs exposed toolbar nesting/startup, stale invalid-opacity
   feedback and a Space/Pan shortcut conflict; all were corrected. New fixture
-  setup failures and a Review readiness race were also corrected. Disclosure
+  setup failures and a Review readiness race were also corrected. A final
+  unchanged-geometry document-switch regression reproduced stale colors from
+  the outgoing document. Moving collection into ready control synchronization
+  fixes it; all 17 targeted palette/Inspector/navigation cases pass, followed
+  by repeated lint/tests, package and installed-wheel checks. Disclosure
   changes preserve saved state and authored history in the checked workflows.
 - **Limits:** Broad checkout and MCP acceptance results combine their broad run
   and focused corrections, rather than one uninterrupted all-pass run. These

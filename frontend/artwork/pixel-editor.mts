@@ -692,6 +692,8 @@ export function createPixelEditor({
     layerControls.sync();
 
     syncNavigation();
+    // Async document adoption draws while busy; refresh once controls are ready.
+    palette.sync();
   }
   function dirtyControls() {
     const modified = session?.changed ?? false;
@@ -786,9 +788,6 @@ export function createPixelEditor({
       sheetEditor.sync();
     }
     rendering.draw();
-    if (!gestureOnly) {
-      palette.sync();
-    }
     if (gestureOnly) {
       dirtyControls();
     } else {

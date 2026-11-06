@@ -340,3 +340,37 @@ document.body.dataset.result=JSON.stringify({closed,opened,busyReads,hiddenReads
     disposed: false,
   });
 });
+
+test('an open palette refreshes when returning to a retained document with unchanged geometry', async ({
+  page,
+  workspace,
+}) => {
+  const root = join(workspace.folder, 'project');
+  execFileSync(workspace.python, [
+    '-I',
+    '-c',
+    `
+from pathlib import Path
+import sys
+from gbc_scene_forge.project.application import Project
+p=Project.create(Path(sys.argv[1]),'Retained palettes')
+for key,color in [('red',[255,0,0,255]),('blue',[0,0,255,255])]:
+    c=p.artwork.documents.create(key,key.title(),'sprite',8,8,p.catalog()['revision'])
+    c=p.artwork.documents.edit(c,[dict(x=0,y=0,rgba=color)])
+    p.artwork.documents.save(c)
+`,
+    root,
+  ]);
+  await page.goto(await workspace.start(root));
+  const colors = page.locator('#art-swatches button');
+  await page.locator('[data-asset="red/artwork"]').click();
+  await expect(colors).toHaveCount(1);
+  await expect(colors.first()).toHaveAttribute('data-rgba', '255,0,0,255');
+  await page.locator('[data-asset="blue/artwork"]').click();
+  await expect(colors.first()).toHaveAttribute('data-rgba', '0,0,255,255');
+  await page.locator('#document-switcher').click();
+  await page.locator('#artwork-documents button').filter({ hasText: 'Red' }).click();
+  await expect(page.locator('#art-palette-section')).toHaveAttribute('open');
+  await expect(colors.first()).toHaveAttribute('data-rgba', '255,0,0,255');
+  await expect(page.locator('#undo')).toBeDisabled();
+});

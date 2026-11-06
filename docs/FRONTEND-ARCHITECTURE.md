@@ -362,7 +362,9 @@ for composition colors, excluding alpha-zero pixels; selected-layer colors use
 source bytes, including hidden RGB. Completed mutations invalidate the cache;
 model identity, raster stamps, frame geometry and layer selection fence reuse.
 Closed panels, hidden Inspectors and in-progress gestures never trigger collection.
-A ResizeObserver refreshes an open Palette when the Inspector becomes visible. No canvas
+Control synchronization refreshes Palette after async document adoption becomes
+ready, including retained documents with unchanged geometry. A ResizeObserver
+refreshes an open Palette when the Inspector becomes visible. No canvas
 readback, additional composition or pixel mutation is needed for palette inspection.
 Main artwork backing surfaces stay within 4,194,304 pixels and 4,096 per axis,
 independently of CSS zoom; a CSS overlay draws the zoomed grid when needed.
