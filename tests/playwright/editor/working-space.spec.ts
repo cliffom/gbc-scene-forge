@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { readFile, writeFile } from 'node:fs/promises';
 import { test, expect, chooseSavedScene, activateScene } from '../support/browser-fixtures.ts';
-import { revealArtworkControl } from '../support/artwork-controls.ts';
+import { revealArtworkControl, selectArtworkLayer } from '../support/artwork-controls.ts';
 import { record, string, number, array } from '../../../frontend/shared/decode.mts';
 import type { Page } from '@playwright/test';
 
@@ -170,7 +170,7 @@ for (const viewport of [
     await expect(page.locator('#art-sequence')).toBeFocused();
     await measure('animation');
     await page.locator('#art-dock > summary').click();
-    await (await revealArtworkControl(page, 'art-layer')).selectOption({ label: 'Overlay' });
+    await selectArtworkLayer(page, 'Overlay');
     await page.locator('#art-layers-toggle').click();
     await (await revealArtworkControl(page, 'art-color')).fill('#cc7744');
     await (await revealArtworkControl(page, 'art-alpha')).fill('127');

@@ -2,7 +2,12 @@
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { test, expect, activateScene } from '../support/browser-fixtures.ts';
-import { revealArtworkControl, saveArtwork, adoptAgentDraft } from '../support/artwork-controls.ts';
+import {
+  revealArtworkControl,
+  saveArtwork,
+  adoptAgentDraft,
+  selectArtworkLayer,
+} from '../support/artwork-controls.ts';
 import { record, string, array } from '../../../frontend/shared/decode.mts';
 import { decodeCandidate } from '../../../frontend/artwork/artwork-contracts.mts';
 import { PixelModel } from '../../../frontend/artwork/pixel-model.mts';
@@ -84,9 +89,9 @@ print(base64.b64encode(encode(16,16,bytes([71,72,73,0])*256)).decode())
   await adoptAgentDraft(page, string(candidate.revision));
   await expect(page.locator('#art-message')).toContainText('Opened a separate editable copy');
   await expect(page.locator('#undo')).toBeDisabled();
-  await (await revealArtworkControl(page, 'art-layer')).selectOption({ label: 'Glow' });
-  await page.locator('#art-layer-opacity').fill('96');
-  await page.locator('#art-layer-update').click();
+  await selectArtworkLayer(page, 'Glow');
+  await page.locator('#art-layer-opacity').fill('38');
+  await page.locator('#art-layer-opacity').press('Enter');
   await page.locator('#art-color').fill('#00ff00');
   await page.locator('#art-canvas').click({ position: { x: 12, y: 12 } });
   await (await revealArtworkControl(page, 'art-handoff-return')).click();
@@ -99,7 +104,7 @@ print(base64.b64encode(encode(16,16,bytes([71,72,73,0])*256)).decode())
   expect((await catalog()).revision).toEqual(base);
   const transferred = decodeCandidate(call('export_artwork_candidate', { candidate: returned }));
   expect(transferred.layer_rgba).toBeTruthy();
-  expect(transferred.descriptor.layers?.items[1].opacity).toBe(96);
+  expect(transferred.descriptor.layers?.items[1].opacity).toBe(97); // 38% in native bytes.
   expect(transferred.layer_rgba?.[layer.id]).toEqual(
     decodeCandidate(original).layer_rgba?.[layer.id],
   );
@@ -262,19 +267,19 @@ p.artwork.documents.save(c)
   const palette = page.locator('#art-swatches button');
   const colors = () =>
     palette.evaluateAll((nodes) => nodes.map((n) => n.getAttribute('data-rgba')));
-  const layerSelect = await revealArtworkControl(page, 'art-layer');
+  await revealArtworkControl(page, 'art-layer-list');
   await page.locator('#art-palette-toggle').click();
   await page.getByRole('tab', { name: 'Selected layer', exact: true }).click();
   expect(await colors()).toContain('255,0,0,255');
   expect(await colors()).not.toContain('0,0,255,255');
   await page.keyboard.press('Escape');
-  await layerSelect.selectOption({ label: 'Blue' });
+  await selectArtworkLayer(page, 'Blue');
   await page.locator('#art-palette-toggle').click();
   expect(await colors()).toContain('0,0,255,255');
   expect(await colors()).toContain('0,255,0,255');
   expect(await colors()).not.toContain('255,0,0,255');
   await page.keyboard.press('Escape');
-  await layerSelect.selectOption({ label: 'Red' });
+  await selectArtworkLayer(page, 'Red');
   await page.locator('#art-palette-toggle').click();
   expect(await colors()).toContain('255,0,0,255');
   expect(await colors()).not.toContain('0,0,255,255');

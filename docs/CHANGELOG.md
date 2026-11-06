@@ -6,6 +6,13 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.43.0 — Direct artwork layer editing
+
+[Release notes](RELEASE-0.43.0.md). Replace the artwork layer dropdown and separate
+name/order controls with a draggable stack, inline rename, visibility/lock icons
+and synchronized percentage opacity controls. Preserve native layer bytes and
+existing artwork history, save and recovery contracts.
+
 ## 0.42.0 — Compact artwork toolbar
 
 [Release notes](RELEASE-0.42.0.md). Keep artwork tools on one row and move controls

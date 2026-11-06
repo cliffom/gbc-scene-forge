@@ -15,6 +15,42 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## 0.43.0 release candidate (#244)
+
+- **Scope:** Release preparation on `issue-244-layer-inspector`, based on
+  `40c4d41`, checked 2026-11-05 on macOS arm64 with Python 3.13.13,
+  Node 24.22.1, Playwright 1.64.1 and local Chrome. Production bundles and
+  freshly installed plain/optional-MCP 0.43.0 wheels were exercised.
+- **Method:** Run `make lint test`, strict Poetry lock validation, production
+  `make build check-dist test-browser`, installed-wheel first-use acceptance,
+  optional-MCP package smoke/protocol tests and real MCP/browser acceptance.
+  Exercise selection, rename commit/cancel/blur, pending redraws, byte-preserving
+  opacity, drag/keyboard ordering, rendered composition, locks, Undo/Redo,
+  checkpoint recovery and save/reopen. Agent-inspect the three-layer stack at
+  1440 × 1000 and bounded eight-layer lists at 1440 × 900, 1280 × 800,
+  800 × 640 and 1440 × 600, including long names and scrolled opacity.
+  Archive [desktop](images/artwork-layer-stack-desktop.png),
+  [compact stack](images/artwork-layer-stack-compact.png) and
+  [compact opacity](images/artwork-layer-opacity-compact.png) captures.
+- **Result:** Lint, documentation checks, 490 Python tests, all TypeScript
+  suites and lock consistency pass. Production browser acceptance passes
+  195 cases with 12 optional-profile skips. Distribution metadata and seven
+  plain-wheel smoke cases pass; installed-wheel first-use passes one case.
+  Optional MCP passes seven smoke, 121 protocol and 16 browser cases. Initial
+  focused runs exposed test migration errors involving required open revisions,
+  recovery wording, history counts and an obsolete Apply locator; corrected
+  cases pass. A scene-close notification assertion also failed once and passed
+  in isolation and the full suite; its cause was not established. After the
+  full regular suite, stale-status retirement and conditional icon rendering
+  received final lint, rebuilt distributions, smoke checks, all seven artwork
+  iteration cases and all 16 MCP/browser cases. The final MCP expectation uses
+  native byte 97 for an authored 38%, reflecting the percentage conversion.
+- **Limits:** Synthetic local Chrome checks and agent image inspection do not
+  establish independent-user discovery, accessibility conformance or prolonged
+  physical-device comfort. The full regular browser suite precedes the final
+  status/icon cleanup; focused coverage follows it. Tiled and its rasterizer
+  are unavailable. Publication and fresh PyPI verification remain separate.
+
 ## 0.42.0 release candidate (#242 / PR #243)
 
 - **Scope:** Release preparation based on `957ff48`, checked 2026-11-05 on

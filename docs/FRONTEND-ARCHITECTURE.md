@@ -65,7 +65,13 @@ Dirty layer reads check descriptors first and compare live sources without
 cloning/compositing; decoded baseline bytes use a 32 MiB / 18-entry session LRU. Equality
 is never cached across reads because buffers permit direct mutation.
 
-Illustration-layer UI belongs to `artwork/artwork-layer-controls.mts`; exact sources,
+Illustration-layer UI belongs to `artwork/artwork-layer-controls.mts`. Keyed rows
+retain focus and pending inline text through unrelated redraws; editing identity
+is scoped to the current model. Selection uses the model without authored history,
+while completed reorder/name/flag/opacity edits use its existing operation gate.
+The shared pointer-drag helper treats layer IDs as opaque strings; scene adapters
+convert their numeric IDs at the boundary. Percentage presentation never rewrites
+an unchanged native opacity byte. Exact sources,
 active layer and history belong to `PixelModel`, and `artwork/artwork-layers.mts`
 owns integer compositing. Layer snapshots share the existing history budget.
 `ArtworkSession` serializes metadata/source synchronization and checkpoints before

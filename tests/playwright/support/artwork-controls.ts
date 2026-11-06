@@ -84,3 +84,22 @@ export async function adoptAgentDraft(page: Page, revision: string) {
   await page.locator('#art-agent-adopt').click();
   await expect(page.locator('#art-agent-preview')).not.toBeVisible();
 }
+
+/** Raster-layer rows are displayed front-to-back, independently of native storage order. */
+export function activeArtworkLayer(page: Page) {
+  return page.locator('.art-layer-row[data-active="true"]');
+}
+export function artworkLayer(page: Page, name: string) {
+  return page.locator('.art-layer-row').filter({
+    has: page.getByRole('button', { name: `Select ${name}`, exact: true }),
+  });
+}
+export async function selectArtworkLayer(page: Page, name: string) {
+  await revealArtworkControl(page, 'art-layer-list');
+  await page.getByRole('button', { name: `Select ${name}`, exact: true }).click();
+}
+export async function renameArtworkLayer(page: Page, name: string) {
+  await activeArtworkLayer(page).locator('.art-layer-select').dblclick();
+  await page.locator('#art-layer-name').fill(name);
+  await page.locator('#art-layer-name').press('Enter');
+}

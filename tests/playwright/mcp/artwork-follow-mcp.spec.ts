@@ -5,7 +5,11 @@ import { join } from 'node:path';
 import type { Page } from '@playwright/test';
 import { test, expect } from '../support/browser-fixtures.ts';
 import { record, array, string } from '../../../frontend/shared/decode.mts';
-import { revealArtworkControl } from '../support/artwork-controls.ts';
+import {
+  revealArtworkControl,
+  activeArtworkLayer,
+  selectArtworkLayer,
+} from '../support/artwork-controls.ts';
 
 const execute = promisify(execFile);
 async function setup(
@@ -262,8 +266,8 @@ test('sheet updates retain the selected frame and source layer', async ({ page, 
   const { commit } = await setup(page, workspace, true);
   await page.locator('#art-frame').selectOption('f1');
   await page.locator('#art-frame-view').click();
-  await (await revealArtworkControl(page, 'art-layer')).selectOption({ label: 'Detail' });
-  const layer = await page.locator('#art-layer').inputValue();
+  await selectArtworkLayer(page, 'Detail');
+  const layer = await activeArtworkLayer(page).getAttribute('data-layer-id');
   await page.locator('#art-canvas').focus();
   const opened = page.waitForResponse('**/api/artwork-open');
   await commit([255, 0, 0, 255]);
@@ -271,7 +275,7 @@ test('sheet updates retain the selected frame and source layer', async ({ page, 
   await expect(page.locator('#art-frame option[value="f1"]')).toHaveText('Updated pose');
   await expect(page.locator('#document-base-state')).toBeHidden();
   await expect(page.locator('#art-frame')).toHaveValue('f1');
-  await expect(page.locator('#art-layer')).toHaveValue(layer);
+  await expect(activeArtworkLayer(page)).toHaveAttribute('data-layer-id', layer ?? '');
   await expect(page.locator('#art-layer-panel')).toBeVisible();
   await expect(page.locator('#art-frame-view')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#document-state')).toHaveText('Saved');

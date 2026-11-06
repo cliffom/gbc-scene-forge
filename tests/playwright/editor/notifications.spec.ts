@@ -3,7 +3,11 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { transpileModule, ModuleKind, ScriptTarget } from 'typescript';
 import { test, expect } from '../support/browser-fixtures.ts';
-import { revealArtworkControl, saveArtwork } from '../support/artwork-controls.ts';
+import {
+  revealArtworkControl,
+  saveArtwork,
+  activeArtworkLayer,
+} from '../support/artwork-controls.ts';
 import type { Feedback } from '../../../frontend/editor/editor-notifications.mts';
 
 declare global {
@@ -83,10 +87,10 @@ for key in ['picture','other']:
   await page.clock.fastForward(5100);
   await expect(warning).toHaveCount(0);
   await canvas.click({ position: { x: 8, y: 8 } });
-  await revealArtworkControl(page, 'art-layer-locked');
-  await page.locator('#art-layer-locked').uncheck();
+  await revealArtworkControl(page, 'art-layer-list');
+  await activeArtworkLayer(page).locator('.art-layer-lock').click();
   await expect(warning).toHaveCount(0);
-  await page.locator('#art-layer-locked').check();
+  await activeArtworkLayer(page).locator('.art-layer-lock').click();
   await canvas.click({ position: { x: 8, y: 8 } });
   await page.locator('[data-asset="other/artwork"]').click();
   await expect(warning).toHaveCount(0);

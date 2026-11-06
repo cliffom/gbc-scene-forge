@@ -174,7 +174,11 @@ export function createLayersController({
 
   layerDragging(
     element('layers', HTMLElement),
-    (id, before) => layerAction((editor) => editor.moveLayer(id, before), false),
+    (id, before) =>
+      layerAction(
+        (editor) => editor.moveLayer(Number(id), before === null ? null : Number(before)),
+        false,
+      ),
     lifetime,
   );
 

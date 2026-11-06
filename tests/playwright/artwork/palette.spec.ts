@@ -4,7 +4,11 @@ import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
 import { build } from 'esbuild';
 import { test, expect } from '../support/browser-fixtures.ts';
-import { revealArtworkControl } from '../support/artwork-controls.ts';
+import {
+  revealArtworkControl,
+  activeArtworkLayer,
+  selectArtworkLayer,
+} from '../support/artwork-controls.ts';
 
 test('palette scopes follow layers, blending, history and frame/sheet views', async ({
   page,
@@ -40,8 +44,8 @@ a.save(c)
   ]);
   await page.goto(await workspace.start(root));
   await page.locator('[data-asset="picture/left"]').click();
-  await revealArtworkControl(page, 'art-layer');
-  const layer = page.locator('#art-layer');
+  await revealArtworkControl(page, 'art-layer-list');
+  const layer = activeArtworkLayer(page);
   const trigger = page.locator('#art-palette-toggle');
   const panel = page.locator('#art-palette');
   const swatch = (rgba: string) => page.locator(`#art-swatches button[data-rgba="${rgba}"]`);
@@ -79,14 +83,14 @@ a.save(c)
     '0,0,255,255',
   );
   await expect(page.locator('#undo')).toBeDisabled();
-  const active = await layer.inputValue();
+  const active = await layer.getAttribute('data-layer-id');
   await swatch('9,20,30,128').click();
-  await expect(layer).toHaveValue(active);
+  await expect(layer).toHaveAttribute('data-layer-id', active ?? '');
   await expect(page.locator('#art-color')).toHaveValue('#09141e');
   await expect(page.locator('#art-alpha')).toHaveValue('128');
   await expect(page.locator('#undo')).toBeDisabled();
-  await layer.selectOption({ label: 'Overlay' });
-  await page.locator('#art-layer-visible').uncheck();
+  await selectArtworkLayer(page, 'Overlay');
+  await activeArtworkLayer(page).locator('.art-layer-visible').click();
   await open();
   await expect(page.locator('#art-swatches button')).toHaveCount(2);
   await page.keyboard.press('Escape');
@@ -98,9 +102,9 @@ a.save(c)
   await open();
   await expect(swatch('0,255,0,255')).toHaveCount(0);
   await page.keyboard.press('Escape');
-  await page.locator('#art-layer-visible').check();
-  await page.locator('#art-layer-opacity').fill('128');
-  await page.locator('#art-layer-update').click();
+  await activeArtworkLayer(page).locator('.art-layer-visible').click();
+  await page.locator('#art-layer-opacity').fill('50');
+  await page.locator('#art-layer-opacity').press('Enter');
   await open();
   await expect(swatch('191,64,0,255')).toBeVisible();
   await expect(swatch('9,20,30,64')).toBeVisible();
@@ -119,7 +123,7 @@ a.save(c)
   await expect(swatch('0,0,255,255')).toBeVisible();
   await page.keyboard.press('Escape');
   await page.locator('#art-sheet-view').click();
-  await layer.selectOption({ label: 'Base' });
+  await selectArtworkLayer(page, 'Base');
   await page.locator('#art-color').fill('#0c2238');
   await page.locator('#art-alpha').fill('255');
   const canvas = await page.locator('#art-canvas').boundingBox();
@@ -170,9 +174,9 @@ a.save(c)
     ).toBe(true);
   }
   await page.keyboard.press('Escape');
-  await page.locator('#art-layer-visible').uncheck();
-  await layer.selectOption({ label: 'Overlay' });
-  await page.locator('#art-layer-visible').uncheck();
+  await activeArtworkLayer(page).locator('.art-layer-visible').click();
+  await selectArtworkLayer(page, 'Overlay');
+  await activeArtworkLayer(page).locator('.art-layer-visible').click();
   await open();
   await expect(page.locator('#art-palette-empty')).toBeVisible();
   await expect(page.locator('#art-swatches button')).toHaveCount(0);
