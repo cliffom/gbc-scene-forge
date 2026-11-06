@@ -21,6 +21,7 @@ Dates, revisions and environments missing from the originals remain unknown.
   `40c4d41`, checked 2026-11-05 on macOS arm64 with Python 3.13.13,
   Node 24.22.1, Playwright 1.64.1 and local Chrome. Production bundles and
   freshly installed plain/optional-MCP 0.43.0 wheels were exercised.
+  Review follow-up uses `ea69b9b` as its base on the same local environment.
 - **Method:** Run `make lint test`, strict Poetry lock validation, production
   `make build check-dist test-browser`, installed-wheel first-use acceptance,
   optional-MCP package smoke/protocol tests and real MCP/browser acceptance.
@@ -32,6 +33,10 @@ Dates, revisions and environments missing from the originals remain unknown.
   Archive [desktop](images/artwork-layer-stack-desktop.png),
   [compact stack](images/artwork-layer-stack-compact.png) and
   [compact opacity](images/artwork-layer-opacity-compact.png) captures.
+  For the review follow-up, first run two new browser regressions against the
+  reviewed bundle, then rerun lint/tests, production build/wheel smoke checks and
+  the artwork iteration/palette suites after correcting numeric commit timing
+  and composition-key handling.
 - **Result:** Lint, documentation checks, 490 Python tests, all TypeScript
   suites and lock consistency pass. Production browser acceptance passes
   195 cases with 12 optional-profile skips. Distribution metadata and seven
@@ -45,11 +50,20 @@ Dates, revisions and environments missing from the originals remain unknown.
   received final lint, rebuilt distributions, smoke checks, all seven artwork
   iteration cases and all 16 MCP/browser cases. The final MCP expectation uses
   native byte 97 for an authored 38%, reflecting the percentage conversion.
+  Both review regressions fail before the fixes: number steppers create history
+  before commit, and composing Enter closes the renamer. All 11 focused browser
+  cases pass afterward, including Escape cancellation, Enter/blur commits,
+  single-step Undo, unchanged byte 127 and composing Enter/Escape with both
+  `isComposing` and legacy key code 229. Rebuilt metadata and seven plain-wheel
+  smoke cases also pass. Follow-up lint, documentation checks, all 490 Python
+  tests and all TypeScript suites pass.
 - **Limits:** Synthetic local Chrome checks and agent image inspection do not
   establish independent-user discovery, accessibility conformance or prolonged
   physical-device comfort. The full regular browser suite precedes the final
   status/icon cleanup; focused coverage follows it. Tiled and its rasterizer
   are unavailable. Publication and fresh PyPI verification remain separate.
+  Composition coverage dispatches synthetic events; physical IME/OS behavior
+  and non-Chromium composition ordering were not exercised.
 
 ## 0.42.0 release candidate (#242 / PR #243)
 

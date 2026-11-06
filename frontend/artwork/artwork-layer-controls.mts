@@ -194,7 +194,13 @@ export function createArtworkLayerControls(
     }
     sync();
   }
-  lifetime.assign(number, 'onchange', commitOpacity);
+  // Number steppers emit change before blur. Keep their value pending too.
+  lifetime.assign(number, 'oninput', () => {
+    if (number.value && number.validity.valid) {
+      range.value = number.value;
+    }
+  });
+  lifetime.assign(number, 'onblur', commitOpacity);
   lifetime.assign(number, 'onkeydown', (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
@@ -248,6 +254,11 @@ export function createArtworkLayerControls(
     });
     lifetime.assign(field, 'onblur', () => finishRename());
     lifetime.assign(field, 'onkeydown', (event) => {
+      // Some IMEs report the candidate-accepting key as 229 after compositionend.
+      if (event.isComposing || event.keyCode === 229) {
+        event.stopPropagation();
+        return;
+      }
       if (event.key === 'Enter' || event.key === 'Escape') {
         event.preventDefault();
         event.stopPropagation();

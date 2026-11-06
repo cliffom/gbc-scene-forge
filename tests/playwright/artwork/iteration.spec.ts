@@ -77,6 +77,33 @@ for key in ['picture','other']:
   await opacity.press('Enter');
   await expect(page.locator('#undo')).toBeDisabled();
   await expect(page.locator('#document-state')).toHaveText('Saved');
+  // Native number steppers emit change while focused; they are still draft edits.
+  await opacity.focus();
+  await opacity.press('ArrowDown');
+  await opacity.press('ArrowDown');
+  await expect(opacity).toHaveValue('48');
+  await expect(page.locator('#undo')).toBeDisabled();
+  await expect(page.locator('#document-state')).toHaveText('Saved');
+  await expect(range).toHaveValue('48');
+  await opacity.press('Escape');
+  await expect(opacity).toHaveValue('50');
+  await expect(range).toHaveValue('50');
+  await expect(page.locator('#undo')).toBeDisabled();
+  await opacity.focus();
+  await opacity.press('ArrowDown');
+  await opacity.press('ArrowDown');
+  await opacity.press('Enter');
+  await expect(opacity).toHaveValue('48');
+  await page.locator('#undo').click();
+  await expect(opacity).toHaveValue('50');
+  await expect(page.locator('#undo')).toBeDisabled();
+  await opacity.focus();
+  await opacity.press('ArrowDown');
+  await opacity.press('Tab');
+  await expect(opacity).toHaveValue('49');
+  await page.locator('#undo').click();
+  await expect(opacity).toHaveValue('50');
+  await expect(page.locator('#undo')).toBeDisabled();
   const choice = activeArtworkLayer(page).locator('.art-layer-select');
   await choice.dblclick();
   const name = page.locator('#art-layer-name');
@@ -155,6 +182,52 @@ print(json.dumps(c['descriptor']['layers']['items']))
   );
   await revealArtworkControl(page, 'art-layer-list');
   await page.screenshot({ path: info.outputPath('layer-list-desktop.png') });
+});
+
+test('inline layer rename preserves IME composition until an ordinary commit key', async ({
+  page,
+  workspace,
+}) => {
+  const root = join(workspace.folder, 'project');
+  execFileSync(workspace.python, [
+    '-I',
+    '-c',
+    `
+import sys
+from pathlib import Path
+from gbc_scene_forge.project.application import Project
+from gbc_scene_forge.artwork import layers
+p=Project.create(Path(sys.argv[1]),'Layer composition')
+a=p.artwork.documents
+c=a.create('picture','Picture','sprite',16,16,p.catalog()['revision'])
+a.save(layers.edit(c,[layers.item('Base')]))
+`,
+    root,
+  ]);
+  await page.goto(await workspace.start(root));
+  await page.locator('[data-asset="picture/artwork"]').click();
+  await revealArtworkControl(page, 'art-layer-list');
+  const choice = activeArtworkLayer(page).locator('.art-layer-select');
+  await choice.dblclick();
+  const name = page.locator('#art-layer-name');
+  await name.dispatchEvent('compositionstart');
+  await name.fill('日本');
+  for (const key of ['Enter', 'Escape']) {
+    for (const composition of [{ isComposing: true }, { isComposing: false, keyCode: 229 }]) {
+      await name.dispatchEvent('keydown', { key, ...composition });
+      await expect(name).toBeFocused();
+      await expect(name).toHaveValue('日本');
+      await expect(page.locator('#undo')).toBeDisabled();
+      await expect(page.locator('#document-state')).toHaveText('Saved');
+    }
+  }
+  await name.dispatchEvent('compositionend', { data: '日本' });
+  await name.press('Enter');
+  await expect(choice).toHaveText('日本');
+  await expect(choice).toBeFocused();
+  await page.locator('#undo').click();
+  await expect(choice).toHaveText('Base');
+  await expect(page.locator('#undo')).toBeDisabled();
 });
 
 test('layer ordering commits once, cancels cleanly, preserves selection and survives save/recovery', async ({
