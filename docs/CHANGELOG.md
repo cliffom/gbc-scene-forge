@@ -6,6 +6,13 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.44.0 — Collapsible artwork Inspector sections
+
+[Release notes](RELEASE-0.44.0.md). Replace the ambiguous Layers/Properties
+button row with independent disclosure headings. Keep layer counts visible,
+retain section state per open artwork document, and preserve existing editing,
+review and recovery behavior.
+
 ## 0.43.0 — Direct artwork layer editing
 
 [Release notes](RELEASE-0.43.0.md). Replace the artwork layer dropdown and separate

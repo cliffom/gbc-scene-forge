@@ -14,8 +14,8 @@ export function createArtworkWorkspace(
     element('art-inspector-actions', HTMLElement),
     element('art-shared', HTMLElement),
     element('art-selection-details', HTMLElement),
-    element('art-layer-panel', HTMLElement),
-    element('art-properties', HTMLElement),
+    element('art-layer-section', HTMLDetailsElement),
+    element('art-properties-section', HTMLDetailsElement),
     button('art-palette-toggle'),
     element('art-palette', HTMLElement),
     element('art-review-panel', HTMLElement),
@@ -96,23 +96,27 @@ export function createArtworkWorkspace(
     surface.classList.toggle('show-art-review', open);
     reviewChanged();
     if (open) {
-      element('art-layer-panel', HTMLElement).hidden = true;
-      button('art-layers-toggle').setAttribute('aria-expanded', 'false');
-      element('art-properties', HTMLElement).hidden = true;
-      button('art-properties-toggle').setAttribute('aria-expanded', 'false');
+      element('art-layer-section', HTMLDetailsElement).open = false;
+      element('art-properties-section', HTMLDetailsElement).open = false;
     }
+  }
+  for (const id of ['art-layer-section', 'art-properties-section']) {
+    const section = element(id, HTMLDetailsElement);
+    section.addEventListener(
+      'toggle',
+      () => {
+        if (section.open) {
+          reviewPanel(false);
+        } else if (section.contains(document.activeElement)) {
+          section.querySelector('summary')?.focus({ preventScroll: true });
+        }
+      },
+      { signal: lifetime.signal },
+    );
   }
   lifetime.assign(button('art-review-close'), 'onclick', () => {
     reviewPanel(false);
     button('save').focus();
-  });
-  lifetime.assign(button('art-properties-toggle'), 'onclick', () => {
-    const panel = element('art-properties', HTMLElement);
-    panel.hidden = !panel.hidden;
-    if (!panel.hidden) {
-      reviewPanel(false);
-    }
-    button('art-properties-toggle').setAttribute('aria-expanded', String(!panel.hidden));
   });
   for (const mode of modes) {
     lifetime.assign(button(`art-${mode}-mode`), 'onclick', () => setup(mode));
@@ -179,10 +183,12 @@ export function createArtworkWorkspace(
     setup,
     prepareIdentity,
     reviewPanel,
-    resetPanels() {
+    resetPanels(defaultSections = false) {
       reviewPanel(false);
-      element('art-properties', HTMLElement).hidden = true;
-      button('art-properties-toggle').setAttribute('aria-expanded', 'false');
+      if (defaultSections) {
+        element('art-layer-section', HTMLDetailsElement).open = true;
+        element('art-properties-section', HTMLDetailsElement).open = true;
+      }
     },
     get mode() {
       return setupMode;

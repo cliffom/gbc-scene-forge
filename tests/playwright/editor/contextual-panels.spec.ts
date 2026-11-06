@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { writeFile } from 'node:fs/promises';
 import { test, expect } from '../support/browser-fixtures.ts';
-import { reviewArtwork } from '../support/artwork-controls.ts';
+import { revealArtworkControl, reviewArtwork } from '../support/artwork-controls.ts';
 
 test('contextual Inspector and optional animation dock preserve drawing space and authored history', async ({
   page,
@@ -52,7 +52,7 @@ a.save(c)
         }
       }, state);
       if (state === 'properties') {
-        await page.locator('#art-properties-toggle').click();
+        await revealArtworkControl(page, 'art-frame-properties');
         await expect(page.locator('#art-frame-geometry')).toHaveText('16 × 16 · origin 4, 8');
       }
       if (state === 'review') {
@@ -185,7 +185,7 @@ a.save(a.edit(c,[dict(x=0,y=0,rgba=[68,85,102,255])]))
   await page.goto(await workspace.start(root));
   await page.locator('[data-asset="tile/artwork"]').click();
   await expect(page.locator('#art-sheet-controls')).toBeHidden();
-  await page.locator('#art-properties-toggle').click();
+  await revealArtworkControl(page, 'art-repeat-canvas');
   const repeat = page.locator('#art-repeat-canvas');
   await expect(repeat).toBeVisible();
   async function expectRepeated(color: number[]) {
@@ -209,13 +209,13 @@ a.save(a.edit(c,[dict(x=0,y=0,rgba=[68,85,102,255])]))
   await page.locator('#redo').click();
   await expectRepeated([204, 119, 51, 255]);
   await page.locator('[data-asset="other/artwork"]').click();
-  await page.locator('#art-properties-toggle').click();
+  await revealArtworkControl(page, 'art-repeat-canvas');
   await expectRepeated([68, 85, 102, 255]);
   await page.locator('#document-switcher').click();
   await page
     .locator('#artwork-documents button')
     .filter({ hasText: /^Tile · Artwork/ })
     .click();
-  await page.locator('#art-properties-toggle').click();
+  await revealArtworkControl(page, 'art-repeat-canvas');
   await expectRepeated([204, 119, 51, 255]);
 });

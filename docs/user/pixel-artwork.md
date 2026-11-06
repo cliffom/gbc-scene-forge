@@ -95,8 +95,15 @@ and transforms. The bounded frame/animation dock sits below the canvas. Collapse
 animation controls. The frame selector, Sheet/Frame scope, onion skin and current
 drawing boundary stay beside the tools even when the dock is collapsed. The dock scrolls
 independently in short windows. **Properties** shows document dimensions and, for
-sheets, frame names, geometry and representations. **Layers** remains independently
-collapsible in the same Inspector. These pane changes do not enter Undo history.
+sheets, frame names, geometry and representations. **Artwork layers** and
+**Properties** are independent collapsible sections: click their headings or use
+Tab then Enter/Space. Right-facing chevrons mean closed; down-facing chevrons mean
+open. The layer count stays visible when closed. Both sections start open for a
+newly opened document and remember their state for each retained artwork document
+while this editor remains mounted. Hiding/showing the Inspector retains those
+choices. Review collapses both sections; opening either returns to editing.
+Closing Review leaves the sections collapsed. Reloading resets these choices.
+These pane changes do not enter Undo history.
 
 Use **Library → Source… → Shared editing / copies…** for the selected source's shared-edit and
 copy choices. **Edit artwork…** opens native artwork directly; clicking a named
@@ -111,7 +118,7 @@ your entered name and identity are retained until you explicitly choose another.
 
 ## Layers, agent exchange and navigation
 
-Open **Layers** in the Inspector to see the artwork stack, with the frontmost
+Open **Artwork layers** in the Inspector to see the artwork stack, with the frontmost
 layer at the top. Click a name to select its source; double-click the name or
 press **F2** while its row is focused to rename it inline. **Enter** or leaving
 the field commits a trimmed, nonempty name; **Escape** cancels. Selecting a layer
