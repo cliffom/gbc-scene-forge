@@ -15,6 +15,35 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Installation guard performance (PR #273 feedback)
+
+- **Scope:** Agent-run checks on 2026-11-11, macOS 27.0.1 arm64, Python
+  3.13.13, based on PR revision `513f065`. Forge remains 0.46.1 and the
+  unpublished plugin remains 0.1.0-alpha.1. The
+  [archived report](evaluations/assets/plugin-distribution/guard-performance.json)
+  records source hashes, rebuilt installation identity and measurements.
+- **Method:** Compare full-hash and metadata guards with source HTTP handlers on
+  a disposable bundled-sample project and the same complete rebuilt plugin.
+  Measure three requests per route and count content inventories after startup.
+  Exercise metadata invalidation, same-length edits with restored mtime, receipt/
+  link/mode changes, cache removal, changed builds and interrupted verification.
+  Run `make lint test`, production `make build check-dist`, isolated native-client
+  install/update/rollback/disable/uninstall acceptance, frozen-runtime Chromium
+  rendering and installed-wheel managed-browser checkpoint recovery.
+- **Result:** Unchanged requests perform zero content inventories, versus 43 in
+  the full-hash comparison. Median project/revision requests fall from 215/231 ms
+  to 19/19 ms on the 611-entry installation. Full hashing still runs at startup
+  and after metadata changes; invalid or replaced builds remain rejected before
+  access. All checks pass: 545 Python tests, TypeScript suites, seven wheel smoke
+  tests, native-client acceptance and both Chromium cases. No release is published.
+- **Limits:** Local warm-cache timings on one host, three samples per route;
+  no browser rendering or load testing in the timing comparison. The Chromium
+  cases cover rendering and real checkpoint recovery separately from the native
+  client's synthetic update/grant/layout scenario. Metadata invalidation relies on
+  local inode/mtime/ctime semantics; it does not authenticate a publisher or protect
+  against privileged metadata tampering. Other platform/client and release
+  boundaries remain in Remaining checks below.
+
 ## Repository plugin delivery and update safety (#258)
 
 - **Scope:** Agent-run local checks on 2026-11-11, macOS 27.0.1 arm64,

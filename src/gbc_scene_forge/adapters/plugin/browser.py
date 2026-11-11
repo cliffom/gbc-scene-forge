@@ -20,7 +20,7 @@ from gbc_scene_forge.adapters.http.server import make_handler
 from gbc_scene_forge.core.errors import Conflict
 from gbc_scene_forge.core.validation import require
 
-from .distribution import guard, verify
+from .distribution import InstallationGuard, guard
 from .selection import Selection
 
 IDLE_SECONDS = 30 * 60
@@ -120,7 +120,8 @@ class BrowserManager:
             else [sys.executable, "-m", __name__]
         )
         self.runtime = {"version": __version__, "bundle": str(selection.bundle)}
-        self.installation = verify(selection.bundle)
+        self.installation_guard = InstallationGuard(selection.bundle)
+        self.installation = self.installation_guard.identity
         if self.installation:
             self.runtime["build_id"] = self.installation["build_id"]
 
@@ -134,7 +135,7 @@ class BrowserManager:
         return record, folder / (key + ".json")
 
     def request(self, project, *, action="open", scene_id=None, instance=None):
-        guard(self.selection.bundle, self.installation)
+        self.installation_guard.check()
         require(action in ("open", "status", "stop"), "Choose open, status or stop")
         project_record, path = self.paths(project.root)
         if scene_id is not None:
@@ -257,7 +258,7 @@ def worker(config):
 
         def prepare_request():
             try:
-                guard(selection.bundle, manager.installation)
+                manager.installation_guard.check()
             except (ValueError, OSError) as error:
                 raise Conflict(str(error)) from error
             try:

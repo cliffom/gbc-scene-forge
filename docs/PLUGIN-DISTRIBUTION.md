@@ -88,6 +88,14 @@ session.
 
 MCP sessions pin their installation and reject changes before tool dispatch.
 Managed browsers check their pinned installation before project requests.
+Each session hashes the full installation at startup, then checks file/directory
+metadata (including the receipt, inode, modes, size, mtime and ctime) on requests.
+A metadata change triggers full content/compatibility validation against the
+pinned build before access continues. Unchanged polling and project-lock guards
+do not reread runtime contents. Changes during validation are rejected rather
+than cached. This local-filesystem optimization retains the corruption-detection
+boundary; it does not authenticate a publisher or protect against privileged
+tampering with filesystem metadata.
 If an update removes a live session's cache, its next tool/project request fails
 closed with recovery instructions. This is safe rejection, not uninterrupted
 session availability. Its authenticated status/stop endpoint remains usable by

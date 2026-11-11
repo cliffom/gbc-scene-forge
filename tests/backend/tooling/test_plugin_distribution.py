@@ -2,6 +2,7 @@
 
 import importlib.util
 import json
+import os
 import shutil
 import subprocess
 import tempfile
@@ -13,6 +14,7 @@ from gbc_scene_forge import __version__
 from gbc_scene_forge.adapters.plugin import distribution
 from gbc_scene_forge.adapters.plugin.selection import Selection
 from gbc_scene_forge.adapters.plugin.session import PluginSession
+from gbc_scene_forge.project.application import Project
 
 REPO = Path(__file__).resolve().parents[3]
 spec = importlib.util.spec_from_file_location("package_plugin", REPO / "runtime/package_plugin.py")
@@ -135,6 +137,124 @@ class PluginDistributionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "changed plugin"):
             session.call("plugin_choose_location", {"mode": "root"})
         self.assertFalse(selection.settings.parent.exists())
+
+    def test_unchanged_session_and_browser_calls_do_not_rehash_installation(self):
+        plugin, _ = self.package()
+        project = Project.create(self.root / "projects/design", "Design")
+        selection = Selection(plugin, settings=self.root / "settings", cache=self.root / "cache")
+        selection.save(selection.prepare(project.root, "project"))
+        session = PluginSession(selection)
+        with patch.object(distribution, "inventory", side_effect=AssertionError("Rehashed")):
+            for _ in range(3):
+                self.assertEqual(
+                    session.call("plugin_status", {})["installation"], session.installation
+                )
+                self.assertTrue(session.call("list_projects", {})["projects"])
+                self.assertFalse(
+                    session.call("plugin_browser", {"project": "project", "action": "status"})[
+                        "running"
+                    ]
+                )
+        # A new session still validates all bytes even with another session alive.
+        with patch.object(distribution, "inventory", wraps=distribution.inventory) as inventory:
+            PluginSession(selection)
+            self.assertGreater(inventory.call_count, 0)
+
+    def test_guard_invalidates_for_content_receipt_links_modes_and_tree_changes(self):
+        def rewrite_preserving_mtime(plugin):
+            path = plugin / "runtime/forge"
+            info = path.stat()
+            path.write_bytes(b"X" + path.read_bytes()[1:])
+            os.utime(path, ns=(info.st_atime_ns, info.st_mtime_ns))
+
+        def replace_file(plugin):
+            path = plugin / "runtime/forge"
+            replacement = plugin / "replacement"
+            replacement.write_text("corrupt replacement")
+            replacement.replace(path)
+
+        def replace_link(plugin):
+            path = plugin / "runtime/forge"
+            path.unlink()
+            path.symlink_to(self.bundle / "forge")
+
+        for index, mutate in enumerate(
+            (
+                rewrite_preserving_mtime,
+                replace_file,
+                replace_link,
+                lambda p: (p / "bin/forge").chmod(0o644),
+                lambda p: (p / "install.json").write_text("{}"),
+                lambda p: (p / "skills/forge-start/SKILL.md").unlink(),
+                lambda p: (p / "skills/added").write_text("mixed installation"),
+                lambda p: shutil.rmtree(p),
+            )
+        ):
+            with self.subTest(mutate=index):
+                plugin, _ = self.package(f"mutation-{index}")
+                guard = distribution.InstallationGuard(plugin)
+                mutate(plugin)
+                with self.assertRaises(ValueError):
+                    guard.check()
+
+    def test_metadata_only_changes_revalidate_once_and_keep_pinned_identity(self):
+        plugin, _ = self.package()
+        guard = distribution.InstallationGuard(plugin)
+        path = plugin / "runtime/forge"
+        info = path.stat()
+        os.utime(path, ns=(info.st_atime_ns, info.st_mtime_ns + 1_000_000_000))
+        with patch.object(distribution, "inventory", wraps=distribution.inventory) as inventory:
+            guard.check()
+            self.assertEqual(inventory.call_count, 1)
+            guard.check()
+            self.assertEqual(inventory.call_count, 1)
+        self.assertEqual(guard.identity, distribution.verify(plugin))
+
+    def test_guard_rejects_replaced_build_with_a_valid_receipt(self):
+        plugin, _ = self.package()
+        guard = distribution.InstallationGuard(plugin)
+        (plugin / "runtime/forge").write_text("a different complete build")
+        receipt_path = plugin / "install.json"
+        receipt = json.loads(receipt_path.read_text())
+        receipt["files"] = distribution.inventory(plugin)
+        receipt["build_id"] = distribution.build_id(receipt["files"])
+        receipt_path.write_text(json.dumps(receipt))
+        self.assertNotEqual(distribution.verify(plugin), guard.identity)
+        with self.assertRaisesRegex(ValueError, "installation changed"):
+            guard.check()
+
+    def test_changes_during_verification_are_never_cached_as_valid(self):
+        plugin, _ = self.package()
+        original_inventory = distribution.inventory
+
+        def interrupted_inventory(root):
+            result = original_inventory(root)
+            (root / "runtime/forge").write_text("changed after hashing")
+            return result
+
+        with patch.object(distribution, "inventory", side_effect=interrupted_inventory):
+            with self.assertRaisesRegex(ValueError, "installation changed"):
+                distribution.InstallationGuard(plugin)
+
+    def test_removed_installation_during_startup_does_not_become_standalone(self):
+        plugin, _ = self.package()
+        original_verify = distribution.verify
+
+        def removed_installation(root):
+            shutil.rmtree(root)
+            return original_verify(root)
+
+        with patch.object(distribution, "verify", side_effect=removed_installation):
+            with self.assertRaisesRegex(ValueError, "installation changed"):
+                distribution.InstallationGuard(plugin)
+
+    def test_standalone_guards_do_not_scan_or_hash_the_runtime(self):
+        guard = distribution.InstallationGuard(self.bundle)  # Standalone roots remain unguarded.
+        self.assertIsNone(guard.identity)
+        with patch.object(
+            distribution, "metadata", side_effect=AssertionError("Scanned standalone")
+        ):
+            guard.check()
 
     def test_packaging_refuses_metadata_binary_mismatch(self):
         with patch.object(
