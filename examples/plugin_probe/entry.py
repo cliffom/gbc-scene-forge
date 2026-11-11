@@ -12,6 +12,37 @@ if not getattr(sys, "frozen", False):
     sys.path.insert(0, str(Path(__file__).resolve().parent / "site-packages"))
 
 
+AUTHORING_TOOLS = {
+    "capabilities",
+    "list_projects",
+    "create_project",
+    "get_project",
+    "list_artwork",
+    "open_artwork",
+    "create_artwork_sheet",
+    "edit_artwork_pixels",
+    "read_artwork_pixels",
+    "review_artwork_candidate",
+    "inspect_artwork_candidate",
+    "review_artwork_animation",
+    "review_artwork_frame",
+    "commit_artwork",
+    "create_scene",
+    "get_scene",
+    "save_scene",
+    "review_artwork",
+    "export_bundle",
+}
+
+
+def tool_profile(definitions, profile):
+    if profile == "full":
+        return list(definitions)
+    if profile != "authoring":
+        raise ValueError("Unknown probe tool profile; choose full or authoring")
+    return [tool for tool in definitions if tool["name"] in AUTHORING_TOOLS]
+
+
 def selection(settings):
     if not settings or not Path(settings).is_absolute():
         raise ValueError("Set FORGE_PLUGIN_PROBE_SETTINGS to an absolute external settings file")
@@ -47,8 +78,14 @@ def main():
         if args.mode == "mcp":
             if args.port is not None or args.no_browser:
                 parser.error("Browser options require browser mode")
+            from gbc_scene_forge.adapters.mcp import tools
             from gbc_scene_forge.adapters.mcp.server import main as launch
 
+            # Narrow this process's advertised and accepted tools together. Domain
+            # validation, revision guards and receipt requirements remain unchanged.
+            tools.TOOLS[:] = tool_profile(
+                tools.TOOLS, os.environ.get("FORGE_PLUGIN_PROBE_TOOL_PROFILE", "full")
+            )
             remaining = []
         else:
             from gbc_scene_forge.adapters.cli import main as launch

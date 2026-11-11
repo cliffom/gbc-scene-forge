@@ -1,0 +1,226 @@
+{
+  "date": "2026-11-11",
+  "attribution": "Agent-run native model turns and synthetic browser/SDK checks; human review pending",
+  "base_revision": "2a26dd559a4a5b43a7d15adb87dd25488d88602e",
+  "client": "codex-cli/app-server 0.167.1",
+  "model": "gpt-6.1-sol",
+  "os": "macOS 27.0.1 (26A434), arm64",
+  "build": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "python_version": "Python 3.13.13",
+    "uv_version": "uv 0.13.7 (Homebrew 2026-11-03 aarch64-apple-darwin)",
+    "source_base": "2a26dd559a4a5b43a7d15adb87dd25488d88602e",
+    "probe_source_sha256": {
+      "build.py": "47a7322cb94669496e7bdcf4a82ac1ff4a550989cec2d837e19e193225370e73",
+      "entry.py": "ad672800c9ba9d6c43d492950866b6aeb11a7c936474c24d4113daaf27f08657",
+      "skill.txt": "e71cfcebfda57f7162b8d359211a757aa5b451e2c5b640e764f32a53b60db1bb",
+      "runtime-requirements.txt": "0e5127428eadc153967840147c9911cfb2936bdd67b661910d87a80f2a00e085",
+      "build-requirements.txt": "d1540f048312a4c2bec2dd8d8894037c3e2a267b14ea54e7f789358e2d6c2f58"
+    },
+    "wheel_sha256": "f309fc71d480b1b15ccdfe33df26aac452553b80b8b35711cf860ff55b753c81",
+    "bundles": {
+      "private-python": {
+        "build_seconds": 7.516,
+        "files_bytes": 132290468,
+        "archive_bytes": 35506752,
+        "archive_sha256": "8c406e7cda9ffa3fb534f7351c53db94666af78169c9c07e3c9308519e70f1b2"
+      },
+      "pyinstaller": {
+        "build_seconds": 10.339,
+        "files_bytes": 37036078,
+        "archive_bytes": 18872707,
+        "archive_sha256": "1c53de57e8c475cc03b8a20458dc71cc6616846fa8af0bee937793103a6bfa28"
+      }
+    },
+    "tool_profile": "authoring"
+  },
+  "full_inventory_failure": {
+    "discovered_mcp_tools": 61,
+    "callable_tools_observed": 32,
+    "native_registry_report": "I enumerated `functions.exec`\u2019s `ALL_TOOLS` metadata for names containing `forge` and verified each resolves to a function. There are **32 callable Forge tools**:\n\n```text\nmcp__forge_review_254__analyze_artwork_cleanup\nmcp__forge_review_254__archive_artwork_candidates\nmcp__forge_review_254__artwork_colors\nmcp__forge_review_254__capabilities\nmcp__forge_review_254__commit_artwork\nmcp__forge_review_254__commit_sprite_tile_conversion\nmcp__forge_review_254__convert_artwork_palette\nmcp__forge_review_254__create_artwork\nmcp__forge_review_254__create_artwork_sheet\nmcp__forge_review_254__create_blockout_scene\nmcp__forge_review_254__create_project\nmcp__forge_review_254__create_scene\nmcp__forge_review_254__delete_artwork\nmcp__forge_review_254__delete_object_definition\nmcp__forge_review_254__delete_scene\nmcp__forge_review_254__delete_stamp\nmcp__forge_review_254__diagnostics\nmcp__forge_review_254__duplicate_artwork\nmcp__forge_review_254__duplicate_artwork_sheet\nmcp__forge_review_254__duplicate_scene\nmcp__forge_review_254__edit_artwork_batch\nmcp__forge_review_254__edit_artwork_layers\nmcp__forge_review_254__edit_artwork_layout\nmcp__forge_review_254__edit_artwork_pixels\nmcp__forge_review_254__edit_artwork_raster\nmcp__forge_review_254__edit_scene\nmcp__forge_review_254__export_artwork_bundle\nmcp__forge_review_254__export_artwork_candidate\nmcp__forge_review_254__export_bundle\nmcp__forge_review_254__get_project\nmcp__forge_review_254__get_scene\nmcp__forge_review_254__import_artwork_layers\n```\n\n`mcp__forge_review_254__list_artwork` is absent from `ALL_TOOLS`, and its lookup on `tools` returns `undefined`. I explicitly attempted that exact name with:\n\n```json\n{\n  \"project\": \"native-review\",\n  \"project_revision\": \"1feda8df1d8c1a68708322fedcbdc30709b333d716f5a87b761e8cb279556eb9\"\n}\n```\n\nThe attempt failed locally with `TypeError: tools[name] is not a function`. The failure is in the orchestration registry lookup for namespace `mcp__forge_review_254`; no request reached Forge.\n\nThe observed count is 32; this does **not** establish a 32-tool cap. No capabilities tool, shell, filesystem, other apps, or editing operations were used.",
+    "controls": [
+      "unrelated MCP/apps disabled",
+      "incremental tools disabled",
+      "plugin server renamed",
+      "plugin-scoped enabled-tools policy attempted"
+    ],
+    "interpretation": "Observed alphabetic registry boundary in this environment, not a universal Codex limit"
+  },
+  "profile_tools": [
+    "capabilities",
+    "commit_artwork",
+    "create_artwork_sheet",
+    "create_project",
+    "create_scene",
+    "edit_artwork_pixels",
+    "export_bundle",
+    "get_project",
+    "get_scene",
+    "inspect_artwork_candidate",
+    "list_artwork",
+    "list_projects",
+    "open_artwork",
+    "read_artwork_pixels",
+    "review_artwork",
+    "review_artwork_animation",
+    "review_artwork_candidate",
+    "review_artwork_frame",
+    "save_scene"
+  ],
+  "prompts": {
+    "inspect": "Validate the installed Forge authoring probe plugin in a native Codex model turn. This is a bounded integration test, not a coding task. Use only its Forge MCP tools and resource readers; do not use shell, filesystem inspection, external apps, or delegate work. The declared test project directory is native-review. Discover tools and project revisions, list/open the saved lantern artwork, and call review_artwork_candidate. Actually inspect the image content delivered by the plugin before reporting. Describe what you visually see (including differences between the two frames and small details), separating observations from metadata. Inspect animation frames using inspect_artwork_candidate and review_artwork_animation with a PNG fallback if APNG is unavailable. Report frame IDs/durations and whether images were actually visible to you. Do not edit or commit anything on this first turn. If the plugin is missing or images cannot be inspected, report that precise failure. Do not claim user-visible UI or human review from a non-interactive CLI test.\n",
+    "refine": "Complete a native installed-plugin guarded authoring test using only Forge MCP tools, MCP resource readers and the built-in programmatic orchestration interface. Do not use shell, filesystem inspection, other apps or delegation. The explicitly selected test project is native-review. Read fresh project/artwork revisions and open the saved lantern sheet. Actually inspect before PNGs. Add exactly one pale highlight pixel to the idle frame at sheet coordinate x=4,y=3 with RGBA [255,240,160,255], leaving every other pixel and all frame/animation metadata unchanged. Review the exact edited candidate, actually inspect the returned image and compare it to before. If you cannot see the image, stop without committing. Otherwise commit with the exact current review receipt. Re-read fresh revisions, reopen the saved artwork and confirm the candidate RGBA and descriptor equal your reviewed edited candidate. Call export_bundle for the fresh project revision and report its artifact URI. Read the native after-PNG resource through MCP so its bytes are retained in the client event log for independent fidelity checking. Report the exact project, artwork and candidate revisions, PNG digest, receipt revision, visual observations and any failed calls; do not claim human review or APNG playback.\n"
+  },
+  "model_messages": {
+    "inspection": [
+      "I\u2019ll use the Forge tools to inspect `native-review`, review the saved lantern artwork and animation, and distinguish what I can see from the returned metadata. I won\u2019t make any changes.\n",
+      "The PNGs are visible: the left frame is an amber rectangle with a small pale-yellow square; the right frame is cyan with no visible highlight. The before/after views look identical, and the inspection reports zero changed pixels. The animation call returned an APNG resource link; I\u2019ll check whether it can be viewed here.\n",
+      "Forge MCP is installed and responded successfully for `native-review`. PNG image inspection passed; animated APNG viewing remains unverified.\n\n**Visual observations:** I actually saw the candidate PNGs, coordinate-labelled inspection sheet, and individual frame PNG fallbacks. Both frames show a centered, tall rectangle with straight edges and surrounding empty space rendered black. `idle` is amber with one small pale-yellow square above and left of center. `glow` is uniformly light cyan, without that highlight. Their silhouettes match. Before/after views appear identical; no magenta changes are visible.\n\n**Returned metadata:**\n\n| Item | Value |\n|---|---|\n| Project revision | `1feda8df1d8c\u2026` |\n| Artwork revision | `1e9ac503c1c2\u2026` |\n| Candidate revision | `384282215522\u2026` |\n| Sheet | Lantern, 16 \u00d7 8 pixels |\n| `idle` | 8 \u00d7 8, 120 ms |\n| `glow` | 8 \u00d7 8, 240 ms |\n| Sequence | `blink`, looping, 360 ms total |\n| Inspection | Complete; zero changed pixels in both rectangles |\n\nI discovered tools/revisions, listed and opened the saved artwork, and called `review_artwork_candidate`, `inspect_artwork_candidate`, and `review_artwork_animation`. The latter returned an APNG resource, but the resource-reader/display attempt produced no visible animation. Individual PNG frame reviews were visible and inspected; playback timing was not visually verified.\n\nNo edits or commits were made. This validates native model access and PNG inspection, without establishing user-visible UI behavior or human review."
+    ],
+    "refinement": [
+      "I\u2019ll use Forge\u2019s native tools to inspect the saved lantern sheet, review the one-pixel candidate, and commit only after I can see and compare the images.\n\n",
+      "I can see the before PNG: an amber idle block on the left with an existing pale pixel, and a cyan glow block on the right. I\u2019ll add the requested pixel at sheet coordinate (4,3), then compare the full sheet and descriptor.\n\n",
+      "I can see the edited PNG: the pale highlight now spans two adjacent pixels in the amber idle frame; the cyan frame looks unchanged. The byte comparison confirms exactly one changed pixel, (4,3), from `[244,176,64,255]` to `[255,240,160,255]`. The descriptor and metadata are unchanged, and the native after-PNG bytes have been read through MCP. I\u2019ll commit with the receipt from this review.\n\n",
+      "Completed in `native-review` using only Forge MCP, MCP resource reads, and programmatic orchestration.\n\nVisually inspected before/after PNGs: the amber idle highlight gained one adjacent pale pixel; the cyan glow frame appeared unchanged. Exact RGBA comparison confirmed only `(4,3)` changed to `[255,240,160,255]`. All other pixels, descriptor, frame/animation metadata remained unchanged. Reopened saved RGBA and descriptor exactly match the reviewed candidate.\n\n| Record | Exact revision/digest |\n|---|---|\n| Project before | `1feda8df1d8c1a68708322fedcbdc30709b333d716f5a87b761e8cb279556eb9` |\n| Project after | `1fbc06ab11b3d1a12bcde2a2816c808feb22aee94ec7a98fbd7d74d10170574e` |\n| Artwork before | `1e9ac503c1c2f6277f7958776e9b02c5c477c03d9f56e97bb4ff6b4e9407f141` |\n| Artwork after | `14b5c15c2b0e0349bfcb624241a7a97aa48382fb977762f3c7764393bf16e408` |\n| Opened candidate | `3842822155224a5a4e79941826e0de3ccf5c933fec2cdd4ef59fbb67675e3428` |\n| Reviewed/committed candidate | `dcc3865e86a36dd3fd6468ee5acc0369b6f10ea075584a664fd322977a0a6d10` |\n| Reopened candidate | `87951f7d5c21f2dfdd10f834b16341d3573250067726e1f1a26908159cbb84a1` |\n| Commit receipt | `aa060c2c6faff2561849bee07357820e52d9f5a1b510f5f8d9791bafbeaa6136` |\n| PNG digest | `426506b8cf3298036a3c7e94a3a3364b6e0ce5158ac96a04fdc6fc3fa4cabe7c` |\n\n[Exported bundle](forge-artifact://snapshot/5cf2fdd2a49e8d1619da6a655c992b66617686d0d6c8dd19617c3264ba315415/project.zip)\n\nThe native after-PNG resource was read through MCP, retaining its base64 bytes in the event log. No failed MCP calls. One orchestration display attempt emitted no image; parsing the resource response and emitting it succeeded before editing. No human review or APNG playback claimed."
+    ]
+  },
+  "guarded_fidelity": {
+    "changed_pixel": [4, 3],
+    "before_rgba": [244, 176, 64, 255],
+    "after_rgba": [255, 240, 160, 255],
+    "changed_pixel_count": 1,
+    "descriptor_unchanged": true,
+    "reopened_matches_reviewed_rgba_and_descriptor": true,
+    "commit": {
+      "project_id": "62f80dbe-216c-4f77-8a7e-f30bcb3858f3",
+      "document_id": "4a378842-b45f-4fb5-b21f-ca665730ebb0",
+      "atlas_id": "lantern",
+      "candidate_revision": "dcc3865e86a36dd3fd6468ee5acc0369b6f10ea075584a664fd322977a0a6d10",
+      "project_revision": "1fbc06ab11b3d1a12bcde2a2816c808feb22aee94ec7a98fbd7d74d10170574e",
+      "artwork_revision": "14b5c15c2b0e0349bfcb624241a7a97aa48382fb977762f3c7764393bf16e408",
+      "png_digest": "426506b8cf3298036a3c7e94a3a3364b6e0ce5158ac96a04fdc6fc3fa4cabe7c",
+      "scene_revisions": {},
+      "review_revision": "aa060c2c6faff2561849bee07357820e52d9f5a1b510f5f8d9791bafbeaa6136"
+    },
+    "native_png_matches_saved": true,
+    "fresh_sdk_export": {
+      "project_revision": "1fbc06ab11b3d1a12bcde2a2816c808feb22aee94ec7a98fbd7d74d10170574e",
+      "export_png_sha256": "426506b8cf3298036a3c7e94a3a3364b6e0ce5158ac96a04fdc6fc3fa4cabe7c",
+      "export_matches_saved_png": true,
+      "zip_bytes": 7255
+    },
+    "client_approval": "Exact fixture commit accepted only after driver checked project, candidate, matching receipt, one expected pixel difference and unchanged descriptor"
+  },
+  "calls": [
+    {
+      "tool": "get_project",
+      "status": "completed",
+      "error": null,
+      "inline_pngs": 0
+    },
+    {
+      "tool": "list_artwork",
+      "status": "completed",
+      "error": null,
+      "inline_pngs": 0
+    },
+    {
+      "tool": "open_artwork",
+      "status": "completed",
+      "error": null,
+      "inline_pngs": 0
+    },
+    {
+      "tool": "review_artwork_candidate",
+      "status": "completed",
+      "error": null,
+      "inline_pngs": 2
+    },
+    {
+      "tool": "read_mcp_resource",
+      "status": "completed",
+      "error": null,
+      "inline_pngs": 0
+    },
+    {
+      "tool": "edit_artwork_pixels",
+      "status": "completed",
+      "error": null,
+      "inline_pngs": 0
+    },
+    {
+      "tool": "review_artwork_candidate",
+      "status": "completed",
+      "error": null,
+      "inline_pngs": 2
+    },
+    {
+      "tool": "read_mcp_resource",
+      "status": "completed",
+      "error": null,
+      "inline_pngs": 0
+    },
+    {
+      "tool": "commit_artwork",
+      "status": "completed",
+      "error": null,
+      "inline_pngs": 0
+    },
+    {
+      "tool": "get_project",
+      "status": "completed",
+      "error": null,
+      "inline_pngs": 0
+    },
+    {
+      "tool": "list_artwork",
+      "status": "completed",
+      "error": null,
+      "inline_pngs": 0
+    },
+    {
+      "tool": "open_artwork",
+      "status": "completed",
+      "error": null,
+      "inline_pngs": 0
+    },
+    {
+      "tool": "export_bundle",
+      "status": "completed",
+      "error": null,
+      "inline_pngs": 0
+    }
+  ],
+  "cli_inspection_report": "The installed Forge plugin passed the read-only discovery and PNG inspection checks in this native model turn. APNG playback could not be visually verified.\n\n**Observed images:** I actually saw the sheet preview, coordinate-labelled inspection PNG, and individual frame PNGs. `idle` is an amber rectangle with a single pale-yellow pixel near its upper-left interior. `glow` has the same silhouette but is uniformly light cyan, without the highlight. Both have surrounding margins displayed black. Saved-before and candidate-after images look identical.\n\n**Plugin metadata:**\n\n- Project: `native-review`\n- Project revision: `1feda8df1d8c1a68708322fedcbdc30709b333d716f5a87b761e8cb279556eb9`\n- Artwork revision: `1e9ac503c1c2f6277f7958776e9b02c5c477c03d9f56e97bb4ff6b4e9407f141`\n- Lantern sheet: 16\u00d78; two 8\u00d78 frames.\n- Looping sequence `blink`: `idle` **120 ms**, then `glow` **240 ms**.\n\n`review_artwork_candidate`, `inspect_artwork_candidate`, and `review_artwork_animation` succeeded. The APNG resource reader returned image bytes, but forwarding them produced no visible image here. Individual frame PNGs provided the successful visual fallback; animation timing remains metadata-only verification.\n\nNo edits or commits were made. This validates model-side tool/image delivery, not user-visible UI or human review.",
+  "browser": {
+    "chromium": "156.0.8078.4",
+    "viewport": [1440, 1000],
+    "headless_scene": "rendered before refinement",
+    "integrated_browser": "Image.decode remained pending although fetched PNG was complete and naturalWidth=16",
+    "default_opener": "Launched installed browser command without --no-browser; no opener failure printed; human window review unconfirmed"
+  },
+  "limits": [
+    "Human review pending",
+    "APNG playback unverified; model inspected PNG frame fallback and timing metadata",
+    "Only the opt-in 19-tool profile completes this model workflow here",
+    "Not a production plugin, minimum OS, signing, clean-machine or other-client/platform acceptance claim"
+  ],
+  "sdk_profiles": {
+    "pyinstaller": {
+      "tool_count": 19,
+      "stale_receipt_rejected": true,
+      "saved_rgba_and_descriptor_match": true,
+      "restart_saved_read": true,
+      "readonly_bundle_unchanged": true,
+      "runtime_path_has_no_python_or_node": true
+    },
+    "private-python": {
+      "tool_count": 19,
+      "stale_receipt_rejected": true,
+      "saved_rgba_and_descriptor_match": true,
+      "restart_saved_read": true,
+      "readonly_bundle_unchanged": true,
+      "runtime_path_has_no_python_or_node": true
+    }
+  }
+}

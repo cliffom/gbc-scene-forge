@@ -4,8 +4,9 @@ The macOS arm64 runtime prototype works through Codex's local plugin installer
 and app-server MCP connection. Prefer a PyInstaller folder bundle for the next
 packaging step: it passed the same checks as private Python at 28% of its installed
 file bytes and 53% of its compressed bytes. This is a **conditional go for further
-development**, not a supported plugin release. Native chat image inspection and
-user-visible review remain unverified, so #254 is not complete.
+development**, not a supported plugin release. The later native-model check below
+passes PNG inspection with an opt-in 19-tool probe profile. Human-visible review
+remains unconfirmed, so #254 is not complete.
 
 The [source probe](../../examples/plugin_probe/entry.py),
 [builder](../../examples/plugin_probe/build.py),
@@ -245,3 +246,109 @@ with `projects/<report.project>/scenes/<report.scene_id>` appended, then
 double-click `lantern/idle` to open saved artwork. The automated HTTP probe does
 not perform this visual step or launch the default OS browser; all captured
 browser observations above used headless Chromium.
+
+## Native model review follow-up
+
+The 2026-11-11 follow-up uses integration base
+`2a26dd559a4a5b43a7d15adb87dd25488d88602e` plus the probe source hashes in the
+[native results](assets/plugin-native-review/results.json). The same native macOS
+27.0.1 arm64 host, Codex CLI/app-server 0.167.1 and authenticated `gpt-6.1-sol`
+model were used. This is agent-run synthetic evidence, not an independent user
+session. The original measurements and limits above retain their historical scope.
+
+### Tool exposure and bounded workaround
+
+An actual model turn exposed a boundary that the earlier direct app-server bridge
+could not detect: MCP status listed all 61 tools, but the model's orchestration
+registry contained only their alphabetically first 32, ending at
+`import_artwork_layers`. `list_artwork`, `open_artwork` and the review tools were
+absent. An explicit lookup/call failed locally with `TypeError`; it did not reach
+Forge. The archived model report lists every observed callable name. Disabling
+unrelated services and incremental-tool features, renaming the server and trying
+plugin-scoped tool policies did not make those functions callable. This bounds the
+observed client/orchestration environment; it does not establish a universal Codex
+tool limit or identify the upstream implementation defect.
+
+The probe builder now accepts `--tool-profile authoring`. This opt-in profile
+advertises and accepts 19 tools covering project discovery/create, sheet
+create/open/edit, review/animation/frame inspection, guarded commit, scene
+create/read/save and portable export. Capabilities reports the same restricted
+inventory, and guessing an excluded tool name fails before project mutation.
+`full` remains the default; the supported wheel and maintained runtime retain
+their full inventory. This is a feasibility workaround, not a decision to remove
+the other authoring capabilities from the future plugin. Downstream packaging and
+skills must test their actual tool surface during a model turn.
+
+Both rebuilt bundle variants passed the existing SDK/cache verification with the
+19-tool profile: read-only relocated installation, empty runtime PATH, stale
+receipt rejection, guarded save, exact reopen/export, restart and HTTP checks.
+The new archive/build/wheel and probe source hashes are in the native results;
+these rebuilt archives are distinct from the original full-profile comparison.
+
+### Observed native model behavior
+
+The installed PyInstaller profile passed both an ephemeral native `codex exec`
+inspection and native app-server model turns. No credentials were copied into
+test outputs. Invocation-specific marketplace settings selected the installed
+probe; the normal authenticated client supplied its own model access.
+
+The model called `review_artwork_candidate`, inspected its inline PNGs, requested
+a coordinate-labelled contact sheet and used individual PNG frame views when
+APNG display produced no visible animation. Its visual report correctly identifies
+matching rectangular silhouettes, an amber `idle` frame with a pale highlight and
+a plain cyan `glow` frame. The 120/240 ms looping timing was read from metadata;
+playback timing was not visually verified. The
+[frame inspection](assets/plugin-native-review/frames.png) and exact prompts and
+model messages are archived.
+
+A separate model turn inspected before/after views, changed only sheet pixel
+`(4,3)` from amber to `[255,240,160,255]`, reviewed the exact edited candidate,
+committed with its current receipt, reopened fresh saved revisions and exported.
+The client driver accepted only that fixture commit after checking the project,
+candidate, matching receipt, expected one-pixel difference and unchanged descriptor.
+An earlier driver stopped at the normal commit approval request without writing;
+the corrected driver handled that request and bounded its wait explicitly.
+
+The root agent independently checked the native tool results and resource bytes:
+reopened RGBA/descriptor equal the reviewed candidate, only one pixel differs,
+and the [native after PNG](assets/plugin-native-review/after-native.png), saved
+atlas and a fresh SDK export have digest
+`426506b8cf3298036a3c7e94a3a3364b6e0ce5158ac96a04fdc6fc3fa4cabe7c`.
+The inspected [nearest-neighbor view](assets/plugin-native-review/after-enlarged.png)
+shows the two-pixel pale highlight; the cyan frame is unchanged. This establishes
+model-side image ingestion and reviewed persistence for this small fixture, not
+general artistic quality or a human review result.
+
+Chromium 156.0.8078.4 rendered the same saved scene at 1440 × 1000 before refinement;
+the root agent inspected the [capture](assets/plugin-native-review/browser-before.png).
+The integrated VS Code browser again stalled at atlas decoding: the 96-byte PNG
+was fetched, and a separate image reported `complete=true`, `naturalWidth=16`,
+while `decode()` remained pending. The same bytes decode in ordinary Chromium.
+The installed launcher also invoked the default OS browser without reporting an
+opener failure. No human confirmation of that window, PNG views or animation
+review has been received. The single validation list retains those boundaries.
+
+### Reproduce a native turn
+
+Build as above with a new output directory and `--tool-profile authoring`, then
+run both archive verifiers. In an authenticated native client, register that
+build's local marketplace and install `forge-authoring-probe@forge-probe-pyinstaller`
+with the normal `codex plugin` commands. Keep its explicit external selection
+and marketplace source available. Use a disposable project and the archived
+inspection/refinement prompts; the recorded refinement targets the seeded lantern
+fixture and must not be run against unrelated user artwork.
+
+Use the enabled installed plugin in `codex exec --ephemeral --sandbox read-only`
+or an app-server model turn. Read-only here governs shell execution; the explicitly
+selected fixture is still subject to normal MCP tool approvals and Forge revision
+guards. Capture native JSON events and final model text, including image blocks,
+receipt/candidate revisions and failures. Observe or answer the normal commit
+approval for the exact fixture; do not infer a saved result from an approval
+request. `--ignore-user-config` runs in this investigation exposed no Forge tools;
+they do not count as installed-plugin visual passes.
+
+Local `make docs-check lint test` passes with 500 Python tests and the TypeScript
+suites; `make build check-dist` passes metadata and seven installed-wheel smoke
+cases. These are local results, not a new CI or release claim. Human review, APNG
+playback, integrated-browser compatibility and other client/platform/delivery
+boundaries remain unverified.

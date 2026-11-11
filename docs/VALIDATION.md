@@ -15,6 +15,31 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Native installed-plugin model review (#254 follow-up)
+
+- **Scope:** Agent-run 2026-11-11 checks on macOS 27.0.1 arm64, Codex CLI/app-server
+  0.167.1 and `gpt-6.1-sol`; integration base `2a26dd5` plus the probe hashes and
+  rebuilt archive/wheel digests in [native results](evaluations/assets/plugin-native-review/results.json).
+  The opt-in authoring probe exposes 19 tools; the ordinary runtime is unchanged.
+- **Method:** Run authenticated native CLI/app-server model turns with the actually
+  installed plugin and disposable external fixture. Inspect inline PNGs and frame
+  fallbacks, review a one-pixel refinement, approve only its checked fixture commit,
+  reopen and export. Independently compare native/saved/exported PNG and candidate
+  bytes. Repeat both bundle SDK/read-only/empty-PATH verifiers and Chromium scene
+  capture; run docs/lint/Python/TypeScript and wheel build/smoke checks.
+- **Result:** Native model messages correctly describe the frames and highlight.
+  Reviewed, reopened and exported content matches exactly; only `(4,3)` changes.
+  The [evaluation](evaluations/plugin-feasibility.md#native-model-review-follow-up)
+  and archived model messages/captures preserve the initial 61-versus-32 tool
+  exposure failure, 19-tool workaround and driver approval correction. Both bundle
+  verifiers, 500 Python tests, TypeScript suites and seven wheel smoke cases pass.
+- **Limits:** Synthetic model/agent evidence only; human-visible review remains
+  unconfirmed. APNG display did not show playback; PNG frames and timing metadata
+  were inspected. The integrated browser again stalled during PNG decode, while
+  ordinary Chromium rendered the scene. The OS opener reported no failure but its
+  window was not confirmed by a person. Full-inventory model exposure and other
+  clients/platforms are not certified; #254 remains open.
+
 ## Self-contained runtime bundle (#255)
 
 - **Scope:** Agent-run 2026-11-11 macOS 27.0.1 arm64 checks on integration base
@@ -3045,12 +3070,15 @@ Dates, revisions and environments missing from the originals remain unknown.
 
 ### Codex plugin feasibility (milestone 25, #254)
 
-- [ ] Demonstrate image inspection during a native installed-plugin model turn and
-  user-visible review of native/enlarged PNGs plus animation frames/timing or APNG;
-  retain exact client/version and reviewer attribution. The app-server bridge and
-  agent artifact inspection do not complete native chat acceptance.
-- [ ] Resolve the integrated-browser image-decoding stall or bound supported
-  browser handoff with repeatable evidence; establish actual default-browser launch.
+- [ ] Confirm human-visible review of native/enlarged PNGs and animation
+      frames/timing or APNG, with reviewer attribution and exact client/version.
+      Native model PNG inspection now passes with the opt-in 19-tool profile;
+      [the follow-up](evaluations/plugin-feasibility.md#native-model-review-follow-up)
+      does not establish human review or successful full-inventory model exposure.
+- [ ] Confirm the default OS browser window and human handoff. Ordinary Chromium
+      renders the fixture repeatedly; the integrated-browser image-decoding stall
+      remains an explicit compatibility limit. The launcher invoked the OS opener
+      without reporting failure, which alone does not confirm the visible window.
 - [ ] Establish additional client/platform support, minimum macOS, signing,
   quarantine/download, archive-selection/size and public-directory boundaries as
   downstream delivery contracts require (#257/#258/#265). Local extraction and

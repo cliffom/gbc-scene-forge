@@ -69,6 +69,7 @@ def build(args):
         },
         "wheel_sha256": hashlib.sha256(wheel.read_bytes()).hexdigest(),
         "bundles": {},
+        "tool_profile": args.tool_profile,
     }
     for mode in ("private-python", "pyinstaller"):
         started = time.monotonic()
@@ -170,7 +171,10 @@ def build(args):
                         "command": "./bin/forge",
                         "cwd": "${PLUGIN_ROOT}",
                         "args": ["mcp"],
-                        "env": {"FORGE_PLUGIN_PROBE_SETTINGS": str(settings)},
+                        "env": {
+                            "FORGE_PLUGIN_PROBE_SETTINGS": str(settings),
+                            "FORGE_PLUGIN_PROBE_TOOL_PROFILE": args.tool_profile,
+                        },
                     }
                 },
             },
@@ -214,6 +218,7 @@ def main():
     parser.add_argument("--settings", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True, help="New disposable directory")
     parser.add_argument("--uv", default="uv")
+    parser.add_argument("--tool-profile", choices=("full", "authoring"), default="full")
     build(parser.parse_args())
 
 
