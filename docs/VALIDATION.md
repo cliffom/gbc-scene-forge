@@ -15,6 +15,40 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Managed plugin browser lifecycle (#257)
+
+- **Scope:** Agent-run local checks on 2026-11-11, macOS 27.0.1 arm64,
+  implementation based on integration revision `e426476`. Package identity remains
+  0.46.1 under milestone 25's deferred-release policy. The
+  [archived native report](evaluations/assets/plugin-lifecycle/result.json) names
+  the exact frozen executable SHA-256 and observation time.
+- **Method:** `make lint test`, final `make docs-check lint`, production
+  `make build check-dist`, a new pinned native build, relocated read-only
+  official-SDK bundle smoke, and installed-executable lifecycle acceptance with
+  isolated HOME, synthetic root selection and an empty runtime PATH. Source
+  subprocess tests cover concurrent launches, occupied ports, worker crash,
+  owner/token/Host checks, idle expiry, selection reset, runtime mismatch and
+  abrupt exit immediately after scene-map publication. Playwright checks managed
+  checkpoint restoration and the existing draft recovery suite against an
+  installed wheel; inspect the restored 1440 × 1000 Chromium view.
+- **Result:** 526 Python tests and the TypeScript suites passed; final lint,
+  formatting, types and documentation checks passed. Seven installed-wheel checks,
+  native SDK bundle smoke and native lifecycle checks passed. Two MCP sessions
+  reuse one verified browser; normal/abrupt MCP exit preserves that server, saved
+  scenes and retained candidates. Fresh MCP resources report expiry. Browser
+  stop/restart preserves its origin; four installed-wheel browser scenarios pass,
+  including restoration as unsaved work without changing saved bytes. The initial
+  browser fixture rejected macOS's aliased temporary path; canonicalizing the
+  fixture fixed it without relaxing production path guards.
+- **Limits:** Synthetic grants bypass the native chooser. This does not establish
+  a new Codex installation, model browser-opening behavior or human usability.
+  Journal fault injection uses a source Python subprocess; native acceptance kills
+  MCP after a completed save, not at an instrumented native write boundary. Idle
+  expiry is accelerated in the worker test. Evidence is local automation, not an
+  independently verified CI run; the report archives scoped results, not the
+  runtime binary or screenshots. WSL/remote/cloud, other native platforms/clients,
+  signing and update/uninstall acceptance remain downstream.
+
 ## Plugin candidate quota recovery (#271 feedback)
 
 - **Scope:** Agent-run local source checks on 2026-11-11, macOS arm64;
@@ -3172,6 +3206,10 @@ Dates, revisions and environments missing from the originals remain unknown.
   have independent users skip or complete the optional first task and find
   browser editing/export. The #256 synthetic chooser/SDK checks above establish
   implementation behavior, not native-dialog or onboarding usability.
+- [ ] Exercise managed browser opening/reuse, chat closure, concurrent
+  conversations and later refinement in an actual installed Codex plugin. The
+  [#257 executable checks](#managed-plugin-browser-lifecycle-257) establish local
+  process behavior, not client browser-opening or independent-user acceptance.
 
 ### Codex plugin feasibility (milestone 25, #254)
 

@@ -78,6 +78,11 @@ protected. Launch the browser against the same root/project to inspect saves:
 gbc-scene-forge --project /absolute/path/to/projects/mcp-forest
 ```
 
+Experimental bundled plugin sessions also provide
+[managed browser handoff](PLUGIN-START.md#managed-browser-handoff-and-process-recovery).
+Their verified browser URL, shared process, idle lifetime and restart address are
+independent of the client-owned stdio session; direct launches remain foreground.
+
 The official SDK handles JSON-RPC, initialization, schema validation, cancellation,
 and stdio framing. Its supported protocol revisions are `2024-11-05`, `2025-03-26`,
 `2025-06-18` and `2025-11-25`; the recorded SDK-client proof uses `2025-11-25`.

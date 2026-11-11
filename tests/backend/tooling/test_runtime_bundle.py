@@ -111,7 +111,7 @@ class RuntimeLauncherTests(unittest.TestCase):
         self.assertEqual(stdout.getvalue(), "")
         self.assertFalse(selection.settings.exists())
 
-    def test_plugin_browser_requires_selection_and_logs_in_cache(self):
+    def test_plugin_browser_requires_selection_and_uses_managed_handoff(self):
         selection = Selection(
             self.bundle, settings=self.root / "settings", cache=self.root / "cache"
         )
@@ -125,11 +125,30 @@ class RuntimeLauncherTests(unittest.TestCase):
                 entry.main(["browser", "--plugin"])
             self.assertEqual(caught.exception.code, 2)
             selection.save(selection.prepare(self.projects, "root"))
+            from gbc_scene_forge.project.application import Project
 
-            def serve(root, port, **kwargs):
-                self.assertEqual(root, self.projects)
-                self.assertEqual(Path.cwd(), selection.cache)
-                self.assertEqual(kwargs, {"single_project": False, "open_browser": False})
-
-            with patch("gbc_scene_forge.adapters.http.server.serve", side_effect=serve):
-                self.assertEqual(entry.main(["browser", "--plugin", "--no-browser"]), 0)
+            project = Project.create(self.projects / "design", "Design")
+            with (
+                patch("gbc_scene_forge.adapters.plugin.browser.BrowserManager.request") as request,
+                redirect_stderr(io.StringIO()) as stderr,
+                redirect_stdout(io.StringIO()) as stdout,
+            ):
+                request.return_value = {"url": "http://127.0.0.1:1234/"}
+                self.assertEqual(
+                    entry.main(["browser", "--plugin", "--project-name", "design", "--no-browser"]),
+                    0,
+                )
+                self.assertEqual(request.call_args.args[0].root, project.root)
+                self.assertIn("http://127.0.0.1:1234/", stderr.getvalue())
+                self.assertEqual(stdout.getvalue(), "")
+            record = selection.prepare(self.projects, "root")
+            with (
+                patch.object(selection, "load", side_effect=[record, record, None]),
+                patch("gbc_scene_forge.adapters.plugin.browser.BrowserManager.request") as request,
+                redirect_stderr(io.StringIO()) as stderr,
+                self.assertRaises(SystemExit) as caught,
+            ):
+                entry.main(["browser", "--plugin", "--project-name", "design", "--no-browser"])
+            self.assertEqual(caught.exception.code, 2)
+            self.assertIn("another conversation", stderr.getvalue())
+            request.assert_not_called()

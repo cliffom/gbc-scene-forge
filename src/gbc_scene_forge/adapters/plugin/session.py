@@ -3,7 +3,28 @@
 from gbc_scene_forge.adapters.mcp.tools import TOOLS, Adapter
 from gbc_scene_forge.core.validation import require
 
+from .browser import BrowserManager
 from .selection import choose_directory
+
+BROWSER_TOOL = {
+    "name": "plugin_browser",
+    "description": "Get a verified loopback browser URL for this project's saved content, or inspect "
+    "its shared browser process. Open the returned URL with the client's browser tool. "
+    "Optional scene_id opens a saved scene. Artwork opens through Documents. "
+    "Use stop only on an explicit user request, with the current instance from status; "
+    "it affects all tabs/conversations sharing that browser. Never stop on chat closure.",
+    "inputSchema": {
+        "type": "object",
+        "properties": {
+            "project": {"type": "string"},
+            "action": {"type": "string", "enum": ["open", "status", "stop"]},
+            "scene_id": {"type": "string"},
+            "instance": {"type": "string"},
+        },
+        "required": ["project", "action"],
+        "additionalProperties": False,
+    },
+}
 
 SETUP_TOOLS = [
     {
@@ -72,7 +93,6 @@ AUTHORING_NAMES = frozenset(
         "save_scene",
         "edit_scene",
         "review_artwork",
-        "review_scene",
         "import_atlas",
         "export_bundle",
     }
@@ -80,11 +100,14 @@ AUTHORING_NAMES = frozenset(
 
 
 class PluginSession:
-    tool_definitions = SETUP_TOOLS + [t for t in TOOLS if t["name"] in AUTHORING_NAMES]
+    tool_definitions = (
+        SETUP_TOOLS + [BROWSER_TOOL] + [t for t in TOOLS if t["name"] in AUTHORING_NAMES]
+    )
 
     def __init__(self, selection, *, chooser=choose_directory):
         self.selection = selection
         self.chooser = chooser
+        self.browser = BrowserManager(selection)
         self.record = None
         self.adapter = None
         self.error = None
@@ -121,7 +144,8 @@ class PluginSession:
     def read_artifact(self, uri):
         self.revalidate()
         require(
-            self.adapter is not None, "Choose a project location first using plugin_choose_location"
+            self.adapter is not None,
+            "Unknown or expired session artifact. Choose a project location and generate it again.",
         )
         return self.adapter.read_artifact(uri)
 
@@ -164,7 +188,7 @@ class PluginSession:
                 self.record, self.adapter, self.error = None, None, None
             return self.status()
         require(
-            name in AUTHORING_NAMES,
+            name in AUTHORING_NAMES or name == "plugin_browser",
             "This tool is unavailable in the bounded plugin profile. "
             "Use browser editing or direct --project/--project-root MCP for the full inventory.",
         )
@@ -174,6 +198,20 @@ class PluginSession:
             "No available project grant. Call plugin_status, then plugin_choose_location. "
             + (self.error or "No location selected."),
         )
+        if name == "plugin_browser":
+            require(
+                isinstance(arguments, dict)
+                and {"project", "action"} <= arguments.keys()
+                and arguments.keys() <= BROWSER_TOOL["inputSchema"]["properties"].keys()
+                and all(isinstance(value, str) for value in arguments.values()),
+                "Invalid browser handoff arguments",
+            )
+            return self.browser.request(
+                self.adapter.project(arguments["project"]),
+                action=arguments["action"],
+                scene_id=arguments.get("scene_id"),
+                instance=arguments.get("instance"),
+            )
         if name == "list_projects" and self.record["mode"] == "project":
             require(arguments == {}, "Invalid tool arguments")
             # Match root discovery: do not acquire a writable history lock or

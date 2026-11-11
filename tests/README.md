@@ -72,6 +72,18 @@ with an empty PATH and captures its sample editor. It is skipped in ordinary
 Playwright runs unless `FORGE_TEST_BUNDLE` is supplied. See the
 [runtime guide](../docs/RUNTIME-BUNDLES.md) for build inputs and bounded evidence.
 
+`make test-plugin-lifecycle BUNDLE_BUILD=build/runtime` runs the frozen executable
+with an isolated home and empty runtime PATH. It checks concurrent MCP sessions,
+normal/abrupt MCP exit, browser reuse/restart, saved scenes, retained candidates,
+expired session resources and token protection. This synthetic selection test
+does not install a Codex plugin or open a native folder dialog.
+`playwright/packaging/plugin-lifecycle.spec.ts` separately paints an unsaved scene,
+closes its tab, restarts the managed browser on the same origin and restores the
+real checkpoint without changing saved content. Use `FORGE_TEST_PYTHON` to run
+its process driver against an installed wheel. Backend browser tests cover
+occupied ports, stale records, ownership, idle expiry, invalid paths and abrupt
+exit after scene-map publication with journal recovery on handoff.
+
 `backend/tooling/test_plugin_probe.py` checks the experimental launcher's explicit
 external selection, symlink containment and argument-override rejection. The
 macOS-only [plugin probe](../examples/plugin_probe/verify.py) separately installs
