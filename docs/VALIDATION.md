@@ -15,6 +15,47 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Repository plugin delivery and update safety (#258)
+
+- **Scope:** Agent-run local checks on 2026-11-11, macOS 27.0.1 arm64,
+  Python 3.13.13, Node 24.22.1 and Codex CLI/app-server 0.167.1. Integration
+  base `11ab0350505ab5bf3f53473edd197cbbd4ac0b29`; unpublished plugin
+  0.1.0-alpha.1 with Forge 0.46.1. The
+  [archived report](evaluations/assets/plugin-distribution/result.json) identifies
+  the exact archive, installed content, wheel, runtime and verification sources.
+- **Method:** Run documentation/lint/types, Python/TypeScript tests, production
+  build/wheel smoke checks and pinned native construction. Install the generated
+  repository in isolated client/home directories; discover its skill/MCP and call
+  status through the actual app-server. Launch with unavailable developer-tool
+  PATH, exercise an incomplete copy and a synthetic second plugin version during
+  live MCP/browser sessions, then disable, roll back and uninstall. Compare project,
+  retained-candidate and selection bytes plus a synthetic layout sentinel. Run
+  relocated read-only SDK bundle/lifecycle checks and five frozen-editor/installed-
+  wheel browser cases; inspect sample rendering and unsaved recovery at 1440 × 1000.
+- **Result:** Final required checks pass with 538 Python tests and the TypeScript
+  suites; seven wheel smoke tests and native repository acceptance pass. Earlier
+  native runs disproved two assumptions: installing a new version removes the old
+  cache, and the generic `-c` enabled override did not disable this app-server's
+  plugin loader. Persisted configuration disables discovery in a fresh session.
+  Old MCP calls and browser project requests reject cache removal (HTTP 409);
+  different builds cannot reuse one browser. Explicit stop/reopen preserves its
+  origin, rollback restores the original identity, and uninstall removes only the
+  plugin cache/registration while project/candidate/settings/layout bytes survive.
+  The maintenance contract now requires finishing work and stopping the managed
+  browser before update. Integrity regressions cover missing manifests/receipts,
+  external receipt links, changed resources, executable modes and incompatible
+  runtime/format/host combinations. SDK, lifecycle and five browser cases pass;
+  the sample renders and recovered painting remains unsaved.
+- **Limits:** Synthetic grants/version/layout, one local source and one native
+  client/host; no new model turn, native chooser, independent-user study, hosted
+  Git repository, signed/quarantined download or clean-OS acceptance. The layout
+  sentinel is not real browser storage; separate Playwright checks exercise actual
+  checkpoints, not a native-client update with unsaved tabs. The OS floor is a
+  conservative artifact contract, not evidence for older macOS. Hashes detect
+  incomplete/mixed contents, not publisher authenticity. Windows/Linux, additional
+  clients and release/publication checks remain downstream. No CI or publication
+  result is implied by these local observations.
+
 ## Managed browser request recovery (PR #272 review)
 
 - **Scope:** Agent-run local source checks on 2026-11-11, macOS arm64; fixes
@@ -3249,10 +3290,11 @@ Dates, revisions and environments missing from the originals remain unknown.
       [the attributed report](#human-browser-review-of-the-installed-plugin-fixture-254).
       The integrated-browser image-decoding stall remains an explicit compatibility
       limit; this confirmation applies to the external Chrome window.
-- [ ] Establish additional client/platform support, minimum macOS, signing,
-  quarantine/download, archive-selection/size and public-directory boundaries as
-  downstream delivery contracts require (#257/#258/#265). Local extraction and
-  one macOS arm64 app-server result do not establish those outcomes.
+- [ ] Establish additional client/platform support (including Windows x64/Linux
+  x64), older macOS, hosted Git repository installation, signing, quarantine/
+  download, archive-selection/size and public-directory boundaries as downstream
+  delivery contracts require (#263/#265). The #258 local repository update/
+  rollback/uninstall checks do not establish those release outcomes.
 
 ### Editor discovery, scope and working space (#224)
 

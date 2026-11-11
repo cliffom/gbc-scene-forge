@@ -58,6 +58,7 @@ help:
 	@echo '  make build / make check-dist Build distributions / test the installed wheel'
 	@echo '  make build-bundle            Build experimental macOS arm64 runtime (pinned Python archive)'
 	@echo '  make check-bundle            Verify a moved, read-only runtime with the MCP SDK'
+	@echo '  make package-plugin          Stage a versioned repository plugin from BUNDLE'
 	@echo '  make test-plugin-lifecycle  Verify installed plugin process sharing and recovery'
 	@echo '  make test-bundle-browser     Render the frozen runtime in Chromium'
 	@echo '  make clean                   Remove build outputs and node_modules; keep projects'
@@ -214,6 +215,11 @@ check-bundle:
 
 test-plugin-lifecycle:
 	$(PYTHON) tests/packaging/plugin_lifecycle_smoke.py --runtime "$(BUNDLE)/forge" --output "$(BUNDLE_CHECK)-lifecycle"
+
+PLUGIN_OUTPUT ?= build/plugin-repository
+.PHONY: package-plugin
+package-plugin:
+	$(PYTHON) runtime/package_plugin.py --bundle "$(BUNDLE)" --output "$(PLUGIN_OUTPUT)"
 
 .PHONY: test-bundle-browser
 test-bundle-browser:

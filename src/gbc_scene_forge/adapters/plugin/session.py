@@ -4,6 +4,7 @@ from gbc_scene_forge.adapters.mcp.tools import TOOLS, Adapter
 from gbc_scene_forge.core.validation import require
 
 from .browser import BrowserManager
+from .distribution import guard, verify
 from .selection import choose_directory
 
 BROWSER_TOOL = {
@@ -106,6 +107,7 @@ class PluginSession:
 
     def __init__(self, selection, *, chooser=choose_directory):
         self.selection = selection
+        self.installation = verify(selection.bundle)
         self.chooser = chooser
         self.browser = BrowserManager(selection)
         self.record = None
@@ -124,6 +126,7 @@ class PluginSession:
         return Adapter(path, single_project=record["mode"] == "project", recover=False)
 
     def revalidate(self):
+        guard(self.selection.bundle, self.installation)
         if self.record is None:
             return
         try:
@@ -152,6 +155,7 @@ class PluginSession:
     def status(self):
         self.revalidate()
         return {
+            "installation": self.installation,
             "selection": self.record,
             "settings_file": str(self.selection.settings),
             "cache_directory": str(self.selection.cache),
@@ -167,6 +171,7 @@ class PluginSession:
         }
 
     def call(self, name, arguments):
+        guard(self.selection.bundle, self.installation)
         if name in {tool["name"] for tool in SETUP_TOOLS}:
             require(isinstance(arguments, dict), "Invalid setup tool arguments")
             if name == "plugin_choose_location":
@@ -179,6 +184,7 @@ class PluginSession:
                     return {**self.status(), "cancelled": True}
                 record = self.selection.prepare(path, arguments["mode"])
                 adapter = self.open(record)
+                guard(self.selection.bundle, self.installation)
                 self.selection.save(record)  # Failed selection/persistence preserves old access.
                 self.record, self.adapter, self.error = record, adapter, None
                 return self.status()

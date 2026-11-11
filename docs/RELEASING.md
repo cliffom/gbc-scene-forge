@@ -155,6 +155,16 @@ the README installation example aligned with the tagged version, and verify fres
 plain and optional-MCP installs before announcing publication. Tagging and upload
 remain separate from local validation.
 
+## Repository plugin distribution
+
+Milestone 25's [repository plugin packager](PLUGIN-DISTRIBUTION.md) stages immutable
+platform-specific marketplaces and archives from an already built runtime.
+Its prerelease plugin version is independent of the Forge wheel version; the
+compatibility resource pins their combination. Issue PRs target the milestone
+branch and do not bump or publish Forge. The milestone integration assesses the
+next unpublished product version after its acceptance gates pass. Platform CI,
+signing and publishing remain #263; public directory submission remains #265.
+
 ## Internal refactors
 
 Behavior-preserving internal cleanup and documentation-only changes do not require

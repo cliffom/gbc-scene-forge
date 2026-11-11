@@ -7,6 +7,17 @@ Call `plugin_status` first, including in later conversations. Tell the user the
 effective project or root and any location error. Do not infer a grant from cwd,
 a checkout, a plugin cache or an arbitrary path mentioned in chat.
 
+Read `installation` in status for plugin/runtime versions, target and build ID.
+The bundled [compatibility contract](../../compatibility.json) describes the
+supported combination. Installation errors require restoring the complete bundle
+and starting a new conversation. Never download dependencies, repair the cache,
+or migrate projects to work around an incompatible build. Keep the prior complete
+repository for rollback. Before updating, finish/save or export work, explicitly
+stop its managed browser and close old chats: the tested client removes the old
+cache on update. An interrupted live session fails closed; restore its complete
+matching bundle or start a fresh conversation with the update. Settings/projects are
+outside the plugin. Disabling/uninstalling does not itself stop an existing browser.
+
 Plugin mode exposes a bounded 32-tool profile so setup remains callable in the
 demonstrated client. After selection, inspect `capabilities` for the actual
 inventory and `unavailable_tools`. Use the browser for unavailable operations;

@@ -1,6 +1,7 @@
 """Frozen runtime launcher; ordinary wheel entry points remain independent."""
 
 import argparse
+import json
 import os
 import sys
 from contextlib import redirect_stdout
@@ -22,11 +23,29 @@ def external_directory(value, bundle):
 def plugin_directory(bundle):
     # Delivery places the executable in bin/ or runtime/ under the manifest.
     # Exclude that whole installation, not only its executable subdirectory.
-    return bundle.parent if (bundle.parent / "plugin.json").is_file() else bundle
+    return (
+        bundle.parent
+        if any(
+            (bundle.parent / name).is_file()
+            for name in ("plugin.json", "install.json", "compatibility.json")
+        )
+        else bundle
+    )
 
 
 def main(argv=None):
     from gbc_scene_forge import __version__
+    from gbc_scene_forge.adapters.plugin.distribution import verify
+
+    bundle = plugin_directory(Path(sys.executable).resolve().parent)
+    try:
+        installed = verify(bundle)
+    except ValueError as error:
+        print(f"Scene Forge: {error}", file=sys.stderr)
+        return 2
+    if (sys.argv[1:] if argv is None else argv) == ["--identity"]:
+        print(json.dumps({"runtime_version": __version__, "installation": installed}))
+        return 0
 
     # Internal child mode is intentionally absent from user-facing help/options.
     if (sys.argv[1:] if argv is None else argv) == ["browser-worker"]:
@@ -35,6 +54,7 @@ def main(argv=None):
         return worker_main()
     parser = argparse.ArgumentParser(description="Self-contained Scene Forge runtime")
     parser.add_argument("--version", action="version", version=f"Scene Forge {__version__}")
+    parser.add_argument("--identity", action="store_true", help="Print installed build identities")
     modes = parser.add_subparsers(dest="mode", required=True)
     for mode in ("browser", "mcp"):
         command = modes.add_parser(mode, help=f"Launch the {mode} server")
@@ -97,7 +117,7 @@ def main(argv=None):
         else:
             if args.mode == "browser" and args.project_name:
                 raise ValueError("--project-name requires --plugin")
-            root = external_directory(args.project or args.project_root, bundle)
+            root = external_directory(args.project or args.project_root, plugin_directory(bundle))
             single_project = args.project is not None
         if args.mode == "browser":
             if not 0 <= args.port <= 65535:
