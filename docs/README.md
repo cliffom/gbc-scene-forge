@@ -43,6 +43,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Evaluations
 
+- [Self-contained Codex plugin feasibility (#254)](evaluations/plugin-feasibility.md)
 - [Drawing space, task entry and native PNG downloads (#228–#234)](evaluations/working-space.md)
 - [Editor usability: discovery, scope and working space (2026-11)](evaluations/usability-review-2026-11.md)
 

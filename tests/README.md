@@ -10,7 +10,7 @@ Run commands from the repository root. Test code is grouped by runner and domain
 | `backend/planning/` | blockout and world authoring |
 | `backend/analysis/` | diagnostics, palette and hardware budgets |
 | `backend/adapters/` | console, HTTP and optional MCP protocol integration |
-| `backend/tooling/` | documentation checker regression tests |
+| `backend/tooling/` | documentation checker and experimental plugin selection boundaries |
 | `backend/architecture/` | backend dependency and installed-entry-point boundaries |
 | `frontend/` | non-browser TypeScript suites grouped by editor, project, artwork, objects, planning, preview and infrastructure |
 | `playwright/` | browser acceptance by domain, with browser fixtures and editor seeds in `playwright/support/` |
@@ -62,6 +62,14 @@ requires the SDK in `FORGE_MCP_PYTHON`. Plain runs retain adapter checks and ski
 the SDK-only test when the extra is absent. `packaging/package_smoke.py` is
 explicitly run with `python -I` after wheel installation, outside unit discovery.
 It imports only the installed application, never test helpers.
+
+`backend/tooling/test_plugin_probe.py` checks the experimental launcher's explicit
+external selection, symlink containment and argument-override rejection. The
+macOS-only [plugin probe](../examples/plugin_probe/verify.py) separately installs
+both runtime alternatives into disposable Codex state and exercises SDK/client
+MCP saves, resources, export and browser HTTP. It is not part of ordinary unit
+discovery and does not start a model turn. Its [evaluation](../docs/evaluations/plugin-feasibility.md)
+records exact client and visual limits.
 
 `fixtures/pixel-cleanup/motif.json` is an original MIT synthetic motif with
 independently declared noise coordinates and intentional glint/diagonal failures.

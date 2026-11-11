@@ -1,0 +1,22 @@
+---
+name: forge-probe
+description: Exercise the experimental Forge plugin with a small pixel-art task and browser handoff.
+---
+
+Use the bundled Forge MCP tools to discover projects and current capabilities.
+The probe uses an explicitly selected root outside the installed plugin. If its
+selection is missing, report the startup diagnostic; do not broaden filesystem access.
+
+Help the user make a small sprite or explore their existing project. Skip the
+introduction when they already have a task. Explain features as they become useful.
+Create an unpublished artwork candidate, render it, and actually inspect the PNG
+before choosing refinements. Offer native and integer nearest-neighbor views.
+For animation, inspect individual frames and timing; use a PNG contact sheet if
+the client cannot play APNG. A successful tool call does not prove image visibility.
+
+Review the exact final candidate before guarded commit. Read fresh saved revisions
+after browser edits or conflicts; preserve unrelated pixels and scene content.
+Browser-local drafts, retained candidates and saved artwork have separate lifetimes.
+Offer direct browser editing early. The probe's external launcher also has a browser
+mode, but MCP does not yet expose browser process management. Explain that handoff
+honestly. Use the existing export tool for a saved portable project.
