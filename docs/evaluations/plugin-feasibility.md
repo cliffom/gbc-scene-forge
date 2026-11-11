@@ -5,8 +5,10 @@ and app-server MCP connection. Prefer a PyInstaller folder bundle for the next
 packaging step: it passed the same checks as private Python at 28% of its installed
 file bytes and 53% of its compressed bytes. This is a **conditional go for further
 development**, not a supported plugin release. The later native-model check below
-passes PNG inspection with an opt-in 19-tool probe profile. Human-visible review
-remains unconfirmed, so #254 is not complete.
+passes PNG inspection with an opt-in 19-tool probe profile. The user subsequently
+confirmed the browser visual checklist and automatic Chrome opening below,
+completing the bounded initial-client feasibility evidence for #254. The full
+tool inventory and downstream delivery/platform boundaries remain unresolved.
 
 The [source probe](../../examples/plugin_probe/entry.py),
 [builder](../../examples/plugin_probe/build.py),
@@ -352,3 +354,26 @@ suites; `make build check-dist` passes metadata and seven installed-wheel smoke
 cases. These are local results, not a new CI or release claim. Human review, APNG
 playback, integrated-browser compatibility and other client/platform/delivery
 boundaries remain unverified.
+
+## Human browser confirmation
+
+On 2026-11-11 the user replied **"verified"** to the regular-Chrome checklist for
+the installed probe's `native-review` project and Workshop scene
+`61abde46-50ff-42a9-b5d9-335e21ccccb5`. The referenced saved project revision is
+`1fbc06ab11b3d1a12bcde2a2816c808feb22aee94ec7a98fbd7d74d10170574e`;
+its native/saved/exported PNG identity is archived in the native results above.
+The requested visual observations were the scene sprite, two adjacent pale pixels
+in the amber `idle` frame at native and enlarged zoom, the cyan `glow` frame
+without a highlight, and 120/240 ms durations.
+
+In a follow-up the user replied **"it did"** to whether Forge opened Chrome
+automatically, confirming the visible OS-browser startup and handoff.
+
+These are user confirmations, rather than agent observations or an independent
+participant study. The replies do not identify the browser version or distinguish
+playback from individual-frame review. They establish neither APNG playback nor
+human image review inside native chat. Together with the preceding native-model,
+SDK and packaging evidence, they complete the bounded initial-client feasibility
+case for #254 using the 19-tool profile and external Chrome handoff. The earlier
+agent-run results retain their original attribution and limits; downstream
+delivery/platform checks remain in the single validation list.
