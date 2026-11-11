@@ -98,6 +98,11 @@ explicit `FORGE_BUILD_COMMIT`.
 
 ## Publication
 
+Milestone 25's experimental self-contained folder distribution has a separate
+[runtime build and verification procedure](RUNTIME-BUNDLES.md). Issue branches
+target the milestone integration branch and must not publish milestone releases.
+The Python wheel's normal build/publication path remains unchanged.
+
 The project uses the MIT license, included in both distribution formats. Before a
 first release, confirm the package name is available on the intended index.
 Keep the version in `pyproject.toml` and `src/gbc_scene_forge/__init__.py` in sync;

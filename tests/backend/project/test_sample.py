@@ -22,6 +22,28 @@ class SampleTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name) / "demo"
 
+    def test_readonly_installed_template_creates_a_writable_named_project(self):
+        source = Path(self.temp.name) / "readonly-template"
+        shutil.copytree(template_path(), source)
+        paths = [source, *source.rglob("*")]
+        modes = {path: path.stat().st_mode for path in paths}
+        self.addCleanup(lambda: [path.chmod(mode) for path, mode in modes.items()])
+        before = {path: path.read_bytes() for path in paths if path.is_file()}
+        for path, mode in modes.items():
+            path.chmod(mode & ~0o222)
+        with patch("gbc_scene_forge.project.sample.template_path", return_value=source):
+            project = Project.from_sample(self.root, title="My forest")
+        self.assertEqual(project.read()[0]["name"], "My forest")
+        loaded = project.scenes.load(project.catalog()["project"]["scenes"][0]["id"])
+        loaded["scene"]["layers"][0]["cells"][2][2] = "sample/path/0/0"
+        project.scenes.save(
+            loaded["id"], loaded["scene"], loaded["revision"], project.catalog()["revision"]
+        )
+        self.assertEqual(project.scenes.load(loaded["id"])["scene"], loaded["scene"])
+        for path, data in before.items():
+            self.assertEqual(path.read_bytes(), data)
+            self.assertEqual(path.stat().st_mode, modes[path] & ~0o222)
+
     def test_sample_is_portable_and_has_editable_scenes_and_preview_metadata(self):
         project = Project.from_sample(self.root)
         catalog = project.catalog()

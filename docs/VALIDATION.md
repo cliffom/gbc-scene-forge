@@ -15,6 +15,37 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Self-contained runtime bundle (#255)
+
+- **Scope:** Agent-run 2026-11-11 macOS 27.0.1 arm64 checks on integration base
+  `72c4c68` plus the build/verification hashes in the
+  [archived results](evaluations/assets/runtime-bundle/results.json). Production
+  Forge 0.46.1 integration wheel, CPython 3.13.13/build 20260602, MCP 1.30.0,
+  Node 24.22.1, Playwright 1.64.1 and Chromium 156.0.8078.4; no publication.
+- **Method:** Build through the documented Make targets; verify the Python
+  archive and dependency hashes, inspect native links and collect licenses.
+  Run official-SDK and raw JSON-RPC checks on a relocated read-only bundle with
+  an empty runtime PATH; create/save/render/reopen artwork and scene, reject a
+  stale receipt, export/reopen Tiled content, restore the demo and check HTTP.
+  Capture and agent-inspect the frozen editor at 1440 × 1000. Run docs/lint,
+  Python/TypeScript, wheel build/metadata/seven installed-wheel smoke cases,
+  121 optional-MCP cases and installed-wheel standalone/MCP browser acceptance.
+- **Result:** Bundle checks pass with 61 tools, unchanged installed content,
+  valid protocol-only stdout, external browser diagnostics/logs and exact saved
+  artwork/export bytes. The read-only-template failure and correction are
+  recorded in [the evaluation](evaluations/runtime-bundle.md), with the
+  [inspected capture](evaluations/assets/runtime-bundle/bundled-editor.png).
+  Source checks pass with 498 Python cases; installed-wheel browser suites pass
+  six standalone and 16 MCP/refresh cases, plus the frozen executable's Chromium
+  case. Bundle file bytes are 37,953,952; gzip sample bytes 19,034,650; SDK
+  initialization is one 0.264-second warm-host observation.
+- **Limits:** One native macOS host; no clean-VM/oldest-OS, Windows/Linux,
+  signing/quarantine, native Codex image review or default OS browser-opener
+  evidence. The SDK/browser driver uses developer tools; only the runtime child
+  has an empty PATH. Measurements do not certify a speedup or universal
+  portability. #254's native visual gate and downstream delivery checks remain
+  in the single Remaining checks list below.
+
 ## Self-contained Codex runtime feasibility (#254)
 
 - **Scope:** Agent-run 2026-11-11 probe on macOS 27.0.1 (26A434), arm64,
