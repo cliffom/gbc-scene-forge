@@ -15,6 +15,27 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Human browser review of the installed-plugin fixture (#254)
+
+- **Scope:** User report on 2026-11-11 for the installed probe's `native-review`
+  project, saved revision `1fbc06ab11b3d1a12bcde2a2816c808feb22aee94ec7a98fbd7d74d10170574e`.
+  The fixture and macOS/native-client environment are identified in the
+  [native results](evaluations/assets/plugin-native-review/results.json);
+  the user's browser version was not supplied.
+- **Method:** The user replied "verified" to the regular-Chrome checklist for
+  the Workshop scene, native/enlarged artwork views, both frames and their timing.
+  This is a user-reported observation, separate from the earlier model and
+  automated browser evidence.
+- **Result:** The user confirms the visible scene and artwork checklist: two
+  adjacent pale highlight pixels in amber `idle`, no highlight in cyan `glow`,
+  and 120/240 ms frame durations. See the
+  [attribution and boundaries](evaluations/plugin-feasibility.md#human-browser-confirmation).
+- **Limits:** The brief reply does not distinguish automatic browser opening
+  from manually following the URL, or actual playback from individual-frame
+  review. It does not verify APNG playback, native chat UI image display,
+  integrated-browser decoding or full-inventory tool exposure. The startup
+  distinction remains in the single Remaining checks list.
+
 ## Native installed-plugin model review (#254 follow-up)
 
 - **Scope:** Agent-run 2026-11-11 checks on macOS 27.0.1 arm64, Codex CLI/app-server
@@ -3070,11 +3091,11 @@ Dates, revisions and environments missing from the originals remain unknown.
 
 ### Codex plugin feasibility (milestone 25, #254)
 
-- [ ] Confirm human-visible review of native/enlarged PNGs and animation
-      frames/timing or APNG, with reviewer attribution and exact client/version.
-      Native model PNG inspection now passes with the opt-in 19-tool profile;
-      [the follow-up](evaluations/plugin-feasibility.md#native-model-review-follow-up)
-      does not establish human review or successful full-inventory model exposure.
+- [x] User-confirmed browser review of native/enlarged artwork and individual
+      frames/timing; see [the attributed report](#human-browser-review-of-the-installed-plugin-fixture-254).
+      The browser version and playback mode were not supplied. Native model PNG
+      inspection passes with the opt-in 19-tool profile; native chat UI image
+      display and successful full-inventory model exposure are not established.
 - [ ] Confirm the default OS browser window and human handoff. Ordinary Chromium
       renders the fixture repeatedly; the integrated-browser image-decoding stall
       remains an explicit compatibility limit. The launcher invoked the OS opener

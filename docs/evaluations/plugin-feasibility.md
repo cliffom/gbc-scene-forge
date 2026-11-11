@@ -5,8 +5,9 @@ and app-server MCP connection. Prefer a PyInstaller folder bundle for the next
 packaging step: it passed the same checks as private Python at 28% of its installed
 file bytes and 53% of its compressed bytes. This is a **conditional go for further
 development**, not a supported plugin release. The later native-model check below
-passes PNG inspection with an opt-in 19-tool probe profile. Human-visible review
-remains unconfirmed, so #254 is not complete.
+passes PNG inspection with an opt-in 19-tool probe profile. The user subsequently
+confirmed the browser visual checklist below; automatic browser opening remains
+unconfirmed, so #254 is not complete.
 
 The [source probe](../../examples/plugin_probe/entry.py),
 [builder](../../examples/plugin_probe/build.py),
@@ -352,3 +353,22 @@ suites; `make build check-dist` passes metadata and seven installed-wheel smoke
 cases. These are local results, not a new CI or release claim. Human review, APNG
 playback, integrated-browser compatibility and other client/platform/delivery
 boundaries remain unverified.
+
+## Human browser confirmation
+
+On 2026-11-11 the user replied **"verified"** to the regular-Chrome checklist for
+the installed probe's `native-review` project and Workshop scene
+`61abde46-50ff-42a9-b5d9-335e21ccccb5`. The referenced saved project revision is
+`1fbc06ab11b3d1a12bcde2a2816c808feb22aee94ec7a98fbd7d74d10170574e`;
+its native/saved/exported PNG identity is archived in the native results above.
+The requested visual observations were the scene sprite, two adjacent pale pixels
+in the amber `idle` frame at native and enlarged zoom, the cyan `glow` frame
+without a highlight, and 120/240 ms durations.
+
+Record this as the user's confirmation of the browser visual checklist, rather
+than an agent observation or an independent participant study. The reply does not
+identify the browser version, distinguish automatic opening from manually opening
+the supplied loopback URL, or distinguish playback from individual-frame review.
+It establishes neither APNG playback nor human image review inside native chat.
+The earlier agent-run results retain their original attribution and limits;
+outstanding startup and delivery checks remain in the single validation list.
