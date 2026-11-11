@@ -1,0 +1,222 @@
+{
+  "recorded_date": "2026-11-11",
+  "attribution": "Agent-run synthetic probe; no independent human session or native chat model turn",
+  "build": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "python_version": "Python 3.13.13",
+    "uv_version": "uv 0.13.7 (Homebrew 2026-11-03 aarch64-apple-darwin)",
+    "source_base": "ba3faf05dc353dce50cce4051728bd4fb39f8954",
+    "probe_source_sha256": {
+      "build.py": "213d225fdce57b517e2a601cedc72140ecd8722c619d0d4f4fce5db04563eac4",
+      "entry.py": "4d102502576aa711c654af21ee7332217cde0b189bebebc1f9728bf2720f28a4",
+      "skill.txt": "e71cfcebfda57f7162b8d359211a757aa5b451e2c5b640e764f32a53b60db1bb",
+      "runtime-requirements.txt": "0e5127428eadc153967840147c9911cfb2936bdd67b661910d87a80f2a00e085",
+      "build-requirements.txt": "d1540f048312a4c2bec2dd8d8894037c3e2a267b14ea54e7f789358e2d6c2f58"
+    },
+    "wheel_sha256": "9d918be88ca59fa3c176ed5a300645e0f4c4cfbac7cf7caed8831e1e27c8dc52",
+    "bundles": {
+      "private-python": {
+        "build_seconds": 7.649,
+        "files_bytes": 132288887,
+        "archive_bytes": 35507260,
+        "archive_sha256": "806b288b4ec556317440820d3516390cdb064a805a3a545d4320a48cf3ca400d"
+      },
+      "pyinstaller": {
+        "build_seconds": 10.582,
+        "files_bytes": 37034985,
+        "archive_bytes": 18871116,
+        "archive_sha256": "84b9da52404b4861fd342be29dd3f64e58263a1ff02a9e1a82f2790edd0c8960"
+      }
+    }
+  },
+  "runs": {
+    "private-python": {
+      "calls": [
+        "create_project",
+        "create_artwork_sheet",
+        "review_artwork_candidate",
+        "edit_artwork_pixels",
+        "review_artwork_candidate",
+        "inspect_artwork_candidate",
+        "review_artwork_animation",
+        "commit_artwork",
+        "list_artwork",
+        "open_artwork",
+        "create_scene",
+        "save_scene",
+        "get_project",
+        "export_bundle"
+      ],
+      "model_image_inspection": "not exercised",
+      "client_image_display": "not exercised",
+      "apng_playback": "not exercised",
+      "initialize_seconds": 0.974,
+      "server": {
+        "name": "gbc-scene-forge",
+        "title": null,
+        "version": "0.46.1",
+        "websiteUrl": null,
+        "icons": null
+      },
+      "tool_count": 61,
+      "project": "probe-private-evidence",
+      "scene_id": "a854e9bf-ac27-41c6-bf11-f57f20cdff6c",
+      "project_revision": "2ba9eb3218e5ea0821967aec9ff4b13ae6fb139b5400a24ab43bd3479535f8f0",
+      "stale_receipt_rejected": true,
+      "saved_rgba_and_descriptor_match": true,
+      "restart_saved_read": true,
+      "browser": {
+        "url": "http://127.0.0.1:61671/projects/probe-private-evidence/",
+        "scene_id": "a854e9bf-ac27-41c6-bf11-f57f20cdff6c",
+        "assets_served": true,
+        "interactive_browser_review": "not exercised"
+      },
+      "codex_runtime": {
+        "client": {
+          "userAgent": "forge-probe/0.167.1 (Mac OS 27.0.1; arm64) dumb (forge-probe; 0.1)",
+          "codexHome": "<disposable client state>",
+          "platformFamily": "unix",
+          "platformOs": "macos"
+        },
+        "server": "forge",
+        "tool_count": 61,
+        "saved_project_revision": "2ba9eb3218e5ea0821967aec9ff4b13ae6fb139b5400a24ab43bd3479535f8f0",
+        "committed": {
+          "project_id": "b5bcb03b-845e-4912-a072-2be75e9f9b08",
+          "document_id": "3ffeee5f-ebc0-470a-b3b6-fa118d584744",
+          "atlas_id": "lantern",
+          "candidate_revision": "4b6f23c666772fdd2c16647092264f885be1fbbf3511637f378058f7b55fc3d0",
+          "project_revision": "665e4ce8324008c3435a5190d7cf47ce92fefa137823940409f084eb9fa6c453",
+          "artwork_revision": "beb86cb9ec3c5949f140a6fff2ac20e84c503662ddbc6651ae659a0b31ab6b9d",
+          "png_digest": "a550adcac05e783b522647d6c9dbfe3a912ed01f1391fc70a05c508768b5420f",
+          "scene_revisions": {},
+          "review_revision": "3187d7c9edb75b10437007ab8eb1de777c8cb26d15049e405c1ac42b34fd2118"
+        },
+        "inline_png_count": 2,
+        "reopened_exact_candidate": true,
+        "export_matches_reviewed_png": true,
+        "preview_response_file": "client-preview.json",
+        "model_turn": false,
+        "user_visible_image_review": "not exercised"
+      },
+      "final_browser": {
+        "url": "http://127.0.0.1:61701/projects/probe-private-evidence/",
+        "scene_id": "a854e9bf-ac27-41c6-bf11-f57f20cdff6c",
+        "assets_served": true,
+        "interactive_browser_review": "not exercised"
+      },
+      "client": "codex-cli 0.167.1",
+      "os": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "architecture": "arm64",
+      "installed_plugin": "<disposable client state>/plugins/cache/forge-probe-private-python/forge-authoring-probe/0.0.0-probe.254",
+      "readonly_bundle_unchanged": true,
+      "runtime_path_has_no_python_or_node": true
+    },
+    "pyinstaller": {
+      "calls": [
+        "create_project",
+        "create_artwork_sheet",
+        "review_artwork_candidate",
+        "edit_artwork_pixels",
+        "review_artwork_candidate",
+        "inspect_artwork_candidate",
+        "review_artwork_animation",
+        "commit_artwork",
+        "list_artwork",
+        "open_artwork",
+        "create_scene",
+        "save_scene",
+        "get_project",
+        "export_bundle"
+      ],
+      "model_image_inspection": "not exercised",
+      "client_image_display": "not exercised",
+      "apng_playback": "not exercised",
+      "initialize_seconds": 0.68,
+      "server": {
+        "name": "gbc-scene-forge",
+        "title": null,
+        "version": "0.46.1",
+        "websiteUrl": null,
+        "icons": null
+      },
+      "tool_count": 61,
+      "project": "probe-frozen-evidence",
+      "scene_id": "61abde46-50ff-42a9-b5d9-335e21ccccb5",
+      "project_revision": "48160c1492cce4cf67b275552f62c2589e12c6cd658155d495ecd642a96c34d2",
+      "stale_receipt_rejected": true,
+      "saved_rgba_and_descriptor_match": true,
+      "restart_saved_read": true,
+      "browser": {
+        "url": "http://127.0.0.1:61682/projects/probe-frozen-evidence/",
+        "scene_id": "61abde46-50ff-42a9-b5d9-335e21ccccb5",
+        "assets_served": true,
+        "interactive_browser_review": "not exercised"
+      },
+      "codex_runtime": {
+        "client": {
+          "userAgent": "forge-probe/0.167.1 (Mac OS 27.0.1; arm64) dumb (forge-probe; 0.1)",
+          "codexHome": "<disposable client state>",
+          "platformFamily": "unix",
+          "platformOs": "macos"
+        },
+        "server": "forge",
+        "tool_count": 61,
+        "saved_project_revision": "48160c1492cce4cf67b275552f62c2589e12c6cd658155d495ecd642a96c34d2",
+        "committed": {
+          "project_id": "62f80dbe-216c-4f77-8a7e-f30bcb3858f3",
+          "document_id": "4a378842-b45f-4fb5-b21f-ca665730ebb0",
+          "atlas_id": "lantern",
+          "candidate_revision": "d3cb3cf263bf4eab7bb40e503911605e87ec389fbf08e7dffb702af4d0c45429",
+          "project_revision": "1feda8df1d8c1a68708322fedcbdc30709b333d716f5a87b761e8cb279556eb9",
+          "artwork_revision": "1e9ac503c1c2f6277f7958776e9b02c5c477c03d9f56e97bb4ff6b4e9407f141",
+          "png_digest": "a550adcac05e783b522647d6c9dbfe3a912ed01f1391fc70a05c508768b5420f",
+          "scene_revisions": {},
+          "review_revision": "19ef2a9560f4fbedf34c0359a5d52d2ae72f3908c81af14cf86cf82f9e7c06d1"
+        },
+        "inline_png_count": 2,
+        "reopened_exact_candidate": true,
+        "export_matches_reviewed_png": true,
+        "preview_response_file": "client-preview.json",
+        "model_turn": false,
+        "user_visible_image_review": "not exercised"
+      },
+      "final_browser": {
+        "url": "http://127.0.0.1:61693/projects/probe-frozen-evidence/",
+        "scene_id": "61abde46-50ff-42a9-b5d9-335e21ccccb5",
+        "assets_served": true,
+        "interactive_browser_review": "not exercised"
+      },
+      "client": "codex-cli 0.167.1",
+      "os": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "architecture": "arm64",
+      "installed_plugin": "<disposable client state>/plugins/cache/forge-probe-pyinstaller/forge-authoring-probe/0.0.0-probe.254",
+      "readonly_bundle_unchanged": true,
+      "runtime_path_has_no_python_or_node": true
+    }
+  },
+  "harness_sha256": {
+    "build.py": "213d225fdce57b517e2a601cedc72140ecd8722c619d0d4f4fce5db04563eac4",
+    "client.py": "aa4d1c4de2204210710e9083fe4f07daa2cf2cedc7b8805ce3d67c297ccbcb50",
+    "entry.py": "4d102502576aa711c654af21ee7332217cde0b189bebebc1f9728bf2720f28a4",
+    "verify.py": "3ac95493c538c19b23bc62a772d4a328cabbbe2d9079eb92298902d3507755a7"
+  },
+  "visual_inspection": {
+    "method": "Root agent viewed PNG files captured from the installed client and Chromium via the host image tool",
+    "native_chat_display": "unverified",
+    "apng_playback": "unverified",
+    "browser": "Chromium 156.0.8078.4 / Playwright 1.64.1, headless, 1440x1000",
+    "integrated_browser": "VS Code Electron 43.8.3 / Chrome 150.0.7871.250 remained at initial shell while image.decode() did not settle; no pageerror captured",
+    "result": "Amber and cyan frames visible; added pale highlight visible; saved scene and Artwork editor render in Chromium"
+  },
+  "artifact_sha256": {
+    "browser-final-artwork.png": "911242b05d47b946ef5e4e54587b4ebabe61ebeb042f79e0faec0956ee694062",
+    "client-preview-1.png": "7f7e253e1d261c085524782bd953697b99e953e6d9b311a501f4bb169ac07f5f",
+    "client-preview-0.png": "a23a319977c2ff1d3b8eba65e0922dff4462d59b6ed5bd2aa2577a5d2b79d637",
+    "native.png": "86ed5bea3183fbe6b736d6027fd82a7e98324c996b6d1ce309a9b4ba16ff4646",
+    "enlarged.png": "a23a319977c2ff1d3b8eba65e0922dff4462d59b6ed5bd2aa2577a5d2b79d637",
+    "browser-final-scene.png": "9652dddb4c7a4209c9724374a6b4fc31b5ccf13dfb3ec8c0618426278ecebff7",
+    "frames.png": "25a39ae648acb212e5db0499cf5a48511628465073db02ee3f5cda64da463d0b",
+    "animation.apng": "eab6b1a92adf033b6630065e900693c310e2b0729296f30e927abbcdf9be81e0"
+  }
+}

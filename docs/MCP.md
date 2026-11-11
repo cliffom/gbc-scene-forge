@@ -8,6 +8,11 @@ transactions as browser authoring. There is no connector or game compiler.
 
 ## Install and connect
 
+The [Codex plugin feasibility probe](evaluations/plugin-feasibility.md) compares
+self-contained macOS arm64 runtimes using the existing MCP server. It is an
+experimental milestone 25 investigation; the installation below remains the
+supported MCP setup.
+
 Install the release with Python 3.10 or newer:
 
 ```sh

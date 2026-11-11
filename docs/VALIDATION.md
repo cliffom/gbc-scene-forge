@@ -15,6 +15,35 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Self-contained Codex runtime feasibility (#254)
+
+- **Scope:** Agent-run 2026-11-11 probe on macOS 27.0.1 (26A434), arm64,
+  Codex CLI/app-server 0.167.1, standalone CPython 3.13.13 and unchanged Forge
+  0.46.1 wheel. Integration baseline `ba3faf05dc353dce50cce4051728bd4fb39f8954`
+  plus probe hashes, locked dependency versions and wheel/archive digests are in
+  the [archived results](evaluations/assets/plugin-feasibility/results.json).
+- **Method:** Build private-Python and PyInstaller marketplaces from the same
+  wheel; install with actual Codex commands in disposable client state. Exercise
+  official-SDK stdio and actual app-server MCP calls with an empty runtime PATH,
+  read-only relocated cache and explicit external selection. Review resources,
+  reject a stale receipt, commit/reopen exact pixels, place a sprite, restart and
+  export. Compare final browser HTTP/export/saved PNG bytes; inspect captured PNGs
+  and Chromium 156.0.8078.4 scene/Artwork views at 1440 × 1000. Reproduction and
+  [captures](evaluations/plugin-feasibility.md) retain attribution and boundaries.
+- **Result:** Both final bundles expose 61 tools, deliver two inline PNGs through
+  Codex, save/reopen/export the refinement and leave installed contents unchanged.
+  PyInstaller uses 37,034,985 file bytes / 18,871,116 gzip bytes versus private
+  Python's 132,288,887 / 35,507,260. Optional-MCP collection, executable declaration,
+  source-discovery and read-only-log failures are documented with corrections.
+  Source lint/494 Python cases/TypeScript checks and production build/metadata/seven
+  wheel smoke cases pass. The packaged skill validator passes with isolated PyYAML.
+- **Limits:** No native chat model turn or human review was run. Agent artifact
+  inspection is distinct from native client image display; APNG playback is
+  unverified. Integrated-browser image decoding stalled; headless Chromium passed.
+  Timing is one observation per bundle. Other Codex surfaces/platforms, signing,
+  download/quarantine behavior and public-directory acceptance remain unverified.
+  Conditional go for further macOS packaging work; #254 remains open.
+
 ## 0.46.1 inactive button release candidate (#252)
 
 - **Scope:** Button styling on `fix/252-disabled-buttons-0.46.1`, based on
@@ -2982,6 +3011,19 @@ Dates, revisions and environments missing from the originals remain unknown.
   claim is made by this local record.
 
 ## Remaining checks
+
+### Codex plugin feasibility (milestone 25, #254)
+
+- [ ] Demonstrate image inspection during a native installed-plugin model turn and
+  user-visible review of native/enlarged PNGs plus animation frames/timing or APNG;
+  retain exact client/version and reviewer attribution. The app-server bridge and
+  agent artifact inspection do not complete native chat acceptance.
+- [ ] Resolve the integrated-browser image-decoding stall or bound supported
+  browser handoff with repeatable evidence; establish actual default-browser launch.
+- [ ] Establish additional client/platform support, minimum macOS, signing,
+  quarantine/download, archive-selection/size and public-directory boundaries as
+  downstream delivery contracts require (#257/#258/#265). Local extraction and
+  one macOS arm64 app-server result do not establish those outcomes.
 
 ### Editor discovery, scope and working space (#224)
 
