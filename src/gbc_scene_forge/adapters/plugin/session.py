@@ -41,9 +41,46 @@ SETUP_TOOLS = [
     )
 ]
 
+# The demonstrated Codex client exposes only 32 tools per server to model turns.
+# Keep setup and the complete first-task flow together in a fixed bounded profile;
+# SDK tools/list alone cannot establish that the model can call every tool.
+AUTHORING_NAMES = frozenset(
+    {
+        "capabilities",
+        "list_projects",
+        "create_project",
+        "get_project",
+        "list_artwork",
+        "open_artwork",
+        "create_artwork",
+        "create_artwork_sheet",
+        "edit_artwork_pixels",
+        "edit_artwork_layers",
+        "edit_artwork_layout",
+        "read_artwork_pixels",
+        "review_artwork_candidate",
+        "inspect_artwork_candidate",
+        "review_artwork_animation",
+        "review_artwork_frame",
+        "commit_artwork",
+        "create_scene",
+        "create_blockout_scene",
+        "review_blockout",
+        "get_scene",
+        "save_scene",
+        "edit_scene",
+        "review_artwork",
+        "review_scene",
+        "import_atlas",
+        "place_stamp",
+        "save_stamp",
+        "export_bundle",
+    }
+)
+
 
 class PluginSession:
-    tool_definitions = SETUP_TOOLS + TOOLS
+    tool_definitions = SETUP_TOOLS + [t for t in TOOLS if t["name"] in AUTHORING_NAMES]
 
     def __init__(self, selection, *, chooser=choose_directory):
         self.selection = selection
@@ -126,6 +163,11 @@ class PluginSession:
                 self.selection.reset()
                 self.record, self.adapter, self.error = None, None, None
             return self.status()
+        require(
+            name in AUTHORING_NAMES,
+            "This tool is unavailable in the bounded plugin profile. "
+            "Use browser editing or direct --project/--project-root MCP for the full inventory.",
+        )
         self.revalidate()
         require(
             self.adapter is not None,
@@ -140,4 +182,13 @@ class PluginSession:
             return {
                 "projects": [{"directory": "project", "id": project["id"], "name": project["name"]}]
             }
-        return self.adapter.call(name, arguments)
+        result = self.adapter.call(name, arguments)
+        if name == "capabilities":
+            result = {
+                **result,
+                "tools": [tool["name"] for tool in self.tool_definitions],
+                "tool_profile": "plugin",
+                "unavailable_tools": [t["name"] for t in TOOLS if t["name"] not in AUTHORING_NAMES],
+                "full_inventory": "Use browser editing or direct --project/--project-root MCP.",
+            }
+        return result

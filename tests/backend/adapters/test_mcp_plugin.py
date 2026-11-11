@@ -38,12 +38,16 @@ class PluginProtocolTests(unittest.TestCase):
                 self.assertFalse(result.isError, result.content)
                 return result.structuredContent
 
-            self.assertIn(
-                "plugin_choose_location", [t.name for t in (await client.list_tools()).tools]
+            advertised = {t.name for t in (await client.list_tools()).tools}
+            self.assertLessEqual(len(advertised), 32)
+            self.assertTrue(
+                {"plugin_status", "plugin_choose_location", "plugin_reset_selection"} <= advertised
             )
             self.assertIsNone((await call("plugin_status"))["selection"])
             self.assertTrue((await client.call_tool("list_projects", {})).isError)
             await call("plugin_choose_location", {"mode": "root"})
+            self.assertEqual(set((await call("capabilities"))["tools"]), advertised)
+            self.assertTrue((await client.call_tool("delete_scene", {})).isError)
             self.assertEqual((await call("list_projects"))["projects"], [])
             await call("create_project", {"name": "Design"})
             catalog = await call("get_project", {"project": "design"})

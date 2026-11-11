@@ -82,7 +82,8 @@ records exact client and visual limits.
 
 `backend/adapters/test_plugin_selection.py` covers first use, cancellation,
 per-user persistence, moved/invalid/denied directories, grant revocation and
-symlink isolation with a synthetic chooser. `test_mcp_plugin.py` runs an actual
+symlink isolation with a synthetic chooser, plus the 32-tool model exposure
+boundary and matching advertised/accepted capabilities. `test_mcp_plugin.py` runs an actual
 SDK stdio conversation through the test-only chooser fixture, including a small
 create/inspect/refine/review/save/export task and a second process reopening the
 selection. `backend/tooling/test_runtime_bundle.py` covers `--plugin` startup and

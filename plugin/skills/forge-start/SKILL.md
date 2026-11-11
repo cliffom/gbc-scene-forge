@@ -7,6 +7,12 @@ Call `plugin_status` first, including in later conversations. Tell the user the
 effective project or root and any location error. Do not infer a grant from cwd,
 a checkout, a plugin cache or an arbitrary path mentioned in chat.
 
+Plugin mode exposes a bounded 32-tool profile so setup remains callable in the
+demonstrated client. After selection, inspect `capabilities` for the actual
+inventory and `unavailable_tools`. Use the browser for unavailable operations;
+do not guess hidden tool names. The outcome matrix's MCP column describes the
+full direct-launch inventory, which is broader than this plugin profile.
+
 If no selection is available, explain the two choices: open one existing Forge
 project, or choose a parent folder in which Forge can discover and create immediate
 projects. Call `plugin_choose_location` with `mode:project` or `mode:root` as

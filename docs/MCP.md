@@ -15,6 +15,12 @@ and platform limits are documented separately. `forge mcp --plugin` also support
 project path; the optional wheel install below
 remains supported.
 
+Plugin mode advertises and accepts a bounded 32-tool profile, including its three
+setup tools, to keep them callable in the demonstrated Codex model registry.
+`capabilities` reports that profile and its unavailable operations. The tool
+descriptions below cover the full direct-launch MCP inventory; see
+[plugin profile limits](PLUGIN-START.md) for browser/direct-launch fallbacks.
+
 The [Codex plugin feasibility probe](evaluations/plugin-feasibility.md) compares
 self-contained macOS arm64 runtimes using the existing MCP server. It is an
 experimental milestone 25 investigation; the installation below remains the

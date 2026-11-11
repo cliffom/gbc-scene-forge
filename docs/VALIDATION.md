@@ -15,6 +15,31 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Plugin bootstrap model exposure (#271 feedback)
+
+- **Scope:** Agent-run local source checks on 2026-11-11, macOS 27.0.1 arm64,
+  Codex CLI/app-server 0.167.1; feedback changes based on `1423ed3`.
+  See the [archived model result](evaluations/assets/plugin-bootstrap/results.json)
+  for model identity, exact advertised inventory, calls and environment limits.
+- **Method:** Bound plugin advertisement and dispatch to 32 tools, including all
+  three setup tools and 29 authoring tools. Run the synthetic selection and real
+  SDK first-task regressions, plus an ephemeral actual model turn with the source
+  fixture. Handle approvals only for exact synthetic status/choose/reset calls.
+- **Result:** The native model successfully called status, choose-root, status,
+  project discovery, capabilities, reset and final status in order. Final selection
+  was null; no selection file or project remained. The initial noninteractive CLI
+  attempt discovered setup tools but could not execute them under its never-approval
+  policy; the subsequent app-server check supplied exact fixture approvals.
+  Regression checks cover the 32-tool exposure boundary, capability/inventory
+  agreement and rejection of excluded operations before and after selection.
+  `make docs-check lint test` passed, including 519 Python tests and the
+  TypeScript suites; documentation checks passed again after this record update.
+- **Limits:** The model used a synthetic chooser and temporary explicit MCP
+  configuration against source, not a newly installed/frozen plugin. This does
+  not exercise the native dialog, every authoring tool or another client/platform.
+  Full direct-launch MCP and browser inventories remain available; plugin mode
+  deliberately excludes operations documented in the selection guide.
+
 ## Plugin selection and first-task automation (#256)
 
 - **Scope:** Agent-run local checks on 2026-11-11, macOS 27.0.1 arm64,
@@ -40,7 +65,8 @@ Dates, revisions and environments missing from the originals remain unknown.
 - **Limits:** The chooser is substituted in automation; no person exercised the
   new native dialog or optional skill in an installed Codex conversation here.
   Existing browser checks exercise direct launch, not managed plugin handoff.
-  Full-inventory model exposure retains the feasibility limit. Windows/Linux
+  The original full-inventory model exposure retained the feasibility limit;
+  the bounded-profile feedback check above covers the subsequent correction. Windows/Linux
   native selection is unavailable; downstream platform, handoff and independent
   acceptance remain separate. Local logs are not archived CI evidence.
 

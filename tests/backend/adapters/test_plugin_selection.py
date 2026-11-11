@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from gbc_scene_forge.adapters.mcp.tools import TOOLS
 from gbc_scene_forge.adapters.plugin.selection import Selection, choose_directory, locations
 from gbc_scene_forge.adapters.plugin.session import PluginSession
 from gbc_scene_forge.project.application import Project
@@ -32,6 +33,40 @@ class PluginSelectionTests(unittest.TestCase):
 
     def snapshot(self, root):
         return {str(p.relative_to(root)): p.read_bytes() for p in root.rglob("*") if p.is_file()}
+
+    def test_bounded_profile_keeps_setup_and_first_task_callable(self):
+        session = self.session(self.root)
+        names = {tool["name"] for tool in session.tool_definitions}
+        # Reproduce the client registry boundary observed in a native model turn.
+        exposed = set(sorted(names)[:32])
+        self.assertEqual(exposed, names)
+        self.assertTrue(
+            {
+                "plugin_status",
+                "plugin_choose_location",
+                "plugin_reset_selection",
+                "list_projects",
+                "create_project",
+                "get_project",
+                "create_artwork",
+                "edit_artwork_pixels",
+                "review_artwork_candidate",
+                "commit_artwork",
+                "create_scene",
+                "review_blockout",
+                "export_bundle",
+            }
+            <= exposed
+        )
+        self.assertIn("delete_scene", {tool["name"] for tool in TOOLS})
+        with self.assertRaisesRegex(ValueError, "bounded plugin profile"):
+            session.call("delete_scene", {})
+        session.call("plugin_choose_location", {"mode": "root"})
+        capabilities = session.call("capabilities", {})
+        self.assertEqual(set(capabilities["tools"]), names)
+        self.assertIn("delete_scene", capabilities["unavailable_tools"])
+        with self.assertRaisesRegex(ValueError, "bounded plugin profile"):
+            session.call("delete_scene", {})
 
     def test_clean_first_use_has_no_grant_and_creates_nothing(self):
         session = self.session()

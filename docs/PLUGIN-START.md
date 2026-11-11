@@ -8,6 +8,18 @@ The [MCP declaration](../plugin/mcp.json) and
 this issue does not ship a new installable marketplace release. Existing
 `--project` and `--project-root` modes keep their explicit startup grants.
 
+Plugin mode uses a fixed 32-tool profile: three setup tools and 29 authoring tools
+for project discovery/creation, artwork and animation inspection/refinement,
+scene/blockout editing, stamps, review/save and export. The demonstrated Codex
+client exposed only the alphabetically first 32 tools from the full inventory,
+which hid every setup tool and blocked first use. Both advertisement and dispatch
+now enforce this bounded profile; `capabilities` reports its exact tools and
+`unavailable_tools`. Use browser editing or direct `--project`/`--project-root`
+MCP for other operations, including deletion, duplication, cleanup, palette
+conversion, object definitions, world editing and diagnostics. Those direct
+launch modes retain the full inventory. See the [outcome matrix](AUTHORING-OUTCOMES.md)
+for operation details; its MCP column describes the full direct-launch surface.
+
 ## Choose, reopen or change a location
 
 Ask Forge to open a project or start a new design. `plugin_status` reports the
