@@ -233,9 +233,14 @@ print(json.dumps({'first': a['id'], 'second': b['id']}))
   await wait("document.getElementById('dirty').textContent === 'SAVED'");
   // Persist a first write but lose its acknowledgement, then explicitly discard it.
   await evaluate(`window.__cleanupFetch = window.fetch; window.__loseCheckpoint = true;
+    window.__checkpointRetryGate = new Promise(resolve => { window.__resumeCheckpointRetry = resolve; });
     window.fetch = async (...args) => {
+      const checkpoint = String(args[0]).endsWith('/api/checkpoint-draft');
+      if (checkpoint && !window.__loseCheckpoint) {
+        await window.__checkpointRetryGate;
+      }
       const response = await window.__cleanupFetch(...args);
-      if (String(args[0]).endsWith('/api/checkpoint-draft') && window.__loseCheckpoint) {
+      if (checkpoint && window.__loseCheckpoint) {
         window.__loseCheckpoint = false;
         throw Error('simulated lost acknowledgement');
       }
@@ -257,6 +262,9 @@ print(json.dumps({'first': a['id'], 'second': b['id']}))
     "document.getElementById('draft-status').textContent.includes('lost acknowledgement')",
   );
   assert.equal(array((await post('list-drafts')).drafts, record).length, 1);
+  // A periodic flush may retry immediately after the failed write. Keep its
+  // acknowledgement pending until the failure and retained checkpoint are observed.
+  await evaluate('window.__resumeCheckpointRetry()');
   await click('revert');
   await wait("document.getElementById('discard-dialog').open");
   await page.locator('#discard-dialog button[value=discard]').first().click();

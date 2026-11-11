@@ -63,6 +63,8 @@ for key in ['picture','other']:
     root,
   ]);
   await page.goto(await workspace.start(root));
+  // Library cards appear before startup releases the document navigation guard.
+  await expect(page.locator('#show-artwork')).toBeEnabled();
   await page.locator('[data-asset="picture/artwork"]').click();
   await revealArtworkControl(page, 'art-layer-list');
   const names = page.locator('.art-layer-select');
