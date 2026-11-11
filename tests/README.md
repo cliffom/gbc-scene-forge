@@ -77,6 +77,13 @@ with an isolated home and empty runtime PATH. It checks concurrent MCP sessions,
 normal/abrupt MCP exit, browser reuse/restart, saved scenes, retained candidates,
 expired session resources and token protection. This synthetic selection test
 does not install a Codex plugin or open a native folder dialog.
+`packaging/plugin_distribution_smoke.py --archive ARCHIVE --codex CODEX --output NEW_DIR`
+installs a packaged repository in isolated client/home directories. It exercises
+native skill/MCP discovery, cached launch without developer tools, interrupted
+copy rejection, a synthetic second plugin version, cache eviction during a live
+session, browser build isolation/origin recovery, disable, rollback and uninstall.
+It compares project/candidate/settings bytes and a synthetic layout sentinel;
+real browser checkpoint recovery remains the separate Playwright check below.
 `playwright/packaging/plugin-lifecycle.spec.ts` separately paints an unsaved scene,
 closes its tab, restarts the managed browser on the same origin and restores the
 real checkpoint without changing saved content. Use `FORGE_TEST_PYTHON` to run

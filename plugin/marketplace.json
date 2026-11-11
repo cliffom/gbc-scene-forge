@@ -1,0 +1,12 @@
+{
+  "name": "scene-forge-repository",
+  "interface": { "displayName": "Scene Forge macOS Apple Silicon builds" },
+  "plugins": [
+    {
+      "name": "scene-forge",
+      "source": { "source": "local", "path": "./plugins/scene-forge" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Productivity"
+    }
+  ]
+}

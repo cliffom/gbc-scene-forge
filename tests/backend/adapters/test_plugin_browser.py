@@ -143,6 +143,9 @@ class PluginBrowserTests(unittest.TestCase):
             session.call("plugin_browser", {"project": "project", "action": "open"})
         self.assertTrue(self.manager.request(self.project, action="status")["running"])
         other = BrowserManager(self.selection)
+        other.runtime = {**self.manager.runtime, "build_id": "another-build"}
+        with self.assertRaisesRegex(ValueError, "different runtime"):
+            other.request(self.project)
         other.runtime = {"version": "future", "bundle": "another-installation"}
         with self.assertRaisesRegex(ValueError, "different runtime"):
             other.request(self.project)

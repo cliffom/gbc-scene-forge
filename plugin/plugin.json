@@ -1,0 +1,13 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "scene-forge",
+  "version": "0.1.0-alpha.1",
+  "description": "Local pixel artwork, animation and scene authoring with an included runtime for macOS Apple Silicon",
+  "license": "MIT",
+  "extensions": {
+    "com.openai": {
+      "requires_local_executor": true,
+      "interface": { "displayName": "Scene Forge (macOS Apple Silicon preview)" }
+    }
+  }
+}

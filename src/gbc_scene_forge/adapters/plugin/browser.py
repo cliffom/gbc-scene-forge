@@ -20,6 +20,7 @@ from gbc_scene_forge.adapters.http.server import make_handler
 from gbc_scene_forge.core.errors import Conflict
 from gbc_scene_forge.core.validation import require
 
+from .distribution import InstallationGuard, guard
 from .selection import Selection
 
 IDLE_SECONDS = 30 * 60
@@ -78,7 +79,8 @@ def load(path):
             and len(record["instance"]) == 32
             and isinstance(record.get("project"), dict)
             and isinstance(record.get("runtime"), dict)
-            and set(record["runtime"]) == {"version", "bundle"}
+            and {"version", "bundle"} <= record["runtime"].keys()
+            and record["runtime"].keys() <= {"version", "bundle", "build_id"}
             and all(isinstance(value, str) for value in record["runtime"].values()),
             "Invalid browser record; preserve it and clear the cache",
         )
@@ -118,6 +120,10 @@ class BrowserManager:
             else [sys.executable, "-m", __name__]
         )
         self.runtime = {"version": __version__, "bundle": str(selection.bundle)}
+        self.installation_guard = InstallationGuard(selection.bundle)
+        self.installation = self.installation_guard.identity
+        if self.installation:
+            self.runtime["build_id"] = self.installation["build_id"]
 
     def paths(self, project):
         record = self.selection.prepare(project, "project")
@@ -129,6 +135,7 @@ class BrowserManager:
         return record, folder / (key + ".json")
 
     def request(self, project, *, action="open", scene_id=None, instance=None):
+        self.installation_guard.check()
         require(action in ("open", "status", "stop"), "Choose open, status or stop")
         project_record, path = self.paths(project.root)
         if scene_id is not None:
@@ -194,6 +201,7 @@ class BrowserManager:
                 start_new_session=True,
             )
         config = {
+            "installation": self.installation,
             "bundle": str(self.selection.bundle),
             "settings": str(self.selection.settings.parent),
             "cache": str(self.selection.cache),
@@ -230,6 +238,7 @@ class BrowserManager:
 
 
 def worker(config):
+    guard(config["bundle"], config.get("installation"))
     selection = Selection(config["bundle"], settings=config["settings"], cache=config["cache"])
     project = selection.validate(config["project"])
     manager = BrowserManager(selection)
@@ -248,6 +257,10 @@ def worker(config):
         identity = {key: record[key] for key in ("instance", "project", "runtime")}
 
         def prepare_request():
+            try:
+                manager.installation_guard.check()
+            except (ValueError, OSError) as error:
+                raise Conflict(str(error)) from error
             try:
                 selection.validate(project_record)
             except (ValueError, OSError) as error:

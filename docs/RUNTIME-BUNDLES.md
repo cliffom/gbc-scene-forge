@@ -10,8 +10,9 @@ Python wheels and their launchers remain supported.
 
 The initial target is **macOS arm64**, following the
 [feasibility decision](evaluations/plugin-feasibility.md). The builder rejects
-other hosts. Windows x64/Linux x64 build configuration, CI, signed delivery and
-release archives belong to #258/#263. No universal OS or client compatibility is
+other hosts. The [repository packager](PLUGIN-DISTRIBUTION.md) stages initial-platform
+delivery. Windows x64/Linux x64 build configuration, CI and signed release delivery
+belong to #263. No universal OS or client compatibility is
 claimed. See [measurements and limitations](evaluations/runtime-bundle.md).
 
 ## Launch contract

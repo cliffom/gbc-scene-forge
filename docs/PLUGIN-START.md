@@ -4,8 +4,8 @@ Milestone 25's experimental runtime supports `forge mcp --plugin`. It starts
 without a project grant and exposes setup tools through MCP. No checkout, Python,
 Node, settings-file edits or MCP reconfiguration is needed to choose a project.
 The [MCP declaration](../plugin/mcp.json) and
-[entry skill](../plugin/skills/forge-start/SKILL.md) are packaging inputs for #258;
-this issue does not ship a new installable marketplace release. Existing
+[entry skill](../plugin/skills/forge-start/SKILL.md) are included by the
+[repository packager](PLUGIN-DISTRIBUTION.md); no public release is published yet. Existing
 `--project` and `--project-root` modes keep their explicit startup grants.
 
 Plugin mode uses a fixed 32-tool profile: three setup tools, browser handoff and 28 authoring tools

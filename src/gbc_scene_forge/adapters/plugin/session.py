@@ -4,6 +4,7 @@ from gbc_scene_forge.adapters.mcp.tools import TOOLS, Adapter
 from gbc_scene_forge.core.validation import require
 
 from .browser import BrowserManager
+from .distribution import InstallationGuard
 from .selection import choose_directory
 
 BROWSER_TOOL = {
@@ -106,6 +107,8 @@ class PluginSession:
 
     def __init__(self, selection, *, chooser=choose_directory):
         self.selection = selection
+        self.installation_guard = InstallationGuard(selection.bundle)
+        self.installation = self.installation_guard.identity
         self.chooser = chooser
         self.browser = BrowserManager(selection)
         self.record = None
@@ -124,6 +127,7 @@ class PluginSession:
         return Adapter(path, single_project=record["mode"] == "project", recover=False)
 
     def revalidate(self):
+        self.installation_guard.check()
         if self.record is None:
             return
         try:
@@ -152,6 +156,7 @@ class PluginSession:
     def status(self):
         self.revalidate()
         return {
+            "installation": self.installation,
             "selection": self.record,
             "settings_file": str(self.selection.settings),
             "cache_directory": str(self.selection.cache),
@@ -167,6 +172,7 @@ class PluginSession:
         }
 
     def call(self, name, arguments):
+        self.installation_guard.check()
         if name in {tool["name"] for tool in SETUP_TOOLS}:
             require(isinstance(arguments, dict), "Invalid setup tool arguments")
             if name == "plugin_choose_location":
@@ -179,6 +185,7 @@ class PluginSession:
                     return {**self.status(), "cancelled": True}
                 record = self.selection.prepare(path, arguments["mode"])
                 adapter = self.open(record)
+                self.installation_guard.check()
                 self.selection.save(record)  # Failed selection/persistence preserves old access.
                 self.record, self.adapter, self.error = record, adapter, None
                 return self.status()

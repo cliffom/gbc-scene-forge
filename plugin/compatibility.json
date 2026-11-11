@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "plugin": "scene-forge",
+  "runtime_version": "0.46.1",
+  "project_format": 1,
+  "selection_format": 1,
+  "target": "macos-arm64",
+  "minimum_macos": "27.0",
+  "client_baseline": "Codex CLI/app-server 0.167.1, local execution"
+}
