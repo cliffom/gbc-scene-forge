@@ -52,14 +52,23 @@ blockout and render an overview/camera view early. Introduce tile layers,
 objects, reusable stamps and camera framing as the task needs them. Use current
 revisions for edits and dry-run/review before saved mutations.
 
-Offer direct browser editing alongside chat early. The bundled launcher has
-`bin/forge browser --plugin`; browser process management/handoff automation is
-owned by #257/#261 and is not an MCP capability yet. If the client cannot launch
-it, explain this limitation and give the user that command relative to the installed
-plugin. Do not imply a repository checkout, Python or Node is needed. Consult
-the maintained browser/MCP outcome matrix in the delivered documentation when
-describing a specific feature; playback, selection and Undo are browser-only.
-Never claim full browser/MCP parity or fabricate a browser URL.
+Offer direct browser editing alongside chat early. Call `plugin_browser` with the
+selected project and `action:"open"`, optionally with a saved scene ID. Open only
+its verified returned loopback URL using the client's browser capability. Saved
+artwork opens from Documents; an unpublished candidate is not saved by handoff.
+If the client cannot open a URL, give the returned URL to the user. The bundled
+`bin/forge browser --plugin` is also available (add `--project-name NAME` for a
+root selection). Neither route needs Python, Node or a checkout.
+
+The browser survives chat closure and expires after 30 minutes without editor
+requests. Reuse it for later conversations; never stop it during ordinary cleanup,
+selection reset or chat closure. A stop affects all sharing tabs: only on an
+explicit user request, inspect `action:"status"` then pass that exact `instance`
+to `action:"stop"`. If unavailable or a saved port is occupied, report the error;
+never kill an unknown process or fabricate another URL. Session previews expire
+with MCP; saved content, browser checkpoints and retained candidates have separate
+lifetimes. Consult the delivered browser/MCP outcome matrix for feature boundaries;
+playback, selection and Undo are browser-only.
 
 At review/save, explain in plain language: saved content lives in the project;
 an unpublished candidate is proposed work and has not replaced the saved artwork;

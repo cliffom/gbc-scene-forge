@@ -58,6 +58,7 @@ help:
 	@echo '  make build / make check-dist Build distributions / test the installed wheel'
 	@echo '  make build-bundle            Build experimental macOS arm64 runtime (pinned Python archive)'
 	@echo '  make check-bundle            Verify a moved, read-only runtime with the MCP SDK'
+	@echo '  make test-plugin-lifecycle  Verify installed plugin process sharing and recovery'
 	@echo '  make test-bundle-browser     Render the frozen runtime in Chromium'
 	@echo '  make clean                   Remove build outputs and node_modules; keep projects'
 	@echo '  make clean-demo              Delete the default .demo/ sample and its edits'
@@ -203,13 +204,16 @@ BUNDLE ?= $(BUNDLE_BUILD)/forge-$(VERSION)-macos-arm64
 BUNDLE_CHECK ?= build/runtime-smoke
 PYTHON_ARCHIVE ?= build/runtime-inputs/python.tar.zst
 UV ?= uv
-.PHONY: build-bundle check-bundle
+.PHONY: build-bundle check-bundle test-plugin-lifecycle
 build-bundle:
 	FORGE_BUILD_MODE=production $(MAKE) build
 	$(PYTHON) runtime/build.py --wheel "$(DIST_WHEEL)" --python-archive "$(PYTHON_ARCHIVE)" --output "$(BUNDLE_BUILD)" --uv "$(UV)"
 
 check-bundle:
 	"$(BUNDLE_BUILD)/build-env/bin/python" tests/packaging/bundle_smoke.py --bundle "$(BUNDLE)" --output "$(BUNDLE_CHECK)"
+
+test-plugin-lifecycle:
+	$(PYTHON) tests/packaging/plugin_lifecycle_smoke.py --runtime "$(BUNDLE)/forge" --output "$(BUNDLE_CHECK)-lifecycle"
 
 .PHONY: test-bundle-browser
 test-bundle-browser:

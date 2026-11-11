@@ -8,7 +8,7 @@ The [MCP declaration](../plugin/mcp.json) and
 this issue does not ship a new installable marketplace release. Existing
 `--project` and `--project-root` modes keep their explicit startup grants.
 
-Plugin mode uses a fixed 32-tool profile: three setup tools and 29 authoring tools
+Plugin mode uses a fixed 32-tool profile: three setup tools, browser handoff and 28 authoring tools
 for project discovery/creation, artwork and animation inspection/refinement,
 scene/blockout editing, candidate recovery/cleanup, review/save and export. The demonstrated Codex
 client exposed only the alphabetically first 32 tools from the full inventory,
@@ -17,7 +17,7 @@ now enforce this bounded profile; `capabilities` reports its exact tools and
 `unavailable_tools`. Use browser editing or direct `--project`/`--project-root`
 MCP for other operations, including saved-content deletion, duplication, stamps,
 frame-specific review, palette conversion, object definitions, world editing,
-bulk candidate archives and diagnostics. Those direct
+bulk candidate archives, filtered SVG scene review and diagnostics. Those direct
 launch modes retain the full inventory. See the [outcome matrix](AUTHORING-OUTCOMES.md)
 for operation details; its MCP column describes the full direct-launch surface.
 
@@ -99,13 +99,80 @@ discarded. Release removes that sidecar, not saved artwork or other candidates.
 Saving or browser adoption does not release the original handles. Keep unpublished
 branches unless the user chooses to discard them; no automatic eviction occurs.
 
-`bin/forge browser --plugin` opens the persisted project/root through the existing
-loopback/token-protected editor, with logs under the user cache. It fails clearly
-when no valid selection exists. It requires no development tools. MCP does not
-yet manage/reuse browser processes or provide a handoff tool; #257/#261 own that
-integration. Existing browser processes retain their original explicit scope;
-switching an MCP session does not retarget or terminate them. Stop/reopen the
-browser launcher to follow a new selection and retain drafts through normal recovery.
+## Managed browser handoff and process recovery
+
+Call `plugin_browser(project, action:"open", scene_id?)` to obtain a verified
+`http://127.0.0.1:PORT/` URL for the same project as MCP. Use the client's browser
+opener with that returned URL. A saved `scene_id` adds the existing scene route;
+missing scenes reject before launch. There is no artwork deep link: choose saved
+artwork in **Documents**. Candidates are unpublished; opening the browser does
+not save or adopt them. Direct launch retains the full MCP inventory; the bounded
+plugin profile replaces filtered SVG `review_scene` with this handoff. Ordinary
+saved-scene PNG review remains available through `review_artwork`.
+
+The bundled `bin/forge browser --plugin` uses the same manager and opens the OS
+browser. With a root selection, add `--project-name NAME` for one immediate
+project. `--no-browser` prints the verified URL to stderr and exits. Managed
+browsers choose their own port; `--port` applies only to direct launches.
+
+The client owns each stdio MCP subprocess. Normal stdin closure stops MCP; an
+abrupt termination loses its in-memory resources. No MCP network listener is
+created. Browser processes are shared by the same OS user, cache and exact
+canonical project/directory identity, independently of any one chat. They survive
+MCP exit and selection changes, keep their original project scope, and expire
+after 30 minutes without editor requests. Open tabs that poll saved updates keep
+the server active. Opening again refreshes its idle deadline. Health/status polling
+does not. Idle/explicit shutdown waits for admitted requests, including saves;
+crash recovery uses the existing durable journal, without replaying a tool call.
+An already-open browser also recovers interrupted writes before its next content
+request; it reports contention while another writer still holds the project lock.
+Requests recheck project identity after queuing and, for mutations, after receiving
+the body, so a delayed upload cannot write into a replacement directory.
+
+`action:"status"` reports whether a recorded browser is actually live. To stop
+one, use `action:"stop", instance:<current instance>` **only when the user asks**;
+it affects every tab/conversation sharing that instance. Chat closure, reset,
+switching projects and plugin sessions never implicitly stop it. A changed/expired
+instance rejects stop. Direct foreground servers and other users' servers are
+never adopted or signalled. The manager authenticates a fixed loopback endpoint
+with a random owner-only cache secret and verifies project, runtime and instance.
+It never signals a PID from a record. Concurrent launch requests serialize under
+an OS lock; the worker holds its own lifetime lock. Failed starts are bounded by
+a ten-second readiness wait; only the newly spawned process handle can be cleaned
+up on failure. A live browser from another runtime/install must be explicitly
+stopped before opening with the current runtime.
+
+Owner-only records/logs live under the per-user cache's `browsers/` directory,
+keyed by project identity. Records retain the selected port after stop/crash so
+restart preserves the browser origin and its local recovery identity. A stale
+record is a hint, never proof of liveness. An occupied saved port causes an
+actionable failure; Forge does not kill its listener or silently change the
+origin. Close that listener and retry. A missing/moved/replaced project fails
+closed, including existing browser requests. Invalid or redirected records fail
+without launching or deleting user files. Keep records while browsers are live;
+cache removal can lose the remembered address. If a record is damaged, preserve
+it, close its tabs and let the idle lifetime expire before clearing that record.
+
+Diagnostics go to MCP stderr and bounded-at-start worker logs, never protocol
+stdout. They describe lifecycle events without tool arguments, saved content,
+URLs or ownership secrets. Direct foreground launch keeps its existing console.
+
+| Content | Owner and lifetime |
+| --- | --- |
+| Saved artwork/scenes and transaction recovery | User project; survives chat, browser and runtime restart. Existing locks and revision guards apply. |
+| Scene/artwork checkpoints | Browser-owned records in project-local `.forge/drafts/` and `.forge/artwork-drafts/`; recover through the browser. Closing a server does not delete them. Changes since the last acknowledged checkpoint and in-memory Undo may be lost. |
+| Compact candidates | Immutable project-local sidecars; survive MCP exit/reset and browser restart until explicitly released. Stale bases remain stale. Recover with candidate listing/export. |
+| PNG/APNG/ZIP previews and review resources | MCP memory cache only; expire on eviction, selection change or process exit. Regenerate an expired resource; a URI is not a durable saved file. |
+| Browser process records/logs | Per-user cache; neither saved project content nor a checkpoint. Preserve records during active use. |
+
+This contract targets the initial local macOS arm64 runtime and the
+[recorded client support matrix](evaluations/plugin-feasibility.md#environment-and-client-boundary).
+It adds process-level installed-executable and browser acceptance, not new Codex
+client installation or human-inspection evidence. WSL, remote workspaces and
+cloud are deferred: a remote loopback URL is not the local user's browser;
+there is no remote MCP socket, forwarded-port fallback or inferred local path.
+Windows/Linux native selection/delivery and other clients remain downstream
+acceptance in #258/#261/#263/#264.
 
 ## A small, optional introduction
 

@@ -28,6 +28,11 @@ def plugin_directory(bundle):
 def main(argv=None):
     from gbc_scene_forge import __version__
 
+    # Internal child mode is intentionally absent from user-facing help/options.
+    if (sys.argv[1:] if argv is None else argv) == ["browser-worker"]:
+        from gbc_scene_forge.adapters.plugin.browser import worker_main
+
+        return worker_main()
     parser = argparse.ArgumentParser(description="Self-contained Scene Forge runtime")
     parser.add_argument("--version", action="version", version=f"Scene Forge {__version__}")
     modes = parser.add_subparsers(dest="mode", required=True)
@@ -46,6 +51,9 @@ def main(argv=None):
             command.add_argument(
                 "--no-browser", action="store_true", help="Only print the editor URL"
             )
+            command.add_argument(
+                "--project-name", help="Immediate project name when plugin selection is a root"
+            )
     args = parser.parse_args(argv)
     try:
         bundle = Path(sys.executable).resolve().parent
@@ -61,14 +69,34 @@ def main(argv=None):
 
                 asyncio.run(run(PluginSession(selection)))
                 return 0
-            record = selection.load()
+            from gbc_scene_forge.adapters.plugin.session import PluginSession
+
+            session = PluginSession(selection)
+            record = session.status()["selection"]
             if record is None:
                 raise ValueError(
-                    "No project selected. Use plugin_choose_location in Forge chat first."
+                    session.error
+                    or "No project selected. Use plugin_choose_location in Forge chat first."
                 )
-            root = selection.validate(record)
             single_project = record["mode"] == "project"
+            from gbc_scene_forge.adapters.http.server import open_editor
+
+            if not single_project and not args.project_name:
+                raise ValueError("Select an immediate project with --project-name NAME")
+            if args.port:
+                raise ValueError("Managed plugin browsers select and preserve their own port")
+            result = session.call(
+                "plugin_browser",
+                {"project": "project" if single_project else args.project_name, "action": "open"},
+            )
+            print(result["url"], file=sys.stderr, flush=True)
+            if not args.no_browser:
+                with redirect_stdout(sys.stderr):
+                    open_editor(result["url"])
+            return 0
         else:
+            if args.mode == "browser" and args.project_name:
+                raise ValueError("--project-name requires --plugin")
             root = external_directory(args.project or args.project_root, bundle)
             single_project = args.project is not None
         if args.mode == "browser":
@@ -76,10 +104,7 @@ def main(argv=None):
                 raise ValueError("--port must be between 0 and 65535")
             from gbc_scene_forge.adapters.http.server import serve
 
-            # Plugin logs/cache belong to user cache, separate from saved projects/settings.
-            if args.plugin:
-                selection.cache.mkdir(parents=True, exist_ok=True)
-            os.chdir(selection.cache if args.plugin else root)
+            os.chdir(root)
             with redirect_stdout(sys.stderr):
                 serve(
                     root,

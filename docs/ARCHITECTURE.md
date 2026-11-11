@@ -141,6 +141,20 @@ or add connector compatibility shims.
 The companion [frontend architecture](FRONTEND-ARCHITECTURE.md) describes the supported
 browser composition, state owners, controller ports and resource lifecycle.
 
+`adapters/plugin/browser.py` owns experimental per-user browser processes and
+authenticated loopback handoffs. It wraps the existing direct-project HTTP handler;
+project services still own recovery, transactions and revision guards. A live
+browser uses the HTTP handler's serialized preparation hook after body reception
+for POSTs to revalidate its bound directory and recover interrupted external writes
+before content access. The managed store opts into a transaction recovery guard:
+each saved-data lock repeats scope validation and recovers pending journals before
+yielding, covering writers that die after HTTP preparation. Other stores retain
+their existing locking behavior. Recovery uses the existing nonblocking project
+lock; an active writer is reported as busy rather than rolled back. A live
+instance has an OS lifetime lock, owner-only cache credentials and a separate
+launch lock; saved PIDs never authorize termination. MCP remains client-owned
+stdio. See [process and content lifetimes](PLUGIN-START.md#managed-browser-handoff-and-process-recovery).
+
 The [editable artwork contract](EDITABLE-ARTWORK.md) specifies milestone 14
 native pixel documents, source ownership, revision guards and portable persistence.
 `ArtworkService.documents` composes `artwork/documents.py` use cases with pure

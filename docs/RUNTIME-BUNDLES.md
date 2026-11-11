@@ -32,7 +32,7 @@ see [plugin selection and first task](PLUGIN-START.md).
 /path/to/forge-folder/forge mcp --project-root '/path/to/My projects'
 /path/to/forge-folder/forge mcp --project '/path/to/My projects/forest'
 /path/to/forge-folder/forge mcp --plugin
-/path/to/forge-folder/forge browser --plugin
+/path/to/forge-folder/forge browser --plugin --project-name forest
 ```
 
 Browser mode binds to loopback, defaults to an available port and prints its URL
@@ -43,8 +43,9 @@ launch errors use stderr; MCP stdout contains only newline-delimited JSON-RPC.
 Help/version output goes to stdout and exits without opening a project. No
 runtime downloads or writes to the installation are needed. Save revisions,
 review receipts, mutation tokens and declared project path guards remain owned by
-the existing services. Stop a foreground process with Ctrl+C. Process reuse,
-background management and browser handoffs belong to #257.
+the existing services. Stop a foreground process with Ctrl+C. Plugin launches use [managed browser handoff](PLUGIN-START.md#managed-browser-handoff-and-process-recovery),
+with authenticated reuse, an idle lifetime and a stable restart address. Direct
+launches remain foreground processes.
 
 ## Build and inspect
 

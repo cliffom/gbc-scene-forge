@@ -1,0 +1,16 @@
+{
+  "observed_at": "2026-11-11T21:08:59.730087+00:00",
+  "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "runtime_version": "0.46.1",
+  "runtime_sha256": "2e9d47a32fd0123545e160aab95ec5f296ba215b07e41903da4d65da9e00148c",
+  "selection": "Synthetic root grant in an isolated HOME; no native dialog or Codex install",
+  "runtime_path": "Empty; no developer executables available",
+  "shared_across_sessions": true,
+  "browser_launcher_reuses_instance": true,
+  "abrupt_mcp_exit_browser_survives": true,
+  "normal_mcp_exit_browser_survives": true,
+  "restart_preserves_origin": true,
+  "saved_scene_and_candidate_survive": true,
+  "session_preview_expired": true,
+  "tool_count": 32
+}

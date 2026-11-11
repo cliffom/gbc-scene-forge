@@ -74,15 +74,23 @@ class StandaloneServer(ThreadingHTTPServer):
         self.console.expire()
 
 
-def make_handler(root, token):
+def make_handler(root, token, *, prepare_request=None):
     root = Path(root).absolute()
     if (root / "forge.project.json").exists():
         Project.recover(root)
     if not (root / "forge.project.json").exists():
         Project.prepare_creation(root)
     project = Project(root, recover=False) if (root / "forge.project.json").exists() else None
+    if project is not None and prepare_request is not None:
+        project.transactions.recovery_guard = prepare_request
     api = ProjectAPI(root, project)
     request_lock = Lock()
+
+    def prepare():
+        if prepare_request is not None:
+            prepare_request()
+            if api.project is not None:
+                api.project.transactions.recover()
 
     class Handler(StandaloneHandler):
         def do_GET(self):
@@ -98,6 +106,7 @@ def make_handler(root, token):
                 return
             route = unquote(urlparse(self.path).path)
             try:
+                prepare()
                 if ("GET", route) in PROJECT_ROUTES:
                     self.respond(api.get(route, parse_qs(urlparse(self.path).query), token))
                 elif route.startswith("/api/scene/") and project:
@@ -153,6 +162,9 @@ def make_handler(root, token):
                 require(0 < length <= limit, f"Request must be within {limit // (1024 * 1024)} MiB")
                 data = json.loads(self.rfile.read(length))
                 require(isinstance(data, dict), "Expected a JSON object")
+                # Check managed scope/recovery after queuing and body reception,
+                # immediately before dispatching any saved-content operation.
+                prepare()
                 route = urlparse(self.path).path
                 result = api.post(route, data)
                 self.respond(result)
