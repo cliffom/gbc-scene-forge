@@ -19,8 +19,9 @@ claimed. See [measurements and limitations](evaluations/runtime-bundle.md).
 Use an absolute, existing project directory outside the runtime folder and its
 parents. Symlink aliases are resolved before checking containment. The browser
 can create projects inside a selected parent; `--project` opens one existing
-project. There is no implicit current-directory selection or plugin-specific
-configuration in this runtime. #256 owns persisted selection and onboarding.
+project. There is no implicit current-directory selection. Alternatively,
+`mcp --plugin` starts with per-user selection and a native setup dialog;
+see [plugin selection and first task](PLUGIN-START.md).
 
 ```sh
 /path/to/forge-folder/forge --version
@@ -30,11 +31,14 @@ configuration in this runtime. #256 owns persisted selection and onboarding.
 /path/to/forge-folder/forge browser --project '/path/to/My projects/forest' --no-browser --port 0
 /path/to/forge-folder/forge mcp --project-root '/path/to/My projects'
 /path/to/forge-folder/forge mcp --project '/path/to/My projects/forest'
+/path/to/forge-folder/forge mcp --plugin
+/path/to/forge-folder/forge browser --plugin
 ```
 
 Browser mode binds to loopback, defaults to an available port and prints its URL
 to stderr. Without `--no-browser`, it calls the existing OS browser opener. Logs
-live under `.forge-logs/` in the selected directory. Browser diagnostics and
+live under `.forge-logs/` in the selected directory for direct launch arguments;
+plugin mode uses the separate per-user cache. Browser diagnostics and
 launch errors use stderr; MCP stdout contains only newline-delimited JSON-RPC.
 Help/version output goes to stdout and exits without opening a project. No
 runtime downloads or writes to the installation are needed. Save revisions,

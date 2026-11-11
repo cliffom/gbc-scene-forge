@@ -23,8 +23,8 @@ MAX_CACHE = 24 * 1024 * 1024
 
 
 class Adapter:
-    def __init__(self, path, *, single_project=False):
-        self.single = Project(path) if single_project else None
+    def __init__(self, path, *, single_project=False, recover=True):
+        self.single = Project(path, recover=recover) if single_project else None
         self.workspace = None if single_project else ProjectRoot(path)
         self.artifacts = OrderedDict()
 

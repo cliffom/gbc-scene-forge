@@ -15,6 +15,81 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Plugin candidate quota recovery (#271 feedback)
+
+- **Scope:** Agent-run local source checks on 2026-11-11, macOS arm64;
+  candidate-lifecycle profile changes based on `7742ac7`.
+- **Method:** Retain 256 distinct 8×8 candidates through compact creation and
+  handle edits, verify the next edit fails, reset/restart and recover the inventory.
+  Export one full envelope, explicitly release its handle and retry the blocked
+  edit. Exercise list/export/release in a real SDK stdio conversation as well.
+- **Result:** All 17 focused plugin tests passed. Quota recovery preserves every
+  other sidecar and saved project file, and the next edit succeeds. The SDK flow
+  saves compact artwork and releases an earlier candidate without changing saved
+  content. The advertised/accepted profile remains within 32 tools, including all
+  setup tools and candidate list/export/release. `make docs-check lint test`
+  passed, including 520 Python tests and the TypeScript suites.
+- **Limits:** Source checks use a synthetic chooser. This does not repeat the
+  native-model verification below with the revised inventory, installed-package
+  acceptance or browser UI checks. The quota regression reaches the record-count
+  limit; it does not fill the separate 64 MiB limit. Stamp creation/placement,
+  frame-specific review and bulk archives require browser/direct-launch workflows.
+
+## Plugin bootstrap model exposure (#271 feedback)
+
+- **Scope:** Agent-run local source checks on 2026-11-11, macOS 27.0.1 arm64,
+  Codex CLI/app-server 0.167.1; feedback changes based on `1423ed3`.
+  See the [archived model result](evaluations/assets/plugin-bootstrap/results.json)
+  for model identity, exact advertised inventory, calls and environment limits.
+- **Method:** Bound plugin advertisement and dispatch to 32 tools, including all
+  three setup tools and 29 authoring tools. Run the synthetic selection and real
+  SDK first-task regressions, plus an ephemeral actual model turn with the source
+  fixture. Handle approvals only for exact synthetic status/choose/reset calls.
+- **Result:** The native model successfully called status, choose-root, status,
+  project discovery, capabilities, reset and final status in order. Final selection
+  was null; no selection file or project remained. The initial noninteractive CLI
+  attempt discovered setup tools but could not execute them under its never-approval
+  policy; the subsequent app-server check supplied exact fixture approvals.
+  Regression checks cover the 32-tool exposure boundary, capability/inventory
+  agreement and rejection of excluded operations before and after selection.
+  `make docs-check lint test` passed, including 519 Python tests and the
+  TypeScript suites; documentation checks passed again after this record update.
+- **Limits:** The model used a synthetic chooser and temporary explicit MCP
+  configuration against source, not a newly installed/frozen plugin. This does
+  not exercise the native dialog, every authoring tool or another client/platform.
+  Full direct-launch MCP and browser inventories remain available; plugin mode
+  deliberately excludes operations documented in the selection guide.
+
+## Plugin selection and first-task automation (#256)
+
+- **Scope:** Agent-run local checks on 2026-11-11, macOS 27.0.1 arm64,
+  Python 3.13.13, Node 24.22.1 and MCP 1.30.0; issue branch based on `ee472a0`.
+  The milestone integration package remains 0.46.1; no release was published.
+- **Method:** Run docs/lint/Python/TypeScript checks and
+  [selection regressions](../tests/backend/adapters/test_plugin_selection.py)
+  with a synthetic chooser, plus an [official-SDK stdio task](../tests/backend/adapters/test_mcp_plugin.py)
+  covering create/inspect/refine/review/save/export, switch and a fresh process.
+  Build/smoke the wheel and frozen runtime; run frozen-editor and standalone
+  Chrome acceptance through the existing direct-launch paths. Start the rebuilt
+  frozen MCP with an empty PATH and no existing user selection, issuing only
+  read-only status/discovery calls without opening the native dialog.
+- **Result:** Local checks pass. Bootstrap denies project access before selection;
+  cancellation, invalid/denied/moved locations, symlink escapes, failed settings
+  publication, stale receipts and superseded grants are covered. Selection and
+  discovery preserve project content, including avoiding a new single-project
+  history lock. The SDK task saves and reopens the same catalog; switching clears
+  preview resources. Wheel metadata/seven installed checks, read-only relocated
+  empty-PATH runtime smoke and frozen/standalone Chrome acceptance pass.
+  Frozen bootstrap advertises 64 tools, has no project grant/resources, rejects
+  discovery and creates no user selection file.
+- **Limits:** The chooser is substituted in automation; no person exercised the
+  new native dialog or optional skill in an installed Codex conversation here.
+  Existing browser checks exercise direct launch, not managed plugin handoff.
+  The original full-inventory model exposure retained the feasibility limit;
+  the bounded-profile feedback check above covers the subsequent correction. Windows/Linux
+  native selection is unavailable; downstream platform, handoff and independent
+  acceptance remain separate. Local logs are not archived CI evidence.
+
 ## Human browser review of the installed-plugin fixture (#254)
 
 - **Scope:** User report on 2026-11-11 for the installed probe's `native-review`
@@ -3089,6 +3164,14 @@ Dates, revisions and environments missing from the originals remain unknown.
   claim is made by this local record.
 
 ## Remaining checks
+
+### Plugin selection, introduction and handoff (#261/#264)
+
+- [ ] Exercise the native folder dialog from an installed plugin, including
+  first-use create, reopen/switch, OS denial/cancellation and a later conversation;
+  have independent users skip or complete the optional first task and find
+  browser editing/export. The #256 synthetic chooser/SDK checks above establish
+  implementation behavior, not native-dialog or onboarding usability.
 
 ### Codex plugin feasibility (milestone 25, #254)
 

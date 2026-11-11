@@ -9,6 +9,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 - [Standalone Scene Forge](STANDALONE.md)
 - [Artwork-free level blockouts](BLOCKOUT.md)
 - [Local MCP authoring](MCP.md)
+- [Plugin selection and first task](PLUGIN-START.md)
 - [Browser and MCP authoring outcomes](AUTHORING-OUTCOMES.md)
 - [GBC scene palette budgets](PALETTE-BUDGETS.md)
 - [User tutorials](user/README.md)
