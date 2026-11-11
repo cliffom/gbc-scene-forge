@@ -6,8 +6,9 @@ packaging step: it passed the same checks as private Python at 28% of its instal
 file bytes and 53% of its compressed bytes. This is a **conditional go for further
 development**, not a supported plugin release. The later native-model check below
 passes PNG inspection with an opt-in 19-tool probe profile. The user subsequently
-confirmed the browser visual checklist below; automatic browser opening remains
-unconfirmed, so #254 is not complete.
+confirmed the browser visual checklist and automatic Chrome opening below,
+completing the bounded initial-client feasibility evidence for #254. The full
+tool inventory and downstream delivery/platform boundaries remain unresolved.
 
 The [source probe](../../examples/plugin_probe/entry.py),
 [builder](../../examples/plugin_probe/build.py),
@@ -365,10 +366,14 @@ The requested visual observations were the scene sprite, two adjacent pale pixel
 in the amber `idle` frame at native and enlarged zoom, the cyan `glow` frame
 without a highlight, and 120/240 ms durations.
 
-Record this as the user's confirmation of the browser visual checklist, rather
-than an agent observation or an independent participant study. The reply does not
-identify the browser version, distinguish automatic opening from manually opening
-the supplied loopback URL, or distinguish playback from individual-frame review.
-It establishes neither APNG playback nor human image review inside native chat.
-The earlier agent-run results retain their original attribution and limits;
-outstanding startup and delivery checks remain in the single validation list.
+In a follow-up the user replied **"it did"** to whether Forge opened Chrome
+automatically, confirming the visible OS-browser startup and handoff.
+
+These are user confirmations, rather than agent observations or an independent
+participant study. The replies do not identify the browser version or distinguish
+playback from individual-frame review. They establish neither APNG playback nor
+human image review inside native chat. Together with the preceding native-model,
+SDK and packaging evidence, they complete the bounded initial-client feasibility
+case for #254 using the 19-tool profile and external Chrome handoff. The earlier
+agent-run results retain their original attribution and limits; downstream
+delivery/platform checks remain in the single validation list.

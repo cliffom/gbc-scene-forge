@@ -24,17 +24,18 @@ Dates, revisions and environments missing from the originals remain unknown.
   the user's browser version was not supplied.
 - **Method:** The user replied "verified" to the regular-Chrome checklist for
   the Workshop scene, native/enlarged artwork views, both frames and their timing.
+  The follow-up "it did" confirms that Forge opened Chrome automatically.
   This is a user-reported observation, separate from the earlier model and
   automated browser evidence.
 - **Result:** The user confirms the visible scene and artwork checklist: two
   adjacent pale highlight pixels in amber `idle`, no highlight in cyan `glow`,
-  and 120/240 ms frame durations. See the
+  and 120/240 ms frame durations, plus automatic browser opening. See the
   [attribution and boundaries](evaluations/plugin-feasibility.md#human-browser-confirmation).
-- **Limits:** The brief reply does not distinguish automatic browser opening
-  from manually following the URL, or actual playback from individual-frame
-  review. It does not verify APNG playback, native chat UI image display,
-  integrated-browser decoding or full-inventory tool exposure. The startup
-  distinction remains in the single Remaining checks list.
+- **Limits:** The replies do not distinguish actual playback from individual-frame
+  review or supply the browser version. They do not verify APNG playback, native
+  chat UI image display, integrated-browser decoding or full-inventory tool
+  exposure. This completes the bounded human review and startup evidence for
+  #254; downstream platform and delivery checks remain separate.
 
 ## Native installed-plugin model review (#254 follow-up)
 
@@ -3096,10 +3097,10 @@ Dates, revisions and environments missing from the originals remain unknown.
       The browser version and playback mode were not supplied. Native model PNG
       inspection passes with the opt-in 19-tool profile; native chat UI image
       display and successful full-inventory model exposure are not established.
-- [ ] Confirm the default OS browser window and human handoff. Ordinary Chromium
-      renders the fixture repeatedly; the integrated-browser image-decoding stall
-      remains an explicit compatibility limit. The launcher invoked the OS opener
-      without reporting failure, which alone does not confirm the visible window.
+- [x] User-confirmed automatic Chrome opening and browser handoff; see
+      [the attributed report](#human-browser-review-of-the-installed-plugin-fixture-254).
+      The integrated-browser image-decoding stall remains an explicit compatibility
+      limit; this confirmation applies to the external Chrome window.
 - [ ] Establish additional client/platform support, minimum macOS, signing,
   quarantine/download, archive-selection/size and public-directory boundaries as
   downstream delivery contracts require (#257/#258/#265). Local extraction and
