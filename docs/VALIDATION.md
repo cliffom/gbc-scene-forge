@@ -15,6 +15,35 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Plugin selection and first-task automation (#256)
+
+- **Scope:** Agent-run local checks on 2026-11-11, macOS 27.0.1 arm64,
+  Python 3.13.13, Node 24.22.1 and MCP 1.30.0; issue branch based on `ee472a0`.
+  The milestone integration package remains 0.46.1; no release was published.
+- **Method:** Run docs/lint/Python/TypeScript checks and
+  [selection regressions](../tests/backend/adapters/test_plugin_selection.py)
+  with a synthetic chooser, plus an [official-SDK stdio task](../tests/backend/adapters/test_mcp_plugin.py)
+  covering create/inspect/refine/review/save/export, switch and a fresh process.
+  Build/smoke the wheel and frozen runtime; run frozen-editor and standalone
+  Chrome acceptance through the existing direct-launch paths. Start the rebuilt
+  frozen MCP with an empty PATH and no existing user selection, issuing only
+  read-only status/discovery calls without opening the native dialog.
+- **Result:** Local checks pass. Bootstrap denies project access before selection;
+  cancellation, invalid/denied/moved locations, symlink escapes, failed settings
+  publication, stale receipts and superseded grants are covered. Selection and
+  discovery preserve project content, including avoiding a new single-project
+  history lock. The SDK task saves and reopens the same catalog; switching clears
+  preview resources. Wheel metadata/seven installed checks, read-only relocated
+  empty-PATH runtime smoke and frozen/standalone Chrome acceptance pass.
+  Frozen bootstrap advertises 64 tools, has no project grant/resources, rejects
+  discovery and creates no user selection file.
+- **Limits:** The chooser is substituted in automation; no person exercised the
+  new native dialog or optional skill in an installed Codex conversation here.
+  Existing browser checks exercise direct launch, not managed plugin handoff.
+  Full-inventory model exposure retains the feasibility limit. Windows/Linux
+  native selection is unavailable; downstream platform, handoff and independent
+  acceptance remain separate. Local logs are not archived CI evidence.
+
 ## Human browser review of the installed-plugin fixture (#254)
 
 - **Scope:** User report on 2026-11-11 for the installed probe's `native-review`
@@ -3089,6 +3118,14 @@ Dates, revisions and environments missing from the originals remain unknown.
   claim is made by this local record.
 
 ## Remaining checks
+
+### Plugin selection, introduction and handoff (#261/#264)
+
+- [ ] Exercise the native folder dialog from an installed plugin, including
+  first-use create, reopen/switch, OS denial/cancellation and a later conversation;
+  have independent users skip or complete the optional first task and find
+  browser editing/export. The #256 synthetic chooser/SDK checks above establish
+  implementation behavior, not native-dialog or onboarding usability.
 
 ### Codex plugin feasibility (milestone 25, #254)
 

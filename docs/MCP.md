@@ -10,7 +10,9 @@ transactions as browser authoring. There is no connector or game compiler.
 
 Milestone 25 also provides an experimental [self-contained runtime](RUNTIME-BUNDLES.md)
 whose `forge mcp` mode includes the SDK and Python. Its explicit project selection
-and platform limits are documented separately; the optional wheel install below
+and platform limits are documented separately. `forge mcp --plugin` also supports
+[native project selection and onboarding](PLUGIN-START.md) without a preconfigured
+project path; the optional wheel install below
 remains supported.
 
 The [Codex plugin feasibility probe](evaluations/plugin-feasibility.md) compares

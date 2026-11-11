@@ -80,6 +80,15 @@ MCP saves, resources, export and browser HTTP. It is not part of ordinary unit
 discovery and does not start a model turn. Its [evaluation](../docs/evaluations/plugin-feasibility.md)
 records exact client and visual limits.
 
+`backend/adapters/test_plugin_selection.py` covers first use, cancellation,
+per-user persistence, moved/invalid/denied directories, grant revocation and
+symlink isolation with a synthetic chooser. `test_mcp_plugin.py` runs an actual
+SDK stdio conversation through the test-only chooser fixture, including a small
+create/inspect/refine/review/save/export task and a second process reopening the
+selection. `backend/tooling/test_runtime_bundle.py` covers `--plugin` startup and
+separate browser cache logs. These tests do not establish native-dialog usability
+or installed-plugin acceptance.
+
 `fixtures/pixel-cleanup/motif.json` is an original MIT synthetic motif with
 independently declared noise coordinates and intentional glint/diagonal failures.
 `support/measure_cleanup.py` reproduces the archived PNGs/results; the
