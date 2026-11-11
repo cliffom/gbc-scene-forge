@@ -5,48 +5,39 @@
 
 ![GBC Scene Forge — Build a world. One tile at a time.](assets/branding/hero.png)
 
-Scene Forge is a local browser editor for building tile-based scenes from imported
-[gbc-atlas](https://github.com/cliffom/gbc-atlas) artwork or
-[native pixel tiles and static sprites](docs/user/pixel-artwork.md). Organize your work into
-projects, paint maps, place sprites and markers, and export portable Tiled files.
-Your projects stay on your computer.
+Scene Forge is a local browser workspace for pixel artwork and tile-based worlds.
+Draw tiles, sprites and illustrations, animate native sheets, build scenes from
+your artwork, or plan a level before drawing a single pixel. Keep artwork and
+scenes together in portable projects, and export maps for Tiled.
+
+Your projects stay on your computer. The installed editor works offline, needs
+no account, and has no additional Python runtime dependencies. An optional local
+MCP server lets agents author and review the same project alongside the browser.
+
+![Riverside in the current scene editor, with the artwork Library and scene Inspector](docs/screenshots/standalone-demo.png)
 
 ## Start editing
 
-Install the release with Python 3.10 or newer:
+Install with **Python 3.10 or newer**:
 
 ```sh
-python -m pip install gbc-scene-forge==0.46.1
+python -m pip install --upgrade gbc-scene-forge==0.46.1
 gbc-scene-forge
 ```
 
-Forge opens your default browser at **http://127.0.0.1:8765/**. The terminal prints the address;
-if no browser opens, open that URL manually. Use `--no-browser` to suppress automatic opening,
-or `--port 0` to select an available port. Keep the terminal running while editing;
-you can stop the server with **Ctrl+C**. The installed editor needs no Node or
-additional Python runtime dependencies.
+Forge opens your default browser at **http://127.0.0.1:8765/**. Keep the terminal
+running while editing; stop the server with **Ctrl+C**. If no browser opens, use
+the address printed in the terminal. Use `--no-browser` to open it yourself, or
+`--port 0` to choose an available port.
 
-The console shows server status, the editor URL, the absolute Project Root path,
-the log location and a live
-Clients / Failures field. Request and client activity goes to
-`.forge-logs/server-PORT.log` under the directory where you launch Forge, keeping the terminal
-compact. Logs include timestamps, all HTTP requests, failures, and client arrivals
-and expirations with IP and User-Agent. They append across launches and rotate at
-1 MiB, retaining three backups (for example, `server-8765.log.1` through
-`server-8765.log.3`). A client
-is one IP address + User-Agent combination, so multiple tabs in the same browser
-count once; different browsers at the same address count separately. Each HTTP
-request refreshes that client's activity. After **120 seconds without a request**,
-the client expires, even if its tab is still open; its next request counts it as
-active again. This is recent activity, not a count of open browser connections.
-The live failure count points to details in the log. Colors appear only in
-interactive terminals and can be disabled with `NO_COLOR` (or `TERM=dumb`).
-Redirected output prints only startup and shutdown summaries without ANSI escapes;
-activity logs always use plain text.
+You need a current desktop browser: Chrome, Edge, Firefox or Safari. Node,
+Poetry, Tiled and [gbc-atlas](https://github.com/cliffom/gbc-atlas) are not required
+to use the installed editor. Installation needs access to the package index or a
+downloaded wheel; the editor, sample and first-scene guide work offline afterward.
+Chrome acceptance runs on macOS and Linux; package CI checks Python 3.13 and 3.14
+on Linux. Other browsers and Windows are outside the automated browser matrix.
 
-![Preview of the compact server console](docs/screenshots/server-console.png)
-
-Working from this repository? Install the development tools described below, then run:
+Working from this repository? Follow [Development](#development), then run:
 
 ```sh
 make setup PYTHON=python3.13
@@ -55,288 +46,234 @@ make run
 
 ### Create your first project
 
-1. Enter **Hello World** on the project selector. Choose **Sample artwork and
-   scenes** to start without preparing artwork. If projects already exist, choose
-   **Create a new project** first.
-2. Optionally enable **Continue first-scene guide**, then choose **Create project**.
-   The sample becomes your own editable project; its bundled original stays unchanged.
-3. Choose **Scene actions → Create scene…**, name it **First scene**, and keep the default dimensions.
-4. Choose a tile from the asset library and paint. Choose **Save scene** or press
-   **Ctrl/⌘ S**, reload, and select **First scene** to confirm your tiles survived.
-5. Place a sprite on the canvas to try its animation preview, then choose **Export… → Whole
-   project → Download ZIP** for portable Tiled files and artwork.
+1. Enter a project name. If projects already exist, choose **Create a new project**.
+2. Choose a starting goal: **Sample artwork and scenes**, **Create pixel artwork**,
+   **Import artwork or maps**, **Blockout — no artwork needed**, or **Empty project**.
+3. Choose **Create project**. The sample gives you an editable copy of two scenes
+   and original MIT-licensed artwork, with no external artwork tools needed.
 
-**First scene guide** in the header opens optional instructions covering project
-creation, artwork import, painting, save/reopen, preview, and export. Close it to
-edit, then reopen to continue. It remembers your position in this browser and can
-be restarted. Empty projects support your own gbc-atlas imports through **Import
-atlas → Browse folder…**; plain PNG tilesheet import is planned separately.
+![The project selector with a saved sample project](docs/screenshots/project-selector.png)
 
-You only need Python 3.10+ and a current desktop browser (Chrome, Edge, Firefox or
-Safari). Node, Poetry, Tiled and gbc-atlas are not needed to edit the bundled
-sample. Installation needs access to the package index or a previously downloaded
-wheel; editing, the guide and sample work offline. Automated browser acceptance
-runs in Chrome on macOS and Linux; the package CI checks Python 3.13 and 3.14 on Linux.
+For a first scene, start with the sample, then choose **Open scene…** and select
+**Riverside**. Choose a tile in the Library and paint on a tile layer. **Save** or
+**Ctrl/⌘ S** saves the active document; **Documents** lets you open saved scenes
+and return to retained artwork. **Scene actions → Create scene…** starts your own map.
 
-Choose a scene from the scene dropdown to open it. If the current scene has
-unsaved edits, choose whether to save, discard, or keep editing before switching.
+The optional **First scene guide** in the header walks through painting,
+save/reopen, sprite preview and export. You can close it while editing and reopen
+to continue. For the full controls and recovery behavior, see the
+[editor guide](docs/STANDALONE.md).
 
-### Plan before importing artwork
+## Create artwork and build worlds
 
-Choose **Blockout — no artwork needed** when creating a project, or **Scene
-actions → Create blockout scene…** in an existing project. Draw labeled ground,
-platforms, hazards and climb regions; place encounter/progression markers; and
-review the route through a configurable gameplay camera. The plan stays as native
-objects when you add artwork or export to Tiled. Follow the
-[blockout tutorial](docs/user/blockout-tutorial.md) for a complete first session,
-or see the [blockout reference](docs/BLOCKOUT.md).
+### Draw and animate in the same workspace
 
-Agents can author saved projects through the optional [local MCP server](docs/MCP.md),
-including blockout planning, bounded atlas import/reimport, canonical decoration,
-and saved artwork camera/overview review. A clean browser automatically
-refreshes after external saves; checks pause during local edits and interactions.
-See [external refresh](docs/user/external-refresh.md) for controls and conflict recovery.
-The ordinary editor needs no MCP dependencies.
+Choose **New…** in the Artwork Library to create a tile, sprite, illustration or
+multi-frame sheet. Artwork opens in the same workbench as scenes, with its own
+history and recoverable draft. Switch documents without losing retained edits.
 
-### Open another project
+- Draw with Pencil, Eraser, Fill, Line and Rectangle; select, move and transform pixels.
+- Work with named layers, visibility, locking and opacity. Inspect colors for the
+  whole composition or the selected layer.
+- Edit named frames, use onion skins, and preview animation with frame timing.
+- Edit shared artwork or make an independent copy. Selected-placement variations
+  let you replace only the captured tiles or sprites after review.
+- Review artwork changes before saving. Download the whole image/sheet or selected
+  frame as a native-size PNG, including unsaved edits and transparency.
 
-Use the **Project** dropdown beside the scene selector to open another project.
-Choose **Choose or create project…** to return to the project selector, then open
-an existing project or choose **Create a new project**, without restarting Forge.
-If your scene has unsaved edits, choose **Save and switch**, **Discard and switch**,
-or **Keep editing**. If saving fails, your edits stay in the current workspace.
+![The native pixel editor with the demo’s Riverside reference image opened as layered artwork](docs/screenshots/native-artwork.png)
 
-Opening a project loads a fresh workspace. Choose a saved scene to continue;
-brushes, selections, undo history, and running previews start fresh. Separate
-browser tabs can work on different projects. If two tabs edit the same scene,
-revision checks protect against overwriting each other's saved work.
+The example above uses the repository's demo reference image in a native artwork
+document. See [Create and edit pixel artwork](docs/user/pixel-artwork.md) for
+setup, drawing, animation, copies, layers and save review.
 
-![Choose an existing project or create a new one](docs/screenshots/project-selector.png)
+### Compose scenes from your artwork
 
-### Where your projects live
+Import [ordinary PNG tilesheets or supported Tiled JSON maps](docs/user/import-artwork.md),
+bring in a gbc-atlas folder, or use your native artwork directly from the Library.
 
-By default, Forge keeps projects in `.forge_project/` under the directory where
-you start it. Each project gets its own folder: **Hello World** becomes
-`hello-world`. Names are normalized to lowercase letters, numbers and hyphens;
-accents are simplified. Choose another name if its folder already exists.
+- Paint tiles and stamps; place sprites, spawn points, trigger rectangles and typed objects.
+- Organize named tile and object layers, reorder them, and control visibility.
+- Copy, duplicate and transform selections; save [reusable stamps](docs/STANDALONE.md#clipboard-and-reusable-stamps).
+- Paint connected roads, walls and shorelines with [terrain brushes](docs/user/terrain-brushes.md).
+- Resize or crop scenes with an anchored preview and Undo, including
+  [wide and tall maps](docs/user/scene-dimensions.md).
+- Preview sprite animation and movement; save sequence mappings and preview preferences.
+- Arrange scenes in [World view](docs/STANDALONE.md#world-view-and-scene-connections)
+  and connect object endpoints between them.
+
+Collapse the Library or Inspector with its header arrow to reclaim canvas space.
+[Review scene](docs/user/review-mode.md) gives you a larger canvas with pan, zoom
+and Fit scene. Share a [scene link](docs/user/scene-links.md) to reopen its saved state.
+
+### Plan a level before adding artwork
+
+Start with **Blockout — no artwork needed**, or choose **Scene actions → Create
+blockout scene…** in an existing project. Draw labeled ground, platforms, hazards
+and climb regions, place encounter/progression markers, and review the route
+through a configurable gameplay camera. The plan stays as native objects when
+you add artwork or export to Tiled.
+
+Follow the [blockout tutorial](docs/user/blockout-tutorial.md) for a complete
+first session, or use the [blockout reference](docs/BLOCKOUT.md).
+
+### Check and export your project
+
+[Project diagnostics](docs/STANDALONE.md#project-diagnostics) finds content errors,
+unused assets and movement findings under explicitly selected assumptions.
+[Reusable object definitions](docs/STANDALONE.md#reusable-object-definitions)
+provide typed fields, shared defaults, instance overrides and navigable validation.
+
+Optional [GBC target budgets](docs/user/gbc-budgets.md) estimate static source tiles
+and OAM alongside [palette requirements](docs/PALETTE-BUDGETS.md). These are authoring
+checks with explicit runtime limits; generic editing and Tiled export do not
+require a target profile.
+
+Choose **Project tools → Export** for a scene or whole-project ZIP. Either scope can include unsaved edits from the open scene when you
+choose that option; other scenes use their saved versions. Open the maps in Tiled, or extract a whole-project export and open it in
+Forge with `--project`. See the [editor guide](docs/STANDALONE.md) for the supported
+Tiled subset and export boundaries.
+
+### Work with a local agent
+
+The optional [MCP server](docs/MCP.md) exposes scene and native artwork authoring,
+blockout planning, bounded atlas import/reimport, rendering and review through the
+same project services as the browser.
+
+```sh
+python -m pip install --upgrade 'gbc-scene-forge[mcp]==0.46.1'
+gbc-scene-forge-mcp --project-root /absolute/path/to/projects
+```
+
+Configure a local stdio-capable MCP client to launch that command. Open the same
+project in the browser to inspect saved changes. Agents can also prepare
+unpublished artwork drafts for browser preview and adoption; publishing requires
+review and current revisions. See the [browser/MCP outcome matrix](docs/AUTHORING-OUTCOMES.md)
+for supported workflows and boundaries.
+
+Clean open documents can follow external saves. Refresh pauses during local edits
+and interactions; [external refresh](docs/user/external-refresh.md) explains the
+controls and conflict recovery. The ordinary editor needs no MCP dependencies.
+
+## Your files and saved work
+
+Forge keeps projects in `.forge_project/` under the directory where you launch it.
+Each project has its own folder; **Hello World** becomes `hello-world`.
 
 ```text
 .forge_project/
-├── hello-world/
-│   ├── forge.project.json    # Project name, identity and format version
-│   ├── assets/               # Imported artwork and generated Tiled tilesets
-│   ├── scenes/               # Saved Tiled maps
-│   └── .forge/history/       # Recovery records
-└── another-world/
-    └── …
+└── hello-world/
+    ├── forge.project.json    # Project identity and declared content
+    ├── assets/               # Imported/native artwork and generated Tiled tilesets
+    ├── scenes/               # Saved Tiled maps
+    └── .forge/               # Recovery records and project-local working data
 ```
 
-Asset and scene folders appear when you import artwork or create scenes. Back up
-or move the **entire project folder**, including its hidden `.forge` directory.
-The project selector finds manifests in the root's immediate child directories;
-there is no separate project registry to maintain.
-
-Choose a different location for your projects:
+Back up or move the **entire project folder**, including its hidden `.forge`
+directory. The selector discovers projects in the root's immediate child folders;
+there is no separate registry. To bring in an existing project, stop Forge and
+move its whole directory under your project root, or open it directly.
 
 ```sh
+# Browse projects stored elsewhere:
 gbc-scene-forge --project-root "$HOME/Scene Forge Projects"
-# From the repository:
-make run PROJECT_ROOT="$HOME/Scene Forge Projects"
-```
 
-Use the same location on later launches to see those projects again. Unsupported
-or damaged manifests are reported in the selector so you can identify the folder
-that needs attention. Version 0.29.0 retains manifest version 1. Native editable
-artwork adds an optional field that older versions reject; projects without native
-artwork need no migration. Native pixel operations support browser drawing and optional MCP authoring. See the
-[editable artwork API and limits](docs/EDITABLE-ARTWORK.md#implemented-service-api-130).
-
-### Bring an existing project into 0.29.0
-
-Existing 0.2.0 projects keep their artwork, scene IDs and manifest format. To add
-one to the selector, stop Forge and move the whole project folder into your
-project root. For the old default location, run these commands from the repository:
-
-```sh
-mkdir -p .forge_project
-# Choose a destination name that does not already exist:
-mv .forge-project .forge_project/my-world
-make run
-```
-
-You can also open a project directly, including an extracted whole-project export:
-
-```sh
+# Open one project, including an extracted whole-project export:
 gbc-scene-forge --project /path/to/my-world
-# From the repository:
-make run PROJECT=/path/to/my-world
 ```
 
-Direct mode opens just that directory; it has no project selector. The old
-`.forge-project/` directory is never moved or deleted automatically. In 0.3.0, a
-positional directory argument means a **project root**; use `--project` for a
-single project. Passing a project as a root produces instructions instead of
-silently nesting new projects inside it. The old `--create` option is replaced by
-project creation in the browser.
+Use the same root on later launches to find your projects again. Direct mode
+opens just one project and has no selector. Invalid or unsupported manifests are
+reported without being rewritten. Native artwork extensions may require a newer
+Forge version; see the [editable artwork contract](docs/EDITABLE-ARTWORK.md).
 
-## Explore the editor
+Use **Project → Choose or create project…** to return to the selector. Unsaved
+scene edits offer save, discard or keep editing before switching. Separate tabs
+can work on different projects, and revision checks protect against overwriting
+another writer's saved work.
 
-- Paint tile regions as stamps; place sprites at their native size and atlas origin.
-- Rename and duplicate scenes; resize or crop with an anchored preview and undo.
-- Use named tile and object layers, change their order and visibility, and undo edits.
-- Recover unsaved scene drafts after a browser or server interruption; checkpoints
-  stay inside the project, with explicit restore, download and discard choices.
-- Place spawn points and trigger rectangles with names, classes and typed properties.
-- Add shared terrain and collision metadata, then inspect it with canvas overlays.
-- Select a sprite to try animation and movement previews. Save sequence mappings
-  and preview preferences separately with **Save preview settings**.
-- Choose **Export…** for a scene or whole-project ZIP. You can include unsaved
-  canvas edits in an export. Open the maps in Tiled, or extract a whole-project
-  export and open it in Forge with `--project`.
+Scene and artwork drafts support recovery after interruptions, with explicit
+restore, download and discard choices. **Close document** can keep a draft without
+deleting saved content. Reloading or opening another project resets in-memory
+Undo history. See [scene recovery](docs/STANDALONE.md) and
+[artwork recovery](docs/user/pixel-artwork.md) for the separate workflows.
 
-See [the editor guide](docs/STANDALONE.md) for controls, atlas reimport, preview
-settings, supported Tiled features and recovery behavior.
+The terminal shows the editor address, project root and recent client/failure
+counts. Request details go to rotating logs in `.forge-logs/` under the launch
+directory. See the [editor guide](docs/STANDALONE.md) for additional launch options.
 
-## Try the sample
+## Try the sample from a checkout
 
-In the installed editor, choose **Sample artwork and scenes** when creating a
-project. Each copy receives its own project identity and a name you choose. It is
-never reset automatically. Source-checkout demo commands below remain useful for
-repeatable development previews.
-
-From a development checkout after setup:
+After development setup:
 
 ```sh
 make demo
 ```
 
-Open the printed address and select **Riverside** or **Courtyard** from the scene
-dropdown. The sample includes original pixel artwork, layers, markers,
-collision metadata and an animated character. Select the character on its object
-layer to try animation and movement previews.
+Choose **Open scene…**, then **Riverside** or **Courtyard**. Select the character
+on its object layer to try animation and movement previews.
 
-![The editable sample project](docs/screenshots/standalone-demo.png)
+The canonical sample lives in [assets/demo/](assets/demo/README.md), with editable
+Aseprite sources, exported PNGs, a gbc-atlas manifest and the portable Forge project.
+It is included in the installed package and covered by this project's MIT license.
 
-The canonical sample lives in [`assets/demo/`](assets/demo/README.md): editable
-Aseprite artwork, exported PNGs and a gbc-atlas manifest, and the portable Forge
-project built from that atlas. `make demo` copies the project into `.demo/` and
-restores its scenes and assets on **every launch**. No artwork tools are needed
-to run it. The installed wheel includes the same project.
-
-To keep editing without a reset, use `make run PROJECT=.demo` or export the project
-to another folder. `make demo DEMO_ROOT=/path/to/demo` chooses another working
-directory with the same reset behavior; unrelated projects are refused. Resets
-retain transaction recovery history and unrelated files. The sample artwork is
-covered by this project's MIT license.
+**Every `make demo` launch resets its working copy** in `.demo/`. To preserve edits,
+use `make run PROJECT=.demo` on later launches or export to another folder.
+`make demo DEMO_ROOT=/path/to/demo` chooses a different resettable working copy.
+The sample created through the browser is your own project and is never reset
+by these commands.
 
 ## Development
 
-See the [documentation index](docs/README.md) and
-[documentation policy](docs/DOCUMENTATION.md). Run `make docs-check` for every change.
+Install **Python 3.13**, **Poetry 2.4–2.x**, **Node 24 (24.12+)**, **npm** and **Make**
+on your `PATH`. Run commands from the repository root. See the
+[Poetry installation guide](https://python-poetry.org/docs/#installation) if needed.
 
-Install **Python 3.13**, **Poetry 2.4–2.x**, **Node 24 (24.12+)**, **npm**, and **Make**
-on your `PATH`. See the [Poetry installation guide](https://python-poetry.org/docs/#installation)
-if needed. Run commands from the repository root.
+```sh
+make setup PYTHON=python3.13
+make run
+```
 
-`.python-version` selects Python 3.13.13 with pyenv; `.nvmrc` and `.node-version`
-select Node 24 with nvm and nodenv respectively. Run `pyenv install -s` and
-`nvm install && nvm use` when using those managers. `.npmrc` makes npm reject
-Node versions outside the supported Node 24 range. After switching Python,
-rerun `make setup PYTHON=python3.13` to select the development interpreter.
+Setup checks tools, creates a Poetry-managed `.venv`, installs locked dependencies
+and bundles the browser UI. It does not install Poetry itself. `.python-version`
+selects Python 3.13.13 with pyenv; `.nvmrc` and `.node-version` select Node 24.
 The installed package continues to support Python 3.10+.
-
-`make setup` checks tools, creates a Poetry-managed `.venv`, installs locked
-dependencies and builds the browser UI. It does not install Poetry itself.
-`make help` lists the available commands.
 
 | Command | What it does |
 | --- | --- |
-| `make run` | Rebuild the UI and open the project selector for `.forge_project/` |
-| `make run PROJECT_ROOT="/path/to/projects"` | Browse projects in another root |
-| `make run PROJECT="/path/to/world"` | Open one project directly |
-| `make demo [DEMO_ROOT=/path]` | Restore the checked-in sample into a working copy and open it |
-| `make run PORT=8777` | Use another local port; also works with `make demo` |
-| `make check-deps` | Check tools and the Python dependency lock without installing |
+| `make run [PROJECT_ROOT=/path]` | Rebuild the UI and browse projects |
+| `make run PROJECT=/path` | Rebuild and open one project directly |
+| `make demo [DEMO_ROOT=/path]` | Reset a working copy of the tracked sample and open it |
+| `make run PORT=8777` | Choose another port; also works with `make demo` |
+| `make check-deps` | Check tools and the Python dependency lock |
 | `make frontend` | Type-check and rebuild the browser UI |
-| `make lint` / `make format` | Check code style, scoped Python types, or apply formatting |
-| `make typecheck-python` | Check Python shared primitives and saved-read contracts |
-| `make typecheck` | Run strict TypeScript checks |
+| `make lint` / `make format` | Check style and scoped Python types, or apply formatting |
+| `make docs-check` | Check documentation links and record structure |
+| `make typecheck-python` / `make typecheck` | Run scoped Python or strict TypeScript checks |
 | `make test` | Run Python and TypeScript tests |
-| `make test-python` / `make test-frontend` | Run Python tests or all TypeScript suites |
 | `make test-frontend-<suite>` | Run one TypeScript suite, such as `drafts` or `model` |
-| `make test-browser [CHROME=/path]` | Run all Chrome acceptance suites in disposable directories |
-| `make test-standalone-browser` / `make test-drafts-browser` | Run editor or draft recovery Chrome acceptance separately |
+| `make test-browser [CHROME=/path]` | Run Chrome acceptance in disposable workspaces |
 | `make check` | Run lint, tests and Chrome acceptance |
-| `make build` | Rebuild the UI, build wheel/source distributions and check metadata |
+| `make build` | Bundle the UI, build wheel/source distributions and check metadata |
 | `make check-dist` | Install the built wheel in an isolated environment and smoke-test it |
-| `make clean` | Remove build outputs and `node_modules`; keep your projects |
-| `make clean-demo` | Delete the default `.demo/`, including saved sample edits |
 
-Stop the sample server before `make clean-demo`. Custom demo directories are never
-removed by that command. Default project and sample directories are Git-ignored.
-Override tool paths with `PYTHON`, `POETRY`, or `NPM` when needed.
-
-Install the test browser once with `npx playwright install chromium` after setup.
-`make test-playwright-browser` runs all regular suites under `tests/playwright/`;
-`npm run test:playwright -- --ui` opens their interactive runner. All suites use
-Playwright Chromium by default; pass `CHROME=/path/to/chrome` to override it.
-See [browser testing](docs/BROWSER-TESTING.md) for the domain layout, single-suite
-selection, readiness, traces, installed-wheel checks and optional MCP runs.
-Optional official Tiled interoperability checks run with
+`make help` lists all commands. Install the test browser once with
+`npx playwright install chromium` after setup. See [browser testing](docs/BROWSER-TESTING.md)
+for suite selection, traces, installed-wheel checks and optional MCP runs.
+Optional official Tiled checks use
 `make test-tiled TILED=/path/to/Tiled RASTERIZER=/path/to/tmxrasterizer`.
 
-Edit TypeScript in `frontend/` and Python in `src/gbc_scene_forge/`.
-Generated JavaScript is Git-ignored. After frontend edits, run `make frontend`
-and reload the page; launch, demo, browser-test and build commands rebuild it for
-you. Release packages include the prebuilt UI.
+Edit TypeScript in [frontend/](frontend/) and Python in
+[src/gbc_scene_forge/](src/gbc_scene_forge/). Generated JavaScript is Git-ignored;
+launch, demo, browser-test and build commands rebuild it. Release packages include
+the prebuilt UI. See the [backend architecture](docs/ARCHITECTURE.md),
+[frontend architecture](docs/FRONTEND-ARCHITECTURE.md) and [test organization](tests/README.md)
+for ownership and contracts.
 
-Optional [GBC palette checks](docs/PALETTE-BUDGETS.md) report scene requirements
-across atlases, with separate background/window and sprite budgets, explicit
-runtime reservations and navigable contributors. Generic editing and Tiled
-export remain available without a target profile.
-
-[Reusable object definitions](docs/STANDALONE.md#reusable-object-definitions) provide
-typed fields, shared defaults, instance overrides and navigable validation for
-points, rectangles and sprites.
-
-[World view and scene connections](docs/STANDALONE.md#world-view-and-scene-connections)
-let you arrange scenes, author one-way or two-way links between object endpoints,
-and follow or repair connections with navigable findings.
-
-[Project diagnostics](docs/STANDALONE.md#project-diagnostics) reports content errors,
-unused assets, and movement findings under explicitly selected assumptions.
-
-Use **Hide Library** and **Hide Inspector** beside the scene selector to reclaim
-canvas width while editing. Either pane can be reopened independently; choices
-last until the editor is reloaded.
-
-Choose **Review scene** in the canvas toolbar for a larger view with the authoring
-panels hidden. Drag to pan, use zoom or Fit scene, and choose **Return to editing**
-when finished. See the [review mode guide](docs/user/review-mode.md).
-
-Clipboard editing, duplication, transforms and reusable project stamps are described
-in the [composition guide](docs/STANDALONE.md#clipboard-and-reusable-stamps).
-
-Import ordinary PNG tilesheets or supported external Tiled JSON maps from the
-Library import dialog. See the [import tutorial](docs/user/import-artwork.md) for
-slicing previews, reimport and the supported Tiled subset.
-
-Paint connected roads, walls and shorelines with [terrain brushes](docs/user/terrain-brushes.md).
-
-Optional [GBC target budgets](docs/user/gbc-budgets.md) report static source-tile
-and OAM estimates alongside palette requirements, with explicit runtime limitations.
-
-Author [wide and tall scenes](docs/user/scene-dimensions.md), including 480×9 cells
-at grid 16, within 65,536 cells and 8,192 pixels per axis.
-
-Copy the scene URL to reopen its saved state directly; see [scene links](docs/user/scene-links.md).
-
-See [the 0.46.1 release notes](docs/RELEASE-0.46.1.md) and
-[building and releasing](docs/RELEASING.md) for release validation and publication.
+Use the [documentation index](docs/README.md) and [documentation policy](docs/DOCUMENTATION.md).
+Run `make docs-check` for every change. See the [0.46.1 release notes](docs/RELEASE-0.46.1.md)
+and [building and releasing](docs/RELEASING.md) for release procedures.
 
 ## License
 
 [MIT](LICENSE). Copyright (c) 2026 Michael Clifford.
-
-Python contributors: see the [backend domain map](docs/ARCHITECTURE.md) for service
-ownership, guarded reads, transaction boundaries and the isolated legacy code.
