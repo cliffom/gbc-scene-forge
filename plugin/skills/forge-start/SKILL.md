@@ -67,6 +67,16 @@ browser-local drafts/Undo belong to that browser. Review the exact final artwork
 candidate, then commit with its current receipt. After a conflict or browser edit,
 read fresh revisions and preserve the user's work through existing recovery flows.
 
+Compact handles persist across reset/restart; each changed handle retains another
+candidate against the shared 256-record / 64 MiB quota. Recover handles and inspect
+quota with `list_artwork_candidates`. Before explicitly discarding a selected
+candidate, preserve its full envelope with `export_artwork_candidate`, then use
+`release_artwork_candidate` to free its sidecar. Release does not delete saved
+artwork. Saving or browser adoption does not release agent handles. Never infer
+that a stale base or another revision makes an unpublished branch disposable.
+Stamp creation/placement, frame-specific review and bulk candidate archives use
+the browser or the full direct-launch MCP inventory.
+
 After the small create → inspect → refine → save task, offer two useful choices,
 such as place the artwork in a scene or add another animation frame. Find portable
 export through `export_bundle` for saved content, or the browser for exports above

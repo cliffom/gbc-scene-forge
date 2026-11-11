@@ -58,10 +58,12 @@ AUTHORING_NAMES = frozenset(
         "edit_artwork_layers",
         "edit_artwork_layout",
         "read_artwork_pixels",
+        "list_artwork_candidates",
+        "export_artwork_candidate",
+        "release_artwork_candidate",
         "review_artwork_candidate",
         "inspect_artwork_candidate",
         "review_artwork_animation",
-        "review_artwork_frame",
         "commit_artwork",
         "create_scene",
         "create_blockout_scene",
@@ -72,8 +74,6 @@ AUTHORING_NAMES = frozenset(
         "review_artwork",
         "review_scene",
         "import_atlas",
-        "place_stamp",
-        "save_stamp",
         "export_bundle",
     }
 )

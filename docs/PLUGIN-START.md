@@ -10,13 +10,14 @@ this issue does not ship a new installable marketplace release. Existing
 
 Plugin mode uses a fixed 32-tool profile: three setup tools and 29 authoring tools
 for project discovery/creation, artwork and animation inspection/refinement,
-scene/blockout editing, stamps, review/save and export. The demonstrated Codex
+scene/blockout editing, candidate recovery/cleanup, review/save and export. The demonstrated Codex
 client exposed only the alphabetically first 32 tools from the full inventory,
 which hid every setup tool and blocked first use. Both advertisement and dispatch
 now enforce this bounded profile; `capabilities` reports its exact tools and
 `unavailable_tools`. Use browser editing or direct `--project`/`--project-root`
-MCP for other operations, including deletion, duplication, cleanup, palette
-conversion, object definitions, world editing and diagnostics. Those direct
+MCP for other operations, including saved-content deletion, duplication, stamps,
+frame-specific review, palette conversion, object definitions, world editing,
+bulk candidate archives and diagnostics. Those direct
 launch modes retain the full inventory. See the [outcome matrix](AUTHORING-OUTCOMES.md)
 for operation details; its MCP column describes the full direct-launch surface.
 
@@ -88,6 +89,15 @@ installed plugin content; removing the plugin or cache cannot remove a project.
 Temporary artifacts are session-owned in-memory MCP resources; browser-local
 drafts remain owned by the browser. The plugin does not sweep any of these on reset.
 Uninstall/update implementation belongs to #258.
+
+Compact artwork candidates persist in the project across reset/restart and share
+the browser's quota (256 records / 64 MiB). Each changed handle retains another
+immutable candidate. Use `list_artwork_candidates` to recover handles and inspect
+quota, `export_artwork_candidate` to preserve a full envelope, then
+`release_artwork_candidate` only for an explicitly selected candidate that can be
+discarded. Release removes that sidecar, not saved artwork or other candidates.
+Saving or browser adoption does not release the original handles. Keep unpublished
+branches unless the user chooses to discard them; no automatic eviction occurs.
 
 `bin/forge browser --plugin` opens the persisted project/root through the existing
 loopback/token-protected editor, with logs under the user cache. It fails clearly

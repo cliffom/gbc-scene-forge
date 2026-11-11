@@ -61,6 +61,7 @@ class PluginProtocolTests(unittest.TestCase):
                     "kind": "tile",
                     "width": 8,
                     "height": 8,
+                    "compact": True,
                 },
             )
             review = await call(
@@ -118,6 +119,17 @@ class PluginProtocolTests(unittest.TestCase):
                 },
             )
             self.assertGreater(exported["resource"]["size"], 0)
+            inventory = await call("list_artwork_candidates", {"project": "design"})
+            self.assertEqual(inventory["used_count"], 2)
+            recovered = await call(
+                "export_artwork_candidate", {"project": "design", "candidate": refined}
+            )
+            self.assertEqual(recovered["revision"], refined["revision"])
+            self.assertIn("rgba", recovered)
+            await call("release_artwork_candidate", {"project": "design", "candidate": blank})
+            self.assertEqual(
+                (await call("list_artwork_candidates", {"project": "design"}))["used_count"], 1
+            )
             await call("plugin_choose_location", {"mode": "project"})
             self.assertEqual((await client.list_resources()).resources, [])
             self.assertEqual((await call("get_project", {"project": "project"})), catalog)

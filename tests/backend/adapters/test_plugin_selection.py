@@ -50,6 +50,9 @@ class PluginSelectionTests(unittest.TestCase):
                 "get_project",
                 "create_artwork",
                 "edit_artwork_pixels",
+                "list_artwork_candidates",
+                "export_artwork_candidate",
+                "release_artwork_candidate",
                 "review_artwork_candidate",
                 "commit_artwork",
                 "create_scene",
@@ -67,6 +70,78 @@ class PluginSelectionTests(unittest.TestCase):
         self.assertIn("delete_scene", capabilities["unavailable_tools"])
         with self.assertRaisesRegex(ValueError, "bounded plugin profile"):
             session.call("delete_scene", {})
+
+    def test_compact_quota_recovery_after_reset_and_restart(self):
+        session = self.session(self.root)
+        session.call("plugin_choose_location", {"mode": "root"})
+        session.call("create_project", {"name": "Design"})
+        catalog = session.call("get_project", {"project": "design"})
+        blank = session.call(
+            "create_artwork",
+            {
+                "project": "design",
+                "project_revision": catalog["revision"],
+                "atlas_id": "tile",
+                "name": "Tile",
+                "kind": "tile",
+                "width": 8,
+                "height": 8,
+                "compact": True,
+            },
+        )
+        current = blank
+        # Exercise the production count limit, including automatic retention on handle edits.
+        for color in range(255):
+            current = session.call(
+                "edit_artwork_pixels",
+                {
+                    "project": "design",
+                    "candidate": current,
+                    "writes": [{"x": 0, "y": 0, "rgba": [color, 0, 0, 255]}],
+                },
+            )
+        next_edit = {
+            "project": "design",
+            "candidate": current,
+            "writes": [{"x": 0, "y": 0, "rgba": [255, 0, 0, 255]}],
+        }
+        with self.assertRaisesRegex(ValueError, "Candidate limit reached"):
+            session.call("edit_artwork_pixels", next_edit)
+        session.call("plugin_reset_selection", {})
+        session = self.session(self.root)
+        session.call("plugin_choose_location", {"mode": "root"})
+        inventory = session.call("list_artwork_candidates", {"project": "design"})
+        self.assertEqual(inventory["used_count"], 256)
+        self.assertEqual(inventory["remaining_count"], 0)
+        self.assertEqual(
+            {item["handle"] for item in inventory["candidates"]}
+            & {blank["handle"], current["handle"]},
+            {blank["handle"], current["handle"]},
+        )
+        saved = self.snapshot(self.root / "design")
+        recovered = session.call(
+            "export_artwork_candidate", {"project": "design", "candidate": blank}
+        )
+        self.assertEqual(recovered["revision"], blank["revision"])
+        self.assertIn("rgba", recovered)
+        session.call("release_artwork_candidate", {"project": "design", "candidate": blank})
+        after = self.snapshot(self.root / "design")
+        removed = saved.keys() - after.keys()
+        self.assertEqual(len(removed), 1)
+        self.assertTrue(next(iter(removed)).startswith(".forge/artwork-candidates/"))
+        self.assertEqual(after, {key: value for key, value in saved.items() if key not in removed})
+        self.assertEqual(session.call("get_project", {"project": "design"}), catalog)
+        self.assertEqual(
+            session.call("export_artwork_candidate", {"project": "design", "candidate": current})[
+                "revision"
+            ],
+            current["revision"],
+        )
+        edited = session.call("edit_artwork_pixels", next_edit)
+        self.assertNotEqual(edited["handle"], current["handle"])
+        inventory = session.call("list_artwork_candidates", {"project": "design"})
+        self.assertEqual(inventory["used_count"], 256)
+        self.assertNotIn(blank["handle"], {item["handle"] for item in inventory["candidates"]})
 
     def test_clean_first_use_has_no_grant_and_creates_nothing(self):
         session = self.session()

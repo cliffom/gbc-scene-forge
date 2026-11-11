@@ -15,6 +15,26 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Plugin candidate quota recovery (#271 feedback)
+
+- **Scope:** Agent-run local source checks on 2026-11-11, macOS arm64;
+  candidate-lifecycle profile changes based on `7742ac7`.
+- **Method:** Retain 256 distinct 8×8 candidates through compact creation and
+  handle edits, verify the next edit fails, reset/restart and recover the inventory.
+  Export one full envelope, explicitly release its handle and retry the blocked
+  edit. Exercise list/export/release in a real SDK stdio conversation as well.
+- **Result:** All 17 focused plugin tests passed. Quota recovery preserves every
+  other sidecar and saved project file, and the next edit succeeds. The SDK flow
+  saves compact artwork and releases an earlier candidate without changing saved
+  content. The advertised/accepted profile remains within 32 tools, including all
+  setup tools and candidate list/export/release. `make docs-check lint test`
+  passed, including 520 Python tests and the TypeScript suites.
+- **Limits:** Source checks use a synthetic chooser. This does not repeat the
+  native-model verification below with the revised inventory, installed-package
+  acceptance or browser UI checks. The quota regression reaches the record-count
+  limit; it does not fill the separate 64 MiB limit. Stamp creation/placement,
+  frame-specific review and bulk archives require browser/direct-launch workflows.
+
 ## Plugin bootstrap model exposure (#271 feedback)
 
 - **Scope:** Agent-run local source checks on 2026-11-11, macOS 27.0.1 arm64,
