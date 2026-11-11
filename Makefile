@@ -56,6 +56,9 @@ help:
 	@echo '  make typecheck               Run strict TypeScript checking'
 	@echo '  make typecheck-python        Check typed Python storage/service boundaries'
 	@echo '  make build / make check-dist Build distributions / test the installed wheel'
+	@echo '  make build-bundle            Build experimental macOS arm64 runtime (pinned Python archive)'
+	@echo '  make check-bundle            Verify a moved, read-only runtime with the MCP SDK'
+	@echo '  make test-bundle-browser     Render the frozen runtime in Chromium'
 	@echo '  make clean                   Remove build outputs and node_modules; keep projects'
 	@echo '  make clean-demo              Delete the default .demo/ sample and its edits'
 
@@ -193,3 +196,21 @@ test-terrain-browser: frontend
 .PHONY: test-playwright-browser
 test-playwright-browser: frontend
 	CHROME="$(CHROME)" $(NPM) run test:playwright
+
+# Experimental native folder bundles; downstream issues own plugin/release delivery.
+BUNDLE_BUILD ?= build/runtime
+BUNDLE ?= $(BUNDLE_BUILD)/forge-$(VERSION)-macos-arm64
+BUNDLE_CHECK ?= build/runtime-smoke
+PYTHON_ARCHIVE ?= build/runtime-inputs/python.tar.zst
+UV ?= uv
+.PHONY: build-bundle check-bundle
+build-bundle:
+	FORGE_BUILD_MODE=production $(MAKE) build
+	$(PYTHON) runtime/build.py --wheel "$(DIST_WHEEL)" --python-archive "$(PYTHON_ARCHIVE)" --output "$(BUNDLE_BUILD)" --uv "$(UV)"
+
+check-bundle:
+	"$(BUNDLE_BUILD)/build-env/bin/python" tests/packaging/bundle_smoke.py --bundle "$(BUNDLE)" --output "$(BUNDLE_CHECK)"
+
+.PHONY: test-bundle-browser
+test-bundle-browser:
+	FORGE_TEST_BUNDLE="$(abspath $(BUNDLE))/forge" CHROME="$(CHROME)" $(NPM) exec -- playwright test --config tests/playwright/playwright.config.ts bundle.spec.ts

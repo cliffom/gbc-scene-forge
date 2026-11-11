@@ -10,13 +10,13 @@ Run commands from the repository root. Test code is grouped by runner and domain
 | `backend/planning/` | blockout and world authoring |
 | `backend/analysis/` | diagnostics, palette and hardware budgets |
 | `backend/adapters/` | console, HTTP and optional MCP protocol integration |
-| `backend/tooling/` | documentation checker and experimental plugin selection boundaries |
+| `backend/tooling/` | documentation checker, runtime launch and experimental plugin selection boundaries |
 | `backend/architecture/` | backend dependency and installed-entry-point boundaries |
 | `frontend/` | non-browser TypeScript suites grouped by editor, project, artwork, objects, planning, preview and infrastructure |
 | `playwright/` | browser acceptance by domain, with browser fixtures and editor seeds in `playwright/support/` |
 | `support/` | shared synthetic atlas/blockout fixtures and executable server, palette, MCP-writer and Tiled helpers |
 | `fixtures/` | shared palette artwork and provenance used by backend and browser checks |
-| `packaging/` | explicit installed-wheel smoke checks |
+| `packaging/` | explicit installed-wheel and frozen-bundle smoke checks |
 | `legacy/` | historical connector tests and their independent fixtures |
 
 `make test-frontend-domain-contracts` pins original normalized outputs and first
@@ -62,6 +62,15 @@ requires the SDK in `FORGE_MCP_PYTHON`. Plain runs retain adapter checks and ski
 the SDK-only test when the extra is absent. `packaging/package_smoke.py` is
 explicitly run with `python -I` after wheel installation, outside unit discovery.
 It imports only the installed application, never test helpers.
+
+`make check-bundle` runs `packaging/bundle_smoke.py` with the locked SDK as a driver
+and no Forge imports. The executable child runs from a relocated read-only copy,
+with an empty PATH and invalid external Python settings. It checks guarded native
+artwork, scene rendering, export/reopen, raw protocol stdout, HTTP assets and demo
+restoration. `make test-bundle-browser` separately launches the real frozen browser
+with an empty PATH and captures its sample editor. It is skipped in ordinary
+Playwright runs unless `FORGE_TEST_BUNDLE` is supplied. See the
+[runtime guide](../docs/RUNTIME-BUNDLES.md) for build inputs and bounded evidence.
 
 `backend/tooling/test_plugin_probe.py` checks the experimental launcher's explicit
 external selection, symlink containment and argument-override rejection. The

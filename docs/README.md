@@ -22,6 +22,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 - [Editor layout guidelines](UI-DESIGN.md)
 - [Documentation policy](DOCUMENTATION.md)
 - [Building and releasing](RELEASING.md)
+- [Experimental self-contained runtime bundles](RUNTIME-BUNDLES.md)
 - [Changelog](CHANGELOG.md)
 - [Validation record](VALIDATION.md)
 - [Roadmap](ROADMAP.md)
@@ -42,6 +43,8 @@ Test ownership and commands are in [test organization](../tests/README.md).
 - [Create and edit pixel artwork](user/pixel-artwork.md)
 
 ## Evaluations
+
+- [Self-contained runtime bundle measurements (#255)](evaluations/runtime-bundle.md)
 
 - [Self-contained Codex plugin feasibility (#254)](evaluations/plugin-feasibility.md)
 - [Drawing space, task entry and native PNG downloads (#228–#234)](evaluations/working-space.md)

@@ -1,0 +1,86 @@
+{
+  "date": "2026-11-11",
+  "base_revision": "72c4c68",
+  "build": {
+    "schema_version": 1,
+    "version": "0.46.1",
+    "target": "macos-arm64",
+    "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "os_libraries": [
+      "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+      "/System/Library/Frameworks/SystemConfiguration.framework/Versions/A/SystemConfiguration",
+      "/usr/lib/libSystem.B.dylib",
+      "/usr/lib/libedit.3.dylib",
+      "/usr/lib/libiconv.2.dylib",
+      "/usr/lib/libncurses.5.4.dylib",
+      "/usr/lib/libpanel.5.4.dylib",
+      "/usr/lib/libz.1.dylib"
+    ],
+    "config": {
+      "schema_version": 1,
+      "target": "macos-arm64",
+      "system": "Darwin",
+      "machine": "arm64",
+      "python_version": "3.13.13",
+      "python_build": "20260602",
+      "python_url": "https://github.com/astral-sh/python-build-standalone/releases/download/20260602/cpython-3.13.13%2B20260602-aarch64-apple-darwin-pgo%2Blto-full.tar.zst",
+      "python_sha256": "643c3645d34338230e7c8100457ed25ea1660216054de38238326847a055b9f8",
+      "uv_version": "0.13.7"
+    },
+    "wheel_sha256": "f309fc71d480b1b15ccdfe33df26aac452553b80b8b35711cf860ff55b753c81",
+    "inputs": {
+      "build-requirements.in": "4439c693c19271e4b0bdc56c641c36b3b06010b1b22eae6733cd244d752e85d5",
+      "build-requirements.txt": "240925835e333544c52a63c01e82b01a8543be38f00ae418ae29a703fee258b9",
+      "build.py": "09fce23394d83e34823bf2f268dfc3f8a44c1609f3fd44ae84c39f48538cd2eb",
+      "config.json": "7a8537271d08d029f66b5aaa8be9e713a6626ab927bb406c6b06b3d77f62d46d",
+      "entry.py": "592e86e2d88bbd1eaf50e304e412da7679a019f8e5bdaacc2cc1b3696ee42cab",
+      "notices.py": "0e0d34c4a8ae6baeb89d8c37e0308369b04a20c05ee68372be9f2fb76dd4acc1",
+      "runtime-requirements.in": "4fe75062c5d424bbc86a8cd58c63ab19aeffe4f0a0e100022252c8032e12ee5b",
+      "runtime-requirements.txt": "fbef807e66e09ad61b7c74cf02ea53dba1eb20ab5e25efab777c96752ed6f2df"
+    },
+    "build_seconds": 9.622,
+    "installed_file_bytes": 37953952,
+    "gzip_sample_bytes": 19034650
+  },
+  "installed_bundle": {
+    "initialize_seconds": 0.264,
+    "tool_count": 61,
+    "project": "bundle-cafe",
+    "scene_id": "effb2c53-fd2d-4bd0-82be-9b60c19ca912",
+    "browser": {
+      "assets_served": true,
+      "sample_restored": true
+    },
+    "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "version": "0.46.1",
+    "bundle_inputs": {
+      "build-requirements.in": "4439c693c19271e4b0bdc56c641c36b3b06010b1b22eae6733cd244d752e85d5",
+      "build-requirements.txt": "240925835e333544c52a63c01e82b01a8543be38f00ae418ae29a703fee258b9",
+      "build.py": "09fce23394d83e34823bf2f268dfc3f8a44c1609f3fd44ae84c39f48538cd2eb",
+      "config.json": "7a8537271d08d029f66b5aaa8be9e713a6626ab927bb406c6b06b3d77f62d46d",
+      "entry.py": "592e86e2d88bbd1eaf50e304e412da7679a019f8e5bdaacc2cc1b3696ee42cab",
+      "notices.py": "0e0d34c4a8ae6baeb89d8c37e0308369b04a20c05ee68372be9f2fb76dd4acc1",
+      "runtime-requirements.in": "4fe75062c5d424bbc86a8cd58c63ab19aeffe4f0a0e100022252c8032e12ee5b",
+      "runtime-requirements.txt": "fbef807e66e09ad61b7c74cf02ea53dba1eb20ab5e25efab777c96752ed6f2df"
+    },
+    "readonly_unchanged": true,
+    "runtime_path_empty": true
+  },
+  "verification_sha256": {
+    "tests/packaging/bundle_smoke.py": "627ad0e1959b9101a99be7f63e435edc7555ddd44c6a4fef48930910a504177d",
+    "tests/playwright/packaging/bundle.spec.ts": "49e0dcdfd46a160f2b1ff3bf5886641b787a9d1cca902c34360b6c1614ad7219",
+    "src/gbc_scene_forge/project/sample.py": "fd77988b35645840bedc9302fbbe87492755124c3c8818227ab6c2ae248b4911",
+    "tests/backend/project/test_sample.py": "e1bb07a8bb1e5be555d291a525e54ef66fc4a0a5ad28783e874a7790b2670568",
+    "Makefile": "95bb3989e3a84f28178b3475c354fda5afeeb0a5661401f43fea0633823c9fac",
+    "pyproject.toml": "2fc43ee736f7d6fe75c59528634c5fae1c64e9f839080badf36c210cb773ff52"
+  },
+  "browser": {
+    "playwright": "1.64.1",
+    "chromium": "156.0.8078.4",
+    "viewport": [
+      1440,
+      1000
+    ],
+    "method": "Headless automated sample creation, saved scene open and reload; root agent inspected the archived screenshot."
+  }
+}
