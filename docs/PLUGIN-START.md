@@ -124,6 +124,10 @@ after 30 minutes without editor requests. Open tabs that poll saved updates keep
 the server active. Opening again refreshes its idle deadline. Health/status polling
 does not. Idle/explicit shutdown waits for admitted requests, including saves;
 crash recovery uses the existing durable journal, without replaying a tool call.
+An already-open browser also recovers interrupted writes before its next content
+request; it reports contention while another writer still holds the project lock.
+Requests recheck project identity after queuing and, for mutations, after receiving
+the body, so a delayed upload cannot write into a replacement directory.
 
 `action:"status"` reports whether a recorded browser is actually live. To stop
 one, use `action:"stop", instance:<current instance>` **only when the user asks**;

@@ -15,6 +15,33 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Managed browser request recovery (PR #272 review)
+
+- **Scope:** Agent-run local source checks on 2026-11-11, macOS arm64; fixes
+  based on PR #272 revision `e2987f3`. Package identity remains 0.46.1.
+- **Method:** Keep a managed browser running while a source writer exits directly
+  after scene-map publication. Exercise its next read and next save independently,
+  then reopen the project. Inject a second writer crash between HTTP preparation
+  and saved-read locking. Hold the project lock to test live-writer contention.
+  Pause an authenticated POST after headers, replace its project directory with
+  a copy, then deliver its body and compare all replacement-file bytes. Run
+  `make lint test`, production `make build check-dist`, the 16 lifecycle/launcher
+  regressions against the installed wheel and the four managed/draft Playwright
+  cases with the installed interpreter. Inspect the restored 1440 × 1000 view.
+- **Result:** All 16 focused lifecycle/launcher tests pass. Interrupted writes
+  recover before subsequent content access; acknowledged saves remain reopenable.
+  Active writers remain protected by the nonblocking lock. The delayed POST returns
+  409 without modifying the replacement directory. Review had reproduced both
+  failures on `e2987f3`: a later browser save blocked recovery, and a delayed POST
+  wrote into a different directory identity. Final documentation/lint/types,
+  530 Python tests and the TypeScript suites pass. All seven wheel smoke tests,
+  16 installed-wheel regressions and four browser cases pass; the restored scene
+  remains unsaved and its saved map is unchanged.
+- **Limits:** Fault injection and request synchronization use source subprocesses
+  and synthetic grants. The earlier frozen-runtime report below predates these
+  review fixes; it does not establish installed-client or native fault-injection
+  coverage for this revision.
+
 ## Managed plugin browser lifecycle (#257)
 
 - **Scope:** Agent-run local checks on 2026-11-11, macOS 27.0.1 arm64,

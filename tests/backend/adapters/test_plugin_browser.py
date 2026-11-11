@@ -1,10 +1,13 @@
 """Real loopback workers: sharing, crash recovery, ownership and fixed origins."""
 
+import http.client
 import json
+import shutil
 import socket
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -16,6 +19,23 @@ from gbc_scene_forge.adapters.plugin.browser import BrowserManager, control, loa
 from gbc_scene_forge.adapters.plugin.selection import Selection
 from gbc_scene_forge.adapters.plugin.session import PluginSession
 from gbc_scene_forge.project.application import Project
+
+INTERRUPT_SCRIPT = """
+import os, sys
+from pathlib import Path
+from gbc_scene_forge.project.application import Project
+from gbc_scene_forge.storage import transactions
+project = Project(Path(sys.argv[1]))
+scene = project.scenes.load(sys.argv[2])
+original = transactions.atomic_write
+def interrupt(path, data):
+    original(path, data)
+    if path == project.root / 'scenes' / (scene['id'] + '.tmj'):
+        os._exit(73)  # Abrupt loss after publication: skip Python rollback/finally.
+transactions.atomic_write = interrupt
+changed = {**scene['scene'], 'width': 3, 'cells': [[''] * 3 for _ in range(2)]}
+project.scenes.save(scene['id'], changed, scene['revision'], project.catalog()['revision'])
+"""
 
 
 class PluginBrowserTests(unittest.TestCase):
@@ -167,32 +187,19 @@ class PluginBrowserTests(unittest.TestCase):
         self.assertEqual(innocent.read_text(), "User content")
         self.assertEqual(self.children, [])
 
-    def test_killed_save_recovers_existing_journal_before_browser_handoff(self):
-        scene = self.project.scenes.create("Garden", 2, 2, 8, self.project.catalog()["revision"])
-        source = self.project.root / "scenes" / (scene["id"] + ".tmj")
-        before = source.read_bytes()
-        script = """
-import os, sys
-from pathlib import Path
-from gbc_scene_forge.project.application import Project
-from gbc_scene_forge.storage import transactions
-project = Project(Path(sys.argv[1]))
-scene = project.scenes.load(sys.argv[2])
-original = transactions.atomic_write
-def interrupt(path, data):
-    original(path, data)
-    if path == project.root / 'scenes' / (scene['id'] + '.tmj'):
-        os._exit(73)  # Abrupt loss after publication: skip Python rollback/finally.
-transactions.atomic_write = interrupt
-changed = {**scene['scene'], 'width': 3, 'cells': [[''] * 3 for _ in range(2)]}
-project.scenes.save(scene['id'], changed, scene['revision'], project.catalog()['revision'])
-"""
+    def interrupt_scene_save(self, scene):
         result = subprocess.run(
-            [sys.executable, "-c", script, str(self.project.root), scene["id"]],
+            [sys.executable, "-c", INTERRUPT_SCRIPT, str(self.project.root), scene["id"]],
             capture_output=True,
             timeout=10,
         )
         self.assertEqual(result.returncode, 73, result.stderr)
+
+    def test_killed_save_recovers_existing_journal_before_browser_handoff(self):
+        scene = self.project.scenes.create("Garden", 2, 2, 8, self.project.catalog()["revision"])
+        source = self.project.root / "scenes" / (scene["id"] + ".tmj")
+        before = source.read_bytes()
+        self.interrupt_scene_save(scene)
         self.assertNotEqual(source.read_bytes(), before)
         self.selection.save(self.selection.prepare(self.project.root, "project"))
         session = PluginSession(self.selection)
@@ -201,4 +208,171 @@ project.scenes.save(scene['id'], changed, scene['revision'], project.catalog()['
         loaded = json.loads(self.read(opened["url"] + "api/scene/" + scene["id"]))
         self.assertEqual(loaded["scene"], scene["scene"])
         self.assertIn("recovered", {r["status"] for r in self.project.transactions.records()})
+        self.stop(opened)
+
+    def test_live_browser_recovers_killed_writer_before_reads_and_saves(self):
+        scene = self.project.scenes.create("Garden", 2, 2, 8, self.project.catalog()["revision"])
+        opened = self.manager.request(self.project)
+        catalog = json.loads(self.read(opened["url"] + "api/project"))
+        source = self.project.root / "scenes" / (scene["id"] + ".tmj")
+        for action in ("read", "save"):
+            with self.subTest(action=action):
+                before = source.read_bytes()
+                self.interrupt_scene_save(scene)
+                self.assertNotEqual(source.read_bytes(), before)
+                if action == "read":
+                    loaded = json.loads(self.read(opened["url"] + "api/scene/" + scene["id"]))
+                    self.assertEqual(loaded, scene)
+                    self.assertEqual(source.read_bytes(), before)
+                changed = {
+                    **scene["scene"],
+                    "width": 4 if action == "read" else 5,
+                    "cells": [[""] * (4 if action == "read" else 5) for _ in range(2)],
+                }
+                saved = json.loads(
+                    self.read(
+                        opened["url"] + "api/save-scene",
+                        headers={
+                            "Content-Type": "application/json",
+                            "X-Scene-Token": catalog["token"],
+                        },
+                        data=json.dumps(
+                            {
+                                "id": scene["id"],
+                                "scene": changed,
+                                "revision": scene["revision"],
+                                "project_revision": self.project.catalog()["revision"],
+                            }
+                        ).encode(),
+                    )
+                )
+                # Reopening must recover cleanly and retain the acknowledged save.
+                scene = Project(self.project.root).scenes.load(scene["id"])
+                self.assertEqual(scene["scene"], saved["scene"])
+                self.assertEqual(scene["scene"]["width"], changed["width"])
+                self.assertNotIn(
+                    "applying", {r["status"] for r in self.project.transactions.records()}
+                )
+        self.assertEqual(
+            self.manager.request(self.project, action="status")["instance"], opened["instance"]
+        )
+        self.stop(opened)
+
+    def test_writer_crash_after_http_preparation_recovers_under_the_read_lock(self):
+        scene = self.project.scenes.create("Garden", 2, 2, 8, self.project.catalog()["revision"])
+        armed = self.base / "inject-crash"
+        script = self.base / "writer.py"
+        script.write_text(INTERRUPT_SCRIPT)
+        self.manager.command = [
+            sys.executable,
+            "-c",
+            """
+import subprocess, sys
+from pathlib import Path
+from gbc_scene_forge.adapters.plugin import browser
+from gbc_scene_forge.storage.transactions import Transactions
+original = Transactions.recover
+def recover(self):
+    original(self)
+    marker = Path(sys.argv[1])
+    if marker.exists():
+        marker.unlink()
+        # A writer enters and dies after the HTTP preparation lock was released,
+        # before the request acquires its actual saved-read lock.
+        result = subprocess.run([sys.executable, *sys.argv[2:]], timeout=5)
+        assert result.returncode == 73, result.returncode
+Transactions.recover = recover
+raise SystemExit(browser.worker_main())
+""",
+            str(armed),
+            str(script),
+            str(self.project.root),
+            scene["id"],
+        ]
+        opened = self.manager.request(self.project)
+        armed.touch()
+        loaded = json.loads(self.read(opened["url"] + "api/scene/" + scene["id"]))
+        self.assertFalse(armed.exists(), "Writer crash was not injected")
+        self.assertEqual(loaded, scene)
+        self.assertIn("recovered", {r["status"] for r in self.project.transactions.records()})
+        self.stop(opened)
+
+    def test_live_browser_does_not_recover_over_an_active_writer(self):
+        opened = self.manager.request(self.project)
+        with self.project.transactions.locked():
+            with self.assertRaises(HTTPError) as caught:
+                self.read(opened["url"] + "api/project")
+            self.assertIn(b"Another scene editor", caught.exception.read())
+        self.assertEqual(caught.exception.code, 400)
+        self.assertTrue(json.loads(self.read(opened["url"] + "api/project"))["project"])
+        self.stop(opened)
+
+    def test_delayed_post_rejects_replaced_directory_after_receiving_body(self):
+        admitted = self.base / "post-admitted"
+        # Observe entry into the serialized POST handler, before reading its body.
+        self.manager.command = [
+            sys.executable,
+            "-c",
+            """
+import sys
+from pathlib import Path
+from gbc_scene_forge.adapters.plugin import browser
+original = browser.make_handler
+def make_handler(*args, **kwargs):
+    handler = original(*args, **kwargs)
+    original_post = handler._post
+    def post(self):
+        Path(sys.argv[1]).touch()
+        return original_post(self)
+    handler._post = post
+    return handler
+browser.make_handler = make_handler
+raise SystemExit(browser.worker_main())
+""",
+            str(admitted),
+        ]
+        opened = self.manager.request(self.project)
+        catalog = json.loads(self.read(opened["url"] + "api/project"))
+        port = int(opened["url"].split(":")[-1].strip("/"))
+        connection = http.client.HTTPConnection("127.0.0.1", port, timeout=3)
+        self.addCleanup(connection.close)
+        data = json.dumps(
+            {
+                "name": "Delayed scene",
+                "width": 2,
+                "height": 2,
+                "grid": 8,
+                "project_revision": catalog["revision"],
+            }
+        ).encode()
+        connection.putrequest("POST", "/api/create-scene")
+        connection.putheader("Content-Type", "application/json")
+        connection.putheader("X-Scene-Token", catalog["token"])
+        connection.putheader("Content-Length", str(len(data)))
+        connection.endheaders()
+        deadline = time.monotonic() + 3
+        while not admitted.exists() and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertTrue(admitted.exists(), "POST did not reach the handler")
+        moved = self.base / "moved"
+        self.project.root.rename(moved)
+        shutil.copytree(moved, self.project.root)
+        before = {
+            str(path.relative_to(self.project.root)): path.read_bytes()
+            for path in self.project.root.rglob("*")
+            if path.is_file()
+        }
+        connection.send(data)
+        response = connection.getresponse()
+        self.assertEqual(response.status, 409, response.read())
+        self.assertEqual(
+            before,
+            {
+                str(path.relative_to(self.project.root)): path.read_bytes()
+                for path in self.project.root.rglob("*")
+                if path.is_file()
+            },
+        )
+        shutil.rmtree(self.project.root)
+        moved.rename(self.project.root)
         self.stop(opened)

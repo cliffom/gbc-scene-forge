@@ -83,6 +83,9 @@ real checkpoint without changing saved content. Use `FORGE_TEST_PYTHON` to run
 its process driver against an installed wheel. Backend browser tests cover
 occupied ports, stale records, ownership, idle expiry, invalid paths and abrupt
 exit after scene-map publication with journal recovery on handoff.
+Regressions also keep the browser alive through an interrupted writer, recover
+before either its next read or save, preserve active-writer contention, and reject
+a POST whose project directory is replaced while its body is still arriving.
 
 `backend/tooling/test_plugin_probe.py` checks the experimental launcher's explicit
 external selection, symlink containment and argument-override rejection. The

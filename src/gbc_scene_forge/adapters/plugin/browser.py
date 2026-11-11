@@ -17,6 +17,7 @@ from urllib.parse import quote, urlparse
 
 from gbc_scene_forge import __version__
 from gbc_scene_forge.adapters.http.server import make_handler
+from gbc_scene_forge.core.errors import Conflict
 from gbc_scene_forge.core.validation import require
 
 from .selection import Selection
@@ -245,7 +246,14 @@ def worker(config):
             "instance": secrets.token_hex(16),
         }
         identity = {key: record[key] for key in ("instance", "project", "runtime")}
-        base_handler = make_handler(project, token)
+
+        def prepare_request():
+            try:
+                selection.validate(project_record)
+            except (ValueError, OSError) as error:
+                raise Conflict("Project location changed; choose it again") from error
+
+        base_handler = make_handler(project, token, prepare_request=prepare_request)
 
         class Handler(base_handler):
             def log_request(self, *args):
@@ -271,11 +279,6 @@ def worker(config):
                         self.reply(identity)
                     else:
                         self.reply({"error": "Not found"}, status=404)
-                    return
-                try:
-                    selection.validate(project_record)
-                except (ValueError, OSError):
-                    self.reply({"error": "Project location changed; choose it again"}, status=409)
                     return
                 self.server.last_editor_request = time.monotonic()
                 getattr(super(), "do_" + method)()
