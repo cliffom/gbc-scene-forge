@@ -203,12 +203,14 @@ a.save(c,receipt=p.artwork.reviews.animation(c,'walk',scale=1)['receipt'])
 import asyncio,copy,json,os,sys
 from mcp import ClientSession,StdioServerParameters
 from mcp.client.stdio import stdio_client
+sys.path.insert(0,'tests')
+from support.project_busy import call_tool
 async def main():
     params=StdioServerParameters(command=sys.executable,args=['-m','gbc_scene_forge.mcp_server','--project',sys.argv[1]],env=dict(os.environ))
     async with stdio_client(params) as (read,write), ClientSession(read,write) as client:
         await client.initialize()
         async def call(name,**args):
-            r=await client.call_tool(name,dict(project='project',**args))
+            r=await call_tool(client,name,dict(project='project',**args))
             assert not r.isError,r.content
             return r.structuredContent
         async def opened():

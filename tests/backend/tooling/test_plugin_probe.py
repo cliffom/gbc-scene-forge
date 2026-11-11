@@ -10,6 +10,8 @@ from contextlib import redirect_stderr
 from pathlib import Path
 from unittest.mock import patch
 
+from gbc_scene_forge.adapters.mcp.tools import TOOLS, Adapter
+
 SCRIPT = Path(__file__).resolve().parents[3] / "examples/plugin_probe/entry.py"
 spec = importlib.util.spec_from_file_location("plugin_probe_entry", SCRIPT)
 entry = importlib.util.module_from_spec(spec)
@@ -68,6 +70,34 @@ class PluginProbeSelectionTests(unittest.TestCase):
             ):
                 entry.main()
             self.assertEqual(caught.exception.code, 2)
+
+
+class PluginProbeToolProfileTests(unittest.TestCase):
+    def test_authoring_profile_keeps_guarded_workflow_and_rejects_other_tools(self):
+        definitions = entry.tool_profile(TOOLS, "authoring")
+        self.assertEqual({tool["name"] for tool in definitions}, entry.AUTHORING_TOOLS)
+        self.assertLess(len(definitions), 32)
+        # A filtered tool cannot be called by guessing its name, and capabilities
+        # must describe the same restricted surface the transport advertises.
+        with (
+            tempfile.TemporaryDirectory() as root,
+            patch("gbc_scene_forge.adapters.mcp.tools.TOOLS", definitions),
+        ):
+            adapter = Adapter(Path(root))
+            self.assertEqual(
+                adapter.call("capabilities", {})["tools"], [tool["name"] for tool in definitions]
+            )
+            with self.assertRaisesRegex(ValueError, "Unsupported capability"):
+                adapter.call("delete_artwork", {})
+            self.assertEqual(list(Path(root).iterdir()), [])
+        self.assertIn("delete_artwork", {tool["name"] for tool in TOOLS})
+
+    def test_full_profile_and_invalid_profile_do_not_modify_definitions(self):
+        before = list(TOOLS)
+        self.assertEqual(entry.tool_profile(TOOLS, "full"), before)
+        with self.assertRaisesRegex(ValueError, "Unknown probe tool profile"):
+            entry.tool_profile(TOOLS, "unknown")
+        self.assertEqual(TOOLS, before)
 
 
 if __name__ == "__main__":

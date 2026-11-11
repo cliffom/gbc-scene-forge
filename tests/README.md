@@ -137,7 +137,8 @@ smoke checks retain isolated mode and do not do this.
 Live-browser MCP writers and individual animation-fixture operations use bounded
 project-busy handling from `support/project_busy.py`: at most 20 attempts with
 50 ms between attempts. MCP retries require the exact structured busy message
-with `invalid_request` (direct lock contention) or `conflict` (commit wrapping);
+with `invalid_request` (direct lock contention), `conflict` (commit wrapping),
+or `busy` (artwork operations);
 direct Python fixture operations retry `TransactionBusy` or a `Conflict` whose
 explicit cause is `TransactionBusy` (the commit adapter's wrapping contract).
 Validation errors, revision conflicts and transport failures still fail. Revision
