@@ -366,9 +366,12 @@ test('dirty scene close protects cancel, failed save/checkpoint and recoverable 
   await expect(page.locator('#status')).toContainText('save unavailable');
   await expect(page.locator('#document-state')).toHaveText('Modified');
   await page.unroute('**/api/save-scene');
+  await expect(page.locator('#draft-status')).toHaveText('Draft checkpoint saved');
   await page.route('**/api/checkpoint-draft', (route) =>
     route.fulfill({ status: 400, json: { error: 'disk full' } }),
   );
+  // The earlier edit may already be checkpointed; require a new write to test failure.
+  await paint(page, 28, 20);
   await page.locator('#close-document').click();
   await page.locator('#close-document-keep').click();
   await expect(
