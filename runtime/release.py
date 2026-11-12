@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from package_plugin import distribution, package
+from provenance import checkout
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
@@ -192,13 +193,10 @@ def check_archive(archive, expected_sha256, output, python, codex=None):
 
 def prepare(args):
     if not re.fullmatch(r"[0-9a-f]{40}", args.revision):
-        raise ValueError("Supply the full source Git revision")
-    actual_revision = subprocess.check_output(
-        ["git", "rev-parse", "HEAD"], cwd=REPO, text=True
-    ).strip()
-    if actual_revision != args.revision:
-        raise ValueError("Source revision differs from this checkout")
-    source_diff = subprocess.check_output(["git", "diff", "--binary", "HEAD"], cwd=REPO)
+        raise ValueError("Supply the full packaging checkout Git revision")
+    packaging_checkout = checkout(REPO)
+    if packaging_checkout is None or packaging_checkout["revision"] != args.revision:
+        raise ValueError("Packaging revision differs from this checkout or is unavailable")
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     _, archive = package(args.bundle, output)
@@ -223,13 +221,17 @@ def prepare(args):
     write(
         output / "release.json",
         {
-            "schema_version": 1,
-            "source_revision": args.revision,
-            "tracked_source_dirty": bool(source_diff),
-            "tracked_source_diff_sha256": hashlib.sha256(source_diff).hexdigest(),
+            "schema_version": 2,
+            "packaging_checkout": packaging_checkout,
+            "runtime_build_checkout": bundle.get("build_checkout"),
+            "wheel_source_revision": bundle.get("wheel_source_revision"),
             "release_tool_inputs": {
                 path.name: digest(path)
-                for path in (HERE / "release.py", HERE / "package_plugin.py")
+                for path in (
+                    HERE / "release.py",
+                    HERE / "package_plugin.py",
+                    HERE / "provenance.py",
+                )
             },
             "created_utc": datetime.now(timezone.utc).isoformat(),
             "installation": evidence["installation"],
@@ -260,7 +262,7 @@ def main():
     parser.add_argument("--sha256", help="Expected archive digest, obtained from a trusted source")
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument(
-        "--revision", help="Full source revision; required for candidate preparation"
+        "--revision", help="Full packaging checkout revision; required for candidate preparation"
     )
     parser.add_argument(
         "--python",

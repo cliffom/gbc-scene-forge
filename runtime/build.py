@@ -14,6 +14,8 @@ import zipfile
 from email.parser import Parser
 from pathlib import Path
 
+from provenance import checkout
+
 HERE = Path(__file__).resolve().parent
 
 
@@ -52,6 +54,7 @@ def os_libraries(bundle):
 
 
 def build(args):
+    build_checkout = checkout(HERE.parent)
     config = json.loads((HERE / "config.json").read_text())
     if (platform.system(), platform.machine()) != (config["system"], config["machine"]):
         raise ValueError(f"Build natively on {config['target']}; other targets belong to #263")
@@ -140,6 +143,9 @@ def build(args):
         "os_libraries": os_libraries(bundle),
         "config": config,
         "wheel_sha256": digest(wheel),
+        "build_checkout": build_checkout,
+        # The wheel is a prebuilt input, possibly from another checkout/revision.
+        "wheel_source_revision": None,
         "signing": "developer-id" if args.codesign_identity else "ad-hoc",
         "inputs": {path.name: digest(path) for path in sorted(HERE.iterdir()) if path.is_file()},
         "build_seconds": round(time.monotonic() - started, 3),

@@ -67,9 +67,18 @@ No runtime interpreter or SDK is supplied by the test driver's PATH.
 
 Candidate artifacts contain the `.tar.gz`, `SHA256SUMS`, `release.json`,
 `dependency-inventory.json` and `archive-check.json`. Metadata includes full source
-revision, tracked dirty-diff digest, build/tool/lock hashes, installation build ID,
-archive digest and explicit trust/client limits. Local dirty builds are not exact
-commit builds. The dependency inventory covers the build-environment superset;
+revision and tracked dirty-diff digest for the **packaging checkout**, separately
+from the **runtime build checkout**, plus build/tool/lock hashes, installation
+build ID, archive digest and explicit trust/client limits. Release metadata schema
+2 uses `packaging_checkout` and `runtime_build_checkout`; it does not attribute a
+prebuilt runtime to the packaging commit. Older bundles without build provenance
+report `runtime_build_checkout: null`. The builder records its checkout in
+`bundle.json`, but the prebuilt input wheel is identified by `wheel_sha256` and
+its source revision remains unknown (`wheel_source_revision: null`). A build
+checkout is not proof of the wheel's source. Local dirty builds are not exact
+commit builds. [Historical schema 1 evidence](evaluations/plugin-releases.md)
+predates this distinction.
+The dependency inventory covers the build-environment superset;
 complete CPython/native/Python/frontend license notices stay inside the archive.
 Checksums detect corruption; obtain them through an authenticated channel. They
 do not authenticate a publisher independently.
