@@ -63,7 +63,7 @@ class PluginDistributionTests(unittest.TestCase):
         self.assertEqual(distribution.verify(moved), installed)
         # Skills and their local references must travel together, without checkout access.
         self.assertTrue(
-            {"forge-start", "forge-artwork", "forge-animation"}
+            {"forge-start", "forge-artwork", "forge-animation", "forge-scenes"}
             <= {p.name for p in (moved / "skills").iterdir()}
         )
         for source in (REPO / "plugin/skills").rglob("*"):

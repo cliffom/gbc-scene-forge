@@ -19,7 +19,10 @@ links its bundled compatibility resource. The packaged
 [artwork](../plugin/skills/forge-artwork/SKILL.md) and
 [animation](../plugin/skills/forge-animation/SKILL.md) skills include local editing
 contracts and representative workflow checks, so authoring does not depend on a
-source checkout or external image service. No lifecycle hooks or first-use dependency
+source checkout or external image service. The
+[scene skill](../plugin/skills/forge-scenes/SKILL.md) also bundles outcome routes,
+portable export/reopen guidance and representative blockout/composition checks.
+No lifecycle hooks or first-use dependency
 installation are needed. Client availability and public-directory eligibility are
 separate from repository distribution (#265).
 

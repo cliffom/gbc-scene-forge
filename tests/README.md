@@ -72,6 +72,16 @@ bytes after archive relocation. These checks do not run a model or establish ima
 visibility, animation playback or artistic quality; representative behavioral
 cases live in the [bundled workflow checks](../plugin/skills/forge-artwork/references/workflow-checks.md).
 
+`backend/adapters/test_mcp_plugin_scenes.py` replays the
+[scene workflow briefs](../plugin/skills/forge-scenes/references/workflow-checks.md)
+through the same bounded profile: artwork-free blockout, existing tile/sprite
+placement and plugin-created artwork. It checks matching candidate preview
+snapshots, pixel/cell coordinates and sprite origins, preserved planning layers,
+connections and artwork, stale save refusal, guarded save, project ZIP reopen in
+a fresh session and scene ZIP preflight/import/reopen. Missing stamp/diagnostic
+tools reject explicitly. These synthetic checks do not establish model adherence,
+actual image inspection, browser handoff or independent-user authoring quality.
+
 `make check-bundle` runs `packaging/bundle_smoke.py` with the locked SDK as a driver
 and no Forge imports. The executable child runs from a relocated read-only copy,
 with an empty PATH and invalid external Python settings. It checks guarded native

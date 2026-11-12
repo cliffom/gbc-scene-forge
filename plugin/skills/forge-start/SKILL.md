@@ -48,8 +48,8 @@ chosen task needs. Keep general pixel art as the default; GBC constraints are op
 
 Route drawing/refinement to [forge-artwork](../forge-artwork/SKILL.md) and timed
 sheets to [forge-animation](../forge-animation/SKILL.md). Scene composition/export
-belongs to the scene authoring skill when delivered (#260); do not claim an absent
-skill is installed. Use current capabilities and the guarded flow below as fallback.
+uses [forge-scenes](../forge-scenes/SKILL.md), including its bundled outcome routes
+for stamps, diagnostics and other browser handoffs.
 
 For drawing, make a small unpublished candidate and render a useful PNG early.
 Actually inspect it before refinement; offer native and integer nearest-neighbor
