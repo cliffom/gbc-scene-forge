@@ -8,7 +8,7 @@ remaining acceptance stays in [validation](../VALIDATION.md#remaining-checks).
 ## Local signed candidate
 
 The candidate was built from clean tracked source revision
-[`1466753`](https://github.com/cliffom/gbc-scene-forge/commit/1466753),
+[`4720f9a`](https://github.com/cliffom/gbc-scene-forge/commit/4720f9a),
 observed on 2026-11-11 Pacific / 2026-11-12 UTC, macOS 27.0.1 ARM64 with Codex
 CLI/app-server 0.167.1. Forge remains 0.46.1 and plugin 0.1.0-alpha.1 under the
 milestone's deferred-release policy. The
@@ -49,7 +49,7 @@ folder-dialog acceptance or independent-user journey.
 
 Chromium acceptance launched the extracted SDK-tested frozen runtime, created the
 bundled sample, opened/reloaded its saved scene and captured rendering at
-1440 × 1000. Local `make docs-check lint test` passed with 557 Python tests and
+1440 × 1000. Local `make docs-check lint test` passed with 558 Python tests and
 TypeScript suites; production `make build check-dist` passed all seven isolated
 installed-wheel checks. This change adds no editor UI behavior. The final candidate
 rebuild repeated packaging/native/archive acceptance to bind evidence to committed
@@ -81,3 +81,42 @@ managed browser servers, preserving TCP socket binding and ephemeral-port discov
 without reverse DNS. A regression makes reverse DNS raise and verifies both server
 classes still bind. Installed-wheel timeout diagnostics now retain the blocked
 child stack instead of reporting only an empty output queue.
+
+The subsequent [archive-check attempt](https://github.com/cliffom/gbc-scene-forge/actions/runs/43177742681)
+built the native runtime successfully, then exposed a workflow interpreter error:
+archive verification used the global Python without Forge installed. The workflow
+now explicitly runs that build-time verifier through Poetry. The SDK test driver
+continues using the separate pinned build interpreter; the launched runtime needs
+neither interpreter. Earlier signed evidence is preserved in
+[the original committed record](https://github.com/cliffom/gbc-scene-forge/blob/4720f9a/docs/evaluations/plugin-releases.md).
+
+The next [archive acceptance attempt](https://github.com/cliffom/gbc-scene-forge/actions/runs/43178255784)
+reached the official-SDK smoke driver, but macOS 15 denied renaming its disposable
+copy because `copytree` inherited the restricted source directory's mode. Test
+staging now grants owner-write only to that scratch directory for relocation,
+then removes write bits before launch. The installed source remains restricted
+and its content inventory remains checked. This setup failure did not establish
+an SDK acceptance pass on that runner.
+
+## Native hosted candidate
+
+The corrected [native CI run](https://github.com/cliffom/gbc-scene-forge/actions/runs/43178752574)
+passed on **macOS 15.8.2 ARM64**, building PR merge revision
+`c9c67effb5867899fead7aeabc1910a77c8db52a` from branch revision `494549c`.
+The [CI release metadata](assets/plugin-releases/ci-release.json) and
+[CI archive report](assets/plugin-releases/ci-archive-check.json) are retained here.
+This is an **ad-hoc** candidate; its original downloaded checksum manifest passes
+for all four delivered files. Its archive SHA-256 is
+`c17bc9ca02433bdc87d55292b80ad209c9b399fbff1df391f479a928a9c75e1d`.
+
+The native build, extracted/relocated read-only runtime, official-SDK smoke and
+Chromium sample rendering/reload passed. The
+[candidate artifact](https://github.com/cliffom/gbc-scene-forge/actions/runs/43178752574/artifacts/13924962912)
+and [diagnostic artifact](https://github.com/cliffom/gbc-scene-forge/actions/runs/43178752574/artifacts/13925641643)
+expire on **2026-12-12 UTC**. Retain them beyond expiry before release qualification;
+these committed JSON records alone do not retain the binary/browser evidence.
+The actual runner predates the macOS 27 client floor, so installed-plugin launcher,
+managed lifecycle and Codex installation are explicitly unperformed in this CI
+run. Those local signed checks above belong to their separate macOS 27 scope.
+CI Gatekeeper assessment also rejects the ad-hoc executable (exit 3). The protected
+signed/notarized dispatch and normal downloaded-plugin trust remain unverified.

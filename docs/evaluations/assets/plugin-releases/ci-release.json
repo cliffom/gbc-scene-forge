@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "source_revision": "c9c67effb5867899fead7aeabc1910a77c8db52a",
+  "tracked_source_dirty": false,
+  "tracked_source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "release_tool_inputs": {
+    "release.py": "f1bb70eabd1f789d210804a230b6c0ef3eb63d9b86fc6f428b011ddccf761bc8",
+    "package_plugin.py": "283419117684a8858ba485af08855ad6fb5920782aefa55f15e054c606573e4c"
+  },
+  "created_utc": "2026-11-12T07:56:55.249266+00:00",
+  "installation": {
+    "plugin": "scene-forge",
+    "plugin_version": "0.1.0-alpha.1",
+    "runtime_version": "0.46.1",
+    "target": "macos-arm64",
+    "build_id": "f9fee8652b4edd681f3a0226474389bdd7d515359b27a57e8816401c69fbfc6b"
+  },
+  "runtime": {
+    "schema_version": 1,
+    "version": "0.46.1",
+    "target": "macos-arm64",
+    "host": "macOS-15.8.2-arm64-arm-64bit-Mach-O",
+    "os_libraries": [
+      "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+      "/System/Library/Frameworks/SystemConfiguration.framework/Versions/A/SystemConfiguration",
+      "/usr/lib/libSystem.B.dylib",
+      "/usr/lib/libedit.3.dylib",
+      "/usr/lib/libiconv.2.dylib",
+      "/usr/lib/libncurses.5.4.dylib",
+      "/usr/lib/libpanel.5.4.dylib",
+      "/usr/lib/libz.1.dylib"
+    ],
+    "config": {
+      "schema_version": 1,
+      "target": "macos-arm64",
+      "system": "Darwin",
+      "machine": "arm64",
+      "python_version": "3.13.13",
+      "python_build": "20260602",
+      "python_url": "https://github.com/astral-sh/python-build-standalone/releases/download/20260602/cpython-3.13.13%2B20260602-aarch64-apple-darwin-pgo%2Blto-full.tar.zst",
+      "python_sha256": "643c3645d34338230e7c8100457ed25ea1660216054de38238326847a055b9f8",
+      "uv_version": "0.13.7"
+    },
+    "wheel_sha256": "d341d1f0b71c09cde41a483b286e320c73fe3a90be230c6d3b32fe92955a4258",
+    "signing": "ad-hoc",
+    "inputs": {
+      "build-requirements.in": "4439c693c19271e4b0bdc56c641c36b3b06010b1b22eae6733cd244d752e85d5",
+      "build-requirements.txt": "240925835e333544c52a63c01e82b01a8543be38f00ae418ae29a703fee258b9",
+      "build.py": "4d17926dd67e47f1ae5d89152d725854521b3d5456387e8c1687b54af687760f",
+      "config.json": "7a8537271d08d029f66b5aaa8be9e713a6626ab927bb406c6b06b3d77f62d46d",
+      "entry.py": "6d5b2ba144bdae15721ba65ff36162ea9117c9d7f95de1c74f1d437d1d1966a7",
+      "notices.py": "0e0d34c4a8ae6baeb89d8c37e0308369b04a20c05ee68372be9f2fb76dd4acc1",
+      "package_plugin.py": "283419117684a8858ba485af08855ad6fb5920782aefa55f15e054c606573e4c",
+      "release.py": "f1bb70eabd1f789d210804a230b6c0ef3eb63d9b86fc6f428b011ddccf761bc8",
+      "runtime-requirements.in": "4fe75062c5d424bbc86a8cd58c63ab19aeffe4f0a0e100022252c8032e12ee5b",
+      "runtime-requirements.txt": "fbef807e66e09ad61b7c74cf02ea53dba1eb20ab5e25efab777c96752ed6f2df"
+    },
+    "build_seconds": 22.922
+  },
+  "archive": "scene-forge-0.1.0-alpha.1-macos-arm64.tar.gz",
+  "archive_sha256": "c17bc9ca02433bdc87d55292b80ad209c9b399fbff1df391f479a928a9c75e1d",
+  "status": "candidate; not published or certified for normal-user installation",
+  "signing": "ad-hoc",
+  "notarization": "not established by this build",
+  "installed_client_acceptance": "not run"
+}

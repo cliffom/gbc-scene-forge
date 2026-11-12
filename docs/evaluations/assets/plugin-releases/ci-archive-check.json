@@ -1,0 +1,73 @@
+{
+  "installation": {
+    "plugin": "scene-forge",
+    "plugin_version": "0.1.0-alpha.1",
+    "runtime_version": "0.46.1",
+    "target": "macos-arm64",
+    "build_id": "f9fee8652b4edd681f3a0226474389bdd7d515359b27a57e8816401c69fbfc6b"
+  },
+  "host": "macOS-15.8.2-arm64-arm-64bit-Mach-O",
+  "archive_sha256": "c17bc9ca02433bdc87d55292b80ad209c9b399fbff1df391f479a928a9c75e1d",
+  "client_os_floor_met": false,
+  "native_client": "not run",
+  "normal_user_download_acceptance": "not run",
+  "verified_native_files": [
+    "runtime/_internal/libpython3.13.dylib",
+    "runtime/_internal/pydantic_core/_pydantic_core.cpython-313-darwin.so",
+    "runtime/_internal/rpds/rpds.cpython-313-darwin.so",
+    "runtime/forge"
+  ],
+  "developer_id_signatures": {},
+  "codesign": {
+    "command": [
+      "/usr/bin/codesign",
+      "-dvvv",
+      "/Users/runner/work/gbc-scene-forge/gbc-scene-forge/build/plugin-candidate/relocated repository caf\u00e9/plugins/scene-forge/runtime/forge"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "Executable=/Users/runner/work/gbc-scene-forge/gbc-scene-forge/build/plugin-candidate/relocated repository cafe\u0301/plugins/scene-forge/runtime/forge\nIdentifier=forge-5555494462b0f09c6d49c7490d8477174b75f8c6\nFormat=Mach-O thin (arm64)\nCodeDirectory v=20400 size=59303 flags=0x2(adhoc) hashes=1847+2 location=embedded\nHash type=sha256 size=32\nCandidateCDHash sha256=3fb5daa45bd3f1793e3539eb1642bd5835c93ba0\nCandidateCDHashFull sha256=3fb5daa45bd3f1793e3539eb1642bd5835c93ba09acce78c170fc928d5fcbfc3\nHash choices=sha256\nCMSDigest=3fb5daa45bd3f1793e3539eb1642bd5835c93ba09acce78c170fc928d5fcbfc3\nCMSDigestType=2\nCDHash=3fb5daa45bd3f1793e3539eb1642bd5835c93ba0\nSignature=adhoc\nInfo.plist=not bound\nTeamIdentifier=not set\nSealed Resources=none\nInternal requirements count=0 size=12\n"
+  },
+  "gatekeeper": {
+    "command": [
+      "/usr/sbin/spctl",
+      "--assess",
+      "--type",
+      "execute",
+      "--verbose=4",
+      "/Users/runner/work/gbc-scene-forge/gbc-scene-forge/build/plugin-candidate/relocated repository caf\u00e9/plugins/scene-forge/runtime/forge"
+    ],
+    "exit_code": 3,
+    "stdout": "",
+    "stderr": "/Users/runner/work/gbc-scene-forge/gbc-scene-forge/build/plugin-candidate/relocated repository caf\u00e9/plugins/scene-forge/runtime/forge: rejected\n"
+  },
+  "readonly_launcher": "not run; host below advertised client OS floor",
+  "official_sdk": {
+    "initialize_seconds": 0.437,
+    "tool_count": 61,
+    "project": "bundle-cafe",
+    "scene_id": "97211863-3d75-4eed-8443-1ee6799ef885",
+    "browser": {
+      "assets_served": true,
+      "sample_restored": true,
+      "url": "http://127.0.0.1:49273/projects/bundle-cafe/"
+    },
+    "host": "macOS-15.8.2-arm64-arm-64bit-Mach-O",
+    "version": "0.46.1",
+    "bundle_inputs": {
+      "build-requirements.in": "4439c693c19271e4b0bdc56c641c36b3b06010b1b22eae6733cd244d752e85d5",
+      "build-requirements.txt": "240925835e333544c52a63c01e82b01a8543be38f00ae418ae29a703fee258b9",
+      "build.py": "4d17926dd67e47f1ae5d89152d725854521b3d5456387e8c1687b54af687760f",
+      "config.json": "7a8537271d08d029f66b5aaa8be9e713a6626ab927bb406c6b06b3d77f62d46d",
+      "entry.py": "6d5b2ba144bdae15721ba65ff36162ea9117c9d7f95de1c74f1d437d1d1966a7",
+      "notices.py": "0e0d34c4a8ae6baeb89d8c37e0308369b04a20c05ee68372be9f2fb76dd4acc1",
+      "package_plugin.py": "283419117684a8858ba485af08855ad6fb5920782aefa55f15e054c606573e4c",
+      "release.py": "f1bb70eabd1f789d210804a230b6c0ef3eb63d9b86fc6f428b011ddccf761bc8",
+      "runtime-requirements.in": "4fe75062c5d424bbc86a8cd58c63ab19aeffe4f0a0e100022252c8032e12ee5b",
+      "runtime-requirements.txt": "fbef807e66e09ad61b7c74cf02ea53dba1eb20ab5e25efab777c96752ed6f2df"
+    },
+    "readonly_unchanged": true,
+    "runtime_path_empty": true
+  },
+  "readonly_unchanged": true
+}

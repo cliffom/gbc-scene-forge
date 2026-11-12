@@ -3350,11 +3350,14 @@ Dates, revisions and environments missing from the originals remain unknown.
 
 ## macOS signed plugin release candidate (#263)
 
-- **Scope:** Clean tracked revision `1466753b0e4b036abff5f6437e90d9cf45ce9036`,
+- **Scope:** Clean tracked revision `4720f9a36d005b2df1cef092dbc767446856c203`,
   observed 2026-11-11 Pacific / 2026-11-12 UTC on macOS 27.0.1 ARM64 with Codex
   CLI/app-server 0.167.1; Forge 0.46.1/plugin 0.1.0-alpha.1, unpublished milestone
   candidate. [Metadata and raw evidence](evaluations/plugin-releases.md) retain
   archive/build/tool identities and observation boundaries.
+  Separate [native CI](https://github.com/cliffom/gbc-scene-forge/actions/runs/43178752574)
+  checks PR merge `c9c67effb5867899fead7aeabc1910a77c8db52a` on macOS 15.8.2 ARM64
+  with ad-hoc signing; it does not meet the macOS 27 installed-client floor.
 - **Method:** Pinned native production build with Developer ID; hash/extract/
   relocate/read-only archive acceptance, strict Mach-O signature and Gatekeeper
   assessment, official MCP SDK authoring/export/reopen, managed process recovery,
@@ -3365,7 +3368,9 @@ Dates, revisions and environments missing from the originals remain unknown.
   timestamps. Local archive/SDK/lifecycle/native-client automation passes;
   installation bytes remain unchanged with no developer tools on runtime PATH.
   Chromium creates/reloads the sample; inspected rendering at 1440 × 1000.
-  557 Python tests, TypeScript suites and seven installed-wheel checks pass.
+  558 Python tests, TypeScript suites and seven installed-wheel checks pass.
+  The native CI build/archive/SDK/Chromium job passes and retains candidate and
+  diagnostic artifacts until 2026-12-12 UTC; downloaded checksums verify.
   Gatekeeper returns 3: “the code is valid but does not seem to be an app.”
 - **Limits:** This is not trusted downloaded-plugin acceptance. No notarization,
   quarantined download, clean OS, native dialog/model-led/independent-user journey,

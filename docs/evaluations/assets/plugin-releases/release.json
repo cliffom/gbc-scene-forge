@@ -1,19 +1,19 @@
 {
   "schema_version": 1,
-  "source_revision": "1466753b0e4b036abff5f6437e90d9cf45ce9036",
+  "source_revision": "4720f9a36d005b2df1cef092dbc767446856c203",
   "tracked_source_dirty": false,
   "tracked_source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "release_tool_inputs": {
     "release.py": "f1bb70eabd1f789d210804a230b6c0ef3eb63d9b86fc6f428b011ddccf761bc8",
     "package_plugin.py": "283419117684a8858ba485af08855ad6fb5920782aefa55f15e054c606573e4c"
   },
-  "created_utc": "2026-11-12T07:40:18.071896+00:00",
+  "created_utc": "2026-11-12T07:50:05.832302+00:00",
   "installation": {
     "plugin": "scene-forge",
     "plugin_version": "0.1.0-alpha.1",
     "runtime_version": "0.46.1",
     "target": "macos-arm64",
-    "build_id": "4537dbc51bb440bef9dc69ea3f361993be16514f6a27769c927e70bd9f89b79a"
+    "build_id": "af6b37e1bb393f2c32bfd89c14c7a5bb3a94176055b0c9d5dfd4ad7f475a2fc0"
   },
   "runtime": {
     "schema_version": 1,
@@ -41,7 +41,7 @@
       "python_sha256": "643c3645d34338230e7c8100457ed25ea1660216054de38238326847a055b9f8",
       "uv_version": "0.13.7"
     },
-    "wheel_sha256": "d167644f340a59d845369fa8263db432524781e8c25ce3330a67588303bde9f5",
+    "wheel_sha256": "d341d1f0b71c09cde41a483b286e320c73fe3a90be230c6d3b32fe92955a4258",
     "signing": "developer-id",
     "inputs": {
       "build-requirements.in": "4439c693c19271e4b0bdc56c641c36b3b06010b1b22eae6733cd244d752e85d5",
@@ -55,10 +55,10 @@
       "runtime-requirements.in": "4fe75062c5d424bbc86a8cd58c63ab19aeffe4f0a0e100022252c8032e12ee5b",
       "runtime-requirements.txt": "fbef807e66e09ad61b7c74cf02ea53dba1eb20ab5e25efab777c96752ed6f2df"
     },
-    "build_seconds": 11.586
+    "build_seconds": 10.864
   },
   "archive": "scene-forge-0.1.0-alpha.1-macos-arm64.tar.gz",
-  "archive_sha256": "dac7a168d401738016c85d52d571fc7ad117885e133dace12a50ae894d8bc8cf",
+  "archive_sha256": "34981c5dc53e2475e2871c99d6db1fa3d5824a13fe5b0cc8644db59e1c9e6a3b",
   "status": "candidate; not published or certified for normal-user installation",
   "signing": "developer-id",
   "notarization": "not established by this build",
