@@ -64,7 +64,7 @@ class NativeClient:
         self.process.stdin.flush()
         self.thread = self.rpc("thread/start", {"cwd": str(cwd), "ephemeral": True})["thread"]["id"]
 
-    def rpc(self, method, params):
+    def rpc(self, method, params, *, allow_error=False):
         self.serial += 1
         self.process.stdin.write(
             json.dumps({"id": self.serial, "method": method, "params": params}) + "\n"
@@ -74,6 +74,8 @@ class NativeClient:
         while time.monotonic() < deadline:
             reply = self.messages.get(timeout=max(0.01, deadline - time.monotonic()))
             if reply.get("id") == self.serial:
+                if allow_error and "error" in reply:
+                    return {"error": reply["error"]}
                 assert "error" not in reply, reply
                 return reply["result"]
             assert not ("id" in reply and "method" in reply), reply
