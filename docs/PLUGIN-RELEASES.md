@@ -104,6 +104,50 @@ notarization or normal-user download behavior. The driver records `spctl` exit
 status and diagnostics even when assessment rejects the executable. Do not remove
 quarantine attributes or disable Gatekeeper to turn a rejection into a pass.
 
+For a local signed candidate, store notarization credentials interactively in a
+Keychain profile; never put the password in source or chat:
+
+```sh
+xcrun notarytool store-credentials forge-notary \
+  --apple-id YOUR_APPLE_ACCOUNT_EMAIL --team-id YOUR_DEVELOPER_TEAM_ID
+xcrun notarytool history --keychain-profile forge-notary
+```
+
+After verifying/extracting the signed candidate archive, submit a ZIP of that same
+repository directory (the service does not accept the distribution's tar archive):
+
+```sh
+ditto -c -k --keepParent \
+  build/plugin-candidate/scene-forge-0.1.0-alpha.1-macos-arm64 \
+  build/forge-notary.zip
+xcrun notarytool submit build/forge-notary.zip \
+  --keychain-profile forge-notary --wait --output-format json
+xcrun notarytool log SUBMISSION_ID --keychain-profile forge-notary \
+  build/notarization-log.json
+```
+
+Require `Accepted`, inspect the log even on acceptance, and retain the submission
+ID, ZIP digest, original archive digest and log together. Notarization registers
+the signed code's tickets; it does not modify the original archive. Apple's
+[custom workflow guidance](https://developer.apple.com/documentation/security/customizing-the-notarization-workflow)
+explains ticket retrieval and stapling. Bare binaries and ZIP archives cannot be
+stapled. Check ticket availability with `codesign --verify --strict
+--check-notarization -R=notarized /path/to/executable`. The explicit requirement is
+essential: signature verification can succeed without it while the notarization
+requirement fails. An accepted submission and available local ticket can be
+observed at different times; retain both results and recheck availability before
+launch qualification. This check is not a substitute for actually launching the
+quarantined payload through the target client. Retain the wording
+and user response for any system prompt; a launch killed after a Gatekeeper
+prompt is a failed launch until its cause is understood.
+
+Browser automation can lose security metadata when saving a download: Playwright
+`saveAs` did so in the [local qualification](evaluations/plugin-releases.md#local-notarization-and-quarantined-download).
+Inspect the browser's original downloaded file and preserve its attributes (for
+example, with macOS `ditto`) before Archive Utility extraction. Inspect quarantine
+again on the extracted runtime and client-managed copy; a missing marker must not
+be reported as a successful quarantined-launch test.
+
 A manually dispatched workflow may select signing. Configure the protected
 `plugin-signing` GitHub environment with required reviewers and these secrets:
 
@@ -127,8 +171,9 @@ values. Rotate/revoke credentials through Apple and GitHub, outside this checkou
 The notarization response is a separate retained observation and checksum. The
 original archive and its build-time trust report remain unchanged. Bare Mach-O
 executables have no supported stapling container in this distribution; an accepted
-submission alone does not establish offline trust. This workflow does not claim
-that signing secrets or notarization are configured, or that a signed dispatch has
+submission alone does not establish offline trust. The
+[local submission evidence](evaluations/plugin-releases.md#local-notarization-and-quarantined-download)
+does not establish that CI signing secrets are configured or a signed dispatch has
 passed. Before advertising ordinary installation, test an actual downloaded,
 quarantined archive under a normal user account and record the client-managed
 copy's signature/trust behavior, online/offline limits and any rejection. Complete

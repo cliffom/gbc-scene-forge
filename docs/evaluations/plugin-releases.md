@@ -27,7 +27,7 @@ Mach-O payloads passed strict signature verification; each has Developer ID
 provenance, hardened runtime and a secure timestamp. This is signature validity
 on this host, not an ordinary-user trust result. `spctl --assess --type execute`
 returned **3**, with **“rejected (the code is valid but does not seem to be an
-app)”**. No notarization, quarantine removal or OS trust override was performed.
+app)”**. At build time, no notarization, quarantine removal or OS trust override was performed.
 The command assesses the raw executable; its rejection does not establish how a
 client will treat a downloaded/notarized archive and copied plugin cache.
 
@@ -56,6 +56,72 @@ rebuild repeated packaging/native/archive acceptance to bind evidence to committ
 source. The local browser reports and archive remain build outputs; raw JSON
 above is retained evidence, not an archived binary or CI-pass claim.
 
+## Local notarization and quarantined download
+
+On 2026-11-12 UTC, the user configured the local `forge-notary` Keychain profile
+and authorized submission of the same signed candidate. The original tar archive
+SHA-256 remains
+`34981c5dc53e2475e2871c99d6db1fa3d5824a13fe5b0cc8644db59e1c9e6a3b`,
+from source revision `4720f9a36d005b2df1cef092dbc767446856c203`. `ditto` wrapped
+its extracted repository in a ZIP with SHA-256
+`240d2c66c4408f0dd512e1ab6ca210f61efa6d456e0cb51b38904709b6ec57eb`.
+Apple [accepted the submission](assets/plugin-releases/notarization.json)
+`1227be35-3516-4e7e-b947-a71834bb8d49`; the
+[notary log](assets/plugin-releases/notarization-log.json) reports no issues and
+tickets for all four ARM64 Mach-O payloads. The original build-time reports remain
+unchanged; this later observation establishes local notarization, not a signed
+CI-dispatch or publication result.
+
+On the existing macOS 27.0.1 ARM64 developer host, headful Chrome
+157.0.8103.78 used an isolated temporary profile to download the actual tar archive
+over loopback HTTP. The [download observation](assets/plugin-releases/quarantined-download.json)
+records Chrome's `com.apple.quarantine` value. Playwright `saveAs` lost that marker;
+that saved copy is not qualification evidence. A subsequent download retained its
+original attributes through macOS `ditto`, and Archive Utility propagated the
+marker to the extracted launcher, runtime and native libraries. The archive hash
+matched the signed candidate. This is browser automation on the developer account,
+not hosted HTTPS delivery or an independent-user/clean-machine test.
+
+All four extracted Mach-O files passed strict signature verification with
+`--check-notarization`. However, the
+[quarantined launcher observation](assets/plugin-releases/quarantined-launch.json)
+failed: `bin/forge --identity` terminated with SIGKILL (return code -9).
+The [scoped macOS policy log](assets/plugin-releases/quarantined-launch.log)
+records a system prompt followed by Gatekeeper rejection for the signed `forge`
+executable. The user subsequently confirmed dismissing that prompt and requested
+a retry; its wording was not captured. Before retry, an explicit `-R=notarized`
+requirement returned 3 on both the extracted and original executables despite
+Apple's accepted submission. Signature verification without that requirement
+did not establish local ticket availability.
+The separate raw-executable `spctl` assessment still returns 3, “the code is valid
+but does not seem to be an app.” No quarantine marker was removed or synthesized,
+and no system trust override was used.
+
+A separate [static Codex cache observation](assets/plugin-releases/quarantined-cache.json)
+successfully registered and installed the quarantined extracted repository into
+isolated HOME/CODEX_HOME state with Codex CLI 0.167.1. All copied file bytes matched
+the source, and the launcher/runtime/CPython dylib retained Chrome's quarantine
+marker. This static observation preceded the launch retry.
+
+The [user-requested retry](assets/plugin-releases/quarantined-retry.json) at
+13:44 UTC succeeded from that client-managed copy: the launcher returned the
+expected installation identity with no developer tools on PATH, and an actual
+isolated Codex app-server started the plugin and returned matching `plugin_status`.
+The user reported that **no prompt appeared on this retry**. The runtime retained
+its original Chrome quarantine marker before and after launch. The
+[final verification](assets/plugin-releases/notarization-verification.json)
+at 13:45 UTC passed strict verification and the explicit `notarized` requirement
+for all four native files; the original extracted executable also then satisfied
+that requirement. Source/cache file bytes still matched the submitted payload.
+These observations establish the successful online quarantined cache launch on
+this host; they do not prove why the earlier ticket requirement failed or establish
+a guaranteed ticket propagation interval. The raw `spctl` assessment still returns
+3 despite that successful launch and explicit notarization verification.
+
+Offline first launch, uncached trust, actual model/browser/user journeys and
+protected CI notarization remain outside this observation. The retry did not
+remove/synthesize quarantine, invoke Open Anyway or change system trust policy.
+
 ## Qualification limits
 
 The [native workflow](../../.github/workflows/plugin-macos.yml) retains separate
@@ -65,7 +131,7 @@ launcher/lifecycle/client acceptance and test the frozen runtime separately.
 A build or synthetic installed-client pass does not complete the downloaded
 quarantine/trust, actual model/image/browser journey or clean-machine gates.
 Protected signing/notarization configuration is code, not evidence that repository
-credentials are configured or an Apple submission passed. Windows/Linux native
+credentials are configured or a signed CI submission passed. Windows/Linux native
 builds, named floors/libraries, client feasibility and acceptance remain required
 milestone outcomes. No additional architectures or remote clients are advertised.
 
@@ -119,4 +185,5 @@ The actual runner predates the macOS 27 client floor, so installed-plugin launch
 managed lifecycle and Codex installation are explicitly unperformed in this CI
 run. Those local signed checks above belong to their separate macOS 27 scope.
 CI Gatekeeper assessment also rejects the ad-hoc executable (exit 3). The protected
-signed/notarized dispatch and normal downloaded-plugin trust remain unverified.
+signed/notarized dispatch remains unverified. The later local notarization and
+quarantined-launch failure/retry have their separate scope above.

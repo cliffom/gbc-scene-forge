@@ -3379,14 +3379,45 @@ Dates, revisions and environments missing from the originals remain unknown.
   separate ad-hoc artifacts have their own run/environment bounds; remaining
   release checks stay below.
 
+## Local macOS notarization and quarantined launch (#263)
+
+- **Scope:** On 2026-11-12 UTC, the existing Developer ID candidate from clean
+  tracked revision `4720f9a36d005b2df1cef092dbc767446856c203`, Forge 0.46.1/plugin
+  0.1.0-alpha.1, on macOS 27.0.1 ARM64 with Chrome 157.0.8103.78 and Codex CLI
+  0.167.1. This later observation does not revise the original build reports.
+- **Method:** User-authorized Apple submission using a local Keychain profile;
+  inspect the accepted log, download the unchanged archive with isolated headful
+  Chrome over loopback HTTP, preserve actual quarantine with `ditto`, extract
+  through Archive Utility, check native signatures/online notarization and attempt
+  a direct launcher invocation. Separately inspect isolated Codex cache installation.
+- **Result:** Apple accepted submission `1227be35-3516-4e7e-b947-a71834bb8d49`
+  with no issues and tickets for all four native files. All four pass strict
+  signature checks. Playwright `saveAs` lost quarantine; the preserved
+  original download and extracted files retain it. Direct launch fails with
+  SIGKILL (-9); the OS log records a prompt and Gatekeeper rejection, and the user
+  confirms dismissing it. An initial explicit `notarized` requirement fails
+  despite service acceptance. Codex copies the quarantined repository unchanged
+  and preserves observed quarantine markers. On the user-requested retry, the
+  cache launcher and native app-server MCP status pass; the user reports no
+  prompt. All four native files then satisfy the explicit `notarized` requirement,
+  and source/cache bytes still match the submission. Raw `spctl` still returns 3.
+  [Retained evidence and hashes](evaluations/plugin-releases.md#local-notarization-and-quarantined-download)
+  preserve both the failure and successful online quarantined cache launch.
+- **Limits:** Initial prompt wording and the cause of the earlier ticket-check
+  failure are unknown; no guaranteed propagation interval is established. No clean OS,
+  independent-user/model journey, offline first launch, hosted HTTPS delivery,
+  protected signed CI dispatch or publication. No quarantine removal or trust
+  override. This scoped online launch does not complete general release qualification.
+
 ## Remaining checks
 
 ### Plugin release qualification (#263)
 
-- [ ] Qualify the [macOS release candidate](PLUGIN-RELEASES.md) after protected
-  notarization and an actual quarantined download/relocation under a normal user
-  account. Record Gatekeeper/client-copy trust and offline behavior; local
-  Developer ID verification alone does not establish ordinary installation.
+- [ ] Complete general [macOS release candidate](PLUGIN-RELEASES.md) qualification
+  beyond the [successful local online quarantined cache launch](evaluations/plugin-releases.md#local-notarization-and-quarantined-download):
+  test a normal independent user/clean host, hosted download/relocation, offline
+  first-launch behavior and protected CI signing/notarization. Local Apple
+  acceptance and developer-host launch do not complete these release gates.
 - [ ] Complete the downloaded candidate's installed-client project selection,
   model image inspection, user image review, browser handoff, create/reopen/edit/
   export and shutdown journey on each advertised macOS client/OS. Synthetic

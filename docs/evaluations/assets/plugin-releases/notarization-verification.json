@@ -1,0 +1,94 @@
+{
+  "observed_utc": "2026-11-12T13:45:13.370736+00:00",
+  "method": "After successful isolated cache launch; explicit notarized requirement on every native cache file and original runtime, inventory comparison, no quarantine removal or synthesized attributes",
+  "native": {
+    "_internal/libpython3.13.dylib": {
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--strict",
+        "--check-notarization",
+        "-R=notarized",
+        "--verbose=2",
+        "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check state/plugins/cache/scene-forge-repository/scene-forge/0.1.0-alpha.1/runtime/_internal/libpython3.13.dylib"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check state/plugins/cache/scene-forge-repository/scene-forge/0.1.0-alpha.1/runtime/_internal/libpython3.13.dylib: valid on disk\n/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check state/plugins/cache/scene-forge-repository/scene-forge/0.1.0-alpha.1/runtime/_internal/libpython3.13.dylib: satisfies its Designated Requirement\n/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check state/plugins/cache/scene-forge-repository/scene-forge/0.1.0-alpha.1/runtime/_internal/libpython3.13.dylib: explicit requirement satisfied\n"
+    },
+    "_internal/pydantic_core/_pydantic_core.cpython-313-darwin.so": {
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--strict",
+        "--check-notarization",
+        "-R=notarized",
+        "--verbose=2",
+        "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check state/plugins/cache/scene-forge-repository/scene-forge/0.1.0-alpha.1/runtime/_internal/pydantic_core/_pydantic_core.cpython-313-darwin.so"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check state/plugins/cache/scene-forge-repository/scene-forge/0.1.0-alpha.1/runtime/_internal/pydantic_core/_pydantic_core.cpython-313-darwin.so: valid on disk\n/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check state/plugins/cache/scene-forge-repository/scene-forge/0.1.0-alpha.1/runtime/_internal/pydantic_core/_pydantic_core.cpython-313-darwin.so: satisfies its Designated Requirement\n/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check state/plugins/cache/scene-forge-repository/scene-forge/0.1.0-alpha.1/runtime/_internal/pydantic_core/_pydantic_core.cpython-313-darwin.so: explicit requirement satisfied\n"
+    },
+    "_internal/rpds/rpds.cpython-313-darwin.so": {
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--strict",
+        "--check-notarization",
+        "-R=notarized",
+        "--verbose=2",
+        "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check state/plugins/cache/scene-forge-repository/scene-forge/0.1.0-alpha.1/runtime/_internal/rpds/rpds.cpython-313-darwin.so"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check state/plugins/cache/scene-forge-repository/scene-forge/0.1.0-alpha.1/runtime/_internal/rpds/rpds.cpython-313-darwin.so: valid on disk\n/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check state/plugins/cache/scene-forge-repository/scene-forge/0.1.0-alpha.1/runtime/_internal/rpds/rpds.cpython-313-darwin.so: satisfies its Designated Requirement\n/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check state/plugins/cache/scene-forge-repository/scene-forge/0.1.0-alpha.1/runtime/_internal/rpds/rpds.cpython-313-darwin.so: explicit requirement satisfied\n"
+    },
+    "forge": {
+      "command": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--strict",
+        "--check-notarization",
+        "-R=notarized",
+        "--verbose=2",
+        "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check state/plugins/cache/scene-forge-repository/scene-forge/0.1.0-alpha.1/runtime/forge"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check state/plugins/cache/scene-forge-repository/scene-forge/0.1.0-alpha.1/runtime/forge: valid on disk\n/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check state/plugins/cache/scene-forge-repository/scene-forge/0.1.0-alpha.1/runtime/forge: satisfies its Designated Requirement\n/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check state/plugins/cache/scene-forge-repository/scene-forge/0.1.0-alpha.1/runtime/forge: explicit requirement satisfied\n"
+    }
+  },
+  "original_requirement_after_retry": {
+    "command": [
+      "/usr/bin/codesign",
+      "--verify",
+      "--strict",
+      "--check-notarization",
+      "-R=notarized",
+      "--verbose=2",
+      "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/runtime/forge"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/runtime/forge: valid on disk\n/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/runtime/forge: satisfies its Designated Requirement\n/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/runtime/forge: explicit requirement satisfied\n"
+  },
+  "initial_explicit_requirement": {
+    "exit_code": 3,
+    "stderr": "build/notary-263/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/runtime/forge: valid on disk\nbuild/notary-263/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/runtime/forge: satisfies its Designated Requirement\ntest-requirement: code failed to satisfy specified code requirement(s)\n"
+  },
+  "source_and_cache_bytes_match_submission": true,
+  "raw_cache_spctl": {
+    "command": [
+      "/usr/sbin/spctl",
+      "--assess",
+      "--type",
+      "execute",
+      "--verbose=4",
+      "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check state/plugins/cache/scene-forge-repository/scene-forge/0.1.0-alpha.1/runtime/forge"
+    ],
+    "exit_code": 3,
+    "stdout": "",
+    "stderr": "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check state/plugins/cache/scene-forge-repository/scene-forge/0.1.0-alpha.1/runtime/forge: rejected (the code is valid but does not seem to be an app)\n"
+  }
+}
