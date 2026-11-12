@@ -35,6 +35,11 @@ source or silently replacing scene references.
 Build an unpublished candidate and render a useful first pass early. Prefer a
 few deterministic batches for silhouettes, color planes and repeated motifs;
 refine intentional pixel clusters rather than issuing one tool call per pixel.
+For requested tile variants, compare their actual pixels: separate frame IDs do
+not establish distinct variants. Inspect repeated and mixed arrangements through
+an available scene preview or browser, as well as isolated tiles; repeated edge
+highlights can form stripes that are invisible in a single tile. If that view is
+unavailable, report the seam/reuse assessment as incomplete.
 Use named layers when they improve editability. Preserve unrelated source pixels,
 layers (including hidden/locked sources), palette choices, metadata and frame
 content during scoped work. Whole-document replacement, quantization, flattening,

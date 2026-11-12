@@ -15,6 +15,33 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Plugin authoring quality and source-dispatch resource baseline (#262)
+
+- **Scope:** Working tree based on `a5834052945b8bc4548166f9fad8379c470e471f`,
+  2026-11-11 America/Los_Angeles (2026-11-12 UTC), macOS 27.0.1 arm64,
+  Python 3.13.13, Forge 0.46.1 / unpublished plugin 0.1.0-alpha.1. Exact source,
+  tool inventory and before/after skill hashes are in the
+  [quality evaluation](evaluations/plugin-authoring-quality.md).
+- **Method:** Define six bounded briefs/rubric before execution; run staged
+  source PluginSession calls with synthetic directory selection, deliver PNGs to
+  the current agent for inspection/refinement, record call/resource payloads and
+  time, compare exact sources/descriptors, reject stale review and reopen saved
+  artwork plus portable projects. Replay final deterministic fixtures separately.
+- **Result:** Six data workflows complete; grass needs two visual corrections;
+  island/room remain visually weak. Exact scope and all 12 exported native
+  document comparisons pass. Baseline uses 169 tool calls/49 resource reads,
+  2,086,834 known result bytes and retains 24 candidates / 1,983,771 bytes. The
+  [archive](evaluations/assets/plugin-quality/outputs.zip) preserves first passes,
+  corrections, preliminary harness failures and final outputs. Replay corrects
+  baseline scene inspection ordering; required docs/lint/Python/frontend checks
+  pass locally. Artwork skill now calls for distinct variants and repeated views.
+- **Limits:** Agent-directed fixed recipes and local image inspection do not
+  establish installed-client skill adherence, independent generation/usability,
+  human judgment, APNG cadence or other platforms. Tokens/cost, exact model/client
+  builds, complete client traffic, inference time and peak memory are unavailable.
+  Bytes exclude protocol/client duplication; timing is local source dispatch.
+  #262 remains open; no publication or independent-user acceptance is claimed.
+
 ## Installed-plugin automated browser handoffs (#261)
 
 - **Scope:** Issue working tree based on `80a2e29205c4f7574f74a80c07744e33c211021f`,
@@ -3322,6 +3349,16 @@ Dates, revisions and environments missing from the originals remain unknown.
   claim is made by this local record.
 
 ## Remaining checks
+
+### Plugin authoring quality and interaction cost (#262)
+
+- [ ] Run the [bounded quality briefs](evaluations/plugin-authoring-quality.md)
+  through the current installed plugin with an actual model turn, native directory
+  grant, exact client/model/runtime/skill identities and observable usage/cost.
+  Verify delivery of inspected previews and compare correction loops/calls/bytes
+  against the source baseline; record unavailable measurements. Reassess the weak
+  island/room outputs and inspect animation playback where supported. Current
+  source-dispatch replay and agent image judgments do not complete this acceptance.
 
 ### Plugin selection, introduction and handoff (#261/#264)
 

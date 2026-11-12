@@ -1,0 +1,76 @@
+{
+  "cases": [
+    {
+      "case": "lantern",
+      "tool_calls": 26,
+      "resource_reads": 6,
+      "request_bytes": 23789,
+      "response_bytes": 136700,
+      "measured_service_ms": 112.879,
+      "failed_calls": [],
+      "stage_wall_seconds": 0.157
+    },
+    {
+      "case": "beacon",
+      "tool_calls": 24,
+      "resource_reads": 8,
+      "request_bytes": 12419,
+      "response_bytes": 139421,
+      "measured_service_ms": 273.417,
+      "failed_calls": [],
+      "stage_wall_seconds": 0.287
+    },
+    {
+      "case": "grass",
+      "tool_calls": 38,
+      "resource_reads": 12,
+      "request_bytes": 12057,
+      "response_bytes": 148110,
+      "measured_service_ms": 471.653,
+      "failed_calls": [],
+      "stage_wall_seconds": 0.511
+    },
+    {
+      "case": "island",
+      "tool_calls": 30,
+      "resource_reads": 9,
+      "request_bytes": 255409,
+      "response_bytes": 1163869,
+      "measured_service_ms": 1087.654,
+      "failed_calls": [],
+      "stage_wall_seconds": 1.13
+    },
+    {
+      "case": "room",
+      "tool_calls": 20,
+      "resource_reads": 3,
+      "request_bytes": 17534,
+      "response_bytes": 163025,
+      "measured_service_ms": 426.354,
+      "failed_calls": [],
+      "stage_wall_seconds": 0.471
+    },
+    {
+      "case": "scope",
+      "tool_calls": 31,
+      "resource_reads": 11,
+      "request_bytes": 10124,
+      "response_bytes": 335287,
+      "measured_service_ms": 713.126,
+      "failed_calls": [
+        {
+          "case": "scope",
+          "phase": "save",
+          "tool": "commit_artwork",
+          "request_bytes": 966,
+          "response_bytes": null,
+          "milliseconds": 17.538,
+          "error": "Conflict: Artwork review no longer matches the candidate/base. Review again."
+        }
+      ],
+      "stage_wall_seconds": 0.763
+    }
+  ],
+  "retained_count": 24,
+  "retained_bytes": 1983771
+}

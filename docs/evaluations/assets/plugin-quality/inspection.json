@@ -1,0 +1,119 @@
+{
+  "attribution": "Current GPT-6-family coding agent; exact model/build unavailable; no human judgments",
+  "delivery": "functions view_image returned bitmap content to current agent",
+  "not_inspected": [
+    "APNG playback",
+    "other replay previews",
+    "editor UI controls"
+  ],
+  "observations": [
+    {
+      "case": "lantern",
+      "images": [
+        "baseline/lantern-initial-after-native_resource.png",
+        "baseline/lantern-initial-after-enlarged_resource.png"
+      ],
+      "scale": "1x and 8x",
+      "decision": "Save; recognizable dark housing/handle and warm light; handle faint on black viewer transparency."
+    },
+    {
+      "case": "beacon",
+      "images": [
+        "baseline/beacon-initial-after-native_resource.png",
+        "baseline/beacon-initial-after-enlarged_resource.png",
+        "baseline/beacon-initial-contact.png"
+      ],
+      "scale": "1x sheet; 8x sheet and ordered frames",
+      "decision": "Save; fixed base/highlight registration; four expanding/contracting poses. APNG generated, not played."
+    },
+    {
+      "case": "grass",
+      "images": [
+        "baseline/grass-initial-after-enlarged_resource.png",
+        "baseline/grass-initial-repeat.png"
+      ],
+      "scale": "8x sheet and 1x repeated aid",
+      "decision": "Refine; top edge highlights create horizontal stripes, duplicate pairs visible."
+    },
+    {
+      "case": "grass",
+      "images": [
+        "baseline/grass-refine-after-enlarged_resource.png",
+        "baseline/grass-refine-repeat.png"
+      ],
+      "scale": "8x sheet and 1x repeated aid",
+      "decision": "Refine again; stripes removed but variants 0/2 and 1/3 still duplicate."
+    },
+    {
+      "case": "grass",
+      "images": [
+        "baseline/grass-refine-2-after-native_resource.png",
+        "baseline/grass-refine-2-after-enlarged_resource.png",
+        "baseline/grass-refine-2-repeat.png"
+      ],
+      "scale": "1x and 8x sheet; 1x repeated aid",
+      "decision": "Save; four distinct rasters, no obvious edge seams. Small texture repeats remain."
+    },
+    {
+      "case": "island",
+      "images": [
+        "baseline/island-initial-after-native_resource.png",
+        "baseline/island-initial-after-enlarged_resource.png"
+      ],
+      "scale": "1x and fitted 6x (reported review scale)",
+      "decision": "Refine shore contrast; recognizable scene but schematic island and competing square moon."
+    },
+    {
+      "case": "island",
+      "images": [
+        "baseline/island-refine-after-native_resource.png",
+        "baseline/island-refine-after-enlarged_resource.png"
+      ],
+      "scale": "1x and fitted 6x",
+      "decision": "Retain unpublished. Contrast improved, straight accent and schematic composition remain weak."
+    },
+    {
+      "case": "room",
+      "images": [
+        "baseline/room-initial.png"
+      ],
+      "scale": "1x 256x128",
+      "decision": "Artwork inspected before save; sparse composition remains weak. Planning PNG not yet inspected."
+    },
+    {
+      "case": "room",
+      "images": [
+        "baseline/room-plan-browser.png"
+      ],
+      "scale": "1x 256x128 SVG element captured in Chrome 157.0.8103.78",
+      "decision": "Viewed after baseline save; floor, spawn, exit, upper route and camera readable with crowded labels. Pre-save planning inspection still missing for this attempt."
+    },
+    {
+      "case": "scope",
+      "images": [
+        "baseline/scope-initial-before-native_resource.png",
+        "baseline/scope-initial-after-native_resource.png",
+        "baseline/scope-initial-contact.png"
+      ],
+      "scale": "1x before/after; 8x labelled contact",
+      "decision": "Save after exact source oracle. Cyan only replaces selected gold source pixels; metal and hidden sketch unchanged."
+    },
+    {
+      "case": "room-replay",
+      "images": [
+        "replay/room-initial.png",
+        "replay/room-plan-browser.png"
+      ],
+      "scale": "1x artwork and planning capture",
+      "decision": "Both actual images viewed before save, correcting baseline ordering. No quality-score improvement claimed."
+    },
+    {
+      "case": "scope-replay",
+      "images": [
+        "replay/scope-initial-contact.png"
+      ],
+      "scale": "8x labelled contact",
+      "decision": "Actual contact viewed before save. Same exact scoped change as baseline."
+    }
+  ]
+}

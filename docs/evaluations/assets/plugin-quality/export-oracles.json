@@ -1,0 +1,14 @@
+{
+  "baseline/room/lantern": true,
+  "baseline/room/beacon": true,
+  "baseline/room/grass": true,
+  "baseline/scope/lantern": true,
+  "baseline/scope/beacon": true,
+  "baseline/scope/grass": true,
+  "replay/room/lantern": true,
+  "replay/room/beacon": true,
+  "replay/room/grass": true,
+  "replay/scope/lantern": true,
+  "replay/scope/beacon": true,
+  "replay/scope/grass": true
+}
