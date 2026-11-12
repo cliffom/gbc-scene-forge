@@ -1,0 +1,18 @@
+{
+  "lantern-initial-after-native_resource.png": true,
+  "lantern-save-after-native_resource.png": true,
+  "lantern-rgba": true,
+  "lantern-layer_rgba": true,
+  "beacon-initial-after-native_resource.png": true,
+  "beacon-save-after-native_resource.png": true,
+  "beacon-rgba": true,
+  "beacon-layer_rgba": true,
+  "grass-initial-after-native_resource.png": true,
+  "grass-save-after-native_resource.png": true,
+  "grass-rgba": true,
+  "grass-layer_rgba": true,
+  "island-initial-after-native_resource.png": true,
+  "island-save-after-native_resource.png": true,
+  "island-rgba": true,
+  "island-layer_rgba": true
+}

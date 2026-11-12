@@ -1,0 +1,74 @@
+{
+  "source_commit": "a5834052945b8bc4548166f9fad8379c470e471f",
+  "utc": "2026-11-12T05:52:04.340797+00:00",
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "python": "3.13.13 (main, May 26 2026, 13:47:44) [Clang 21.0.0 (clang-2100.1.1.101)]",
+  "runtime_version": "0.46.1",
+  "plugin_manifest": {
+    "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+    "name": "scene-forge",
+    "version": "0.1.0-alpha.1",
+    "description": "Local pixel artwork, animation and scene authoring with an included runtime for macOS Apple Silicon",
+    "license": "MIT",
+    "extensions": {
+      "com.openai": {
+        "requires_local_executor": true,
+        "interface": {
+          "displayName": "Scene Forge (macOS Apple Silicon preview)"
+        }
+      }
+    }
+  },
+  "method": "source PluginSession; synthetic chooser; agent-inspected staged replay",
+  "installed_client": null,
+  "model": "GPT-6 family per session instructions; exact model/build unavailable",
+  "tokens": null,
+  "cost": null,
+  "peak_memory": null,
+  "external_image_services": 0,
+  "skills": {
+    "plugin/skills/forge-animation/SKILL.md": "4e45618f357734c7e0bf20f6c5e1d5027de9f53e62341845d9f86728808a0a5b",
+    "plugin/skills/forge-artwork/SKILL.md": "d1e0079fae4d55692410b1ee3df9984a6eb8f5ac8abde04c0ebf876afdfb9516",
+    "plugin/skills/forge-artwork/references/native-editing.md": "372859364f4cd42813eb34f93ac67bf948cc235890a43ed9f9c39150ee4b370c",
+    "plugin/skills/forge-artwork/references/workflow-checks.md": "115bb62ffd7b0421a02990278afa40a4316cf47b3fb8599739ccad51126a8387",
+    "plugin/skills/forge-scenes/SKILL.md": "bfdbf7e7e33a6af6fbff6540b88fc02ef35e3009cea63d616ec62b61b342ee2e",
+    "plugin/skills/forge-scenes/references/outcome-routes.md": "b993e6534c69b4c63b7379a82fb0f9c06da27473b1ad483f64313c3d4c5c7d88",
+    "plugin/skills/forge-scenes/references/portable-export.md": "a5ace2f0eafc4e3f931b955e71013d0a454a7b82ec6231b8fe2b4c64e1f0f023",
+    "plugin/skills/forge-scenes/references/workflow-checks.md": "4297beb4f09c80646bc67528a26422d5f9fa076da316ba1b3b7d3492264f321f",
+    "plugin/skills/forge-start/SKILL.md": "267477aadda40fd943c3534069aea87002cdac0b158e284bdd079305d5cee049"
+  },
+  "tool_inventory": [
+    "plugin_status",
+    "plugin_choose_location",
+    "plugin_reset_selection",
+    "plugin_browser",
+    "capabilities",
+    "list_projects",
+    "create_project",
+    "get_project",
+    "get_scene",
+    "create_blockout_scene",
+    "create_scene",
+    "edit_scene",
+    "save_scene",
+    "review_blockout",
+    "import_atlas",
+    "review_artwork",
+    "export_bundle",
+    "edit_artwork_layers",
+    "create_artwork_sheet",
+    "edit_artwork_layout",
+    "review_artwork_animation",
+    "list_artwork",
+    "create_artwork",
+    "open_artwork",
+    "read_artwork_pixels",
+    "edit_artwork_pixels",
+    "review_artwork_candidate",
+    "commit_artwork",
+    "export_artwork_candidate",
+    "list_artwork_candidates",
+    "release_artwork_candidate",
+    "inspect_artwork_candidate"
+  ]
+}

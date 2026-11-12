@@ -72,6 +72,13 @@ bytes after archive relocation. These checks do not run a model or establish ima
 visibility, animation playback or artistic quality; representative behavioral
 cases live in the [bundled workflow checks](../plugin/skills/forge-artwork/references/workflow-checks.md).
 
+`support/measure_plugin_authoring.py` runs a staged source-dispatch quality/cost
+baseline with a synthetic directory grant. It stops between first pass,
+refinement and save for actual agent image inspection, records all calls/resource
+reads and checks exact saved sources and portable reopen. It is not an installed
+client or independent-user test. The [protocol, reproduction order and limitations](../docs/evaluations/plugin-authoring-quality.md)
+define its fixtures, measurement boundaries and inspection attribution.
+
 `backend/adapters/test_mcp_plugin_scenes.py` replays the
 [scene workflow briefs](../plugin/skills/forge-scenes/references/workflow-checks.md)
 through the same bounded profile: artwork-free blockout, existing tile/sprite
