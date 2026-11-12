@@ -103,6 +103,13 @@ copy rejection, a synthetic second plugin version, cache eviction during a live
 session, browser build isolation/origin recovery, disable, rollback and uninstall.
 It compares project/candidate/settings bytes and a synthetic layout sentinel;
 real browser checkpoint recovery remains the separate Playwright check below.
+`make test-plugin-handoff PLUGIN_ARCHIVE=/absolute/archive.tar.gz CODEX=/absolute/codex`
+installs the real repository archive into isolated native client state and alternates
+native tool calls with Chromium artwork/scene edits. It exercises fresh threads,
+simultaneous clients, exact saved preservation, dirty conflicts, unpublished exchange,
+expired previews and changed selection. It skips without both inputs; it is not a
+model turn or human edit. See the [handoff protocol](../docs/evaluations/plugin-handoffs.md)
+for exact oracles and the separate installed-client human acceptance procedure.
 `playwright/packaging/plugin-lifecycle.spec.ts` separately paints an unsaved scene,
 closes its tab, restarts the managed browser on the same origin and restores the
 real checkpoint without changing saved content. Use `FORGE_TEST_PYTHON` to run

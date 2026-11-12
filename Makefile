@@ -60,6 +60,7 @@ help:
 	@echo '  make check-bundle            Verify a moved, read-only runtime with the MCP SDK'
 	@echo '  make package-plugin          Stage a versioned repository plugin from BUNDLE'
 	@echo '  make test-plugin-lifecycle  Verify installed plugin process sharing and recovery'
+	@echo '  make test-plugin-handoff    Verify native installed-plugin/browser handoffs (PLUGIN_ARCHIVE, CODEX)'
 	@echo '  make test-bundle-browser     Render the frozen runtime in Chromium'
 	@echo '  make clean                   Remove build outputs and node_modules; keep projects'
 	@echo '  make clean-demo              Delete the default .demo/ sample and its edits'
@@ -215,6 +216,11 @@ check-bundle:
 
 test-plugin-lifecycle:
 	$(PYTHON) tests/packaging/plugin_lifecycle_smoke.py --runtime "$(BUNDLE)/forge" --output "$(BUNDLE_CHECK)-lifecycle"
+
+.PHONY: test-plugin-handoff
+test-plugin-handoff:
+	@test -n "$(PLUGIN_ARCHIVE)" -a -n "$(CODEX)" || { echo 'Set PLUGIN_ARCHIVE and absolute CODEX executable path'; exit 2; }
+	FORGE_TEST_PLUGIN_ARCHIVE="$(abspath $(PLUGIN_ARCHIVE))" FORGE_TEST_CODEX="$(CODEX)" CHROME="$(CHROME)" $(NPM) exec -- playwright test --config tests/playwright/playwright.config.ts plugin-handoff.spec.ts
 
 PLUGIN_OUTPUT ?= build/plugin-repository
 .PHONY: package-plugin

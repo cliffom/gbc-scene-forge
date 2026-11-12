@@ -46,6 +46,8 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Evaluations
 
+- [Installed-plugin browser handoff protocol (#261)](evaluations/plugin-handoffs.md)
+
 - [Self-contained runtime bundle measurements (#255)](evaluations/runtime-bundle.md)
 
 - [Self-contained Codex plugin feasibility (#254)](evaluations/plugin-feasibility.md)

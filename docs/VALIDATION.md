@@ -15,6 +15,33 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Installed-plugin automated browser handoffs (#261)
+
+- **Scope:** Issue working tree based on `80a2e29205c4f7574f74a80c07744e33c211021f`,
+  observed 2026-11-11 America/Los_Angeles (2026-11-12 UTC), macOS 27.0.1 arm64,
+  Python 3.13.13, Codex CLI/app-server 0.167.1 and Chromium 156.0.8078.4. Plugin
+  0.1.0-alpha.1 / Forge 0.46.1; exact test/archive/runtime identities are in the
+  [archived result](evaluations/assets/plugin-handoffs/result.json).
+- **Method:** Install the actual repository archive in isolated native client/home
+  state with a synthetic root grant. Alternate app-server tool calls and Chromium
+  gestures, close/recreate native clients/threads, compare every saved RGBA byte,
+  complete canonical scenes and downloaded conflicting checkpoints. Agent-inspect
+  1440×1000 captures. Run the companion installed-wheel checkpoint restart test,
+  required lint/docs/Python/TypeScript checks and production build/wheel smoke checks.
+- **Result:** Native handoff and installed-wheel restart cases pass, including
+  visible clean refresh, competing/dirty save refusal, stale revisions/receipts,
+  retained unpublished exchange/release, expired preview resources, browser restart
+  and selection revocation. Required checks pass: 551 Python tests, frontend suites
+  and seven wheel smoke tests. The [evaluation](evaluations/plugin-handoffs.md)
+  preserves early harness failures, a cleaned-up test worker and background native
+  WebSocket diagnostics. No runtime behavior or release version changed.
+- **Limits:** Synthetic grants, pointer automation and native threads do not
+  establish a human manual edit or a model-led refinement in an actual new
+  conversation. This small opaque-tile/scene fixture does not establish layered or
+  animation fidelity, independent OS users, native directory dialogs, additional
+  clients/platforms or artistic quality. #261 remains open in Remaining checks;
+  local results and archived captures do not certify CI or independent-user acceptance.
+
 ## Installation guard performance (PR #273 feedback)
 
 - **Scope:** Agent-run checks on 2026-11-11, macOS 27.0.1 arm64, Python
@@ -3298,15 +3325,20 @@ Dates, revisions and environments missing from the originals remain unknown.
 
 ### Plugin selection, introduction and handoff (#261/#264)
 
+- [ ] Complete the [installed-plugin handoff protocol](evaluations/plugin-handoffs.md)
+  with an attributable manual artwork/scene edit and a model-led refinement in an
+  actual fresh conversation (#261), including visual inspection, dirty-document
+  conflicts, stale guards, unpublished exchange, restart and changed selection.
+  Synthetic native app-server threads and Playwright gestures do not complete
+  this manual/model acceptance. The
+  [#257 executable checks](#managed-plugin-browser-lifecycle-257) establish local
+  process behavior, not client browser-opening or independent-user acceptance.
+
 - [ ] Exercise the native folder dialog from an installed plugin, including
   first-use create, reopen/switch, OS denial/cancellation and a later conversation;
   have independent users skip or complete the optional first task and find
   browser editing/export. The #256 synthetic chooser/SDK checks above establish
   implementation behavior, not native-dialog or onboarding usability.
-- [ ] Exercise managed browser opening/reuse, chat closure, concurrent
-  conversations and later refinement in an actual installed Codex plugin. The
-  [#257 executable checks](#managed-plugin-browser-lifecycle-257) establish local
-  process behavior, not client browser-opening or independent-user acceptance.
 
 ### Codex plugin feasibility (milestone 25, #254)
 
