@@ -1,0 +1,302 @@
+{
+  "python_packages": [
+    {
+      "name": "altgraph",
+      "version": "0.17.5",
+      "licenses": [
+        "altgraph/altgraph-0.17.5.dist-info/LICENSE"
+      ]
+    },
+    {
+      "name": "annotated-types",
+      "version": "0.8.0",
+      "licenses": [
+        "annotated-types/annotated_types-0.8.0.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "name": "anyio",
+      "version": "4.16.0",
+      "licenses": [
+        "anyio/anyio-4.16.0.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "name": "attrs",
+      "version": "26.1.0",
+      "licenses": [
+        "attrs/attrs-26.1.0.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "name": "certifi",
+      "version": "2026.10.23",
+      "licenses": [
+        "certifi/certifi-2026.10.23.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "name": "cffi",
+      "version": "2.1.1",
+      "licenses": [
+        "cffi/cffi-2.1.1.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "name": "click",
+      "version": "8.5.1",
+      "licenses": [
+        "click/click-8.5.1.dist-info/licenses/LICENSE.txt"
+      ]
+    },
+    {
+      "name": "cryptography",
+      "version": "50.0.2",
+      "licenses": [
+        "cryptography/cryptography-50.0.2.dist-info/licenses/LICENSE",
+        "cryptography/cryptography-50.0.2.dist-info/licenses/LICENSE.APACHE",
+        "cryptography/cryptography-50.0.2.dist-info/licenses/LICENSE.BSD"
+      ]
+    },
+    {
+      "name": "gbc-scene-forge",
+      "version": "0.46.1",
+      "licenses": [
+        "gbc-scene-forge/gbc_scene_forge-0.46.1.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "name": "h11",
+      "version": "0.16.0",
+      "licenses": [
+        "h11/h11-0.16.0.dist-info/licenses/LICENSE.txt"
+      ]
+    },
+    {
+      "name": "httpcore",
+      "version": "1.0.9",
+      "licenses": [
+        "httpcore/httpcore-1.0.9.dist-info/licenses/LICENSE.md"
+      ]
+    },
+    {
+      "name": "httpx",
+      "version": "0.28.1",
+      "licenses": [
+        "httpx/httpx-0.28.1.dist-info/licenses/LICENSE.md"
+      ]
+    },
+    {
+      "name": "httpx-sse",
+      "version": "0.4.3",
+      "licenses": [
+        "httpx-sse/httpx_sse-0.4.3.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "name": "idna",
+      "version": "3.20",
+      "licenses": [
+        "idna/idna-3.20.dist-info/licenses/LICENSE.md"
+      ]
+    },
+    {
+      "name": "jsonschema",
+      "version": "4.26.0",
+      "licenses": [
+        "jsonschema/jsonschema-4.26.0.dist-info/licenses/COPYING"
+      ]
+    },
+    {
+      "name": "jsonschema-specifications",
+      "version": "2025.9.1",
+      "licenses": [
+        "jsonschema-specifications/jsonschema_specifications-2025.9.1.dist-info/licenses/COPYING"
+      ]
+    },
+    {
+      "name": "macholib",
+      "version": "1.16.4",
+      "licenses": [
+        "macholib/macholib-1.16.4.dist-info/LICENSE"
+      ]
+    },
+    {
+      "name": "mcp",
+      "version": "1.30.0",
+      "licenses": [
+        "mcp/mcp-1.30.0.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "name": "packaging",
+      "version": "26.3",
+      "licenses": [
+        "packaging/packaging-26.3.dist-info/licenses/LICENSE",
+        "packaging/packaging-26.3.dist-info/licenses/LICENSE.APACHE",
+        "packaging/packaging-26.3.dist-info/licenses/LICENSE.BSD"
+      ]
+    },
+    {
+      "name": "pycparser",
+      "version": "3.12",
+      "licenses": [
+        "pycparser/pycparser-3.12.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "name": "pydantic",
+      "version": "2.14.3",
+      "licenses": [
+        "pydantic/pydantic-2.14.3.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "name": "pydantic-settings",
+      "version": "2.16.2",
+      "licenses": [
+        "pydantic-settings/pydantic_settings-2.16.2.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "name": "pydantic_core",
+      "version": "2.50.4",
+      "licenses": [
+        "pydantic_core/pydantic_core-2.50.4.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "name": "pyinstaller",
+      "version": "6.22.3",
+      "licenses": [
+        "pyinstaller/pyinstaller-6.22.3.dist-info/licenses/COPYING.txt"
+      ]
+    },
+    {
+      "name": "pyinstaller-hooks-contrib",
+      "version": "2026.10",
+      "licenses": [
+        "pyinstaller-hooks-contrib/pyinstaller_hooks_contrib-2026.10.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "name": "PyJWT",
+      "version": "2.15.1",
+      "licenses": [
+        "PyJWT/pyjwt-2.15.1.dist-info/licenses/AUTHORS.rst",
+        "PyJWT/pyjwt-2.15.1.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "name": "python-dotenv",
+      "version": "1.2.4",
+      "licenses": [
+        "python-dotenv/python_dotenv-1.2.4.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "name": "python-multipart",
+      "version": "0.0.33",
+      "licenses": [
+        "python-multipart/python_multipart-0.0.33.dist-info/licenses/LICENSE.txt"
+      ]
+    },
+    {
+      "name": "referencing",
+      "version": "0.37.0",
+      "licenses": [
+        "referencing/referencing-0.37.0.dist-info/licenses/COPYING"
+      ]
+    },
+    {
+      "name": "rpds-py",
+      "version": "2026.9.1",
+      "licenses": [
+        "rpds-py/rpds_py-2026.9.1.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "name": "setuptools",
+      "version": "84.2.1",
+      "licenses": [
+        "setuptools/setuptools-84.2.1.dist-info/licenses/LICENSE",
+        "setuptools/setuptools/_vendor/autocommand-2.2.2.dist-info/LICENSE",
+        "setuptools/setuptools/_vendor/backports.tarfile-1.2.0.dist-info/LICENSE",
+        "setuptools/setuptools/_vendor/importlib_metadata-8.7.1.dist-info/licenses/LICENSE",
+        "setuptools/setuptools/_vendor/jaraco.text-4.0.0.dist-info/LICENSE",
+        "setuptools/setuptools/_vendor/jaraco_context-6.1.0.dist-info/licenses/LICENSE",
+        "setuptools/setuptools/_vendor/jaraco_functools-4.4.0.dist-info/licenses/LICENSE",
+        "setuptools/setuptools/_vendor/more_itertools-10.8.0.dist-info/licenses/LICENSE",
+        "setuptools/setuptools/_vendor/packaging-26.3.dist-info/licenses/LICENSE",
+        "setuptools/setuptools/_vendor/packaging-26.3.dist-info/licenses/LICENSE.APACHE",
+        "setuptools/setuptools/_vendor/packaging-26.3.dist-info/licenses/LICENSE.BSD",
+        "setuptools/setuptools/_vendor/platformdirs-4.4.0.dist-info/licenses/LICENSE",
+        "setuptools/setuptools/_vendor/tomli-2.4.0.dist-info/licenses/LICENSE",
+        "setuptools/setuptools/_vendor/wheel-0.46.3.dist-info/licenses/LICENSE.txt",
+        "setuptools/setuptools/_vendor/zipp-3.23.0.dist-info/licenses/LICENSE",
+        "setuptools/setuptools/config/NOTICE",
+        "setuptools/setuptools/config/_validate_pyproject/NOTICE"
+      ]
+    },
+    {
+      "name": "sse-starlette",
+      "version": "3.7.0",
+      "licenses": [
+        "sse-starlette/sse_starlette-3.7.0.dist-info/licenses/AUTHORS",
+        "sse-starlette/sse_starlette-3.7.0.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "name": "starlette",
+      "version": "1.10.0",
+      "licenses": [
+        "starlette/starlette-1.10.0.dist-info/licenses/LICENSE.md"
+      ]
+    },
+    {
+      "name": "typing-inspection",
+      "version": "0.4.5",
+      "licenses": [
+        "typing-inspection/typing_inspection-0.4.5.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "name": "typing_extensions",
+      "version": "4.16.0",
+      "licenses": [
+        "typing_extensions/typing_extensions-4.16.0.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "name": "uvicorn",
+      "version": "0.54.0",
+      "licenses": [
+        "uvicorn/uvicorn-0.54.0.dist-info/licenses/LICENSE.md"
+      ]
+    }
+  ],
+  "python": {
+    "schema_version": 1,
+    "target": "macos-arm64",
+    "system": "Darwin",
+    "machine": "arm64",
+    "python_version": "3.13.13",
+    "python_build": "20260602",
+    "python_url": "https://github.com/astral-sh/python-build-standalone/releases/download/20260602/cpython-3.13.13%2B20260602-aarch64-apple-darwin-pgo%2Blto-full.tar.zst",
+    "python_sha256": "643c3645d34338230e7c8100457ed25ea1660216054de38238326847a055b9f8",
+    "uv_version": "0.13.7"
+  },
+  "system_libraries": [
+    "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+    "/System/Library/Frameworks/SystemConfiguration.framework/Versions/A/SystemConfiguration",
+    "/usr/lib/libSystem.B.dylib",
+    "/usr/lib/libedit.3.dylib",
+    "/usr/lib/libiconv.2.dylib",
+    "/usr/lib/libncurses.5.4.dylib",
+    "/usr/lib/libpanel.5.4.dylib",
+    "/usr/lib/libz.1.dylib"
+  ],
+  "native_licenses": "plugins/scene-forge/runtime/notices/python-native/",
+  "frontend_notices": "plugins/scene-forge/runtime/notices/frontend.txt",
+  "scope": "build environment superset; complete license files are in the archive"
+}

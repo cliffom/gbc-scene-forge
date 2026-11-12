@@ -47,6 +47,8 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Evaluations
 
+- [macOS plugin release candidate evidence (#263)](evaluations/plugin-releases.md)
+
 - [Plugin authoring quality, visual inspection and resource baseline (#262)](evaluations/plugin-authoring-quality.md)
 
 - [Installed-plugin browser handoff protocol (#261)](evaluations/plugin-handoffs.md)

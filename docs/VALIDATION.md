@@ -3348,6 +3348,32 @@ Dates, revisions and environments missing from the originals remain unknown.
   deterministic work counts provide regression guards. No new CI-pass or publication
   claim is made by this local record.
 
+## macOS signed plugin release candidate (#263)
+
+- **Scope:** Clean tracked revision `1466753b0e4b036abff5f6437e90d9cf45ce9036`,
+  observed 2026-11-11 Pacific / 2026-11-12 UTC on macOS 27.0.1 ARM64 with Codex
+  CLI/app-server 0.167.1; Forge 0.46.1/plugin 0.1.0-alpha.1, unpublished milestone
+  candidate. [Metadata and raw evidence](evaluations/plugin-releases.md) retain
+  archive/build/tool identities and observation boundaries.
+- **Method:** Pinned native production build with Developer ID; hash/extract/
+  relocate/read-only archive acceptance, strict Mach-O signature and Gatekeeper
+  assessment, official MCP SDK authoring/export/reopen, managed process recovery,
+  actual isolated Codex installation with synthetic update/disable/rollback/
+  uninstall interactions, and Chromium frozen-editor rendering. Run local
+  docs/lint/Python/TypeScript checks and isolated installed-wheel smoke.
+- **Result:** Four native signatures verify with Developer ID/hardened runtime/
+  timestamps. Local archive/SDK/lifecycle/native-client automation passes;
+  installation bytes remain unchanged with no developer tools on runtime PATH.
+  Chromium creates/reloads the sample; inspected rendering at 1440 × 1000.
+  557 Python tests, TypeScript suites and seven installed-wheel checks pass.
+  Gatekeeper returns 3: “the code is valid but does not seem to be an app.”
+- **Limits:** This is not trusted downloaded-plugin acceptance. No notarization,
+  quarantined download, clean OS, native dialog/model-led/independent-user journey,
+  hosted delivery or Windows/Linux qualification. The signed archive is local;
+  retained JSON does not independently archive that binary. Native CI and its
+  separate ad-hoc artifacts have their own run/environment bounds; remaining
+  release checks stay below.
+
 ## Remaining checks
 
 ### Plugin release qualification (#263)
