@@ -210,5 +210,13 @@ be exposed, disclose the limit and arrange browser/user review; keep the candida
 unpublished unless the user authorizes saving without model inspection. Animation
 PNG contact sheets plus exact order/duration inspection cover a client without
 APNG playback, but do not establish perceived cadence. Numeric validation alone
-does not establish visual quality. The scene skill remains #260; installed handoff,
+does not establish visual quality. The bundled
+[scene skill](../plugin/skills/forge-scenes/SKILL.md) covers blockouts, existing or
+new artwork placement, composition refinement and portable export. Its
+[outcome routes](../plugin/skills/forge-scenes/references/outcome-routes.md) identify
+browser handoffs for stamps, diagnostics, semantic terrain brushes and preferences;
+its [export guide](../plugin/skills/forge-scenes/references/portable-export.md)
+distinguishes saved snapshots from drafts and requires separate reopen verification.
+[Scene workflow briefs](../plugin/skills/forge-scenes/references/workflow-checks.md)
+cover candidate review, conflicts and bounded overview inspection. Installed handoff,
 quality/resource evaluation and independent-user acceptance stay with #261/#262/#264.
