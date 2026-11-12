@@ -233,7 +233,7 @@ RELEASE_REVISION ?=
 .PHONY: check-plugin-release
 check-plugin-release:
 	@test -n "$(RELEASE_REVISION)" || { echo 'Set RELEASE_REVISION to the full source Git revision'; exit 2; }
-	$(PYTHON) runtime/release.py --bundle "$(BUNDLE)" --output "$(PLUGIN_RELEASE_OUTPUT)" --revision "$(RELEASE_REVISION)" --python "$(BUNDLE_BUILD)/build-env/bin/python"
+	$(POETRY) run python runtime/release.py --bundle "$(BUNDLE)" --output "$(PLUGIN_RELEASE_OUTPUT)" --revision "$(RELEASE_REVISION)" --python "$(BUNDLE_BUILD)/build-env/bin/python"
 
 .PHONY: test-bundle-browser
 test-bundle-browser:
