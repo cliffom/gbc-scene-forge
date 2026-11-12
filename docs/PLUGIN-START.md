@@ -193,6 +193,22 @@ At review/save explain: saved content lives in the project; an unpublished
 candidate is proposed work that has not replaced the saved artwork; browser-local
 drafts and Undo belong to that browser. After saving, offer a useful next action
 and portable `export_bundle` output (or browser export above the MCP size limit).
-The dedicated artwork/scene skills in #259/#260 own detailed authoring workflows;
-the entry skill routes to them when delivered, with current guarded tools as a
-fallback. Installed handoff and independent-user acceptance stay with #261/#264.
+The bundled [artwork skill](../plugin/skills/forge-artwork/SKILL.md) handles
+illustrations, tiles and static sprites; the
+[animation skill](../plugin/skills/forge-animation/SKILL.md) adds explicit frames,
+order, timing and loop inspection. Their
+[native editing reference](../plugin/skills/forge-artwork/references/native-editing.md)
+describes the actual bounded profile, scoped source preservation and exact receipt
+flow. The [representative briefs and checks](../plugin/skills/forge-artwork/references/workflow-checks.md)
+cover draft-only work, shared-asset scope, hidden layers, timing, missing tools and
+image/playback fallbacks. Read fresh inventory and canonical descriptors rather
+than replacing documents from remembered JSON. General pixel art remains the
+default; opt-in palette estimates do not certify a target runtime.
+
+Model image inspection is required when the client supports it. If images cannot
+be exposed, disclose the limit and arrange browser/user review; keep the candidate
+unpublished unless the user authorizes saving without model inspection. Animation
+PNG contact sheets plus exact order/duration inspection cover a client without
+APNG playback, but do not establish perceived cadence. Numeric validation alone
+does not establish visual quality. The scene skill remains #260; installed handoff,
+quality/resource evaluation and independent-user acceptance stay with #261/#262/#264.

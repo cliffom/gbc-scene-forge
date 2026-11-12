@@ -63,6 +63,15 @@ the SDK-only test when the extra is absent. `packaging/package_smoke.py` is
 explicitly run with `python -I` after wheel installation, outside unit discovery.
 It imports only the installed application, never test helpers.
 
+`backend/adapters/test_mcp_plugin_artwork.py` replays bundled artwork/animation
+skill recipes through the bounded plugin session with a synthetic directory grant.
+It checks sparse/dense pixel batches, exact hidden-source preservation, PNG contact
+resources, timing-only edits, stale receipts, saved reopen, unpublished tile sheets
+and unavailable-tool rejection. Packaging checks compare every skill/reference's
+bytes after archive relocation. These checks do not run a model or establish image
+visibility, animation playback or artistic quality; representative behavioral
+cases live in the [bundled workflow checks](../plugin/skills/forge-artwork/references/workflow-checks.md).
+
 `make check-bundle` runs `packaging/bundle_smoke.py` with the locked SDK as a driver
 and no Forge imports. The executable child runs from a relocated read-only copy,
 with an empty PATH and invalid external Python settings. It checks guarded native

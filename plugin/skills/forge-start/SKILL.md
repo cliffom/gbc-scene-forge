@@ -46,10 +46,10 @@ small sprite, build a small scene, or explore this project. A specific request
 skips the introduction. Prefer existing assets and scenes; create only what the
 chosen task needs. Keep general pixel art as the default; GBC constraints are opt-in.
 
-Route drawing/refinement to the artwork authoring skill when available, and scene
-composition/export to the scene authoring skill when available. Those workflows
-are owned by issues #259 and #260; do not claim absent skills are installed.
-Until available, use current capabilities and the guarded authoring flow below.
+Route drawing/refinement to [forge-artwork](../forge-artwork/SKILL.md) and timed
+sheets to [forge-animation](../forge-animation/SKILL.md). Scene composition/export
+belongs to the scene authoring skill when delivered (#260); do not claim an absent
+skill is installed. Use current capabilities and the guarded flow below as fallback.
 
 For drawing, make a small unpublished candidate and render a useful PNG early.
 Actually inspect it before refinement; offer native and integer nearest-neighbor
