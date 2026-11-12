@@ -162,8 +162,10 @@ platform-specific marketplaces and archives from an already built runtime.
 Its prerelease plugin version is independent of the Forge wheel version; the
 compatibility resource pins their combination. Issue PRs target the milestone
 branch and do not bump or publish Forge. The milestone integration assesses the
-next unpublished product version after its acceptance gates pass. Platform CI,
-signing and publishing remain #263; public directory submission remains #265.
+next unpublished product version after its acceptance gates pass. The
+[macOS plugin candidate procedure](PLUGIN-RELEASES.md) describes native CI,
+archive evidence and protected signing/notarization configuration. Final platform
+qualification and publishing remain #263; public directory submission remains #265.
 
 ## Internal refactors
 

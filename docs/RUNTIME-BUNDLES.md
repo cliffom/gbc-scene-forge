@@ -11,8 +11,9 @@ Python wheels and their launchers remain supported.
 The initial target is **macOS arm64**, following the
 [feasibility decision](evaluations/plugin-feasibility.md). The builder rejects
 other hosts. The [repository packager](PLUGIN-DISTRIBUTION.md) stages initial-platform
-delivery. Windows x64/Linux x64 build configuration, CI and signed release delivery
-belong to #263. No universal OS or client compatibility is
+delivery. The [macOS candidate workflow](PLUGIN-RELEASES.md) adds native CI,
+archive verification and optional Developer ID signing. Windows x64/Linux x64
+builds and final release/client qualification remain #263. No universal OS or client compatibility is
 claimed. See [measurements and limitations](evaluations/runtime-bundle.md).
 
 ## Launch contract
@@ -76,10 +77,14 @@ The output is `build/runtime/forge-VERSION-macos-arm64/forge` alongside
 `BUNDLE_CHECK`, `PYTHON_ARCHIVE` or `UV` to use other locations. The source
 archive includes [the build sources](../runtime/); the ordinary wheel does not
 include build tooling. Build metadata records schema version, target, wheel hash,
-configuration/source/lock hashes and external OS libraries. The build rejects
-native links to absolute non-system paths. The adjacent build report records
-construction time, installed file bytes and a temporary gzip size sample. Native
-signatures, timestamps and archive metadata mean outputs are not bit-reproducible.
+configuration/source/lock hashes, external OS libraries and the builder's Git
+checkout revision/tracked diff (unknown for exported source trees). This checkout
+describes the freezing tools, not the prebuilt wheel's source revision, which
+remains unknown; packaging retains these scopes separately.
+The build rejects native links to absolute non-system paths. The adjacent build
+report records construction time, installed file bytes and a temporary gzip size
+sample. Native signatures, timestamps and archive metadata mean outputs are not
+bit-reproducible.
 
 `notices/` includes license files and a versioned inventory from all installed
 build-environment distributions (a superset of frozen runtime packages), CPython's

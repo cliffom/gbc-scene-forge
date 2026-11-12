@@ -3348,7 +3348,87 @@ Dates, revisions and environments missing from the originals remain unknown.
   deterministic work counts provide regression guards. No new CI-pass or publication
   claim is made by this local record.
 
+## macOS signed plugin release candidate (#263)
+
+- **Scope:** Clean tracked revision `4720f9a36d005b2df1cef092dbc767446856c203`,
+  observed 2026-11-11 Pacific / 2026-11-12 UTC on macOS 27.0.1 ARM64 with Codex
+  CLI/app-server 0.167.1; Forge 0.46.1/plugin 0.1.0-alpha.1, unpublished milestone
+  candidate. [Metadata and raw evidence](evaluations/plugin-releases.md) retain
+  archive/build/tool identities and observation boundaries.
+  Separate [native CI](https://github.com/cliffom/gbc-scene-forge/actions/runs/43178752574)
+  checks PR merge `c9c67effb5867899fead7aeabc1910a77c8db52a` on macOS 15.8.2 ARM64
+  with ad-hoc signing; it does not meet the macOS 27 installed-client floor.
+- **Method:** Pinned native production build with Developer ID; hash/extract/
+  relocate/read-only archive acceptance, strict Mach-O signature and Gatekeeper
+  assessment, official MCP SDK authoring/export/reopen, managed process recovery,
+  actual isolated Codex installation with synthetic update/disable/rollback/
+  uninstall interactions, and Chromium frozen-editor rendering. Run local
+  docs/lint/Python/TypeScript checks and isolated installed-wheel smoke.
+- **Result:** Four native signatures verify with Developer ID/hardened runtime/
+  timestamps. Local archive/SDK/lifecycle/native-client automation passes;
+  installation bytes remain unchanged with no developer tools on runtime PATH.
+  Chromium creates/reloads the sample; inspected rendering at 1440 × 1000.
+  558 Python tests, TypeScript suites and seven installed-wheel checks pass.
+  The native CI build/archive/SDK/Chromium job passes and retains candidate and
+  diagnostic artifacts until 2026-12-12 UTC; downloaded checksums verify.
+  Gatekeeper returns 3: “the code is valid but does not seem to be an app.”
+- **Limits:** This is not trusted downloaded-plugin acceptance. No notarization,
+  quarantined download, clean OS, native dialog/model-led/independent-user journey,
+  hosted delivery or Windows/Linux qualification. The signed archive is local;
+  retained JSON does not independently archive that binary. Native CI and its
+  separate ad-hoc artifacts have their own run/environment bounds; remaining
+  release checks stay below.
+
+## Local macOS notarization and quarantined launch (#263)
+
+- **Scope:** On 2026-11-12 UTC, the existing Developer ID candidate from clean
+  tracked revision `4720f9a36d005b2df1cef092dbc767446856c203`, Forge 0.46.1/plugin
+  0.1.0-alpha.1, on macOS 27.0.1 ARM64 with Chrome 157.0.8103.78 and Codex CLI
+  0.167.1. This later observation does not revise the original build reports.
+- **Method:** User-authorized Apple submission using a local Keychain profile;
+  inspect the accepted log, download the unchanged archive with isolated headful
+  Chrome over loopback HTTP, preserve actual quarantine with `ditto`, extract
+  through Archive Utility, check native signatures/online notarization and attempt
+  a direct launcher invocation. Separately inspect isolated Codex cache installation.
+- **Result:** Apple accepted submission `1227be35-3516-4e7e-b947-a71834bb8d49`
+  with no issues and tickets for all four native files. All four pass strict
+  signature checks. Playwright `saveAs` lost quarantine; the preserved
+  original download and extracted files retain it. Direct launch fails with
+  SIGKILL (-9); the OS log records a prompt and Gatekeeper rejection, and the user
+  confirms dismissing it. An initial explicit `notarized` requirement fails
+  despite service acceptance. Codex copies the quarantined repository unchanged
+  and preserves observed quarantine markers. On the user-requested retry, the
+  cache launcher and native app-server MCP status pass; the user reports no
+  prompt. All four native files then satisfy the explicit `notarized` requirement,
+  and source/cache bytes still match the submission. Raw `spctl` still returns 3.
+  [Retained evidence and hashes](evaluations/plugin-releases.md#local-notarization-and-quarantined-download)
+  preserve both the failure and successful online quarantined cache launch.
+- **Limits:** Initial prompt wording and the cause of the earlier ticket-check
+  failure are unknown; no guaranteed propagation interval is established. No clean OS,
+  independent-user/model journey, offline first launch, hosted HTTPS delivery,
+  protected signed CI dispatch or publication. No quarantine removal or trust
+  override. This scoped online launch does not complete general release qualification.
+
 ## Remaining checks
+
+### Plugin release qualification (#263)
+
+- [ ] Complete general [macOS release candidate](PLUGIN-RELEASES.md) qualification
+  beyond the [successful local online quarantined cache launch](evaluations/plugin-releases.md#local-notarization-and-quarantined-download):
+  test a normal independent user/clean host, hosted download/relocation, offline
+  first-launch behavior and protected CI signing/notarization. Local Apple
+  acceptance and developer-host launch do not complete these release gates.
+- [ ] Complete the downloaded candidate's installed-client project selection,
+  model image inspection, user image review, browser handoff, create/reopen/edit/
+  export and shutdown journey on each advertised macOS client/OS. Synthetic
+  SDK/app-server automation and prior probe evidence do not complete this gate.
+- [ ] Produce Windows x64/Linux x64 native archives with named OS/library floors,
+  a selected Linux glibc baseline, trust policy and installed-client acceptance.
+  Record unavailable clients explicitly; these remain required milestone outcomes.
+- [ ] Verify hosted repository/release delivery, archive size/selection and retain
+  the exact release archive plus CI evidence beyond Actions artifact expiry before
+  milestone publication. Intel macOS, ARM Windows/Linux and WSL/remote execution
+  remain deferred.
 
 ### Plugin authoring quality and interaction cost (#262)
 
@@ -3388,11 +3468,10 @@ Dates, revisions and environments missing from the originals remain unknown.
       [the attributed report](#human-browser-review-of-the-installed-plugin-fixture-254).
       The integrated-browser image-decoding stall remains an explicit compatibility
       limit; this confirmation applies to the external Chrome window.
-- [ ] Establish additional client/platform support (including Windows x64/Linux
-  x64), older macOS, hosted Git repository installation, signing, quarantine/
-  download, archive-selection/size and public-directory boundaries as downstream
-  delivery contracts require (#263/#265). The #258 local repository update/
-  rollback/uninstall checks do not establish those release outcomes.
+- [ ] Establish public-directory eligibility/submission boundaries (#265).
+  Additional platform/release qualification belongs to #263 above; older macOS
+  remains unadvertised. The #258 local repository update/rollback/uninstall checks
+  do not establish those release outcomes.
 
 ### Editor discovery, scope and working space (#224)
 

@@ -13,6 +13,7 @@ from socket import create_connection
 from unittest.mock import patch
 
 from gbc_scene_forge.adapters.console import ServerConsole
+from gbc_scene_forge.adapters.http.common import LocalHandler, LocalHTTPServer
 from gbc_scene_forge.adapters.http.server import (
     StandaloneServer,
     make_handler,
@@ -25,6 +26,17 @@ from gbc_scene_forge.build_info import build_version
 
 
 class ConsoleTests(unittest.TestCase):
+    def test_loopback_servers_bind_without_reverse_dns(self):
+        for server_type in (LocalHTTPServer, StandaloneServer):
+            with (
+                self.subTest(server_type=server_type),
+                patch("socket.getfqdn", side_effect=AssertionError("Unexpected reverse DNS")),
+            ):
+                with server_type(("127.0.0.1", 0), LocalHandler) as server:
+                    self.assertEqual(server.server_name, "127.0.0.1")
+                    self.assertEqual(server.server_port, server.socket.getsockname()[1])
+                    self.assertGreater(server.server_port, 0)
+
     def test_launcher_writes_timestamped_rotating_log_and_compact_output(self):
         with tempfile.TemporaryDirectory() as folder:
             server = unittest.mock.MagicMock()

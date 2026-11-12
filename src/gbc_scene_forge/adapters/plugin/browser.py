@@ -10,12 +10,12 @@ import sys
 import tempfile
 import time
 from contextlib import contextmanager
-from http.server import ThreadingHTTPServer
 from pathlib import Path
 from threading import Lock, Thread
 from urllib.parse import quote, urlparse
 
 from gbc_scene_forge import __version__
+from gbc_scene_forge.adapters.http.common import LocalHTTPServer
 from gbc_scene_forge.adapters.http.server import make_handler
 from gbc_scene_forge.core.errors import Conflict
 from gbc_scene_forge.core.validation import require
@@ -302,7 +302,7 @@ def worker(config):
             def do_POST(self):
                 self.dispatch("POST")
 
-        class Server(ThreadingHTTPServer):
+        class Server(LocalHTTPServer):
             def __init__(self, *args):
                 self.active = 0
                 self.active_lock = Lock()

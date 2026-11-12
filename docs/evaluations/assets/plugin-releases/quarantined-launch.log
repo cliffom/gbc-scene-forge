@@ -1,0 +1,5 @@
+2026-11-12 05:40:25.635 Df syspolicyd[509:96b7bd6] [com.apple.securityd:gk] temporarySigning type=1 matchFlags=0x0 path=/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/bin/forge
+2026-11-12 05:40:25.780 Df syspolicyd[509:96b7c0f] [com.apple.syspolicy.exec:default] GK evaluateScanResult: 1, PST: (path: a8ff4155a69bf2f5), (team: 62X274W9SU), (id: forge), (bundle_id: NOT_A_BUNDLE), 1, 0, 1, 0, 0, 3, 0
+2026-11-12 05:40:25.780 Df syspolicyd[509:96b7c0f] [com.apple.syspolicy.exec:default] Prompt shown (6, 0), waiting for response: PST: (path: a8ff4155a69bf2f5), (team: 62X274W9SU), (id: forge), (bundle_id: NOT_A_BUNDLE)
+2026-11-12 05:40:33.079 Df syspolicyd[509:96b7c0f] [com.apple.syspolicy.exec:default] Adding Gatekeeper denial breadcrumb (direct): PST: (path: a8ff4155a69bf2f5), (team: 62X274W9SU), (id: forge), (bundle_id: NOT_A_BUNDLE)
+2026-11-12 05:40:33.082 E  syspolicyd[509:96b7bd6] [com.apple.syspolicy.exec:default] Terminating process due to Gatekeeper rejection: 30572, <private>

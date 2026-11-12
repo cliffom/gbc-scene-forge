@@ -24,6 +24,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 - [Editor layout guidelines](UI-DESIGN.md)
 - [Documentation policy](DOCUMENTATION.md)
 - [Building and releasing](RELEASING.md)
+- [macOS plugin release candidates](PLUGIN-RELEASES.md)
 - [Experimental self-contained runtime bundles](RUNTIME-BUNDLES.md)
 - [Changelog](CHANGELOG.md)
 - [Validation record](VALIDATION.md)
@@ -45,6 +46,8 @@ Test ownership and commands are in [test organization](../tests/README.md).
 - [Create and edit pixel artwork](user/pixel-artwork.md)
 
 ## Evaluations
+
+- [macOS plugin release candidate evidence (#263)](evaluations/plugin-releases.md)
 
 - [Plugin authoring quality, visual inspection and resource baseline (#262)](evaluations/plugin-authoring-quality.md)
 

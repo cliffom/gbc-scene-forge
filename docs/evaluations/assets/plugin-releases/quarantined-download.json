@@ -1,0 +1,18 @@
+{
+  "observed_utc": "2026-11-12T13:38:37.830Z",
+  "browser": "157.0.8103.78",
+  "method": "Headful Chrome automation, isolated temporary browser profile, loopback HTTP download; not hosted public delivery or an independent-user test",
+  "destination": "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/downloaded-candidate.tar.gz",
+  "source_quarantine": {
+    "value": "0081;6af5c15d;Chrome;"
+  },
+  "saved_quarantine": {
+    "exit_code": 1,
+    "stderr": "xattr: /Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/downloaded-candidate.tar.gz: No such xattr: com.apple.quarantine\n"
+  },
+  "preserved_destination": "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/quarantined-download.tar.gz",
+  "preserved_quarantine": {
+    "value": "0081;6af5c15d;Chrome;"
+  },
+  "sha256": "34981c5dc53e2475e2871c99d6db1fa3d5824a13fe5b0cc8644db59e1c9e6a3b"
+}

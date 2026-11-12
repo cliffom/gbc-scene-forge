@@ -308,6 +308,10 @@ def main():
     output.mkdir(parents=True, exist_ok=False)
     copied = output / "original location"
     shutil.copytree(args.bundle, copied, symlinks=True)
+    # copytree preserves a restricted installation's directory mode. macOS 15
+    # requires owner-write on the source directory to rename it. This is only
+    # our disposable copy; remove write bits again below before runtime launch.
+    copied.chmod(copied.stat().st_mode | 0o200)
     bundle = output / "moved runtime café"
     copied.rename(bundle)
     executable = bundle / "forge"

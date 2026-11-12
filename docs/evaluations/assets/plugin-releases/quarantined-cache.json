@@ -1,0 +1,32 @@
+{
+  "observed_utc": "2026-11-12T13:41:50.330967+00:00",
+  "method": "Static isolated Codex cache installation from quarantined Archive Utility output; no cache executable launched",
+  "marketplace_add": {
+    "exit_code": 0,
+    "stdout": "{\n  \"marketplaceName\": \"scene-forge-repository\",\n  \"installedRoot\": \"/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/scene-forge-0.1.0-alpha.1-macos-arm64\",\n  \"alreadyAdded\": false\n}\n",
+    "stderr": ""
+  },
+  "plugin_add": {
+    "exit_code": 0,
+    "stdout": "{\n  \"pluginId\": \"scene-forge@scene-forge-repository\",\n  \"name\": \"scene-forge\",\n  \"marketplaceName\": \"scene-forge-repository\",\n  \"version\": \"0.1.0-alpha.1\",\n  \"installedPath\": \"/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check state/plugins/cache/scene-forge-repository/scene-forge/0.1.0-alpha.1\",\n  \"authPolicy\": \"ON_INSTALL\"\n}\n",
+    "stderr": ""
+  },
+  "quarantine": {
+    "bin/forge": {
+      "exit_code": 0,
+      "stdout": "0081;6af5c15d;Chrome;\n",
+      "stderr": ""
+    },
+    "runtime/forge": {
+      "exit_code": 0,
+      "stdout": "0081;6af5c15d;Chrome;\n",
+      "stderr": ""
+    },
+    "runtime/_internal/libpython3.13.dylib": {
+      "exit_code": 0,
+      "stdout": "0081;6af5c15d;Chrome;\n",
+      "stderr": ""
+    }
+  },
+  "cache_bytes_match_source": true
+}

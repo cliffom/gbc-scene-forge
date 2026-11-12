@@ -109,7 +109,7 @@ def build_id(files):
     return hashlib.sha256(json.dumps(files, sort_keys=True).encode()).hexdigest()
 
 
-def verify(root):
+def verify(root, *, check_host=True):
     """Return installed identity, or reject before any project/settings mutation."""
     root = Path(root).resolve()
     if not has_installation(root):
@@ -131,9 +131,12 @@ def verify(root):
             "Incompatible plugin/runtime/project-format combination",
         )
         require(
-            (platform.system(), platform.machine()) == ("Darwin", "arm64")
-            and tuple(map(int, platform.mac_ver()[0].split(".")[:2]))
-            >= tuple(map(int, contract["minimum_macos"].split("."))),
+            not check_host
+            or (
+                (platform.system(), platform.machine()) == ("Darwin", "arm64")
+                and tuple(map(int, platform.mac_ver()[0].split(".")[:2]))
+                >= tuple(map(int, contract["minimum_macos"].split(".")))
+            ),
             "This bundle requires local macOS 27.0+ on Apple Silicon",
         )
         files = inventory(root)

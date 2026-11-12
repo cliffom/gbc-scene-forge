@@ -1,0 +1,37 @@
+{
+  "logFormatVersion": 1,
+  "jobId": "1227be35-3516-4e7e-b947-a71834bb8d49",
+  "status": "Accepted",
+  "statusSummary": "Ready for distribution",
+  "statusCode": 0,
+  "archiveFilename": "forge-notary.zip",
+  "uploadDate": "2026-11-12T13:37:10.718Z",
+  "sha256": "240d2c66c4408f0dd512e1ab6ca210f61efa6d456e0cb51b38904709b6ec57eb",
+  "ticketContents": [
+    {
+      "path": "forge-notary.zip/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/runtime/forge",
+      "digestAlgorithm": "SHA-256",
+      "cdhash": "ea9796a5d0c0a383e3275ee869ddf4d03a54f1a2",
+      "arch": "arm64"
+    },
+    {
+      "path": "forge-notary.zip/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/runtime/_internal/libpython3.13.dylib",
+      "digestAlgorithm": "SHA-256",
+      "cdhash": "078e7900f91d589dbaf3263d477ff121dcdf4759",
+      "arch": "arm64"
+    },
+    {
+      "path": "forge-notary.zip/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/runtime/_internal/rpds/rpds.cpython-313-darwin.so",
+      "digestAlgorithm": "SHA-256",
+      "cdhash": "41ca0ac716ccaa353a8179f7cf84d5fed07150e8",
+      "arch": "arm64"
+    },
+    {
+      "path": "forge-notary.zip/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/runtime/_internal/pydantic_core/_pydantic_core.cpython-313-darwin.so",
+      "digestAlgorithm": "SHA-256",
+      "cdhash": "97df7fbdb407bf57a31337e4086fccde76830688",
+      "arch": "arm64"
+    }
+  ],
+  "issues": null
+}

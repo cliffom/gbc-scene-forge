@@ -14,6 +14,8 @@ import zipfile
 from email.parser import Parser
 from pathlib import Path
 
+from provenance import checkout
+
 HERE = Path(__file__).resolve().parent
 
 
@@ -52,6 +54,7 @@ def os_libraries(bundle):
 
 
 def build(args):
+    build_checkout = checkout(HERE.parent)
     config = json.loads((HERE / "config.json").read_text())
     if (platform.system(), platform.machine()) != (config["system"], config["machine"]):
         raise ValueError(f"Build natively on {config['target']}; other targets belong to #263")
@@ -94,6 +97,9 @@ def build(args):
     )
     run(uv, "pip", "install", "--python", interpreter, "--no-deps", wheel)
     name = f"forge-{version}-{config['target']}"
+    signing = []
+    if args.codesign_identity:
+        signing = ["--codesign-identity", args.codesign_identity]
     run(
         interpreter,
         "-m",
@@ -115,6 +121,7 @@ def build(args):
         "mcp",
         "--collect-all",
         "pydantic",
+        *signing,
         HERE / "entry.py",
         env={**os.environ, "PYTHONHASHSEED": "0"},
     )
@@ -136,6 +143,10 @@ def build(args):
         "os_libraries": os_libraries(bundle),
         "config": config,
         "wheel_sha256": digest(wheel),
+        "build_checkout": build_checkout,
+        # The wheel is a prebuilt input, possibly from another checkout/revision.
+        "wheel_source_revision": None,
+        "signing": "developer-id" if args.codesign_identity else "ad-hoc",
         "inputs": {path.name: digest(path) for path in sorted(HERE.iterdir()) if path.is_file()},
         "build_seconds": round(time.monotonic() - started, 3),
     }
@@ -156,6 +167,7 @@ def main():
     parser.add_argument("--python-archive", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True, help="New build directory")
     parser.add_argument("--uv", default="uv")
+    parser.add_argument("--codesign-identity", help="Developer ID identity in the build keychain")
     try:
         build(parser.parse_args())
     except (ValueError, OSError, subprocess.CalledProcessError) as error:

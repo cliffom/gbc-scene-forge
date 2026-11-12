@@ -1,0 +1,135 @@
+name: macOS plugin candidate
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/plugin-macos.yml'
+      - 'runtime/**'
+      - 'plugin/**'
+      - 'src/**'
+      - 'frontend/**'
+      - 'tests/packaging/**'
+      - 'tests/playwright/packaging/**'
+      - 'tests/backend/tooling/**'
+      - 'pyproject.toml'
+      - 'Makefile'
+      - '.python-version'
+      - '.nvmrc'
+      - '*lock*'
+  workflow_dispatch:
+    inputs:
+      sign:
+        description: 'Sign and submit to Apple using the protected plugin-signing environment'
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  candidate:
+    # Native hosted build baseline; this does not lower the plugin's macOS 27 floor.
+    runs-on: macos-15
+    environment: ${{ inputs.sign && 'plugin-signing' || 'plugin-candidate' }}
+    env:
+      FORGE_BUILD_MODE: production
+    steps:
+      - uses: actions/checkout@v5
+      - name: Require native ARM64
+        run: test "$(uname -m)" = arm64
+      - uses: actions/setup-python@v6
+        with:
+          python-version-file: '.python-version'
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+      - name: Install build tools
+        run: |
+          python -m pip install poetry==2.4.2 uv==0.13.7
+          make setup
+          brew install zstd
+      - name: Read versioned artifact names
+        run: |
+          python -c 'import json, os, tomllib; v=tomllib.load(open("pyproject.toml", "rb"))["project"]["version"]; p=json.load(open("plugin/plugin.json"))["version"]; f=open(os.environ["GITHUB_ENV"], "a"); f.write(f"FORGE_RUNTIME_NAME=forge-{v}-macos-arm64\nFORGE_WHEEL=gbc_scene_forge-{v}-py3-none-any.whl\nFORGE_PLUGIN_NAME=scene-forge-{p}-macos-arm64\n")'
+      - name: Fetch pinned CPython input
+        run: |
+          mkdir -p build/runtime-inputs
+          python -c 'import json, urllib.request; c=json.load(open("runtime/config.json")); urllib.request.urlretrieve(c["python_url"], "build/runtime-inputs/python.tar.zst")'
+      - name: Import signing identity into disposable runner keychain
+        if: ${{ inputs.sign }}
+        env:
+          FORGE_SIGNING_P12: ${{ secrets.FORGE_SIGNING_P12 }}
+          FORGE_SIGNING_PASSWORD: ${{ secrets.FORGE_SIGNING_PASSWORD }}
+          FORGE_SIGNING_IDENTITY: ${{ secrets.FORGE_SIGNING_IDENTITY }}
+        run: |
+          set -euo pipefail
+          test -n "$FORGE_SIGNING_IDENTITY"
+          python -c 'import base64, os, pathlib; pathlib.Path(os.environ["RUNNER_TEMP"], "forge.p12").write_bytes(base64.b64decode(os.environ["FORGE_SIGNING_P12"]))'
+          keychain="$RUNNER_TEMP/forge-signing.keychain-db"
+          password=$(openssl rand -hex 32)
+          echo "::add-mask::$password"
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+          security import "$RUNNER_TEMP/forge.p12" -k "$keychain" -P "$FORGE_SIGNING_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$password" "$keychain" >/dev/null
+          security list-keychains -d user -s "$keychain" "$HOME/Library/Keychains/login.keychain-db"
+          rm "$RUNNER_TEMP/forge.p12"
+      - name: Build production wheel and native runtime
+        env:
+          FORGE_SIGNING_IDENTITY: ${{ inputs.sign && secrets.FORGE_SIGNING_IDENTITY || '' }}
+        run: |
+          make build check-dist
+          signing=()
+          if [ -n "$FORGE_SIGNING_IDENTITY" ]; then signing=(--codesign-identity "$FORGE_SIGNING_IDENTITY"); fi
+          python runtime/build.py --wheel "dist/$FORGE_WHEEL" --python-archive build/runtime-inputs/python.tar.zst --output build/runtime "${signing[@]}"
+      - name: Verify actual archive and retain candidate metadata
+        run: |
+          poetry run python runtime/release.py --bundle "build/runtime/$FORGE_RUNTIME_NAME" --output build/plugin-candidate --revision "$GITHUB_SHA" --python build/runtime/build-env/bin/python
+      - name: Frozen browser acceptance from extracted and relocated release
+        run: |
+          npx playwright install chromium
+          FORGE_TEST_BUNDLE="$PWD/build/plugin-candidate/sdk-smoke/moved runtime café/forge" npx playwright test --config tests/playwright/playwright.config.ts bundle.spec.ts
+      - name: Submit signed candidate to Apple notarization
+        if: ${{ inputs.sign }}
+        env:
+          FORGE_APPLE_ID: ${{ secrets.FORGE_APPLE_ID }}
+          FORGE_APPLE_PASSWORD: ${{ secrets.FORGE_APPLE_PASSWORD }}
+          FORGE_APPLE_TEAM: ${{ secrets.FORGE_APPLE_TEAM }}
+        run: |
+          set -euo pipefail
+          ditto -c -k --keepParent "build/plugin-candidate/$FORGE_PLUGIN_NAME" "$RUNNER_TEMP/forge-notary.zip"
+          xcrun notarytool submit "$RUNNER_TEMP/forge-notary.zip" --apple-id "$FORGE_APPLE_ID" --password "$FORGE_APPLE_PASSWORD" --team-id "$FORGE_APPLE_TEAM" --wait --output-format json > build/plugin-candidate/notarization.json
+          python -c 'import json; r=json.load(open("build/plugin-candidate/notarization.json")); assert r["status"] == "Accepted", r'
+          shasum -a 256 build/plugin-candidate/notarization.json > build/plugin-candidate/NOTARIZATION-SHA256
+      - name: Remove signing credentials
+        if: ${{ always() && inputs.sign }}
+        run: |
+          rm -f "$RUNNER_TEMP/forge.p12" "$RUNNER_TEMP/forge-notary.zip"
+          security delete-keychain "$RUNNER_TEMP/forge-signing.keychain-db"
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: scene-forge-macos-arm64-candidate
+          retention-days: 30
+          if-no-files-found: error
+          path: |
+            build/plugin-candidate/*.tar.gz
+            build/plugin-candidate/SHA256SUMS
+            build/plugin-candidate/release.json
+            build/plugin-candidate/dependency-inventory.json
+            build/plugin-candidate/archive-check.json
+            build/plugin-candidate/notarization.json
+            build/plugin-candidate/NOTARIZATION-SHA256
+      - uses: actions/upload-artifact@v7.0.2
+        if: ${{ always() }}
+        with:
+          name: scene-forge-macos-arm64-evidence
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            build/runtime/build-report.json
+            build/plugin-candidate/archive-check.json
+            build/plugin-candidate/notarization.json
+            build/plugin-candidate/*/report.json
+            build/plugin-candidate/*/result.json
+            build/plugin-candidate/*/*.png
+            build/plugin-candidate/*/*.log
+            build/reports/

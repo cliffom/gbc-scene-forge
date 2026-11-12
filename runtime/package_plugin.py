@@ -78,7 +78,9 @@ def package(bundle, output):
                 "files": files,
             },
         )
-        verifier.verify(plugin)
+        # A native build host may predate the advertised client OS floor. Runtime
+        # entry points always use verify's host check before project access.
+        verifier.verify(plugin, check_host=False)
         packed = staging / archive.name
         with tarfile.open(packed, "w:gz") as stream:
             stream.add(market, arcname=name)
