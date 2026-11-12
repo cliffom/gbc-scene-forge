@@ -212,9 +212,11 @@ def exercise(archive, codex, output):
             },
         )
         (output / "plugin-detail.json").write_text(json.dumps(details, indent=2) + "\n")
-        assert any(
-            skill["name"] == "scene-forge:forge-start" for skill in details["plugin"]["skills"]
-        )
+        assert {
+            "scene-forge:forge-start",
+            "scene-forge:forge-artwork",
+            "scene-forge:forge-animation",
+        } <= {skill["name"] for skill in details["plugin"]["skills"]}
         assert "forge" in details["plugin"]["mcpServers"]
         # A partial new source is rejected by the installed runtime before selection access.
         broken = output / "interrupted copy"

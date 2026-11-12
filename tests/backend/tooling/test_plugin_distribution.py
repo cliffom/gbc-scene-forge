@@ -61,6 +61,15 @@ class PluginDistributionTests(unittest.TestCase):
         shutil.unpack_archive(archive, extracted, filter="data")
         moved = next(extracted.iterdir()) / "plugins/scene-forge"
         self.assertEqual(distribution.verify(moved), installed)
+        # Skills and their local references must travel together, without checkout access.
+        self.assertTrue(
+            {"forge-start", "forge-artwork", "forge-animation"}
+            <= {p.name for p in (moved / "skills").iterdir()}
+        )
+        for source in (REPO / "plugin/skills").rglob("*"):
+            if source.is_file():
+                packaged = moved / "skills" / source.relative_to(REPO / "plugin/skills")
+                self.assertEqual(packaged.read_bytes(), source.read_bytes())
         self.assertTrue((moved / "bin/forge").stat().st_mode & 0o100)
         with self.assertRaisesRegex(ValueError, "never replace"):
             self.package()

@@ -15,7 +15,11 @@ The [manifest](../plugin/plugin.json), [MCP configuration](../plugin/mcp.json),
 [catalog template](../plugin/marketplace.json) follow the
 [official plugin packaging guide](https://developers.openai.com/plugins/build/plugins),
 consulted on 2026-11-11. Portable packages discover root `skills/`; the entry skill
-links its bundled compatibility resource. No lifecycle hooks or first-use dependency
+links its bundled compatibility resource. The packaged
+[artwork](../plugin/skills/forge-artwork/SKILL.md) and
+[animation](../plugin/skills/forge-animation/SKILL.md) skills include local editing
+contracts and representative workflow checks, so authoring does not depend on a
+source checkout or external image service. No lifecycle hooks or first-use dependency
 installation are needed. Client availability and public-directory eligibility are
 separate from repository distribution (#265).
 
