@@ -94,6 +94,9 @@ def build(args):
     )
     run(uv, "pip", "install", "--python", interpreter, "--no-deps", wheel)
     name = f"forge-{version}-{config['target']}"
+    signing = []
+    if args.codesign_identity:
+        signing = ["--codesign-identity", args.codesign_identity]
     run(
         interpreter,
         "-m",
@@ -115,6 +118,7 @@ def build(args):
         "mcp",
         "--collect-all",
         "pydantic",
+        *signing,
         HERE / "entry.py",
         env={**os.environ, "PYTHONHASHSEED": "0"},
     )
@@ -136,6 +140,7 @@ def build(args):
         "os_libraries": os_libraries(bundle),
         "config": config,
         "wheel_sha256": digest(wheel),
+        "signing": "developer-id" if args.codesign_identity else "ad-hoc",
         "inputs": {path.name: digest(path) for path in sorted(HERE.iterdir()) if path.is_file()},
         "build_seconds": round(time.monotonic() - started, 3),
     }
@@ -156,6 +161,7 @@ def main():
     parser.add_argument("--python-archive", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True, help="New build directory")
     parser.add_argument("--uv", default="uv")
+    parser.add_argument("--codesign-identity", help="Developer ID identity in the build keychain")
     try:
         build(parser.parse_args())
     except (ValueError, OSError, subprocess.CalledProcessError) as error:

@@ -24,6 +24,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 - [Editor layout guidelines](UI-DESIGN.md)
 - [Documentation policy](DOCUMENTATION.md)
 - [Building and releasing](RELEASING.md)
+- [macOS plugin release candidates](PLUGIN-RELEASES.md)
 - [Experimental self-contained runtime bundles](RUNTIME-BUNDLES.md)
 - [Changelog](CHANGELOG.md)
 - [Validation record](VALIDATION.md)

@@ -3350,6 +3350,24 @@ Dates, revisions and environments missing from the originals remain unknown.
 
 ## Remaining checks
 
+### Plugin release qualification (#263)
+
+- [ ] Qualify the [macOS release candidate](PLUGIN-RELEASES.md) after protected
+  notarization and an actual quarantined download/relocation under a normal user
+  account. Record Gatekeeper/client-copy trust and offline behavior; local
+  Developer ID verification alone does not establish ordinary installation.
+- [ ] Complete the downloaded candidate's installed-client project selection,
+  model image inspection, user image review, browser handoff, create/reopen/edit/
+  export and shutdown journey on each advertised macOS client/OS. Synthetic
+  SDK/app-server automation and prior probe evidence do not complete this gate.
+- [ ] Produce Windows x64/Linux x64 native archives with named OS/library floors,
+  a selected Linux glibc baseline, trust policy and installed-client acceptance.
+  Record unavailable clients explicitly; these remain required milestone outcomes.
+- [ ] Verify hosted repository/release delivery, archive size/selection and retain
+  the exact release archive plus CI evidence beyond Actions artifact expiry before
+  milestone publication. Intel macOS, ARM Windows/Linux and WSL/remote execution
+  remain deferred.
+
 ### Plugin authoring quality and interaction cost (#262)
 
 - [ ] Run the [bounded quality briefs](evaluations/plugin-authoring-quality.md)
@@ -3388,11 +3406,10 @@ Dates, revisions and environments missing from the originals remain unknown.
       [the attributed report](#human-browser-review-of-the-installed-plugin-fixture-254).
       The integrated-browser image-decoding stall remains an explicit compatibility
       limit; this confirmation applies to the external Chrome window.
-- [ ] Establish additional client/platform support (including Windows x64/Linux
-  x64), older macOS, hosted Git repository installation, signing, quarantine/
-  download, archive-selection/size and public-directory boundaries as downstream
-  delivery contracts require (#263/#265). The #258 local repository update/
-  rollback/uninstall checks do not establish those release outcomes.
+- [ ] Establish public-directory eligibility/submission boundaries (#265).
+  Additional platform/release qualification belongs to #263 above; older macOS
+  remains unadvertised. The #258 local repository update/rollback/uninstall checks
+  do not establish those release outcomes.
 
 ### Editor discovery, scope and working space (#224)
 

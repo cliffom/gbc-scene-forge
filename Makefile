@@ -59,6 +59,7 @@ help:
 	@echo '  make build-bundle            Build experimental macOS arm64 runtime (pinned Python archive)'
 	@echo '  make check-bundle            Verify a moved, read-only runtime with the MCP SDK'
 	@echo '  make package-plugin          Stage a versioned repository plugin from BUNDLE'
+	@echo '  make check-plugin-release    Prepare/verify a macOS candidate (RELEASE_REVISION required)'
 	@echo '  make test-plugin-lifecycle  Verify installed plugin process sharing and recovery'
 	@echo '  make test-plugin-handoff    Verify native installed-plugin/browser handoffs (PLUGIN_ARCHIVE, CODEX)'
 	@echo '  make test-bundle-browser     Render the frozen runtime in Chromium'
@@ -226,6 +227,13 @@ PLUGIN_OUTPUT ?= build/plugin-repository
 .PHONY: package-plugin
 package-plugin:
 	$(PYTHON) runtime/package_plugin.py --bundle "$(BUNDLE)" --output "$(PLUGIN_OUTPUT)"
+
+PLUGIN_RELEASE_OUTPUT ?= build/plugin-candidate
+RELEASE_REVISION ?=
+.PHONY: check-plugin-release
+check-plugin-release:
+	@test -n "$(RELEASE_REVISION)" || { echo 'Set RELEASE_REVISION to the full source Git revision'; exit 2; }
+	$(PYTHON) runtime/release.py --bundle "$(BUNDLE)" --output "$(PLUGIN_RELEASE_OUTPUT)" --revision "$(RELEASE_REVISION)" --python "$(BUNDLE_BUILD)/build-env/bin/python"
 
 .PHONY: test-bundle-browser
 test-bundle-browser:

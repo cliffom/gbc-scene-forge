@@ -5,7 +5,9 @@ Milestone 25 builds a repository marketplace with stable identity
 The initial artifact requires **local macOS 27.0+ on Apple Silicon**, with Codex
 CLI/app-server **0.167.1** as its tested client baseline. The conservative OS floor
 bounds this artifact to the observed major OS; older macOS has not been tested.
-Windows x64/Linux x64 artifacts and release automation belong to #263. Intel macOS,
+The [native macOS candidate workflow](PLUGIN-RELEASES.md) prepares archives,
+checksums, inventories and trust evidence. Windows x64/Linux x64 delivery and
+the remaining installed-client/release acceptance stay under #263. Intel macOS,
 WSL, remote/cloud execution and other clients are not supported by this artifact.
 A shell host check rejects other architectures before trying the executable;
 the manifest does not select or download native binaries.
@@ -48,8 +50,10 @@ For Git distribution, commit **the generated directory's contents** to a dedicat
 distribution repository/ref, preserving modes and symlinks, then register it with
 `codex plugin marketplace add OWNER/DISTRIBUTION-REPO --ref REF`. Do not advertise
 this source repository as already shipping native binaries. Publishing the
-distribution repository, release archives, signing/notarization and download/
-quarantine acceptance are #263 release operations. Packaging publishes nothing.
+distribution repository and releases are separate operations. The
+[macOS candidate procedure](PLUGIN-RELEASES.md) covers signing/notarization setup;
+actual download/quarantine and client acceptance remain #263 gates.
+Packaging publishes nothing.
 
 The client copies the plugin into its managed cache; runtime launch uses only that
 copy. Start with [project selection](PLUGIN-START.md). `bin/forge --identity` and

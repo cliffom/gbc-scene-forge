@@ -47,6 +47,16 @@ class PluginDistributionTests(unittest.TestCase):
         destination, archive = packager.package(self.bundle, self.root / output)
         return destination / "plugins/scene-forge", archive
 
+    def test_build_verification_can_skip_only_host_check(self):
+        plugin, _ = self.package()
+        with patch.object(distribution.platform, "mac_ver", return_value=("15.0", (), "")):
+            with self.assertRaisesRegex(ValueError, "requires local macOS"):
+                distribution.verify(plugin)
+            self.assertIsNotNone(distribution.verify(plugin, check_host=False))
+            (plugin / "plugin.json").write_text(json.dumps({"name": "changed"}))
+            with self.assertRaises(ValueError):
+                distribution.verify(plugin, check_host=False)
+
     def test_complete_relocated_archive_and_stable_discovery(self):
         plugin, archive = self.package()
         installed = distribution.verify(plugin)
