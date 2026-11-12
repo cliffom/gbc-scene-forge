@@ -83,7 +83,7 @@ jobs:
           python runtime/build.py --wheel "dist/$FORGE_WHEEL" --python-archive build/runtime-inputs/python.tar.zst --output build/runtime "${signing[@]}"
       - name: Verify actual archive and retain candidate metadata
         run: |
-          python runtime/release.py --bundle "build/runtime/$FORGE_RUNTIME_NAME" --output build/plugin-candidate --revision "$GITHUB_SHA" --python build/runtime/build-env/bin/python
+          poetry run python runtime/release.py --bundle "build/runtime/$FORGE_RUNTIME_NAME" --output build/plugin-candidate --revision "$GITHUB_SHA" --python build/runtime/build-env/bin/python
       - name: Frozen browser acceptance from extracted and relocated release
         run: |
           npx playwright install chromium
