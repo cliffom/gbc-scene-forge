@@ -5,6 +5,8 @@ import { join } from 'node:path';
 import type { Page } from '@playwright/test';
 import { test, expect } from '../support/browser-fixtures.ts';
 import { record, array, string } from '../../../frontend/shared/decode.mts';
+import { decodeCandidate } from '../../../frontend/artwork/artwork-contracts.mts';
+import { PixelModel } from '../../../frontend/artwork/pixel-model.mts';
 import {
   revealArtworkControl,
   activeArtworkLayer,
@@ -114,11 +116,13 @@ test('clean artwork follows repeated MCP commits, preserves view and retires old
   const { commit } = await setup(page, workspace);
   await page.locator('#art-zoom').selectOption('8');
   await page.locator('#art-canvas').focus();
-  // A clean document can still have Redo history after Undo.
+  // Own saves retain Undo; a truly clean document can adopt external content.
   await page.locator('#art-canvas').click({ position: { x: 30, y: 30 } });
-  await page.locator('#undo').click();
-  await expect(page.locator('#redo')).toBeEnabled();
-  await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
+  await page.locator('#save').click();
+  await expect(page.locator('#save')).toHaveText('Confirm save');
+  await page.locator('#save').click();
+  await expect(page.locator('#document-state')).toHaveText('Saved');
+  await expect(page.locator('#undo')).toBeEnabled();
   await page.locator('#art-canvas').focus();
   const view = await page.locator('.art-canvas-scroll').evaluate((n) => {
     n.scrollLeft = 100;
@@ -180,6 +184,87 @@ test('dirty artwork stays local and offers download, cancel and explicit load la
   await expect(page.locator('#art-sync')).toBeHidden();
 });
 
+test('Undo after a rejected competing save preserves Redo and edited recovery through reload', async ({
+  page,
+  workspace,
+}, info) => {
+  const { commit, url } = await setup(page, workspace);
+  const post = async (route: string, data = {}) => {
+    const catalog = record(await (await page.request.get(new URL('api/project', url).href)).json());
+    const response = await page.request.post(new URL(`api/${route}`, url).href, {
+      data,
+      headers: { 'X-Scene-Token': string(catalog.token) },
+    });
+    expect(response.ok()).toBe(true);
+    return record(await response.json());
+  };
+  const saved = async () => {
+    const catalog = record(await (await page.request.get(new URL('api/project', url).href)).json());
+    const listing = await post('artwork-list', { project_revision: catalog.revision });
+    const item = array(listing.documents, record).find(
+      (d) => record(d.target).atlas_id === 'picture',
+    );
+    expect(item).toBeDefined();
+    return post('artwork-open', {
+      target: item?.target,
+      project_revision: catalog.revision,
+      artwork_revision: item?.artwork_revision,
+    });
+  };
+  await page.locator('#art-color').fill('#ffff00');
+  const canvas = await page.locator('#art-canvas').boundingBox();
+  if (!canvas) {
+    throw Error('Expected canvas bounds');
+  }
+  await page.locator('#art-canvas').click({
+    position: { x: (2.5 * canvas.width) / 64, y: (2.5 * canvas.height) / 64 },
+  });
+  await expect.poll(() => pixel(page)).toEqual([255, 255, 0, 255]);
+  await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
+  await page.locator('#save').click();
+  await expect(page.locator('#save')).toHaveText('Confirm save');
+  await commit([255, 0, 255, 255]);
+  const winning = await saved();
+  await page.locator('#save').click();
+  await expect(page.locator('#art-message')).toContainText('Local pixels are retained');
+  await page.locator('#art-review-close').click();
+  await page.locator('#undo').click();
+  await expect(page.locator('#document-state')).toHaveText('Saved');
+  await expect(page.locator('#art-sync-status')).toContainText('Redo edits retained');
+  // Wait beyond discovery and checkpoint debounce; neither may retire this branch.
+  await page.waitForTimeout(2500);
+  await expect(page.locator('#redo')).toBeEnabled();
+  expect(await pixel(page)).not.toEqual([255, 0, 255, 255]);
+  const drafts = array((await post('artwork-draft-list')).drafts, record);
+  expect(drafts).toHaveLength(1);
+  const draft = drafts[0];
+  const download = () => post('artwork-draft-download', { id: draft.id, revision: draft.revision });
+  const recovery = await download();
+  const model = new PixelModel(decodeCandidate(recovery.candidate));
+  expect(model.color({ x: 2, y: 2 })).toEqual([255, 255, 0, 255]);
+  await page.screenshot({ path: info.outputPath('paused-redo-after-conflict.png') });
+  await page.setViewportSize({ width: 800, height: 640 });
+  await expect(page.locator('#art-sync-load')).toBeVisible();
+  await page.screenshot({ path: info.outputPath('paused-redo-after-conflict-compact.png') });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  // Switching documents must not silently retire the clean-looking checkpoint.
+  await page.locator('[data-asset="other/artwork"]').click();
+  await page.locator('[data-asset="picture/artwork"]').click();
+  await expect(page.locator('#redo')).toBeEnabled();
+  expect(await download()).toEqual(recovery);
+  await page.locator('#art-sync-load').click();
+  await expect(page.locator('#art-reload-dialog')).toBeVisible();
+  await page.locator('#art-reload-cancel').click();
+  await page.locator('#redo').click();
+  await expect.poll(() => pixel(page)).toEqual([255, 255, 0, 255]);
+  await page.screenshot({ path: info.outputPath('redo-retained-after-conflict.png') });
+  await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
+  expect(await saved()).toEqual(winning);
+  await page.reload();
+  expect(await download()).toEqual(recovery);
+  expect(await saved()).toEqual(winning);
+});
+
 test('an edit during a delayed read defeats adoption; preference and manual checks remain effective', async ({
   page,
   workspace,
@@ -220,6 +305,10 @@ test('an edit during a delayed read defeats adoption; preference and manual chec
   expect(await pixel(page)).not.toEqual([255, 0, 0, 255]);
   await page.locator('#project-commands').click();
   await page.locator('#check-external').click();
+  await expect(page.locator('#art-sync-status')).toContainText('Redo edits retained');
+  await expect(page.locator('#redo')).toBeEnabled();
+  await page.locator('#art-sync-load').click();
+  await page.locator('#art-reload-confirm').click();
   await expect.poll(() => pixel(page)).toEqual([255, 0, 0, 255]);
 });
 
@@ -297,14 +386,14 @@ test('removed artwork keeps the open canvas and offers download instead of repla
   expect(await pixel(page)).toEqual(before);
 });
 
-test('checkpoint retirement briefly guards edits before replacing a clean document', async ({
+test('explicit checkpoint retirement guards edits before discarding a Redo branch', async ({
   page,
   workspace,
 }) => {
   const { commit } = await setup(page, workspace);
   await page.locator('#art-canvas').click({ position: { x: 30, y: 30 } });
   await page.locator('#undo').click();
-  await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
+  await expect(page.locator('#art-draft-status')).toContainText('recovery checkpoint');
   await expect(page.locator('#redo')).toBeEnabled();
   let release!: () => void;
   let fetched!: () => void;
@@ -320,6 +409,9 @@ test('checkpoint retirement briefly guards edits before replacing a clean docume
     await route.continue();
   });
   await commit([255, 0, 0, 255]);
+  await expect(page.locator('#art-sync-status')).toContainText('Redo edits retained');
+  await page.locator('#art-sync-load').click();
+  await page.locator('#art-reload-confirm').click();
   await waiting;
   await expect(page.locator('#art-color')).toBeDisabled();
   const before = await pixel(page);

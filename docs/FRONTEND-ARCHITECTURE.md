@@ -315,7 +315,10 @@ command label; completion and cancellation perform full control synchronization.
 No pointer segments are dropped or deferred.
 
 Artwork sessions retain at most two decoded pixel baselines for exact saved and
-checkpoint comparisons. Dirty state itself is never cached. Encoding remains at
+checkpoint comparisons. Dirty comparisons always read the live model. A separate
+immutable completed-edit snapshot supports checkpoint debounce and is retained
+while Undo reaches the saved base with pending Redo; checkpointing that state
+preserves the edit instead of overwriting recovery with the base. Encoding remains at
 persistence/download boundaries. Pending and uncertain checkpoint acknowledgments
 continue to protect departure, even when Undo reaches the saved base.
 
@@ -334,7 +337,7 @@ Artwork saved discovery also follows a clean active saved document. Reads stage 
 fresh candidate and revalidate the saved project revision and interaction/session
 fence before adoption. Replacement creates a new model/history, retires only that
 document's checkpoint and transfers retained view/control state without focusing
-the canvas. Dirty or uncertain local work blocks automatic adoption. Explicit
+the canvas. Dirty or uncertain local work and pending Redo block automatic adoption. Explicit
 Load latest confirms discard and uses the existing operation gate; background
 failure/retry status stays inline rather than entering the toast channel.
 

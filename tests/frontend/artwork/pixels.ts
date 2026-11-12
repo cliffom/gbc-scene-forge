@@ -135,8 +135,9 @@ const api: ProjectApi['json'] = async (route, decode, data) => {
 const session = new ArtworkSession(candidate, api);
 assert.equal(session.uncheckpointed, false);
 session.model.apply(() => session.model.put({ x: 0, y: 0 }, hidden));
+session.captureCheckpoint();
 session.model.undo();
-assert.equal(session.uncheckpointed, false);
+assert.equal(session.uncheckpointed, true);
 session.model.redo();
 const first = session.checkpoint();
 session.model.undo();
@@ -158,14 +159,36 @@ assert.deepEqual(
 assert.deepEqual(new PixelModel(decodeCandidate(written[1].candidate)).color({ x: 1, y: 0 }), red);
 assert.equal(session.uncheckpointed, false);
 assert.deepEqual(session.original, candidate);
-// Undo to the saved base still diverges from an older durable checkpoint.
+// Undo to the saved base retains the edited recovery snapshot and live Redo.
 session.model.undo();
 session.model.undo();
 assert.equal(session.changed, false);
-assert.equal(session.uncheckpointed, true);
+assert.equal(session.hasLocalWork, true);
+assert.equal(session.uncheckpointed, false);
 await session.checkpoint();
 assert.equal(session.uncheckpointed, false);
-assert.equal(decodeCandidate(written.at(-1)?.candidate).rgba, candidate.rgba);
+assert.deepEqual(
+  new PixelModel(decodeCandidate(written.at(-1)?.candidate)).color({ x: 1, y: 0 }),
+  red,
+);
+// Capture before debounce, then Undo before any checkpoint reaches the queue.
+const quick = new ArtworkSession(candidate, api);
+quick.model.apply(() => quick.model.put({ x: 1, y: 0 }, red));
+quick.captureCheckpoint();
+quick.model.undo();
+await quick.checkpoint();
+assert.equal(quick.changed, false);
+assert.equal(quick.uncheckpointed, false);
+assert.deepEqual(
+  new PixelModel(decodeCandidate(written.at(-1)?.candidate)).color({ x: 1, y: 0 }),
+  red,
+);
+assert.equal(
+  quick.downloadWork().redo_checkpoint?.rgba,
+  decodeCandidate(written.at(-1)?.candidate).rgba,
+);
+quick.model.redo();
+assert.deepEqual(quick.model.color({ x: 1, y: 0 }), red);
 console.log('Pixel history, drawing, transforms, bounds, and serialized checkpoint races passed.');
 
 // A lost first checkpoint response is inspected before explicit cleanup, never replayed.
@@ -552,8 +575,15 @@ hiddenSession.model.selectLayer(effectLayer.id);
 hiddenSession.model.apply(() => hiddenSession.model.put({ x: 1, y: 0 }, hidden));
 assert.equal(hiddenSession.changed, true);
 assert.equal(encoded(hiddenSession.model.composite()), hiddenLayerCandidate.rgba);
+const hiddenRecovery = hiddenSession.captureCheckpoint();
 hiddenSession.model.undo();
 assert.equal(hiddenSession.changed, false);
+assert.deepEqual(hiddenSession.captureCheckpoint(), hiddenRecovery);
+assert.notEqual(
+  hiddenRecovery.layers?.[effectLayer.id],
+  hiddenLayerCandidate.layer_rgba?.[effectLayer.id],
+);
+assert.deepEqual(hiddenSession.downloadWork().redo_checkpoint?.layer_rgba, hiddenRecovery.layers);
 layered.apply(() => layered.setLayers([baseLayer, { ...effectLayer, locked: true }]));
 assert.throws(() => layered.apply(() => layered.put({ x: 0, y: 0 }, red)), /locked/);
 assert.throws(

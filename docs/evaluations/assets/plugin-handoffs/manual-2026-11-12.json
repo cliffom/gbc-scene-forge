@@ -1,0 +1,111 @@
+{
+  "date": "2026-11-12 America/Los_Angeles",
+  "source_revision": "4720f9a36d005b2df1cef092dbc767446856c203",
+  "archive_sha256": "34981c5dc53e2475e2871c99d6db1fa3d5824a13fe5b0cc8644db59e1c9e6a3b",
+  "installation": {
+    "plugin_version": "0.1.0-alpha.1",
+    "runtime_version": "0.46.1",
+    "target": "macos-arm64",
+    "build_id": "af6b37e1bb393f2c32bfd89c14c7a5bb3a94176055b0c9d5dfd4ad7f475a2fc0"
+  },
+  "host": "macOS 27.0.1 arm64",
+  "client": "Codex CLI 0.167.2",
+  "browser_version": null,
+  "method": "User browser gestures and screenshots; actual fresh model-led CLI conversation; evaluator read-only comparisons of saved files and checkpoint inventory.",
+  "limits": [
+    "User reports establish gestures and visible adoption.",
+    "Evaluator result files are preserved here; full project baselines and checkpoint-before-Undo payload are not archived.",
+    "No claim that the patched checkout or a rebuilt signed candidate passed human acceptance."
+  ],
+  "observations": {
+    "after-fresh-artwork": {
+      "changed_saved_files": [
+        "forge.project.json",
+        "assets/handoff_beacon/atlas.png",
+        "assets/handoff_beacon/grid-8/0.png"
+      ],
+      "pixel_differences": {
+        "assets/handoff_beacon/atlas.png": [
+          {
+            "x": 1,
+            "y": 0,
+            "before": [
+              24,
+              28,
+              36,
+              255
+            ],
+            "after": [
+              0,
+              0,
+              255,
+              255
+            ]
+          }
+        ],
+        "assets/handoff_beacon/grid-8/0.png": [
+          {
+            "x": 1,
+            "y": 0,
+            "before": [
+              24,
+              28,
+              36,
+              255
+            ],
+            "after": [
+              0,
+              0,
+              255,
+              255
+            ]
+          }
+        ]
+      },
+      "scene_byte_identical": true
+    },
+    "after-fresh-scene": {
+      "scene_only_change": {
+        "layer": "Ground",
+        "cell": [
+          3,
+          2
+        ],
+        "before": 0,
+        "after": 1
+      },
+      "all_other_scene_fields_preserved": true,
+      "all_artwork_retains_expected_pixels_and_metadata": true
+    },
+    "after-agent-magenta": {
+      "only_pixel_change": [
+        2,
+        0
+      ],
+      "saved_rgba": [
+        255,
+        0,
+        255,
+        255
+      ],
+      "scene_and_other_artwork_preserved": true,
+      "changed_saved_files": [
+        "forge.project.json",
+        "assets/handoff_beacon/atlas.png",
+        "assets/handoff_beacon/grid-8/0.png"
+      ]
+    },
+    "after-browser-conflict": {
+      "stale_browser_save_rejected_user_screenshot": true,
+      "all_saved_files_byte_identical": true,
+      "checkpoint_files": [
+        ".forge/artwork-drafts/13601984-e24f-419b-8e63-7faeeccf08e8.json"
+      ]
+    },
+    "after-undo": {
+      "saved_file_changes": [],
+      "checkpoints": [],
+      "user_report": "Undo once adopted saved magenta; no Redo state"
+    }
+  }
+}
