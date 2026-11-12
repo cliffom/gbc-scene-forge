@@ -6,14 +6,13 @@ import logging
 import secrets
 import traceback
 import webbrowser
-from http.server import ThreadingHTTPServer
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from threading import Lock, Thread
 from urllib.parse import parse_qs, unquote, urlparse
 
 from gbc_scene_forge.adapters.console import ServerConsole
-from gbc_scene_forge.adapters.http.common import LocalHandler
+from gbc_scene_forge.adapters.http.common import LocalHandler, LocalHTTPServer
 from gbc_scene_forge.artwork import dimensions
 from gbc_scene_forge.core.errors import Conflict
 from gbc_scene_forge.core.validation import require
@@ -63,7 +62,7 @@ class StandaloneHandler(LocalHandler):
         console.error(format % args, count_failure=False)
 
 
-class StandaloneServer(ThreadingHTTPServer):
+class StandaloneServer(LocalHTTPServer):
     def handle_error(self, request, client_address):
         self.console.error(
             f"Unhandled request error from {client_address[0]}: {traceback.format_exc()}"
