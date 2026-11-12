@@ -97,8 +97,54 @@ This is an opaque 8×8 tile and a small scene, with synthetic directory grants a
 browser gestures. It does not establish hidden-layer/animation fidelity through
 this installed fixture, model skill adherence or image visibility, a human edit,
 independent OS-user isolation, native folder-dialog behavior or another client/OS.
-The required human and actual fresh-conversation acceptance remains unperformed;
+Human and actual fresh-conversation acceptance was unperformed at this automated
+observation. The later partial human observation below found a product failure;
 #261 stays open. Broader SDK coverage and the protocol below retain their own bounds.
+
+## Partial human observation and Undo failure (2026-11-12)
+
+The user performed browser edits and started an actual fresh model-led Codex CLI
+conversation, using the signed macOS arm64 candidate: plugin 0.1.0-alpha.1,
+runtime 0.46.1, source `4720f9a36d005b2df1cef092dbc767446856c203`,
+build `af6b37e1bb393f2c32bfd89c14c7a5bb3a94176055b0c9d5dfd4ad7f475a2fc0`.
+The host was macOS 27.0.1 arm64 and the working client reported Codex CLI 0.167.2.
+The browser version was not captured. The
+[evaluator results](assets/plugin-handoffs/manual-2026-11-12.json) retain the
+read-only comparison outputs and user attribution, separately from automation.
+
+Fresh-conversation discovery and disjoint refinement preserved the user's green
+pixel at (0,0) while changing only (1,0) to blue in both the atlas and tile PNGs.
+The complete saved scene comparison found only Ground cell (3,2) changed from
+empty to the beacon; the user's earlier placement and every other scene field
+survived. User screenshots showed clean adoption before reload and retention
+after reload. Model image-inspection statements remain self-reports; these
+observations do not independently establish what images the model received.
+
+The user then painted unsaved yellow at (2,0), obtained a checkpoint acknowledgment
+and reviewed it. The agent committed magenta at the same pixel. The browser
+retained yellow and rejected stale Save with the local-pixels-retained conflict.
+Evaluator comparisons found all 16 saved files identical to the winning agent
+save and confirmed a checkpoint file existed. After Close review and one Undo,
+the user reported immediate adoption of magenta and unavailable Redo. Inspection
+found no remaining checkpoint JSON and no saved-file changes. The checkpoint's
+pre-Undo payload was not captured, so its exact yellow content is not proven.
+
+The source treated equality with the old saved base as sufficient for automatic
+adoption, despite pending Redo. Adoption replaced the model/history and deleted
+the owned checkpoint. The fix based on milestone `8e0693d` treats pending Redo as
+local work, retains the last captured edited recovery snapshot even if Undo
+precedes debounce, and confirms explicit discard. Recovery preserves that snapshot,
+not the history stack or its Undo position. Source browser automation covers the
+failure sequence, retained Redo, exact yellow recovery after reload and unchanged
+magenta winning content; it is separate from signed installed-candidate acceptance.
+Agent inspection of the [1440×1000 notice](assets/plugin-handoffs/paused-redo-after-conflict.png)
+and [800×640 notice](assets/plugin-handoffs/paused-redo-after-conflict-compact.png)
+confirmed visible Redo and Load latest controls in the automated conflict state.
+
+The committed comparison outputs are summaries, not archived project baselines or
+the missing pre-Undo checkpoint. The human protocol is partial: a rebuilt signed
+candidate has not been installed/retested, and the remaining conflict, restart,
+exchange and selection cases remain governed by the validation checklist.
 
 ## Cases and exact oracles
 

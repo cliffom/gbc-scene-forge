@@ -518,7 +518,11 @@ not added to project inventory or exports.
 
 A completed gesture captures its pixels and schedules a checkpoint after 350 ms.
 Requests serialize per document; each snapshot excludes later unfinished or
-canceled gestures. Close awaits a current checkpoint; failures retain pixels and a JSON
+canceled gestures. Undo to the saved base with pending Redo retains the last
+captured edited snapshot for recovery, including when Undo precedes the debounce.
+Automatic saved adoption and silent checkpoint retirement remain blocked until
+the branch is deliberately discarded. Recovery restores those captured pixels,
+not the history stack or its Undo position. Close awaits a current checkpoint; failures retain pixels and a JSON
 inspection download. Before-unload warns for uncheckpointed work. Disposal aborts
 transport/timers and never deletes acknowledged checkpoints. Recovered history
 starts locally from the recovered pixels. No automatic rebase, layered editing or

@@ -331,7 +331,7 @@ export function createPixelEditor({
     lifetime.cancelTimeout(timer);
     timer = undefined;
     sheetEditor.stop();
-    if (session?.changed) {
+    if (session?.hasLocalWork) {
       await session.checkpoint();
     } else {
       await session?.removeCheckpoint();
@@ -819,26 +819,24 @@ export function createPixelEditor({
       : 'Saved artwork; recovery checkpoint pending…';
     const current = session;
     // Capture the completed edit before a later gesture can mutate the model.
-    const pixels = current?.model.composite().slice();
-    const checkpointDescriptor = current ? structuredClone(current.model.descriptor) : undefined;
-    const checkpointLayers = current?.model.descriptor.layers
-      ? current.model.layerEncoding()
-      : undefined;
+    const snapshot = current?.captureCheckpoint();
     timer = lifetime.timeout(() => {
       timer = undefined;
-      if (!current || !pixels) {
+      if (!current || !snapshot) {
         return;
       }
       void current
-        .checkpoint(pixels, checkpointDescriptor, checkpointLayers)
+        .checkpoint(snapshot)
         .then(() => {
           if (session === current && !lifetime.disposed) {
             feedback.clear('checkpoint');
             element('art-draft-status', HTMLElement).textContent = current.uncheckpointed
               ? 'New edits await checkpoint.'
-              : current.changed
-                ? 'Unsaved artwork checkpointed in this project.'
-                : 'Saved artwork checkpointed in this project.';
+              : current.model.redoStack.length && !current.changed
+                ? 'Redo edits retained in the recovery checkpoint.'
+                : current.changed
+                  ? 'Unsaved artwork checkpointed in this project.'
+                  : 'Saved artwork checkpointed in this project.';
           }
         })
         .catch((error) => {
@@ -1523,7 +1521,7 @@ export function createPixelEditor({
     sheetEditor.stop();
     const current = session;
     const choice =
-      current && (current.changed || current.uncheckpointed)
+      current && (current.hasLocalWork || current.uncheckpointed)
         ? await ports.confirmClose(current.model.descriptor.name, true)
         : 'discard';
     if (!choice || lifetime.disposed || current !== session || !presentationSlot.active) {
@@ -2046,8 +2044,10 @@ export function createPixelEditor({
       (missing
         ? 'This artwork is no longer available. Your open version is preserved; download work to keep a copy.'
         : stale
-          ? session?.changed
-            ? 'Live updates paused · unsaved edits. Download work to keep a copy, or load the latest saved version.'
+          ? session?.hasLocalWork
+            ? session.changed
+              ? 'Live updates paused · unsaved edits. Download work to keep a copy, or load the latest saved version.'
+              : 'Live updates paused · Redo edits retained. Redo to inspect your edits, or load the latest saved version.'
             : input('auto-refresh').checked
               ? ''
               : 'A newer version is available. Load the latest saved version.'
@@ -2056,7 +2056,7 @@ export function createPixelEditor({
     element('art-sync-status', HTMLElement).textContent = text;
     button('art-sync-load').hidden = !stale || !!missing;
     button('art-sync-load').disabled = busy;
-    button('art-sync-load').textContent = session?.changed ? 'Load latest…' : 'Load latest';
+    button('art-sync-load').textContent = session?.hasLocalWork ? 'Load latest…' : 'Load latest';
     button('art-sync-download').hidden = !session || (!stale && !discoveryError && !missing);
     button('art-sync-download').disabled = busy;
     button('art-sync-retry').hidden = !discoveryError;
@@ -2067,7 +2067,8 @@ export function createPixelEditor({
     if (current.original.operation !== 'edit') {
       return;
     }
-    const canApply = () => eligible() && (discard || (!current.changed && !current.uncheckpointed));
+    const canApply = () =>
+      eligible() && (discard || (!current.hasLocalWork && !current.uncheckpointed));
     if (!canApply()) {
       return;
     }
@@ -2163,7 +2164,7 @@ export function createPixelEditor({
     }, 'reload-artwork');
   }
   lifetime.assign(button('art-sync-load'), 'onclick', () => {
-    if (session?.changed || session?.uncheckpointed) {
+    if (session?.hasLocalWork || session?.uncheckpointed) {
       reloadSession = session;
       reloadDialog.showModal();
     } else {
@@ -2222,7 +2223,7 @@ export function createPixelEditor({
       }
       if (
         current?.externalChanged &&
-        !current.changed &&
+        !current.hasLocalWork &&
         savedDocumentIds?.has(current.original.document_id)
       ) {
         await loadLatest(current, eligible);

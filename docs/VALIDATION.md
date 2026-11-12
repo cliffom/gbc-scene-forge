@@ -15,6 +15,34 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Artwork Redo preservation after competing saves (#261)
+
+- **Scope:** Fix working tree based on milestone `8e0693dd94542df35f824ce5a50d416d2fbfdbc3`,
+  checked 2026-11-12 America/Los_Angeles on macOS 27.0.1 arm64. The preceding
+  human observation used signed plugin 0.1.0-alpha.1 / runtime 0.46.1 from source
+  `4720f9a36d005b2df1cef092dbc767446856c203`, Codex CLI 0.167.2; its archive/build
+  identities and missing browser provenance are in the
+  [evaluator results](evaluations/assets/plugin-handoffs/manual-2026-11-12.json).
+- **Method:** User browser gestures/screenshots and an actual fresh model-led
+  conversation, with evaluator read-only pixel/scene/saved-file comparisons.
+  Separately run source Playwright/MCP artwork-follow tests and pixel-session
+  checks; inspect the automated notice at 1440×1000 and 800×640.
+- **Result:** Human fresh-conversation refinements preserved all but the requested
+  pixel/cell, and dirty Save refused the competing revision. One Undo then lost
+  Redo and the checkpoint while leaving winning files unchanged. The source fix
+  preserves pending Redo, its edited recovery snapshot and discard confirmation;
+  all 11 artwork-follow tests pass, including exact yellow recovery after reload,
+  retained history across document switching and unchanged winning magenta data.
+  `make lint test`, the final pixel-session checks (including hidden-layer sources
+  and Undo before debounce), frontend build and `make docs-check` pass locally.
+  The [evaluation](evaluations/plugin-handoffs.md#partial-human-observation-and-undo-failure-2026-11-12)
+  preserves the failure, attribution, comparison outputs and patched UI captures.
+- **Limits:** The pre-Undo checkpoint payload and complete human project baselines
+  are not archived. The installed signed candidate still contains the failure;
+  the patched runtime has not been rebuilt, signed or manually retested. Recovery
+  stores the captured edited state, not the Undo/Redo stack. Scene conflicts and
+  the rest of the human protocol remain incomplete; #261 stays open.
+
 ## Plugin authoring quality and source-dispatch resource baseline (#262)
 
 - **Scope:** Working tree based on `a5834052945b8bc4548166f9fad8379c470e471f`,
@@ -3446,6 +3474,9 @@ Dates, revisions and environments missing from the originals remain unknown.
   with an attributable manual artwork/scene edit and a model-led refinement in an
   actual fresh conversation (#261), including visual inspection, dirty-document
   conflicts, stale guards, unpublished exchange, restart and changed selection.
+  [Partial human acceptance](#artwork-redo-preservation-after-competing-saves-261)
+  passed disjoint refinements but found artwork Undo losing Redo/checkpoint;
+  rebuild/sign/install the fix and repeat that human case before continuing recovery.
   Synthetic native app-server threads and Playwright gestures do not complete
   this manual/model acceptance. The
   [#257 executable checks](#managed-plugin-browser-lifecycle-257) establish local

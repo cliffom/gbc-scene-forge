@@ -16,6 +16,12 @@ const MAX_BASELINE_BYTES = 32 * 1024 * 1024;
 // Two sets of up to eight sources plus a composite; also bound small-entry overhead.
 const MAX_BASELINE_ENTRIES = 18;
 
+type CheckpointSnapshot = {
+  pixels: Uint8ClampedArray;
+  descriptor: Candidate['descriptor'];
+  layers: Record<string, string> | undefined;
+};
+
 export class ArtworkSession {
   readonly model: PixelModel;
   original: Candidate;
@@ -31,6 +37,7 @@ export class ArtworkSession {
   private checkpointAttempted = false;
   private checkpointUncertain = false;
   private pendingCheckpoints = 0;
+  private recoverySnapshot: CheckpointSnapshot | undefined;
   private queue: Promise<unknown> = Promise.resolve();
   // Saved/checkpoint layer sources share a byte-bounded LRU. Cache baselines,
   // never dirty state: callers may mutate bytes directly or replace history.
@@ -79,8 +86,10 @@ export class ArtworkSession {
     this.original = candidate;
     this.externalChanged = false;
     this.receipt = null;
+    this.recoverySnapshot = undefined;
   }
   downloadWork() {
+    const redo = !this.changed && this.model.redoStack.length ? this.recoverySnapshot : undefined;
     return {
       original: structuredClone(this.original),
       candidate: structuredClone(this.candidate),
@@ -89,6 +98,13 @@ export class ArtworkSession {
       layer_rgba: this.model.descriptor.layers ? this.model.layerEncoding() : undefined,
       width: this.model.width,
       height: this.model.height,
+      redo_checkpoint: redo
+        ? {
+            descriptor: structuredClone(redo.descriptor),
+            rgba: encoded(redo.pixels),
+            layer_rgba: redo.layers ? { ...redo.layers } : undefined,
+          }
+        : undefined,
     };
   }
   private layersMatch(value: Record<string, string> | undefined) {
@@ -110,15 +126,37 @@ export class ArtworkSession {
     );
   }
   get uncheckpointed() {
+    // At the saved base, Redo still owns the last edited checkpoint. Recovery
+    // retains that edit, rather than replacing it with the unchanged base.
+    const recovery =
+      !this.changed && this.model.redoStack.length ? this.recoverySnapshot : undefined;
     return (
       this.pendingCheckpoints > 0 ||
       this.checkpointUncertain ||
-      ((this.changed || this.checkpointAttempted) &&
-        (JSON.stringify(this.model.descriptor) !== this.checkpointLayout ||
-          !this.layersMatch(this.checkpointLayers) ||
-          (!this.model.descriptor.layers &&
-            !this.matches(this.model.pixels, this.checkpointPixels))))
+      ((this.hasLocalWork || this.checkpointAttempted) &&
+        (recovery
+          ? JSON.stringify(recovery.descriptor) !== this.checkpointLayout ||
+            JSON.stringify(recovery.layers) !== JSON.stringify(this.checkpointLayers) ||
+            !this.matches(recovery.pixels, this.checkpointPixels)
+          : JSON.stringify(this.model.descriptor) !== this.checkpointLayout ||
+            !this.layersMatch(this.checkpointLayers) ||
+            (!this.model.descriptor.layers &&
+              !this.matches(this.model.pixels, this.checkpointPixels))))
     );
+  }
+  get hasLocalWork() {
+    return this.changed || this.model.redoStack.length > 0;
+  }
+  captureCheckpoint(): CheckpointSnapshot {
+    if (!this.changed && this.model.redoStack.length && this.recoverySnapshot) {
+      return this.recoverySnapshot;
+    }
+    this.recoverySnapshot = {
+      pixels: this.model.composite().slice(),
+      descriptor: structuredClone(this.model.descriptor),
+      layers: this.model.descriptor.layers ? this.model.layerEncoding() : undefined,
+    };
+    return this.recoverySnapshot;
   }
   invalidate() {
     this.receipt = null;
@@ -264,14 +302,10 @@ export class ArtworkSession {
     await send();
     return this.candidate;
   }
-  checkpoint(
-    snapshot = this.model.composite(),
-    layout = this.model.descriptor,
-    layerSnapshot = layout.layers ? this.model.layerEncoding() : undefined,
-  ) {
-    const pixels = snapshot.slice();
-    const descriptor = structuredClone(layout);
-    const layerPixels = layerSnapshot;
+  checkpoint(snapshot = this.captureCheckpoint()) {
+    const pixels = snapshot.pixels.slice();
+    const descriptor = structuredClone(snapshot.descriptor);
+    const layerPixels = snapshot.layers;
     // Undo can return to the saved base while an older checkpoint is still queued.
     this.pendingCheckpoints++;
     return this.serialize(async () => {
