@@ -316,10 +316,12 @@ No pointer segments are dropped or deferred.
 
 Artwork sessions retain at most two decoded pixel baselines for exact saved and
 checkpoint comparisons. Dirty comparisons always read the live model. A separate
-immutable completed-edit snapshot supports checkpoint debounce and is retained
-while Undo reaches the saved base with pending Redo; checkpointing that state
-preserves the edit instead of overwriting recovery with the base. Encoding remains at
-persistence/download boundaries. Pending and uncertain checkpoint acknowledgments
+immutable completed-edit snapshot supports checkpoint debounce and retains the
+branch tip while Redo remains. Checkpointing older dirty history positions does
+not replace that tip; returning to the saved base checkpoints the pending edit.
+Own saves retain that snapshot when they retain Redo; subsequent checkpoints use
+the acknowledged saved base. A new edit replaces the branch and its snapshot.
+Encoding remains at persistence/download boundaries. Pending and uncertain checkpoint acknowledgments
 continue to protect departure, even when Undo reaches the saved base.
 
 `editor/editor-layers.mts` compares exact object option labels/order/IDs before

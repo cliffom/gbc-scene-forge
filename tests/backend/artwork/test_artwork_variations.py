@@ -270,6 +270,36 @@ class ArtworkVariationTests(unittest.TestCase):
             drafts.restore(draft_id, ack["revision"])
         self.assertEqual(drafts.download(draft_id, ack["revision"])["candidate"], candidate)
 
+    def test_stale_variation_recovers_pixels_without_source_metadata_or_replacements(self):
+        candidate = self.variation()
+        drafts = ArtworkDrafts(self.art)
+        draft_id = str(uuid4())
+        ack = drafts.write(
+            dict(
+                id=draft_id,
+                owner=str(uuid4()),
+                revision=None,
+                project_id=candidate["project_id"],
+                name="Variation",
+                original=candidate,
+                candidate=candidate,
+            )
+        )
+        self.project.scenes.create("External", 4, 4, 8, self.revision())
+        before = self.snapshot()
+        recovered = drafts.restore(draft_id, ack["revision"])["candidate"]
+        self.assertEqual(self.snapshot(), before)
+        self.assertEqual(recovered["rgba"], candidate["rgba"])
+        self.assertIsNone(recovered["source"])
+        self.assertIsNone(recovered["descriptor"]["provenance"])
+        self.assertEqual(recovered["metadata"], {})
+        self.assertNotIn("placements", recovered)
+        self.art.save(recovered)
+        for path, raw in before.items():
+            if path.startswith("scenes/"):
+                self.assertEqual((self.project.root / path).read_bytes(), raw)
+        self.assertEqual(drafts.download(draft_id, ack["revision"])["candidate"], candidate)
+
     def test_write_failure_rolls_back_artwork_and_selected_maps_together(self):
         from gbc_scene_forge.storage import transactions
 

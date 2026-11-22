@@ -107,7 +107,10 @@ writer's state. Existing manifest, history and checkpoint formats remain intact.
 
 Refresh probes cache bounded hashes for declared files; coherent snapshots share
 the saved-read API. Draft checkpoints remain independent of committed history and
-can retain stale local work; restoration must validate the original saved base.
+can retain stale local work; restoration validates the original saved base at the
+same project revision or detaches stale artwork into a fresh independent candidate
+against the verified current project. Detached recovery retains raster/layer/layout
+content and removes source dependencies, tile metadata and placement replacements.
 Neither a transport nor a report may bypass these rules by reaching into private
 storage internals.
 

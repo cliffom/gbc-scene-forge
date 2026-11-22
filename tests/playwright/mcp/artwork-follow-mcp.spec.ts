@@ -263,7 +263,121 @@ test('Undo after a rejected competing save preserves Redo and edited recovery th
   await page.reload();
   expect(await download()).toEqual(recovery);
   expect(await saved()).toEqual(winning);
+  await page.locator('#show-artwork').click();
+  await revealArtworkControl(page, 'art-drafts');
+  await page.getByRole('button', { name: 'Recover copy', exact: true }).click();
+  await expect(page.locator('#art-message')).toContainText('Recovered a new copy');
+  await expect.poll(() => pixel(page)).toEqual([255, 255, 0, 255]);
+  await expect(page.locator('#document-state')).toHaveText('New');
+  await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
+  await page.screenshot({ path: info.outputPath('recovered-copy-after-conflict.png') });
+  const recoveredDrafts = array((await post('artwork-draft-list')).drafts, record);
+  expect(recoveredDrafts).toHaveLength(2);
+  const recoveredId = recoveredDrafts.find((d) => d.id !== draft.id);
+  expect(recoveredId).toBeDefined();
+  const independent = record(
+    (
+      await post('artwork-draft-download', {
+        id: recoveredId?.id,
+        revision: recoveredId?.revision,
+      })
+    ).candidate,
+  );
+  expect(independent.operation).toBe('create');
+  expect(independent.atlas_id).not.toBe('picture');
+  await page.locator('#save').click();
+  await expect(page.locator('#save')).toHaveText('Confirm save');
+  await page.locator('#save').click();
+  await expect(page.locator('#document-state')).toHaveText('Saved');
+  const catalog = record(await (await page.request.get(new URL('api/project', url).href)).json());
+  const listing = await post('artwork-list', { project_revision: catalog.revision });
+  const copied = array(listing.documents, record).find(
+    (d) => record(d.target).atlas_id === independent.atlas_id,
+  );
+  expect(copied).toBeDefined();
+  const opened = await post('artwork-open', {
+    target: copied?.target,
+    project_revision: catalog.revision,
+    artwork_revision: copied?.artwork_revision,
+  });
+  expect(new PixelModel(decodeCandidate(opened)).color({ x: 2, y: 2 })).toEqual([255, 255, 0, 255]);
+  expect((await saved()).rgba).toEqual(winning.rgba);
+  expect(await download()).toEqual(recovery);
 });
+
+for (const saveWhileUndone of [false, true]) {
+  test(`Redo recovery survives ${saveWhileUndone ? 'saving while undone' : 'crossing the saved history position'}`, async ({
+    page,
+    workspace,
+  }) => {
+    const { url } = await setup(page, workspace);
+    const post = async (route: string, data = {}) => {
+      const catalog = record(
+        await (await page.request.get(new URL('api/project', url).href)).json(),
+      );
+      const response = await page.request.post(new URL(`api/${route}`, url).href, {
+        data,
+        headers: { 'X-Scene-Token': string(catalog.token) },
+      });
+      expect(response.ok()).toBe(true);
+      return record(await response.json());
+    };
+    const paint = async (color: string) => {
+      await page.locator('#art-color').fill(color);
+      const canvas = await page.locator('#art-canvas').boundingBox();
+      if (!canvas) {
+        throw Error('Expected canvas bounds');
+      }
+      await page.locator('#art-canvas').click({
+        position: { x: (2.5 * canvas.width) / 64, y: (2.5 * canvas.height) / 64 },
+      });
+      await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
+    };
+    const save = async () => {
+      await page.locator('#save').click();
+      await expect(page.locator('#save')).toHaveText('Confirm save');
+      await page.locator('#save').click();
+      await expect(page.locator('#save')).toHaveText('Save artwork…');
+      await expect(page.locator('#document-state')).toHaveText('Saved');
+    };
+    await paint('#ff0000');
+    await save();
+    await paint('#ffff00');
+    await page.locator('#undo').click();
+    if (saveWhileUndone) {
+      await save();
+    } else {
+      await page.locator('#undo').click();
+      await expect(page.locator('#document-state')).toHaveText('Modified');
+      await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
+      await page.locator('#redo').click();
+    }
+    await expect.poll(() => pixel(page)).toEqual([255, 0, 0, 255]);
+    await expect(page.locator('#redo')).toBeEnabled();
+    // Suspending must persist the pending yellow edit against the current saved base.
+    await page.locator('[data-asset="other/artwork"]').click();
+    await page.locator('[data-asset="picture/artwork"]').click();
+    await expect(page.locator('#redo')).toBeEnabled();
+    await expect(page.locator('#document-state')).toHaveText('Saved');
+    const drafts = array((await post('artwork-draft-list')).drafts, record);
+    expect(drafts).toHaveLength(1);
+    const download = () =>
+      post('artwork-draft-download', { id: drafts[0].id, revision: drafts[0].revision });
+    const recovery = await download();
+    expect(new PixelModel(decodeCandidate(recovery.candidate)).color({ x: 2, y: 2 })).toEqual([
+      255, 255, 0, 255,
+    ]);
+    expect(new PixelModel(decodeCandidate(recovery.original)).color({ x: 2, y: 2 })).toEqual([
+      255, 0, 0, 255,
+    ]);
+    await page.screenshot({ path: test.info().outputPath('redo-recovery.png') });
+    await page.locator('#redo').click();
+    await expect.poll(() => pixel(page)).toEqual([255, 255, 0, 255]);
+    await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
+    await page.reload();
+    expect(await download()).toEqual(recovery);
+  });
+}
 
 test('an edit during a delayed read defeats adoption; preference and manual checks remain effective', async ({
   page,

@@ -86,7 +86,9 @@ export class ArtworkSession {
     this.original = candidate;
     this.externalChanged = false;
     this.receipt = null;
-    this.recoverySnapshot = undefined;
+    if (!this.model.redoStack.length) {
+      this.recoverySnapshot = undefined;
+    }
   }
   downloadWork() {
     const redo = !this.changed && this.model.redoStack.length ? this.recoverySnapshot : undefined;
@@ -151,12 +153,18 @@ export class ArtworkSession {
     if (!this.changed && this.model.redoStack.length && this.recoverySnapshot) {
       return this.recoverySnapshot;
     }
-    this.recoverySnapshot = {
+    const snapshot = {
       pixels: this.model.composite().slice(),
       descriptor: structuredClone(this.model.descriptor),
       layers: this.model.descriptor.layers ? this.model.layerEncoding() : undefined,
     };
-    return this.recoverySnapshot;
+    // History travel may checkpoint an older dirty state, but it must not
+    // replace the captured branch tip still reachable through Redo. A completed
+    // edit clears Redo, so a replacement branch captures its own recovery tip.
+    if (!this.model.redoStack.length) {
+      this.recoverySnapshot = snapshot;
+    }
+    return snapshot;
   }
   invalidate() {
     this.receipt = null;

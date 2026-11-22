@@ -486,6 +486,29 @@ class ArtworkDocuments:
     read = staticmethod(editable.read_pixels)
     layout = staticmethod(editable.edit_layout)
 
+    def recover_copy(self, candidate, session):
+        """Detach checkpoint artwork from stale sources and placement replacements."""
+        pixels = editable.check_candidate(candidate)
+        require(
+            candidate["project_id"] == session.document["id"],
+            "Candidate belongs to another project",
+        )
+        descriptor = copy.deepcopy(candidate["descriptor"])
+        descriptor.update(id=str(uuid4()), atlas_id=f"recovered_{uuid4().hex}", provenance=None)
+        self._absence(session.document, descriptor)
+        result = self._envelope(
+            session.document,
+            session.revision,
+            {k: v for k, v in descriptor.items() if k != "layers"},
+            pixels,
+            "create",
+        )
+        if "layer_rgba" in candidate:
+            result["descriptor"] = descriptor
+            result["layer_rgba"] = copy.deepcopy(candidate["layer_rgba"])
+            result = editable.seal({k: v for k, v in result.items() if k != "revision"})
+        return result
+
     def placement_scenes(self, candidate, session):
         """Bound selected-scene reads and validate exact bases before review/save/restore."""
         if "placements" not in candidate:
