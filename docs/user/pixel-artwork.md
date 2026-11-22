@@ -411,18 +411,23 @@ the owned checkpoint's stored revision and pixels. A later checkpoint or explici
 discard performs that check before writing or deleting; failed checks retain local work.
 
 Choose **Filters & recovery → Browse / recover / candidates…** in the Library,
-or **Browse / recover artwork…** in the document switcher, to see recoverable records. **Recover copy** checks the
-original saved base and opens unsaved pixels under a fresh draft identity; it
-retains the original record. **Delete checkpoint** explicitly removes a listed
+or **Browse / recover artwork…** in the document switcher, to see recoverable records.
+**Recover copy** opens unsaved pixels under a fresh draft identity and retains the
+original record. If the project has changed since the checkpoint, it creates
+independent artwork with a new atlas ID, preserving exact pixels, layers and frame
+layout. This independent copy carries no source provenance, tile metadata or
+placement replacements; download the original checkpoint to inspect those details.
+Review and save the copy to add it alongside the newer artwork.
+**Delete checkpoint** explicitly removes a listed
 record. **Close document** (or **Document actions → Close artwork**) closes a saved
 document. Modified work offers Save, Keep draft and close, Discard and close, or
 Cancel. Discard removes the current working checkpoint. Save and discard
 of a recovered copy leave its original record available until explicitly deleted.
 Recovery restores pixels and bases, without claiming a durable undo stack.
 
-If another browser or MCP writer saves first, review/save or restoration rejects
-the stale base. Local pixels and existing checkpoints remain available. Download
-the work, inspect the latest saved asset, and reconcile explicitly; Forge never
+If another browser or MCP writer saves first, review/save rejects the stale base.
+Local pixels and existing checkpoints remain available. Recover an independent
+copy, or download the work, inspect the latest saved asset, and reconcile explicitly; Forge never
 rebases stale pixels or overwrites another writer automatically. Downloaded JSON
 is an inspection/reconciliation record, not an automatic import format. **Download
 work** captures the live layout as `current_descriptor` and exact pixels as

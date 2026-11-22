@@ -385,7 +385,7 @@ test('new artwork, duplicate imported pixels, compact UI and recoverable draft c
   assert.equal(array(drafts.drafts, record).length, 1); // Original retained after recovery.
 });
 
-test('external artwork save rejects reviewed pixels and preserves stale checkpoint for download', async ({
+test('external artwork save rejects reviewed pixels and permits an independent recovery copy', async ({
   page,
   workspace,
 }) => {
@@ -414,14 +414,16 @@ test('external artwork save rejects reviewed pixels and preserves stale checkpoi
   await expect(page.locator('#status')).toHaveText('Scene opened.');
   await page.locator('#show-artwork').click();
   await revealArtworkControl(page, 'art-drafts');
-  await page.getByRole('button', { name: 'Recover copy', exact: true }).click();
-  await expect(page.locator('#art-message')).toContainText('retained');
-  await expect(page.locator('#art-start')).toBeVisible();
   const [download] = await Promise.all([
     page.waitForEvent('download'),
     page.getByRole('button', { name: 'Download', exact: true }).click(),
   ]);
   assert.equal(download.suggestedFilename(), 'artwork-draft.json');
+  await page.getByRole('button', { name: 'Recover copy', exact: true }).click();
+  await expect(page.locator('#art-message')).toContainText('Recovered a new copy');
+  await expect(page.locator('#art-canvas')).toBeVisible();
+  await expect(page.locator('#document-state')).toHaveText('New');
+  assert.deepEqual(new PixelModel(await opened(page, url)).color({ x: 0, y: 0 }), [0, 0, 255, 255]);
 });
 
 test('placed sprite editing preserves origin and references; blank sprites preview without placing', async ({
@@ -482,7 +484,7 @@ test('placed sprite editing preserves origin and references; blank sprites previ
   assert.deepEqual(finalScene.scene, before.scene);
 });
 
-test('clean close removes an older checkpoint; failed checkpoint retains local work and blocks closing', async ({
+test('scene switching keeps Redo recovery; explicit discard removes it; failed checkpoints block switching', async ({
   page,
   workspace,
 }) => {
@@ -493,6 +495,17 @@ test('clean close removes an older checkpoint; failed checkpoint retains local w
   await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
   await page.locator('#undo').click();
   await activateScene(page);
+  await expect(page.locator('#artwork-surface')).not.toBeVisible();
+  const retained = array((await post(page, url, 'draft-list', {})).drafts, record);
+  assert.equal(retained.length, 1);
+  const recovery = decodeCandidate(
+    (await post(page, url, 'draft-download', retained[0])).candidate,
+  );
+  assert.deepEqual(new PixelModel(recovery).color({ x: 0, y: 0 }), [255, 0, 0, 255]);
+  await openGrass(page);
+  await expect(page.locator('#redo')).toBeEnabled();
+  await page.locator('#close-document').click();
+  await page.locator('#close-document-discard').click();
   await expect(page.locator('#artwork-surface')).not.toBeVisible();
   assert.equal(array((await post(page, url, 'draft-list', {})).drafts, record).length, 0);
   await openGrass(page);
@@ -520,59 +533,76 @@ test('clean close removes an older checkpoint; failed checkpoint retains local w
   assert.equal(array((await post(page, url, 'draft-list', {})).drafts, record).length, 1);
 });
 
-test('Undo to the saved base warns on reload until the recovery checkpoint catches up', async ({
-  page,
-  workspace,
-}) => {
-  const { url } = await setup(page, workspace);
-  const original = await opened(page, url);
-  await page.clock.install();
-  await page.clock.pauseAt(new Date());
-  await openGrass(page);
-  await page.locator('#art-color').fill('#ff0000');
-  await draw(page, 0, 0);
-  await page.clock.runFor(400);
-  await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
-  await page.locator('#undo').click();
+for (const acknowledged of [false, true]) {
+  test(`Undo to the saved base protects edited recovery with prior acknowledgment=${acknowledged}`, async ({
+    page,
+    workspace,
+  }) => {
+    const { url } = await setup(page, workspace);
+    const original = await opened(page, url);
+    await page.clock.install();
+    await page.clock.pauseAt(new Date());
+    await openGrass(page);
+    await page.locator('#art-color').fill('#ff0000');
+    await draw(page, 0, 0);
+    if (acknowledged) {
+      await page.clock.runFor(400);
+      await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
+    }
+    await page.locator('#undo').click();
+    await expect(page.locator('#redo')).toBeEnabled();
+    await expect(page.locator('#document-state')).toHaveText('Saved');
 
-  // Override the shared fixture's automatic acceptance so this test can stay.
-  page.removeAllListeners('dialog');
-  const prompt = page.waitForEvent('dialog');
-  const reloading = page.reload().catch(() => null);
-  const dialog = await prompt;
-  assert.equal(dialog.type(), 'beforeunload');
-  await dialog.dismiss();
-  await reloading;
-  await expect(page.locator('#artwork-surface')).toBeVisible();
-  const drafts = array((await post(page, url, 'draft-list', {})).drafts, record);
-  assert.equal(drafts.length, 1);
-  const stale = decodeCandidate((await post(page, url, 'draft-download', drafts[0])).candidate);
-  assert.deepEqual(new PixelModel(stale).color({ x: 0, y: 0 }), [255, 0, 0, 255]);
-
-  await page.clock.runFor(400);
-  await expect(page.locator('#art-draft-status')).toContainText('checkpointed');
-  const updated = array((await post(page, url, 'draft-list', {})).drafts, record);
-  const checkpoint = await post(page, url, 'draft-download', updated[0]);
-  assert.equal(decodeCandidate(checkpoint.candidate).rgba, original.rgba);
-  // With the Undo durably stored, reload must proceed without an unload dialog.
-  // Resume frames before checking live notification announcements after reload.
-  await page.clock.resume();
-  await page.reload();
-  await expect(page.locator('#status')).toHaveText('Scene opened.');
-  await page.locator('#show-artwork').click();
-  await revealArtworkControl(page, 'art-drafts');
-  await page.getByRole('button', { name: 'Recover copy', exact: true }).click();
-  await expect(page.locator('#art-message')).toContainText('Recovered a new copy');
-  const [download] = await Promise.all([
-    page.waitForEvent('download'),
-    (await revealArtworkControl(page, 'art-download')).click(),
-  ]);
-  const path = await download.path();
-  assert.ok(path);
-  const recovered = record(JSON.parse(await readFile(path, 'utf8')));
-  assert.equal(decodeCandidate(recovered.candidate).rgba, original.rgba);
-  assert.equal(recovered.current_rgba, original.rgba);
-});
+    // Only an edit without a durable recovery checkpoint needs an unload warning.
+    page.removeAllListeners('dialog');
+    if (!acknowledged) {
+      const prompt = page.waitForEvent('dialog');
+      const reloading = page.reload({ timeout: 2000 }).catch(() => null);
+      const dialog = await prompt;
+      assert.equal(dialog.type(), 'beforeunload');
+      await dialog.dismiss();
+      await reloading;
+      await expect(page.locator('#artwork-surface')).toBeVisible();
+    }
+    const before = array((await post(page, url, 'draft-list', {})).drafts, record);
+    assert.equal(before.length, acknowledged ? 1 : 0);
+    await page.clock.runFor(400);
+    await expect(page.locator('#art-draft-status')).toContainText('recovery checkpoint');
+    const updated = array((await post(page, url, 'draft-list', {})).drafts, record);
+    assert.equal(updated.length, 1);
+    if (acknowledged) {
+      assert.equal(updated[0].revision, before[0].revision);
+    }
+    const checkpoint = await post(page, url, 'draft-download', updated[0]);
+    const edited = decodeCandidate(checkpoint.candidate);
+    assert.deepEqual(new PixelModel(edited).color({ x: 0, y: 0 }), [255, 0, 0, 255]);
+    assert.notEqual(edited.rgba, original.rgba);
+    // Acknowledged edited recovery allows reload, preserving Redo's pixels on disk.
+    let unloadPrompts = 0;
+    page.on('dialog', async (dialog) => {
+      unloadPrompts++;
+      await dialog.accept();
+    });
+    await page.clock.resume();
+    await page.reload();
+    assert.equal(unloadPrompts, 0);
+    await expect(page.locator('#status')).toHaveText('Scene opened.');
+    assert.equal((await opened(page, url)).rgba, original.rgba);
+    await page.locator('#show-artwork').click();
+    await revealArtworkControl(page, 'art-drafts');
+    await page.getByRole('button', { name: 'Recover copy', exact: true }).click();
+    await expect(page.locator('#art-message')).toContainText('Recovered a new copy');
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      (await revealArtworkControl(page, 'art-download')).click(),
+    ]);
+    const path = await download.path();
+    assert.ok(path);
+    const recovered = record(JSON.parse(await readFile(path, 'utf8')));
+    assert.equal(decodeCandidate(recovered.candidate).rgba, edited.rgba);
+    assert.equal(recovered.current_rgba, edited.rgba);
+  });
+}
 
 test('a lost checkpoint update acknowledgment keeps Undo protected until guarded reconciliation', async ({
   page,

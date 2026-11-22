@@ -509,16 +509,28 @@ candidate's identity, bases, descriptor and metadata cannot change. Updates requ
 the same owner and exact draft revision; stale bases remain checkpointable.
 `artwork-draft-list` returns bounded record summaries and individual damaged-record
 errors. `artwork-draft-download` and `artwork-draft-restore` take ID/revision;
-restore additionally validates the original/current candidates against verified
-saved artwork, then the browser writes a fresh owned copy. Original checkpoints
-remain intact. `artwork-draft-delete` requires ID/revision/owner; deleting a listed
+restore verifies current project assets. At the same project revision it validates
+the original/current candidates against saved artwork. At a newer revision it
+creates independent unsaved artwork with fresh document/atlas identities and the
+checkpoint's exact pixels, layers and frame layout. This detached copy omits source
+provenance, tile metadata and selected-placement replacements; the original
+checkpoint retains those details. The browser writes a fresh owned checkpoint.
+Saving still requires review and the recovered candidate's exact project revision.
+Original checkpoints remain intact. `artwork-draft-delete` requires ID/revision/owner; deleting a listed
 record is an explicit user action. Owner UUIDs distinguish writers rather than
 provide authentication. Records follow the paths, sizes and quotas above and are
 not added to project inventory or exports.
 
 A completed gesture captures its pixels and schedules a checkpoint after 350 ms.
 Requests serialize per document; each snapshot excludes later unfinished or
-canceled gestures. Close awaits a current checkpoint; failures retain pixels and a JSON
+canceled gestures. Undo to the saved base with pending Redo retains the last
+captured branch-tip edit for recovery, including when Undo precedes the debounce,
+crosses the saved history position and returns through Redo, or Save retains
+pending Redo. Older dirty history positions checkpoint their current pixels
+without replacing that branch-tip snapshot. A new edit replaces the Redo branch.
+Automatic saved adoption and silent checkpoint retirement remain blocked until
+the branch is deliberately discarded. Recovery restores those captured pixels,
+not the history stack or its Undo position. Close awaits a current checkpoint; failures retain pixels and a JSON
 inspection download. Before-unload warns for uncheckpointed work. Disposal aborts
 transport/timers and never deletes acknowledged checkpoints. Recovered history
 starts locally from the recovered pixels. No automatic rebase, layered editing or

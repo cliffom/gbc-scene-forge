@@ -333,12 +333,10 @@ class HttpRoutingTests(unittest.TestCase):
                     )[0],
                     409,
                 )
-                self.assertEqual(
-                    self.request(
-                        server, prefix + "/api/artwork-draft-restore", {"id": draft["id"], **ack}
-                    )[0],
-                    409,
-                )
+                recovered = post("draft-restore", {"id": draft["id"], **ack})["candidate"]
+                self.assertEqual(recovered["rgba"], candidate["rgba"])
+                self.assertNotEqual(recovered["atlas_id"], candidate["atlas_id"])
+                self.assertEqual(recovered["project_revision"], saved["project_revision"])
                 self.assertEqual(
                     post("draft-download", {"id": draft["id"], **ack})["candidate"], candidate
                 )

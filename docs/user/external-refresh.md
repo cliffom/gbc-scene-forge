@@ -81,8 +81,12 @@ and [compact](../screenshots/external-refresh/live-artwork-review-compact.png) s
 Manual edits pause replacement. **Live updates paused · unsaved edits** offers
 **Download work** and **Load latest…**. Loading latest requires confirmation before
 discarding manual edits, history and the document's checkpoint. Cancel keeps your
-work. Undoing back to the saved base lets automatic following resume once pending
-checkpoint work settles. Other retained documents and scene edits stay unchanged.
+work. Undoing back to the saved base keeps replacement paused while Redo still
+holds local edits. Use Redo to inspect those edits or confirm **Load latest…** to
+discard them. The recovery checkpoint retains the most recently captured edited
+state; it does not persist the Undo/Redo stack or its current position. Download
+work includes that retained state alongside the current pixels. Other retained
+documents and scene edits stay unchanged.
 
 ![Paused artwork review with download and load-latest actions](../screenshots/external-refresh/paused-artwork-review-compact.png)
 

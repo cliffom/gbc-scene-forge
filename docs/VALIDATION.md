@@ -15,6 +15,282 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Local macOS plugin alpha.3 candidate
+
+- **Scope:** Plugin 0.1.0-alpha.3 with Forge 0.46.1, built 2026-11-12 on macOS
+  27.0.1 Apple Silicon with Codex CLI 0.167.2 from the dirty working tree based
+  on `f3faca4b6e7022202ea14382157eabb8a3244cd0`, including independent stale
+  checkpoint recovery. Runtime and packaging metadata record checkout diff
+  SHA-256 `aa1456006c322555c978965a321dce96006b0555565b03c1db58719a6a35b4f9`;
+  the prebuilt input wheel's source revision remains unverified.
+- **Method:** Build the production wheel, run installed-wheel smoke tests, freeze
+  with Developer ID signing, verify all archive Mach-O signatures and read-only
+  relocation, exercise official MCP SDK operations, managed lifecycle and isolated
+  Codex install/update/disable/rollback/uninstall, and run frozen-runtime Chromium
+  acceptance. Submit the same signed package to Apple and check its log and
+  explicit local notarization requirement.
+- **Result:** Seven installed-wheel tests, archive/SDK/lifecycle/native-client
+  checks and one frozen browser case pass. Apple accepts submission
+  `2d84586d-48ec-41e3-803f-e19f67dc9ef5` with no issues. Repeated explicit
+  notarization ticket checks initially fail for the new executable after acceptance,
+  including after a successful launcher identity check; the CPython library passes.
+  A later recheck before providing installation steps passes the executable's
+  explicit notarization requirement; the earlier failures remain in the local logs.
+  The build-time bare-executable
+  Gatekeeper assessment rejects it as valid code that does not seem to be an app.
+  Archive SHA-256 is
+  `593bf31bc0917edba0545141f594bc8b4725c537669d1c63a668d28cbe4806ba`.
+  Local logs and metadata are under `build/plugin-alpha3-verified/` and
+  `build/alpha3-*.log`; prior source validation is recorded separately below.
+- **Limits:** Local ignored outputs are not archived release evidence. No GitHub
+  publication, personal installation, human recovery retest, fresh quarantined
+  download or offline trust test occurred during build verification. The subsequent
+  user installation and recovery test are recorded below. The later successful
+  ticket check does not establish why earlier checks failed or a guaranteed ticket
+  propagation interval.
+
+## Human alpha.3 independent artwork recovery
+
+- **Scope:** User's `handoff-261` project on 2026-11-12 after following the
+  alpha.3 installation instructions and reporting a fresh session. The installed
+  skill catalog points to 0.1.0-alpha.3; screenshots show Forge 0.46.1. Host and
+  client versions were not independently remeasured during this manual test.
+- **Method:** Inspect successive user-supplied browser screenshots while guiding
+  Browse & recover, Recover copy, independent-artwork review, Confirm save,
+  browser reload/reopen and reopening the original artwork. The user performs the
+  browser actions; screenshots establish the resulting visible states.
+- **Result:** Recovery opens a New document with the purple pixel and a notice
+  that the original checkpoint is retained. Review identifies new independent
+  artwork with existing artwork and placements intact. Saving adds a third Library
+  entry and shows Saved. The subsequent screenshot after reload/reopen guidance
+  retains the purple pixel. Reopening the original shows its cyan top-right pixel
+  and no recovered purple pixel. This manual recovery/save/reopen case passes.
+- **Limits:** Screenshot-based human acceptance, not independent filesystem or
+  exact RGBA verification. Reload execution and checkpoint retention after saving
+  were not independently instrumented. This does not complete the entire #261
+  handoff protocol, cross-platform qualification or quarantined/offline trust tests.
+
+## Human alpha.3 preview, browser edit, Tiled export and shutdown
+
+- **Scope:** User-installed plugin 0.1.0-alpha.3 with Forge 0.46.1 in a fresh
+  Codex CLI conversation on macOS, observed 2026-11-12 with project `handoff-261`.
+  Build provenance is recorded above; client/host versions were not remeasured.
+- **Method:** Inspect user-supplied CLI and browser screenshots while the user
+  requests saved-artwork inspection and browser handoff, manually edits/saves the
+  recovered copy, requests read-only pixel verification and portable export, opens
+  an exported scene in Tiled, then explicitly requests managed-browser shutdown.
+- **Result:** The CLI receives an artwork preview and opens the managed browser.
+  An initial busy-project read succeeds on retry. Its initial purple-pixel
+  coordinate report is incorrect; a subsequent pixel decode reports (6,6), RGBA
+  [155,80,131,255]. After the browser save, another decode reports the new yellow
+  pixel at (0,7), RGBA [230,225,81,255], and the retained purple pixel. Export
+  reports no warnings or skipped animations, passing ZIP integrity and manifest
+  checksums, and an unchanged source revision. The user opens an extracted scene
+  in Tiled; the screenshot shows rendered artwork, Ground/Sprites layers, tilesets
+  and zero errors/warnings. Explicit shutdown returns stopped, then status reports
+  running false with no URL/instance; the CLI reports the saved revision unchanged.
+- **Limits:** Screenshot-based acceptance; underlying tool calls, file checks and
+  revision comparisons are reported by the separate CLI, not independently rerun.
+  Tiled version is unknown; one rendered scene does not verify unused recovered
+  artwork or every exported scene. Saved artwork requires manual navigation after
+  browser handoff because artwork deep links are unsupported. Native project
+  selection/create, model-led refinement, fresh hosted download, independent-host
+  and offline qualification are not established by this journey.
+
+## Human alpha.3 native project picker
+
+- **Scope:** User-installed plugin 0.1.0-alpha.3 with Forge 0.46.1 on macOS,
+  observed 2026-11-12 in the manual journey above and a subsequent fresh Codex
+  CLI 0.167.2 conversation, identified by its startup banner and new transcript.
+- **Method:** User requests native selection of the existing `handoff-261`
+  project, selects its folder, then requests another existing-project selection
+  and cancels. User then chooses a parent folder for a separate empty project,
+  selects that project in the same conversation, and repeats native selection and
+  read-only inspection in a fresh conversation. Inspect user-supplied native-dialog
+  and CLI-result screenshots.
+- **Result:** The macOS folder picker appears with the existing project folder.
+  After selection, the CLI reports reopening `handoff-261` with contents unchanged.
+  The second selection reports cancellation, retaining `handoff-261` as selected
+  with all project data unchanged. Creation adds `macos-alpha3-check` under the
+  chosen parent; the CLI reports `handoff-261` unchanged. Switching to the new
+  project and reopening it in the fresh conversation succeed. Read-only inspection
+  reports no scenes, artwork assets, files, candidates or archives, with no project
+  changes. The fresh conversation initially reports the persisted selected path
+  with no location error before reopening it through the picker.
+  In that fresh conversation, switching back to `handoff-261` reports its saved
+  `handoff_room` scene and three artwork entries, including the recovered copy;
+  the CLI reports both projects unchanged.
+- **Limits:** Screenshot-based user acceptance; tool details are collapsed and
+  selection persistence/data comparisons were not independently inspected. This
+  covers existing-project selection, cancellation, separate-project creation,
+  switching and later-conversation reopening. It does not establish clean-install
+  first-use onboarding, OS permission denial or independent-user usability.
+
+## Human alpha.3 model refinement after project switching
+
+- **Scope:** User-installed plugin 0.1.0-alpha.3 with Forge 0.46.1 in the fresh
+  Codex CLI 0.167.2 conversation above, observed 2026-11-12 after switching from
+  the empty test project back to `handoff-261`.
+- **Method:** User asks the model to add white at (7,7) to the recovered artwork,
+  preserving purple at (6,6), yellow at (0,7) and other pixels, showing review
+  before saving and leaving the original artwork unchanged. Inspect the CLI
+  screenshot and subsequent user-supplied browser screenshot of the saved result.
+- **Result:** The CLI commits the recovered artwork, reopens it and reports only
+  (7,7) changed, with the original unchanged. Its transcript shows a subsequent
+  exported candidate/review image and a local review-note update; earlier preview
+  details are outside the screenshot. The managed browser opens on request. The
+  browser shows Saved and visible white at bottom-right, yellow at bottom-left
+  and purple one pixel diagonally above the white, matching the requested edit.
+  On the user's subsequent explicit shutdown request, the CLI reads the current
+  browser instance, stops it and obtains status with running false and null
+  URL/instance, reporting saved data unchanged.
+- **Limits:** Screenshot-based visual handoff, not an independent exact-byte diff
+  or inspection of the original after this save. The CLI reports a pre-save review,
+  but the visible transcript does not establish that order. No separate approval
+  was obtained; the submitted prompt did not explicitly require waiting for one.
+  This does not establish an ignored approval instruction or complete the remaining
+  dirty-document/unpublished-exchange handoff cases.
+
+## Local macOS plugin alpha.2 candidate
+
+- **Scope:** Plugin 0.1.0-alpha.2 with Forge 0.46.1, built 2026-11-12 on macOS
+  27.0.1 Apple Silicon with Codex CLI 0.167.2 from the dirty working tree based
+  on `f3faca4b6e7022202ea14382157eabb8a3244cd0`, including PR #279 recovery fixes.
+  Runtime and packaging metadata record their separate checkout diff digests;
+  wheel source revision remains unverified.
+- **Method:** Build the production wheel, check its installed distribution,
+  freeze with Developer ID signing, verify the relocated read-only archive,
+  exercise official MCP SDK operations, managed lifecycle and isolated Codex
+  install/update/disable/rollback/uninstall, and run frozen-runtime Chromium
+  acceptance. Submit the signed package with the existing Keychain profile and
+  check the explicit notarization requirement. Run `make lint test`,
+  `make docs-check` and `git diff --check`.
+- **Result:** Wheel smoke, archive signatures, SDK, lifecycle, isolated Codex
+  journey and frozen-runtime browser test pass. The first client-update check
+  failed because its hard-coded synthetic alpha.2 matched the candidate; using
+  a distinct derived version makes the repeated check pass. Lint, 563 Python
+  tests and frontend suites pass. Apple accepts the signed code and the runtime
+  passes `codesign --verify --strict --check-notarization -R=notarized`.
+  Candidate archive SHA-256 is
+  `da77c56be27abef5b3e22a50b077b868a8712f2df4f0ab3d25606d9dd7271482`.
+- **Limits:** Local ignored build artifacts and notarization records are not
+  archived release evidence. No GitHub publication, fresh quarantined download or
+  offline trust test occurred. The later personal install and human acceptance
+  observation are recorded separately below.
+  The earlier source browser run remains separate from the frozen-runtime smoke.
+
+## Independent recovery of stale artwork checkpoints
+
+- **Scope:** Local source working tree based on PR #279 head
+  `f3faca4b6e7022202ea14382157eabb8a3244cd0`, checked 2026-11-12 on macOS.
+  This source change is newer than the installed alpha.2 package.
+- **Method:** Reproduce competing saves with backend fixtures and the real stdio
+  MCP writer. Recover after browser reload, review/save/reopen the independent
+  artwork, and compare the winning source and original checkpoint. Check layered
+  sheets, selected-placement variations, HTTP recovery and large artwork. Inspect
+  the recovered browser view at 1440×1000. Run `make lint test`, production artwork
+  and MCP-follow Playwright suites, `make docs-check` and `git diff --check`.
+- **Result:** Lint, frontend suites, 566 backend tests and 56 browser cases pass.
+  Recovery preserves exact
+  pixels, layers and frame layout under fresh document/atlas identities, leaving
+  source artwork and the original checkpoint intact. Later saves retain revision
+  guards. Initial runs exposed outdated stale-recovery rejection expectations and
+  browser assertions expecting Modified instead of New; corrected checks pass.
+- **Limits:** Synthetic source/runtime tests and screenshot inspection, not an
+  installed candidate or human acceptance pass. Independent recovery omits source
+  provenance, tile metadata and placement replacements, retained in the original
+  checkpoint. The user's project and downloaded backup were not modified.
+
+## Human alpha.2 artwork recovery observation
+
+- **Scope:** User-installed plugin 0.1.0-alpha.2 on macOS 27.0.1 Apple Silicon,
+  Codex CLI 0.167.2, observed 2026-11-12 in the user's `handoff-261` project.
+  Package provenance is recorded in the alpha.2 entry above.
+- **Method:** User paints a purple pixel, undoes/redoes, commits competing cyan
+  pixels through MCP, attempts the stale browser save, undoes/redoes again, then
+  reloads after checkpoint acknowledgment and selects Recover copy. Inspect the
+  user's downloaded checkpoint without modifying it or the project.
+- **Result:** Redo survives the rejected save and the competing update, including
+  Undo to the saved base. The checkpoint survives reload. Recover copy fails with
+  “Project changed on disk”. Download succeeds and contains the exact purple
+  pixel at (6,6), RGBA [155,80,131,255], against its original pre-MCP base.
+- **Limits:** User-reported UI observations and local backup inspection, not an
+  automated acceptance pass. Installed alpha.2 retains this recovery failure;
+  subsequent source fixes require a new candidate and installed human retest.
+
+## Browser acceptance for retained artwork Redo (PR #279)
+
+- **Scope:** Local macOS working tree based on PR #279 head
+  `f3faca4b6e7022202ea14382157eabb8a3244cd0`, checked 2026-11-12
+  America/Los_Angeles. The triggering Ubuntu
+  [CI run](https://github.com/cliffom/gbc-scene-forge/actions/runs/43275887563/job/131384041804)
+  failed three browser cases, with 205 passing and 14 skipped.
+- **Method:** Reproduce all three failures locally. Update acceptance expectations
+  for scene switching versus explicit discard, reload with and without durable
+  edited recovery, and explicit external-save adoption after Undo. Check exact
+  recovered pixels and verify the external red pixel after confirmed adoption.
+  Run `FORGE_BUILD_MODE=production make test-browser` with four local workers,
+  plus `make lint test`, `make docs-check` and `git diff --check`.
+- **Result:** All three failures reproduce and the four revised targeted cases
+  pass. Tests preserve checkpoint failure and unload-warning coverage while
+  retaining pending Redo edits instead of expecting their automatic deletion.
+  The full production browser run passes 209 cases with 14 optional cases
+  skipped; lint, 563 Python tests, frontend suites and documentation checks pass.
+- **Limits:** Local source-runtime checks do not establish an Ubuntu CI pass or
+  signed-plugin acceptance. No runtime change or release is introduced by this
+  acceptance-test correction.
+
+## Artwork Redo recovery across saved history positions (PR #279)
+
+- **Scope:** Local macOS working tree based on PR #279 head
+  `f3faca4b6e7022202ea14382157eabb8a3244cd0`, checked 2026-11-12
+  America/Los_Angeles with Node 24.22.1. The installed signed plugin is unchanged.
+- **Method:** Reproduce crossing the saved history position and saving while
+  undone in pixel-session tests; check exact checkpoint/download bytes, pending
+  work flags and replacement branches. Exercise both transitions in Chromium at
+  1440×1000, switch documents and compare checkpoint candidate/base pixels before
+  and after reload. Run required lint, Python/frontend tests, frontend build and
+  documentation checks.
+- **Result:** The new crossing regression failed before the fix. Both session
+  regressions now pass; the 11 existing artwork-follow browser cases pass, and
+  both new browser cases pass after correcting an initial status-text assertion
+  for reopened tabs. Recovery contains yellow pending Redo pixels against the
+  saved red base. `make lint test` passes (563 Python tests plus frontend suites);
+  `npm run build` and `make docs-check` pass locally. Inspection of the save-while-
+  undone capture confirms saved pixels with Redo enabled. Captures/reports are
+  local ignored build outputs, not archived evidence or a CI claim.
+- **Limits:** These are synthetic source-runtime checks, not a rebuilt signed
+  plugin or human acceptance retest. Recovery preserves one captured edited state,
+  not the history stack; the installed-client checks below remain outstanding.
+
+## Artwork Redo preservation after competing saves (#261)
+
+- **Scope:** Fix working tree based on milestone `8e0693dd94542df35f824ce5a50d416d2fbfdbc3`,
+  checked 2026-11-12 America/Los_Angeles on macOS 27.0.1 arm64. The preceding
+  human observation used signed plugin 0.1.0-alpha.1 / runtime 0.46.1 from source
+  `4720f9a36d005b2df1cef092dbc767446856c203`, Codex CLI 0.167.2; its archive/build
+  identities and missing browser provenance are in the
+  [evaluator results](evaluations/assets/plugin-handoffs/manual-2026-11-12.json).
+- **Method:** User browser gestures/screenshots and an actual fresh model-led
+  conversation, with evaluator read-only pixel/scene/saved-file comparisons.
+  Separately run source Playwright/MCP artwork-follow tests and pixel-session
+  checks; inspect the automated notice at 1440×1000 and 800×640.
+- **Result:** Human fresh-conversation refinements preserved all but the requested
+  pixel/cell, and dirty Save refused the competing revision. One Undo then lost
+  Redo and the checkpoint while leaving winning files unchanged. The source fix
+  preserves pending Redo, its edited recovery snapshot and discard confirmation;
+  all 11 artwork-follow tests pass, including exact yellow recovery after reload,
+  retained history across document switching and unchanged winning magenta data.
+  `make lint test`, the final pixel-session checks (including hidden-layer sources
+  and Undo before debounce), frontend build and `make docs-check` pass locally.
+  The [evaluation](evaluations/plugin-handoffs.md#partial-human-observation-and-undo-failure-2026-11-12)
+  preserves the failure, attribution, comparison outputs and patched UI captures.
+- **Limits:** The pre-Undo checkpoint payload and complete human project baselines
+  are not archived. The installed signed candidate still contains the failure;
+  the patched runtime has not been rebuilt, signed or manually retested. Recovery
+  stores the captured edited state, not the Undo/Redo stack. Scene conflicts and
+  the rest of the human protocol remain incomplete; #261 stays open.
+
 ## Plugin authoring quality and source-dispatch resource baseline (#262)
 
 - **Scope:** Working tree based on `a5834052945b8bc4548166f9fad8379c470e471f`,
@@ -3422,6 +3698,11 @@ Dates, revisions and environments missing from the originals remain unknown.
   model image inspection, user image review, browser handoff, create/reopen/edit/
   export and shutdown journey on each advertised macOS client/OS. Synthetic
   SDK/app-server automation and prior probe evidence do not complete this gate.
+  The [alpha.3 manual journey](#human-alpha3-preview-browser-edit-tiled-export-and-shutdown)
+  covers preview, browser edit/readback, Tiled reopen and explicit shutdown from
+  a local installation. The [native-picker test](#human-alpha3-native-project-picker)
+  covers selection/cancellation, creation, switching and fresh-conversation reopen;
+  downloaded-client coverage remains.
 - [ ] Produce Windows x64/Linux x64 native archives with named OS/library floors,
   a selected Linux glibc baseline, trust policy and installed-client acceptance.
   Record unavailable clients explicitly; these remain required milestone outcomes.
@@ -3446,6 +3727,18 @@ Dates, revisions and environments missing from the originals remain unknown.
   with an attributable manual artwork/scene edit and a model-led refinement in an
   actual fresh conversation (#261), including visual inspection, dirty-document
   conflicts, stale guards, unpublished exchange, restart and changed selection.
+  [Partial human acceptance](#artwork-redo-preservation-after-competing-saves-261)
+  passed disjoint refinements but found artwork Undo losing Redo/checkpoint.
+  The [alpha.2 human retest](#human-alpha2-artwork-recovery-observation) preserves
+  Redo but finds stale Recover copy failing. The
+  [alpha.3 human recovery test](#human-alpha3-independent-artwork-recovery) passes
+  recovery, independent save/reopen and visual preservation of the winning source.
+  The [subsequent manual journey](#human-alpha3-preview-browser-edit-tiled-export-and-shutdown)
+  verifies browser-edit readback, export/Tiled reopen and explicit shutdown.
+  The [fresh-conversation model refinement](#human-alpha3-model-refinement-after-project-switching)
+  is visible in the browser after switching projects; exact-byte preservation and
+  pre-save review order were not independently verified.
+  Continue the remaining handoff protocol cases beyond this recovery regression.
   Synthetic native app-server threads and Playwright gestures do not complete
   this manual/model acceptance. The
   [#257 executable checks](#managed-plugin-browser-lifecycle-257) establish local
@@ -3456,6 +3749,9 @@ Dates, revisions and environments missing from the originals remain unknown.
   have independent users skip or complete the optional first task and find
   browser editing/export. The #256 synthetic chooser/SDK checks above establish
   implementation behavior, not native-dialog or onboarding usability.
+  The [alpha.3 native-picker test](#human-alpha3-native-project-picker) covers
+  selection/cancellation, separate-project creation, switching and reopening in a
+  fresh conversation; clean-install onboarding and OS denial remain untested.
 
 ### Codex plugin feasibility (milestone 25, #254)
 
