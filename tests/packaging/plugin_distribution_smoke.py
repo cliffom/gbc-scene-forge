@@ -239,7 +239,9 @@ def exercise(archive, codex, output):
         updated_plugin = update / "plugins/scene-forge"
         manifest_path = updated_plugin / "plugin.json"
         manifest = json.loads(manifest_path.read_text())
-        manifest["version"] = "0.1.0-alpha.2"
+        version = manifest["version"].split("+", 1)[0]
+        updated_version = version + (".smoke" if "-" in version else "-smoke")
+        manifest["version"] = updated_version
         manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
         receipt_path = updated_plugin / "install.json"
         receipt = json.loads(receipt_path.read_text())
@@ -256,7 +258,7 @@ def exercise(archive, codex, output):
         cli("add", SELECTOR)
         current = NativeClient(codex, runtime_env, output)
         clients.append(current)
-        assert current.status()["installation"]["plugin_version"] == "0.1.0-alpha.2"
+        assert current.status()["installation"]["plugin_version"] == updated_version
         # This client removes the previous cache even for a distinct plugin version.
         assert not installed.exists()
         stale = native.status(allow_error=True)
@@ -270,7 +272,7 @@ def exercise(archive, codex, output):
             assert error.code == 409 and "installation changed" in error.read().decode()
         else:
             raise AssertionError("Old browser served project data after its cache was removed")
-        updated_cache = installed.parent / "0.1.0-alpha.2"
+        updated_cache = installed.parent / updated_version
         second = Client(updated_cache / "bin/forge", ["--plugin"], runtime_env)
         clients.append(second)
         mismatch = second.rpc(

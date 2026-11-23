@@ -168,6 +168,8 @@ check-dist:
 	build/package-smoke/bin/python -I tests/packaging/package_smoke.py
 
 clean:
+	# Runtime smoke checks can leave read-only bundles behind.
+	if [ -d build ]; then chmod -R u+w build; fi
 	rm -rf build dist node_modules
 	rm -f src/gbc_scene_forge/static/app.js src/gbc_scene_forge/static/app.js.map src/gbc_scene_forge/static/app.meta.json
 	rm -f src/gbc_scene_forge/static/project.js src/gbc_scene_forge/static/project.js.map
