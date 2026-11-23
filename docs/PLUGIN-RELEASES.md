@@ -3,9 +3,13 @@
 The [native candidate workflow](../.github/workflows/plugin-macos.yml) builds the
 macOS Apple Silicon portion of #263. It prepares downloadable Actions artifacts;
 it does not publish a GitHub release or a distribution repository. Milestone 25
-issue PRs retain Forge 0.46.1 and plugin 0.1.0-alpha.1 until integration assesses
-the product release. Do not install different development builds under one
-version as if they were published updates.
+issue PRs retain Forge 0.46.1 until integration assesses the product release.
+Plugin candidate 0.1.0-alpha.4 packages the merged artwork Redo retention and
+independent stale-checkpoint recovery fixes from PR #279. It uses a distinct
+version from the previously installed alpha.3 development build. The alpha.2
+human recovery failure and subsequent alpha.3 validation remain recorded in
+[validation](VALIDATION.md). Candidate builds do not publish a milestone release.
+Do not reuse a plugin version for different build contents.
 
 ## Platform and client boundaries
 
@@ -93,7 +97,7 @@ Verify a separately obtained archive before installation, using a trusted digest
 
 ```sh
 build/runtime-candidate/build-env/bin/python runtime/release.py \
-  --archive /absolute/path/to/scene-forge-0.1.0-alpha.1-macos-arm64.tar.gz \
+  --archive /absolute/path/to/scene-forge-0.1.0-alpha.4-macos-arm64.tar.gz \
   --sha256 EXPECTED_SHA256 --output build/download-check \
   --codex /absolute/path/to/codex
 ```
@@ -127,7 +131,7 @@ repository directory (the service does not accept the distribution's tar archive
 
 ```sh
 ditto -c -k --keepParent \
-  build/plugin-candidate/scene-forge-0.1.0-alpha.1-macos-arm64 \
+  build/plugin-candidate/scene-forge-0.1.0-alpha.4-macos-arm64 \
   build/forge-notary.zip
 xcrun notarytool submit build/forge-notary.zip \
   --keychain-profile forge-notary --wait --output-format json
