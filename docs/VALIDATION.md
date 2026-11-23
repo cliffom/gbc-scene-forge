@@ -15,6 +15,30 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Local macOS plugin alpha.4 candidate
+
+- **Scope:** Plugin 0.1.0-alpha.4 with Forge 0.46.1, built November 22, 2026
+  (Pacific time) on macOS 27.2.1 Apple Silicon with Codex CLI 0.171.0. The
+  runtime and packaging came from clean checkout
+  `68d83d31f66b8fdb74d3ab555a53f544de69b898`; the release tool records the input
+  wheel hash but does not independently attest its source revision.
+- **Method:** Build and test the installed wheel, verify the exact archive and
+  its relocated read-only runtime, exercise the MCP SDK and managed browser
+  lifecycle, and run isolated Codex install/update/rollback and installed browser
+  handoff tests. Verify cleanup using a disposable read-only bundle.
+- **Result:** Wheel, archive, SDK, lifecycle, install/update/disable/rollback/
+  uninstall, cleanup, and both browser checks passed. The frozen browser check
+  passed with the path quoted directly after the Make target split it on spaces.
+  The installed handoff passed after correcting the stale recovery message and
+  downloading the original checkpoint before creating the recovered copy. The
+  archive was unchanged across those reruns. Its SHA-256 is
+  `55ca6569e2acd7cbf46ef6865e14666cbde8ea690dc3fa03b291d4dc8b6c9678`.
+- **Limits:** The archive is ad-hoc signed; native signature verification passed
+  but Gatekeeper rejected the executable. Results use synthetic selection and
+  Codex threads without model turns. Local evidence is under
+  `build/issue-263-alpha4/`; it is not a published or notarized artifact.
+  Clean-machine, quarantined download, and cross-platform validation remain open.
+
 ## Local macOS plugin alpha.3 candidate
 
 - **Scope:** Plugin 0.1.0-alpha.3 with Forge 0.46.1, built 2026-11-12 on macOS

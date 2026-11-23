@@ -273,8 +273,6 @@ test('installed plugin preserves browser artwork and scenes across fresh native 
     await page.reload();
     await page.locator('#show-artwork').click();
     await revealArtworkControl(page, 'art-drafts');
-    await page.getByRole('button', { name: 'Recover copy', exact: true }).click();
-    await expect(page.locator('#art-message')).toContainText('Local pixels are retained');
     const download = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Download', exact: true }).click();
     const checkpointPath = info.outputPath('conflicting-artwork.json');
@@ -284,6 +282,10 @@ test('installed plugin preserves browser artwork and scenes across fresh native 
     local.set([255, 0, 0, 255], 8);
     local.set([40, 60, 80, 255], 16); // Local checkpoint predates the winning magenta edit.
     expect(Buffer.from(decodeCandidate(checkpoint.candidate).rgba, 'base64')).toEqual(local);
+    await page.getByRole('button', { name: 'Recover copy', exact: true }).click();
+    await expect(page.locator('#art-message')).toContainText('Recovered a new copy');
+    await expect(page.locator('#document-state')).toHaveText('New');
+    expect(await pixels(await open())).toEqual(expected);
     // Explicit adoption gives the browser a separate copy; the retained source is immutable.
     await page.reload();
     await page.locator('#show-artwork').click();
