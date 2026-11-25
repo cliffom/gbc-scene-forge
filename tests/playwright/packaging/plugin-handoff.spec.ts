@@ -460,7 +460,7 @@ test('installed plugin preserves browser artwork and scenes across fresh native 
     await command({ action: 'selection', alternate: true });
     const revoked = await call('plugin_status');
     expect(revoked.selection).toBeNull();
-    expect(string(revoked.error)).toContain('Selection changed');
+    expect(string(revoked.error)).toContain('Legacy selection changed');
     expect((await raw('get_project', { project })).isError).toBe(true);
     await command({ action: 'fresh', client: 'third' });
     expect((await call('list_projects', {}, 'third')).projects).toEqual([]);

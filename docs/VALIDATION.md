@@ -15,6 +15,24 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Local macOS plugin alpha.5 candidate
+
+- **Scope:** Plugin 0.1.0-alpha.5 with Forge 0.46.1, built November 25, 2026
+  (Pacific time) on macOS 27.2.1 Apple Silicon with Codex CLI 0.171.0-alpha.13.2.
+  The runtime and packaging came from clean checkout
+  `e9a0c4c366965d25a806d72e1885fc2233bc462a`, which includes PR #282's onboarding.
+- **Method:** Build and test the installed wheel, verify the actual archive and
+  relocated read-only runtime, and run SDK, managed browser lifecycle, isolated
+  Codex install/update/rollback, frozen-browser, and installed-handoff checks.
+- **Result:** The checks passed. The first installed-handoff run expected the old
+  legacy-selection error text. The corrected assertion passed on the same
+  archive, with SHA-256
+  `10b76ef89658c30a8fd2323eef67be27412a6149928f1bb9be3eccbf5bf3eb78`.
+- **Limits:** Local evidence is under `build/issue-280-alpha5/`. The archive is
+  ad-hoc signed and Gatekeeper rejected it. The installed checks use synthetic
+  selections and do not qualify the alpha.5 native picker, model turns, signed
+  downloads, clean machines, or other platforms.
+
 ## Local macOS plugin alpha.4 candidate
 
 - **Scope:** Plugin 0.1.0-alpha.4 with Forge 0.46.1, built November 22, 2026
