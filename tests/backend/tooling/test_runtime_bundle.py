@@ -150,5 +150,5 @@ class RuntimeLauncherTests(unittest.TestCase):
             ):
                 entry.main(["browser", "--plugin", "--project-name", "design", "--no-browser"])
             self.assertEqual(caught.exception.code, 2)
-            self.assertIn("another conversation", stderr.getvalue())
+            self.assertIn("Legacy selection changed", stderr.getvalue())
             request.assert_not_called()

@@ -9,6 +9,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from gbc_scene_forge.adapters.plugin.selection import WORKSPACE_LIBRARY
 from gbc_scene_forge.artwork import png
 
 
@@ -45,11 +46,23 @@ class PluginProtocolTests(unittest.TestCase):
             )
             self.assertIsNone((await call("plugin_status"))["selection"])
             self.assertTrue((await client.call_tool("list_projects", {})).isError)
-            await call("plugin_choose_location", {"mode": "root"})
+            status = await call(
+                "plugin_choose_location", {"mode": "workspace", "start_in": str(base / "projects")}
+            )
+            self.assertFalse(status["selection"]["library_exists"])
             self.assertEqual(set((await call("capabilities"))["tools"]), advertised)
             self.assertTrue((await client.call_tool("delete_scene", {})).isError)
             self.assertEqual((await call("list_projects"))["projects"], [])
             await call("create_project", {"name": "Design"})
+            catalog = await call("get_project", {"project": "design"})
+            await call(
+                "create_blockout_scene",
+                {
+                    "project": "design",
+                    "name": "First level",
+                    "project_revision": catalog["revision"],
+                },
+            )
             catalog = await call("get_project", {"project": "design"})
             blank = await call(
                 "create_artwork",
@@ -137,10 +150,12 @@ class PluginProtocolTests(unittest.TestCase):
         async with stdio_client(params) as streams, ClientSession(*streams) as client:
             await client.initialize()
             status = await client.call_tool("plugin_status", {})
-            self.assertEqual(status.structuredContent["selection"]["mode"], "project")
-            opened = await client.call_tool("get_project", {"project": "project"})
+            self.assertIsNone(status.structuredContent["selection"])
+            selected = await client.call_tool("plugin_choose_location", {"mode": "workspace"})
+            self.assertTrue(selected.structuredContent["selection"]["library_exists"])
+            opened = await client.call_tool("get_project", {"project": "design"})
             self.assertEqual(opened.structuredContent, catalog)
             reset = await client.call_tool("plugin_reset_selection", {})
             self.assertFalse(reset.isError)
             self.assertIsNone(reset.structuredContent["selection"])
-            self.assertTrue((base / "projects/design").is_dir())
+            self.assertTrue((base / "projects" / WORKSPACE_LIBRARY / "design").is_dir())

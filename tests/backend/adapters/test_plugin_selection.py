@@ -9,10 +9,16 @@ from pathlib import Path
 from unittest.mock import patch
 
 from gbc_scene_forge.adapters.mcp.tools import TOOLS
-from gbc_scene_forge.adapters.plugin.selection import Selection, choose_directory, locations
+from gbc_scene_forge.adapters.plugin.selection import (
+    WORKSPACE_LIBRARY,
+    Selection,
+    choose_directory,
+    locations,
+)
 from gbc_scene_forge.adapters.plugin.session import PluginSession
 from gbc_scene_forge.project.application import Project
 from gbc_scene_forge.project.schema import MANIFEST
+from gbc_scene_forge.scenes.authoring import MAX_INPUT
 
 
 class PluginSelectionTests(unittest.TestCase):
@@ -29,7 +35,7 @@ class PluginSelectionTests(unittest.TestCase):
         )
 
     def session(self, path=None):
-        return PluginSession(self.selection, chooser=lambda mode: path)
+        return PluginSession(self.selection, chooser=lambda mode, **kwargs: path)
 
     def snapshot(self, root):
         return {str(p.relative_to(root)): p.read_bytes() for p in root.rglob("*") if p.is_file()}
@@ -154,17 +160,111 @@ class PluginSelectionTests(unittest.TestCase):
         self.assertTrue(session.call("plugin_choose_location", {"mode": "root"})["cancelled"])
         self.assertFalse(self.selection.settings.exists())
 
+    def test_workspace_choice_uses_confirmed_folder_and_is_local_to_chat(self):
+        alternate = self.base / "alternate"
+        alternate.mkdir()
+        Project.create(alternate / "unrelated", "Unrelated")
+        first = self.session(self.root)
+        second = self.session(alternate)
+        with patch.object(second, "chooser", wraps=second.chooser) as picker:
+            result = second.call(
+                "plugin_choose_location", {"mode": "workspace", "start_in": str(self.root)}
+            )
+            picker.assert_called_once_with("workspace", start_in=str(self.root))
+        library = alternate / WORKSPACE_LIBRARY
+        self.assertEqual(result["selection"]["path"], str(library))
+        self.assertEqual(result["selection_scope"], "chat")
+        self.assertEqual(second.call("list_projects", {})["projects"], [])
+        self.assertIn("create_project", second.call("capabilities", {})["tools"])
+        with self.assertRaises(ValueError):
+            second.call("create_project", {"name": "../escape"})
+        self.assertFalse(library.exists())
+        first.call("plugin_choose_location", {"mode": "workspace", "start_in": str(self.root)})
+        first.call("create_project", {"name": "First game"})
+        second.call("create_project", {"name": "Second game"})
+        self.assertTrue((library / "second-game" / MANIFEST).is_file())
+        self.assertEqual(first.call("list_projects", {})["projects"][0]["name"], "First game")
+        self.assertEqual(second.call("list_projects", {})["projects"][0]["name"], "Second game")
+        second.chooser = lambda mode: None
+        self.assertTrue(second.call("plugin_choose_location", {"mode": "workspace"})["cancelled"])
+        self.assertEqual(second.status()["selection"]["path"], str(library))
+        second.call("plugin_reset_selection", {})
+        self.assertEqual(first.call("list_projects", {})["projects"][0]["name"], "First game")
+        self.assertFalse(self.selection.settings.exists())
+
+    def test_workspace_rejects_redirected_or_replaced_library(self):
+        outside = self.base / "outside"
+        outside.mkdir()
+        library = self.root / WORKSPACE_LIBRARY
+        session = self.session(self.root)
+        library.symlink_to(outside, target_is_directory=True)
+        with self.assertRaisesRegex(ValueError, "symlink"):
+            session.call("plugin_choose_location", {"mode": "workspace"})
+        library.unlink()
+        session.call("plugin_choose_location", {"mode": "workspace"})
+        library.symlink_to(outside, target_is_directory=True)
+        with self.assertRaisesRegex(ValueError, "symlink"):
+            session.call("create_project", {"name": "Do not create"})
+        self.assertEqual(list(outside.iterdir()), [])
+        library.unlink()
+        library.mkdir()
+        session.call("plugin_choose_location", {"mode": "workspace"})
+        library.rename(self.root / "old-library")
+        library.mkdir()
+        self.assertIsNone(session.status()["selection"])
+        self.assertIn("replaced", session.error)
+
+    def test_oversized_first_creation_leaves_the_game_folder_unchanged(self):
+        session = self.session(self.root)
+        session.call("plugin_choose_location", {"mode": "workspace"})
+        with self.assertRaisesRegex(ValueError, "Authoring input exceeds 4 MiB"):
+            session.call("create_project", {"name": "Game" + " " * MAX_INPUT})
+        self.assertEqual(list(self.root.iterdir()), [])
+        self.assertFalse(session.status()["selection"]["library_exists"])
+        self.assertEqual(session.call("create_project", {"name": "Game"})["directory"], "game")
+
+    def test_two_grants_to_an_empty_game_folder_can_reuse_the_same_library(self):
+        first = self.session(self.root)
+        second = self.session(self.root)
+        for session in (first, second):
+            self.assertFalse(
+                session.call("plugin_choose_location", {"mode": "workspace"})["selection"][
+                    "library_exists"
+                ]
+            )
+        first.call("create_project", {"name": "First"})
+        second.call("create_project", {"name": "Second"})
+        for session in (first, second):
+            self.assertEqual(
+                [item["name"] for item in session.call("list_projects", {})["projects"]],
+                ["First", "Second"],
+            )
+
+    def test_legacy_selection_is_read_without_publishing_chat_choices(self):
+        record = self.selection.prepare(self.root, "root")
+        self.selection.save(record)
+        old_chat = self.session()
+        self.assertEqual(old_chat.status()["selection_scope"], "legacy")
+        new_chat = self.session(self.root)
+        new_chat.call("plugin_choose_location", {"mode": "workspace"})
+        new_chat.call("plugin_reset_selection", {})
+        self.assertEqual(self.selection.load(), record)
+        self.assertEqual(old_chat.status()["selection"], record)
+        old_chat.call("plugin_reset_selection", {})
+        self.assertFalse(self.selection.settings.exists())
+
     def test_choose_create_reopen_single_project_and_switch(self):
         session = self.session(self.root)
         result = session.call("plugin_choose_location", {"mode": "root"})
         self.assertEqual(result["selection"]["path"], str(self.root))
         self.assertEqual(session.call("list_projects", {})["projects"], [])
         self.assertEqual(list(self.root.iterdir()), [])
-        self.assertEqual(self.selection.settings.stat().st_mode & 0o777, 0o600)
+        self.assertFalse(self.selection.settings.exists())
         created = session.call("create_project", {"name": "My design"})
         project = self.root / created["directory"]
         before = self.snapshot(project)
-        reopened = self.session()
+        reopened = self.session(self.root)
+        reopened.call("plugin_choose_location", {"mode": "root"})
         self.assertEqual(reopened.call("list_projects", {})["projects"][0]["name"], "My design")
         session.chooser = lambda mode: project
         session.call("plugin_choose_location", {"mode": "project"})
@@ -175,10 +275,8 @@ class PluginSelectionTests(unittest.TestCase):
         for value in ("../my-design", str(project), "my-design"):
             with self.assertRaises(ValueError):
                 session.call("get_project", {"project": value})
-        # Other running conversations lose their old grant instead of silently adopting this one.
-        self.assertIsNone(reopened.call("plugin_status", {})["selection"])
-        self.assertIn("another conversation", reopened.error)
-        self.assertEqual(self.session().record["mode"], "project")
+        self.assertEqual(reopened.call("plugin_status", {})["selection"]["mode"], "root")
+        self.assertIsNone(self.session().record)
 
     def test_discovery_invalid_content_and_denied_access_have_no_project_writes(self):
         Project.create(self.root / "good", "Good")
@@ -210,17 +308,17 @@ class PluginSelectionTests(unittest.TestCase):
         self.assertEqual(self.snapshot(project.root), before)
         self.assertFalse(lock.exists())
 
-    def test_cancel_failed_persistence_and_invalid_arguments_preserve_old_grant(self):
+    def test_cancel_failed_validation_and_invalid_arguments_preserve_old_grant(self):
         session = self.session(self.root)
         session.call("plugin_choose_location", {"mode": "root"})
-        original = self.selection.settings.read_bytes()
+        original = session.record
         session.chooser = lambda mode: None
         self.assertTrue(session.call("plugin_choose_location", {"mode": "project"})["cancelled"])
-        self.assertEqual(self.selection.settings.read_bytes(), original)
+        self.assertEqual(session.record, original)
         other = self.base / "other"
         other.mkdir()
         session.chooser = lambda mode: other
-        with patch.object(self.selection, "save", side_effect=PermissionError("denied")):
+        with patch.object(self.selection, "prepare", side_effect=PermissionError("denied")):
             with self.assertRaises(PermissionError):
                 session.call("plugin_choose_location", {"mode": "root"})
         self.assertEqual(session.record["path"], str(self.root))
@@ -246,6 +344,8 @@ class PluginSelectionTests(unittest.TestCase):
                 session.call("get_project", {"project": directory})
 
     def test_unavailable_moved_replaced_and_symlinked_grants_fail_closed(self):
+        self.selection.save(self.selection.prepare(self.root, "root"))
+        legacy = self.session()
         session = self.session(self.root)
         session.call("plugin_choose_location", {"mode": "root"})
         moved = self.root.with_name("moved")
@@ -259,6 +359,7 @@ class PluginSelectionTests(unittest.TestCase):
         self.root.unlink()
         self.root.mkdir()
         self.assertIn("replaced", self.session().error)
+        self.assertIsNone(legacy.status()["selection"])
 
     def test_switch_and_reset_clear_artifacts_without_deleting_projects(self):
         project = Project.create(self.root / "design", "Design")
@@ -289,6 +390,7 @@ class PluginSelectionTests(unittest.TestCase):
     def test_settings_parent_cannot_be_redirected_into_a_project(self):
         session = self.session(self.root)
         session.call("plugin_choose_location", {"mode": "root"})
+        self.selection.save(session.record)
         self.selection.settings.parent.rename(self.base / "old settings")
         self.selection.settings.parent.symlink_to(self.root, target_is_directory=True)
         with self.assertRaisesRegex(ValueError, "symlink"):
@@ -320,6 +422,25 @@ class PluginSelectionTests(unittest.TestCase):
 
 
 class NativeChooserTests(unittest.TestCase):
+    def test_starting_location_is_only_a_positional_hint(self):
+        hint = '/tmp/Game folder "café"'
+        chosen = Path("/tmp/Different folder")
+        with (
+            patch("platform.system", return_value="Darwin"),
+            patch(
+                "subprocess.run",
+                return_value=subprocess.CompletedProcess([], 0, f"{chosen}/\n", ""),
+            ) as run,
+        ):
+            self.assertEqual(choose_directory("workspace", start_in=hint), chosen)
+            command = run.call_args.args[0]
+            self.assertIn("default location", command[2])
+            self.assertIn(WORKSPACE_LIBRARY, command[-2])
+            self.assertEqual(command[-1], hint)
+            self.assertNotIn(hint, command[2])
+            choose_directory("workspace", start_in="relative/path")
+            self.assertNotIn("relative/path", run.call_args.args[0])
+
     def test_native_selection_cancellation_permission_failure_and_timeout(self):
         with patch("platform.system", return_value="Darwin"):
             for code, stdout, stderr in (

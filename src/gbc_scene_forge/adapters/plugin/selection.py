@@ -11,6 +11,8 @@ from gbc_scene_forge.core.validation import require
 from gbc_scene_forge.project.application import Project
 from gbc_scene_forge.project.schema import MANIFEST
 
+WORKSPACE_LIBRARY = ".gbc-scene-forge"
+
 
 def locations():
     """Use OS-owned user locations; never infer a project from cwd or a checkout."""
@@ -36,24 +38,39 @@ def separate(path, other):
     )
 
 
-def choose_directory(mode):
-    """Only the native chooser can grant a new path; MCP accepts no path argument."""
-    require(mode in ("project", "root"), "Choose project or root")
+def choose_directory(mode, *, start_in=None):
+    """The starting folder is a hint. Only the native chooser returns a grant."""
+    prompts = {
+        "project": "Open one existing Forge project. Forge will access only this project.",
+        "root": "Choose a parent folder. Forge can discover and create immediate projects inside it.",
+        "workspace": f"Choose your game folder. Forge stores projects inside {WORKSPACE_LIBRARY}/.",
+    }
+    require(mode in prompts, "Choose workspace, project or root")
     require(
         platform.system() == "Darwin",
         "Native plugin selection currently requires local macOS. "
         "Use the runtime's explicit --project or --project-root mode on other systems.",
     )
-    prompt = (
-        "Open one existing Forge project. Forge will access only this project."
-        if mode == "project"
-        else "Choose a parent folder. Forge can discover and create immediate projects inside it."
-    )
-    # A fixed OS executable and constant script, without a shell or interpolated paths.
-    script = f'POSIX path of (choose folder with prompt "{prompt}")'
+    # Pass the untrusted hint as data. If it cannot resolve to a folder, use the OS default.
+    script = """on run argv
+    if (count of argv) > 1 then
+        set startingFolder to missing value
+        try
+            set candidateFolder to (POSIX file (item 2 of argv)) as alias
+            if folder of (info for candidateFolder) then set startingFolder to candidateFolder
+        end try
+        if startingFolder is not missing value then
+            return POSIX path of (choose folder with prompt (item 1 of argv) default location startingFolder)
+        end if
+    end if
+    return POSIX path of (choose folder with prompt (item 1 of argv))
+end run"""
+    command = ["/usr/bin/osascript", "-e", script, "--", prompts[mode]]
+    if start_in and "\x00" not in start_in and Path(start_in).is_absolute():
+        command.append(start_in)
     try:
         result = subprocess.run(
-            ["/usr/bin/osascript", "-e", script],
+            command,
             capture_output=True,
             text=True,
             timeout=55,
@@ -95,7 +112,7 @@ class Selection:
             isinstance(record, dict)
             and set(record) == {"schema_version", "mode", "path", "identity"}
             and record["schema_version"] == 1
-            and record["mode"] in ("project", "root")
+            and record["mode"] in ("project", "root", "workspace")
             and isinstance(record["path"], str),
             "Invalid saved selection. Ask Forge to change location or reset selection.",
         )
@@ -118,12 +135,35 @@ class Selection:
         )
         if record["mode"] == "project":
             Project(path, recover=False)  # Discovery must not replay interrupted writes.
-        else:
+        elif record["mode"] == "root":
             require(
                 not (path / MANIFEST).exists(),
                 "This is a Forge project. Choose 'project' to reopen it, or select its parent.",
             )
         return path
+
+    def library(self, workspace, *, create=False):
+        """Resolve only the immediate library of a previously confirmed game folder."""
+        path = self.validate(workspace) / WORKSPACE_LIBRARY
+        require(not path.is_symlink(), "The Forge library must not be a symlink")
+        if create and not path.exists():
+            parent = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+            try:
+                info = os.fstat(parent)
+                require(
+                    workspace["identity"] == [info.st_dev, info.st_ino],
+                    "The game folder changed; choose it again",
+                )
+                try:
+                    os.mkdir(path.name, mode=0o700, dir_fd=parent)
+                except FileExistsError:
+                    pass  # A concurrent chat may have created the same library.
+            finally:
+                os.close(parent)
+        if not path.exists():
+            return None
+        self.validate(workspace)
+        return self.prepare(path, "root", canonicalize=False)
 
     def load(self):
         self.check_owned_paths()
@@ -142,11 +182,14 @@ class Selection:
                 "Invalid saved selection. Ask Forge to change location or reset selection."
             ) from error
         self.validate(record)
+        require(record["mode"] != "workspace", "Workspace selections belong to one chat")
         return record
 
-    def prepare(self, path, mode):
-        require(Path(path).is_absolute(), "Choose an absolute existing directory")
-        path = Path(path).resolve(strict=True)
+    def prepare(self, path, mode, *, canonicalize=True):
+        path = Path(path)
+        require(path.is_absolute(), "Choose an absolute existing directory")
+        if canonicalize:
+            path = path.resolve(strict=True)
         info = path.stat()
         record = {
             "schema_version": 1,
@@ -159,6 +202,7 @@ class Selection:
 
     def save(self, record):
         self.validate(record)
+        require(record["mode"] != "workspace", "Workspace selections belong to one chat")
         require(not self.settings.is_symlink(), "Settings must not be a symlink")
         self.settings.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         # NamedTemporaryFile is owner-only before publication. No chmod or other
