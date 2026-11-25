@@ -1,6 +1,6 @@
 {
   "name": "scene-forge-repository",
-  "interface": { "displayName": "Scene Forge macOS Apple Silicon builds" },
+  "interface": { "displayName": "GBC Scene Forge macOS Apple Silicon builds" },
   "plugins": [
     {
       "name": "scene-forge",

@@ -71,6 +71,13 @@ class PluginDistributionTests(unittest.TestCase):
         shutil.unpack_archive(archive, extracted, filter="data")
         moved = next(extracted.iterdir()) / "plugins/scene-forge"
         self.assertEqual(distribution.verify(moved), installed)
+        interface = json.loads((moved / "plugin.json").read_text())["extensions"]["com.openai"][
+            "interface"
+        ]
+        self.assertEqual(interface["displayName"], "GBC Scene Forge")
+        logo = (REPO / "assets/branding/logo-256.png").read_bytes()
+        for field in ("composerIcon", "logo"):
+            self.assertEqual((moved / interface[field]).read_bytes(), logo)
         # Skills and their local references must travel together, without checkout access.
         self.assertTrue(
             {"forge-start", "forge-artwork", "forge-animation", "forge-scenes"}
