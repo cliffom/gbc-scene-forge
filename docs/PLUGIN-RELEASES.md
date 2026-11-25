@@ -15,7 +15,7 @@ stale-checkpoint recovery from PR #279. The earlier candidate results remain in
 
 | Target | Build baseline | Advertised runtime/client floor | Acceptance boundary |
 | --- | --- | --- | --- |
-| macOS Apple Silicon (ARM64) | Native hosted `macos-15`, architecture asserted before building | macOS 27.0+, local Codex CLI/app-server 0.167.1 | Milestone 25 preview target. Signed hosted-archive and clean-Mac installed-client qualification remain open in [#263](https://github.com/cliffom/gbc-scene-forge/issues/263). |
+| macOS Apple Silicon (ARM64) | Native hosted `macos-15`, architecture asserted before building | macOS 27.0+, local Codex CLI/app-server 0.167.1 | Milestone 25 preview target. See [alpha.6 signing and clean-Mac launch evidence](VALIDATION.md#protected-macos-plugin-alpha6-candidate-and-clean-mac-launch) and [remaining installed-client and release delivery checks](VALIDATION.md#plugin-release-qualification-263). |
 | Windows x64 | Deferred | Not advertised | Native build, Windows baseline, download trust and installed-client acceptance are tracked in [#283](https://github.com/cliffom/gbc-scene-forge/issues/283). |
 | Linux x64 | Deferred | Not advertised | Native build, distribution or glibc baseline, download trust and installed-client acceptance are tracked in [#284](https://github.com/cliffom/gbc-scene-forge/issues/284). |
 

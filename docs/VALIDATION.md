@@ -15,6 +15,37 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Protected macOS plugin alpha.6 candidate and clean-Mac launch
+
+- **Scope:** Plugin 0.1.0-alpha.6 with Forge 0.46.1, built from clean revision
+  `68b49432808eef8f6e211091fc3311aac8e23b6d` by the
+  [protected November 25, 2026 CI run](https://github.com/cliffom/gbc-scene-forge/actions/runs/45693295297)
+  on macOS 15.8.2 ARM64. Local archive verification used macOS 27.2.1 ARM64
+  and Codex CLI 0.171.0-alpha.13.2. The maintainer reported the subsequent
+  clean Apple Silicon Mac test. Its exact macOS and Codex versions were not supplied.
+- **Method:** Verify the downloaded archive checksum, Developer ID signatures,
+  explicit notarization requirement and relocation into a read-only path with
+  spaces and non-ASCII characters. Exercise the SDK, frozen browser and synthetic
+  Codex installation and lifecycle. The maintainer followed the clean-Mac
+  checklist for a quarantined browser download, an offline launcher identity
+  check before online assessment, and a separate online first launch with a
+  Codex model turn, blockout creation and editor handoff.
+- **Result:** Apple accepted `ff67651a-4ddb-492b-a02b-cdb5c5c4f4a1`. The archive
+  SHA-256 is `9c1bbb8c686ff6ae8d53cf24b8051f6de3c40abfb4c428756a0c936187361298`.
+  All four Mach-O payloads passed strict verification and the explicit
+  notarization requirement on the local host. Bare-executable `spctl` assessment
+  returned 3 in CI and locally, reporting valid code that does not seem to be an
+  app. SDK, browser and synthetic client checks passed. The maintainer reported
+  that the clean-Mac download, offline runtime first launch and online Codex
+  blockout/editor checks all passed.
+- **Limits:** The offline result covers the local Forge runtime. CI runs below
+  the installed-client floor; local automation uses synthetic grants. The
+  maintainer report covers the launch walkthrough. Independent new-user
+  acceptance and the full installed-client authoring journey remain open below.
+  The [candidate](https://github.com/cliffom/gbc-scene-forge/actions/runs/45693295297/artifacts/15060870243)
+  and [diagnostics](https://github.com/cliffom/gbc-scene-forge/actions/runs/45693295297/artifacts/15058959670)
+  expire December 25, 2026 UTC. Local copies are under `build/issue-263-alpha6-ci/`.
+
 ## Local macOS plugin alpha.5 candidate
 
 - **Scope:** Plugin 0.1.0-alpha.5 with Forge 0.46.1, built November 25, 2026
@@ -3736,11 +3767,9 @@ targets local macOS on Apple Silicon. Deferred platform qualification is tracked
 in [Windows x64 #283](https://github.com/cliffom/gbc-scene-forge/issues/283) and
 [Linux x64 #284](https://github.com/cliffom/gbc-scene-forge/issues/284).
 
-- [ ] Complete general [macOS release candidate](PLUGIN-RELEASES.md) qualification
-  beyond the [successful local online quarantined cache launch](evaluations/plugin-releases.md#local-notarization-and-quarantined-download):
-  test a normal independent user/clean host, hosted download/relocation, offline
-  first-launch behavior and protected CI signing/notarization. Local Apple
-  acceptance and developer-host launch do not complete these release gates.
+- [x] Verify protected signing and notarization, archive relocation and launch
+  from a quarantined download, including an offline Forge first launch on a
+  clean Mac. See the [alpha.6 results](#protected-macos-plugin-alpha6-candidate-and-clean-mac-launch).
 - [ ] Complete the downloaded candidate's installed-client project selection,
   model image inspection, user image review, browser handoff, create/reopen/edit/
   export and shutdown journey on each advertised macOS client/OS. Synthetic
