@@ -23,66 +23,53 @@ for operation details; its MCP column describes the full direct-launch surface.
 
 ## Choose, reopen or change a location
 
-Ask Forge to open a project or start a new design. `plugin_status` reports the
-effective absolute project/root, settings/cache locations and any startup error.
-On first use there is no filesystem discovery until a directory is chosen.
+Ask Forge to open a project or start a new design. On first use, the native
+folder picker asks for the folder where the game lives. Choose the current
+working folder or another folder. Forge stores named projects under the
+selected folder's `.gbc-scene-forge/` directory and continues the original
+authoring task after confirmation.
 
-`plugin_choose_location` opens a native folder dialog with one of two scopes:
+`plugin_status` reports the effective path, its selection scope, and any
+startup error. `plugin_choose_location` has three modes:
 
-- `project`: choose an existing Forge project. Only that project is accessible,
-  using the MCP name `project`.
-- `root`: choose an existing parent directory. Forge can discover its immediate
-  project directories and create a new project there with `create_project`.
-  Discovery creates no projects, artwork or scenes and reports malformed projects
-  as unavailable. Creation atomically reserves a new child using existing name rules.
+- `workspace` is the default for new work. Choose the game folder, then
+  discover or create immediate projects under its `.gbc-scene-forge/` child.
+  If the library is absent, `list_projects` returns an empty list.
+  `create_project` creates the missing library on demand and uses the existing
+  rules for reserving a named project directory.
+- `project` opens one existing Forge project directly. Use the MCP name
+  `project` to access it.
+- `root` explicitly opens a library in the earlier layout. The chosen folder
+  itself contains the named projects.
 
-The dialog states its scope. The model cannot submit a path or browse the
-filesystem through a setup tool. Finish the dialog within 55 seconds, or cancel
-and ask to choose again. A cancelled dialog or failed validation/settings write
-keeps the previous selection. Project/root validation happens before settings are
-saved. Invalid project content does not trigger repair or interrupted-write recovery
-during selection. Normal project operations retain the existing recovery and
-revision contracts.
+On macOS the optional `start_in` argument positions the picker at a known
+absolute working folder from the chat. Without a usable hint the picker opens
+at its normal location. The confirmed picker result grants project access.
+Finish the dialog within 55 seconds or cancel to retain the previous selection.
+The Forge selection applies to Forge tools in the current chat. Codex manages
+the chat's working folder separately.
 
-This solves the startup-grant ordering by separating bootstrap from authoring:
-the initial MCP process owns only its known settings file; a native user choice
-constructs the scoped domain adapter inside that process. The direct server's
-startup authorization is unchanged. No general shell/file tools are added.
-
-The native chooser currently uses macOS's system `osascript`, without a shell or
-development tools. macOS folder/automation restrictions can deny the dialog or
-subsequent access; the error points to **System Settings → Privacy & Security**.
-Windows/Linux native selection is unavailable in this initial macOS runtime.
-Their explicit launch arguments remain the fallback; bundle/platform delivery is
-owned by #258/#263. The [feasibility record](evaluations/plugin-feasibility.md)
-names the tested Codex client; a chooser unit test is not installed-client proof.
-
-Later conversations reopen the persisted selection. Missing/moved directories,
-replaced directories, a new symlink, read-only/denied access, invalid settings or
-invalid projects leave setup available with a diagnostic. Nothing silently falls
-back to cwd, a parent folder or a plugin cache. Ask to **change Forge location**
-to choose again, or **reset Forge selection** (`plugin_reset_selection`) to forget
-only the settings entry. Reset never deletes a project.
-
-Selection is checked before each project call and artifact read. Another
-conversation changing/resetting settings revokes the old session's grant; that
-session must explicitly choose again. A switch replaces the adapter and clears
-session preview resources. Read current revisions and regenerate previews before
-continuing. Symlink/path containment remains enforced for project children and
-declared files. This is a cooperative local application boundary, not a sandbox
-against another process running as the same OS user.
+The chooser uses the macOS system `osascript` command. If macOS denies folder or
+automation access, the error points to **System Settings → Privacy & Security**.
+Windows and Linux can launch the runtime with explicit `--project` or
+`--project-root` arguments. Platform delivery is tracked in #258/#263.
 
 ## Data ownership and browser handoff
 
-The default macOS settings file is
-`~/Library/Application Support/Scene Forge/selection.json` (schema version 1,
-scope, canonical path and directory device/inode). Its parent is created only
-after a successful choice; the selection file is written atomically with owner
-read/write permissions. Cache/log output belongs under
-`~/Library/Caches/Scene Forge/`. OS-appropriate Windows/XDG locations are defined
-for future platform delivery; there is no project-path environment override.
-These locations and user projects must be separate from each other and the
-runtime/plugin bundle, including ancestor/descendant aliases.
+New selections live in the chat's MCP connection. A fresh connection can
+reopen a library by choosing the same game folder. Previous installations'
+`~/Library/Application Support/Scene Forge/selection.json` remains readable as a
+legacy selection and is never overwritten by a new choice. A reset clears the
+active chat selection or forgets a legacy selection loaded by that connection.
+It leaves project files intact.
+
+Forge revalidates the confirmed folder and any open library before project calls
+and artifact reads. Moved, replaced, denied or symlinked locations require a
+fresh selection. Discovery reports malformed projects without repairing them.
+Switching replaces the adapter and clears session previews. Read current revisions
+and regenerate previews in the new project. Per-user cache and logs live under
+`~/Library/Caches/Scene Forge/`, separate from projects, settings and the plugin
+installation. This is a cooperative local application boundary.
 
 Projects remain user-owned wherever selected. Plugin removal must remove only
 installed plugin content; removing the plugin or cache cannot remove a project.
@@ -110,10 +97,11 @@ not save or adopt them. Direct launch retains the full MCP inventory; the bounde
 plugin profile replaces filtered SVG `review_scene` with this handoff. Ordinary
 saved-scene PNG review remains available through `review_artwork`.
 
-The bundled `bin/forge browser --plugin` uses the same manager and opens the OS
-browser. With a root selection, add `--project-name NAME` for one immediate
-project. `--no-browser` prints the verified URL to stderr and exits. Managed
-browsers choose their own port; `--port` applies only to direct launches.
+From a terminal, use the bundled `bin/forge browser --project <absolute-project-directory>`
+to open a saved project directly. The legacy `bin/forge browser --plugin` route
+continues to use an existing saved selection. For a legacy root, add
+`--project-name NAME`. Managed browsers choose their own port. Direct launches can
+specify `--port`.
 
 The client owns each stdio MCP subprocess. Normal stdin closure stops MCP; an
 abrupt termination loses its in-memory resources. No MCP network listener is

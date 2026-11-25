@@ -3722,6 +3722,9 @@ Dates, revisions and environments missing from the originals remain unknown.
   model image inspection, user image review, browser handoff, create/reopen/edit/
   export and shutdown journey on each advertised macOS client/OS. Synthetic
   SDK/app-server automation and prior probe evidence do not complete this gate.
+  For #281, confirm the picker opens at the chat's working folder when supplied,
+  choose that folder and an alternate in separate chats, and verify creation and
+  reopen under each confirmed folder's `.gbc-scene-forge/` library.
   The [alpha.3 manual journey](#human-alpha3-preview-browser-edit-tiled-export-and-shutdown)
   covers preview, browser edit/readback, Tiled reopen and explicit shutdown from
   a local installation. The [native-picker test](#human-alpha3-native-project-picker)
