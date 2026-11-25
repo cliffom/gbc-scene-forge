@@ -15,6 +15,9 @@ on:
       - '.python-version'
       - '.nvmrc'
       - '*lock*'
+  push:
+    branches:
+      - candidate/macos-preview
   workflow_dispatch:
     inputs:
       sign:
@@ -27,9 +30,10 @@ jobs:
   candidate:
     # Native hosted build baseline; this does not lower the plugin's macOS 27 floor.
     runs-on: macos-15
-    environment: ${{ inputs.sign && 'plugin-signing' || 'plugin-candidate' }}
+    environment: ${{ (inputs.sign || (github.event_name == 'push' && github.ref == 'refs/heads/candidate/macos-preview')) && 'plugin-signing' || 'plugin-candidate' }}
     env:
       FORGE_BUILD_MODE: production
+      FORGE_SIGN_CANDIDATE: ${{ inputs.sign || (github.event_name == 'push' && github.ref == 'refs/heads/candidate/macos-preview') }}
     steps:
       - uses: actions/checkout@v5
       - name: Require native ARM64
@@ -54,7 +58,7 @@ jobs:
           mkdir -p build/runtime-inputs
           python -c 'import json, urllib.request; c=json.load(open("runtime/config.json")); urllib.request.urlretrieve(c["python_url"], "build/runtime-inputs/python.tar.zst")'
       - name: Import signing identity into disposable runner keychain
-        if: ${{ inputs.sign }}
+        if: ${{ env.FORGE_SIGN_CANDIDATE == 'true' }}
         env:
           FORGE_SIGNING_P12: ${{ secrets.FORGE_SIGNING_P12 }}
           FORGE_SIGNING_PASSWORD: ${{ secrets.FORGE_SIGNING_PASSWORD }}
@@ -75,7 +79,7 @@ jobs:
           rm "$RUNNER_TEMP/forge.p12"
       - name: Build production wheel and native runtime
         env:
-          FORGE_SIGNING_IDENTITY: ${{ inputs.sign && secrets.FORGE_SIGNING_IDENTITY || '' }}
+          FORGE_SIGNING_IDENTITY: ${{ env.FORGE_SIGN_CANDIDATE == 'true' && secrets.FORGE_SIGNING_IDENTITY || '' }}
         run: |
           make build check-dist
           signing=()
@@ -89,7 +93,7 @@ jobs:
           npx playwright install chromium
           FORGE_TEST_BUNDLE="$PWD/build/plugin-candidate/sdk-smoke/moved runtime café/forge" npx playwright test --config tests/playwright/playwright.config.ts bundle.spec.ts
       - name: Submit signed candidate to Apple notarization
-        if: ${{ inputs.sign }}
+        if: ${{ env.FORGE_SIGN_CANDIDATE == 'true' }}
         env:
           FORGE_APPLE_ID: ${{ secrets.FORGE_APPLE_ID }}
           FORGE_APPLE_PASSWORD: ${{ secrets.FORGE_APPLE_PASSWORD }}
@@ -101,7 +105,7 @@ jobs:
           python -c 'import json; r=json.load(open("build/plugin-candidate/notarization.json")); assert r["status"] == "Accepted", r'
           shasum -a 256 build/plugin-candidate/notarization.json > build/plugin-candidate/NOTARIZATION-SHA256
       - name: Remove signing credentials
-        if: ${{ always() && inputs.sign }}
+        if: ${{ always() && env.FORGE_SIGN_CANDIDATE == 'true' }}
         run: |
           rm -f "$RUNNER_TEMP/forge.p12" "$RUNNER_TEMP/forge-notary.zip"
           security delete-keychain "$RUNNER_TEMP/forge-signing.keychain-db"

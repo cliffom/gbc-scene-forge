@@ -6,12 +6,10 @@ candidate for [#263](https://github.com/cliffom/gbc-scene-forge/issues/263).
 It stages downloadable Actions artifacts for qualification. Publishing the
 GitHub release and distribution repository follows milestone integration. Issue
 PRs retain Forge 0.46.1 until integration assesses the product release.
-Plugin candidate 0.1.0-alpha.5 adds the game-folder onboarding from PR #282 to
-the artwork Redo retention and independent stale-checkpoint recovery in alpha.4
-(PR #279). The alpha.2 human recovery failure and the alpha.3 and alpha.4
-results remain recorded in [validation](VALIDATION.md). Candidate builds do not
-publish a milestone release. Do not reuse a plugin version for different build
-contents.
+Plugin candidate 0.1.0-alpha.6 is reserved for the protected signing run. It
+includes the game-folder onboarding from PR #282 and the artwork Redo and
+stale-checkpoint recovery from PR #279. The earlier candidate results remain in
+[validation](VALIDATION.md). Each distinct candidate uses its own plugin version.
 
 ## Platform and client boundaries
 
@@ -99,7 +97,7 @@ Verify a separately obtained archive before installation, using a trusted digest
 
 ```sh
 build/runtime-candidate/build-env/bin/python runtime/release.py \
-  --archive /absolute/path/to/scene-forge-0.1.0-alpha.5-macos-arm64.tar.gz \
+  --archive /absolute/path/to/scene-forge-0.1.0-alpha.6-macos-arm64.tar.gz \
   --sha256 EXPECTED_SHA256 --output build/download-check \
   --codex /absolute/path/to/codex
 ```
@@ -133,7 +131,7 @@ repository directory (the service does not accept the distribution's tar archive
 
 ```sh
 ditto -c -k --keepParent \
-  build/plugin-candidate/scene-forge-0.1.0-alpha.5-macos-arm64 \
+  build/plugin-candidate/scene-forge-0.1.0-alpha.6-macos-arm64 \
   build/forge-notary.zip
 xcrun notarytool submit build/forge-notary.zip \
   --keychain-profile forge-notary --wait --output-format json
@@ -163,8 +161,12 @@ example, with macOS `ditto`) before Archive Utility extraction. Inspect quaranti
 again on the extracted runtime and client-managed copy; a missing marker must not
 be reported as a successful quarantined-launch test.
 
-A manually dispatched workflow may select signing. Configure the protected
-`plugin-signing` GitHub environment with required reviewers and these secrets:
+Use the dedicated `candidate/macos-preview` branch for the protected signing
+run. A push to that branch triggers signing while the milestone workflow lives
+outside the default branch. Manual dispatch can select signing once GitHub
+recognizes the workflow on the default branch. Configure the `plugin-signing`
+GitHub environment to allow the candidate branch and require reviewer approval.
+Store these credentials as environment secrets:
 
 | Secret | Purpose |
 | --- | --- |
@@ -175,7 +177,7 @@ A manually dispatched workflow may select signing. Configure the protected
 | `FORGE_APPLE_PASSWORD` | App-specific notarization password |
 | `FORGE_APPLE_TEAM` | Developer team ID |
 
-PR builds receive no signing credentials. Manual signed builds import the identity
+PR builds receive no signing credentials. Protected builds import the identity
 into an unlocked temporary runner keychain, sign with hardened runtime and secure
 timestamps through PyInstaller, and submit a ZIP of the same packaged repository
 to Apple's notary service. Missing credentials, signing failure or an unaccepted
@@ -194,5 +196,4 @@ quarantined archive under a normal user account and record the client-managed
 copy's signature/trust behavior, online/offline limits and any rejection. Complete
 project selection, model PNG inspection, user image review, browser handoff,
 create/reopen/edit/export and shutdown on the exact advertised client/OS. Keep
-unavailable checks in [Remaining checks](VALIDATION.md#remaining-checks), including
-Windows/Linux feasibility and their OS/library/signing decisions.
+unavailable macOS checks in [Remaining checks](VALIDATION.md#remaining-checks).
