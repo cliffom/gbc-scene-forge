@@ -12,9 +12,12 @@ The initial target is **macOS arm64**, following the
 [feasibility decision](evaluations/plugin-feasibility.md). The builder rejects
 other hosts. The [repository packager](PLUGIN-DISTRIBUTION.md) stages initial-platform
 delivery. The [macOS candidate workflow](PLUGIN-RELEASES.md) adds native CI,
-archive verification and optional Developer ID signing. Windows x64/Linux x64
-builds and final release/client qualification remain #263. No universal OS or client compatibility is
-claimed. See [measurements and limitations](evaluations/runtime-bundle.md).
+archive verification and optional Developer ID signing. Final macOS Apple Silicon
+preview qualification is tracked in [#263](https://github.com/cliffom/gbc-scene-forge/issues/263).
+Windows x64 and Linux x64 builds and client qualification are deferred to
+[#283](https://github.com/cliffom/gbc-scene-forge/issues/283) and
+[#284](https://github.com/cliffom/gbc-scene-forge/issues/284), respectively. See
+[measurements and limitations](evaluations/runtime-bundle.md).
 
 ## Launch contract
 

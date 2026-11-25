@@ -1,9 +1,11 @@
 # macOS plugin release candidates
 
 The [native candidate workflow](../.github/workflows/plugin-macos.yml) builds the
-macOS Apple Silicon portion of #263. It prepares downloadable Actions artifacts;
-it does not publish a GitHub release or a distribution repository. Milestone 25
-issue PRs retain Forge 0.46.1 until integration assesses the product release.
+[Milestone 25 macOS Apple Silicon preview](https://github.com/cliffom/gbc-scene-forge/milestone/25)
+candidate for [#263](https://github.com/cliffom/gbc-scene-forge/issues/263).
+It stages downloadable Actions artifacts for qualification. Publishing the
+GitHub release and distribution repository follows milestone integration. Issue
+PRs retain Forge 0.46.1 until integration assesses the product release.
 Plugin candidate 0.1.0-alpha.5 adds the game-folder onboarding from PR #282 to
 the artwork Redo retention and independent stale-checkpoint recovery in alpha.4
 (PR #279). The alpha.2 human recovery failure and the alpha.3 and alpha.4
@@ -15,9 +17,9 @@ contents.
 
 | Target | Build baseline | Advertised runtime/client floor | Acceptance boundary |
 | --- | --- | --- | --- |
-| macOS ARM64 | Native hosted `macos-15`, architecture asserted before building | macOS 27.0+, local Codex CLI/app-server 0.167.1 | Archive/SDK/browser automation; actual client qualification on the named OS remains separate |
-| Windows x64 | Not selected | Not advertised | Required milestone outcome; native build, OS floor, trust and installed-client journey remain open |
-| Linux x64 | Not selected | Not advertised | Required milestone outcome; select a build baseline and glibc range before delivery |
+| macOS Apple Silicon (ARM64) | Native hosted `macos-15`, architecture asserted before building | macOS 27.0+, local Codex CLI/app-server 0.167.1 | Milestone 25 preview target. Signed hosted-archive and clean-Mac installed-client qualification remain open in [#263](https://github.com/cliffom/gbc-scene-forge/issues/263). |
+| Windows x64 | Deferred | Not advertised | Native build, Windows baseline, download trust and installed-client acceptance are tracked in [#283](https://github.com/cliffom/gbc-scene-forge/issues/283). |
+| Linux x64 | Deferred | Not advertised | Native build, distribution or glibc baseline, download trust and installed-client acceptance are tracked in [#284](https://github.com/cliffom/gbc-scene-forge/issues/284). |
 
 Intel macOS, ARM Windows/Linux, WSL and remote execution remain deferred. The
 build baseline is deliberately distinct from the tested client floor. The

@@ -3731,6 +3731,11 @@ Dates, revisions and environments missing from the originals remain unknown.
 
 ### Plugin release qualification (#263)
 
+The [Milestone 25 preview](https://github.com/cliffom/gbc-scene-forge/milestone/25)
+targets local macOS on Apple Silicon. Deferred platform qualification is tracked
+in [Windows x64 #283](https://github.com/cliffom/gbc-scene-forge/issues/283) and
+[Linux x64 #284](https://github.com/cliffom/gbc-scene-forge/issues/284).
+
 - [ ] Complete general [macOS release candidate](PLUGIN-RELEASES.md) qualification
   beyond the [successful local online quarantined cache launch](evaluations/plugin-releases.md#local-notarization-and-quarantined-download):
   test a normal independent user/clean host, hosted download/relocation, offline
@@ -3748,13 +3753,9 @@ Dates, revisions and environments missing from the originals remain unknown.
   a local installation. The [native-picker test](#human-alpha3-native-project-picker)
   covers selection/cancellation, creation, switching and fresh-conversation reopen;
   downloaded-client coverage remains.
-- [ ] Produce Windows x64/Linux x64 native archives with named OS/library floors,
-  a selected Linux glibc baseline, trust policy and installed-client acceptance.
-  Record unavailable clients explicitly; these remain required milestone outcomes.
 - [ ] Verify hosted repository/release delivery, archive size/selection and retain
   the exact release archive plus CI evidence beyond Actions artifact expiry before
-  milestone publication. Intel macOS, ARM Windows/Linux and WSL/remote execution
-  remain deferred.
+  publishing the macOS Apple Silicon preview.
 
 ### Plugin authoring quality and interaction cost (#262)
 
@@ -3810,7 +3811,7 @@ Dates, revisions and environments missing from the originals remain unknown.
       The integrated-browser image-decoding stall remains an explicit compatibility
       limit; this confirmation applies to the external Chrome window.
 - [ ] Establish public-directory eligibility/submission boundaries (#265).
-  Additional platform/release qualification belongs to #263 above; older macOS
+  macOS preview release qualification belongs to #263 above; older macOS
   remains unadvertised. The #258 local repository update/rollback/uninstall checks
   do not establish those release outcomes.
 
