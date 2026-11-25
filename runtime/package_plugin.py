@@ -59,6 +59,8 @@ def package(bundle, output):
         shutil.copytree(REPO / "plugin", plugin)
         (plugin / "marketplace.json").unlink()
         (plugin / "bin/forge").chmod(0o755)
+        (plugin / "assets").mkdir(exist_ok=True)
+        shutil.copy2(REPO / "assets/branding/logo-256.png", plugin / "assets/logo-256.png")
         shutil.copytree(bundle, plugin / "runtime", symlinks=True)
         shutil.copy2(REPO / "LICENSE", plugin / "LICENSE")
         write(
