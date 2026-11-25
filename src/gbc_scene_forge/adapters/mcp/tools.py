@@ -22,6 +22,25 @@ MAX_ARTIFACT = 16 * 1024 * 1024
 MAX_CACHE = 24 * 1024 * 1024
 
 
+def validate_arguments(name, arguments):
+    if name in artwork.NAMES:
+        require(
+            len(record_bytes(arguments)) <= dimensions.MAX_CANDIDATE_BYTES + 2 * 1024 * 1024,
+            "Artwork tool input exceeds 26 MiB; use compact handles and bounded pixel batches",
+        )
+    else:
+        authoring.bounded(arguments)
+    definition = next((t for t in TOOLS if t["name"] == name), None)
+    require(definition is not None, "Unsupported capability; inspect capabilities/tools/list")
+    shape = definition["inputSchema"]
+    require(
+        isinstance(arguments, dict)
+        and set(shape["required"]) <= set(arguments)
+        and not set(arguments) - set(shape["properties"]),
+        "Invalid tool arguments",
+    )
+
+
 class Adapter:
     def __init__(self, path, *, single_project=False, recover=True, create_root=True):
         self.single = Project(path, recover=recover) if single_project else None
@@ -71,22 +90,7 @@ class Adapter:
         }
 
     def call(self, name, arguments):
-        if name in artwork.NAMES:
-            require(
-                len(record_bytes(arguments)) <= dimensions.MAX_CANDIDATE_BYTES + 2 * 1024 * 1024,
-                "Artwork tool input exceeds 26 MiB; use compact handles and bounded pixel batches",
-            )
-        else:
-            authoring.bounded(arguments)
-        definition = next((t for t in TOOLS if t["name"] == name), None)
-        require(definition is not None, "Unsupported capability; inspect capabilities/tools/list")
-        shape = definition["inputSchema"]
-        require(
-            isinstance(arguments, dict)
-            and set(shape["required"]) <= set(arguments)
-            and not set(arguments) - set(shape["properties"]),
-            "Invalid tool arguments",
-        )
+        validate_arguments(name, arguments)
         a = arguments
         if name == "capabilities":
             return self.capabilities()

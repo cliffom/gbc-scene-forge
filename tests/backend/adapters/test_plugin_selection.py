@@ -18,6 +18,7 @@ from gbc_scene_forge.adapters.plugin.selection import (
 from gbc_scene_forge.adapters.plugin.session import PluginSession
 from gbc_scene_forge.project.application import Project
 from gbc_scene_forge.project.schema import MANIFEST
+from gbc_scene_forge.scenes.authoring import MAX_INPUT
 
 
 class PluginSelectionTests(unittest.TestCase):
@@ -212,6 +213,15 @@ class PluginSelectionTests(unittest.TestCase):
         library.mkdir()
         self.assertIsNone(session.status()["selection"])
         self.assertIn("replaced", session.error)
+
+    def test_oversized_first_creation_leaves_the_game_folder_unchanged(self):
+        session = self.session(self.root)
+        session.call("plugin_choose_location", {"mode": "workspace"})
+        with self.assertRaisesRegex(ValueError, "Authoring input exceeds 4 MiB"):
+            session.call("create_project", {"name": "Game" + " " * MAX_INPUT})
+        self.assertEqual(list(self.root.iterdir()), [])
+        self.assertFalse(session.status()["selection"]["library_exists"])
+        self.assertEqual(session.call("create_project", {"name": "Game"})["directory"], "game")
 
     def test_two_grants_to_an_empty_game_folder_can_reuse_the_same_library(self):
         first = self.session(self.root)

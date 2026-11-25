@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from gbc_scene_forge.adapters.mcp.tools import TOOLS, Adapter
+from gbc_scene_forge.adapters.mcp.tools import TOOLS, Adapter, validate_arguments
 from gbc_scene_forge.core.validation import require
 from gbc_scene_forge.project.workspaces import slug
 
@@ -241,10 +241,7 @@ class PluginSession:
         return self.status()
 
     def create_library(self, arguments):
-        require(
-            isinstance(arguments, dict) and {"name"} <= arguments.keys() <= {"name", "starter"},
-            "Invalid tool arguments",
-        )
+        validate_arguments("create_project", arguments)
         require(arguments.get("starter", "empty") in ("empty", "blockout"), "Invalid starter")
         slug(arguments["name"])
         record = self.selection.library(self.workspace, create=True)
