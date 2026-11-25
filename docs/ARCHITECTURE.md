@@ -35,9 +35,11 @@ wire/browser representations, units and shared boundary fixtures.
 
 ## Plugin bootstrap ownership
 
-The optional `adapters/plugin` bootstrap owns per-user settings and native folder
-selection before MCP has a domain grant. It replaces a scoped MCP adapter after a
-validated user choice; domain services retain all authoring/recovery rules.
+The optional `adapters/plugin` bootstrap owns native folder selection and legacy
+per-user settings. A validated game-folder choice grants the chat access to the
+`.gbc-scene-forge/` child. The bootstrap opens a scoped MCP adapter when the library
+exists or the chat first creates a project. Domain services retain authoring and
+recovery rules.
 See [plugin selection](PLUGIN-START.md) for revocation, data ownership and limits.
 
 ## HTTP dispatch ownership

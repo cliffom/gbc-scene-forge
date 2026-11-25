@@ -23,9 +23,9 @@ MAX_CACHE = 24 * 1024 * 1024
 
 
 class Adapter:
-    def __init__(self, path, *, single_project=False, recover=True):
+    def __init__(self, path, *, single_project=False, recover=True, create_root=True):
         self.single = Project(path, recover=recover) if single_project else None
-        self.workspace = None if single_project else ProjectRoot(path)
+        self.workspace = None if single_project else ProjectRoot(path, create=create_root)
         self.artifacts = OrderedDict()
 
     def project(self, directory):
@@ -50,6 +50,26 @@ class Adapter:
             return {"uri": uri, "mimeType": mime, "text": data.decode()}
         return {"uri": uri, "mimeType": mime, "blob": base64.b64encode(data).decode()}
 
+    @staticmethod
+    def capabilities():
+        return {
+            "version": 1,
+            "transport": "stdio",
+            "tools": [t["name"] for t in TOOLS],
+            "deferred": DEFERRED,
+            "max_operations": authoring.MAX_OPERATIONS,
+            "max_tile_edits": authoring.MAX_TILE_EDITS,
+            "max_input_bytes": authoring.MAX_INPUT,
+            "max_artifact_bytes": MAX_ARTIFACT,
+            "max_view_dimension": rendering.MAX_DIMENSION,
+            "max_view_pixels": rendering.MAX_PIXELS,
+            "max_source_pixels_per_view": rendering.MAX_SOURCE_PIXELS,
+            "max_composited_pixels_per_view": rendering.MAX_WORK,
+            "artifact_cache_bytes": MAX_CACHE,
+            "artwork": artwork.capabilities(),
+            "history": "Saved writes only. Browser drafts and Undo remain independent.",
+        }
+
     def call(self, name, arguments):
         if name in artwork.NAMES:
             require(
@@ -69,23 +89,7 @@ class Adapter:
         )
         a = arguments
         if name == "capabilities":
-            return {
-                "version": 1,
-                "transport": "stdio",
-                "tools": [t["name"] for t in TOOLS],
-                "deferred": DEFERRED,
-                "max_operations": authoring.MAX_OPERATIONS,
-                "max_tile_edits": authoring.MAX_TILE_EDITS,
-                "max_input_bytes": authoring.MAX_INPUT,
-                "max_artifact_bytes": MAX_ARTIFACT,
-                "max_view_dimension": rendering.MAX_DIMENSION,
-                "max_view_pixels": rendering.MAX_PIXELS,
-                "max_source_pixels_per_view": rendering.MAX_SOURCE_PIXELS,
-                "max_composited_pixels_per_view": rendering.MAX_WORK,
-                "artifact_cache_bytes": MAX_CACHE,
-                "artwork": artwork.capabilities(),
-                "history": "Saved writes only. Browser drafts and Undo remain independent.",
-            }
+            return self.capabilities()
         if name == "list_projects":
             return (
                 {"projects": [{"directory": "project", **self.single.catalog()}]}

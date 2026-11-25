@@ -61,9 +61,7 @@ def main(argv=None):
         group = command.add_mutually_exclusive_group(required=True)
         group.add_argument("--project-root", type=Path, help="Absolute existing parent of projects")
         group.add_argument("--project", type=Path, help="Absolute existing Forge project")
-        group.add_argument(
-            "--plugin", action="store_true", help="Use per-user native project selection"
-        )
+        group.add_argument("--plugin", action="store_true", help="Use plugin project selection")
         if mode == "browser":
             command.add_argument(
                 "--port", type=int, default=0, help="Loopback port (default: auto)"
@@ -96,7 +94,7 @@ def main(argv=None):
             if record is None:
                 raise ValueError(
                     session.error
-                    or "No project selected. Use plugin_choose_location in Forge chat first."
+                    or "No legacy selection. Use --project PATH or open the browser from Forge chat."
                 )
             single_project = record["mode"] == "project"
             from gbc_scene_forge.adapters.http.server import open_editor

@@ -25,7 +25,7 @@ def slug(title):
 
 
 class ProjectRoot:
-    def __init__(self, root):
+    def __init__(self, root, *, create=True):
         self.root = Path(root).absolute()
         self._catalog_cache = {}
         self._catalog_lock = Lock()
@@ -35,7 +35,10 @@ class ProjectRoot:
             "or move it into a project root as a child directory.",
         )
         safe_path(self.root, ".root-check")
-        self.root.mkdir(parents=True, exist_ok=True)
+        if create:
+            self.root.mkdir(parents=True, exist_ok=True)
+        else:
+            require(self.root.is_dir(), "The selected project root is unavailable")
 
     def path(self, directory):
         require(

@@ -24,22 +24,30 @@ inventory and `unavailable_tools`. Use the browser for unavailable operations;
 do not guess hidden tool names. The outcome matrix's MCP column describes the
 full direct-launch inventory, which is broader than this plugin profile.
 
-If no selection is available, explain the two choices: open one existing Forge
-project, or choose a parent folder in which Forge can discover and create immediate
-projects. Call `plugin_choose_location` with `mode:project` or `mode:root` as
-appropriate. The native dialog is the user's directory grant; ask them to finish
-or cancel it. The tool has no path argument. Cancellation keeps the old selection.
-If OS permissions prevent selection, report the actionable tool error. Never work
-around denied access with shell/filesystem tools or broaden to a parent directory.
+For a new game or design with no chat selection, ask the user to choose their
+game folder. Explain that Forge uses `.gbc-scene-forge/` inside it for named
+projects. Call `plugin_choose_location` with `mode:workspace`. If the host
+provides an absolute working folder for this chat, pass it as `start_in` to
+position the picker. Omit the hint if unknown. The native dialog grants access
+to the chosen location. Ask the user to finish or cancel it. A cancelled picker
+keeps the current selection. If the user wants to open a particular Forge
+project elsewhere, use `mode:project`. Use `mode:root` only for an explicitly
+requested existing library layout.
 
-Show the selected absolute location before proceeding. `list_projects` is
-read-only and reports invalid/unavailable immediate projects without repairing
-them. A single selected project uses the alias `project`. For a new project,
-select its parent root and use `create_project` with the user's chosen name and
-starter only after they request creation. Never create assets/scenes during
-discovery. Offer change location or `plugin_reset_selection` when requested;
-reset forgets only the selection. Switching discards session preview resources;
-read fresh revisions and regenerate previews in the chosen project.
+Show the confirmed absolute Forge location before proceeding. A legacy saved
+selection is reported as `selection_scope:legacy`. Use it when the user is
+continuing that project, and choose a game folder for a new task in a
+different workspace. New choices last for the chat's plugin connection.
+In a later chat, selecting the same game folder reopens its library.
+
+Use `list_projects` to discover named projects. Discovery creates nothing.
+When the task calls for a new project, use `create_project` with a name and
+starter appropriate to the request. This creates a missing library. A single
+project chosen with `mode:project` has the alias `project`. Continue the
+original request after selection and any required project creation. Offer change
+location or `plugin_reset_selection` when requested. Switching clears session
+preview resources. Read fresh revisions and regenerate previews in the chosen
+project. If OS permissions prevent selection, report the actionable tool error.
 
 Offer an optional introduction only if the user has no specific task: draw a
 small sprite, build a small scene, or explore this project. A specific request
@@ -67,9 +75,10 @@ Offer direct browser editing alongside chat early. Call `plugin_browser` with th
 selected project and `action:"open"`, optionally with a saved scene ID. Open only
 its verified returned loopback URL using the client's browser capability. Saved
 artwork opens from Documents; an unpublished candidate is not saved by handoff.
-If the client cannot open a URL, give the returned URL to the user. The bundled
-`bin/forge browser --plugin` is also available (add `--project-name NAME` for a
-root selection). Neither route needs Python, Node or a checkout.
+If the client cannot open a URL, give the returned URL to the user. A separate
+terminal can also open saved projects using the bundled
+`bin/forge browser --project <absolute-project-directory>`. These routes need
+no Python, Node or checkout.
 
 The browser survives chat closure and expires after 30 minutes without editor
 requests. Reuse it for later conversations; never stop it during ordinary cleanup,
