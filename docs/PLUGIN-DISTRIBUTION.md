@@ -6,9 +6,12 @@ The initial artifact requires **local macOS 27.0+ on Apple Silicon**, with Codex
 CLI/app-server **0.167.1** as its tested client baseline. The conservative OS floor
 bounds this artifact to the observed major OS; older macOS has not been tested.
 The [native macOS candidate workflow](PLUGIN-RELEASES.md) prepares archives,
-checksums, inventories and trust evidence. Windows x64/Linux x64 delivery and
-the remaining installed-client/release acceptance stay under #263. Intel macOS,
-WSL, remote/cloud execution and other clients are not supported by this artifact.
+checksums, inventories and trust evidence. Milestone 25 targets the Apple Silicon
+preview, with installed-client and release acceptance in [#263](https://github.com/cliffom/gbc-scene-forge/issues/263).
+Windows x64 and Linux x64 are deferred to [#283](https://github.com/cliffom/gbc-scene-forge/issues/283)
+and [#284](https://github.com/cliffom/gbc-scene-forge/issues/284), respectively.
+Intel macOS, WSL, remote/cloud execution and other clients are not supported by
+this artifact.
 A shell host check rejects other architectures before trying the executable;
 the manifest does not select or download native binaries.
 
