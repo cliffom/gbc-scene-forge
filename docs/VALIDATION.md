@@ -40,11 +40,28 @@ Dates, revisions and environments missing from the originals remain unknown.
   blockout/editor checks all passed.
 - **Limits:** The offline result covers the local Forge runtime. CI runs below
   the installed-client floor; local automation uses synthetic grants. The
-  maintainer report covers the launch walkthrough. Independent new-user
-  acceptance and the full installed-client authoring journey remain open below.
+  initial maintainer report covers the launch walkthrough. The broader
+  acceptance confirmation has its own scope below.
   The [candidate](https://github.com/cliffom/gbc-scene-forge/actions/runs/45693295297/artifacts/15060870243)
   and [diagnostics](https://github.com/cliffom/gbc-scene-forge/actions/runs/45693295297/artifacts/15058959670)
   expire December 25, 2026 UTC. Local copies are under `build/issue-263-alpha6-ci/`.
+
+## Maintainer confirmation of alpha.6 preview acceptance
+
+- **Scope:** macOS Apple Silicon preview qualification for #263 and the related
+  onboarding, authoring quality and independent first-use checks in #281, #262
+  and #264. The maintainer confirmed completion on November 25, 2026 Pacific time
+  after the signed alpha.6 clean-Mac test.
+- **Method:** The maintainer confirmed the remaining checks as a group after
+  reviewing the list of outstanding release gates.
+- **Result:** The maintainer confirmed verification of the installed-client
+  authoring journey, including folder selection, fresh-chat reopen and edit,
+  export and shutdown, plus the authoring quality evaluation, independent
+  first-use validation, download verification and artifact retention.
+- **Limits:** This is a maintainer attestation. Per-case results, client and
+  model versions, measurements, participant details and the retention location
+  were not supplied with the confirmation. Release publication and a smoke check
+  of the published download are separate from candidate verification.
 
 ## Local macOS plugin alpha.5 candidate
 
@@ -3770,7 +3787,7 @@ in [Windows x64 #283](https://github.com/cliffom/gbc-scene-forge/issues/283) and
 - [x] Verify protected signing and notarization, archive relocation and launch
   from a quarantined download, including an offline Forge first launch on a
   clean Mac. See the [alpha.6 results](#protected-macos-plugin-alpha6-candidate-and-clean-mac-launch).
-- [ ] Complete the downloaded candidate's installed-client project selection,
+- [x] Complete the downloaded candidate's installed-client project selection,
   model image inspection, user image review, browser handoff, create/reopen/edit/
   export and shutdown journey on each advertised macOS client/OS. Synthetic
   SDK/app-server automation and prior probe evidence do not complete this gate.
@@ -3780,25 +3797,27 @@ in [Windows x64 #283](https://github.com/cliffom/gbc-scene-forge/issues/283) and
   The [alpha.3 manual journey](#human-alpha3-preview-browser-edit-tiled-export-and-shutdown)
   covers preview, browser edit/readback, Tiled reopen and explicit shutdown from
   a local installation. The [native-picker test](#human-alpha3-native-project-picker)
-  covers selection/cancellation, creation, switching and fresh-conversation reopen;
-  downloaded-client coverage remains.
-- [ ] Verify hosted repository/release delivery, archive size/selection and retain
-  the exact release archive plus CI evidence beyond Actions artifact expiry before
-  publishing the macOS Apple Silicon preview.
+  covers selection/cancellation, creation, switching and fresh-conversation reopen.
+  See the [maintainer's alpha.6 confirmation](#maintainer-confirmation-of-alpha6-preview-acceptance).
+- [x] Verify candidate download and retain the archive and CI evidence beyond
+  Actions artifact expiry per the [maintainer's confirmation](#maintainer-confirmation-of-alpha6-preview-acceptance).
+- [ ] Smoke-check the published marketplace and release download, including
+  archive selection and matching its SHA-256 to the verified candidate.
 
 ### Plugin authoring quality and interaction cost (#262)
 
-- [ ] Run the [bounded quality briefs](evaluations/plugin-authoring-quality.md)
+- [x] Run the [bounded quality briefs](evaluations/plugin-authoring-quality.md)
   through the current installed plugin with an actual model turn, native directory
   grant, exact client/model/runtime/skill identities and observable usage/cost.
   Verify delivery of inspected previews and compare correction loops/calls/bytes
   against the source baseline; record unavailable measurements. Reassess the weak
-  island/room outputs and inspect animation playback where supported. Current
-  source-dispatch replay and agent image judgments do not complete this acceptance.
+  island/room outputs and inspect animation playback where supported. See the
+  [maintainer's alpha.6 confirmation](#maintainer-confirmation-of-alpha6-preview-acceptance)
+  for the attribution and evidence limits.
 
 ### Plugin selection, introduction and handoff (#261/#264)
 
-- [ ] Complete the [installed-plugin handoff protocol](evaluations/plugin-handoffs.md)
+- [x] Complete the [installed-plugin handoff protocol](evaluations/plugin-handoffs.md)
   with an attributable manual artwork/scene edit and a model-led refinement in an
   actual fresh conversation (#261), including visual inspection, dirty-document
   conflicts, stale guards, unpublished exchange, restart and changed selection.
@@ -3813,20 +3832,20 @@ in [Windows x64 #283](https://github.com/cliffom/gbc-scene-forge/issues/283) and
   The [fresh-conversation model refinement](#human-alpha3-model-refinement-after-project-switching)
   is visible in the browser after switching projects; exact-byte preservation and
   pre-save review order were not independently verified.
-  Continue the remaining handoff protocol cases beyond this recovery regression.
-  Synthetic native app-server threads and Playwright gestures do not complete
-  this manual/model acceptance. The
+  See the [maintainer's alpha.6 confirmation](#maintainer-confirmation-of-alpha6-preview-acceptance)
+  for the later installed-client acceptance. The
   [#257 executable checks](#managed-plugin-browser-lifecycle-257) establish local
   process behavior, not client browser-opening or independent-user acceptance.
 
-- [ ] Exercise the native folder dialog from an installed plugin, including
+- [x] Exercise the native folder dialog from an installed plugin, including
   first-use create, reopen/switch, OS denial/cancellation and a later conversation;
   have independent users skip or complete the optional first task and find
   browser editing/export. The #256 synthetic chooser/SDK checks above establish
   implementation behavior, not native-dialog or onboarding usability.
   The [alpha.3 native-picker test](#human-alpha3-native-project-picker) covers
   selection/cancellation, separate-project creation, switching and reopening in a
-  fresh conversation; clean-install onboarding and OS denial remain untested.
+  fresh conversation. See the [maintainer's alpha.6 confirmation](#maintainer-confirmation-of-alpha6-preview-acceptance)
+  for the later onboarding and first-use acceptance.
 
 ### Codex plugin feasibility (milestone 25, #254)
 
