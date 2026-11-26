@@ -22,7 +22,16 @@ jobs:
       - run: make setup
       - run: make docs-check lint test-frontend build check-dist
       - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+        run: |
+          # Avoid the runner's default Ubuntu mirrors during their DNS outage.
+          # APT still authenticates these mirrors with Ubuntu's archive signing keys.
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            printf '%s\n' \
+              'https://mirrors.edge.kernel.org/ubuntu/' \
+              'https://mirror.math.princeton.edu/pub/ubuntu/' \
+              | sudo tee /etc/apt/apt-mirrors.txt > /dev/null
+          fi
+          npx playwright install --with-deps chromium
       - name: Browser acceptance checks
         run: make test-browser
       - name: Installed-wheel first-use acceptance

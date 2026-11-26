@@ -33,6 +33,15 @@ this change does not replace the wire format with a parallel class hierarchy.
 See [authoring limit ownership](DOMAIN-LIMITS.md) for domain policy definitions,
 wire/browser representations, units and shared boundary fixtures.
 
+## Plugin bootstrap ownership
+
+The optional `adapters/plugin` bootstrap owns native folder selection and legacy
+per-user settings. A validated game-folder choice grants the chat access to the
+`.gbc-scene-forge/` child. The bootstrap opens a scoped MCP adapter when the library
+exists or the chat first creates a project. Domain services retain authoring and
+recovery rules.
+See [plugin selection](PLUGIN-START.md) for revocation, data ownership and limits.
+
 ## HTTP dispatch ownership
 
 `adapters/http/routes.py` lists fixed project endpoints in `PROJECT_ROUTES`, keyed
@@ -100,7 +109,10 @@ writer's state. Existing manifest, history and checkpoint formats remain intact.
 
 Refresh probes cache bounded hashes for declared files; coherent snapshots share
 the saved-read API. Draft checkpoints remain independent of committed history and
-can retain stale local work; restoration must validate the original saved base.
+can retain stale local work; restoration validates the original saved base at the
+same project revision or detaches stale artwork into a fresh independent candidate
+against the verified current project. Detached recovery retains raster/layer/layout
+content and removes source dependencies, tile metadata and placement replacements.
 Neither a transport nor a report may bypass these rules by reaching into private
 storage internals.
 
@@ -133,6 +145,20 @@ or add connector compatibility shims.
 
 The companion [frontend architecture](FRONTEND-ARCHITECTURE.md) describes the supported
 browser composition, state owners, controller ports and resource lifecycle.
+
+`adapters/plugin/browser.py` owns experimental per-user browser processes and
+authenticated loopback handoffs. It wraps the existing direct-project HTTP handler;
+project services still own recovery, transactions and revision guards. A live
+browser uses the HTTP handler's serialized preparation hook after body reception
+for POSTs to revalidate its bound directory and recover interrupted external writes
+before content access. The managed store opts into a transaction recovery guard:
+each saved-data lock repeats scope validation and recovers pending journals before
+yielding, covering writers that die after HTTP preparation. Other stores retain
+their existing locking behavior. Recovery uses the existing nonblocking project
+lock; an active writer is reported as busy rather than rolled back. A live
+instance has an OS lifetime lock, owner-only cache credentials and a separate
+launch lock; saved PIDs never authorize termination. MCP remains client-owned
+stdio. See [process and content lifetimes](PLUGIN-START.md#managed-browser-handoff-and-process-recovery).
 
 The [editable artwork contract](EDITABLE-ARTWORK.md) specifies milestone 14
 native pixel documents, source ownership, revision guards and portable persistence.

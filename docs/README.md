@@ -9,6 +9,8 @@ Test ownership and commands are in [test organization](../tests/README.md).
 - [Standalone Scene Forge](STANDALONE.md)
 - [Artwork-free level blockouts](BLOCKOUT.md)
 - [Local MCP authoring](MCP.md)
+- [Plugin selection and first task](PLUGIN-START.md)
+- [Repository plugin delivery and maintenance](PLUGIN-DISTRIBUTION.md)
 - [Browser and MCP authoring outcomes](AUTHORING-OUTCOMES.md)
 - [GBC scene palette budgets](PALETTE-BUDGETS.md)
 - [User tutorials](user/README.md)
@@ -22,6 +24,8 @@ Test ownership and commands are in [test organization](../tests/README.md).
 - [Editor layout guidelines](UI-DESIGN.md)
 - [Documentation policy](DOCUMENTATION.md)
 - [Building and releasing](RELEASING.md)
+- [macOS plugin release candidates](PLUGIN-RELEASES.md)
+- [Experimental self-contained runtime bundles](RUNTIME-BUNDLES.md)
 - [Changelog](CHANGELOG.md)
 - [Validation record](VALIDATION.md)
 - [Roadmap](ROADMAP.md)
@@ -43,6 +47,15 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Evaluations
 
+- [macOS plugin release candidate evidence (#263)](evaluations/plugin-releases.md)
+
+- [Plugin authoring quality, visual inspection and resource baseline (#262)](evaluations/plugin-authoring-quality.md)
+
+- [Installed-plugin browser handoff protocol (#261)](evaluations/plugin-handoffs.md)
+
+- [Self-contained runtime bundle measurements (#255)](evaluations/runtime-bundle.md)
+
+- [Self-contained Codex plugin feasibility (#254)](evaluations/plugin-feasibility.md)
 - [Drawing space, task entry and native PNG downloads (#228–#234)](evaluations/working-space.md)
 - [Editor usability: discovery, scope and working space (2026-11)](evaluations/usability-review-2026-11.md)
 

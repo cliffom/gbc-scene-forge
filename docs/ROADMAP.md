@@ -11,6 +11,16 @@ and agent-draft presentation (#237), and constrained palette-reduction design
 (#214 in milestone 23).
 Validation gaps live in the [single remaining-check list](VALIDATION.md#remaining-checks).
 
+## Self-contained Codex authoring plugin (milestone 25)
+
+[Milestone 25](https://github.com/cliffom/gbc-scene-forge/milestone/25) aims for
+task-based onboarding to Forge's design tools through a self-contained local
+plugin. The [runtime feasibility investigation](evaluations/plugin-feasibility.md)
+informs packaging and explicit project selection; native client visual acceptance
+remains an initial gate. Issue branches and PRs use
+`milestone/25-codex-authoring-plugin` as their base. Prepare the integration PR to
+`main` only after milestone completion; issue PRs do not publish milestone releases.
+
 ## Editor discovery, scope and working space (milestone 24)
 
 [Milestone 24](https://github.com/cliffom/gbc-scene-forge/milestone/24) follows the

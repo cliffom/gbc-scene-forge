@@ -1,0 +1,233 @@
+{"case": "lantern", "phase": "initial", "tool": "plugin_status", "request_bytes": 2, "response_bytes": 500, "milliseconds": 0.018, "error": null}
+{"case": "lantern", "phase": "initial", "tool": "plugin_choose_location", "request_bytes": 18, "response_bytes": 631, "milliseconds": 1.578, "error": null}
+{"case": "lantern", "phase": "initial", "tool": "capabilities", "request_bytes": 2, "response_bytes": 6942, "milliseconds": 0.501, "error": null}
+{"case": "lantern", "phase": "initial", "tool": "get_project", "request_bytes": 21, "response_bytes": 244, "milliseconds": 1.415, "error": null}
+{"case": "lantern", "phase": "initial", "tool": "create_artwork", "request_bytes": 199, "response_bytes": 293, "milliseconds": 2.526, "error": null}
+{"case": "lantern", "phase": "initial", "tool": "edit_artwork_layers", "request_bytes": 655, "response_bytes": 293, "milliseconds": 3.5, "error": null}
+{"case": "lantern", "phase": "initial", "tool": "edit_artwork_pixels", "request_bytes": 5910, "response_bytes": 293, "milliseconds": 4.789, "error": null}
+{"case": "lantern", "phase": "initial", "tool": "edit_artwork_pixels", "request_bytes": 5910, "response_bytes": 293, "milliseconds": 4.852, "error": null}
+{"case": "lantern", "phase": "initial", "tool": "edit_artwork_pixels", "request_bytes": 5910, "response_bytes": 293, "milliseconds": 5.445, "error": null}
+{"case": "lantern", "phase": "initial", "tool": "edit_artwork_layers", "request_bytes": 654, "response_bytes": 293, "milliseconds": 4.557, "error": null}
+{"case": "lantern", "phase": "initial", "tool": "review_artwork_candidate", "request_bytes": 337, "response_bytes": 1713, "milliseconds": 4.299, "error": null}
+{"case": "lantern", "phase": "initial", "tool": "resources/read", "request_bytes": 117, "response_bytes": 370, "decoded_bytes": 163, "sha256": "7bc956cc12e7ac795be0167e007b6bf45ecf830277720ef9b4387c4765ceb015", "file": "lantern-initial-after-native_resource.png", "milliseconds": 0.423, "error": null}
+{"case": "lantern", "phase": "initial", "tool": "resources/read", "request_bytes": 119, "response_bytes": 2012, "decoded_bytes": 1393, "sha256": "2d171617f1837d622e33c645c5c605208629f8860da2e74f4191891eda5f0cc5", "file": "lantern-initial-after-enlarged_resource.png", "milliseconds": 0.399, "error": null}
+{"case": "lantern", "phase": "initial", "tool": "export_artwork_candidate", "request_bytes": 327, "response_bytes": 22955, "milliseconds": 1.451, "error": null}
+{"case": "lantern", "phase": "initial", "tool": "inspect_artwork_candidate", "request_bytes": 427, "response_bytes": 1441, "milliseconds": 8.306, "error": null}
+{"case": "lantern", "phase": "initial", "tool": "resources/read", "request_bytes": 112, "response_bytes": 11813, "decoded_bytes": 8749, "sha256": "beed87b446759b79f6ae28d4b009c200c10a9d48cf27d4b6c21f822891d6122b", "file": "lantern-initial-contact.png", "milliseconds": 0.522, "error": null}
+{"case": "lantern", "phase": "initial", "tool": "list_artwork_candidates", "request_bytes": 21, "response_bytes": 4764, "milliseconds": 3.465, "error": null}
+{"case": "lantern", "phase": "initial", "stage_wall_seconds": 0.087}
+{"case": "lantern", "phase": "save", "tool": "plugin_status", "request_bytes": 2, "response_bytes": 631, "milliseconds": 0.34, "error": null}
+{"case": "lantern", "phase": "save", "tool": "plugin_choose_location", "request_bytes": 18, "response_bytes": 631, "milliseconds": 2.082, "error": null}
+{"case": "lantern", "phase": "save", "tool": "capabilities", "request_bytes": 2, "response_bytes": 6942, "milliseconds": 0.442, "error": null}
+{"case": "lantern", "phase": "save", "tool": "review_artwork_candidate", "request_bytes": 337, "response_bytes": 1713, "milliseconds": 4.502, "error": null}
+{"case": "lantern", "phase": "save", "tool": "resources/read", "request_bytes": 117, "response_bytes": 370, "decoded_bytes": 163, "sha256": "7bc956cc12e7ac795be0167e007b6bf45ecf830277720ef9b4387c4765ceb015", "file": "lantern-save-after-native_resource.png", "milliseconds": 0.889, "error": null}
+{"case": "lantern", "phase": "save", "tool": "resources/read", "request_bytes": 119, "response_bytes": 2012, "decoded_bytes": 1393, "sha256": "2d171617f1837d622e33c645c5c605208629f8860da2e74f4191891eda5f0cc5", "file": "lantern-save-after-enlarged_resource.png", "milliseconds": 0.464, "error": null}
+{"case": "lantern", "phase": "save", "tool": "export_artwork_candidate", "request_bytes": 327, "response_bytes": 22955, "milliseconds": 1.571, "error": null}
+{"case": "lantern", "phase": "save", "tool": "inspect_artwork_candidate", "request_bytes": 427, "response_bytes": 1441, "milliseconds": 8.356, "error": null}
+{"case": "lantern", "phase": "save", "tool": "resources/read", "request_bytes": 112, "response_bytes": 11813, "decoded_bytes": 8749, "sha256": "beed87b446759b79f6ae28d4b009c200c10a9d48cf27d4b6c21f822891d6122b", "file": "lantern-save-contact.png", "milliseconds": 0.661, "error": null}
+{"case": "lantern", "phase": "save", "tool": "commit_artwork", "request_bytes": 799, "response_bytes": 573, "milliseconds": 13.131, "error": null}
+{"case": "lantern", "phase": "save", "tool": "get_project", "request_bytes": 21, "response_bytes": 1961, "milliseconds": 2.992, "error": null}
+{"case": "lantern", "phase": "save", "tool": "list_artwork", "request_bytes": 107, "response_bytes": 1083, "milliseconds": 6.562, "error": null}
+{"case": "lantern", "phase": "save", "tool": "open_artwork", "request_bytes": 312, "response_bytes": 293, "milliseconds": 11.721, "error": null}
+{"case": "lantern", "phase": "save", "tool": "export_artwork_candidate", "request_bytes": 327, "response_bytes": 23015, "milliseconds": 3.876, "error": null}
+{"case": "lantern", "phase": "save", "tool": "list_artwork_candidates", "request_bytes": 21, "response_bytes": 6124, "milliseconds": 7.244, "error": null}
+{"case": "lantern", "phase": "save", "stage_wall_seconds": 0.07}
+{"case": "beacon", "phase": "initial", "tool": "plugin_status", "request_bytes": 2, "response_bytes": 631, "milliseconds": 0.807, "error": null}
+{"case": "beacon", "phase": "initial", "tool": "plugin_choose_location", "request_bytes": 18, "response_bytes": 631, "milliseconds": 4.753, "error": null}
+{"case": "beacon", "phase": "initial", "tool": "capabilities", "request_bytes": 2, "response_bytes": 6942, "milliseconds": 0.947, "error": null}
+{"case": "beacon", "phase": "initial", "tool": "get_project", "request_bytes": 21, "response_bytes": 1961, "milliseconds": 2.557, "error": null}
+{"case": "beacon", "phase": "initial", "tool": "create_artwork_sheet", "request_bytes": 834, "response_bytes": 293, "milliseconds": 8.644, "error": null}
+{"case": "beacon", "phase": "initial", "tool": "edit_artwork_pixels", "request_bytes": 5860, "response_bytes": 293, "milliseconds": 8.828, "error": null}
+{"case": "beacon", "phase": "initial", "tool": "review_artwork_candidate", "request_bytes": 337, "response_bytes": 1711, "milliseconds": 12.446, "error": null}
+{"case": "beacon", "phase": "initial", "tool": "resources/read", "request_bytes": 117, "response_bytes": 382, "decoded_bytes": 174, "sha256": "6c6d5c4db5f6cdd85d1c33585b9df212ebd56e22a1b5e52a66e13036026b364d", "file": "beacon-initial-after-native_resource.png", "milliseconds": 1.056, "error": null}
+{"case": "beacon", "phase": "initial", "tool": "resources/read", "request_bytes": 119, "response_bytes": 2504, "decoded_bytes": 1763, "sha256": "1aac635f6ae4fe8543c737f7f7b530dab99894d393136336e402735c0f39d649", "file": "beacon-initial-after-enlarged_resource.png", "milliseconds": 0.947, "error": null}
+{"case": "beacon", "phase": "initial", "tool": "export_artwork_candidate", "request_bytes": 327, "response_bytes": 6706, "milliseconds": 4.974, "error": null}
+{"case": "beacon", "phase": "initial", "tool": "review_artwork_animation", "request_bytes": 359, "response_bytes": 1188, "milliseconds": 23.191, "error": null}
+{"case": "beacon", "phase": "initial", "tool": "resources/read", "request_bytes": 115, "response_bytes": 2777, "decoded_bytes": 1969, "sha256": "96dcfb52e02a06139ee88cf17c6b2eb3a4b102dfc4e230c2148d0c0ea7f0475f", "file": "beacon-initial.apng", "milliseconds": 1.267, "error": null}
+{"case": "beacon", "phase": "initial", "tool": "inspect_artwork_candidate", "request_bytes": 541, "response_bytes": 1736, "milliseconds": 39.929, "error": null}
+{"case": "beacon", "phase": "initial", "tool": "resources/read", "request_bytes": 112, "response_bytes": 27565, "decoded_bytes": 20564, "sha256": "c96093caac668a45dcdfdc22959952bb428d9cba2e50fa7b0db16f599be8a47f", "file": "beacon-initial-contact.png", "milliseconds": 1.3, "error": null}
+{"case": "beacon", "phase": "initial", "tool": "list_artwork_candidates", "request_bytes": 21, "response_bytes": 7650, "milliseconds": 17.596, "error": null}
+{"case": "beacon", "phase": "initial", "stage_wall_seconds": 0.136}
+{"case": "beacon", "phase": "save", "tool": "plugin_status", "request_bytes": 2, "response_bytes": 631, "milliseconds": 0.934, "error": null}
+{"case": "beacon", "phase": "save", "tool": "plugin_choose_location", "request_bytes": 18, "response_bytes": 631, "milliseconds": 5.934, "error": null}
+{"case": "beacon", "phase": "save", "tool": "capabilities", "request_bytes": 2, "response_bytes": 6942, "milliseconds": 0.937, "error": null}
+{"case": "beacon", "phase": "save", "tool": "review_artwork_candidate", "request_bytes": 337, "response_bytes": 1711, "milliseconds": 11.313, "error": null}
+{"case": "beacon", "phase": "save", "tool": "resources/read", "request_bytes": 117, "response_bytes": 382, "decoded_bytes": 174, "sha256": "6c6d5c4db5f6cdd85d1c33585b9df212ebd56e22a1b5e52a66e13036026b364d", "file": "beacon-save-after-native_resource.png", "milliseconds": 0.946, "error": null}
+{"case": "beacon", "phase": "save", "tool": "resources/read", "request_bytes": 119, "response_bytes": 2504, "decoded_bytes": 1763, "sha256": "1aac635f6ae4fe8543c737f7f7b530dab99894d393136336e402735c0f39d649", "file": "beacon-save-after-enlarged_resource.png", "milliseconds": 0.917, "error": null}
+{"case": "beacon", "phase": "save", "tool": "export_artwork_candidate", "request_bytes": 327, "response_bytes": 6706, "milliseconds": 2.886, "error": null}
+{"case": "beacon", "phase": "save", "tool": "review_artwork_animation", "request_bytes": 359, "response_bytes": 1188, "milliseconds": 13.481, "error": null}
+{"case": "beacon", "phase": "save", "tool": "resources/read", "request_bytes": 115, "response_bytes": 2777, "decoded_bytes": 1969, "sha256": "96dcfb52e02a06139ee88cf17c6b2eb3a4b102dfc4e230c2148d0c0ea7f0475f", "file": "beacon-save.apng", "milliseconds": 1.162, "error": null}
+{"case": "beacon", "phase": "save", "tool": "inspect_artwork_candidate", "request_bytes": 541, "response_bytes": 1736, "milliseconds": 26.692, "error": null}
+{"case": "beacon", "phase": "save", "tool": "resources/read", "request_bytes": 112, "response_bytes": 27565, "decoded_bytes": 20564, "sha256": "c96093caac668a45dcdfdc22959952bb428d9cba2e50fa7b0db16f599be8a47f", "file": "beacon-save-contact.png", "milliseconds": 1.288, "error": null}
+{"case": "beacon", "phase": "save", "tool": "commit_artwork", "request_bytes": 799, "response_bytes": 572, "milliseconds": 22.952, "error": null}
+{"case": "beacon", "phase": "save", "tool": "get_project", "request_bytes": 21, "response_bytes": 4787, "milliseconds": 6.641, "error": null}
+{"case": "beacon", "phase": "save", "tool": "list_artwork", "request_bytes": 107, "response_bytes": 2593, "milliseconds": 13.541, "error": null}
+{"case": "beacon", "phase": "save", "tool": "open_artwork", "request_bytes": 310, "response_bytes": 293, "milliseconds": 16.417, "error": null}
+{"case": "beacon", "phase": "save", "tool": "export_artwork_candidate", "request_bytes": 327, "response_bytes": 6766, "milliseconds": 6.425, "error": null}
+{"case": "beacon", "phase": "save", "tool": "list_artwork_candidates", "request_bytes": 21, "response_bytes": 8667, "milliseconds": 11.709, "error": null}
+{"case": "beacon", "phase": "save", "stage_wall_seconds": 0.151}
+{"case": "grass", "phase": "initial", "tool": "plugin_status", "request_bytes": 2, "response_bytes": 631, "milliseconds": 1.641, "error": null}
+{"case": "grass", "phase": "initial", "tool": "plugin_choose_location", "request_bytes": 18, "response_bytes": 631, "milliseconds": 8.181, "error": null}
+{"case": "grass", "phase": "initial", "tool": "capabilities", "request_bytes": 2, "response_bytes": 6942, "milliseconds": 1.603, "error": null}
+{"case": "grass", "phase": "initial", "tool": "get_project", "request_bytes": 21, "response_bytes": 4787, "milliseconds": 4.548, "error": null}
+{"case": "grass", "phase": "initial", "tool": "create_artwork_sheet", "request_bytes": 596, "response_bytes": 293, "milliseconds": 14.855, "error": null}
+{"case": "grass", "phase": "initial", "tool": "edit_artwork_pixels", "request_bytes": 1763, "response_bytes": 293, "milliseconds": 13.282, "error": null}
+{"case": "grass", "phase": "initial", "tool": "review_artwork_candidate", "request_bytes": 337, "response_bytes": 1706, "milliseconds": 17.818, "error": null}
+{"case": "grass", "phase": "initial", "tool": "resources/read", "request_bytes": 117, "response_bytes": 314, "decoded_bytes": 121, "sha256": "fe89d1d7cf918e50d0be1a9ef1f3f4b8863a173dc3c34a95d062b01b0272133e", "file": "grass-initial-after-native_resource.png", "milliseconds": 1.546, "error": null}
+{"case": "grass", "phase": "initial", "tool": "resources/read", "request_bytes": 119, "response_bytes": 696, "decoded_bytes": 408, "sha256": "f90bdd0952d14bd860103396d4503e4f682608283187025f33d24327744e6f61", "file": "grass-initial-after-enlarged_resource.png", "milliseconds": 1.51, "error": null}
+{"case": "grass", "phase": "initial", "tool": "export_artwork_candidate", "request_bytes": 327, "response_bytes": 2371, "milliseconds": 4.654, "error": null}
+{"case": "grass", "phase": "initial", "tool": "inspect_artwork_candidate", "request_bytes": 426, "response_bytes": 1440, "milliseconds": 26.583, "error": null}
+{"case": "grass", "phase": "initial", "tool": "resources/read", "request_bytes": 112, "response_bytes": 5833, "decoded_bytes": 4264, "sha256": "fa1d69269112003f111ae796fa77402acb71c5ef4b82c18fdb89e95a16370bfe", "file": "grass-initial-contact.png", "milliseconds": 2.009, "error": null}
+{"case": "grass", "phase": "initial", "tool": "list_artwork_candidates", "request_bytes": 21, "response_bytes": 10189, "milliseconds": 13.733, "error": null}
+{"case": "grass", "phase": "initial", "stage_wall_seconds": 0.122}
+{"case": "grass", "phase": "refine", "tool": "plugin_status", "request_bytes": 2, "response_bytes": 631, "milliseconds": 1.535, "error": null}
+{"case": "grass", "phase": "refine", "tool": "plugin_choose_location", "request_bytes": 18, "response_bytes": 631, "milliseconds": 9.388, "error": null}
+{"case": "grass", "phase": "refine", "tool": "capabilities", "request_bytes": 2, "response_bytes": 6942, "milliseconds": 2.197, "error": null}
+{"case": "grass", "phase": "refine", "tool": "edit_artwork_pixels", "request_bytes": 1544, "response_bytes": 293, "milliseconds": 14.557, "error": null}
+{"case": "grass", "phase": "refine", "tool": "review_artwork_candidate", "request_bytes": 337, "response_bytes": 1706, "milliseconds": 18.572, "error": null}
+{"case": "grass", "phase": "refine", "tool": "resources/read", "request_bytes": 117, "response_bytes": 306, "decoded_bytes": 116, "sha256": "7bb8d503b5853d030e8ecda0a084d14b0af353e607850ce0a15207de17d5002c", "file": "grass-refine-after-native_resource.png", "milliseconds": 1.608, "error": null}
+{"case": "grass", "phase": "refine", "tool": "resources/read", "request_bytes": 119, "response_bytes": 692, "decoded_bytes": 405, "sha256": "afd1a0a9741dd7205c68236e5850636ff97513af152784a78ce1775f42286579", "file": "grass-refine-after-enlarged_resource.png", "milliseconds": 1.5, "error": null}
+{"case": "grass", "phase": "refine", "tool": "export_artwork_candidate", "request_bytes": 327, "response_bytes": 2371, "milliseconds": 4.665, "error": null}
+{"case": "grass", "phase": "refine", "tool": "inspect_artwork_candidate", "request_bytes": 426, "response_bytes": 1440, "milliseconds": 26.611, "error": null}
+{"case": "grass", "phase": "refine", "tool": "resources/read", "request_bytes": 112, "response_bytes": 5773, "decoded_bytes": 4221, "sha256": "1ee615a125bbcd5dc760b4609d70f1cfc77961eeb4f8749a14d81ca855d10462", "file": "grass-refine-contact.png", "milliseconds": 1.611, "error": null}
+{"case": "grass", "phase": "refine", "tool": "list_artwork_candidates", "request_bytes": 21, "response_bytes": 10950, "milliseconds": 11.897, "error": null}
+{"case": "grass", "phase": "refine", "stage_wall_seconds": 0.104}
+{"case": "grass", "phase": "refine-2", "tool": "plugin_status", "request_bytes": 2, "response_bytes": 631, "milliseconds": 1.419, "error": null}
+{"case": "grass", "phase": "refine-2", "tool": "plugin_choose_location", "request_bytes": 18, "response_bytes": 631, "milliseconds": 8.339, "error": null}
+{"case": "grass", "phase": "refine-2", "tool": "capabilities", "request_bytes": 2, "response_bytes": 6942, "milliseconds": 1.571, "error": null}
+{"case": "grass", "phase": "refine-2", "tool": "edit_artwork_pixels", "request_bytes": 646, "response_bytes": 293, "milliseconds": 12.772, "error": null}
+{"case": "grass", "phase": "refine-2", "tool": "review_artwork_candidate", "request_bytes": 337, "response_bytes": 1706, "milliseconds": 17.745, "error": null}
+{"case": "grass", "phase": "refine-2", "tool": "resources/read", "request_bytes": 117, "response_bytes": 310, "decoded_bytes": 119, "sha256": "28ec8c70ccad69a7866bf998887b5c97bb8103261edd4f4c194cf3292ad95ec7", "file": "grass-refine-2-after-native_resource.png", "milliseconds": 1.581, "error": null}
+{"case": "grass", "phase": "refine-2", "tool": "resources/read", "request_bytes": 119, "response_bytes": 720, "decoded_bytes": 426, "sha256": "aee379c40baf3cadd0c2693e4b3a723acd83ff34a46ee2471fb21339674036b6", "file": "grass-refine-2-after-enlarged_resource.png", "milliseconds": 1.481, "error": null}
+{"case": "grass", "phase": "refine-2", "tool": "export_artwork_candidate", "request_bytes": 327, "response_bytes": 2371, "milliseconds": 4.902, "error": null}
+{"case": "grass", "phase": "refine-2", "tool": "inspect_artwork_candidate", "request_bytes": 426, "response_bytes": 1440, "milliseconds": 28.418, "error": null}
+{"case": "grass", "phase": "refine-2", "tool": "resources/read", "request_bytes": 112, "response_bytes": 5885, "decoded_bytes": 4305, "sha256": "c5b299be4bc5b6a642a1b4477e9db8cbdbf6471a1088c03194dd39e0d423ce0e", "file": "grass-refine-2-contact.png", "milliseconds": 1.742, "error": null}
+{"case": "grass", "phase": "refine-2", "tool": "list_artwork_candidates", "request_bytes": 21, "response_bytes": 11711, "milliseconds": 15.81, "error": null}
+{"case": "grass", "phase": "refine-2", "stage_wall_seconds": 0.105}
+{"case": "grass", "phase": "save", "tool": "plugin_status", "request_bytes": 2, "response_bytes": 631, "milliseconds": 1.529, "error": null}
+{"case": "grass", "phase": "save", "tool": "plugin_choose_location", "request_bytes": 18, "response_bytes": 631, "milliseconds": 8.613, "error": null}
+{"case": "grass", "phase": "save", "tool": "capabilities", "request_bytes": 2, "response_bytes": 6942, "milliseconds": 1.596, "error": null}
+{"case": "grass", "phase": "save", "tool": "review_artwork_candidate", "request_bytes": 337, "response_bytes": 1706, "milliseconds": 16.618, "error": null}
+{"case": "grass", "phase": "save", "tool": "resources/read", "request_bytes": 117, "response_bytes": 310, "decoded_bytes": 119, "sha256": "28ec8c70ccad69a7866bf998887b5c97bb8103261edd4f4c194cf3292ad95ec7", "file": "grass-save-after-native_resource.png", "milliseconds": 1.764, "error": null}
+{"case": "grass", "phase": "save", "tool": "resources/read", "request_bytes": 119, "response_bytes": 720, "decoded_bytes": 426, "sha256": "aee379c40baf3cadd0c2693e4b3a723acd83ff34a46ee2471fb21339674036b6", "file": "grass-save-after-enlarged_resource.png", "milliseconds": 3.293, "error": null}
+{"case": "grass", "phase": "save", "tool": "export_artwork_candidate", "request_bytes": 327, "response_bytes": 2371, "milliseconds": 4.778, "error": null}
+{"case": "grass", "phase": "save", "tool": "inspect_artwork_candidate", "request_bytes": 426, "response_bytes": 1440, "milliseconds": 28.001, "error": null}
+{"case": "grass", "phase": "save", "tool": "resources/read", "request_bytes": 112, "response_bytes": 5885, "decoded_bytes": 4305, "sha256": "c5b299be4bc5b6a642a1b4477e9db8cbdbf6471a1088c03194dd39e0d423ce0e", "file": "grass-save-contact.png", "milliseconds": 1.85, "error": null}
+{"case": "grass", "phase": "save", "tool": "commit_artwork", "request_bytes": 799, "response_bytes": 571, "milliseconds": 24.426, "error": null}
+{"case": "grass", "phase": "save", "tool": "get_project", "request_bytes": 21, "response_bytes": 7001, "milliseconds": 8.171, "error": null}
+{"case": "grass", "phase": "save", "tool": "list_artwork", "request_bytes": 107, "response_bytes": 3782, "milliseconds": 17.908, "error": null}
+{"case": "grass", "phase": "save", "tool": "open_artwork", "request_bytes": 309, "response_bytes": 293, "milliseconds": 24.365, "error": null}
+{"case": "grass", "phase": "save", "tool": "export_artwork_candidate", "request_bytes": 327, "response_bytes": 2431, "milliseconds": 7.188, "error": null}
+{"case": "grass", "phase": "save", "tool": "list_artwork_candidates", "request_bytes": 21, "response_bytes": 12895, "milliseconds": 19.669, "error": null}
+{"case": "grass", "phase": "save", "stage_wall_seconds": 0.18}
+{"case": "island", "phase": "initial", "tool": "plugin_status", "request_bytes": 2, "response_bytes": 631, "milliseconds": 2.084, "error": null}
+{"case": "island", "phase": "initial", "tool": "plugin_choose_location", "request_bytes": 18, "response_bytes": 631, "milliseconds": 12.464, "error": null}
+{"case": "island", "phase": "initial", "tool": "capabilities", "request_bytes": 2, "response_bytes": 6942, "milliseconds": 2.011, "error": null}
+{"case": "island", "phase": "initial", "tool": "get_project", "request_bytes": 21, "response_bytes": 7001, "milliseconds": 6.952, "error": null}
+{"case": "island", "phase": "initial", "tool": "create_artwork", "request_bytes": 198, "response_bytes": 293, "milliseconds": 27.972, "error": null}
+{"case": "island", "phase": "initial", "tool": "edit_artwork_layers", "request_bytes": 654, "response_bytes": 293, "milliseconds": 33.139, "error": null}
+{"case": "island", "phase": "initial", "tool": "edit_artwork_pixels", "request_bytes": 82367, "response_bytes": 293, "milliseconds": 57.97, "error": null}
+{"case": "island", "phase": "initial", "tool": "edit_artwork_pixels", "request_bytes": 82367, "response_bytes": 293, "milliseconds": 66.983, "error": null}
+{"case": "island", "phase": "initial", "tool": "edit_artwork_pixels", "request_bytes": 82367, "response_bytes": 293, "milliseconds": 68.371, "error": null}
+{"case": "island", "phase": "initial", "tool": "review_artwork_candidate", "request_bytes": 337, "response_bytes": 1714, "milliseconds": 53.295, "error": null}
+{"case": "island", "phase": "initial", "tool": "resources/read", "request_bytes": 117, "response_bytes": 1046, "decoded_bytes": 670, "sha256": "732d4277554c1a8b46b3d17c1821a544e408966da44b70bcf2d9453972b41bad", "file": "island-initial-after-native_resource.png", "milliseconds": 2.113, "error": null}
+{"case": "island", "phase": "initial", "tool": "resources/read", "request_bytes": 119, "response_bytes": 9780, "decoded_bytes": 7220, "sha256": "7d33ca946ef15ac48582ad4d881b4152c08d9027e5e9bf0259ce9524f41d21f3", "file": "island-initial-after-enlarged_resource.png", "milliseconds": 2.201, "error": null}
+{"case": "island", "phase": "initial", "tool": "export_artwork_candidate", "request_bytes": 327, "response_bytes": 328777, "milliseconds": 19.452, "error": null}
+{"case": "island", "phase": "initial", "tool": "inspect_artwork_candidate", "request_bytes": 428, "response_bytes": 1445, "milliseconds": 91.905, "error": null}
+{"case": "island", "phase": "initial", "tool": "resources/read", "request_bytes": 112, "response_bytes": 13169, "decoded_bytes": 9767, "sha256": "8ddb75b407718b98288ff0bcc7c5167178b7dd7a82403cb97dc00c5f510bb096", "file": "island-initial-contact.png", "milliseconds": 2.447, "error": null}
+{"case": "island", "phase": "initial", "tool": "list_artwork_candidates", "request_bytes": 21, "response_bytes": 16720, "milliseconds": 47.74, "error": null}
+{"case": "island", "phase": "initial", "stage_wall_seconds": 0.514}
+{"case": "island", "phase": "refine", "tool": "plugin_status", "request_bytes": 2, "response_bytes": 631, "milliseconds": 2.181, "error": null}
+{"case": "island", "phase": "refine", "tool": "plugin_choose_location", "request_bytes": 18, "response_bytes": 631, "milliseconds": 13.658, "error": null}
+{"case": "island", "phase": "refine", "tool": "capabilities", "request_bytes": 2, "response_bytes": 6942, "milliseconds": 2.352, "error": null}
+{"case": "island", "phase": "refine", "tool": "edit_artwork_pixels", "request_bytes": 2858, "response_bytes": 293, "milliseconds": 70.245, "error": null}
+{"case": "island", "phase": "refine", "tool": "review_artwork_candidate", "request_bytes": 337, "response_bytes": 1714, "milliseconds": 59.328, "error": null}
+{"case": "island", "phase": "refine", "tool": "resources/read", "request_bytes": 117, "response_bytes": 1058, "decoded_bytes": 680, "sha256": "2ff71be26d8322f4da0c04ff34c7b222b0b0646a1c29fc57c79a075fc55d5087", "file": "island-refine-after-native_resource.png", "milliseconds": 2.078, "error": null}
+{"case": "island", "phase": "refine", "tool": "resources/read", "request_bytes": 119, "response_bytes": 9844, "decoded_bytes": 7267, "sha256": "41f6b632c7cbfcaaa7bc36b0cb2522143ecc1d2564b12c8fd64448c10947662d", "file": "island-refine-after-enlarged_resource.png", "milliseconds": 2.042, "error": null}
+{"case": "island", "phase": "refine", "tool": "export_artwork_candidate", "request_bytes": 327, "response_bytes": 328777, "milliseconds": 15.303, "error": null}
+{"case": "island", "phase": "refine", "tool": "inspect_artwork_candidate", "request_bytes": 428, "response_bytes": 1445, "milliseconds": 88.53, "error": null}
+{"case": "island", "phase": "refine", "tool": "resources/read", "request_bytes": 112, "response_bytes": 13209, "decoded_bytes": 9798, "sha256": "2bffecabf30ecd51a4f344b20bf0a8490a3a8bd1139af0a7a9d41cb81e909364", "file": "island-refine-contact.png", "milliseconds": 2.781, "error": null}
+{"case": "island", "phase": "refine", "tool": "list_artwork_candidates", "request_bytes": 21, "response_bytes": 17485, "milliseconds": 57.89, "error": null}
+{"case": "island", "phase": "refine", "stage_wall_seconds": 0.328}
+{"case": "island", "phase": "save", "tool": "plugin_status", "request_bytes": 2, "response_bytes": 631, "milliseconds": 2.476, "error": null}
+{"case": "island", "phase": "save", "tool": "plugin_choose_location", "request_bytes": 18, "response_bytes": 631, "milliseconds": 10.781, "error": null}
+{"case": "island", "phase": "save", "tool": "capabilities", "request_bytes": 2, "response_bytes": 6942, "milliseconds": 2.503, "error": null}
+{"case": "island", "phase": "save", "tool": "review_artwork_candidate", "request_bytes": 337, "response_bytes": 1714, "milliseconds": 66.214, "error": null}
+{"case": "island", "phase": "save", "tool": "resources/read", "request_bytes": 117, "response_bytes": 1058, "decoded_bytes": 680, "sha256": "2ff71be26d8322f4da0c04ff34c7b222b0b0646a1c29fc57c79a075fc55d5087", "file": "island-save-after-native_resource.png", "milliseconds": 2.767, "error": null}
+{"case": "island", "phase": "save", "tool": "resources/read", "request_bytes": 119, "response_bytes": 9844, "decoded_bytes": 7267, "sha256": "41f6b632c7cbfcaaa7bc36b0cb2522143ecc1d2564b12c8fd64448c10947662d", "file": "island-save-after-enlarged_resource.png", "milliseconds": 2.522, "error": null}
+{"case": "island", "phase": "save", "tool": "export_artwork_candidate", "request_bytes": 327, "response_bytes": 328777, "milliseconds": 16.013, "error": null}
+{"case": "island", "phase": "save", "tool": "inspect_artwork_candidate", "request_bytes": 428, "response_bytes": 1445, "milliseconds": 87.481, "error": null}
+{"case": "island", "phase": "save", "tool": "resources/read", "request_bytes": 112, "response_bytes": 13209, "decoded_bytes": 9798, "sha256": "2bffecabf30ecd51a4f344b20bf0a8490a3a8bd1139af0a7a9d41cb81e909364", "file": "island-save-contact.png", "milliseconds": 2.574, "error": null}
+{"case": "island", "phase": "save", "tool": "get_project", "request_bytes": 21, "response_bytes": 7001, "milliseconds": 7.735, "error": null}
+{"case": "island", "phase": "save", "tool": "list_artwork", "request_bytes": 107, "response_bytes": 3782, "milliseconds": 20.315, "error": null}
+{"case": "island", "phase": "save", "tool": "list_artwork_candidates", "request_bytes": 21, "response_bytes": 17485, "milliseconds": 52.786, "error": null}
+{"case": "island", "phase": "save", "stage_wall_seconds": 0.288}
+{"case": "room", "phase": "initial", "tool": "plugin_status", "request_bytes": 2, "response_bytes": 631, "milliseconds": 1.989, "error": null}
+{"case": "room", "phase": "initial", "tool": "plugin_choose_location", "request_bytes": 18, "response_bytes": 631, "milliseconds": 10.635, "error": null}
+{"case": "room", "phase": "initial", "tool": "capabilities", "request_bytes": 2, "response_bytes": 6942, "milliseconds": 2.088, "error": null}
+{"case": "room", "phase": "initial", "tool": "get_project", "request_bytes": 21, "response_bytes": 7001, "milliseconds": 6.439, "error": null}
+{"case": "room", "phase": "initial", "tool": "create_blockout_scene", "request_bytes": 231, "response_bytes": 2531, "milliseconds": 20.266, "error": null}
+{"case": "room", "phase": "initial", "tool": "get_scene", "request_bytes": 71, "response_bytes": 2531, "milliseconds": 9.535, "error": null}
+{"case": "room", "phase": "initial", "tool": "get_project", "request_bytes": 21, "response_bytes": 19140, "milliseconds": 9.576, "error": null}
+{"case": "room", "phase": "initial", "tool": "edit_scene", "request_bytes": 3368, "response_bytes": 9776, "milliseconds": 43.059, "error": null}
+{"case": "room", "phase": "initial", "tool": "get_scene", "request_bytes": 71, "response_bytes": 2531, "milliseconds": 9.312, "error": null}
+{"case": "room", "phase": "initial", "tool": "review_artwork", "request_bytes": 4370, "response_bytes": 1120, "milliseconds": 38.105, "error": null}
+{"case": "room", "phase": "initial", "tool": "review_blockout", "request_bytes": 4370, "response_bytes": 1232, "milliseconds": 24.795, "error": null}
+{"case": "room", "phase": "initial", "tool": "resources/read", "request_bytes": 113, "response_bytes": 902, "decoded_bytes": 566, "sha256": "79ccaf28f2249cb375c4ed83c5df4b5e90cbc3c1e8c51b7a223c48fcdac31a67", "file": "room-initial.png", "milliseconds": 2.984, "error": null}
+{"case": "room", "phase": "initial", "tool": "resources/read", "request_bytes": 113, "response_bytes": 2756, "decoded_bytes": 2370, "sha256": "4de58471260ad65ff50558447be14b992828be63ba41f7ed380159aae3f406a9", "file": "room-initial.svg", "milliseconds": 2.635, "error": null}
+{"case": "room", "phase": "initial", "tool": "list_artwork_candidates", "request_bytes": 21, "response_bytes": 17478, "milliseconds": 57.783, "error": null}
+{"case": "room", "phase": "initial", "stage_wall_seconds": 0.251}
+{"case": "room", "phase": "save", "tool": "plugin_status", "request_bytes": 2, "response_bytes": 631, "milliseconds": 3.542, "error": null}
+{"case": "room", "phase": "save", "tool": "plugin_choose_location", "request_bytes": 18, "response_bytes": 631, "milliseconds": 13.092, "error": null}
+{"case": "room", "phase": "save", "tool": "capabilities", "request_bytes": 2, "response_bytes": 6942, "milliseconds": 2.725, "error": null}
+{"case": "room", "phase": "save", "tool": "save_scene", "request_bytes": 4370, "response_bytes": 10296, "milliseconds": 55.418, "error": null}
+{"case": "room", "phase": "save", "tool": "get_scene", "request_bytes": 71, "response_bytes": 4360, "milliseconds": 10.64, "error": null}
+{"case": "room", "phase": "save", "tool": "get_project", "request_bytes": 21, "response_bytes": 19140, "milliseconds": 8.28, "error": null}
+{"case": "room", "phase": "save", "tool": "export_bundle", "request_bytes": 125, "response_bytes": 342, "milliseconds": 20.379, "error": null}
+{"case": "room", "phase": "save", "tool": "resources/read", "request_bytes": 112, "response_bytes": 28003, "decoded_bytes": 20889, "sha256": "e727cf45fe3ce1c26ae7dd496094f8caef0fe96787db233c4fbf833433cddcba", "file": "room-project.zip", "milliseconds": 2.9, "error": null}
+{"case": "room", "phase": "save", "tool": "list_artwork_candidates", "request_bytes": 21, "response_bytes": 17478, "milliseconds": 70.177, "error": null}
+{"case": "room", "phase": "save", "stage_wall_seconds": 0.22}
+{"case": "scope", "phase": "initial", "tool": "plugin_status", "request_bytes": 2, "response_bytes": 631, "milliseconds": 2.851, "error": null}
+{"case": "scope", "phase": "initial", "tool": "plugin_choose_location", "request_bytes": 18, "response_bytes": 631, "milliseconds": 12.63, "error": null}
+{"case": "scope", "phase": "initial", "tool": "capabilities", "request_bytes": 2, "response_bytes": 6942, "milliseconds": 2.745, "error": null}
+{"case": "scope", "phase": "initial", "tool": "get_project", "request_bytes": 21, "response_bytes": 19140, "milliseconds": 9.01, "error": null}
+{"case": "scope", "phase": "initial", "tool": "list_artwork", "request_bytes": 107, "response_bytes": 3782, "milliseconds": 24.697, "error": null}
+{"case": "scope", "phase": "initial", "tool": "open_artwork", "request_bytes": 312, "response_bytes": 293, "milliseconds": 31.686, "error": null}
+{"case": "scope", "phase": "initial", "tool": "export_artwork_candidate", "request_bytes": 327, "response_bytes": 23015, "milliseconds": 11.641, "error": null}
+{"case": "scope", "phase": "initial", "tool": "review_artwork_candidate", "request_bytes": 327, "response_bytes": 3093, "milliseconds": 44.442, "error": null}
+{"case": "scope", "phase": "initial", "tool": "edit_artwork_pixels", "request_bytes": 2520, "response_bytes": 293, "milliseconds": 31.87, "error": null}
+{"case": "scope", "phase": "initial", "tool": "review_artwork_candidate", "request_bytes": 337, "response_bytes": 3097, "milliseconds": 36.521, "error": null}
+{"case": "scope", "phase": "initial", "tool": "resources/read", "request_bytes": 118, "response_bytes": 371, "decoded_bytes": 163, "sha256": "7bc956cc12e7ac795be0167e007b6bf45ecf830277720ef9b4387c4765ceb015", "file": "scope-initial-before-native_resource.png", "milliseconds": 2.697, "error": null}
+{"case": "scope", "phase": "initial", "tool": "resources/read", "request_bytes": 120, "response_bytes": 2013, "decoded_bytes": 1393, "sha256": "2d171617f1837d622e33c645c5c605208629f8860da2e74f4191891eda5f0cc5", "file": "scope-initial-before-enlarged_resource.png", "milliseconds": 2.581, "error": null}
+{"case": "scope", "phase": "initial", "tool": "resources/read", "request_bytes": 117, "response_bytes": 370, "decoded_bytes": 164, "sha256": "37b31dd12b1fa43b0baebafe3a81dec9bb69e372e94857a9e632aef4ab635845", "file": "scope-initial-after-native_resource.png", "milliseconds": 2.667, "error": null}
+{"case": "scope", "phase": "initial", "tool": "resources/read", "request_bytes": 119, "response_bytes": 2016, "decoded_bytes": 1396, "sha256": "cd0d872e106c8076fb9345ba3f728916d2326a9aab5fb7d96e8e27a97a19ed7f", "file": "scope-initial-after-enlarged_resource.png", "milliseconds": 2.591, "error": null}
+{"case": "scope", "phase": "initial", "tool": "export_artwork_candidate", "request_bytes": 327, "response_bytes": 23015, "milliseconds": 10.048, "error": null}
+{"case": "scope", "phase": "initial", "tool": "inspect_artwork_candidate", "request_bytes": 427, "response_bytes": 1674, "milliseconds": 51.099, "error": null}
+{"case": "scope", "phase": "initial", "tool": "resources/read", "request_bytes": 112, "response_bytes": 14005, "decoded_bytes": 10395, "sha256": "3a2541eb554095deb0dfcc9642c826bf95bc087671bc3ed16c6b7da3e62af570", "file": "scope-initial-contact.png", "milliseconds": 3.029, "error": null}
+{"case": "scope", "phase": "initial", "tool": "get_project", "request_bytes": 21, "response_bytes": 19140, "milliseconds": 7.678, "error": null}
+{"case": "scope", "phase": "initial", "tool": "list_artwork_candidates", "request_bytes": 21, "response_bytes": 19181, "milliseconds": 55.739, "error": null}
+{"case": "scope", "phase": "initial", "stage_wall_seconds": 0.362}
+{"case": "scope", "phase": "save", "tool": "plugin_status", "request_bytes": 2, "response_bytes": 631, "milliseconds": 2.326, "error": null}
+{"case": "scope", "phase": "save", "tool": "plugin_choose_location", "request_bytes": 18, "response_bytes": 631, "milliseconds": 13.607, "error": null}
+{"case": "scope", "phase": "save", "tool": "capabilities", "request_bytes": 2, "response_bytes": 6942, "milliseconds": 3.934, "error": null}
+{"case": "scope", "phase": "save", "tool": "review_artwork_candidate", "request_bytes": 337, "response_bytes": 3097, "milliseconds": 37.386, "error": null}
+{"case": "scope", "phase": "save", "tool": "resources/read", "request_bytes": 118, "response_bytes": 371, "decoded_bytes": 163, "sha256": "7bc956cc12e7ac795be0167e007b6bf45ecf830277720ef9b4387c4765ceb015", "file": "scope-save-before-native_resource.png", "milliseconds": 2.409, "error": null}
+{"case": "scope", "phase": "save", "tool": "resources/read", "request_bytes": 120, "response_bytes": 2013, "decoded_bytes": 1393, "sha256": "2d171617f1837d622e33c645c5c605208629f8860da2e74f4191891eda5f0cc5", "file": "scope-save-before-enlarged_resource.png", "milliseconds": 2.486, "error": null}
+{"case": "scope", "phase": "save", "tool": "resources/read", "request_bytes": 117, "response_bytes": 370, "decoded_bytes": 164, "sha256": "37b31dd12b1fa43b0baebafe3a81dec9bb69e372e94857a9e632aef4ab635845", "file": "scope-save-after-native_resource.png", "milliseconds": 2.812, "error": null}
+{"case": "scope", "phase": "save", "tool": "resources/read", "request_bytes": 119, "response_bytes": 2016, "decoded_bytes": 1396, "sha256": "cd0d872e106c8076fb9345ba3f728916d2326a9aab5fb7d96e8e27a97a19ed7f", "file": "scope-save-after-enlarged_resource.png", "milliseconds": 3.565, "error": null}
+{"case": "scope", "phase": "save", "tool": "export_artwork_candidate", "request_bytes": 327, "response_bytes": 23015, "milliseconds": 8.233, "error": null}
+{"case": "scope", "phase": "save", "tool": "inspect_artwork_candidate", "request_bytes": 427, "response_bytes": 1674, "milliseconds": 52.197, "error": null}
+{"case": "scope", "phase": "save", "tool": "resources/read", "request_bytes": 112, "response_bytes": 14005, "decoded_bytes": 10395, "sha256": "3a2541eb554095deb0dfcc9642c826bf95bc087671bc3ed16c6b7da3e62af570", "file": "scope-save-contact.png", "milliseconds": 2.954, "error": null}
+{"case": "scope", "phase": "save", "tool": "commit_artwork", "request_bytes": 966, "response_bytes": null, "milliseconds": 17.538, "error": "Conflict: Artwork review no longer matches the candidate/base. Review again."}
+{"case": "scope", "phase": "save", "tool": "get_project", "request_bytes": 21, "response_bytes": 19140, "milliseconds": 8.488, "error": null}
+{"case": "scope", "phase": "save", "tool": "commit_artwork", "request_bytes": 966, "response_bytes": 573, "milliseconds": 34.367, "error": null}
+{"case": "scope", "phase": "save", "tool": "get_project", "request_bytes": 21, "response_bytes": 19140, "milliseconds": 8.683, "error": null}
+{"case": "scope", "phase": "save", "tool": "list_artwork", "request_bytes": 107, "response_bytes": 3782, "milliseconds": 20.274, "error": null}
+{"case": "scope", "phase": "save", "tool": "open_artwork", "request_bytes": 312, "response_bytes": 293, "milliseconds": 28.443, "error": null}
+{"case": "scope", "phase": "save", "tool": "export_artwork_candidate", "request_bytes": 327, "response_bytes": 23015, "milliseconds": 9.07, "error": null}
+{"case": "scope", "phase": "save", "tool": "get_scene", "request_bytes": 71, "response_bytes": 4360, "milliseconds": 9.885, "error": null}
+{"case": "scope", "phase": "save", "tool": "get_project", "request_bytes": 21, "response_bytes": 19140, "milliseconds": 8.112, "error": null}
+{"case": "scope", "phase": "save", "tool": "export_bundle", "request_bytes": 125, "response_bytes": 342, "milliseconds": 19.784, "error": null}
+{"case": "scope", "phase": "save", "tool": "resources/read", "request_bytes": 112, "response_bytes": 28003, "decoded_bytes": 20887, "sha256": "a90aca319a4bea08566550d4d0a59a45599cb837f5c3e232548a9561625a6f3a", "file": "scope-project.zip", "milliseconds": 2.955, "error": null}
+{"case": "scope", "phase": "save", "tool": "list_artwork_candidates", "request_bytes": 21, "response_bytes": 20032, "milliseconds": 67.396, "error": null}
+{"case": "scope", "phase": "save", "stage_wall_seconds": 0.401}

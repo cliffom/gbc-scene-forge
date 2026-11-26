@@ -16,9 +16,12 @@ class Transactions:
     def __init__(self, root, history):
         self.root = root
         self.history = root / history
+        # Long-lived managed readers opt in with a scope/schema validator.
+        # Their access locks recover pending journals before exposing saved state.
+        self.recovery_guard = None
 
     @contextmanager
-    def locked(self):
+    def locked(self, *, recover=True):
         # macOS and Linux development hosts share a non-blocking filesystem lock.
         import fcntl
 
@@ -34,6 +37,10 @@ class Transactions:
                     "Another scene editor is applying changes. Try again when it finishes."
                 ) from error
             try:
+                if self.recovery_guard is not None:
+                    self.recovery_guard()
+                    if recover:
+                        self._recover_locked()
                 yield
             finally:
                 fcntl.flock(lock, fcntl.LOCK_UN)
@@ -84,10 +91,13 @@ class Transactions:
         atomic_write(base / "transaction.json", record_bytes(record))
 
     def recover(self):
-        with self.locked():
-            for record in self.records():
-                if record["status"] in ("applying", "restoring"):
-                    self._restore(record, interrupted=True)
+        with self.locked(recover=False):
+            self._recover_locked()
+
+    def _recover_locked(self):
+        for record in self.records():
+            if record["status"] in ("applying", "restoring"):
+                self._restore(record, interrupted=True)
 
     def apply(self, changes, expected, label, *, review_id=None):
         with self.locked():

@@ -16,7 +16,6 @@ from gbc_scene_forge.adapters.mcp.schemas import TOOLS
 from gbc_scene_forge.adapters.mcp.tools import Adapter
 from gbc_scene_forge.artwork import dimensions, editable, png
 from gbc_scene_forge.artwork.drafts import ArtworkDrafts
-from gbc_scene_forge.core.errors import Conflict
 from gbc_scene_forge.project.application import Project
 
 
@@ -123,8 +122,10 @@ class LargeArtworkTests(unittest.TestCase):
                     self.assertEqual(
                         png.decode(archive.read("assets/card/sprites/0.png"), generic=True)[2], raw
                     )
-                with self.assertRaises(Conflict):
-                    drafts.restore(data["id"], draft_ack["revision"])
+                independent = drafts.restore(data["id"], draft_ack["revision"])["candidate"]
+                self.assertEqual(independent["rgba"], candidate["rgba"])
+                self.assertNotEqual(independent["atlas_id"], candidate["atlas_id"])
+                self.assertEqual(independent["project_revision"], ack["project_revision"])
 
     def test_incompressible_png_exceeds_old_payload_budget_and_preserves_rgba(self):
         width, height = 1500, 2100

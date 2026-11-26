@@ -1,0 +1,66 @@
+{
+  "observed_utc": "2026-11-12T13:44:38.778360+00:00",
+  "method": "User requested retry after confirming dismissal of initial Gatekeeper prompt; launch isolated Codex copy with original Chrome quarantine retained",
+  "first_attempt": "Source launcher SIGKILL after user-dismissed Gatekeeper prompt; retained in quarantined-launch.json",
+  "quarantine_before": {
+    "command": [
+      "/usr/bin/xattr",
+      "-p",
+      "com.apple.quarantine",
+      "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check state/plugins/cache/scene-forge-repository/scene-forge/0.1.0-alpha.1/runtime/forge"
+    ],
+    "exit_code": 0,
+    "stdout": "0081;6af5c15d;Chrome;\n",
+    "stderr": ""
+  },
+  "identity": {
+    "command": [
+      "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check state/plugins/cache/scene-forge-repository/scene-forge/0.1.0-alpha.1/bin/forge",
+      "--identity"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"runtime_version\": \"0.46.1\", \"installation\": {\"plugin\": \"scene-forge\", \"plugin_version\": \"0.1.0-alpha.1\", \"runtime_version\": \"0.46.1\", \"target\": \"macos-arm64\", \"build_id\": \"af6b37e1bb393f2c32bfd89c14c7a5bb3a94176055b0c9d5dfd4ad7f475a2fc0\"}}\n",
+    "stderr": ""
+  },
+  "native_status": {
+    "installation": {
+      "plugin": "scene-forge",
+      "plugin_version": "0.1.0-alpha.1",
+      "runtime_version": "0.46.1",
+      "target": "macos-arm64",
+      "build_id": "af6b37e1bb393f2c32bfd89c14c7a5bb3a94176055b0c9d5dfd4ad7f475a2fc0"
+    },
+    "selection": null,
+    "settings_file": "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check home/Library/Application Support/Scene Forge/selection.json",
+    "cache_directory": "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check home/Library/Caches/Scene Forge",
+    "error": null,
+    "next_step": "Choose an existing project (project), or a parent folder (root) to create one. plugin_choose_location opens the native dialog; project discovery creates nothing.",
+    "project_alias": null
+  },
+  "quarantine_after": {
+    "command": [
+      "/usr/bin/xattr",
+      "-p",
+      "com.apple.quarantine",
+      "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check state/plugins/cache/scene-forge-repository/scene-forge/0.1.0-alpha.1/runtime/forge"
+    ],
+    "exit_code": 0,
+    "stdout": "0081;6af5c15d;Chrome;\n",
+    "stderr": ""
+  },
+  "notarized_requirement": {
+    "command": [
+      "/usr/bin/codesign",
+      "--verify",
+      "--strict",
+      "--check-notarization",
+      "-R=notarized",
+      "--verbose=2",
+      "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check state/plugins/cache/scene-forge-repository/scene-forge/0.1.0-alpha.1/runtime/forge"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check state/plugins/cache/scene-forge-repository/scene-forge/0.1.0-alpha.1/runtime/forge: valid on disk\n/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check state/plugins/cache/scene-forge-repository/scene-forge/0.1.0-alpha.1/runtime/forge: satisfies its Designated Requirement\n/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/cache check state/plugins/cache/scene-forge-repository/scene-forge/0.1.0-alpha.1/runtime/forge: explicit requirement satisfied\n"
+  },
+  "status": "passed; online isolated cache launcher and native MCP startup"
+}

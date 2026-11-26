@@ -56,7 +56,7 @@ def create_server(adapter):
 
     @server.list_tools()
     async def list_tools():
-        return [types.Tool(**tool) for tool in TOOLS]
+        return [types.Tool(**tool) for tool in getattr(adapter, "tool_definitions", TOOLS)]
 
     @server.call_tool()
     async def call_tool(name, arguments):

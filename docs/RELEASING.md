@@ -98,6 +98,11 @@ explicit `FORGE_BUILD_COMMIT`.
 
 ## Publication
 
+Milestone 25's experimental self-contained folder distribution has a separate
+[runtime build and verification procedure](RUNTIME-BUNDLES.md). Issue branches
+target the milestone integration branch and must not publish milestone releases.
+The Python wheel's normal build/publication path remains unchanged.
+
 The project uses the MIT license, included in both distribution formats. Before a
 first release, confirm the package name is available on the intended index.
 Keep the version in `pyproject.toml` and `src/gbc_scene_forge/__init__.py` in sync;
@@ -149,6 +154,18 @@ artifacts in `dist/` before manual publication. Review compatibility notes, keep
 the README installation example aligned with the tagged version, and verify fresh
 plain and optional-MCP installs before announcing publication. Tagging and upload
 remain separate from local validation.
+
+## Repository plugin distribution
+
+Milestone 25's [repository plugin packager](PLUGIN-DISTRIBUTION.md) stages immutable
+platform-specific marketplaces and archives from an already built runtime.
+Its prerelease plugin version is independent of the Forge wheel version; the
+compatibility resource pins their combination. Issue PRs target the milestone
+branch and do not bump or publish Forge. The milestone integration assesses the
+next unpublished product version after its acceptance gates pass. The
+[macOS plugin candidate procedure](PLUGIN-RELEASES.md) describes native CI,
+archive evidence and protected signing/notarization configuration. Final platform
+qualification and publishing remain #263; public directory submission remains #265.
 
 ## Internal refactors
 

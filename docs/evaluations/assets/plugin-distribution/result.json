@@ -1,0 +1,60 @@
+{
+  "observed_at": "2026-11-11T22:52:31.542727+00:00",
+  "codex": "codex-cli 0.167.1",
+  "identity": {
+    "plugin": "scene-forge",
+    "plugin_version": "0.1.0-alpha.1",
+    "runtime_version": "0.46.1",
+    "target": "macos-arm64",
+    "build_id": "06f2d93305dacb6bdaafd457f18973e30d54ea9e33995d65e2949c2b5588edbb"
+  },
+  "archive_sha256": "f33ebdd001e7dc452af9ae3ef472a68a6113bce08d3b6f77b7dfcf91b81ed2a6",
+  "installed_cache": "Previous cache removed on update; old session rejected calls",
+  "native_status": true,
+  "interrupted_copy_rejected": true,
+  "update": true,
+  "cross_build_browser_reuse_rejected": true,
+  "browser_origin_preserved_across_update": true,
+  "rollback": true,
+  "disable": true,
+  "uninstall": true,
+  "projects_candidates_settings_layout_preserved": true,
+  "limits": "Synthetic selection/version/layout; no model turn, real browser storage, human usability, Git-hosted source, signed download or clean-OS test.",
+  "source_base": "11ab0350505ab5bf3f53473edd197cbbd4ac0b29",
+  "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "driver_python": "3.13.13",
+  "source_sha256": {
+    "runtime/entry.py": "6d5b2ba144bdae15721ba65ff36162ea9117c9d7f95de1c74f1d437d1d1966a7",
+    "runtime/package_plugin.py": "58b749e4e3b11633d863dc2ed4d95d06f981049200abfc1bed2ac8e1e3d35ac5",
+    "plugin/plugin.json": "856d1856ae8c18fe6d342c369f98aa7bb29e5723697c2c19537aa0f447948966",
+    "plugin/mcp.json": "14fb994c4e1ed60305fe7273bff118179f90d36d622d4896735402c932ad73d5",
+    "plugin/compatibility.json": "0029082375e2c88decc428dba434de26b2e599e61ca136b4170801a6be57ceb2",
+    "plugin/marketplace.json": "5d64bbb2fadbd0fdd952e46392b68add46e881dabc333687bbdbbfcadb07bf5f",
+    "plugin/bin/forge": "10fca661f1db4c05d62544d0fb1a41ff6cd500182511cff0ddeedf3a37525267",
+    "plugin/skills/forge-start/SKILL.md": "9bf572ed646ebbe53a4f6763ec70cbcff7df59abef8739fb3f3571c73f680b71",
+    "src/gbc_scene_forge/adapters/plugin/distribution.py": "1bf51742f1fd9e3dd0f58cae71e6c62a3ea78621615888e6ea353d5d6b011188",
+    "src/gbc_scene_forge/adapters/plugin/session.py": "e63277c84033fe66118357580d6d16a87767ee98f5016aea0c0e3a2d66967d94",
+    "src/gbc_scene_forge/adapters/plugin/browser.py": "aab44cc1783b9fb11d9a247defad1d6ae0c231fe549aed0b74672012cd592242",
+    "tests/backend/tooling/test_plugin_distribution.py": "4930f771e1f12ee3e04be5d73c5217fe730d7e26d5ec536ff730393ac343f797",
+    "tests/packaging/plugin_distribution_smoke.py": "2d973ea657ddc4286bcbdba202dbbb7e280d82577c76d6ba6338e88d29f3d4d8",
+    "tests/packaging/plugin_lifecycle_smoke.py": "bba448f2e8f90dfd9ab2fa9893b128087542b5de879bfe52370355ab039e5227",
+    "tests/packaging/bundle_smoke.py": "627ad0e1959b9101a99be7f63e435edc7555ddd44c6a4fef48930910a504177d"
+  },
+  "runtime_sha256": "242a9c380d7c84e95528ac0b0d1760d2491785936ac24502719d3c7102ead544",
+  "wheel_sha256": "9099a64b5ddb150a3e8cf7f31bae5c0e191c6548c5d4ae2f003527973f30329b",
+  "runtime_inputs": {
+    "build-requirements.in": "4439c693c19271e4b0bdc56c641c36b3b06010b1b22eae6733cd244d752e85d5",
+    "build-requirements.txt": "240925835e333544c52a63c01e82b01a8543be38f00ae418ae29a703fee258b9",
+    "build.py": "09fce23394d83e34823bf2f268dfc3f8a44c1609f3fd44ae84c39f48538cd2eb",
+    "config.json": "7a8537271d08d029f66b5aaa8be9e713a6626ab927bb406c6b06b3d77f62d46d",
+    "entry.py": "6d5b2ba144bdae15721ba65ff36162ea9117c9d7f95de1c74f1d437d1d1966a7",
+    "notices.py": "0e0d34c4a8ae6baeb89d8c37e0308369b04a20c05ee68372be9f2fb76dd4acc1",
+    "package_plugin.py": "58b749e4e3b11633d863dc2ed4d95d06f981049200abfc1bed2ac8e1e3d35ac5",
+    "runtime-requirements.in": "4fe75062c5d424bbc86a8cd58c63ab19aeffe4f0a0e100022252c8032e12ee5b",
+    "runtime-requirements.txt": "fbef807e66e09ad61b7c74cf02ea53dba1eb20ab5e25efab777c96752ed6f2df"
+  },
+  "material_findings": [
+    "The first live-update test expected retained old cache files; Codex removed them. Existing sessions now reject missing or changed installation contents, and maintenance requires stopping browsers before update.",
+    "The generic -c plugin enabled override did not disable native app-server discovery; persisted enabled=false did."
+  ]
+}

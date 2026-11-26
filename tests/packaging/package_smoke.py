@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 import unittest
 import zipfile
 from importlib.metadata import distribution
@@ -152,7 +153,17 @@ class InstalledPackageSmokeTests(unittest.TestCase):
     def test_installed_launcher_creates_sample_and_serves_offline_editor(self):
         with tempfile.TemporaryDirectory() as folder:
             process = subprocess.Popen(
-                [sys.executable, "-I", "-m", "gbc_scene_forge", "--no-browser", "--port", "0"],
+                [
+                    sys.executable,
+                    "-I",
+                    "-c",
+                    "import faulthandler, runpy; "
+                    "faulthandler.dump_traceback_later(10); "
+                    "runpy.run_module('gbc_scene_forge', run_name='__main__')",
+                    "--no-browser",
+                    "--port",
+                    "0",
+                ],
                 cwd=folder,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
@@ -169,8 +180,12 @@ class InstalledPackageSmokeTests(unittest.TestCase):
             reader.start()
             try:
                 output = ""
+                deadline = time.monotonic() + 15
                 while True:
-                    line = lines.get(timeout=15)
+                    try:
+                        line = lines.get(timeout=max(0.01, deadline - time.monotonic()))
+                    except queue.Empty:
+                        self.fail(f"Installed launcher startup timed out:\n{output}")
                     self.assertIsNotNone(line, output)
                     output += line
                     match = re.search(r"Editor\s+(http://127\.0\.0\.1:\d+/)", output)

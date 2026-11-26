@@ -130,10 +130,14 @@ class ArtworkDrafts:
     def restore(self, draft_id, revision):
         value = self.download(draft_id, revision)
         candidate = value["candidate"]
-        with self.store.read_session(candidate["project_revision"], verify_assets=True) as session:
-            self.documents.validate_base(value["original"], session.document)
-            self.documents.validate_base(candidate, session.document)
-            self.documents.placement_scenes(candidate, session)
+        with self.store.read_session(verify_assets=True) as session:
+            if candidate["project_revision"] != session.revision:
+                candidate = self.documents.recover_copy(candidate, session)
+                value = {**value, "original": candidate, "candidate": candidate}
+            else:
+                self.documents.validate_base(value["original"], session.document)
+                self.documents.validate_base(candidate, session.document)
+                self.documents.placement_scenes(candidate, session)
         # The browser recovers into a fresh record/owner. The original remains available.
         return value
 

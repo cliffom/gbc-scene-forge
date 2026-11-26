@@ -56,6 +56,13 @@ help:
 	@echo '  make typecheck               Run strict TypeScript checking'
 	@echo '  make typecheck-python        Check typed Python storage/service boundaries'
 	@echo '  make build / make check-dist Build distributions / test the installed wheel'
+	@echo '  make build-bundle            Build experimental macOS arm64 runtime (pinned Python archive)'
+	@echo '  make check-bundle            Verify a moved, read-only runtime with the MCP SDK'
+	@echo '  make package-plugin          Stage a versioned repository plugin from BUNDLE'
+	@echo '  make check-plugin-release    Prepare/verify a macOS candidate (RELEASE_REVISION required)'
+	@echo '  make test-plugin-lifecycle  Verify installed plugin process sharing and recovery'
+	@echo '  make test-plugin-handoff    Verify native installed-plugin/browser handoffs (PLUGIN_ARCHIVE, CODEX)'
+	@echo '  make test-bundle-browser     Render the frozen runtime in Chromium'
 	@echo '  make clean                   Remove build outputs and node_modules; keep projects'
 	@echo '  make clean-demo              Delete the default .demo/ sample and its edits'
 
@@ -161,6 +168,8 @@ check-dist:
 	build/package-smoke/bin/python -I tests/packaging/package_smoke.py
 
 clean:
+	# Make read-only bundle directories removable without changing shared file permissions.
+	if [ -d build ]; then find build -type d -exec chmod u+w {} +; fi
 	rm -rf build dist node_modules
 	rm -f src/gbc_scene_forge/static/app.js src/gbc_scene_forge/static/app.js.map src/gbc_scene_forge/static/app.meta.json
 	rm -f src/gbc_scene_forge/static/project.js src/gbc_scene_forge/static/project.js.map
@@ -193,3 +202,41 @@ test-terrain-browser: frontend
 .PHONY: test-playwright-browser
 test-playwright-browser: frontend
 	CHROME="$(CHROME)" $(NPM) run test:playwright
+
+# Experimental native folder bundles; downstream issues own plugin/release delivery.
+BUNDLE_BUILD ?= build/runtime
+BUNDLE ?= $(BUNDLE_BUILD)/forge-$(VERSION)-macos-arm64
+BUNDLE_CHECK ?= build/runtime-smoke
+PYTHON_ARCHIVE ?= build/runtime-inputs/python.tar.zst
+UV ?= uv
+.PHONY: build-bundle check-bundle test-plugin-lifecycle
+build-bundle:
+	FORGE_BUILD_MODE=production $(MAKE) build
+	$(PYTHON) runtime/build.py --wheel "$(DIST_WHEEL)" --python-archive "$(PYTHON_ARCHIVE)" --output "$(BUNDLE_BUILD)" --uv "$(UV)"
+
+check-bundle:
+	"$(BUNDLE_BUILD)/build-env/bin/python" tests/packaging/bundle_smoke.py --bundle "$(BUNDLE)" --output "$(BUNDLE_CHECK)"
+
+test-plugin-lifecycle:
+	$(PYTHON) tests/packaging/plugin_lifecycle_smoke.py --runtime "$(BUNDLE)/forge" --output "$(BUNDLE_CHECK)-lifecycle"
+
+.PHONY: test-plugin-handoff
+test-plugin-handoff:
+	@test -n "$(PLUGIN_ARCHIVE)" -a -n "$(CODEX)" || { echo 'Set PLUGIN_ARCHIVE and absolute CODEX executable path'; exit 2; }
+	FORGE_TEST_PLUGIN_ARCHIVE="$(abspath $(PLUGIN_ARCHIVE))" FORGE_TEST_CODEX="$(CODEX)" CHROME="$(CHROME)" $(NPM) exec -- playwright test --config tests/playwright/playwright.config.ts plugin-handoff.spec.ts
+
+PLUGIN_OUTPUT ?= build/plugin-repository
+.PHONY: package-plugin
+package-plugin:
+	$(PYTHON) runtime/package_plugin.py --bundle "$(BUNDLE)" --output "$(PLUGIN_OUTPUT)"
+
+PLUGIN_RELEASE_OUTPUT ?= build/plugin-candidate
+RELEASE_REVISION ?=
+.PHONY: check-plugin-release
+check-plugin-release:
+	@test -n "$(RELEASE_REVISION)" || { echo 'Set RELEASE_REVISION to the full source Git revision'; exit 2; }
+	$(POETRY) run python runtime/release.py --bundle "$(BUNDLE)" --output "$(PLUGIN_RELEASE_OUTPUT)" --revision "$(RELEASE_REVISION)" --python "$(BUNDLE_BUILD)/build-env/bin/python"
+
+.PHONY: test-bundle-browser
+test-bundle-browser:
+	FORGE_TEST_BUNDLE="$(abspath $(BUNDLE))/forge" CHROME="$(CHROME)" $(NPM) exec -- playwright test --config tests/playwright/playwright.config.ts bundle.spec.ts

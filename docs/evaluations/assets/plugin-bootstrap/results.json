@@ -1,0 +1,112 @@
+{
+  "scope": {
+    "date": "2026-11-11",
+    "base_revision": "1423ed38b20a87e9a3cae487e4a5c2635ef1ace3",
+    "changes": "Uncommitted PR #271 feedback fix: bounded PluginSession inventory",
+    "platform": "macOS 27.0.1 arm64",
+    "client": "codex-cli/app-server 0.167.1",
+    "model": "gpt-6.1-sol",
+    "source_sha256": {
+      "src/gbc_scene_forge/adapters/plugin/session.py": "8601f33a829a9be2708fa3d82e5a8a12e414a420115ced21e88857277a4f62cb",
+      "tests/support/serve_plugin_fixture.py": "ff9c72e9398237a37d7e49fc3e89d20698d1f1c701fad3227f91ff8f5a3abde5"
+    }
+  },
+  "method": {
+    "attribution": "Agent-run native model turn against source PluginSession with the synthetic directory chooser fixture",
+    "fixture": "tests/support/serve_plugin_fixture.py",
+    "prompt": "Run a bounded MCP integration check. Use only forge_bootstrap MCP tools; do not use shell, file, or other tools. This server uses a synthetic chooser for a disposable fixture, so no native folder dialog opens. Call plugin_status, then plugin_choose_location with mode root, then plugin_status, then list_projects, then capabilities, then plugin_reset_selection, then plugin_status. Make the actual calls and report whether all three setup tools successfully executed. Do not create projects or artwork. Stop after these checks.",
+    "approvals": "Driver accepted only exact fixture plugin_status({}), plugin_choose_location({mode:root}) and plugin_reset_selection({}); shell/file and unrelated requests were prohibited.",
+    "initial_cli_attempt": "All setup tools were discoverable; setup calls blocked by the noninteractive never-approval policy. Subsequent app-server turn handled exact fixture approvals."
+  },
+  "result": {
+    "advertised_tools": [
+      "capabilities",
+      "commit_artwork",
+      "create_artwork",
+      "create_artwork_sheet",
+      "create_blockout_scene",
+      "create_project",
+      "create_scene",
+      "edit_artwork_layers",
+      "edit_artwork_layout",
+      "edit_artwork_pixels",
+      "edit_scene",
+      "export_bundle",
+      "get_project",
+      "get_scene",
+      "import_atlas",
+      "inspect_artwork_candidate",
+      "list_artwork",
+      "list_projects",
+      "open_artwork",
+      "place_stamp",
+      "plugin_choose_location",
+      "plugin_reset_selection",
+      "plugin_status",
+      "read_artwork_pixels",
+      "review_artwork",
+      "review_artwork_animation",
+      "review_artwork_candidate",
+      "review_artwork_frame",
+      "review_blockout",
+      "review_scene",
+      "save_scene",
+      "save_stamp"
+    ],
+    "advertised_count": 32,
+    "calls": [
+      {
+        "tool": "plugin_status",
+        "arguments": {},
+        "status": "completed",
+        "is_error": false
+      },
+      {
+        "tool": "plugin_choose_location",
+        "arguments": {
+          "mode": "root"
+        },
+        "status": "completed",
+        "is_error": false
+      },
+      {
+        "tool": "plugin_status",
+        "arguments": {},
+        "status": "completed",
+        "is_error": false
+      },
+      {
+        "tool": "list_projects",
+        "arguments": {},
+        "status": "completed",
+        "is_error": false
+      },
+      {
+        "tool": "capabilities",
+        "arguments": {},
+        "status": "completed",
+        "is_error": false
+      },
+      {
+        "tool": "plugin_reset_selection",
+        "arguments": {},
+        "status": "completed",
+        "is_error": false
+      },
+      {
+        "tool": "plugin_status",
+        "arguments": {},
+        "status": "completed",
+        "is_error": false
+      }
+    ],
+    "final_selection": null,
+    "selection_file_remaining": false,
+    "created_projects": []
+  },
+  "limits": [
+    "Synthetic chooser; no native dialog exercised.",
+    "Source checkout via explicit temporary MCP configuration, not an installed/frozen plugin.",
+    "Confirms setup and capabilities during a real model turn, not every authoring operation or other clients/platforms."
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "target": "macos-arm64",
+  "system": "Darwin",
+  "machine": "arm64",
+  "python_version": "3.13.13",
+  "python_build": "20260602",
+  "python_url": "https://github.com/astral-sh/python-build-standalone/releases/download/20260602/cpython-3.13.13%2B20260602-aarch64-apple-darwin-pgo%2Blto-full.tar.zst",
+  "python_sha256": "643c3645d34338230e7c8100457ed25ea1660216054de38238326847a055b9f8",
+  "uv_version": "0.13.7"
+}

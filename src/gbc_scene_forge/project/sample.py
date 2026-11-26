@@ -2,6 +2,7 @@
 
 import json
 import shutil
+import stat
 import tempfile
 from pathlib import Path
 from uuid import uuid4
@@ -78,6 +79,10 @@ def prepare(root, *, reset=False, title=None):
     with tempfile.TemporaryDirectory(prefix=".forge-sample-", dir=root.parent) as folder:
         staging = Path(folder) / "project"
         shutil.copytree(source, staging, ignore=shutil.ignore_patterns(".forge"))
+        # Installed templates may be read-only. This newly owned copy must be editable,
+        # including its directories, before naming it or creating transaction files.
+        for path in [staging, *staging.rglob("*")]:
+            path.chmod(path.stat().st_mode | stat.S_IWUSR)
         if title is not None:
             manifest = staging / MANIFEST
             document = json.loads(manifest.read_bytes())

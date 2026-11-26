@@ -1,0 +1,137 @@
+{
+  "observed_at": "2026-11-11T23:26:19.555063+00:00",
+  "source_base": "513f065ef509dae3569a2ffe5e489c21e803331d",
+  "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "python": "3.13.13",
+  "installation": {
+    "plugin": "scene-forge",
+    "plugin_version": "0.1.0-alpha.1",
+    "runtime_version": "0.46.1",
+    "target": "macos-arm64",
+    "build_id": "060e2a65a41b7990f81d0de08e7e8175f05bbb07b17225d6b250606fd1f84365"
+  },
+  "metadata_entries": 611,
+  "method": "Source HTTP handlers on a disposable bundled-sample project with the rebuilt complete plugin. Compare full verification at each guard with the session metadata guard; three requests per route, monotonic wall time. Inventory spy counts full content scans; initialization excluded.",
+  "measurements": {
+    "full_hash_guard": {
+      "routes": {
+        "/": {
+          "milliseconds": [
+            146.702,
+            145.969,
+            135.612
+          ],
+          "median_ms": 145.969
+        },
+        "/api/project": {
+          "milliseconds": [
+            203.553,
+            225.974,
+            214.881
+          ],
+          "median_ms": 214.881
+        },
+        "/api/choices": {
+          "milliseconds": [
+            297.858,
+            220.751,
+            223.158
+          ],
+          "median_ms": 223.158
+        },
+        "/api/revisions": {
+          "milliseconds": [
+            231.164,
+            236.287,
+            221.556
+          ],
+          "median_ms": 231.164
+        },
+        "/api/snapshot": {
+          "milliseconds": [
+            206.462,
+            238.618,
+            240.972
+          ],
+          "median_ms": 238.618
+        }
+      },
+      "content_inventory_calls": 43
+    },
+    "metadata_guard": {
+      "routes": {
+        "/": {
+          "milliseconds": [
+            12.393,
+            11.501,
+            10.322
+          ],
+          "median_ms": 11.501
+        },
+        "/api/project": {
+          "milliseconds": [
+            17.384,
+            19.537,
+            19.365
+          ],
+          "median_ms": 19.365
+        },
+        "/api/choices": {
+          "milliseconds": [
+            28.193,
+            21.019,
+            25.745
+          ],
+          "median_ms": 25.745
+        },
+        "/api/revisions": {
+          "milliseconds": [
+            30.522,
+            19.334,
+            18.985
+          ],
+          "median_ms": 19.334
+        },
+        "/api/snapshot": {
+          "milliseconds": [
+            21.776,
+            20.151,
+            25.016
+          ],
+          "median_ms": 21.776
+        }
+      },
+      "content_inventory_calls": 0
+    }
+  },
+  "native_acceptance": {
+    "observed_at": "2026-11-11T23:25:50.048479+00:00",
+    "codex": "codex-cli 0.167.1",
+    "identity": {
+      "plugin": "scene-forge",
+      "plugin_version": "0.1.0-alpha.1",
+      "runtime_version": "0.46.1",
+      "target": "macos-arm64",
+      "build_id": "060e2a65a41b7990f81d0de08e7e8175f05bbb07b17225d6b250606fd1f84365"
+    },
+    "archive_sha256": "8b8753951b80e0093c6d8dcfe84e4e34dd091159e6f909e302969c9b8ce95f68",
+    "installed_cache": "Previous cache removed on update; old session rejected calls",
+    "native_status": true,
+    "interrupted_copy_rejected": true,
+    "update": true,
+    "cross_build_browser_reuse_rejected": true,
+    "browser_origin_preserved_across_update": true,
+    "rollback": true,
+    "disable": true,
+    "uninstall": true,
+    "projects_candidates_settings_layout_preserved": true,
+    "limits": "Synthetic selection/version/layout; no model turn, real browser storage, human usability, Git-hosted source, signed download or clean-OS test."
+  },
+  "source_sha256": {
+    "src/gbc_scene_forge/adapters/plugin/distribution.py": "d854d20336b8c62089aaefb78d1287c244e0fa4ec6bbec6e483c2cbf6629e8c0",
+    "src/gbc_scene_forge/adapters/plugin/browser.py": "3ff5250ed5cf206fb69d7886ba59981778d769766a4da48232bc5818bcd83047",
+    "src/gbc_scene_forge/adapters/plugin/session.py": "f63279d7b730552dfafc4f0bc1d89ba3238d99a6ab93c35b93a43ab0fcb46c63",
+    "tests/backend/tooling/test_plugin_distribution.py": "2b205eb00b7d7fd121f8867ef74f303b211e72a609d1f64346b491b8605a613e"
+  },
+  "limits": "Local warm-cache timing on one macOS host, without browser rendering or load testing. Native acceptance uses synthetic grant/version/layout and no model turn. Metadata invalidation relies on local inode/mtime/ctime semantics; no publisher authentication or privileged-tampering guarantee."
+}

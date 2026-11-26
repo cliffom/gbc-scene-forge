@@ -135,8 +135,9 @@ const api: ProjectApi['json'] = async (route, decode, data) => {
 const session = new ArtworkSession(candidate, api);
 assert.equal(session.uncheckpointed, false);
 session.model.apply(() => session.model.put({ x: 0, y: 0 }, hidden));
+session.captureCheckpoint();
 session.model.undo();
-assert.equal(session.uncheckpointed, false);
+assert.equal(session.uncheckpointed, true);
 session.model.redo();
 const first = session.checkpoint();
 session.model.undo();
@@ -158,14 +159,106 @@ assert.deepEqual(
 assert.deepEqual(new PixelModel(decodeCandidate(written[1].candidate)).color({ x: 1, y: 0 }), red);
 assert.equal(session.uncheckpointed, false);
 assert.deepEqual(session.original, candidate);
-// Undo to the saved base still diverges from an older durable checkpoint.
+// Undo to the saved base retains the edited recovery snapshot and live Redo.
 session.model.undo();
 session.model.undo();
 assert.equal(session.changed, false);
-assert.equal(session.uncheckpointed, true);
+assert.equal(session.hasLocalWork, true);
+assert.equal(session.uncheckpointed, false);
 await session.checkpoint();
 assert.equal(session.uncheckpointed, false);
-assert.equal(decodeCandidate(written.at(-1)?.candidate).rgba, candidate.rgba);
+assert.deepEqual(
+  new PixelModel(decodeCandidate(written.at(-1)?.candidate)).color({ x: 1, y: 0 }),
+  red,
+);
+// Capture before debounce, then Undo before any checkpoint reaches the queue.
+const quick = new ArtworkSession(candidate, api);
+quick.model.apply(() => quick.model.put({ x: 1, y: 0 }, red));
+quick.captureCheckpoint();
+quick.model.undo();
+await quick.checkpoint();
+assert.equal(quick.changed, false);
+assert.equal(quick.uncheckpointed, false);
+assert.deepEqual(
+  new PixelModel(decodeCandidate(written.at(-1)?.candidate)).color({ x: 1, y: 0 }),
+  red,
+);
+assert.equal(
+  quick.downloadWork().redo_checkpoint?.rgba,
+  decodeCandidate(written.at(-1)?.candidate).rgba,
+);
+quick.model.redo();
+assert.deepEqual(quick.model.color({ x: 1, y: 0 }), red);
+
+// Crossing the saved position must not replace the pending Redo branch's recovery
+// with an older state on the Undo side of that position.
+const crossing = new ArtworkSession(candidate, api);
+const yellow: Color = [255, 255, 0, 255];
+crossing.model.apply(() => crossing.model.put({ x: 0, y: 0 }, red));
+crossing.captureCheckpoint();
+crossing.adoptSaved(await crossing.synchronizeCurrent());
+crossing.model.apply(() => crossing.model.put({ x: 0, y: 0 }, yellow));
+crossing.captureCheckpoint();
+await crossing.checkpoint();
+crossing.model.undo();
+crossing.captureCheckpoint();
+crossing.model.undo();
+crossing.captureCheckpoint();
+await crossing.checkpoint();
+assert.deepEqual(
+  new PixelModel(decodeCandidate(written.at(-1)?.candidate)).color({ x: 0, y: 0 }),
+  [0, 0, 0, 0],
+);
+crossing.model.redo();
+crossing.captureCheckpoint();
+assert.equal(crossing.changed, false);
+assert.equal(crossing.uncheckpointed, true);
+await crossing.checkpoint();
+assert.equal(crossing.uncheckpointed, false);
+assert.deepEqual(
+  new PixelModel(decodeCandidate(written.at(-1)?.candidate)).color({ x: 0, y: 0 }),
+  yellow,
+);
+assert.equal(
+  crossing.downloadWork().redo_checkpoint?.rgba,
+  decodeCandidate(written.at(-1)?.candidate).rgba,
+);
+crossing.model.redo();
+assert.deepEqual(crossing.model.color({ x: 0, y: 0 }), yellow);
+
+// An ordinary save removes the old checkpoint, but keeps Redo and its snapshot.
+const saving = new ArtworkSession(candidate, api);
+saving.model.apply(() => saving.model.put({ x: 0, y: 0 }, red));
+saving.captureCheckpoint();
+saving.adoptSaved(await saving.synchronizeCurrent());
+saving.model.apply(() => saving.model.put({ x: 0, y: 0 }, yellow));
+const future = saving.captureCheckpoint();
+await saving.checkpoint();
+saving.model.undo();
+saving.captureCheckpoint();
+const savedWhileUndone = await saving.synchronizeCurrent();
+await saving.removeCheckpoint();
+saving.adoptSaved(savedWhileUndone);
+assert.equal(saving.changed, false);
+assert.equal(saving.model.redoStack.length, 1);
+assert.equal(saving.downloadWork().redo_checkpoint?.rgba, encoded(future.pixels));
+assert.equal(saving.uncheckpointed, true);
+await saving.checkpoint();
+assert.equal(saving.uncheckpointed, false);
+assert.deepEqual(written.at(-1)?.original, savedWhileUndone);
+assert.deepEqual(
+  new PixelModel(decodeCandidate(written.at(-1)?.candidate)).color({ x: 0, y: 0 }),
+  yellow,
+);
+saving.model.redo();
+assert.deepEqual(saving.model.color({ x: 0, y: 0 }), yellow);
+// A replacement branch must capture its own edit rather than keep old yellow.
+saving.model.undo();
+saving.captureCheckpoint();
+saving.model.apply(() => saving.model.put({ x: 0, y: 0 }, hidden));
+saving.captureCheckpoint();
+saving.model.undo();
+assert.deepEqual([...saving.captureCheckpoint().pixels.slice(0, 4)], hidden);
 console.log('Pixel history, drawing, transforms, bounds, and serialized checkpoint races passed.');
 
 // A lost first checkpoint response is inspected before explicit cleanup, never replayed.
@@ -552,8 +645,15 @@ hiddenSession.model.selectLayer(effectLayer.id);
 hiddenSession.model.apply(() => hiddenSession.model.put({ x: 1, y: 0 }, hidden));
 assert.equal(hiddenSession.changed, true);
 assert.equal(encoded(hiddenSession.model.composite()), hiddenLayerCandidate.rgba);
+const hiddenRecovery = hiddenSession.captureCheckpoint();
 hiddenSession.model.undo();
 assert.equal(hiddenSession.changed, false);
+assert.deepEqual(hiddenSession.captureCheckpoint(), hiddenRecovery);
+assert.notEqual(
+  hiddenRecovery.layers?.[effectLayer.id],
+  hiddenLayerCandidate.layer_rgba?.[effectLayer.id],
+);
+assert.deepEqual(hiddenSession.downloadWork().redo_checkpoint?.layer_rgba, hiddenRecovery.layers);
 layered.apply(() => layered.setLayers([baseLayer, { ...effectLayer, locked: true }]));
 assert.throws(() => layered.apply(() => layered.put({ x: 0, y: 0 }, red)), /locked/);
 assert.throws(

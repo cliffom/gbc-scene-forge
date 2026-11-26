@@ -1,0 +1,148 @@
+{
+  "observed_at": "2026-11-12T05:16:40.679741+00:00",
+  "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "driver_python": "3.13.13",
+  "codex": "codex-cli 0.167.1",
+  "archive_sha256": "437ebc88f6223ece022dd8bac136c24e152d8041b0d258072047a4ff343db153",
+  "installation": {
+    "plugin": "scene-forge",
+    "plugin_version": "0.1.0-alpha.1",
+    "runtime_version": "0.46.1",
+    "target": "macos-arm64",
+    "build_id": "9d765364ed3852d6ed1bd4513375722d67d956612e5eda485b789414c90f61a1"
+  },
+  "runtime_sha256": "242a9c380d7c84e95528ac0b0d1760d2491785936ac24502719d3c7102ead544",
+  "runtime_wheel_sha256": "9099a64b5ddb150a3e8cf7f31bae5c0e191c6548c5d4ae2f003527973f30329b",
+  "initial_thread": "01a1ce2f-bea4-7f83-a2db-6b2acd7a3d3f",
+  "selection": "Synthetic root grant in isolated HOME; no native dialog",
+  "method": "Native app-server tool calls and Playwright gestures; no model turns",
+  "chromium": "156.0.8078.4",
+  "source_sha256": {
+    "tests/playwright/packaging/plugin-handoff.spec.ts": "96b629a3f89e725f9c988a01bbb6b4545fe0d305aa9ddbd3c2a0788dcd8854cd",
+    "tests/packaging/plugin_handoff_driver.py": "06a745aaf1478e205ba386cd33e40d33f2c00b18384aa6edf6f8317c4d2fb9c3",
+    "tests/packaging/plugin_distribution_smoke.py": "559d749b0125685864062e72be08e951bb84d2c91f91674945aded97e9d39558"
+  },
+  "saved_rgba_sha256": "1f834bc47c84cf110f29e9d196210ad29c1ea988685cc9af77351aa0dde2d410",
+  "returned_rgba_sha256": "f16dac82f827a08f1fce18a43834cb67f85d6cf05f123c8cba2108abc4c57dee",
+  "saved_scene": {
+    "width": 8,
+    "height": 8,
+    "grid": 8,
+    "layers": [
+      {
+        "id": 1,
+        "name": "Ground",
+        "type": "tilelayer",
+        "visible": true,
+        "cells": [
+          [
+            "tile/artwork/0/0",
+            "tile/artwork/0/0",
+            "",
+            "tile/artwork/0/0",
+            "tile/artwork/0/0",
+            "",
+            "",
+            ""
+          ],
+          [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ]
+        ]
+      },
+      {
+        "id": 2,
+        "name": "Sprites",
+        "type": "objectgroup",
+        "visible": true,
+        "objects": []
+      }
+    ],
+    "next_layer_id": 3,
+    "next_object_id": 1
+  },
+  "assertions": [
+    "saved artwork and scene discovery in fresh native threads",
+    "exact browser-gesture preservation and targeted refinement",
+    "visible clean-document adoption and reload",
+    "simultaneous-session and dirty-browser save conflicts",
+    "stale project/artwork/scene guards and changed review candidate",
+    "retained unpublished adoption/return and explicit handle release",
+    "expired preview resource after process restart",
+    "exact conflicting checkpoints and managed server restart",
+    "selection revocation and rediscovery"
+  ],
+  "limits": "Synthetic directory grant and gestures; no model turns, human manual edit, independent OS users, native folder dialog or additional platform/client coverage.",
+  "source_base": "80a2e29205c4f7574f74a80c07744e33c211021f",
+  "viewport_css": [
+    1440,
+    1000
+  ]
+}

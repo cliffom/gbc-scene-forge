@@ -32,6 +32,14 @@ Classifications below mean:
 
 ## Outcome matrix
 
+The installed authoring plugin exposes a smaller 32-tool profile. Its maintained,
+self-contained [scene outcome routes](../plugin/skills/forge-scenes/references/outcome-routes.md)
+extend this matrix with explicit plugin/browser routes for every scene-skill
+promise, including stamps, diagnostics, imports, terrain, preferences and recovery.
+The full MCP column below does not imply those tools are callable in the plugin.
+See the bundled [scene skill](../plugin/skills/forge-scenes/SKILL.md) and
+[export/reopen guidance](../plugin/skills/forge-scenes/references/portable-export.md).
+
 Evidence links identify source acceptance, not proof that every row ran on every
 release. Current execution evidence belongs in
 [Validation](VALIDATION.md#consolidated-editor-workflows-milestone-22);

@@ -2,7 +2,7 @@ import { revealArtworkControl, reviewArtwork, saveArtwork } from '../support/art
 /** Actual optional-SDK stdio writes alternate with browser artwork edits and conflicts. */
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { cp, writeFile } from 'node:fs/promises';
+import { cp, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { record, array, string } from '../../../frontend/shared/decode.mts';
@@ -120,6 +120,8 @@ test('mcp: artwork brief, hand edits, agent revision, selected sprite variation 
   await expect(page.locator('#save')).toBeEnabled();
   await writeFile(writes, JSON.stringify([{ x: 6, y: 6, rgba: [90, 130, 80, 255] }]));
   await run(['--asset', 'moss', '--writes', writes]);
+  const winningMoss = await open('moss');
+  assert.deepEqual(new PixelModel(winningMoss).color({ x: 6, y: 6 }), [90, 130, 80, 255]);
   await page.locator('#save').click();
   await expect(page.locator('#art-message')).toContainText('Local pixels are retained');
   await page.screenshot({ path: info.outputPath('mixed-writer-conflict.png') });
@@ -128,12 +130,37 @@ test('mcp: artwork brief, hand edits, agent revision, selected sprite variation 
   await expect(page.locator('#status')).toHaveText('Scene opened.');
   await page.locator('#show-artwork').click();
   await revealArtworkControl(page, 'art-drafts');
-  await page.getByRole('button', { name: 'Recover copy', exact: true }).click();
-  await expect(page.locator('#art-message')).toContainText('Local pixels are retained');
+  const listDrafts = async () => array((await post('draft-list', {})).drafts, record);
+  const drafts = await listDrafts();
+  assert.equal(drafts.length, 1);
+  const [checkpoint] = drafts;
+  const readDraft = (draft: Record<string, unknown>) =>
+    post('draft-download', { id: draft.id, revision: draft.revision, owner: draft.owner });
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download', exact: true }).click();
-  await (await download).saveAs(info.outputPath('conflicting-artwork-draft.json'));
-  assert.deepEqual(new PixelModel(await open('moss')).color({ x: 0, y: 0 }), [146, 161, 90, 255]);
+  const checkpointPath = info.outputPath('conflicting-artwork-draft.json');
+  await (await download).saveAs(checkpointPath);
+  const originalCheckpoint = record(JSON.parse(await readFile(checkpointPath, 'utf8')));
+
+  await page.getByRole('button', { name: 'Recover copy', exact: true }).click();
+  await expect(page.locator('#art-message')).toContainText('Recovered a new copy');
+  const recoveryDrafts = await listDrafts();
+  assert.equal(recoveryDrafts.length, 2);
+  const recovery = recoveryDrafts.find((draft) => draft.id !== checkpoint.id);
+  assert.ok(recovery);
+  const copy = decodeCandidate((await readDraft(recovery)).candidate);
+  assert.equal(copy.operation, 'create');
+  assert.notEqual(copy.atlas_id, 'moss');
+  await reviewArtwork(page);
+  await saveArtwork(page);
+  assert.deepEqual(
+    new PixelModel(await open(copy.atlas_id)).color({ x: 0, y: 0 }),
+    [170, 17, 51, 255],
+  );
+  const currentMoss = await open('moss');
+  assert.equal(currentMoss.artwork_revision, winningMoss.artwork_revision);
+  assert.equal(currentMoss.rgba, winningMoss.rgba);
+  assert.deepEqual(await readDraft(checkpoint), originalCheckpoint);
   // Verify the final mixed result survives a portable project ZIP and fresh reopen.
   await promisify(execFile)(workspace.python, [
     '-c',
@@ -145,7 +172,7 @@ p=Project(Path(sys.argv[1]));raw,_=p.export_bundle('project',p.catalog()['revisi
 out=Path(sys.argv[2]);zipfile.ZipFile(io.BytesIO(raw)).extractall(out)
 q=Project(out)
 assert q.scenes.load(sys.argv[3])['scene']==p.scenes.load(sys.argv[3])['scene']
-assert len(q.artwork.documents.list(q.catalog()['revision'])['documents'])==3
+assert len(q.artwork.documents.list(q.catalog()['revision'])['documents'])==4
 `,
     string(seed.project),
     join(workspace.folder, 'exported'),
@@ -203,12 +230,14 @@ a.save(c,receipt=p.artwork.reviews.animation(c,'walk',scale=1)['receipt'])
 import asyncio,copy,json,os,sys
 from mcp import ClientSession,StdioServerParameters
 from mcp.client.stdio import stdio_client
+sys.path.insert(0,'tests')
+from support.project_busy import call_tool
 async def main():
     params=StdioServerParameters(command=sys.executable,args=['-m','gbc_scene_forge.mcp_server','--project',sys.argv[1]],env=dict(os.environ))
     async with stdio_client(params) as (read,write), ClientSession(read,write) as client:
         await client.initialize()
         async def call(name,**args):
-            r=await client.call_tool(name,dict(project='project',**args))
+            r=await call_tool(client,name,dict(project='project',**args))
             assert not r.isError,r.content
             return r.structuredContent
         async def opened():

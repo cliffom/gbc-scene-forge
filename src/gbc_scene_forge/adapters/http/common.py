@@ -1,11 +1,20 @@
 """Loopback response and Host checks shared by HTTP frontends."""
 
-from http.server import BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.resources import files
+from socketserver import TCPServer
 
 from gbc_scene_forge.core.serialization import json_text
 
 STATIC = files("gbc_scene_forge").joinpath("static")
+
+
+class LocalHTTPServer(ThreadingHTTPServer):
+    def server_bind(self):
+        # HTTPServer reverse-resolves the bound address to populate server_name.
+        # Our numeric loopback URL needs no DNS, which can stall offline/CI hosts.
+        TCPServer.server_bind(self)
+        self.server_name, self.server_port = self.server_address[:2]
 
 
 class LocalHandler(BaseHTTPRequestHandler):

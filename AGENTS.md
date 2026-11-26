@@ -37,6 +37,12 @@ Name Python test files `test_*.py` and methods `test_*`; use standard-library `u
 
 Existing commits use short, imperative subjects such as “Preserve original scenes on first draft save.” Follow that style. Pull requests should explain the behavior change, link relevant issues, report validation commands/results, and include screenshots for visible UI changes.
 
+Milestone 25 (Self-contained Codex authoring plugin) uses
+`milestone/25-codex-authoring-plugin` as its integration branch. Create issue
+branches from that branch and target all milestone issue PRs against it. Keep
+milestone work out of `main` until the milestone is complete; only then prepare
+the integration PR to `main`. Issue PRs must not publish milestone releases.
+
 ## Architecture & Safety Boundaries
 
 Forge is a standalone scene authoring tool built around imported artwork and portable Tiled projects. Forge owns generic rendering, atlas import, project storage, and Tiled serialization. Connector v1 and game-specific Apply/build integrations are no longer a supported direction; new work does not need to preserve their APIs, document formats, or behavior. Do not add connector compatibility adapters or design constraints for them. Existing connector code may be refactored or removed when it obstructs the standalone model. Preserve loopback binding, mutation-token checks, declared workspace paths, and conflict-aware recovery. Never introduce game-specific branches into the editor.

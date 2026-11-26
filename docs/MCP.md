@@ -8,6 +8,24 @@ transactions as browser authoring. There is no connector or game compiler.
 
 ## Install and connect
 
+Milestone 25 also provides an experimental [self-contained runtime](RUNTIME-BUNDLES.md)
+whose `forge mcp` mode includes the SDK and Python. Its explicit project selection
+and platform limits are documented separately. `forge mcp --plugin` also supports
+[native project selection and onboarding](PLUGIN-START.md) without a preconfigured
+project path; the optional wheel install below
+remains supported.
+
+Plugin mode advertises and accepts a bounded 32-tool profile, including its three
+setup tools, to keep them callable in the demonstrated Codex model registry.
+`capabilities` reports that profile and its unavailable operations. The tool
+descriptions below cover the full direct-launch MCP inventory; see
+[plugin profile limits](PLUGIN-START.md) for browser/direct-launch fallbacks.
+
+The [Codex plugin feasibility probe](evaluations/plugin-feasibility.md) compares
+self-contained macOS arm64 runtimes using the existing MCP server. It is an
+experimental milestone 25 investigation; the installation below remains the
+supported MCP setup.
+
 Install the release with Python 3.10 or newer:
 
 ```sh
@@ -59,6 +77,11 @@ protected. Launch the browser against the same root/project to inspect saves:
 ```sh
 gbc-scene-forge --project /absolute/path/to/projects/mcp-forest
 ```
+
+Experimental bundled plugin sessions also provide
+[managed browser handoff](PLUGIN-START.md#managed-browser-handoff-and-process-recovery).
+Their verified browser URL, shared process, idle lifetime and restart address are
+independent of the client-owned stdio session; direct launches remain foreground.
 
 The official SDK handles JSON-RPC, initialization, schema validation, cancellation,
 and stdio framing. Its supported protocol revisions are `2024-11-05`, `2025-03-26`,

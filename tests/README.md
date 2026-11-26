@@ -10,13 +10,13 @@ Run commands from the repository root. Test code is grouped by runner and domain
 | `backend/planning/` | blockout and world authoring |
 | `backend/analysis/` | diagnostics, palette and hardware budgets |
 | `backend/adapters/` | console, HTTP and optional MCP protocol integration |
-| `backend/tooling/` | documentation checker regression tests |
+| `backend/tooling/` | documentation checker, runtime launch and experimental plugin selection boundaries |
 | `backend/architecture/` | backend dependency and installed-entry-point boundaries |
 | `frontend/` | non-browser TypeScript suites grouped by editor, project, artwork, objects, planning, preview and infrastructure |
 | `playwright/` | browser acceptance by domain, with browser fixtures and editor seeds in `playwright/support/` |
 | `support/` | shared synthetic atlas/blockout fixtures and executable server, palette, MCP-writer and Tiled helpers |
 | `fixtures/` | shared palette artwork and provenance used by backend and browser checks |
-| `packaging/` | explicit installed-wheel smoke checks |
+| `packaging/` | explicit installed-wheel and frozen-bundle smoke checks |
 | `legacy/` | historical connector tests and their independent fixtures |
 
 `make test-frontend-domain-contracts` pins original normalized outputs and first
@@ -62,6 +62,92 @@ requires the SDK in `FORGE_MCP_PYTHON`. Plain runs retain adapter checks and ski
 the SDK-only test when the extra is absent. `packaging/package_smoke.py` is
 explicitly run with `python -I` after wheel installation, outside unit discovery.
 It imports only the installed application, never test helpers.
+
+`backend/adapters/test_mcp_plugin_artwork.py` replays bundled artwork/animation
+skill recipes through the bounded plugin session with a synthetic directory grant.
+It checks sparse/dense pixel batches, exact hidden-source preservation, PNG contact
+resources, timing-only edits, stale receipts, saved reopen, unpublished tile sheets
+and unavailable-tool rejection. Packaging checks compare every skill/reference's
+bytes after archive relocation. These checks do not run a model or establish image
+visibility, animation playback or artistic quality; representative behavioral
+cases live in the [bundled workflow checks](../plugin/skills/forge-artwork/references/workflow-checks.md).
+
+`support/measure_plugin_authoring.py` runs a staged source-dispatch quality/cost
+baseline with a synthetic directory grant. It stops between first pass,
+refinement and save for actual agent image inspection, records all calls/resource
+reads and checks exact saved sources and portable reopen. It is not an installed
+client or independent-user test. The [protocol, reproduction order and limitations](../docs/evaluations/plugin-authoring-quality.md)
+define its fixtures, measurement boundaries and inspection attribution.
+
+`backend/adapters/test_mcp_plugin_scenes.py` replays the
+[scene workflow briefs](../plugin/skills/forge-scenes/references/workflow-checks.md)
+through the same bounded profile: artwork-free blockout, existing tile/sprite
+placement and plugin-created artwork. It checks matching candidate preview
+snapshots, pixel/cell coordinates and sprite origins, preserved planning layers,
+connections and artwork, stale save refusal, guarded save, project ZIP reopen in
+a fresh session and scene ZIP preflight/import/reopen. Missing stamp/diagnostic
+tools reject explicitly. These synthetic checks do not establish model adherence,
+actual image inspection, browser handoff or independent-user authoring quality.
+
+`make check-bundle` runs `packaging/bundle_smoke.py` with the locked SDK as a driver
+and no Forge imports. The executable child runs from a relocated read-only copy,
+with an empty PATH and invalid external Python settings. It checks guarded native
+artwork, scene rendering, export/reopen, raw protocol stdout, HTTP assets and demo
+restoration. `make test-bundle-browser` separately launches the real frozen browser
+with an empty PATH and captures its sample editor. It is skipped in ordinary
+Playwright runs unless `FORGE_TEST_BUNDLE` is supplied. See the
+[runtime guide](../docs/RUNTIME-BUNDLES.md) for build inputs and bounded evidence.
+
+`make test-plugin-lifecycle BUNDLE_BUILD=build/runtime` runs the frozen executable
+with an isolated home and empty runtime PATH. It checks concurrent MCP sessions,
+normal/abrupt MCP exit, browser reuse/restart, saved scenes, retained candidates,
+expired session resources and token protection. This synthetic selection test
+does not install a Codex plugin or open a native folder dialog.
+`packaging/plugin_distribution_smoke.py --archive ARCHIVE --codex CODEX --output NEW_DIR`
+installs a packaged repository in isolated client/home directories. It exercises
+native skill/MCP discovery, cached launch without developer tools, interrupted
+copy rejection, a synthetic second plugin version, cache eviction during a live
+session, browser build isolation/origin recovery, disable, rollback and uninstall.
+It compares project/candidate/settings bytes and a synthetic layout sentinel;
+real browser checkpoint recovery remains the separate Playwright check below.
+`make test-plugin-handoff PLUGIN_ARCHIVE=/absolute/archive.tar.gz CODEX=/absolute/codex`
+installs the real repository archive into isolated native client state and alternates
+native tool calls with Chromium artwork/scene edits. It exercises fresh threads,
+simultaneous clients, exact saved preservation, dirty conflicts, unpublished exchange,
+expired previews and changed selection. It skips without both inputs; it is not a
+model turn or human edit. See the [handoff protocol](../docs/evaluations/plugin-handoffs.md)
+for exact oracles and the separate installed-client human acceptance procedure.
+`playwright/packaging/plugin-lifecycle.spec.ts` separately paints an unsaved scene,
+closes its tab, restarts the managed browser on the same origin and restores the
+real checkpoint without changing saved content. Use `FORGE_TEST_PYTHON` to run
+its process driver against an installed wheel. Backend browser tests cover
+occupied ports, stale records, ownership, idle expiry, invalid paths and abrupt
+exit after scene-map publication with journal recovery on handoff.
+Regressions also keep the browser alive through an interrupted writer, recover
+before either its next read or save, preserve active-writer contention, and reject
+a POST whose project directory is replaced while its body is still arriving.
+
+`backend/tooling/test_plugin_probe.py` checks the experimental launcher's explicit
+external selection, symlink containment and argument-override rejection. The
+macOS-only [plugin probe](../examples/plugin_probe/verify.py) separately installs
+both runtime alternatives into disposable Codex state and exercises SDK/client
+MCP saves, resources, export and browser HTTP. It is not part of ordinary unit
+discovery and does not start a model turn. Its [evaluation](../docs/evaluations/plugin-feasibility.md)
+records exact client and visual limits.
+
+`backend/adapters/test_plugin_selection.py` covers first use, cancellation,
+per-user persistence, moved/invalid/denied directories, grant revocation and
+symlink isolation with a synthetic chooser, plus the 32-tool model exposure
+boundary and matching advertised/accepted capabilities. It fills the production
+256-candidate quota, resets/restarts, exports and explicitly releases one candidate,
+then resumes editing while preserving saved content and other candidates.
+`test_mcp_plugin.py` runs an actual
+SDK stdio conversation through the test-only chooser fixture, including a small
+compact create/inspect/refine/review/save/export task, candidate list/export/release
+and a second process reopening the
+selection. `backend/tooling/test_runtime_bundle.py` covers `--plugin` startup and
+separate browser cache logs. These tests do not establish native-dialog usability
+or installed-plugin acceptance.
 
 `fixtures/pixel-cleanup/motif.json` is an original MIT synthetic motif with
 independently declared noise coordinates and intentional glint/diagonal failures.
@@ -120,7 +206,8 @@ smoke checks retain isolated mode and do not do this.
 Live-browser MCP writers and individual animation-fixture operations use bounded
 project-busy handling from `support/project_busy.py`: at most 20 attempts with
 50 ms between attempts. MCP retries require the exact structured busy message
-with `invalid_request` (direct lock contention) or `conflict` (commit wrapping);
+with `invalid_request` (direct lock contention), `conflict` (commit wrapping),
+or `busy` (artwork operations);
 direct Python fixture operations retry `TransactionBusy` or a `Conflict` whose
 explicit cause is `TransactionBusy` (the commit adapter's wrapping contract).
 Validation errors, revision conflicts and transport failures still fail. Revision

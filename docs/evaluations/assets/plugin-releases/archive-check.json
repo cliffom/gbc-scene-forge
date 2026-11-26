@@ -1,0 +1,131 @@
+{
+  "installation": {
+    "plugin": "scene-forge",
+    "plugin_version": "0.1.0-alpha.1",
+    "runtime_version": "0.46.1",
+    "target": "macos-arm64",
+    "build_id": "af6b37e1bb393f2c32bfd89c14c7a5bb3a94176055b0c9d5dfd4ad7f475a2fc0"
+  },
+  "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "archive_sha256": "34981c5dc53e2475e2871c99d6db1fa3d5824a13fe5b0cc8644db59e1c9e6a3b",
+  "client_os_floor_met": true,
+  "native_client": "synthetic install/update/disable/rollback/uninstall passed",
+  "normal_user_download_acceptance": "not run",
+  "verified_native_files": [
+    "runtime/_internal/libpython3.13.dylib",
+    "runtime/_internal/pydantic_core/_pydantic_core.cpython-313-darwin.so",
+    "runtime/_internal/rpds/rpds.cpython-313-darwin.so",
+    "runtime/forge"
+  ],
+  "developer_id_signatures": {
+    "runtime/_internal/libpython3.13.dylib": {
+      "command": [
+        "/usr/bin/codesign",
+        "-dvvv",
+        "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/plugin-263-dns/relocated repository caf\u00e9/plugins/scene-forge/runtime/_internal/libpython3.13.dylib"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "Executable=/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/plugin-263-dns/relocated repository cafe\u0301/plugins/scene-forge/runtime/_internal/libpython3.13.dylib\nIdentifier=libpython3\nFormat=Mach-O thin (arm64)\nCodeDirectory v=20500 size=35094 flags=0x10000(runtime) hashes=1091+2 location=embedded\nHash type=sha256 size=32\nCandidateCDHash sha256=078e7900f91d589dbaf3263d477ff121dcdf4759\nCandidateCDHashFull sha256=078e7900f91d589dbaf3263d477ff121dcdf4759b98da09d188d3ac15a9ab069\nHash choices=sha256\nCMSDigest=078e7900f91d589dbaf3263d477ff121dcdf4759b98da09d188d3ac15a9ab069\nCMSDigestType=2\nCDHash=078e7900f91d589dbaf3263d477ff121dcdf4759\nSignature size=8982\nAuthority=Developer ID Application: Michael Clifford (62X274W9SU)\nAuthority=Developer ID Certification Authority\nAuthority=Apple Root CA\nTimestamp=Nov 11, 2026 at 11:49:42\u202fPM\nInfo.plist=not bound\nTeamIdentifier=62X274W9SU\nRuntime Version=15.5.0\nSealed Resources=none\nInternal requirements count=1 size=172\nTotal signatures=1\nChosen signature=1\n"
+    },
+    "runtime/_internal/pydantic_core/_pydantic_core.cpython-313-darwin.so": {
+      "command": [
+        "/usr/bin/codesign",
+        "-dvvv",
+        "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/plugin-263-dns/relocated repository caf\u00e9/plugins/scene-forge/runtime/_internal/pydantic_core/_pydantic_core.cpython-313-darwin.so"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "Executable=/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/plugin-263-dns/relocated repository cafe\u0301/plugins/scene-forge/runtime/_internal/pydantic_core/_pydantic_core.cpython-313-darwin.so\nIdentifier=_pydantic_core.cpython-313-darwin\nFormat=Mach-O thin (arm64)\nCodeDirectory v=20500 size=8909 flags=0x10000(runtime) hashes=272+2 location=embedded\nHash type=sha256 size=32\nCandidateCDHash sha256=97df7fbdb407bf57a31337e4086fccde76830688\nCandidateCDHashFull sha256=97df7fbdb407bf57a31337e4086fccde7683068810c7c717d812c860430f0947\nHash choices=sha256\nCMSDigest=97df7fbdb407bf57a31337e4086fccde7683068810c7c717d812c860430f0947\nCMSDigestType=2\nCDHash=97df7fbdb407bf57a31337e4086fccde76830688\nSignature size=8982\nAuthority=Developer ID Application: Michael Clifford (62X274W9SU)\nAuthority=Developer ID Certification Authority\nAuthority=Apple Root CA\nTimestamp=Nov 11, 2026 at 11:49:42\u202fPM\nInfo.plist=not bound\nTeamIdentifier=62X274W9SU\nRuntime Version=26.5.0\nSealed Resources=none\nInternal requirements count=1 size=196\nTotal signatures=1\nChosen signature=1\n"
+    },
+    "runtime/_internal/rpds/rpds.cpython-313-darwin.so": {
+      "command": [
+        "/usr/bin/codesign",
+        "-dvvv",
+        "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/plugin-263-dns/relocated repository caf\u00e9/plugins/scene-forge/runtime/_internal/rpds/rpds.cpython-313-darwin.so"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "Executable=/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/plugin-263-dns/relocated repository cafe\u0301/plugins/scene-forge/runtime/_internal/rpds/rpds.cpython-313-darwin.so\nIdentifier=rpds.cpython-313-darwin\nFormat=Mach-O thin (arm64)\nCodeDirectory v=20500 size=2083 flags=0x10000(runtime) hashes=59+2 location=embedded\nHash type=sha256 size=32\nCandidateCDHash sha256=41ca0ac716ccaa353a8179f7cf84d5fed07150e8\nCandidateCDHashFull sha256=41ca0ac716ccaa353a8179f7cf84d5fed07150e8501559b80097ad955718be87\nHash choices=sha256\nCMSDigest=41ca0ac716ccaa353a8179f7cf84d5fed07150e8501559b80097ad955718be87\nCMSDigestType=2\nCDHash=41ca0ac716ccaa353a8179f7cf84d5fed07150e8\nSignature size=8983\nAuthority=Developer ID Application: Michael Clifford (62X274W9SU)\nAuthority=Developer ID Certification Authority\nAuthority=Apple Root CA\nTimestamp=Nov 11, 2026 at 11:49:43\u202fPM\nInfo.plist=not bound\nTeamIdentifier=62X274W9SU\nRuntime Version=26.5.0\nSealed Resources=none\nInternal requirements count=1 size=184\nTotal signatures=1\nChosen signature=1\n"
+    },
+    "runtime/forge": {
+      "command": [
+        "/usr/bin/codesign",
+        "-dvvv",
+        "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/plugin-263-dns/relocated repository caf\u00e9/plugins/scene-forge/runtime/forge"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "Executable=/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/plugin-263-dns/relocated repository cafe\u0301/plugins/scene-forge/runtime/forge\nIdentifier=forge\nFormat=Mach-O thin (arm64)\nCodeDirectory v=20500 size=14961 flags=0x10000(runtime) hashes=462+2 location=embedded\nHash type=sha256 size=32\nCandidateCDHash sha256=ea9796a5d0c0a383e3275ee869ddf4d03a54f1a2\nCandidateCDHashFull sha256=ea9796a5d0c0a383e3275ee869ddf4d03a54f1a2daac5f3ba7b4866ff4cbf975\nHash choices=sha256\nCMSDigest=ea9796a5d0c0a383e3275ee869ddf4d03a54f1a2daac5f3ba7b4866ff4cbf975\nCMSDigestType=2\nCDHash=ea9796a5d0c0a383e3275ee869ddf4d03a54f1a2\nSignature size=8983\nAuthority=Developer ID Application: Michael Clifford (62X274W9SU)\nAuthority=Developer ID Certification Authority\nAuthority=Apple Root CA\nTimestamp=Nov 11, 2026 at 11:49:42\u202fPM\nInfo.plist=not bound\nTeamIdentifier=62X274W9SU\nRuntime Version=15.5.0\nSealed Resources=none\nInternal requirements count=1 size=168\nTotal signatures=1\nChosen signature=1\n"
+    }
+  },
+  "codesign": {
+    "command": [
+      "/usr/bin/codesign",
+      "-dvvv",
+      "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/plugin-263-dns/relocated repository caf\u00e9/plugins/scene-forge/runtime/forge"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "Executable=/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/plugin-263-dns/relocated repository cafe\u0301/plugins/scene-forge/runtime/forge\nIdentifier=forge\nFormat=Mach-O thin (arm64)\nCodeDirectory v=20500 size=14961 flags=0x10000(runtime) hashes=462+2 location=embedded\nHash type=sha256 size=32\nCandidateCDHash sha256=ea9796a5d0c0a383e3275ee869ddf4d03a54f1a2\nCandidateCDHashFull sha256=ea9796a5d0c0a383e3275ee869ddf4d03a54f1a2daac5f3ba7b4866ff4cbf975\nHash choices=sha256\nCMSDigest=ea9796a5d0c0a383e3275ee869ddf4d03a54f1a2daac5f3ba7b4866ff4cbf975\nCMSDigestType=2\nCDHash=ea9796a5d0c0a383e3275ee869ddf4d03a54f1a2\nSignature size=8983\nAuthority=Developer ID Application: Michael Clifford (62X274W9SU)\nAuthority=Developer ID Certification Authority\nAuthority=Apple Root CA\nTimestamp=Nov 11, 2026 at 11:49:42\u202fPM\nInfo.plist=not bound\nTeamIdentifier=62X274W9SU\nRuntime Version=15.5.0\nSealed Resources=none\nInternal requirements count=1 size=168\nTotal signatures=1\nChosen signature=1\n"
+  },
+  "gatekeeper": {
+    "command": [
+      "/usr/sbin/spctl",
+      "--assess",
+      "--type",
+      "execute",
+      "--verbose=4",
+      "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/plugin-263-dns/relocated repository caf\u00e9/plugins/scene-forge/runtime/forge"
+    ],
+    "exit_code": 3,
+    "stdout": "",
+    "stderr": "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/plugin-263-dns/relocated repository caf\u00e9/plugins/scene-forge/runtime/forge: rejected (the code is valid but does not seem to be an app)\n"
+  },
+  "readonly_launcher": "passed; empty runtime PATH",
+  "official_sdk": {
+    "initialize_seconds": 0.265,
+    "tool_count": 61,
+    "project": "bundle-cafe",
+    "scene_id": "fd39e622-8dff-4d34-9cb7-8f306c047558",
+    "browser": {
+      "assets_served": true,
+      "sample_restored": true,
+      "url": "http://127.0.0.1:57440/projects/bundle-cafe/"
+    },
+    "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "version": "0.46.1",
+    "bundle_inputs": {
+      "build-requirements.in": "4439c693c19271e4b0bdc56c641c36b3b06010b1b22eae6733cd244d752e85d5",
+      "build-requirements.txt": "240925835e333544c52a63c01e82b01a8543be38f00ae418ae29a703fee258b9",
+      "build.py": "4d17926dd67e47f1ae5d89152d725854521b3d5456387e8c1687b54af687760f",
+      "config.json": "7a8537271d08d029f66b5aaa8be9e713a6626ab927bb406c6b06b3d77f62d46d",
+      "entry.py": "6d5b2ba144bdae15721ba65ff36162ea9117c9d7f95de1c74f1d437d1d1966a7",
+      "notices.py": "0e0d34c4a8ae6baeb89d8c37e0308369b04a20c05ee68372be9f2fb76dd4acc1",
+      "package_plugin.py": "283419117684a8858ba485af08855ad6fb5920782aefa55f15e054c606573e4c",
+      "release.py": "f1bb70eabd1f789d210804a230b6c0ef3eb63d9b86fc6f428b011ddccf761bc8",
+      "runtime-requirements.in": "4fe75062c5d424bbc86a8cd58c63ab19aeffe4f0a0e100022252c8032e12ee5b",
+      "runtime-requirements.txt": "fbef807e66e09ad61b7c74cf02ea53dba1eb20ab5e25efab777c96752ed6f2df"
+    },
+    "readonly_unchanged": true,
+    "runtime_path_empty": true
+  },
+  "lifecycle": {
+    "observed_at": "2026-11-12T07:49:56.667448+00:00",
+    "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "runtime_version": "0.46.1",
+    "runtime_sha256": "210ae0592f012d37d474b4bcbea95bca9551d968e87d470f2ff13ea13bb0e934",
+    "selection": "Synthetic root grant in an isolated HOME; no native dialog or Codex install",
+    "runtime_path": "Empty; no developer executables available",
+    "shared_across_sessions": true,
+    "browser_launcher_reuses_instance": true,
+    "abrupt_mcp_exit_browser_survives": true,
+    "normal_mcp_exit_browser_survives": true,
+    "restart_preserves_origin": true,
+    "saved_scene_and_candidate_survive": true,
+    "session_preview_expired": true,
+    "tool_count": 32
+  },
+  "codex_version": "codex-cli 0.167.1",
+  "readonly_unchanged": true
+}

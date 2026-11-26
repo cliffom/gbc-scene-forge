@@ -1,0 +1,140 @@
+{
+  "observed_utc": "2026-11-12T13:40:24.641107+00:00",
+  "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "archive_sha256": "34981c5dc53e2475e2871c99d6db1fa3d5824a13fe5b0cc8644db59e1c9e6a3b",
+  "source_revision": "4720f9a36d005b2df1cef092dbc767446856c203",
+  "method": "Headful isolated Chrome loopback download, ditto preserves original quarantine, Archive Utility extraction, direct launcher and isolated native Codex app-server launch; online existing developer host",
+  "limits": "No clean OS/uncached trust environment, independent human, offline launch, hosted HTTPS delivery, model turn, or GUI client journey. Synthetic isolated client HOME and CODEX_HOME. Raw spctl assessment is separate from launch acceptance.",
+  "source_native_before_launch": {
+    "_internal/libpython3.13.dylib": {
+      "sha256": "0cbd75e76e14fb73051365ca666ba982cee7761e2835c563b1042ab65bcf2fdf",
+      "quarantine": {
+        "command": [
+          "/usr/bin/xattr",
+          "-p",
+          "com.apple.quarantine",
+          "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/runtime/_internal/libpython3.13.dylib"
+        ],
+        "exit_code": 0,
+        "stdout": "0081;6af5c15d;Chrome;\n",
+        "stderr": ""
+      },
+      "signature_and_online_notarization": {
+        "command": [
+          "/usr/bin/codesign",
+          "--verify",
+          "--strict",
+          "--check-notarization",
+          "--verbose=2",
+          "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/runtime/_internal/libpython3.13.dylib"
+        ],
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/runtime/_internal/libpython3.13.dylib: valid on disk\n/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/runtime/_internal/libpython3.13.dylib: satisfies its Designated Requirement\n"
+      }
+    },
+    "_internal/pydantic_core/_pydantic_core.cpython-313-darwin.so": {
+      "sha256": "ef5a01585eccc97ccb9a4033a09bf0e2f2c62d24412804e199c9bb9e3c333b09",
+      "quarantine": {
+        "command": [
+          "/usr/bin/xattr",
+          "-p",
+          "com.apple.quarantine",
+          "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/runtime/_internal/pydantic_core/_pydantic_core.cpython-313-darwin.so"
+        ],
+        "exit_code": 0,
+        "stdout": "0081;6af5c15d;Chrome;\n",
+        "stderr": ""
+      },
+      "signature_and_online_notarization": {
+        "command": [
+          "/usr/bin/codesign",
+          "--verify",
+          "--strict",
+          "--check-notarization",
+          "--verbose=2",
+          "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/runtime/_internal/pydantic_core/_pydantic_core.cpython-313-darwin.so"
+        ],
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/runtime/_internal/pydantic_core/_pydantic_core.cpython-313-darwin.so: valid on disk\n/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/runtime/_internal/pydantic_core/_pydantic_core.cpython-313-darwin.so: satisfies its Designated Requirement\n"
+      }
+    },
+    "_internal/rpds/rpds.cpython-313-darwin.so": {
+      "sha256": "d509c418fc3163e66ec343586ba72d81f8975c491e1194662a166a6fe96d3864",
+      "quarantine": {
+        "command": [
+          "/usr/bin/xattr",
+          "-p",
+          "com.apple.quarantine",
+          "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/runtime/_internal/rpds/rpds.cpython-313-darwin.so"
+        ],
+        "exit_code": 0,
+        "stdout": "0081;6af5c15d;Chrome;\n",
+        "stderr": ""
+      },
+      "signature_and_online_notarization": {
+        "command": [
+          "/usr/bin/codesign",
+          "--verify",
+          "--strict",
+          "--check-notarization",
+          "--verbose=2",
+          "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/runtime/_internal/rpds/rpds.cpython-313-darwin.so"
+        ],
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/runtime/_internal/rpds/rpds.cpython-313-darwin.so: valid on disk\n/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/runtime/_internal/rpds/rpds.cpython-313-darwin.so: satisfies its Designated Requirement\n"
+      }
+    },
+    "forge": {
+      "sha256": "210ae0592f012d37d474b4bcbea95bca9551d968e87d470f2ff13ea13bb0e934",
+      "quarantine": {
+        "command": [
+          "/usr/bin/xattr",
+          "-p",
+          "com.apple.quarantine",
+          "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/runtime/forge"
+        ],
+        "exit_code": 0,
+        "stdout": "0081;6af5c15d;Chrome;\n",
+        "stderr": ""
+      },
+      "signature_and_online_notarization": {
+        "command": [
+          "/usr/bin/codesign",
+          "--verify",
+          "--strict",
+          "--check-notarization",
+          "--verbose=2",
+          "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/runtime/forge"
+        ],
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/runtime/forge: valid on disk\n/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/runtime/forge: satisfies its Designated Requirement\n"
+      }
+    }
+  },
+  "source_launcher_quarantine": {
+    "command": [
+      "/usr/bin/xattr",
+      "-p",
+      "com.apple.quarantine",
+      "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/bin/forge"
+    ],
+    "exit_code": 0,
+    "stdout": "0081;6af5c15d;Chrome;\n",
+    "stderr": ""
+  },
+  "source_identity": {
+    "command": [
+      "/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/bin/forge",
+      "--identity"
+    ],
+    "exit_code": -9,
+    "stdout": "",
+    "stderr": ""
+  },
+  "status": "failed",
+  "error": "AssertionError({'command': ['/Users/mclifford/Development/github.com/cliffom/gbc-scene-forge/build/notary-263/scene-forge-0.1.0-alpha.1-macos-arm64/plugins/scene-forge/bin/forge', '--identity'], 'exit_code': -9, 'stdout': '', 'stderr': ''})"
+}

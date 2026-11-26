@@ -1,0 +1,11 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "forge": {
+      "type": "stdio",
+      "command": "./bin/forge",
+      "cwd": "${PLUGIN_ROOT}",
+      "args": ["mcp", "--plugin"]
+    }
+  }
+}

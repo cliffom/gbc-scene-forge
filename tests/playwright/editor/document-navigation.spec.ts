@@ -156,7 +156,7 @@ test('one document bar retains dirty scene, layers, selection, tools and sheet c
   await page.screenshot({ path: info.outputPath('documents-compact.png') });
 });
 
-test('external artwork preserves dirty history, then follows when Undo returns to the saved base', async ({
+test('external artwork preserves Redo at the saved base until explicitly loading latest', async ({
   page,
   workspace,
 }) => {
@@ -184,9 +184,33 @@ c=a.edit(c,[dict(x=0,y=0,rgba=[255,0,0,255])]);a.save(c)
   );
   await expect(page.locator('#document-state')).toHaveText('Modified');
   await page.locator('#undo').click();
+  await expect(page.locator('#art-sync-status')).toContainText('Redo edits retained');
+  await expect(page.locator('#redo')).toBeEnabled();
+  await expect(page.locator('#document-base-state')).toBeVisible();
+  await page.locator('#redo').click();
+  await expect(page.locator('#document-state')).toHaveText('Modified');
+  await page.locator('#undo').click();
+  await page.locator('#art-sync-load').click();
+  await expect(page.locator('#art-reload-dialog')).toBeVisible();
+  await page.locator('#art-reload-cancel').click();
+  await expect(page.locator('#redo')).toBeEnabled();
+  await page.locator('#art-sync-load').click();
+  await page.locator('#art-reload-confirm').click();
   await expect(page.locator('#document-state')).toHaveText('Saved');
   await expect(page.locator('#document-base-state')).toBeHidden();
   await expect(page.locator('#redo')).toBeDisabled();
+  expect(
+    await page.locator('#art-canvas').evaluate((node) => {
+      if (!(node instanceof HTMLCanvasElement)) {
+        throw Error('Expected artwork canvas');
+      }
+      const context = node.getContext('2d');
+      if (!context) {
+        throw Error('Expected artwork context');
+      }
+      return [...context.getImageData(node.width / 16, node.height / 16, 1, 1).data];
+    }),
+  ).toEqual([255, 0, 0, 255]);
 });
 
 test('failed and delayed checkpoints guard scene and project departures and preserve recovery', async ({
@@ -366,9 +390,12 @@ test('dirty scene close protects cancel, failed save/checkpoint and recoverable 
   await expect(page.locator('#status')).toContainText('save unavailable');
   await expect(page.locator('#document-state')).toHaveText('Modified');
   await page.unroute('**/api/save-scene');
+  await expect(page.locator('#draft-status')).toHaveText('Draft checkpoint saved');
   await page.route('**/api/checkpoint-draft', (route) =>
     route.fulfill({ status: 400, json: { error: 'disk full' } }),
   );
+  // The earlier edit may already be checkpointed; require a new write to test failure.
+  await paint(page, 28, 20);
   await page.locator('#close-document').click();
   await page.locator('#close-document-keep').click();
   await expect(

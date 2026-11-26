@@ -15,6 +15,739 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## Protected macOS plugin alpha.6 candidate and clean-Mac launch
+
+- **Scope:** Plugin 0.1.0-alpha.6 with Forge 0.46.1, built from clean revision
+  `68b49432808eef8f6e211091fc3311aac8e23b6d` by the
+  [protected November 25, 2026 CI run](https://github.com/cliffom/gbc-scene-forge/actions/runs/45693295297)
+  on macOS 15.8.2 ARM64. Local archive verification used macOS 27.2.1 ARM64
+  and Codex CLI 0.171.0-alpha.13.2. The maintainer reported the subsequent
+  clean Apple Silicon Mac test. Its exact macOS and Codex versions were not supplied.
+- **Method:** Verify the downloaded archive checksum, Developer ID signatures,
+  explicit notarization requirement and relocation into a read-only path with
+  spaces and non-ASCII characters. Exercise the SDK, frozen browser and synthetic
+  Codex installation and lifecycle. The maintainer followed the clean-Mac
+  checklist for a quarantined browser download, an offline launcher identity
+  check before online assessment, and a separate online first launch with a
+  Codex model turn, blockout creation and editor handoff.
+- **Result:** Apple accepted `ff67651a-4ddb-492b-a02b-cdb5c5c4f4a1`. The archive
+  SHA-256 is `9c1bbb8c686ff6ae8d53cf24b8051f6de3c40abfb4c428756a0c936187361298`.
+  All four Mach-O payloads passed strict verification and the explicit
+  notarization requirement on the local host. Bare-executable `spctl` assessment
+  returned 3 in CI and locally, reporting valid code that does not seem to be an
+  app. SDK, browser and synthetic client checks passed. The maintainer reported
+  that the clean-Mac download, offline runtime first launch and online Codex
+  blockout/editor checks all passed.
+- **Limits:** The offline result covers the local Forge runtime. CI runs below
+  the installed-client floor; local automation uses synthetic grants. The
+  initial maintainer report covers the launch walkthrough. The broader
+  acceptance confirmation has its own scope below.
+  The [candidate](https://github.com/cliffom/gbc-scene-forge/actions/runs/45693295297/artifacts/15060870243)
+  and [diagnostics](https://github.com/cliffom/gbc-scene-forge/actions/runs/45693295297/artifacts/15058959670)
+  expire December 25, 2026 UTC. Local copies are under `build/issue-263-alpha6-ci/`.
+
+## Maintainer confirmation of alpha.6 preview acceptance
+
+- **Scope:** macOS Apple Silicon preview qualification for #263 and the related
+  onboarding, authoring quality and independent first-use checks in #281, #262
+  and #264. The maintainer confirmed completion on November 25, 2026 Pacific time
+  after the signed alpha.6 clean-Mac test.
+- **Method:** The maintainer confirmed the remaining checks as a group after
+  reviewing the list of outstanding release gates.
+- **Result:** The maintainer confirmed verification of the installed-client
+  authoring journey, including folder selection, fresh-chat reopen and edit,
+  export and shutdown, plus the authoring quality evaluation, independent
+  first-use validation, download verification and artifact retention.
+- **Limits:** This is a maintainer attestation. Per-case results, client and
+  model versions, measurements, participant details and the retention location
+  were not supplied with the confirmation. Release publication and a smoke check
+  of the published download are separate from candidate verification.
+
+## Local macOS plugin alpha.5 candidate
+
+- **Scope:** Plugin 0.1.0-alpha.5 with Forge 0.46.1, built November 25, 2026
+  (Pacific time) on macOS 27.2.1 Apple Silicon with Codex CLI 0.171.0-alpha.13.2.
+  The runtime and packaging came from clean checkout
+  `e9a0c4c366965d25a806d72e1885fc2233bc462a`, which includes PR #282's onboarding.
+- **Method:** Build and test the installed wheel, verify the actual archive and
+  relocated read-only runtime, and run SDK, managed browser lifecycle, isolated
+  Codex install/update/rollback, frozen-browser, and installed-handoff checks.
+- **Result:** The checks passed. The first installed-handoff run expected the old
+  legacy-selection error text. The corrected assertion passed on the same
+  archive, with SHA-256
+  `10b76ef89658c30a8fd2323eef67be27412a6149928f1bb9be3eccbf5bf3eb78`.
+- **Limits:** Local evidence is under `build/issue-280-alpha5/`. The archive is
+  ad-hoc signed and Gatekeeper rejected it. The installed checks use synthetic
+  selections and do not qualify the alpha.5 native picker, model turns, signed
+  downloads, clean machines, or other platforms.
+
+## Local macOS plugin alpha.4 candidate
+
+- **Scope:** Plugin 0.1.0-alpha.4 with Forge 0.46.1, built November 22, 2026
+  (Pacific time) on macOS 27.2.1 Apple Silicon with Codex CLI 0.171.0. The
+  runtime and packaging came from clean checkout
+  `68d83d31f66b8fdb74d3ab555a53f544de69b898`; the release tool records the input
+  wheel hash but does not independently attest its source revision.
+- **Method:** Build and test the installed wheel, verify the exact archive and
+  its relocated read-only runtime, exercise the MCP SDK and managed browser
+  lifecycle, and run isolated Codex install/update/rollback and installed browser
+  handoff tests. Verify cleanup using a disposable read-only bundle.
+- **Result:** Wheel, archive, SDK, lifecycle, install/update/disable/rollback/
+  uninstall, cleanup, and both browser checks passed. The frozen browser check
+  passed with the path quoted directly after the Make target split it on spaces.
+  The installed handoff passed after correcting the stale recovery message and
+  downloading the original checkpoint before creating the recovered copy. The
+  archive was unchanged across those reruns. Its SHA-256 is
+  `55ca6569e2acd7cbf46ef6865e14666cbde8ea690dc3fa03b291d4dc8b6c9678`.
+- **Limits:** The archive is ad-hoc signed; native signature verification passed
+  but Gatekeeper rejected the executable. Results use synthetic selection and
+  Codex threads without model turns. Local evidence is under
+  `build/issue-263-alpha4/`; it is not a published or notarized artifact.
+  Clean-machine, quarantined download, and cross-platform validation remain open.
+
+## Local macOS plugin alpha.3 candidate
+
+- **Scope:** Plugin 0.1.0-alpha.3 with Forge 0.46.1, built 2026-11-12 on macOS
+  27.0.1 Apple Silicon with Codex CLI 0.167.2 from the dirty working tree based
+  on `f3faca4b6e7022202ea14382157eabb8a3244cd0`, including independent stale
+  checkpoint recovery. Runtime and packaging metadata record checkout diff
+  SHA-256 `aa1456006c322555c978965a321dce96006b0555565b03c1db58719a6a35b4f9`;
+  the prebuilt input wheel's source revision remains unverified.
+- **Method:** Build the production wheel, run installed-wheel smoke tests, freeze
+  with Developer ID signing, verify all archive Mach-O signatures and read-only
+  relocation, exercise official MCP SDK operations, managed lifecycle and isolated
+  Codex install/update/disable/rollback/uninstall, and run frozen-runtime Chromium
+  acceptance. Submit the same signed package to Apple and check its log and
+  explicit local notarization requirement.
+- **Result:** Seven installed-wheel tests, archive/SDK/lifecycle/native-client
+  checks and one frozen browser case pass. Apple accepts submission
+  `2d84586d-48ec-41e3-803f-e19f67dc9ef5` with no issues. Repeated explicit
+  notarization ticket checks initially fail for the new executable after acceptance,
+  including after a successful launcher identity check; the CPython library passes.
+  A later recheck before providing installation steps passes the executable's
+  explicit notarization requirement; the earlier failures remain in the local logs.
+  The build-time bare-executable
+  Gatekeeper assessment rejects it as valid code that does not seem to be an app.
+  Archive SHA-256 is
+  `593bf31bc0917edba0545141f594bc8b4725c537669d1c63a668d28cbe4806ba`.
+  Local logs and metadata are under `build/plugin-alpha3-verified/` and
+  `build/alpha3-*.log`; prior source validation is recorded separately below.
+- **Limits:** Local ignored outputs are not archived release evidence. No GitHub
+  publication, personal installation, human recovery retest, fresh quarantined
+  download or offline trust test occurred during build verification. The subsequent
+  user installation and recovery test are recorded below. The later successful
+  ticket check does not establish why earlier checks failed or a guaranteed ticket
+  propagation interval.
+
+## Human alpha.3 independent artwork recovery
+
+- **Scope:** User's `handoff-261` project on 2026-11-12 after following the
+  alpha.3 installation instructions and reporting a fresh session. The installed
+  skill catalog points to 0.1.0-alpha.3; screenshots show Forge 0.46.1. Host and
+  client versions were not independently remeasured during this manual test.
+- **Method:** Inspect successive user-supplied browser screenshots while guiding
+  Browse & recover, Recover copy, independent-artwork review, Confirm save,
+  browser reload/reopen and reopening the original artwork. The user performs the
+  browser actions; screenshots establish the resulting visible states.
+- **Result:** Recovery opens a New document with the purple pixel and a notice
+  that the original checkpoint is retained. Review identifies new independent
+  artwork with existing artwork and placements intact. Saving adds a third Library
+  entry and shows Saved. The subsequent screenshot after reload/reopen guidance
+  retains the purple pixel. Reopening the original shows its cyan top-right pixel
+  and no recovered purple pixel. This manual recovery/save/reopen case passes.
+- **Limits:** Screenshot-based human acceptance, not independent filesystem or
+  exact RGBA verification. Reload execution and checkpoint retention after saving
+  were not independently instrumented. This does not complete the entire #261
+  handoff protocol, cross-platform qualification or quarantined/offline trust tests.
+
+## Human alpha.3 preview, browser edit, Tiled export and shutdown
+
+- **Scope:** User-installed plugin 0.1.0-alpha.3 with Forge 0.46.1 in a fresh
+  Codex CLI conversation on macOS, observed 2026-11-12 with project `handoff-261`.
+  Build provenance is recorded above; client/host versions were not remeasured.
+- **Method:** Inspect user-supplied CLI and browser screenshots while the user
+  requests saved-artwork inspection and browser handoff, manually edits/saves the
+  recovered copy, requests read-only pixel verification and portable export, opens
+  an exported scene in Tiled, then explicitly requests managed-browser shutdown.
+- **Result:** The CLI receives an artwork preview and opens the managed browser.
+  An initial busy-project read succeeds on retry. Its initial purple-pixel
+  coordinate report is incorrect; a subsequent pixel decode reports (6,6), RGBA
+  [155,80,131,255]. After the browser save, another decode reports the new yellow
+  pixel at (0,7), RGBA [230,225,81,255], and the retained purple pixel. Export
+  reports no warnings or skipped animations, passing ZIP integrity and manifest
+  checksums, and an unchanged source revision. The user opens an extracted scene
+  in Tiled; the screenshot shows rendered artwork, Ground/Sprites layers, tilesets
+  and zero errors/warnings. Explicit shutdown returns stopped, then status reports
+  running false with no URL/instance; the CLI reports the saved revision unchanged.
+- **Limits:** Screenshot-based acceptance; underlying tool calls, file checks and
+  revision comparisons are reported by the separate CLI, not independently rerun.
+  Tiled version is unknown; one rendered scene does not verify unused recovered
+  artwork or every exported scene. Saved artwork requires manual navigation after
+  browser handoff because artwork deep links are unsupported. Native project
+  selection/create, model-led refinement, fresh hosted download, independent-host
+  and offline qualification are not established by this journey.
+
+## Human alpha.3 native project picker
+
+- **Scope:** User-installed plugin 0.1.0-alpha.3 with Forge 0.46.1 on macOS,
+  observed 2026-11-12 in the manual journey above and a subsequent fresh Codex
+  CLI 0.167.2 conversation, identified by its startup banner and new transcript.
+- **Method:** User requests native selection of the existing `handoff-261`
+  project, selects its folder, then requests another existing-project selection
+  and cancels. User then chooses a parent folder for a separate empty project,
+  selects that project in the same conversation, and repeats native selection and
+  read-only inspection in a fresh conversation. Inspect user-supplied native-dialog
+  and CLI-result screenshots.
+- **Result:** The macOS folder picker appears with the existing project folder.
+  After selection, the CLI reports reopening `handoff-261` with contents unchanged.
+  The second selection reports cancellation, retaining `handoff-261` as selected
+  with all project data unchanged. Creation adds `macos-alpha3-check` under the
+  chosen parent; the CLI reports `handoff-261` unchanged. Switching to the new
+  project and reopening it in the fresh conversation succeed. Read-only inspection
+  reports no scenes, artwork assets, files, candidates or archives, with no project
+  changes. The fresh conversation initially reports the persisted selected path
+  with no location error before reopening it through the picker.
+  In that fresh conversation, switching back to `handoff-261` reports its saved
+  `handoff_room` scene and three artwork entries, including the recovered copy;
+  the CLI reports both projects unchanged.
+- **Limits:** Screenshot-based user acceptance; tool details are collapsed and
+  selection persistence/data comparisons were not independently inspected. This
+  covers existing-project selection, cancellation, separate-project creation,
+  switching and later-conversation reopening. It does not establish clean-install
+  first-use onboarding, OS permission denial or independent-user usability.
+
+## Human alpha.3 model refinement after project switching
+
+- **Scope:** User-installed plugin 0.1.0-alpha.3 with Forge 0.46.1 in the fresh
+  Codex CLI 0.167.2 conversation above, observed 2026-11-12 after switching from
+  the empty test project back to `handoff-261`.
+- **Method:** User asks the model to add white at (7,7) to the recovered artwork,
+  preserving purple at (6,6), yellow at (0,7) and other pixels, showing review
+  before saving and leaving the original artwork unchanged. Inspect the CLI
+  screenshot and subsequent user-supplied browser screenshot of the saved result.
+- **Result:** The CLI commits the recovered artwork, reopens it and reports only
+  (7,7) changed, with the original unchanged. Its transcript shows a subsequent
+  exported candidate/review image and a local review-note update; earlier preview
+  details are outside the screenshot. The managed browser opens on request. The
+  browser shows Saved and visible white at bottom-right, yellow at bottom-left
+  and purple one pixel diagonally above the white, matching the requested edit.
+  On the user's subsequent explicit shutdown request, the CLI reads the current
+  browser instance, stops it and obtains status with running false and null
+  URL/instance, reporting saved data unchanged.
+- **Limits:** Screenshot-based visual handoff, not an independent exact-byte diff
+  or inspection of the original after this save. The CLI reports a pre-save review,
+  but the visible transcript does not establish that order. No separate approval
+  was obtained; the submitted prompt did not explicitly require waiting for one.
+  This does not establish an ignored approval instruction or complete the remaining
+  dirty-document/unpublished-exchange handoff cases.
+
+## Local macOS plugin alpha.2 candidate
+
+- **Scope:** Plugin 0.1.0-alpha.2 with Forge 0.46.1, built 2026-11-12 on macOS
+  27.0.1 Apple Silicon with Codex CLI 0.167.2 from the dirty working tree based
+  on `f3faca4b6e7022202ea14382157eabb8a3244cd0`, including PR #279 recovery fixes.
+  Runtime and packaging metadata record their separate checkout diff digests;
+  wheel source revision remains unverified.
+- **Method:** Build the production wheel, check its installed distribution,
+  freeze with Developer ID signing, verify the relocated read-only archive,
+  exercise official MCP SDK operations, managed lifecycle and isolated Codex
+  install/update/disable/rollback/uninstall, and run frozen-runtime Chromium
+  acceptance. Submit the signed package with the existing Keychain profile and
+  check the explicit notarization requirement. Run `make lint test`,
+  `make docs-check` and `git diff --check`.
+- **Result:** Wheel smoke, archive signatures, SDK, lifecycle, isolated Codex
+  journey and frozen-runtime browser test pass. The first client-update check
+  failed because its hard-coded synthetic alpha.2 matched the candidate; using
+  a distinct derived version makes the repeated check pass. Lint, 563 Python
+  tests and frontend suites pass. Apple accepts the signed code and the runtime
+  passes `codesign --verify --strict --check-notarization -R=notarized`.
+  Candidate archive SHA-256 is
+  `da77c56be27abef5b3e22a50b077b868a8712f2df4f0ab3d25606d9dd7271482`.
+- **Limits:** Local ignored build artifacts and notarization records are not
+  archived release evidence. No GitHub publication, fresh quarantined download or
+  offline trust test occurred. The later personal install and human acceptance
+  observation are recorded separately below.
+  The earlier source browser run remains separate from the frozen-runtime smoke.
+
+## Independent recovery of stale artwork checkpoints
+
+- **Scope:** Local source working tree based on PR #279 head
+  `f3faca4b6e7022202ea14382157eabb8a3244cd0`, checked 2026-11-12 on macOS.
+  This source change is newer than the installed alpha.2 package.
+- **Method:** Reproduce competing saves with backend fixtures and the real stdio
+  MCP writer. Recover after browser reload, review/save/reopen the independent
+  artwork, and compare the winning source and original checkpoint. Check layered
+  sheets, selected-placement variations, HTTP recovery and large artwork. Inspect
+  the recovered browser view at 1440×1000. Run `make lint test`, production artwork
+  and MCP-follow Playwright suites, `make docs-check` and `git diff --check`.
+- **Result:** Lint, frontend suites, 566 backend tests and 56 browser cases pass.
+  Recovery preserves exact
+  pixels, layers and frame layout under fresh document/atlas identities, leaving
+  source artwork and the original checkpoint intact. Later saves retain revision
+  guards. Initial runs exposed outdated stale-recovery rejection expectations and
+  browser assertions expecting Modified instead of New; corrected checks pass.
+- **Limits:** Synthetic source/runtime tests and screenshot inspection, not an
+  installed candidate or human acceptance pass. Independent recovery omits source
+  provenance, tile metadata and placement replacements, retained in the original
+  checkpoint. The user's project and downloaded backup were not modified.
+
+## Human alpha.2 artwork recovery observation
+
+- **Scope:** User-installed plugin 0.1.0-alpha.2 on macOS 27.0.1 Apple Silicon,
+  Codex CLI 0.167.2, observed 2026-11-12 in the user's `handoff-261` project.
+  Package provenance is recorded in the alpha.2 entry above.
+- **Method:** User paints a purple pixel, undoes/redoes, commits competing cyan
+  pixels through MCP, attempts the stale browser save, undoes/redoes again, then
+  reloads after checkpoint acknowledgment and selects Recover copy. Inspect the
+  user's downloaded checkpoint without modifying it or the project.
+- **Result:** Redo survives the rejected save and the competing update, including
+  Undo to the saved base. The checkpoint survives reload. Recover copy fails with
+  “Project changed on disk”. Download succeeds and contains the exact purple
+  pixel at (6,6), RGBA [155,80,131,255], against its original pre-MCP base.
+- **Limits:** User-reported UI observations and local backup inspection, not an
+  automated acceptance pass. Installed alpha.2 retains this recovery failure;
+  subsequent source fixes require a new candidate and installed human retest.
+
+## Browser acceptance for retained artwork Redo (PR #279)
+
+- **Scope:** Local macOS working tree based on PR #279 head
+  `f3faca4b6e7022202ea14382157eabb8a3244cd0`, checked 2026-11-12
+  America/Los_Angeles. The triggering Ubuntu
+  [CI run](https://github.com/cliffom/gbc-scene-forge/actions/runs/43275887563/job/131384041804)
+  failed three browser cases, with 205 passing and 14 skipped.
+- **Method:** Reproduce all three failures locally. Update acceptance expectations
+  for scene switching versus explicit discard, reload with and without durable
+  edited recovery, and explicit external-save adoption after Undo. Check exact
+  recovered pixels and verify the external red pixel after confirmed adoption.
+  Run `FORGE_BUILD_MODE=production make test-browser` with four local workers,
+  plus `make lint test`, `make docs-check` and `git diff --check`.
+- **Result:** All three failures reproduce and the four revised targeted cases
+  pass. Tests preserve checkpoint failure and unload-warning coverage while
+  retaining pending Redo edits instead of expecting their automatic deletion.
+  The full production browser run passes 209 cases with 14 optional cases
+  skipped; lint, 563 Python tests, frontend suites and documentation checks pass.
+- **Limits:** Local source-runtime checks do not establish an Ubuntu CI pass or
+  signed-plugin acceptance. No runtime change or release is introduced by this
+  acceptance-test correction.
+
+## Artwork Redo recovery across saved history positions (PR #279)
+
+- **Scope:** Local macOS working tree based on PR #279 head
+  `f3faca4b6e7022202ea14382157eabb8a3244cd0`, checked 2026-11-12
+  America/Los_Angeles with Node 24.22.1. The installed signed plugin is unchanged.
+- **Method:** Reproduce crossing the saved history position and saving while
+  undone in pixel-session tests; check exact checkpoint/download bytes, pending
+  work flags and replacement branches. Exercise both transitions in Chromium at
+  1440×1000, switch documents and compare checkpoint candidate/base pixels before
+  and after reload. Run required lint, Python/frontend tests, frontend build and
+  documentation checks.
+- **Result:** The new crossing regression failed before the fix. Both session
+  regressions now pass; the 11 existing artwork-follow browser cases pass, and
+  both new browser cases pass after correcting an initial status-text assertion
+  for reopened tabs. Recovery contains yellow pending Redo pixels against the
+  saved red base. `make lint test` passes (563 Python tests plus frontend suites);
+  `npm run build` and `make docs-check` pass locally. Inspection of the save-while-
+  undone capture confirms saved pixels with Redo enabled. Captures/reports are
+  local ignored build outputs, not archived evidence or a CI claim.
+- **Limits:** These are synthetic source-runtime checks, not a rebuilt signed
+  plugin or human acceptance retest. Recovery preserves one captured edited state,
+  not the history stack; the installed-client checks below remain outstanding.
+
+## Artwork Redo preservation after competing saves (#261)
+
+- **Scope:** Fix working tree based on milestone `8e0693dd94542df35f824ce5a50d416d2fbfdbc3`,
+  checked 2026-11-12 America/Los_Angeles on macOS 27.0.1 arm64. The preceding
+  human observation used signed plugin 0.1.0-alpha.1 / runtime 0.46.1 from source
+  `4720f9a36d005b2df1cef092dbc767446856c203`, Codex CLI 0.167.2; its archive/build
+  identities and missing browser provenance are in the
+  [evaluator results](evaluations/assets/plugin-handoffs/manual-2026-11-12.json).
+- **Method:** User browser gestures/screenshots and an actual fresh model-led
+  conversation, with evaluator read-only pixel/scene/saved-file comparisons.
+  Separately run source Playwright/MCP artwork-follow tests and pixel-session
+  checks; inspect the automated notice at 1440×1000 and 800×640.
+- **Result:** Human fresh-conversation refinements preserved all but the requested
+  pixel/cell, and dirty Save refused the competing revision. One Undo then lost
+  Redo and the checkpoint while leaving winning files unchanged. The source fix
+  preserves pending Redo, its edited recovery snapshot and discard confirmation;
+  all 11 artwork-follow tests pass, including exact yellow recovery after reload,
+  retained history across document switching and unchanged winning magenta data.
+  `make lint test`, the final pixel-session checks (including hidden-layer sources
+  and Undo before debounce), frontend build and `make docs-check` pass locally.
+  The [evaluation](evaluations/plugin-handoffs.md#partial-human-observation-and-undo-failure-2026-11-12)
+  preserves the failure, attribution, comparison outputs and patched UI captures.
+- **Limits:** The pre-Undo checkpoint payload and complete human project baselines
+  are not archived. The installed signed candidate still contains the failure;
+  the patched runtime has not been rebuilt, signed or manually retested. Recovery
+  stores the captured edited state, not the Undo/Redo stack. Scene conflicts and
+  the rest of the human protocol remain incomplete; #261 stays open.
+
+## Plugin authoring quality and source-dispatch resource baseline (#262)
+
+- **Scope:** Working tree based on `a5834052945b8bc4548166f9fad8379c470e471f`,
+  2026-11-11 America/Los_Angeles (2026-11-12 UTC), macOS 27.0.1 arm64,
+  Python 3.13.13, Forge 0.46.1 / unpublished plugin 0.1.0-alpha.1. Exact source,
+  tool inventory and before/after skill hashes are in the
+  [quality evaluation](evaluations/plugin-authoring-quality.md).
+- **Method:** Define six bounded briefs/rubric before execution; run staged
+  source PluginSession calls with synthetic directory selection, deliver PNGs to
+  the current agent for inspection/refinement, record call/resource payloads and
+  time, compare exact sources/descriptors, reject stale review and reopen saved
+  artwork plus portable projects. Replay final deterministic fixtures separately.
+- **Result:** Six data workflows complete; grass needs two visual corrections;
+  island/room remain visually weak. Exact scope and all 12 exported native
+  document comparisons pass. Baseline uses 169 tool calls/49 resource reads,
+  2,086,834 known result bytes and retains 24 candidates / 1,983,771 bytes. The
+  [archive](evaluations/assets/plugin-quality/outputs.zip) preserves first passes,
+  corrections, preliminary harness failures and final outputs. Replay corrects
+  baseline scene inspection ordering; required docs/lint/Python/frontend checks
+  pass locally. Artwork skill now calls for distinct variants and repeated views.
+- **Limits:** Agent-directed fixed recipes and local image inspection do not
+  establish installed-client skill adherence, independent generation/usability,
+  human judgment, APNG cadence or other platforms. Tokens/cost, exact model/client
+  builds, complete client traffic, inference time and peak memory are unavailable.
+  Bytes exclude protocol/client duplication; timing is local source dispatch.
+  #262 remains open; no publication or independent-user acceptance is claimed.
+
+## Installed-plugin automated browser handoffs (#261)
+
+- **Scope:** Issue working tree based on `80a2e29205c4f7574f74a80c07744e33c211021f`,
+  observed 2026-11-11 America/Los_Angeles (2026-11-12 UTC), macOS 27.0.1 arm64,
+  Python 3.13.13, Codex CLI/app-server 0.167.1 and Chromium 156.0.8078.4. Plugin
+  0.1.0-alpha.1 / Forge 0.46.1; exact test/archive/runtime identities are in the
+  [archived result](evaluations/assets/plugin-handoffs/result.json).
+- **Method:** Install the actual repository archive in isolated native client/home
+  state with a synthetic root grant. Alternate app-server tool calls and Chromium
+  gestures, close/recreate native clients/threads, compare every saved RGBA byte,
+  complete canonical scenes and downloaded conflicting checkpoints. Agent-inspect
+  1440×1000 captures. Run the companion installed-wheel checkpoint restart test,
+  required lint/docs/Python/TypeScript checks and production build/wheel smoke checks.
+- **Result:** Native handoff and installed-wheel restart cases pass, including
+  visible clean refresh, competing/dirty save refusal, stale revisions/receipts,
+  retained unpublished exchange/release, expired preview resources, browser restart
+  and selection revocation. Required checks pass: 551 Python tests, frontend suites
+  and seven wheel smoke tests. The [evaluation](evaluations/plugin-handoffs.md)
+  preserves early harness failures, a cleaned-up test worker and background native
+  WebSocket diagnostics. No runtime behavior or release version changed.
+- **Limits:** Synthetic grants, pointer automation and native threads do not
+  establish a human manual edit or a model-led refinement in an actual new
+  conversation. This small opaque-tile/scene fixture does not establish layered or
+  animation fidelity, independent OS users, native directory dialogs, additional
+  clients/platforms or artistic quality. #261 remains open in Remaining checks;
+  local results and archived captures do not certify CI or independent-user acceptance.
+
+## Installation guard performance (PR #273 feedback)
+
+- **Scope:** Agent-run checks on 2026-11-11, macOS 27.0.1 arm64, Python
+  3.13.13, based on PR revision `513f065`. Forge remains 0.46.1 and the
+  unpublished plugin remains 0.1.0-alpha.1. The
+  [archived report](evaluations/assets/plugin-distribution/guard-performance.json)
+  records source hashes, rebuilt installation identity and measurements.
+- **Method:** Compare full-hash and metadata guards with source HTTP handlers on
+  a disposable bundled-sample project and the same complete rebuilt plugin.
+  Measure three requests per route and count content inventories after startup.
+  Exercise metadata invalidation, same-length edits with restored mtime, receipt/
+  link/mode changes, cache removal, changed builds and interrupted verification.
+  Run `make lint test`, production `make build check-dist`, isolated native-client
+  install/update/rollback/disable/uninstall acceptance, frozen-runtime Chromium
+  rendering and installed-wheel managed-browser checkpoint recovery.
+- **Result:** Unchanged requests perform zero content inventories, versus 43 in
+  the full-hash comparison. Median project/revision requests fall from 215/231 ms
+  to 19/19 ms on the 611-entry installation. Full hashing still runs at startup
+  and after metadata changes; invalid or replaced builds remain rejected before
+  access. All checks pass: 545 Python tests, TypeScript suites, seven wheel smoke
+  tests, native-client acceptance and both Chromium cases. No release is published.
+- **Limits:** Local warm-cache timings on one host, three samples per route;
+  no browser rendering or load testing in the timing comparison. The Chromium
+  cases cover rendering and real checkpoint recovery separately from the native
+  client's synthetic update/grant/layout scenario. Metadata invalidation relies on
+  local inode/mtime/ctime semantics; it does not authenticate a publisher or protect
+  against privileged metadata tampering. Other platform/client and release
+  boundaries remain in Remaining checks below.
+
+## Repository plugin delivery and update safety (#258)
+
+- **Scope:** Agent-run local checks on 2026-11-11, macOS 27.0.1 arm64,
+  Python 3.13.13, Node 24.22.1 and Codex CLI/app-server 0.167.1. Integration
+  base `11ab0350505ab5bf3f53473edd197cbbd4ac0b29`; unpublished plugin
+  0.1.0-alpha.1 with Forge 0.46.1. The
+  [archived report](evaluations/assets/plugin-distribution/result.json) identifies
+  the exact archive, installed content, wheel, runtime and verification sources.
+- **Method:** Run documentation/lint/types, Python/TypeScript tests, production
+  build/wheel smoke checks and pinned native construction. Install the generated
+  repository in isolated client/home directories; discover its skill/MCP and call
+  status through the actual app-server. Launch with unavailable developer-tool
+  PATH, exercise an incomplete copy and a synthetic second plugin version during
+  live MCP/browser sessions, then disable, roll back and uninstall. Compare project,
+  retained-candidate and selection bytes plus a synthetic layout sentinel. Run
+  relocated read-only SDK bundle/lifecycle checks and five frozen-editor/installed-
+  wheel browser cases; inspect sample rendering and unsaved recovery at 1440 × 1000.
+- **Result:** Final required checks pass with 538 Python tests and the TypeScript
+  suites; seven wheel smoke tests and native repository acceptance pass. Earlier
+  native runs disproved two assumptions: installing a new version removes the old
+  cache, and the generic `-c` enabled override did not disable this app-server's
+  plugin loader. Persisted configuration disables discovery in a fresh session.
+  Old MCP calls and browser project requests reject cache removal (HTTP 409);
+  different builds cannot reuse one browser. Explicit stop/reopen preserves its
+  origin, rollback restores the original identity, and uninstall removes only the
+  plugin cache/registration while project/candidate/settings/layout bytes survive.
+  The maintenance contract now requires finishing work and stopping the managed
+  browser before update. Integrity regressions cover missing manifests/receipts,
+  external receipt links, changed resources, executable modes and incompatible
+  runtime/format/host combinations. SDK, lifecycle and five browser cases pass;
+  the sample renders and recovered painting remains unsaved.
+- **Limits:** Synthetic grants/version/layout, one local source and one native
+  client/host; no new model turn, native chooser, independent-user study, hosted
+  Git repository, signed/quarantined download or clean-OS acceptance. The layout
+  sentinel is not real browser storage; separate Playwright checks exercise actual
+  checkpoints, not a native-client update with unsaved tabs. The OS floor is a
+  conservative artifact contract, not evidence for older macOS. Hashes detect
+  incomplete/mixed contents, not publisher authenticity. Windows/Linux, additional
+  clients and release/publication checks remain downstream. No CI or publication
+  result is implied by these local observations.
+
+## Managed browser request recovery (PR #272 review)
+
+- **Scope:** Agent-run local source checks on 2026-11-11, macOS arm64; fixes
+  based on PR #272 revision `e2987f3`. Package identity remains 0.46.1.
+- **Method:** Keep a managed browser running while a source writer exits directly
+  after scene-map publication. Exercise its next read and next save independently,
+  then reopen the project. Inject a second writer crash between HTTP preparation
+  and saved-read locking. Hold the project lock to test live-writer contention.
+  Pause an authenticated POST after headers, replace its project directory with
+  a copy, then deliver its body and compare all replacement-file bytes. Run
+  `make lint test`, production `make build check-dist`, the 16 lifecycle/launcher
+  regressions against the installed wheel and the four managed/draft Playwright
+  cases with the installed interpreter. Inspect the restored 1440 × 1000 view.
+- **Result:** All 16 focused lifecycle/launcher tests pass. Interrupted writes
+  recover before subsequent content access; acknowledged saves remain reopenable.
+  Active writers remain protected by the nonblocking lock. The delayed POST returns
+  409 without modifying the replacement directory. Review had reproduced both
+  failures on `e2987f3`: a later browser save blocked recovery, and a delayed POST
+  wrote into a different directory identity. Final documentation/lint/types,
+  530 Python tests and the TypeScript suites pass. All seven wheel smoke tests,
+  16 installed-wheel regressions and four browser cases pass; the restored scene
+  remains unsaved and its saved map is unchanged.
+- **Limits:** Fault injection and request synchronization use source subprocesses
+  and synthetic grants. The earlier frozen-runtime report below predates these
+  review fixes; it does not establish installed-client or native fault-injection
+  coverage for this revision.
+
+## Managed plugin browser lifecycle (#257)
+
+- **Scope:** Agent-run local checks on 2026-11-11, macOS 27.0.1 arm64,
+  implementation based on integration revision `e426476`. Package identity remains
+  0.46.1 under milestone 25's deferred-release policy. The
+  [archived native report](evaluations/assets/plugin-lifecycle/result.json) names
+  the exact frozen executable SHA-256 and observation time.
+- **Method:** `make lint test`, final `make docs-check lint`, production
+  `make build check-dist`, a new pinned native build, relocated read-only
+  official-SDK bundle smoke, and installed-executable lifecycle acceptance with
+  isolated HOME, synthetic root selection and an empty runtime PATH. Source
+  subprocess tests cover concurrent launches, occupied ports, worker crash,
+  owner/token/Host checks, idle expiry, selection reset, runtime mismatch and
+  abrupt exit immediately after scene-map publication. Playwright checks managed
+  checkpoint restoration and the existing draft recovery suite against an
+  installed wheel; inspect the restored 1440 × 1000 Chromium view.
+- **Result:** 526 Python tests and the TypeScript suites passed; final lint,
+  formatting, types and documentation checks passed. Seven installed-wheel checks,
+  native SDK bundle smoke and native lifecycle checks passed. Two MCP sessions
+  reuse one verified browser; normal/abrupt MCP exit preserves that server, saved
+  scenes and retained candidates. Fresh MCP resources report expiry. Browser
+  stop/restart preserves its origin; four installed-wheel browser scenarios pass,
+  including restoration as unsaved work without changing saved bytes. The initial
+  browser fixture rejected macOS's aliased temporary path; canonicalizing the
+  fixture fixed it without relaxing production path guards.
+- **Limits:** Synthetic grants bypass the native chooser. This does not establish
+  a new Codex installation, model browser-opening behavior or human usability.
+  Journal fault injection uses a source Python subprocess; native acceptance kills
+  MCP after a completed save, not at an instrumented native write boundary. Idle
+  expiry is accelerated in the worker test. Evidence is local automation, not an
+  independently verified CI run; the report archives scoped results, not the
+  runtime binary or screenshots. WSL/remote/cloud, other native platforms/clients,
+  signing and update/uninstall acceptance remain downstream.
+
+## Plugin candidate quota recovery (#271 feedback)
+
+- **Scope:** Agent-run local source checks on 2026-11-11, macOS arm64;
+  candidate-lifecycle profile changes based on `7742ac7`.
+- **Method:** Retain 256 distinct 8×8 candidates through compact creation and
+  handle edits, verify the next edit fails, reset/restart and recover the inventory.
+  Export one full envelope, explicitly release its handle and retry the blocked
+  edit. Exercise list/export/release in a real SDK stdio conversation as well.
+- **Result:** All 17 focused plugin tests passed. Quota recovery preserves every
+  other sidecar and saved project file, and the next edit succeeds. The SDK flow
+  saves compact artwork and releases an earlier candidate without changing saved
+  content. The advertised/accepted profile remains within 32 tools, including all
+  setup tools and candidate list/export/release. `make docs-check lint test`
+  passed, including 520 Python tests and the TypeScript suites.
+- **Limits:** Source checks use a synthetic chooser. This does not repeat the
+  native-model verification below with the revised inventory, installed-package
+  acceptance or browser UI checks. The quota regression reaches the record-count
+  limit; it does not fill the separate 64 MiB limit. Stamp creation/placement,
+  frame-specific review and bulk archives require browser/direct-launch workflows.
+
+## Plugin bootstrap model exposure (#271 feedback)
+
+- **Scope:** Agent-run local source checks on 2026-11-11, macOS 27.0.1 arm64,
+  Codex CLI/app-server 0.167.1; feedback changes based on `1423ed3`.
+  See the [archived model result](evaluations/assets/plugin-bootstrap/results.json)
+  for model identity, exact advertised inventory, calls and environment limits.
+- **Method:** Bound plugin advertisement and dispatch to 32 tools, including all
+  three setup tools and 29 authoring tools. Run the synthetic selection and real
+  SDK first-task regressions, plus an ephemeral actual model turn with the source
+  fixture. Handle approvals only for exact synthetic status/choose/reset calls.
+- **Result:** The native model successfully called status, choose-root, status,
+  project discovery, capabilities, reset and final status in order. Final selection
+  was null; no selection file or project remained. The initial noninteractive CLI
+  attempt discovered setup tools but could not execute them under its never-approval
+  policy; the subsequent app-server check supplied exact fixture approvals.
+  Regression checks cover the 32-tool exposure boundary, capability/inventory
+  agreement and rejection of excluded operations before and after selection.
+  `make docs-check lint test` passed, including 519 Python tests and the
+  TypeScript suites; documentation checks passed again after this record update.
+- **Limits:** The model used a synthetic chooser and temporary explicit MCP
+  configuration against source, not a newly installed/frozen plugin. This does
+  not exercise the native dialog, every authoring tool or another client/platform.
+  Full direct-launch MCP and browser inventories remain available; plugin mode
+  deliberately excludes operations documented in the selection guide.
+
+## Plugin selection and first-task automation (#256)
+
+- **Scope:** Agent-run local checks on 2026-11-11, macOS 27.0.1 arm64,
+  Python 3.13.13, Node 24.22.1 and MCP 1.30.0; issue branch based on `ee472a0`.
+  The milestone integration package remains 0.46.1; no release was published.
+- **Method:** Run docs/lint/Python/TypeScript checks and
+  [selection regressions](../tests/backend/adapters/test_plugin_selection.py)
+  with a synthetic chooser, plus an [official-SDK stdio task](../tests/backend/adapters/test_mcp_plugin.py)
+  covering create/inspect/refine/review/save/export, switch and a fresh process.
+  Build/smoke the wheel and frozen runtime; run frozen-editor and standalone
+  Chrome acceptance through the existing direct-launch paths. Start the rebuilt
+  frozen MCP with an empty PATH and no existing user selection, issuing only
+  read-only status/discovery calls without opening the native dialog.
+- **Result:** Local checks pass. Bootstrap denies project access before selection;
+  cancellation, invalid/denied/moved locations, symlink escapes, failed settings
+  publication, stale receipts and superseded grants are covered. Selection and
+  discovery preserve project content, including avoiding a new single-project
+  history lock. The SDK task saves and reopens the same catalog; switching clears
+  preview resources. Wheel metadata/seven installed checks, read-only relocated
+  empty-PATH runtime smoke and frozen/standalone Chrome acceptance pass.
+  Frozen bootstrap advertises 64 tools, has no project grant/resources, rejects
+  discovery and creates no user selection file.
+- **Limits:** The chooser is substituted in automation; no person exercised the
+  new native dialog or optional skill in an installed Codex conversation here.
+  Existing browser checks exercise direct launch, not managed plugin handoff.
+  The original full-inventory model exposure retained the feasibility limit;
+  the bounded-profile feedback check above covers the subsequent correction. Windows/Linux
+  native selection is unavailable; downstream platform, handoff and independent
+  acceptance remain separate. Local logs are not archived CI evidence.
+
+## Human browser review of the installed-plugin fixture (#254)
+
+- **Scope:** User report on 2026-11-11 for the installed probe's `native-review`
+  project, saved revision `1fbc06ab11b3d1a12bcde2a2816c808feb22aee94ec7a98fbd7d74d10170574e`.
+  The fixture and macOS/native-client environment are identified in the
+  [native results](evaluations/assets/plugin-native-review/results.json);
+  the user's browser version was not supplied.
+- **Method:** The user replied "verified" to the regular-Chrome checklist for
+  the Workshop scene, native/enlarged artwork views, both frames and their timing.
+  The follow-up "it did" confirms that Forge opened Chrome automatically.
+  This is a user-reported observation, separate from the earlier model and
+  automated browser evidence.
+- **Result:** The user confirms the visible scene and artwork checklist: two
+  adjacent pale highlight pixels in amber `idle`, no highlight in cyan `glow`,
+  and 120/240 ms frame durations, plus automatic browser opening. See the
+  [attribution and boundaries](evaluations/plugin-feasibility.md#human-browser-confirmation).
+- **Limits:** The replies do not distinguish actual playback from individual-frame
+  review or supply the browser version. They do not verify APNG playback, native
+  chat UI image display, integrated-browser decoding or full-inventory tool
+  exposure. This completes the bounded human review and startup evidence for
+  #254; downstream platform and delivery checks remain separate.
+
+## Native installed-plugin model review (#254 follow-up)
+
+- **Scope:** Agent-run 2026-11-11 checks on macOS 27.0.1 arm64, Codex CLI/app-server
+  0.167.1 and `gpt-6.1-sol`; integration base `2a26dd5` plus the probe hashes and
+  rebuilt archive/wheel digests in [native results](evaluations/assets/plugin-native-review/results.json).
+  The opt-in authoring probe exposes 19 tools; the ordinary runtime is unchanged.
+- **Method:** Run authenticated native CLI/app-server model turns with the actually
+  installed plugin and disposable external fixture. Inspect inline PNGs and frame
+  fallbacks, review a one-pixel refinement, approve only its checked fixture commit,
+  reopen and export. Independently compare native/saved/exported PNG and candidate
+  bytes. Repeat both bundle SDK/read-only/empty-PATH verifiers and Chromium scene
+  capture; run docs/lint/Python/TypeScript and wheel build/smoke checks.
+- **Result:** Native model messages correctly describe the frames and highlight.
+  Reviewed, reopened and exported content matches exactly; only `(4,3)` changes.
+  The [evaluation](evaluations/plugin-feasibility.md#native-model-review-follow-up)
+  and archived model messages/captures preserve the initial 61-versus-32 tool
+  exposure failure, 19-tool workaround and driver approval correction. Both bundle
+  verifiers, 500 Python tests, TypeScript suites and seven wheel smoke cases pass.
+- **Limits:** Synthetic model/agent evidence only; human-visible review remains
+  unconfirmed. APNG display did not show playback; PNG frames and timing metadata
+  were inspected. The integrated browser again stalled during PNG decode, while
+  ordinary Chromium rendered the scene. The OS opener reported no failure but its
+  window was not confirmed by a person. Full-inventory model exposure and other
+  clients/platforms are not certified; #254 remains open.
+
+## Self-contained runtime bundle (#255)
+
+- **Scope:** Agent-run 2026-11-11 macOS 27.0.1 arm64 checks on integration base
+  `72c4c68` plus the build/verification hashes in the
+  [archived results](evaluations/assets/runtime-bundle/results.json). Production
+  Forge 0.46.1 integration wheel, CPython 3.13.13/build 20260602, MCP 1.30.0,
+  Node 24.22.1, Playwright 1.64.1 and Chromium 156.0.8078.4; no publication.
+- **Method:** Build through the documented Make targets; verify the Python
+  archive and dependency hashes, inspect native links and collect licenses.
+  Run official-SDK and raw JSON-RPC checks on a relocated read-only bundle with
+  an empty runtime PATH; create/save/render/reopen artwork and scene, reject a
+  stale receipt, export/reopen Tiled content, restore the demo and check HTTP.
+  Capture and agent-inspect the frozen editor at 1440 × 1000. Run docs/lint,
+  Python/TypeScript, wheel build/metadata/seven installed-wheel smoke cases,
+  121 optional-MCP cases and installed-wheel standalone/MCP browser acceptance.
+- **Result:** Bundle checks pass with 61 tools, unchanged installed content,
+  valid protocol-only stdout, external browser diagnostics/logs and exact saved
+  artwork/export bytes. The read-only-template failure and correction are
+  recorded in [the evaluation](evaluations/runtime-bundle.md), with the
+  [inspected capture](evaluations/assets/runtime-bundle/bundled-editor.png).
+  Source checks pass with 498 Python cases; installed-wheel browser suites pass
+  six standalone and 16 MCP/refresh cases, plus the frozen executable's Chromium
+  case. Bundle file bytes are 37,953,952; gzip sample bytes 19,034,650; SDK
+  initialization is one 0.264-second warm-host observation.
+- **Limits:** One native macOS host; no clean-VM/oldest-OS, Windows/Linux,
+  signing/quarantine, native Codex image review or default OS browser-opener
+  evidence. The SDK/browser driver uses developer tools; only the runtime child
+  has an empty PATH. Measurements do not certify a speedup or universal
+  portability. #254's native visual gate and downstream delivery checks remain
+  in the single Remaining checks list below.
+
+## Self-contained Codex runtime feasibility (#254)
+
+- **Scope:** Agent-run 2026-11-11 probe on macOS 27.0.1 (26A434), arm64,
+  Codex CLI/app-server 0.167.1, standalone CPython 3.13.13 and unchanged Forge
+  0.46.1 wheel. Integration baseline `ba3faf05dc353dce50cce4051728bd4fb39f8954`
+  plus probe hashes, locked dependency versions and wheel/archive digests are in
+  the [archived results](evaluations/assets/plugin-feasibility/results.json).
+- **Method:** Build private-Python and PyInstaller marketplaces from the same
+  wheel; install with actual Codex commands in disposable client state. Exercise
+  official-SDK stdio and actual app-server MCP calls with an empty runtime PATH,
+  read-only relocated cache and explicit external selection. Review resources,
+  reject a stale receipt, commit/reopen exact pixels, place a sprite, restart and
+  export. Compare final browser HTTP/export/saved PNG bytes; inspect captured PNGs
+  and Chromium 156.0.8078.4 scene/Artwork views at 1440 × 1000. Reproduction and
+  [captures](evaluations/plugin-feasibility.md) retain attribution and boundaries.
+- **Result:** Both final bundles expose 61 tools, deliver two inline PNGs through
+  Codex, save/reopen/export the refinement and leave installed contents unchanged.
+  PyInstaller uses 37,034,985 file bytes / 18,871,116 gzip bytes versus private
+  Python's 132,288,887 / 35,507,260. Optional-MCP collection, executable declaration,
+  source-discovery and read-only-log failures are documented with corrections.
+  Source lint/494 Python cases/TypeScript checks and production build/metadata/seven
+  wheel smoke cases pass. The packaged skill validator passes with isolated PyYAML.
+- **Limits:** No native chat model turn or human review was run. Agent artifact
+  inspection is distinct from native client image display; APNG playback is
+  unverified. Integrated-browser image decoding stalled; headless Chromium passed.
+  Timing is one observation per bundle. Other Codex surfaces/platforms, signing,
+  download/quarantine behavior and public-directory acceptance remain unverified.
+  Conditional go for further macOS packaging work; #254 remains open.
+
 ## 0.46.1 inactive button release candidate (#252)
 
 - **Scope:** Button styling on `fix/252-disabled-buttons-0.46.1`, based on
@@ -2981,7 +3714,159 @@ Dates, revisions and environments missing from the originals remain unknown.
   deterministic work counts provide regression guards. No new CI-pass or publication
   claim is made by this local record.
 
+## macOS signed plugin release candidate (#263)
+
+- **Scope:** Clean tracked revision `4720f9a36d005b2df1cef092dbc767446856c203`,
+  observed 2026-11-11 Pacific / 2026-11-12 UTC on macOS 27.0.1 ARM64 with Codex
+  CLI/app-server 0.167.1; Forge 0.46.1/plugin 0.1.0-alpha.1, unpublished milestone
+  candidate. [Metadata and raw evidence](evaluations/plugin-releases.md) retain
+  archive/build/tool identities and observation boundaries.
+  Separate [native CI](https://github.com/cliffom/gbc-scene-forge/actions/runs/43178752574)
+  checks PR merge `c9c67effb5867899fead7aeabc1910a77c8db52a` on macOS 15.8.2 ARM64
+  with ad-hoc signing; it does not meet the macOS 27 installed-client floor.
+- **Method:** Pinned native production build with Developer ID; hash/extract/
+  relocate/read-only archive acceptance, strict Mach-O signature and Gatekeeper
+  assessment, official MCP SDK authoring/export/reopen, managed process recovery,
+  actual isolated Codex installation with synthetic update/disable/rollback/
+  uninstall interactions, and Chromium frozen-editor rendering. Run local
+  docs/lint/Python/TypeScript checks and isolated installed-wheel smoke.
+- **Result:** Four native signatures verify with Developer ID/hardened runtime/
+  timestamps. Local archive/SDK/lifecycle/native-client automation passes;
+  installation bytes remain unchanged with no developer tools on runtime PATH.
+  Chromium creates/reloads the sample; inspected rendering at 1440 × 1000.
+  558 Python tests, TypeScript suites and seven installed-wheel checks pass.
+  The native CI build/archive/SDK/Chromium job passes and retains candidate and
+  diagnostic artifacts until 2026-12-12 UTC; downloaded checksums verify.
+  Gatekeeper returns 3: “the code is valid but does not seem to be an app.”
+- **Limits:** This is not trusted downloaded-plugin acceptance. No notarization,
+  quarantined download, clean OS, native dialog/model-led/independent-user journey,
+  hosted delivery or Windows/Linux qualification. The signed archive is local;
+  retained JSON does not independently archive that binary. Native CI and its
+  separate ad-hoc artifacts have their own run/environment bounds; remaining
+  release checks stay below.
+
+## Local macOS notarization and quarantined launch (#263)
+
+- **Scope:** On 2026-11-12 UTC, the existing Developer ID candidate from clean
+  tracked revision `4720f9a36d005b2df1cef092dbc767446856c203`, Forge 0.46.1/plugin
+  0.1.0-alpha.1, on macOS 27.0.1 ARM64 with Chrome 157.0.8103.78 and Codex CLI
+  0.167.1. This later observation does not revise the original build reports.
+- **Method:** User-authorized Apple submission using a local Keychain profile;
+  inspect the accepted log, download the unchanged archive with isolated headful
+  Chrome over loopback HTTP, preserve actual quarantine with `ditto`, extract
+  through Archive Utility, check native signatures/online notarization and attempt
+  a direct launcher invocation. Separately inspect isolated Codex cache installation.
+- **Result:** Apple accepted submission `1227be35-3516-4e7e-b947-a71834bb8d49`
+  with no issues and tickets for all four native files. All four pass strict
+  signature checks. Playwright `saveAs` lost quarantine; the preserved
+  original download and extracted files retain it. Direct launch fails with
+  SIGKILL (-9); the OS log records a prompt and Gatekeeper rejection, and the user
+  confirms dismissing it. An initial explicit `notarized` requirement fails
+  despite service acceptance. Codex copies the quarantined repository unchanged
+  and preserves observed quarantine markers. On the user-requested retry, the
+  cache launcher and native app-server MCP status pass; the user reports no
+  prompt. All four native files then satisfy the explicit `notarized` requirement,
+  and source/cache bytes still match the submission. Raw `spctl` still returns 3.
+  [Retained evidence and hashes](evaluations/plugin-releases.md#local-notarization-and-quarantined-download)
+  preserve both the failure and successful online quarantined cache launch.
+- **Limits:** Initial prompt wording and the cause of the earlier ticket-check
+  failure are unknown; no guaranteed propagation interval is established. No clean OS,
+  independent-user/model journey, offline first launch, hosted HTTPS delivery,
+  protected signed CI dispatch or publication. No quarantine removal or trust
+  override. This scoped online launch does not complete general release qualification.
+
 ## Remaining checks
+
+### Plugin release qualification (#263)
+
+The [Milestone 25 preview](https://github.com/cliffom/gbc-scene-forge/milestone/25)
+targets local macOS on Apple Silicon. Deferred platform qualification is tracked
+in [Windows x64 #283](https://github.com/cliffom/gbc-scene-forge/issues/283) and
+[Linux x64 #284](https://github.com/cliffom/gbc-scene-forge/issues/284).
+
+- [x] Verify protected signing and notarization, archive relocation and launch
+  from a quarantined download, including an offline Forge first launch on a
+  clean Mac. See the [alpha.6 results](#protected-macos-plugin-alpha6-candidate-and-clean-mac-launch).
+- [x] Complete the downloaded candidate's installed-client project selection,
+  model image inspection, user image review, browser handoff, create/reopen/edit/
+  export and shutdown journey on each advertised macOS client/OS. Synthetic
+  SDK/app-server automation and prior probe evidence do not complete this gate.
+  For #281, confirm the picker opens at the chat's working folder when supplied,
+  choose that folder and an alternate in separate chats, and verify creation and
+  reopen under each confirmed folder's `.gbc-scene-forge/` library.
+  The [alpha.3 manual journey](#human-alpha3-preview-browser-edit-tiled-export-and-shutdown)
+  covers preview, browser edit/readback, Tiled reopen and explicit shutdown from
+  a local installation. The [native-picker test](#human-alpha3-native-project-picker)
+  covers selection/cancellation, creation, switching and fresh-conversation reopen.
+  See the [maintainer's alpha.6 confirmation](#maintainer-confirmation-of-alpha6-preview-acceptance).
+- [x] Verify candidate download and retain the archive and CI evidence beyond
+  Actions artifact expiry per the [maintainer's confirmation](#maintainer-confirmation-of-alpha6-preview-acceptance).
+- [x] Verify the [signed alpha.7 archive](https://github.com/cliffom/gbc-scene-forge/actions/runs/45722180810)
+  and confirm that isolated desktop Codex reads the GBC Scene Forge name and
+  resolves both icon fields from the installed plugin.
+- [ ] Verify signed alpha.8 installs and launches under `scene-forge-macos`,
+  and confirm users can reopen existing projects after replacing the old plugin ID.
+- [ ] Smoke-check the published marketplace and release download, including
+  archive selection and matching its SHA-256 to the verified candidate.
+
+### Plugin authoring quality and interaction cost (#262)
+
+- [x] Run the [bounded quality briefs](evaluations/plugin-authoring-quality.md)
+  through the current installed plugin with an actual model turn, native directory
+  grant, exact client/model/runtime/skill identities and observable usage/cost.
+  Verify delivery of inspected previews and compare correction loops/calls/bytes
+  against the source baseline; record unavailable measurements. Reassess the weak
+  island/room outputs and inspect animation playback where supported. See the
+  [maintainer's alpha.6 confirmation](#maintainer-confirmation-of-alpha6-preview-acceptance)
+  for the attribution and evidence limits.
+
+### Plugin selection, introduction and handoff (#261/#264)
+
+- [x] Complete the [installed-plugin handoff protocol](evaluations/plugin-handoffs.md)
+  with an attributable manual artwork/scene edit and a model-led refinement in an
+  actual fresh conversation (#261), including visual inspection, dirty-document
+  conflicts, stale guards, unpublished exchange, restart and changed selection.
+  [Partial human acceptance](#artwork-redo-preservation-after-competing-saves-261)
+  passed disjoint refinements but found artwork Undo losing Redo/checkpoint.
+  The [alpha.2 human retest](#human-alpha2-artwork-recovery-observation) preserves
+  Redo but finds stale Recover copy failing. The
+  [alpha.3 human recovery test](#human-alpha3-independent-artwork-recovery) passes
+  recovery, independent save/reopen and visual preservation of the winning source.
+  The [subsequent manual journey](#human-alpha3-preview-browser-edit-tiled-export-and-shutdown)
+  verifies browser-edit readback, export/Tiled reopen and explicit shutdown.
+  The [fresh-conversation model refinement](#human-alpha3-model-refinement-after-project-switching)
+  is visible in the browser after switching projects; exact-byte preservation and
+  pre-save review order were not independently verified.
+  See the [maintainer's alpha.6 confirmation](#maintainer-confirmation-of-alpha6-preview-acceptance)
+  for the later installed-client acceptance. The
+  [#257 executable checks](#managed-plugin-browser-lifecycle-257) establish local
+  process behavior, not client browser-opening or independent-user acceptance.
+
+- [x] Exercise the native folder dialog from an installed plugin, including
+  first-use create, reopen/switch, OS denial/cancellation and a later conversation;
+  have independent users skip or complete the optional first task and find
+  browser editing/export. The #256 synthetic chooser/SDK checks above establish
+  implementation behavior, not native-dialog or onboarding usability.
+  The [alpha.3 native-picker test](#human-alpha3-native-project-picker) covers
+  selection/cancellation, separate-project creation, switching and reopening in a
+  fresh conversation. See the [maintainer's alpha.6 confirmation](#maintainer-confirmation-of-alpha6-preview-acceptance)
+  for the later onboarding and first-use acceptance.
+
+### Codex plugin feasibility (milestone 25, #254)
+
+- [x] User-confirmed browser review of native/enlarged artwork and individual
+      frames/timing; see [the attributed report](#human-browser-review-of-the-installed-plugin-fixture-254).
+      The browser version and playback mode were not supplied. Native model PNG
+      inspection passes with the opt-in 19-tool profile; native chat UI image
+      display and successful full-inventory model exposure are not established.
+- [x] User-confirmed automatic Chrome opening and browser handoff; see
+      [the attributed report](#human-browser-review-of-the-installed-plugin-fixture-254).
+      The integrated-browser image-decoding stall remains an explicit compatibility
+      limit; this confirmation applies to the external Chrome window.
+- [ ] Establish public-directory eligibility/submission boundaries (#265).
+  macOS preview release qualification belongs to #263 above; older macOS
+  remains unadvertised. The #258 local repository update/rollback/uninstall checks
+  do not establish those release outcomes.
 
 ### Editor discovery, scope and working space (#224)
 

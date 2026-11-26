@@ -22,10 +22,29 @@ MAX_ARTIFACT = 16 * 1024 * 1024
 MAX_CACHE = 24 * 1024 * 1024
 
 
+def validate_arguments(name, arguments):
+    if name in artwork.NAMES:
+        require(
+            len(record_bytes(arguments)) <= dimensions.MAX_CANDIDATE_BYTES + 2 * 1024 * 1024,
+            "Artwork tool input exceeds 26 MiB; use compact handles and bounded pixel batches",
+        )
+    else:
+        authoring.bounded(arguments)
+    definition = next((t for t in TOOLS if t["name"] == name), None)
+    require(definition is not None, "Unsupported capability; inspect capabilities/tools/list")
+    shape = definition["inputSchema"]
+    require(
+        isinstance(arguments, dict)
+        and set(shape["required"]) <= set(arguments)
+        and not set(arguments) - set(shape["properties"]),
+        "Invalid tool arguments",
+    )
+
+
 class Adapter:
-    def __init__(self, path, *, single_project=False):
-        self.single = Project(path) if single_project else None
-        self.workspace = None if single_project else ProjectRoot(path)
+    def __init__(self, path, *, single_project=False, recover=True, create_root=True):
+        self.single = Project(path, recover=recover) if single_project else None
+        self.workspace = None if single_project else ProjectRoot(path, create=create_root)
         self.artifacts = OrderedDict()
 
     def project(self, directory):
@@ -50,42 +69,31 @@ class Adapter:
             return {"uri": uri, "mimeType": mime, "text": data.decode()}
         return {"uri": uri, "mimeType": mime, "blob": base64.b64encode(data).decode()}
 
+    @staticmethod
+    def capabilities():
+        return {
+            "version": 1,
+            "transport": "stdio",
+            "tools": [t["name"] for t in TOOLS],
+            "deferred": DEFERRED,
+            "max_operations": authoring.MAX_OPERATIONS,
+            "max_tile_edits": authoring.MAX_TILE_EDITS,
+            "max_input_bytes": authoring.MAX_INPUT,
+            "max_artifact_bytes": MAX_ARTIFACT,
+            "max_view_dimension": rendering.MAX_DIMENSION,
+            "max_view_pixels": rendering.MAX_PIXELS,
+            "max_source_pixels_per_view": rendering.MAX_SOURCE_PIXELS,
+            "max_composited_pixels_per_view": rendering.MAX_WORK,
+            "artifact_cache_bytes": MAX_CACHE,
+            "artwork": artwork.capabilities(),
+            "history": "Saved writes only. Browser drafts and Undo remain independent.",
+        }
+
     def call(self, name, arguments):
-        if name in artwork.NAMES:
-            require(
-                len(record_bytes(arguments)) <= dimensions.MAX_CANDIDATE_BYTES + 2 * 1024 * 1024,
-                "Artwork tool input exceeds 26 MiB; use compact handles and bounded pixel batches",
-            )
-        else:
-            authoring.bounded(arguments)
-        definition = next((t for t in TOOLS if t["name"] == name), None)
-        require(definition is not None, "Unsupported capability; inspect capabilities/tools/list")
-        shape = definition["inputSchema"]
-        require(
-            isinstance(arguments, dict)
-            and set(shape["required"]) <= set(arguments)
-            and not set(arguments) - set(shape["properties"]),
-            "Invalid tool arguments",
-        )
+        validate_arguments(name, arguments)
         a = arguments
         if name == "capabilities":
-            return {
-                "version": 1,
-                "transport": "stdio",
-                "tools": [t["name"] for t in TOOLS],
-                "deferred": DEFERRED,
-                "max_operations": authoring.MAX_OPERATIONS,
-                "max_tile_edits": authoring.MAX_TILE_EDITS,
-                "max_input_bytes": authoring.MAX_INPUT,
-                "max_artifact_bytes": MAX_ARTIFACT,
-                "max_view_dimension": rendering.MAX_DIMENSION,
-                "max_view_pixels": rendering.MAX_PIXELS,
-                "max_source_pixels_per_view": rendering.MAX_SOURCE_PIXELS,
-                "max_composited_pixels_per_view": rendering.MAX_WORK,
-                "artifact_cache_bytes": MAX_CACHE,
-                "artwork": artwork.capabilities(),
-                "history": "Saved writes only. Browser drafts and Undo remain independent.",
-            }
+            return self.capabilities()
         if name == "list_projects":
             return (
                 {"projects": [{"directory": "project", **self.single.catalog()}]}
