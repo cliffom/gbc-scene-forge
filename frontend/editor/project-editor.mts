@@ -68,6 +68,7 @@ export function mountProjectEditor() {
   const brushes = new BrushState();
   const gestures = new GestureState();
   const activity = new EditorActivity();
+  let startupPending = true;
   const commandView: { current?: ReturnType<typeof createDocumentCommands> } = {};
   let sceneModified = false;
   const layoutView: { current?: ReturnType<typeof createEditorLayout> } = {};
@@ -505,6 +506,7 @@ export function mountProjectEditor() {
     status,
     api,
     ports: {
+      startupPending: () => startupPending,
       syncPanCursor: (...args) => gesturesController.syncPanCursor(...args),
       draw: (...args) => renderingController.draw(...args),
 
@@ -950,6 +952,11 @@ export function mountProjectEditor() {
         history.replaceState(history.state, '', location.pathname);
         firstSceneGuide.continueInProject();
       }
+    }
+  }).finally(() => {
+    startupPending = false;
+    if (!lifetime.disposed) {
+      artworkController.filterPalette();
     }
   });
 

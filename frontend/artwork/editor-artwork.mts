@@ -24,6 +24,7 @@ import type { TileChoice } from './tile-inspector.mts';
 import { tileParts, transformMetadata } from './tile-transform.mts';
 
 export interface Ports {
+  startupPending: () => boolean;
   syncPanCursor: () => void;
   draw: (refreshUI?: boolean) => void;
   discard: () => Promise<boolean>;
@@ -185,6 +186,8 @@ export function createArtworkController({
     const query = input('search').value.trim().toLowerCase();
     const atlas = select('atlas-filter').value;
     const kind = select('kind-filter').value;
+    const startupPending = ports.startupPending();
+    const editingArtwork = document.body.classList.contains('editing-artwork');
     let count = 0;
     const items = element('palette', HTMLElement).querySelectorAll<HTMLButtonElement>(
       'button[data-asset]',
@@ -197,10 +200,9 @@ export function createArtworkController({
         (atlas && item.dataset.atlas !== atlas) ||
         (kind && item.dataset.kind !== kind),
       );
-      item.draggable = !document.body.classList.contains('editing-artwork');
+      item.draggable = !editingArtwork;
       item.disabled =
-        !document.body.classList.contains('editing-artwork') &&
-        item.dataset.sceneUnavailable === 'true';
+        startupPending || (!editingArtwork && item.dataset.sceneUnavailable === 'true');
       if (item.parentElement?.classList.contains('asset-card')) {
         item.parentElement.hidden = item.hidden;
       }
