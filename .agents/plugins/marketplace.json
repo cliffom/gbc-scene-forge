@@ -9,7 +9,7 @@
         "source": "git-subdir",
         "url": "https://github.com/cliffom/gbc-scene-forge.git",
         "path": "./plugins/gbc-scene-forge-macos",
-        "sha": "00f08d85a4b3bcee4a800d5cac0c21f643c1438e"
+        "sha": "a595ed8a81fe9b766ee0a2cba110dffc9e6acf98"
       },
       "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
       "category": "Productivity"
