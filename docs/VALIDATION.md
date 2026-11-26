@@ -3808,9 +3808,15 @@ in [Windows x64 #283](https://github.com/cliffom/gbc-scene-forge/issues/283) and
   reopen an existing project after replacing the old ID, and matches the
   published download. The [milestone integration PR](https://github.com/cliffom/gbc-scene-forge/pull/288)
   records the clean-Mac confirmation and signed candidate evidence.
-- [ ] Verify signed alpha.9 installs and launches under the prefixed plugin and
-  marketplace IDs, then test a fresh install and an update through the catalog
-  on `main`.
+- [x] Verify [signed alpha.9](https://github.com/cliffom/gbc-scene-forge/actions/runs/45733118924)
+  under the prefixed plugin and marketplace IDs. The archive checksum and strict
+  notarization requirement passed for the signed candidate. Isolated desktop
+  Codex 0.171.0-alpha.13.2 installed and launched the exact signed bundle on macOS
+  27.2.1 ARM64. Bare-executable Gatekeeper assessment returned 3. See the
+  [alpha.9 prerelease](https://github.com/cliffom/gbc-scene-forge/releases/tag/plugin-v0.1.0-alpha.9)
+  for the retained candidate and CI evidence.
+- [ ] Smoke-check installation from the published default branch catalog and
+  verify the public alpha.9 download against the signed archive.
 
 ### Plugin authoring quality and interaction cost (#262)
 

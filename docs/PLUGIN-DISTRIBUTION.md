@@ -1,6 +1,6 @@
 # Repository plugin distribution
 
-The next preview installs as `gbc-scene-forge-macos@gbc-scene-forge-repository`.
+The macOS preview installs as `gbc-scene-forge-macos@gbc-scene-forge-repository`.
 In Codex it appears as **GBC Scene Forge** with the project's pixel-art anvil icon.
 The initial artifact requires **local macOS 27.0+ on Apple Silicon**, with Codex
 CLI/app-server **0.167.1** as its tested client baseline. The conservative OS floor
@@ -49,20 +49,21 @@ This source checkout itself does not contain the native binary. Extract archives
 preserving executable modes/internal symlinks, move the entire directory to its
 final location, then register it. Keep the source available while configured.
 
-The Git marketplace on `main` will list the latest released build for each
-supported platform. Each catalog entry pins a released bundle by Git commit
-using `git-subdir`. Store the generated plugin directories on `distribution/plugins`
-with their executable modes and symlinks intact. Once the alpha.9 catalog is
-published, register the repository and install the macOS listing:
+The [Git marketplace on `main`](../.agents/plugins/marketplace.json) lists the
+latest released build for each supported platform. Register the repository and
+install the macOS listing:
 
 ```sh
 codex plugin marketplace add cliffom/gbc-scene-forge
 codex plugin add gbc-scene-forge-macos@gbc-scene-forge-repository
 ```
 
-For each release, verify and publish the signed bundle before updating its catalog
-pin on `main`. Keep the other platform entries on their current release commits.
-Qualify each additional platform before adding its listing and bundle. The
+Each entry uses `git-subdir` to pin a verified bundle by commit. Store the
+generated plugin directories on `distribution/plugins` with their executable
+modes and symlinks intact. For each release, publish an immutable tag for the
+verified bundle, then update that platform's catalog pin on `main` through a PR.
+Keep the other platform entries on their current release commits. Qualify each
+additional platform before adding its listing and bundle. The
 [macOS candidate procedure](PLUGIN-RELEASES.md) covers signing/notarization setup;
 actual download/quarantine and client acceptance remain #263 gates.
 Packaging publishes nothing.
