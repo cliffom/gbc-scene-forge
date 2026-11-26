@@ -1,0 +1,1674 @@
+{
+  "schema_version": 1,
+  "plugin": "gbc-scene-forge-macos",
+  "plugin_version": "0.1.0-alpha.11",
+  "runtime_version": "0.47.0",
+  "target": "macos-arm64",
+  "build_id": "d34e58ec7b06ebf86f37a85c884a61b7ccdc4b9ad4b8d08456cec54ce157d194",
+  "files": {
+    "LICENSE": {
+      "sha256": "e6609b53d533dedf1fd4646298248ce1a5abe8373f023a96631640918f28e43f",
+      "executable": false
+    },
+    "assets/logo-256.png": {
+      "sha256": "d8845f81ddc558b4f88602c13b033245e3946fc4d3b159677396c71797e6a08a",
+      "executable": false
+    },
+    "bin/forge": {
+      "sha256": "10fca661f1db4c05d62544d0fb1a41ff6cd500182511cff0ddeedf3a37525267",
+      "executable": true
+    },
+    "compatibility.json": {
+      "sha256": "ffd1931640a2590a1297b1e82dbc3a69a59591938f354976303734b54cdbf18b",
+      "executable": false
+    },
+    "mcp.json": {
+      "sha256": "14fb994c4e1ed60305fe7273bff118179f90d36d622d4896735402c932ad73d5",
+      "executable": false
+    },
+    "plugin.json": {
+      "sha256": "a5ebcd210fed175f5fc3f85e47fd09a72871a327f7da0a1d3aec72714fa7be54",
+      "executable": false
+    },
+    "runtime/_internal/attrs-26.1.0.dist-info/INSTALLER": {
+      "sha256": "e6184ce10e266134fdcfa401e8f1a95005bcd4f18d16b62b757323e2833fe9a9",
+      "executable": false
+    },
+    "runtime/_internal/attrs-26.1.0.dist-info/METADATA": {
+      "sha256": "4cd40e690f23bf37cbcad34efd6758e062df1df07c86833f7e3ce95bf1fa38cc",
+      "executable": false
+    },
+    "runtime/_internal/attrs-26.1.0.dist-info/RECORD": {
+      "sha256": "6b0b326d4b4ee0fac27909ac7cbb066fc4bdf8e93d87031e27e770db059e5a04",
+      "executable": false
+    },
+    "runtime/_internal/attrs-26.1.0.dist-info/REQUESTED": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "executable": false
+    },
+    "runtime/_internal/attrs-26.1.0.dist-info/WHEEL": {
+      "sha256": "41c708c5adba6e097513ab8ccb9f1d7865a2fb469e22491a9e01dcc64da459fc",
+      "executable": false
+    },
+    "runtime/_internal/attrs-26.1.0.dist-info/licenses/LICENSE": {
+      "sha256": "882115c95dfc2af1eeb6714f8ec6d5cbcabf667caff8729f42420da63f714e9f",
+      "executable": false
+    },
+    "runtime/_internal/base_library.zip": {
+      "sha256": "e9a76badf8d18b0b6fb328bdd2c692c74ef17602a88ae719ee0ad148448f2ee8",
+      "executable": false
+    },
+    "runtime/_internal/certifi/cacert.pem": {
+      "sha256": "2ef52ad56b4803e264045c915e55c236cbfa045b84b81efefc218a19eb44bd2b",
+      "executable": false
+    },
+    "runtime/_internal/certifi/py.typed": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "executable": false
+    },
+    "runtime/_internal/click-8.5.1.dist-info/INSTALLER": {
+      "sha256": "e6184ce10e266134fdcfa401e8f1a95005bcd4f18d16b62b757323e2833fe9a9",
+      "executable": false
+    },
+    "runtime/_internal/click-8.5.1.dist-info/METADATA": {
+      "sha256": "63d23e734a4c63191d956c85a399291729141377c9af847dcd2b4b450e0b81cc",
+      "executable": false
+    },
+    "runtime/_internal/click-8.5.1.dist-info/RECORD": {
+      "sha256": "9e724411879c4a1987f62c7c6e7efc34631c3618884d2133d783b729f2423421",
+      "executable": false
+    },
+    "runtime/_internal/click-8.5.1.dist-info/REQUESTED": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "executable": false
+    },
+    "runtime/_internal/click-8.5.1.dist-info/WHEEL": {
+      "sha256": "1b68144734c4b66791f27add5d425f3620775585718a03d0f9b110ba3a4d88db",
+      "executable": false
+    },
+    "runtime/_internal/click-8.5.1.dist-info/licenses/LICENSE.txt": {
+      "sha256": "9a8ad106a394e853bfe21f42f4e72d592819a22805d991b5f3275029292b658d",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/__init__.py": {
+      "sha256": "c584c548766272693971b79374754e29ab941f8c1dc07927414775fcb1434e2e",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/__main__.py": {
+      "sha256": "849f217b0c1db749b4b4f4bb8648970ec74ddd575c58c3809eccb64f332030ca",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/adapters/__init__.py": {
+      "sha256": "b4fadb15a7399309111376900ad8d076a887c98b0416b469fcde858e0ae4decd",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/adapters/cli.py": {
+      "sha256": "d1ceffe02edc302d5162a9e89865c3d17e6be645a0fa126f02b53d980359659a",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/adapters/console.py": {
+      "sha256": "2f0e47e8bc3c2e08df0500e3c0e0249f63eda1f4fac00a42410c632d1b50c679",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/adapters/http/__init__.py": {
+      "sha256": "99e3cc88afb52641b8d3eed1ccabc90c802b10996cf9069219eddf89d6a7d334",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/adapters/http/artwork.py": {
+      "sha256": "2adaab4a7b5d53f086d5b707d01a99c1391a7d1e98a8302f85fd5569fc0bc680",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/adapters/http/common.py": {
+      "sha256": "d51b57615eecb0cae57abf2c3d46e6c3e9e8bfe3352759a1f782b2dd23d2018b",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/adapters/http/routes.py": {
+      "sha256": "9725896732ab6001df26e27127830c5afb3962193dbba93650e0a4f6353ba737",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/adapters/http/server.py": {
+      "sha256": "efe2971ce87fe47e53e7c81594b42116a36ffda5b1fe31f2e37e27800b5e4fc6",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/adapters/http/static.py": {
+      "sha256": "5dd4c114caab9b7e621abb55939a385a90c4d46f7d01b22579bf16f5df761554",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/adapters/mcp/__init__.py": {
+      "sha256": "78d17e3ee8ba089e0df3e812a0f2ed40464a1b110d83fd289743bb343c95fbb3",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/adapters/mcp/artwork.py": {
+      "sha256": "c1408851d1588d802245edfbd03f1cd0092771b889c2b55d8759e14e45e412d4",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/adapters/mcp/schemas.py": {
+      "sha256": "f8094cb1d61cc87e98f761656c98305e4de52df16facd775cac37d2bea3687f7",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/adapters/mcp/server.py": {
+      "sha256": "cd141054306046df26910683ae0f66b3e06a5b09eacc6f602d94b76f59773af7",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/adapters/mcp/tools.py": {
+      "sha256": "40a227a267ee4fdeb6b8429ff6ac097653943dee765830adff51351105dd1e57",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/adapters/plugin/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/adapters/plugin/browser.py": {
+      "sha256": "3fa8f159afc0714f34cda46e015924df375e8697534c3381096517e1e0171bf2",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/adapters/plugin/distribution.py": {
+      "sha256": "b8f943ad5c0fe93f856a3d3e068cf96cfb6642b2a3430afb69bd758d0b080e31",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/adapters/plugin/selection.py": {
+      "sha256": "b8eeec5376c48f285f489c145c3c211efdf488665c0a1bea3498a02bc9ac8613",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/adapters/plugin/session.py": {
+      "sha256": "6e1e644b9260bdcb1c8e0d9141d82c80ed3f127ca82435238f2a44a497ed6b57",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/adapters/sample.py": {
+      "sha256": "6b2021a90a7d67d70d7abe429a0e2f1d5520a5bac67f0b709a38d86061c54a84",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/analysis/__init__.py": {
+      "sha256": "05426a40eefd88332b2553aa4eba9230be91e3b7961579eb81f291a17b93d7c1",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/analysis/artwork_usage.py": {
+      "sha256": "d7130305c57c9ca6b31c2505c3efccc2a7199a418fc36536eb8b04840a6a60ae",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/analysis/diagnostics.py": {
+      "sha256": "82f59f9e4aad2a35afcabe6d46d01576f83df0fc6a61c456ccbce65d99a490f1",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/analysis/objects.py": {
+      "sha256": "950bbc32e12d8c13038d86048bec82bc8aa5ba0db73d399bc424419345f6652c",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/analysis/palette_budget.py": {
+      "sha256": "9aa0c3cda5fbdbd98e7e925dfe69bae57dd2289defff149ff49597535f0889ca",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/analysis/service.py": {
+      "sha256": "0f32e3c2a41915c3fbfd770dc5cffd060c8888f90dd4622d3df4abf29af1f012",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/analysis/target_budget.py": {
+      "sha256": "1fd4edce16ca9a14f5964e3ec3c1e81b2eb683cb1b7e63d40bbee7d9dd64a196",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/artwork/__init__.py": {
+      "sha256": "05d4fe3350dd3ede91b52e081b6dc3041b7da3e2f2569b2b1e482f0b165ac16a",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/artwork/animation_review.py": {
+      "sha256": "bb49c9552841126a4e44285c14e5656f955078fa58b588ebe0e8b4e60c1fcb9c",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/artwork/animations.py": {
+      "sha256": "d6b542c848520c8b516059bd49957bd22582c6b795b4faba704e94314f1dd823",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/artwork/atlas.py": {
+      "sha256": "3c8e682333b800b905639c8b491e571371bec04842afdb40ea9bb4697c738502",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/artwork/candidates.py": {
+      "sha256": "667a636cd3cd13db071c93a88d907ce583482c125291273344b849ef0e19763c",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/artwork/cleanup.py": {
+      "sha256": "070e719c8a156082af4b92f4d772f6c137874d453d4502378913238d971dba1d",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/artwork/contact_raster.py": {
+      "sha256": "4cb044775e210d00e5cc8e42e989f7c876aa3050dd667f1cec67ac690a1b7a87",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/artwork/conversion.py": {
+      "sha256": "fa15f069a9237277b6f492aba6e5c0b55ffbc10e18a665084d03d391f9798cb1",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/artwork/deletion.py": {
+      "sha256": "127edea87d177b66622c3a218a9d601769ecfc48a9b00e248a96307e87342fa1",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/artwork/dimensions.py": {
+      "sha256": "51a973e8c1ed281ce106451f19b94dbcb3a8bb35a59c053dcf36fc4e09a952a7",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/artwork/documents.py": {
+      "sha256": "f9206bbfd63dd64bf917a827cb91770870b6cf75c2695e692049e8814e03fa1a",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/artwork/drafts.py": {
+      "sha256": "2bc18681b308cfa52b7d68d0265560661d6f805b5a808231aac9d7843d740624",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/artwork/editable.py": {
+      "sha256": "359bc82f6ec1ce12af3e25e11424095f1a63dc967db98d02052b60f7cc52bab5",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/artwork/inspection.py": {
+      "sha256": "a0bc51e1806337805794383c2ebcad303ddecf089ac0bb489159d5cdda638cf4",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/artwork/layers.py": {
+      "sha256": "799cfc2e3e0610f5dcabd48554dbfd8f84ba4b380b929fdd504af36f03834fb4",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/artwork/metadata.py": {
+      "sha256": "6588352a623fc4f4fe5f66780e251010ac27a98168992f0687cc20d1a8cf2d3b",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/artwork/model.py": {
+      "sha256": "fb0b8eec8dacab532520154f841ea3b86ea4cb31d7e4590d15e83471dc9d515c",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/artwork/placements.py": {
+      "sha256": "ed7282a00f3ea8a2caba40689bd3ff9328eac2d815d2a063e9d68c8577878128",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/artwork/png.py": {
+      "sha256": "f16952af1aeb46db24c49e2ac235034ac75a0f16f8171b123fa52174a737175f",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/artwork/raster.py": {
+      "sha256": "96d8120b7c639d7900afb72cbf7369615830354a77db381387eec91db865388e",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/artwork/review.py": {
+      "sha256": "0e197da6b0ad15e76abf8a86d4a6dfb489406224cc006f2515a5ac6b02d26235",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/artwork/service.py": {
+      "sha256": "74ce3c0abf05d99ee87038e1728811bf858f5ad784be84ee66b87bd0af2e1b86",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/artwork/sheets.py": {
+      "sha256": "3e158fb70b0368cc161fe6b5486b7898fb29995a798553f9abe79f46fb3cfddd",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/artwork/tilesheet.py": {
+      "sha256": "8791a210099c7b37afdcfbfd7e9c29b809b85e77b96d74ffc9ac81d67ea3686c",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/artwork/workshop.py": {
+      "sha256": "337789891374efa8c0c7f0dc3419e8dcdaeda440ce44bdfd69c0593eff0ac1e0",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/build_info.py": {
+      "sha256": "e9c915a6e04cc5de16b1161931539945bae1b395b5ded44a5b148b194c940ac9",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/core/__init__.py": {
+      "sha256": "c14c0b1e526cc3c2621c4bd3e3e4aee6816fa58d416cbab7fce2630997c9f7f7",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/core/errors.py": {
+      "sha256": "54b9e204ba5816459288285d6d7b897a97cb5ed43048dd2019c3ebb40bfaaaba",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/core/identities.py": {
+      "sha256": "1dad58676c3c179f3de603f76f4841f04fb0d4f059f1ae44556615fc2c0d7fb8",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/core/records.py": {
+      "sha256": "e7e92b0782d302c9c4634c24593b036353a54a71a44fce7a75e31b3dcaa75a55",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/core/serialization.py": {
+      "sha256": "a98eae6a99aa56d4ace73ecdec11ea54df0f10f3862af722abfe1670ac57cfb0",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/core/validation.py": {
+      "sha256": "1bf17f329ac1c0fc2f99b313bbaa483a8eb97f88d3e6d074cd41a22bd72b680e",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/demo_project/assets/sample/atlas.png": {
+      "sha256": "25c97a1ed28e2633de4f20174c5bc6dde8c1884454e32efb1a0d1f4131f0324e",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/demo_project/assets/sample/grid-16.tsj": {
+      "sha256": "c57ffd870e64232b10460962ee95af882553cdf84c863c5be2ec51002f303658",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/demo_project/assets/sample/grid-32.tsj": {
+      "sha256": "dc79490deeb8a5100259004d5c922e6e27fe40577f696e92f2f50ea8a5d4ad60",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/demo_project/assets/sample/grid-8/0.png": {
+      "sha256": "64454e4120796a5a9a8f9fcf5278f81753f78d73804a19abca607502d10a7deb",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/demo_project/assets/sample/grid-8/1.png": {
+      "sha256": "ab89768c82266abf8d52e3deb12a507de9b24e2cf49a758cdd5921c87b5c5b96",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/demo_project/assets/sample/grid-8/10.png": {
+      "sha256": "6ba568062b66035d62573a9f791f0fee803ff583a96614f2ca347fd880380b94",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/demo_project/assets/sample/grid-8/11.png": {
+      "sha256": "e9a8843d6d38378aa498bb08cbbd83c52321c783aecec1f4e468b263fc8bfbd6",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/demo_project/assets/sample/grid-8/2.png": {
+      "sha256": "b9269ff524f7a342eb4d45f98a0f75b72075dabf0fca2c7f8432abedb1272a4c",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/demo_project/assets/sample/grid-8/3.png": {
+      "sha256": "149aab53de515bf93c20885183d1f22944729b45ffe0d84bac36377720affcbd",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/demo_project/assets/sample/grid-8/4.png": {
+      "sha256": "20ec6656c767700d2e07baeddfa03022d58d635c9b9c08b9f52e9003a13261cd",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/demo_project/assets/sample/grid-8/5.png": {
+      "sha256": "0b28b0479891e94469514e7830e9f3b79cb969810308439dfa0e1a37eff2c5c9",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/demo_project/assets/sample/grid-8/6.png": {
+      "sha256": "4bfba00218e23c5e11b3798e195f3e61df78649a3fc6db4c02d165f3daea4d45",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/demo_project/assets/sample/grid-8/7.png": {
+      "sha256": "d32279d94884b2abda9db7d2ca2dd9312bc35a4e71ddae8b666c08a45704b6d4",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/demo_project/assets/sample/grid-8/8.png": {
+      "sha256": "8f9f30c775681d8a08e97b8dd6dcb8b0e30edb440dd0ef85517aac5ac8467079",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/demo_project/assets/sample/grid-8/9.png": {
+      "sha256": "60530b349d5153d003708b76308b2db4805a6a2df80f22220b7ab0265d5f3ca2",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/demo_project/assets/sample/grid-8.tsj": {
+      "sha256": "40720c93a9bd4144136fbd9829f489a4c795e623ddad957a757eca8815880266",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/demo_project/assets/sample/sample.atlas.json": {
+      "sha256": "2cea50002479d617d6f65ee99a62ff8addc2fffd19050c63ef7286abb1e5d707",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/demo_project/assets/sample/sprites/0.png": {
+      "sha256": "7900e257c00fae94a08c471824beb8ed6a889050ec4c49dd25a3ed7620e2cd9e",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/demo_project/assets/sample/sprites/1.png": {
+      "sha256": "f1cce2b984e764aa580f99c42e21f3c6cc9b219b158acf57d33594344b3b009f",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/demo_project/assets/sample/sprites.tsj": {
+      "sha256": "be7bd826377674cdbba44d17e4685aae45e92419fd7ac5d8126709dd92a73e5c",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/demo_project/forge.project.json": {
+      "sha256": "94a12165b1d3a561edbe2ff3ad15f4ab6b541db2f14c04e8edcfc6dd76fcb174",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/demo_project/scenes/694f19d2-ce59-4263-87f0-3d517f329434.tmj": {
+      "sha256": "f941dec1d9b8a62f00441030bdaed98118719db4a879d890f2ba412b535c7e25",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/demo_project/scenes/718d82d4-b0b5-4891-b724-5d1896749348.tmj": {
+      "sha256": "3d4b975c72e67ffe900dd8046a20c0a57761f993397e5a13caeda48fc3663bf5",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/formats/__init__.py": {
+      "sha256": "21ff71407b62a3e02ade26741bebf5fc83e19888d9e4e0755c7439de3867165e",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/formats/exporting.py": {
+      "sha256": "52f44a4b657e82dcae775c87437bd6fc14781d637a1d77873d331eba423aaaed",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/formats/intake.py": {
+      "sha256": "4fd452099c4fa8969d08c80a0fe1bdd3cd5cf5ca2762a871d26c7a0afcc375e8",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/formats/tiled.py": {
+      "sha256": "fad8c1cb91728279f4bd9cdf1410cc34e6eb0ea1246019f2ccfa07e12bca0048",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/formats/transfer.py": {
+      "sha256": "47560c9dc22699b76889d25915ee96bfda146768d33982357194aadc60c35576",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/legacy/__init__.py": {
+      "sha256": "0c36596e09e05df3b03a6bc0091f17dbbc49045ee15df8ff5921c0334426585a",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/legacy/apply.py": {
+      "sha256": "b620879e98a3c1b68f038071c62be9467ffe8c7a2cee5515bd74c5771df1c7d5",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/legacy/contract.py": {
+      "sha256": "8da42dd811a8543e78d6cbc7a68da6c383df62a3448860cb4fae94d65e0291f4",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/legacy/demo/__init__.py": {
+      "sha256": "023e6d03085a7ec050ff61bf83c151dc5973a8f16c956b0f3cd9986934e912ad",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/legacy/demo/__main__.py": {
+      "sha256": "b5093948111067e913d9e53da0efbc22665a50182ec6763fc7b6108f6c8b7799",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/legacy/demo/scenes/river.json": {
+      "sha256": "19b1dc2941f12890ea442c8392b003856a485434226c178af964f5ea705e5183",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/legacy/demo/scenes/village.json": {
+      "sha256": "6654973639f0823d76a0a6880efdf6c591eae77ff5c922edbe0238b02275b2c3",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/legacy/documents.py": {
+      "sha256": "057ae42f4db95945ecaca0941d0b4a6543f78ef5b3c39ae318586a4d29cf6144",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/legacy/progress.py": {
+      "sha256": "0f4256e52e61ed45e8cd853545e6aca84355a4853b3194ff7a8cec5d4cb0c376",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/legacy/server.py": {
+      "sha256": "bc280138ee8b7c63c7cc8512f29d194c4dea71daa791cdf57b196dfcd79bb1a1",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/mcp_server.py": {
+      "sha256": "9838433aa62d7e622044b7940342e44fef9da666a5c11c71f4031f665bfa9f90",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/planning/__init__.py": {
+      "sha256": "e09c6986f04b4e53bd82ce83448acf41c81ee08d71dde486869e4c14aab85d34",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/planning/blockout.py": {
+      "sha256": "bc3b616f5570ca845efb91a0da7aa1649c258981cf383bc5ade0e911f51ab63a",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/planning/service.py": {
+      "sha256": "c499053b3902c68db8a6d15b9057bf5c1c11cd99ebfde321a8150c13f33faedb",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/planning/world.py": {
+      "sha256": "e2b44972ebae073623a28c3dfc3f26634176bf1aee2f63d2454ef94e05df6deb",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/project/__init__.py": {
+      "sha256": "b887f34b1d9bfeb979d1b31187cf9aa6d900ca2c001097f58a8646bf66885979",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/project/application.py": {
+      "sha256": "0ce1c70532dfbaaa8f4f3e51e0c64ab91ab66bf1c7763611b315869978654b95",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/project/drafts.py": {
+      "sha256": "2f67c2df22b76b09964dabc1a8cccc24a1c027d1980a993688f452d22d46eee9",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/project/intake.py": {
+      "sha256": "72841aba420944020da5b2653c78501b01d1ac849fb48392264a4e284dd1a298",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/project/lifecycle.py": {
+      "sha256": "91b3286f6d81f8678c07e1f8619145734269b7606301ae67153fa78d72a40af5",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/project/sample.py": {
+      "sha256": "fd77988b35645840bedc9302fbbe87492755124c3c8818227ab6c2ae248b4911",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/project/schema.py": {
+      "sha256": "397ccf7c0c7db2e71540469a9d450508861de3f321b7fc4ca4b3ca67108e5173",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/project/store.py": {
+      "sha256": "bdd2136ffd924ef2dab21edc4f63db92d3cd3d286ba354133ab51a297ab1b2f8",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/project/transfer.py": {
+      "sha256": "af7a3543073c7f5a81ac06c894bdc65f3c91253bdb8e91386512d7f7c08036ec",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/project/updates.py": {
+      "sha256": "da8c3085fa109d15e715cbfa471c40d5f74fe9135de2942c17b527c00747f554",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/project/workspaces.py": {
+      "sha256": "e6d379f442fa3740b524b5011766803eb7cc85814230febc13e0d70b9111c379",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/scene_objects/__init__.py": {
+      "sha256": "9cd46d38f27efbcad40f9670d1ef8e0670b881be2fffcf48add3bf2718115099",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/scene_objects/compositions.py": {
+      "sha256": "1c6d4b3f945404ff0fa1bb95d041a374912f6c6a5f328f6ccf0c224d4e94185a",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/scene_objects/definitions.py": {
+      "sha256": "46c494743c6063d5149ce7998331d3b7dcc65040ec12d7ecac359ee3bafd322b",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/scene_objects/model.py": {
+      "sha256": "24fb18909c563783e146b3226ca24190a574dd320e05947023ee467015156703",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/scene_objects/preview.py": {
+      "sha256": "14b04e4dec9360541f6e01dbc684d31c0c11801d2f4228b9e0331e37207c974d",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/scene_objects/service.py": {
+      "sha256": "3932b92ff1fcfb8999853d4a680f9e3726528fcb879129785f5f67cc3a7549f3",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/scenes/__init__.py": {
+      "sha256": "bb056ae91b9f196bba5abdb0182baf20f639027f6d03acd9e53e7e45d6717da0",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/scenes/authoring.py": {
+      "sha256": "8cb531fe79820f42b7392ead2b0761363731ea4d039aaa2ae7e3c87cc7ddacdb",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/scenes/dimensions.py": {
+      "sha256": "dbd3b53311669a399f1107fb21213c799e52abbf1cf3423d12d005c7cd563831",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/scenes/rendering.py": {
+      "sha256": "a7cb68aaa82caacb4c59f6f2297e502035ef44d0ae7e9c36178eeeeec21fa877",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/scenes/service.py": {
+      "sha256": "393bbe38b22be7d60a287154dc2022713207233ff8cb5f2a069a757d60986272",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/scenes/view_filters.py": {
+      "sha256": "eac9d2dce15eda2ad8c266e56143e343f52686c43a9b2653e077c6d6796f755a",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/static/branding/apple-touch-icon.png": {
+      "sha256": "d8845f81ddc558b4f88602c13b033245e3946fc4d3b159677396c71797e6a08a",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/static/branding/favicon-16.png": {
+      "sha256": "d0b34c1bfdb0d215c0a1854c88c7f5325676a3443f0a8c129debb08b8389dc67",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/static/branding/favicon-32.png": {
+      "sha256": "cdf0274a4caaf95f080ef0232bef45e4682ed68de638fb439c1acf8af787db77",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/static/branding/logo-64.png": {
+      "sha256": "5b0ba02845ae161acd5134dcff58d2836fb111f5571fea73a43bd0f27e5e3c91",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/static/build-info.json": {
+      "sha256": "a06b470a60868d9d39ec0f45cd9d64a4923894c46fb808e1fbc2647e13aba9f5",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/static/project.css": {
+      "sha256": "ec2c5207418f8997d33ebd817a9ac47d381508cdaa7a22d7abd58b2cf6106703",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/static/project.html": {
+      "sha256": "a2cef17c6cb7569401d44c06da4f765364ac1968f69372ebe396204ef56861b4",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/static/project.js": {
+      "sha256": "a0dc9e8d3972eecdd2668cfec12680b32980ac885ff7e1dea11fd408e62f3865",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/static/project.js.map": {
+      "sha256": "f6ad31ef2fbdff14b2a629126d371f5295c4dddf5a7e550a79d7374e112451c1",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/static/style.css": {
+      "sha256": "054f3823b02a85430128b20a0c65e437f3cef5c6f07c59a8bcbe85f1876f4ac1",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/static/third-party-notices.txt": {
+      "sha256": "a64f148f0650ec161f94fa3df23eafa40f8e6a4244f30365c21d988c9dc751b1",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/storage/__init__.py": {
+      "sha256": "52481ca8485e4f6a3ca30478192b0ebf209ffe78a9c59c3eb0b799e2d8c726d7",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/storage/files.py": {
+      "sha256": "97bcfa9f501a8f398a6b1accfed0b92d2fffc8b36a2e8dd3085b5d44c754e1f9",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/storage/paths.py": {
+      "sha256": "fac8f849e73dca24f0c07cd4702b1b5d09049674eed94f7d93ae438fb258b3db",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge/storage/transactions.py": {
+      "sha256": "a46d4aec890aeaa9298a892a15834f1e8ce9710ae0b8294e809e8b6019e6471b",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge-0.47.0.dist-info/INSTALLER": {
+      "sha256": "e6184ce10e266134fdcfa401e8f1a95005bcd4f18d16b62b757323e2833fe9a9",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge-0.47.0.dist-info/METADATA": {
+      "sha256": "f0c75fa8ee432326a876d062914a83ef0787e07d30b69ca09b7591fb18df2261",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge-0.47.0.dist-info/RECORD": {
+      "sha256": "1a3c0904cbbaaedcc6d1aecc781b73f8b44967bb1b1c20e0e217b202f094ef4b",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge-0.47.0.dist-info/REQUESTED": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge-0.47.0.dist-info/WHEEL": {
+      "sha256": "5b77e4a649bbfb07fdbc123967eeecd1e5a478cfaca6eefc23c35e6fdf037848",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge-0.47.0.dist-info/direct_url.json": {
+      "sha256": "5a0d1b7a905f007fd2fca11e03dfe8574ba6c5a04008bc3b57bfc7e70784a32f",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge-0.47.0.dist-info/entry_points.txt": {
+      "sha256": "e303711c8d1bd2065313cd7cb5851e3dd1b0e5d1cdb5b8e4f7a8c2cec31978ea",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge-0.47.0.dist-info/licenses/LICENSE": {
+      "sha256": "e6609b53d533dedf1fd4646298248ce1a5abe8373f023a96631640918f28e43f",
+      "executable": false
+    },
+    "runtime/_internal/gbc_scene_forge-0.47.0.dist-info/uv_cache.json": {
+      "sha256": "ee16d9034b4e4318eca535e3818d88b04287d8aca62a74ff2a6b4190e4c903a0",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema/benchmarks/issue232/issue.json": {
+      "sha256": "79a3ce663311bb9bbc4692abb00f6e93bb9c3d94b9b64286e03fe190e4d0dc79",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema-4.26.0.dist-info/INSTALLER": {
+      "sha256": "e6184ce10e266134fdcfa401e8f1a95005bcd4f18d16b62b757323e2833fe9a9",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema-4.26.0.dist-info/METADATA": {
+      "sha256": "05b189866ca98a96da3934bf6b83687ced3ff85325273b77e16b705f6d8b26d2",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema-4.26.0.dist-info/RECORD": {
+      "sha256": "dd84fb6eebd7db8f22786f7e8eab6c996922f31532c0d3bba56e06beeba4393e",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema-4.26.0.dist-info/REQUESTED": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema-4.26.0.dist-info/WHEEL": {
+      "sha256": "58b82a17209f9bf2804afe161f2632d0fde933f9bb2792fd936b2474a2e2ac2f",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema-4.26.0.dist-info/entry_points.txt": {
+      "sha256": "bceeeb5f816cff1215272da99c0b4a8134b17e99e8cc0550d038c29a93319d61",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema-4.26.0.dist-info/licenses/COPYING": {
+      "sha256": "4f92a015a13c4d1a040bef018aa13430b4f1bc73b41b16bb846c346766de7439",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema_specifications/schemas/draft201909/metaschema.json": {
+      "sha256": "7b761b3e121f0a0ca1ea2a0b8e2cc856bcf801604b8268d71bacaa202bc0c13b",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema_specifications/schemas/draft201909/vocabularies/applicator": {
+      "sha256": "6895100e99726fbb107058512bbec3ecfd4b24e8fd2facee3e505ee72b0d4c31",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema_specifications/schemas/draft201909/vocabularies/content": {
+      "sha256": "9b7d4f55a4e2fdb02c430068fdffabc732addce238da3f1df2690249c3353274",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema_specifications/schemas/draft201909/vocabularies/core": {
+      "sha256": "b5a2c4957f6495d0a5081f0409ebe8a14e4139acb203fc748471f8ede2af5b2c",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema_specifications/schemas/draft201909/vocabularies/format": {
+      "sha256": "50ebbfe790611a849b8cc400a09c1d0e0fb6ab5c0d43a0f22201fd3625056bf4",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema_specifications/schemas/draft201909/vocabularies/meta-data": {
+      "sha256": "d47e2445dd6a82271a298d83cc6c6cb8d4ae1e15e0dc56becd37a163ecf01286",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema_specifications/schemas/draft201909/vocabularies/validation": {
+      "sha256": "1e526c1d335a734805fc82cf5798c12b960ad7da2517c66cda5a1b09359c3c1c",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema_specifications/schemas/draft202012/metaschema.json": {
+      "sha256": "41da76f5afb7ce062d248f762463a92f7ca47e4e0f905b224ba6afeef91ded0f",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema_specifications/schemas/draft202012/vocabularies/applicator": {
+      "sha256": "c4a6e4147b91fef7fea6dc058cb1bf93402f7414b76578a8b16aaf1dad6aacef",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema_specifications/schemas/draft202012/vocabularies/content": {
+      "sha256": "08343747764e4a5814262793cf4d652057a7913863c5950d43297e8e1fdac5b6",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema_specifications/schemas/draft202012/vocabularies/core": {
+      "sha256": "c2d12a8e4dd11d336dfc83a3f663aa4c69f0b49b3beb094ffeb25b5316f4803d",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema_specifications/schemas/draft202012/vocabularies/format-annotation": {
+      "sha256": "abc775adfefd89d22358170d9bf93f4ebd2349563bbbedd60f02bef7c812bcc0",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema_specifications/schemas/draft202012/vocabularies/format-assertion": {
+      "sha256": "c52242b9a1bb786b26c3e82c7add428c31f9c96e575dce99e56ea5feaa6da20c",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema_specifications/schemas/draft202012/vocabularies/meta-data": {
+      "sha256": "8f76d6e14f41b9b92ef933b708cdc5144c8b5268651ad11918485fb1754f1c76",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema_specifications/schemas/draft202012/vocabularies/unevaluated": {
+      "sha256": "2dbfbcb73994b670b0976492adee1fffb46c21682784d2f5a4ca561f9e2d0cb4",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema_specifications/schemas/draft202012/vocabularies/validation": {
+      "sha256": "7010a31e541f32d2be721e2de348df75c9b36876a3ed304877fc0abda1d37a58",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema_specifications/schemas/draft3/metaschema.json": {
+      "sha256": "2cf75f64436fb5be374a2eaa27ab8b7e1fd651c9b46daea6c67b02fd64e2458b",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema_specifications/schemas/draft4/metaschema.json": {
+      "sha256": "e1489d0b4755f02793302591d3fcb8f07b6893a82a94f24895f8e4edf11b82e2",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema_specifications/schemas/draft6/metaschema.json": {
+      "sha256": "c29dfce9f54835c3a06c03b3c5d5ec0eda77706568f9c4df7cfbc7566a51006d",
+      "executable": false
+    },
+    "runtime/_internal/jsonschema_specifications/schemas/draft7/metaschema.json": {
+      "sha256": "3d5392088261606c559b603f385329c9f1ab45b5d667eb990687453b055d405e",
+      "executable": false
+    },
+    "runtime/_internal/libpython3.13.dylib": {
+      "sha256": "745b6ad94172e901c21c992cec08c9fa42ed092273ec79dc839901f19c81f7c7",
+      "executable": true
+    },
+    "runtime/_internal/mcp-1.30.0.dist-info/INSTALLER": {
+      "sha256": "e6184ce10e266134fdcfa401e8f1a95005bcd4f18d16b62b757323e2833fe9a9",
+      "executable": false
+    },
+    "runtime/_internal/mcp-1.30.0.dist-info/METADATA": {
+      "sha256": "3880c29896149862971af57942e3e5c0ad2a909696a66b9811c62f6e47e65111",
+      "executable": false
+    },
+    "runtime/_internal/mcp-1.30.0.dist-info/RECORD": {
+      "sha256": "ac347c85899b0dd1ea41846b2450674a50a241199e15f359a0bc9f73a09b97fe",
+      "executable": false
+    },
+    "runtime/_internal/mcp-1.30.0.dist-info/REQUESTED": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "executable": false
+    },
+    "runtime/_internal/mcp-1.30.0.dist-info/WHEEL": {
+      "sha256": "ccec20e2307acd7da453dd7437e70c6b08e2bc3ead3bc3445af135da37b56d59",
+      "executable": false
+    },
+    "runtime/_internal/mcp-1.30.0.dist-info/entry_points.txt": {
+      "sha256": "8271816e8df2185d1824d5df669824020d7e090b4ac67cf1ae5039ddcf2f8980",
+      "executable": false
+    },
+    "runtime/_internal/mcp-1.30.0.dist-info/licenses/LICENSE": {
+      "sha256": "5e13dbbc1d120fc2a03cecde7c91424ae2d7de11b63d58ded2f4431e261ee50d",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/__init__.py": {
+      "sha256": "e5248cb9bbe293b3536dbed7fea54326dcdf3c03370ae5f03d794c58496ec01b",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_config.py": {
+      "sha256": "e2b804ab7e0255ce8622b4e5310f5c27c4b904ef3c4aab03428ea6ebc4c56da7",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_contextlib.py": {
+      "sha256": "22beb95b49258f71ee34d3aebc87bfa15cc39adea19277d5595edc7a6afa17b6",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_core_metadata.py": {
+      "sha256": "63f836b778bbba5b8afb05c266fcc97d114c3d4336dda0582df69ee05cc13f2d",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_core_utils.py": {
+      "sha256": "8a8bec150d2ef70b4fbc45cd4aa42d5c64855dca4f13f693028d525ccef91b51",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_dataclasses.py": {
+      "sha256": "cb21c51bd77443010dffd315ae7f31455f863125d2e75b5fc67f6d7096de4edc",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_decorators.py": {
+      "sha256": "66a6a829cc2d5ae7566be5aca298b11d265e03be58188908f463a2802988ce59",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_decorators_v1.py": {
+      "sha256": "bfbfdcc8406f25c7853b46986b502ebd879a32f8c4611437f936d6f14f0685db",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_discriminated_union.py": {
+      "sha256": "1dd44bd97385a02795f79acad189312563e149d9995a7bad45a68192643ad07b",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_docs_extraction.py": {
+      "sha256": "57cffe4df1b5a141e9113842bcdb598c968fc1dfb3568767e04aa4006bf5ee16",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_fields.py": {
+      "sha256": "3a52a08aa54ee884d37b3bb8eab20390675fd20877aa7a61c7dd9186b3f89b6f",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_forward_ref.py": {
+      "sha256": "aba490856f30a3dbcf662b9727aeb555f83b3e0a2a7890504c0ddda489d75a50",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_generate_schema.py": {
+      "sha256": "9d48aa7744d224bbb90f42cf44284ea51dd1c5a0f1be5666f4ec40e935ac58eb",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_generics.py": {
+      "sha256": "ce1b9a9fabec531d1890d249b11a4a4cb9ae3584d0777b89989837729e00f73d",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_git.py": {
+      "sha256": "2303e1dc33df6b65eadeb06e07d371f25b91d80d62ebd41d7937d659722e0958",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_import_utils.py": {
+      "sha256": "4d18710f93ae63a094a2c8a805d05c254b34a26ec820e36265d60057bcd0f233",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_known_annotated_metadata.py": {
+      "sha256": "d005ff3dca24d7bdd67ee29b5632a33e4e1ee4e5ea8f7b78c466dc984a444293",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_mock_val_ser.py": {
+      "sha256": "cd6582f8456a5aa9977a89a1cbabb985784d6efbc3bf40f9f39f4a98efa3fc1d",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_model_construction.py": {
+      "sha256": "e9f8b178522454c24ff04b3d7b734665b20b9e3b6ed4c9b5d7d5fe5ad019cee3",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_namespace_utils.py": {
+      "sha256": "e3166b5289f4d676b402d2749d8dad2d037692e0c7f1eae984afa0e4a5bfbce2",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_repr.py": {
+      "sha256": "30d91ae289c2f6efad5c9bd5dabb33dc95ecbb1aa5c0a6ca9ddd7afad831ae2c",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_schema_gather.py": {
+      "sha256": "d2a19b8b3e2975c7ef74c887ec9b9e275d2d43c73be748353a4674c723ffdb44",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_schema_generation_shared.py": {
+      "sha256": "f272ec49aaa011e6f1785dba3b088f06dd1954f8a91aa5b5215e346a09117f1c",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_serializers.py": {
+      "sha256": "7af3ae70384c8888da8a4e5fe3230b7433f4f0e0c1d25da90a2af6d87b90f808",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_signature.py": {
+      "sha256": "eb827244927c19ff8939fad96b6c53354746a5ded11aa74d2d815760e16e3d95",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_type_refs.py": {
+      "sha256": "9f1260561c30c6248e7106eb7357b92daf83a66e7053fe1248a254064a7484e5",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_typing_extra.py": {
+      "sha256": "b0a7cae41bb61c58e13ee73f793dd6c235f4f7cdb7df90f64b471f6f0496ba51",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_utils.py": {
+      "sha256": "23de5935186553e9bc579a6a0594ab3f6b0c20d63e8b0e5a6dc3d451185a0678",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_validate_call.py": {
+      "sha256": "1af1a77f65933c19bc83a5fd53747232f2f9a3dcb92bce3a91d2b9090fd03e19",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_internal/_validators.py": {
+      "sha256": "f98f5abb8473a20d0274c11e387b3bedcf7df0c4ef81a1167d1360c432f67389",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/_migration.py": {
+      "sha256": "24ecb6a0c319ac9bc8b0f4655a1d056c2d7a6d68b112b8c60afb22c1071ca733",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/alias_generators.py": {
+      "sha256": "28cd67deee097cb48197552e620de1a181f35c90fecaf82b9eaf2ed5c73087f0",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/aliases.py": {
+      "sha256": "7ca40cf66ee92d9d94a1322a2be6cca31b3971634836b1f1a61c73b01e9501df",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/annotated_handlers.py": {
+      "sha256": "f6bace2c54e0f723d6e1945b40089e5af0c4fe41bac4b3ce789f8b9f524de899",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/class_validators.py": {
+      "sha256": "8bf5778fe3d87462d22e68ff20965e913463ba73bc488573f0b325aae3f23fb1",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/color.py": {
+      "sha256": "1169b69b7a325e9a96d4bef0b05494b7f0df31ffa01d3c67d14850df780a0c60",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/config.py": {
+      "sha256": "ce6280cd61c4d3ce852122e3f75996711baed907ccab1b609a9aebf6f1a12171",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/dataclasses.py": {
+      "sha256": "e5165ec1265f74ba2f029cbee956d1c4eb29529eec47f8b4a348f9846da22cd1",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/datetime_parse.py": {
+      "sha256": "402f9680cc4caffc10fe6357512ec055ffb684b121befb0f6353d0ca148639d9",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/decorator.py": {
+      "sha256": "617fa3500a6ee4029a55628fa1a57e9fee25ed46d2ebd184b7d45ade1b3398a2",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/deprecated/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/deprecated/class_validators.py": {
+      "sha256": "738127ab5cabd4d2198a9184a8b430d2cf4bd096362d9c839606ada428977d68",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/deprecated/config.py": {
+      "sha256": "93f96c564e7ba5ac4b24e701b9e1f4edcbb53a012059d541c66ea57da0b70825",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/deprecated/copy_internals.py": {
+      "sha256": "1a177ebe431de446020a0c821ad3ca3b9f27a7d704281402eaa9017881052368",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/deprecated/decorator.py": {
+      "sha256": "1c98f6260a9b349f292fed268abeaa38995d5f640b9055c96634359f3b63f341",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/deprecated/json.py": {
+      "sha256": "f44a727f972ad5bf9d734873da3278e77bfaebd5b313a63c209667ae9da3a048",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/deprecated/parse.py": {
+      "sha256": "6efd018db828a1ccaf078ecb709c3a9d935b9ba1ecc7f4279e8fcb09a8c7e2b5",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/deprecated/tools.py": {
+      "sha256": "8993e668028e560347ea789e61facc1d4d101b0c8c5098da5eb8d9660bbeb742",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/env_settings.py": {
+      "sha256": "e881de79612a9543d152fdd5f805e217f5bdd5f836270fccdced25df827f7b20",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/error_wrappers.py": {
+      "sha256": "44aea6a804dcf72303f8a043f48252f47a4a0a9ad61ddf30a3ce019e6fb77d1f",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/errors.py": {
+      "sha256": "e8d3f2c9de372b30c9765da667da8a316b98311dac4f5ffffaf8c50aa4b36509",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/experimental/__init__.py": {
+      "sha256": "413eeb298743b0289327d1848e6b107561d2730a4aaeb3641aaeafa8e34fe914",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/experimental/arguments_schema.py": {
+      "sha256": "1059e35ffba5a7eb4fc948d05f9a6642dba0d4e14bfc071cf1b70c6cb77e7d56",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/experimental/missing_sentinel.py": {
+      "sha256": "41b40c4c2bd6222fd46255111db42c866a65a4a42383cc955654b41552729413",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/experimental/pipeline.py": {
+      "sha256": "2794f8950b83c776c23e9ba70ac9dc0e49c2cb752dd01600ec75036c62c0d606",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/fields.py": {
+      "sha256": "70538e4988a6748f96d7a991ace8ef8a56983bbd5f589afc13d31150531ebca7",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/functional_serializers.py": {
+      "sha256": "c1c17b977673638ac45c11b422453728b1abe7f34810a4baf8216ad7896e5522",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/functional_validators.py": {
+      "sha256": "ba78239e3ba03f1021eef3e153b629ee4eb374f51f299aed3856d1ccdd3ae1fc",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/generics.py": {
+      "sha256": "d19a99f4ef5a9e7223ff7986051aa9b3886d7b2ddbe65575f9ddad5313cc3270",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/json.py": {
+      "sha256": "647f11908ee1e01cfece9f0e7530316c952856f72853e8e131d459d01fa4d317",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/json_schema.py": {
+      "sha256": "3813bb1df7ed24d384052ee031aaf4befd05127e38a1acc2bbbc7bc3612ae7d7",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/main.py": {
+      "sha256": "a18a2ea6fe02abd1035dd56b35006fd29b0c90227f71d77e45fa0e52aed5aee7",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/mypy.py": {
+      "sha256": "a964d139d2e5829f6c44d5d33dde05de74247bcd7c2d259dafbafcdffe659afe",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/networks.py": {
+      "sha256": "6085ec09a594a84ec533000ee6e8d85c294c2f123728fe9ed8c755c273f95f8b",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/parse.py": {
+      "sha256": "c2477cd9d82dbd6b43f3de54fc8e84d61b6a3251a1052604577f5cb8149ea370",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/plugin/__init__.py": {
+      "sha256": "4ab557f570db50acede8154d0512972a612ac5e704444aba0385a857f44c2617",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/plugin/_loader.py": {
+      "sha256": "42eb42a853c5465b1059bb26e4dbff53a4997c5d1437cb36b5f25e4d3c144944",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/plugin/_schema_validator.py": {
+      "sha256": "ffff5fdede9a759c4d832cda8ee35d6b9b2222f2960c35ecb04e900fc8735c1e",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/py.typed": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/root_model.py": {
+      "sha256": "ede9ea6cf64715793b0cefb61fdc06f4dc6620678971b1d27b084a48b4bc6b80",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/schema.py": {
+      "sha256": "56aaa3beafcb9daa5592779b51ddc1a7f275a768176599d94602f8f1b5441bba",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/tools.py": {
+      "sha256": "88742977c489e43093b4f5796ad015d3a4fcf5b8d268c15e659d8b5fd95ab196",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/type_adapter.py": {
+      "sha256": "1ee22b6275110ec5f44d2d4bf00fc02b1ca696a83d300f8e0ee682a7df6ffa47",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/types.py": {
+      "sha256": "e4814eeef3981f268f7f8544d9b462f5a51d1f5098f8d8000e3a580dfc085904",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/typing.py": {
+      "sha256": "3fb7de037e4cc1370bb11d6e2fb75bd12fa8c9d071a1b9976b9e580e80606a34",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/utils.py": {
+      "sha256": "d799d1d90a6a4c1165415e1336d4c8b4cc93271fdf6f257e80f988118d46a287",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/v1/__init__.py": {
+      "sha256": "4b140f925801b385c727013a059f6aa1ec18a0688dc98527987cc414265b7e72",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/v1/_hypothesis_plugin.py": {
+      "sha256": "e444b9c56bb0d45400b3298b7b3cbc4209d5cf466955f5378e4993ef81f6ed54",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/v1/annotated_types.py": {
+      "sha256": "ba4d8d000c6a88d10b2a388787287129a20e87c1759585bf2f3ad6dd7ee86417",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/v1/class_validators.py": {
+      "sha256": "50b39a21481850306c1cbec411511aadc33e52e6ca52082837c8526c3a27b051",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/v1/color.py": {
+      "sha256": "8990012d8a7a395a28d801643fd229ae2ff049cebe2a496ef18ba149aaed7798",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/v1/config.py": {
+      "sha256": "6ba3f459eafdc7871bc0a5bb5eff29a1252a33858ff912d6c17e9832962af400",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/v1/dataclasses.py": {
+      "sha256": "d127e4f933709b6d52aa21a1869cecd43b176a385d58ce848796624aee1b8c80",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/v1/datetime_parse.py": {
+      "sha256": "7b1ce1f94974216478170455a6f1396a84d0ebd0cae91faf342b546a4a30071b",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/v1/decorator.py": {
+      "sha256": "cda6b1c71a163c29bcd7c0f56ecd3285aa518d79b7d95f06d191d609d335b970",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/v1/env_settings.py": {
+      "sha256": "03d557c2d465d36018fa31f40b4a2ecb954dc377e2e85fe9933b870e380000e3",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/v1/error_wrappers.py": {
+      "sha256": "ebadb931fc3daa40b63708ad07f2450167bc07e5efeb3054eeb2fd936f2d7f2a",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/v1/errors.py": {
+      "sha256": "988c0f103e6f18ce50e6fe02e19d493e5753447fa89af132947ea4b0c84e98fc",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/v1/fields.py": {
+      "sha256": "323890e90e51904fa4a177e6c7cb5825b7def7bfd0798b67a6441ff0e4ef7bfb",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/v1/generics.py": {
+      "sha256": "633c8a4d937ac79435446277590f6337ebb01c9c4bdd6e2aa19ab07195eac568",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/v1/json.py": {
+      "sha256": "590e47cbf848a5f751dd84bc93a37613a28c273b1d6c18bf95d58e3c9695f353",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/v1/main.py": {
+      "sha256": "bd10754dba64ccf3773f98a326573e72336e3be1dc88d3a90b86fc2b7cd99df7",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/v1/mypy.py": {
+      "sha256": "7a047836a1777257da5583cfe679a3dfa8e374e1c9a513de1984bcde6ccd4c96",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/v1/networks.py": {
+      "sha256": "1d836d2807ce98e9ca269b0383583a488923f563e153ffa2f25e5ed89281a46e",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/v1/parse.py": {
+      "sha256": "049b5daa2651b5abfd55114298ec6863e2889909a33f2f80fcda288e21546716",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/v1/py.typed": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/v1/schema.py": {
+      "sha256": "6aa06e03ef9cabc8005648a6e4124f140487cce67c745b66157fdf346afa8a9e",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/v1/tools.py": {
+      "sha256": "d650dd5c79348cbe6e3f7bb9442600bd402518296000efb8e6592af63edfc810",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/v1/types.py": {
+      "sha256": "45f275f5c345872f952acda5cc8225f7f747627f1595a6dded592d3afa106b02",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/v1/typing.py": {
+      "sha256": "a2fc2d2e911909b9e08596877d2349ba9cdeb731cd90b5e39ffeba9204e7215e",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/v1/utils.py": {
+      "sha256": "d4fa8e225cfa3955b019db371c12a5c3812de9ab05a2ed1452902da3b8c5382b",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/v1/validators.py": {
+      "sha256": "9725249f5316847c65097e597c48058ff0801e88e888f71a41e31d10cf57be25",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/v1/version.py": {
+      "sha256": "e7564f342ec572c6c019197ea76fef6c9d3e6ca52d8edc1cea188aac1a06e190",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/validate_call_decorator.py": {
+      "sha256": "a24b5935b1f4e1100457df4d4af9791133cd2d310413f1cb9308fae133ac59dd",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/validators.py": {
+      "sha256": "a706c825755bd42576980138c3f1067cd8fb0f0cec29a5b0fed4cbe9cbe24eeb",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/version.py": {
+      "sha256": "ffe1b201a9ef16463d3d013a6fcc166eb126c36b65835f38d9f955bc6bf6929b",
+      "executable": false
+    },
+    "runtime/_internal/pydantic/warnings.py": {
+      "sha256": "b48844f9808d8963603b9dddc28ee361d385bfb007cc999391b31d10664b124a",
+      "executable": false
+    },
+    "runtime/_internal/pydantic-2.14.3.dist-info/INSTALLER": {
+      "sha256": "e6184ce10e266134fdcfa401e8f1a95005bcd4f18d16b62b757323e2833fe9a9",
+      "executable": false
+    },
+    "runtime/_internal/pydantic-2.14.3.dist-info/METADATA": {
+      "sha256": "c3eb8984172bedc8e056655e1419351f4497374a91b7b709dbc4a1340f50e1e9",
+      "executable": false
+    },
+    "runtime/_internal/pydantic-2.14.3.dist-info/RECORD": {
+      "sha256": "a89b7526ee4dfe7e517505bffee55f78cfe8f21f4df719f7269e46658cefbfb4",
+      "executable": false
+    },
+    "runtime/_internal/pydantic-2.14.3.dist-info/REQUESTED": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "executable": false
+    },
+    "runtime/_internal/pydantic-2.14.3.dist-info/WHEEL": {
+      "sha256": "da266b2640c891e0e1d24f528a428ca85b913feb9aea66f822bd40b04478044c",
+      "executable": false
+    },
+    "runtime/_internal/pydantic-2.14.3.dist-info/licenses/LICENSE": {
+      "sha256": "a9e186f3ca16b5eef84318e7a701721351a00cb7b8ae3a4394b67b49e3529ef3",
+      "executable": false
+    },
+    "runtime/_internal/pydantic_core/_pydantic_core.cpython-313-darwin.so": {
+      "sha256": "f7e9e8caef7f381b76c23a2696e05f9b948ca29105a42e8cb58f151b3ff87e8a",
+      "executable": true
+    },
+    "runtime/_internal/rpds/rpds.cpython-313-darwin.so": {
+      "sha256": "2cf98ff59a4ac84b9648df7b5d75f5f83ae479606f46f36ac07de29d6c3616be",
+      "executable": true
+    },
+    "runtime/_internal/setuptools/_vendor/jaraco/text/Lorem ipsum.txt": {
+      "sha256": "37fedcffbf73c4eb9f058f47677cb33203a436ff9390e4d38a8e01c9dad28e0b",
+      "executable": false
+    },
+    "runtime/bundle.json": {
+      "sha256": "f54a97ac3da8aa5a3d631fd0013cd8b45413ff5dd1344b03f80db7bf0cf25b99",
+      "executable": false
+    },
+    "runtime/forge": {
+      "sha256": "7e340e7eedc3d19197d6cddc5c450c8aef13e39c659c8798775d22917e2576ac",
+      "executable": true
+    },
+    "runtime/notices/PYTHON-LICENSE.txt": {
+      "sha256": "78b12c3a81360b357002334f0e70ea0e92eebf7a9b358805c03c48484945f3bb",
+      "executable": false
+    },
+    "runtime/notices/frontend.txt": {
+      "sha256": "a64f148f0650ec161f94fa3df23eafa40f8e6a4244f30365c21d988c9dc751b1",
+      "executable": false
+    },
+    "runtime/notices/python-native/LICENSE.bdb.txt": {
+      "sha256": "3bdff06e69991c94664f2ef5c5f8096f60b7dbec071756ea6cc26b445e06ec5b",
+      "executable": false
+    },
+    "runtime/notices/python-native/LICENSE.bzip2.txt": {
+      "sha256": "1f38bbc7caacafd65169276d759c0d88c991b753b643ce35d0e45ea1971dd441",
+      "executable": false
+    },
+    "runtime/notices/python-native/LICENSE.cpython.txt": {
+      "sha256": "86e61415828a8b5b06ec8d024e6f086ce155a8b85fd0c419c0ba4dc004e74fdd",
+      "executable": false
+    },
+    "runtime/notices/python-native/LICENSE.expat.txt": {
+      "sha256": "122f2c27000472a201d337b9b31f7eb2b52d091b02857061a8880371612d9534",
+      "executable": false
+    },
+    "runtime/notices/python-native/LICENSE.libX11.txt": {
+      "sha256": "2daec087a88e7c9b8082557cdeebad5bbb8155a4137472f0b22e269cd99d0c1e",
+      "executable": false
+    },
+    "runtime/notices/python-native/LICENSE.libXau.txt": {
+      "sha256": "56abe29bb1d9806a9e04fa9f80fed2c0f18027594df3f098148d814aef6bddfa",
+      "executable": false
+    },
+    "runtime/notices/python-native/LICENSE.libedit.txt": {
+      "sha256": "29cea33c32bbc9785142386377915612a2fa786482c46843383384aded2e09b1",
+      "executable": false
+    },
+    "runtime/notices/python-native/LICENSE.libffi.txt": {
+      "sha256": "deaf3a42effb551a5b140fa9afefed183a27f1341c6d1bf430d106a5e6931fc0",
+      "executable": false
+    },
+    "runtime/notices/python-native/LICENSE.liblzma.txt": {
+      "sha256": "9a4062de0a2c388a98cf35a35d348b62fa97c838a71c3c28ee1a2d7d0a565b02",
+      "executable": false
+    },
+    "runtime/notices/python-native/LICENSE.libuuid.txt": {
+      "sha256": "122ee1f7e258f2c3c0e538a75c037684f420454bf3850ddc74ce750bbf5fe86b",
+      "executable": false
+    },
+    "runtime/notices/python-native/LICENSE.libxcb.txt": {
+      "sha256": "c5ffbfeaa501071ceeb97b7de2c0d703fdaa35de01c0fb6cbac1c28453a3e9fd",
+      "executable": false
+    },
+    "runtime/notices/python-native/LICENSE.mpdecimal.txt": {
+      "sha256": "669512af7219f58be03a398766d7c9da11a3b3df9d3f05cb74c5ceca25c8da3b",
+      "executable": false
+    },
+    "runtime/notices/python-native/LICENSE.ncurses.txt": {
+      "sha256": "87a4c4442337b8968ef956031c406b74f9cb7149b7ba87311bdaba534816201c",
+      "executable": false
+    },
+    "runtime/notices/python-native/LICENSE.openssl-1.1.txt": {
+      "sha256": "9c04cce50c4989d5601dd8b07f6ab922c40388b66ac736c9007cb1ed9d9dd560",
+      "executable": false
+    },
+    "runtime/notices/python-native/LICENSE.openssl-3.txt": {
+      "sha256": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a",
+      "executable": false
+    },
+    "runtime/notices/python-native/LICENSE.sqlite.txt": {
+      "sha256": "38bef3d28b24f145ea293bd3b6eb4b20396982abc8303128fb493986ea5bc719",
+      "executable": false
+    },
+    "runtime/notices/python-native/LICENSE.tcl.txt": {
+      "sha256": "c0a69a2bfd757361ec7e6143973b103c90409316b49e9c88db26ad6388e79f16",
+      "executable": false
+    },
+    "runtime/notices/python-native/LICENSE.tix.txt": {
+      "sha256": "3ac5cdd0bef6c43ce34c6a7ced452081d9e5a0bf94082b9f9147d23ec9e214f5",
+      "executable": false
+    },
+    "runtime/notices/python-native/LICENSE.zlib.txt": {
+      "sha256": "818922b2620f12801a12bf78e399644a30990e66824abd8ca8ec24d451d6f92c",
+      "executable": false
+    },
+    "runtime/notices/python-packages/PyJWT/pyjwt-2.15.1.dist-info/licenses/AUTHORS.rst": {
+      "sha256": "925ce43461029eedbf558ec0b7cf7fc4b045def5120ebb97937c70814071cf07",
+      "executable": false
+    },
+    "runtime/notices/python-packages/PyJWT/pyjwt-2.15.1.dist-info/licenses/LICENSE": {
+      "sha256": "797a7a20231d4c433e9f1911db1731d06b5828b98f499819a034f7c0f56f5ce5",
+      "executable": false
+    },
+    "runtime/notices/python-packages/altgraph/altgraph-0.17.5.dist-info/LICENSE": {
+      "sha256": "6c194d6db0c64d45535d10c95142b9b0cda7b7dcc7f1ddee302b3d536f3dbe46",
+      "executable": false
+    },
+    "runtime/notices/python-packages/annotated-types/annotated_types-0.8.0.dist-info/licenses/LICENSE": {
+      "sha256": "fe1049884b1a0d9342901e88e07f32925d24b3121d9972b6a6805fb9824b095d",
+      "executable": false
+    },
+    "runtime/notices/python-packages/anyio/anyio-4.16.0.dist-info/licenses/LICENSE": {
+      "sha256": "5361ac9dc58f2ef5fd2e9b09c68297c17f04950909bbc8023bdb82eacf22c2b0",
+      "executable": false
+    },
+    "runtime/notices/python-packages/attrs/attrs-26.1.0.dist-info/licenses/LICENSE": {
+      "sha256": "882115c95dfc2af1eeb6714f8ec6d5cbcabf667caff8729f42420da63f714e9f",
+      "executable": false
+    },
+    "runtime/notices/python-packages/certifi/certifi-2026.10.23.dist-info/licenses/LICENSE": {
+      "sha256": "e93716da6b9c0d5a4a1df60fe695b370f0695603d21f6f83f053e42cfc10caf7",
+      "executable": false
+    },
+    "runtime/notices/python-packages/cffi/cffi-2.1.1.dist-info/licenses/LICENSE": {
+      "sha256": "5ba24ddc57067f9249add644c3afc41a5d6dc37e23433ef759d95df370b0af63",
+      "executable": false
+    },
+    "runtime/notices/python-packages/click/click-8.5.1.dist-info/licenses/LICENSE.txt": {
+      "sha256": "9a8ad106a394e853bfe21f42f4e72d592819a22805d991b5f3275029292b658d",
+      "executable": false
+    },
+    "runtime/notices/python-packages/cryptography/cryptography-50.0.2.dist-info/licenses/LICENSE": {
+      "sha256": "3e0c7c091a948b82533ba98fd7cbb40432d6f1a9acbf85f5922d2f99a93ae6bb",
+      "executable": false
+    },
+    "runtime/notices/python-packages/cryptography/cryptography-50.0.2.dist-info/licenses/LICENSE.APACHE": {
+      "sha256": "aac73b3148f6d1d7111dbca32099f68d26c644c6813ae1e4f05f6579aa2663fe",
+      "executable": false
+    },
+    "runtime/notices/python-packages/cryptography/cryptography-50.0.2.dist-info/licenses/LICENSE.BSD": {
+      "sha256": "602c4c7482de6479dd2e9793cda275e5e63d773dacd1eca689232ab7008fb4fb",
+      "executable": false
+    },
+    "runtime/notices/python-packages/gbc-scene-forge/gbc_scene_forge-0.47.0.dist-info/licenses/LICENSE": {
+      "sha256": "e6609b53d533dedf1fd4646298248ce1a5abe8373f023a96631640918f28e43f",
+      "executable": false
+    },
+    "runtime/notices/python-packages/h11/h11-0.16.0.dist-info/licenses/LICENSE.txt": {
+      "sha256": "37db5bb85926db28a427a25867f10b1232003aea1be69ccb851138adb8e6f361",
+      "executable": false
+    },
+    "runtime/notices/python-packages/httpcore/httpcore-1.0.9.dist-info/licenses/LICENSE.md": {
+      "sha256": "fdcb59154c74cbaba16a11242f7740bea9f23d6feb5547917d8c5f94a80392a5",
+      "executable": false
+    },
+    "runtime/notices/python-packages/httpx/httpx-0.28.1.dist-info/licenses/LICENSE.md": {
+      "sha256": "4ec59d544f12b5f539a3a716fd321ac58ccd8030b465221f2c880200cdf28d8d",
+      "executable": false
+    },
+    "runtime/notices/python-packages/httpx-sse/httpx_sse-0.4.3.dist-info/licenses/LICENSE": {
+      "sha256": "beec67e4ee83a7af26f242bed9987aa863d6d2dfb776106aa2360c4187f31901",
+      "executable": false
+    },
+    "runtime/notices/python-packages/idna/idna-3.20.dist-info/licenses/LICENSE.md": {
+      "sha256": "1a9a4f0e3d479a27240ddd59a9137a66ab4a0f9dfdc8ca6188cc0bfd85187f04",
+      "executable": false
+    },
+    "runtime/notices/python-packages/inventory.json": {
+      "sha256": "3b2d8e9fb5422b02479c3ce6ee4a78860ea9fe768f096b421784febaf93574e7",
+      "executable": false
+    },
+    "runtime/notices/python-packages/jsonschema/jsonschema-4.26.0.dist-info/licenses/COPYING": {
+      "sha256": "4f92a015a13c4d1a040bef018aa13430b4f1bc73b41b16bb846c346766de7439",
+      "executable": false
+    },
+    "runtime/notices/python-packages/jsonschema-specifications/jsonschema_specifications-2025.9.1.dist-info/licenses/COPYING": {
+      "sha256": "42dcd63495f87b4eb7c7757afa379bb55a53f94afd7a5f657d9adf57236e515c",
+      "executable": false
+    },
+    "runtime/notices/python-packages/macholib/macholib-1.16.4.dist-info/LICENSE": {
+      "sha256": "47082ab2bc0184123ec9f10fdf80c70723ee68f07d44382e17615c2a6ba70b09",
+      "executable": false
+    },
+    "runtime/notices/python-packages/mcp/mcp-1.30.0.dist-info/licenses/LICENSE": {
+      "sha256": "5e13dbbc1d120fc2a03cecde7c91424ae2d7de11b63d58ded2f4431e261ee50d",
+      "executable": false
+    },
+    "runtime/notices/python-packages/packaging/packaging-26.3.dist-info/licenses/LICENSE": {
+      "sha256": "cad1ef5bd340d73e074ba614d26f7deaca5c7940c3d8c34852e65c4909686c48",
+      "executable": false
+    },
+    "runtime/notices/python-packages/packaging/packaging-26.3.dist-info/licenses/LICENSE.APACHE": {
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "executable": false
+    },
+    "runtime/notices/python-packages/packaging/packaging-26.3.dist-info/licenses/LICENSE.BSD": {
+      "sha256": "b70e7e9b742f1cc6f948b34c16aa39ffece94196364bc88ff0d2180f0028fac5",
+      "executable": false
+    },
+    "runtime/notices/python-packages/pycparser/pycparser-3.12.dist-info/licenses/LICENSE": {
+      "sha256": "0a9e78156ae8b96caf1b4f11ac2df424b83de29736f9e757630548a6272fdf90",
+      "executable": false
+    },
+    "runtime/notices/python-packages/pydantic/pydantic-2.14.3.dist-info/licenses/LICENSE": {
+      "sha256": "a9e186f3ca16b5eef84318e7a701721351a00cb7b8ae3a4394b67b49e3529ef3",
+      "executable": false
+    },
+    "runtime/notices/python-packages/pydantic-settings/pydantic_settings-2.16.2.dist-info/licenses/LICENSE": {
+      "sha256": "eb355a753e020346d33d83bf9769135b89fc610568ac531a01c295bcee7fd998",
+      "executable": false
+    },
+    "runtime/notices/python-packages/pydantic_core/pydantic_core-2.50.4.dist-info/licenses/LICENSE": {
+      "sha256": "2afdd30d54b4d62b6f488a6bcc1546e84ec5061f13f4209c03d012348783795a",
+      "executable": false
+    },
+    "runtime/notices/python-packages/pyinstaller/pyinstaller-6.22.3.dist-info/licenses/COPYING.txt": {
+      "sha256": "0598064c7d2718e38d7914a7d08343b2fa008e3bea9ebba2aa7a6ffa5900dd64",
+      "executable": false
+    },
+    "runtime/notices/python-packages/pyinstaller-hooks-contrib/pyinstaller_hooks_contrib-2026.10.dist-info/licenses/LICENSE": {
+      "sha256": "91d0baaff00773038e72c0a1fc9d5d2d38706b7a2b9c04f34296608f931b9cd0",
+      "executable": false
+    },
+    "runtime/notices/python-packages/python-dotenv/python_dotenv-1.2.4.dist-info/licenses/LICENSE": {
+      "sha256": "80619b7049f08c81683ad0e01f08f257a840652dd71ee83146d36658c7d2c2b9",
+      "executable": false
+    },
+    "runtime/notices/python-packages/python-multipart/python_multipart-0.0.33.dist-info/licenses/LICENSE.txt": {
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "executable": false
+    },
+    "runtime/notices/python-packages/referencing/referencing-0.37.0.dist-info/licenses/COPYING": {
+      "sha256": "42dcd63495f87b4eb7c7757afa379bb55a53f94afd7a5f657d9adf57236e515c",
+      "executable": false
+    },
+    "runtime/notices/python-packages/rpds-py/rpds_py-2026.9.1.dist-info/licenses/LICENSE": {
+      "sha256": "314e4e91be3baa93c0fb4bccc9e4e97cd643eb839b065af921782c2175fe9909",
+      "executable": false
+    },
+    "runtime/notices/python-packages/setuptools/setuptools/_vendor/autocommand-2.2.2.dist-info/LICENSE": {
+      "sha256": "ade78d04982d69972d444a8e14a94f87a2334dd3855cc80348ea8e240aa0df2d",
+      "executable": false
+    },
+    "runtime/notices/python-packages/setuptools/setuptools/_vendor/backports.tarfile-1.2.0.dist-info/LICENSE": {
+      "sha256": "86da0f01aeae46348a3c3d465195dc1ceccde79f79e87769a64b8da04b2a4741",
+      "executable": false
+    },
+    "runtime/notices/python-packages/setuptools/setuptools/_vendor/importlib_metadata-8.7.1.dist-info/licenses/LICENSE": {
+      "sha256": "458502e12d97bbf64438606a20044aa85eb05fb0a8a807bb35dbec253fd1fc04",
+      "executable": false
+    },
+    "runtime/notices/python-packages/setuptools/setuptools/_vendor/jaraco.text-4.0.0.dist-info/LICENSE": {
+      "sha256": "86da0f01aeae46348a3c3d465195dc1ceccde79f79e87769a64b8da04b2a4741",
+      "executable": false
+    },
+    "runtime/notices/python-packages/setuptools/setuptools/_vendor/jaraco_context-6.1.0.dist-info/licenses/LICENSE": {
+      "sha256": "9755a18519666e5f0f4cae3daad3d7012bcae48a600b31237d75e9fe134e6683",
+      "executable": false
+    },
+    "runtime/notices/python-packages/setuptools/setuptools/_vendor/jaraco_functools-4.4.0.dist-info/licenses/LICENSE": {
+      "sha256": "5a57cb4db85e2a2dd88c290628908add57e3451449e0a9a71fdfb38776fd759d",
+      "executable": false
+    },
+    "runtime/notices/python-packages/setuptools/setuptools/_vendor/more_itertools-10.8.0.dist-info/licenses/LICENSE": {
+      "sha256": "09f1c8c9e941af3e584d59641ea9b87d83c0cb0fd007eb5ef391a7e2643c1a46",
+      "executable": false
+    },
+    "runtime/notices/python-packages/setuptools/setuptools/_vendor/packaging-26.3.dist-info/licenses/LICENSE": {
+      "sha256": "cad1ef5bd340d73e074ba614d26f7deaca5c7940c3d8c34852e65c4909686c48",
+      "executable": false
+    },
+    "runtime/notices/python-packages/setuptools/setuptools/_vendor/packaging-26.3.dist-info/licenses/LICENSE.APACHE": {
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "executable": false
+    },
+    "runtime/notices/python-packages/setuptools/setuptools/_vendor/packaging-26.3.dist-info/licenses/LICENSE.BSD": {
+      "sha256": "b70e7e9b742f1cc6f948b34c16aa39ffece94196364bc88ff0d2180f0028fac5",
+      "executable": false
+    },
+    "runtime/notices/python-packages/setuptools/setuptools/_vendor/platformdirs-4.4.0.dist-info/licenses/LICENSE": {
+      "sha256": "29e0fd62e929850e86eb28c3fdccf0cefdf4fa94879011cffb3d0d4bed6d4db6",
+      "executable": false
+    },
+    "runtime/notices/python-packages/setuptools/setuptools/_vendor/tomli-2.4.0.dist-info/licenses/LICENSE": {
+      "sha256": "b80816b0d530b8accb4c2211783790984a6e3b61922c2b5ee92f3372ab2742fe",
+      "executable": false
+    },
+    "runtime/notices/python-packages/setuptools/setuptools/_vendor/wheel-0.46.3.dist-info/licenses/LICENSE.txt": {
+      "sha256": "30c23618679108f3e8ea1d2a658c7ca417bdfc891c98ef1a89fa4ff0c9828654",
+      "executable": false
+    },
+    "runtime/notices/python-packages/setuptools/setuptools/_vendor/zipp-3.23.0.dist-info/licenses/LICENSE": {
+      "sha256": "5a57cb4db85e2a2dd88c290628908add57e3451449e0a9a71fdfb38776fd759d",
+      "executable": false
+    },
+    "runtime/notices/python-packages/setuptools/setuptools/config/NOTICE": {
+      "sha256": "2dddf08818297a3b89d43d95ff659d8da85741108c9136dfa3a4d856c0623bd8",
+      "executable": false
+    },
+    "runtime/notices/python-packages/setuptools/setuptools/config/_validate_pyproject/NOTICE": {
+      "sha256": "09c9bcea95ca086f8bc5bed174e40bc835b297d40fb5f86bbbb570fe0a5581a7",
+      "executable": false
+    },
+    "runtime/notices/python-packages/setuptools/setuptools-84.2.1.dist-info/licenses/LICENSE": {
+      "sha256": "86da0f01aeae46348a3c3d465195dc1ceccde79f79e87769a64b8da04b2a4741",
+      "executable": false
+    },
+    "runtime/notices/python-packages/sse-starlette/sse_starlette-3.7.0.dist-info/licenses/AUTHORS": {
+      "sha256": "c2ff63d2ecf128bbda8ab1b2016830a5da124202fbb97168685bb9946aed3f1a",
+      "executable": false
+    },
+    "runtime/notices/python-packages/sse-starlette/sse_starlette-3.7.0.dist-info/licenses/LICENSE": {
+      "sha256": "80af6bfccbebd2c14d4aab96695cab9950e177190cc80f5ef819e99996883e8e",
+      "executable": false
+    },
+    "runtime/notices/python-packages/starlette/starlette-1.10.0.dist-info/licenses/LICENSE.md": {
+      "sha256": "dcb95677a02240243187e964f941847d19b17821cf99e5afae684fab328c19bf",
+      "executable": false
+    },
+    "runtime/notices/python-packages/typing-inspection/typing_inspection-0.4.5.dist-info/licenses/LICENSE": {
+      "sha256": "804b59b25f2c31bd278f9202a19ae49a3945aa2664387e2d0a128c7cacc61ec3",
+      "executable": false
+    },
+    "runtime/notices/python-packages/typing_extensions/typing_extensions-4.16.0.dist-info/licenses/LICENSE": {
+      "sha256": "3b2f81fe21d181c499c59a256c8e1968455d6689d269aa85373bfb6af41da3bf",
+      "executable": false
+    },
+    "runtime/notices/python-packages/uvicorn/uvicorn-0.54.0.dist-info/licenses/LICENSE.md": {
+      "sha256": "efe1acf3e62fb99c288b0ec73e5a773b7268ef4320fe757ea994214e4b63c371",
+      "executable": false
+    },
+    "skills/forge-animation/SKILL.md": {
+      "sha256": "4e45618f357734c7e0bf20f6c5e1d5027de9f53e62341845d9f86728808a0a5b",
+      "executable": false
+    },
+    "skills/forge-artwork/SKILL.md": {
+      "sha256": "8719765d77550eb96a8f3aafa46fb2935350848d81c99beab282371301c0f5d0",
+      "executable": false
+    },
+    "skills/forge-artwork/references/native-editing.md": {
+      "sha256": "372859364f4cd42813eb34f93ac67bf948cc235890a43ed9f9c39150ee4b370c",
+      "executable": false
+    },
+    "skills/forge-artwork/references/workflow-checks.md": {
+      "sha256": "412bb88a7a42004e6dc0aa5ad7417fd98890b66dda09c3e12a0243893b752cbe",
+      "executable": false
+    },
+    "skills/forge-scenes/SKILL.md": {
+      "sha256": "bfdbf7e7e33a6af6fbff6540b88fc02ef35e3009cea63d616ec62b61b342ee2e",
+      "executable": false
+    },
+    "skills/forge-scenes/references/outcome-routes.md": {
+      "sha256": "b993e6534c69b4c63b7379a82fb0f9c06da27473b1ad483f64313c3d4c5c7d88",
+      "executable": false
+    },
+    "skills/forge-scenes/references/portable-export.md": {
+      "sha256": "a5ace2f0eafc4e3f931b955e71013d0a454a7b82ec6231b8fe2b4c64e1f0f023",
+      "executable": false
+    },
+    "skills/forge-scenes/references/workflow-checks.md": {
+      "sha256": "4297beb4f09c80646bc67528a26422d5f9fa076da316ba1b3b7d3492264f321f",
+      "executable": false
+    },
+    "skills/forge-start/SKILL.md": {
+      "sha256": "43f1b2dee45a0cc81ee5dfd3b3dbbc5df512bb2d27a8fae120570d3a991b57a4",
+      "executable": false
+    }
+  }
+}

@@ -1,0 +1,3 @@
+[console_scripts]
+gbc-scene-forge = gbc_scene_forge.adapters.cli:main
+gbc-scene-forge-mcp = gbc_scene_forge.adapters.mcp.server:main

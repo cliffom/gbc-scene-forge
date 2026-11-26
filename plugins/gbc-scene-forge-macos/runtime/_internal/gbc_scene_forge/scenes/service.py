@@ -1,0 +1,391 @@
+"""Scenes use cases over guarded native project persistence."""
+
+import json
+from uuid import uuid4
+
+from gbc_scene_forge.core.errors import Conflict
+from gbc_scene_forge.core.identities import name
+from gbc_scene_forge.core.records import NativeDocument
+from gbc_scene_forge.core.serialization import json_text
+from gbc_scene_forge.core.validation import require
+from gbc_scene_forge.formats import tiled
+from gbc_scene_forge.planning import blockout, world
+from gbc_scene_forge.project.store import ProjectStore
+from gbc_scene_forge.scene_objects import compositions
+from gbc_scene_forge.scenes import authoring, rendering, view_filters
+from gbc_scene_forge.scenes.dimensions import check_dimensions
+from gbc_scene_forge.storage.files import digest, read_optional
+from gbc_scene_forge.storage.paths import safe_path
+
+
+class SceneService:
+    """Application operations owned by the scenes domain."""
+
+    def __init__(self, store: ProjectStore) -> None:
+        self.store = store
+
+    def create(
+        self, title: str, width: int, height: int, grid: int, revision: str
+    ) -> NativeDocument:
+        """Create a saved blank scene against the expected project revision."""
+        document = self.store.current(revision)
+        title = name(title)
+        check_dimensions(width, height, grid)
+        scene = {
+            "width": width,
+            "height": height,
+            "grid": grid,
+            "cells": [[tiled.EMPTY] * width for _ in range(height)],
+        }
+        encoded = json_text(tiled.encode(scene, document)).encode()
+        scene_id = str(uuid4())
+        path = f"scenes/{scene_id}.tmj"
+        document["scenes"].append({"id": scene_id, "name": title, "path": path})
+        self.store.commit(document, revision, {path: encoded}, {path: None}, "Create scene")
+        return {
+            "id": scene_id,
+            "name": title,
+            "revision": digest(encoded),
+            "scene": tiled.decode(json.loads(encoded), document),
+        }
+
+    def save(
+        self,
+        scene_id: str,
+        scene: NativeDocument,
+        revision: str,
+        project_revision: str,
+        *,
+        confirm_broken_links: bool = False,
+    ) -> NativeDocument:
+        """Commit canonical scene bytes with manifest, map and link-removal guards."""
+        document = self.store.current(project_revision)
+        current = self.store.load_scene(scene_id, document)
+        if current["revision"] != revision:
+            raise Conflict("Scene changed on disk. Reopen it before saving.")
+        tiled.check_scene(scene, document)
+        broken = world.removed_links(
+            document.get("world", world.empty()), scene_id, current["scene"], scene
+        )
+        require(
+            not broken or confirm_broken_links is True,
+            "Saving removes linked objects. Confirm broken connections before saving.",
+        )
+        path = f"scenes/{scene_id}.tmj"
+        encoded = json_text(tiled.encode(scene, document)).encode()
+        self.store.commit(
+            document, project_revision, {path: encoded}, {path: revision}, "Save scene"
+        )
+        # A later external edit must not become the revision acknowledged by this
+        # save: the browser keeps its submitted canvas and undo history.
+        return {
+            "id": scene_id,
+            "name": current["name"],
+            "revision": digest(encoded),
+            "project_revision": digest(json_text(document).encode()),
+            "scene": tiled.decode(json.loads(encoded), document),
+        }
+
+    def rename(
+        self, scene_id: str, title: str, revision: str, project_revision: str
+    ) -> NativeDocument:
+        """Rename a scene without replacing its identity or saved contents."""
+        document = self.store.current(project_revision)
+        current = self.store.load_scene(scene_id, document)
+        if current["revision"] != revision:
+            raise Conflict("Scene changed on disk. Reopen it before renaming.")
+        entry = next(item for item in document["scenes"] if item["id"] == scene_id)
+        entry["name"] = name(title)
+        self.store.commit(document, project_revision, {}, {entry["path"]: revision}, "Rename scene")
+        return {
+            "renamed": scene_id,
+            "scene_revision": revision,
+            "project": document,
+            "revision": digest(json_text(document).encode()),
+        }
+
+    def duplicate(
+        self,
+        scene_id: str,
+        title: str,
+        revision: str,
+        project_revision: str,
+        scene: NativeDocument | None = None,
+    ) -> NativeDocument:
+        """Copy a guarded saved scene or validated candidate to a new identity."""
+        document = self.store.current(project_revision)
+        current = self.store.load_scene(scene_id, document)
+        if current["revision"] != revision:
+            raise Conflict("Scene changed on disk. Reopen it before duplicating.")
+        title = name(title)
+        candidate = current["scene"] if scene is None else scene
+        encoded = json_text(tiled.encode(candidate, document)).encode()
+        new_id = str(uuid4())
+        path = f"scenes/{new_id}.tmj"
+        source = next(item["path"] for item in document["scenes"] if item["id"] == scene_id)
+        document["scenes"].append({"id": new_id, "name": title, "path": path})
+        self.store.commit(
+            document,
+            project_revision,
+            {path: encoded},
+            {path: None, source: revision},
+            "Duplicate scene",
+        )
+        return {
+            "duplicated": new_id,
+            "source_scene_id": scene_id,
+            "scene_revision": digest(encoded),
+            "project": document,
+            "revision": digest(json_text(document).encode()),
+        }
+
+    def delete(
+        self,
+        scene_id: str,
+        revision: str,
+        project_revision: str,
+        *,
+        confirm_broken_links: bool = False,
+        dry_run: bool = False,
+    ) -> NativeDocument:
+        """Remove a scene atomically, retaining broken world links only when confirmed."""
+        require(type(dry_run) is bool, "dry_run must be a boolean")
+        require(type(confirm_broken_links) is bool, "confirm_broken_links must be a boolean")
+        document = self.store.current(project_revision)
+        entry = next((item for item in document["scenes"] if item["id"] == scene_id), None)
+        require(entry is not None, "Choose a project scene")
+        path = entry["path"]
+        current = digest(read_optional(safe_path(self.store.root, path)))
+        if not isinstance(revision, str) or current != revision:
+            raise Conflict("Scene changed on disk. Reopen the delete dialog before trying again.")
+        consequences = {
+            "connections": world.references(document.get("world", world.empty()), scene_id),
+            "world_position": document.get("world", world.empty())["positions"].get(scene_id),
+            "behavior": "Removes the saved scene and its world position. "
+            "Acknowledged connections remain as broken links; other scenes are unchanged.",
+        }
+        if dry_run:
+            if digest(read_optional(safe_path(self.store.root, path))) != revision:
+                raise Conflict("Scene changed on disk. Reopen it before previewing deletion.")
+            self.store.current(project_revision)
+            return {
+                "scene_id": scene_id,
+                "scene_revision": revision,
+                "revision": project_revision,
+                "dry_run": True,
+                "consequences": consequences,
+            }
+        require(
+            not consequences["connections"] or confirm_broken_links is True,
+            "Deleting this scene breaks connections. Confirm before deleting.",
+        )
+        if "world" in document:
+            document["world"]["positions"].pop(scene_id, None)
+        document["scenes"] = [item for item in document["scenes"] if item["id"] != scene_id]
+        self.store.commit(
+            document, project_revision, {path: None}, {path: revision}, "Delete scene"
+        )
+        return {
+            "deleted": scene_id,
+            "consequences": consequences,
+            "project": document,
+            "revision": digest(json_text(document).encode()),
+        }
+
+    def load(self, scene_id: str) -> NativeDocument:
+        """Load the saved scene with its coherent project revision."""
+        with self.store.read_session() as session:
+            return session.scene(scene_id)
+
+    def edit(
+        self,
+        scene_id: str,
+        project_revision: str,
+        scene_revision: str,
+        *,
+        operations: list[NativeDocument] | None = None,
+        scene: NativeDocument | None = None,
+        dry_run: bool = False,
+    ) -> NativeDocument:
+        """Prepare a canonical candidate and optionally save it through native guards."""
+
+        def prepare(saved, document):
+            candidate, allocated = (
+                authoring.edit(saved, document, operations)
+                if operations is not None
+                else (scene, [])
+            )
+            return candidate, allocated, {}
+
+        return self._edit(scene_id, project_revision, scene_revision, prepare, dry_run)
+
+    def place_stamp(
+        self, scene_id, project_revision, scene_revision, stamp_id, x, y, *, dry_run=False
+    ):
+        """Place a saved composition through the shared canonical scene-save contract."""
+        return self._edit(
+            scene_id,
+            project_revision,
+            scene_revision,
+            lambda saved, document: compositions.place(saved, document, stamp_id, x, y),
+            dry_run,
+        )
+
+    def _edit(self, scene_id, project_revision, scene_revision, prepare, dry_run):
+        # Required mutation guards must be checked even for a dry run; None is
+        # reserved for unguarded read sessions, not a wildcard expected revision.
+        self.store.current(project_revision)
+        with self.store.read_session(project_revision) as session:
+            document = session.document
+            loaded = session.scene(scene_id)
+        if loaded["revision"] != scene_revision:
+            raise Conflict("Scene changed on disk. Inspect again before editing.")
+        candidate, allocated, details = prepare(loaded["scene"], document)
+        tiled.check_scene(candidate, document)
+        candidate = tiled.decode(tiled.encode(candidate, document), document)
+        with self.store.read_session(project_revision, verify_assets=True) as session:
+            if session.scene(scene_id)["revision"] != loaded["revision"]:
+                raise Conflict("Scene changed while preparing edits. Inspect again.")
+        summary = authoring.changes(loaded["scene"], candidate)
+        require(type(dry_run) is bool, "dry_run must be boolean")
+        result = (
+            {**loaded, "scene": candidate}
+            if dry_run
+            else self.save(scene_id, candidate, scene_revision, project_revision)
+        )
+        return {
+            **result,
+            "project_revision": result.get("project_revision", project_revision),
+            "dry_run": dry_run,
+            "allocated_object_ids": allocated,
+            "allocated_layer_ids": [
+                layer["id"]
+                for layer in tiled.scene_layers(candidate)
+                if layer["id"] not in {v["id"] for v in tiled.scene_layers(loaded["scene"])}
+            ],
+            "changes": summary,
+            **details,
+        }
+
+    def review_artwork(
+        self, scene_id, revision, scene_revision, *, camera_id=None, overview=None, scene=None
+    ):
+        """Render artwork alone, retaining the existing PNG contract."""
+        return self._review_scene(
+            scene_id, revision, scene_revision, camera_id=camera_id, overview=overview, scene=scene
+        )
+
+    def review_scene(
+        self,
+        scene_id,
+        revision,
+        scene_revision,
+        *,
+        camera_id=None,
+        overview=None,
+        scene=None,
+        filters=None,
+    ):
+        """Read-only combined artwork and planning SVGs with transient view filters."""
+        return self._review_scene(
+            scene_id,
+            revision,
+            scene_revision,
+            camera_id=camera_id,
+            overview=overview,
+            scene=scene,
+            choices=view_filters.filters(filters),
+        )
+
+    def _review_scene(
+        self,
+        scene_id,
+        revision,
+        scene_revision,
+        *,
+        camera_id=None,
+        overview=None,
+        scene=None,
+        choices=None,
+    ):
+        """Render a saved scene or canonical candidate under one verified read session."""
+        if scene is not None:
+            authoring.bounded(scene)
+        self.store.current(revision)
+        with self.store.read_session(revision, verify_assets=True) as session:
+            loaded = session.scene(scene_id)
+            if loaded["revision"] != scene_revision:
+                raise Conflict("Scene changed on disk. Reopen before reviewing artwork.")
+            document = session.document
+            scene = loaded["scene"] if scene is None else scene
+            tiled.check_scene(scene, document)
+            scene = tiled.decode(tiled.encode(scene, document), document)
+            try:
+                camera = blockout.select_camera(scene, document, camera_id)
+            except ValueError:
+                if camera_id is not None or choices is not None:
+                    raise
+                camera = None
+            camera_view = (
+                rendering.viewport({k: camera[k] for k in ("x", "y", "width", "height")})
+                if camera
+                else None
+            )
+            width, height = scene["width"] * scene["grid"], scene["height"] * scene["grid"]
+            overview = rendering.viewport(
+                overview
+                if overview is not None
+                else dict(
+                    x=0,
+                    y=0,
+                    width=min(width, rendering.MAX_DIMENSION),
+                    height=min(height, rendering.MAX_DIMENSION),
+                )
+            )
+            require(
+                overview["x"] < width and overview["y"] < height,
+                "Overview origin must be inside the scene",
+            )
+
+            def read_image(path):
+                data = safe_path(self.store.root, path).read_bytes()
+                if digest(data) != document["files"][path]:
+                    raise Conflict("Project artwork changed while reviewing.")
+                return data
+
+            visible = scene if choices is None else view_filters.filtered(scene, document, choices)
+            result = dict(
+                scene_id=scene_id,
+                project_revision=revision,
+                scene_revision=scene_revision,
+                snapshot_revision=authoring.snapshot(scene),
+                includes_artwork=True,
+                includes_planning_overlays=choices is not None,
+                units="pixels",
+                scale=1,
+                width=width,
+                height=height,
+                camera=camera,
+                overview=overview,
+                overview_complete=(
+                    overview["x"] == overview["y"] == 0
+                    and overview["width"] >= width
+                    and overview["height"] >= height
+                ),
+                **(
+                    {"camera_png": rendering.render(visible, document, read_image, camera_view)}
+                    if camera_view
+                    else {}
+                ),
+                overview_png=rendering.render(visible, document, read_image, overview),
+            )
+            if choices is not None:
+                result["filters"] = choices
+                for label, view in (("camera", camera_view), ("overview", overview)):
+                    result[f"{label}_svg"] = blockout.render_svg(
+                        visible, document, view, artwork=result.pop(f"{label}_png"), generic=True
+                    )
+            self.store.current(revision)
+            if session.scene(scene_id)["revision"] != scene_revision:
+                raise Conflict("Scene changed while reviewing artwork.")
+            return result
