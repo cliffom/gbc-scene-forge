@@ -4,6 +4,7 @@
   "plugins": [
     {
       "name": "gbc-scene-forge-macos",
+      "interface": { "displayName": "GBC Scene Forge" },
       "source": {
         "source": "git-subdir",
         "url": "https://github.com/cliffom/gbc-scene-forge.git",
