@@ -94,6 +94,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Release notes
 
+- [Scene Forge 0.47.0](RELEASE-0.47.0.md) — self-contained Codex plugin preview for macOS Apple Silicon.
 - [Scene Forge 0.46.1](RELEASE-0.46.1.md) — consistent inactive buttons and hover feedback.
 - [Scene Forge 0.46.0](RELEASE-0.46.0.md) — artwork download icon and options overlay.
 - [Scene Forge 0.45.0](RELEASE-0.45.0.md) — organized Artwork and Scene Inspectors.

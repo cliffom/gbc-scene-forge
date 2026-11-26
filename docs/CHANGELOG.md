@@ -6,6 +6,13 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.47.0 — GBC Scene Forge for Codex
+
+[Release notes](RELEASE-0.47.0.md). Add a self-contained local Codex plugin
+preview for macOS Apple Silicon. Author scenes, artwork and animation with the
+bundled runtime and open the browser editor on the same project. Preserve artwork
+Redo in recovery and keep Library tiles disabled until editor startup completes.
+
 ## 0.46.1 — Consistent inactive buttons
 
 [Release notes](RELEASE-0.46.1.md). Match Save and Close document's disabled
