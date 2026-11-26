@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "plugin": "gbc-scene-forge-macos",
-  "runtime_version": "0.47.0",
+  "runtime_version": "0.47.1",
   "project_format": 1,
   "selection_format": 1,
   "target": "macos-arm64",

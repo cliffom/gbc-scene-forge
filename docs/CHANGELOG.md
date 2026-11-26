@@ -6,6 +6,12 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.47.1 — Matching Codex and Forge release versions
+
+[Release notes](RELEASE-0.47.1.md). Codex displays `0.47.1` for the macOS plugin
+bundled with GitHub release `v0.47.1`. The signing workflow checks that the
+release tag, Forge package, runtime, and plugin metadata use the same version.
+
 ## 0.47.0 — GBC Scene Forge for Codex
 
 [Release notes](RELEASE-0.47.0.md). Add a self-contained local Codex plugin

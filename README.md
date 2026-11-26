@@ -35,7 +35,7 @@ See the [plugin guide](docs/PLUGIN-START.md) and [installation and update guide]
 Install the release wheel with **Python 3.10 or newer**:
 
 ```sh
-python -m pip install --upgrade https://github.com/cliffom/gbc-scene-forge/releases/download/v0.47.0/gbc_scene_forge-0.47.0-py3-none-any.whl
+python -m pip install --upgrade https://github.com/cliffom/gbc-scene-forge/releases/download/v0.47.1/gbc_scene_forge-0.47.1-py3-none-any.whl
 gbc-scene-forge
 ```
 
@@ -155,7 +155,7 @@ blockout planning, bounded atlas import/reimport, rendering and review through t
 same project services as the browser.
 
 ```sh
-python -m pip install --upgrade 'gbc-scene-forge[mcp] @ https://github.com/cliffom/gbc-scene-forge/releases/download/v0.47.0/gbc_scene_forge-0.47.0-py3-none-any.whl'
+python -m pip install --upgrade 'gbc-scene-forge[mcp] @ https://github.com/cliffom/gbc-scene-forge/releases/download/v0.47.1/gbc_scene_forge-0.47.1-py3-none-any.whl'
 gbc-scene-forge-mcp --project-root /absolute/path/to/projects
 ```
 
@@ -285,7 +285,7 @@ the prebuilt UI. See the [backend architecture](docs/ARCHITECTURE.md),
 for ownership and contracts.
 
 Use the [documentation index](docs/README.md) and [documentation policy](docs/DOCUMENTATION.md).
-Run `make docs-check` for every change. See the [0.47.0 release notes](docs/RELEASE-0.47.0.md)
+Run `make docs-check` for every change. See the [0.47.1 release notes](docs/RELEASE-0.47.1.md)
 and [building and releasing](docs/RELEASING.md) for release procedures.
 
 ## License
