@@ -33,6 +33,14 @@ def package(bundle, output):
     output = output.resolve()
     contract = json.loads((REPO / "plugin/compatibility.json").read_text())
     manifest = json.loads((REPO / "plugin/plugin.json").read_text())
+    marketplace = json.loads((REPO / "plugin/marketplace.json").read_text())
+    plugin_path = f"plugins/{manifest['name']}"
+    [entry] = marketplace["plugins"]
+    if entry["name"] != manifest["name"] or entry["source"] != {
+        "source": "local",
+        "path": f"./{plugin_path}",
+    }:
+        raise ValueError("Marketplace listing must match the packaged plugin name and path")
     metadata = json.loads((bundle / "bundle.json").read_text())
     if (metadata["version"], metadata["target"]) != (
         contract["runtime_version"],
@@ -55,7 +63,7 @@ def package(bundle, output):
     with tempfile.TemporaryDirectory(prefix=".scene-forge-staging-", dir=output) as temporary:
         staging = Path(temporary)
         market = staging / name
-        plugin = market / "plugins/scene-forge"
+        plugin = market / plugin_path
         shutil.copytree(REPO / "plugin", plugin)
         (plugin / "marketplace.json").unlink()
         (plugin / "bin/forge").chmod(0o755)
@@ -63,10 +71,7 @@ def package(bundle, output):
         shutil.copy2(REPO / "assets/branding/logo-256.png", plugin / "assets/logo-256.png")
         shutil.copytree(bundle, plugin / "runtime", symlinks=True)
         shutil.copy2(REPO / "LICENSE", plugin / "LICENSE")
-        write(
-            market / ".agents/plugins/marketplace.json",
-            json.loads((REPO / "plugin/marketplace.json").read_text()),
-        )
+        write(market / ".agents/plugins/marketplace.json", marketplace)
         files = verifier.inventory(plugin)
         write(
             plugin / "install.json",

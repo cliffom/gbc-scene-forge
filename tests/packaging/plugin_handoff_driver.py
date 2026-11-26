@@ -16,7 +16,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-from plugin_distribution_smoke import SELECTOR, NativeClient
+from plugin_distribution_smoke import NativeClient, marketplace_installation
 
 
 class Handoff:
@@ -36,8 +36,10 @@ class Handoff:
         with tarfile.open(archive) as stream:
             stream.extractall(source, filter="data")
         self.repository = next(source.iterdir())
+        self.marketplace, plugin = marketplace_installation(self.repository)
+        self.selector = f"{plugin.name}@{self.marketplace}"
         self.cli("marketplace", "add", str(self.repository))
-        self.cli("add", SELECTOR)
+        self.cli("add", self.selector)
         self.settings = self.home / "Library/Application Support/Scene Forge/selection.json"
         self.settings.parent.mkdir(parents=True)
         self.select(self.projects)
@@ -45,7 +47,7 @@ class Handoff:
         self.env.update(PATH="/unavailable", PYTHONHOME="/unavailable", PYTHONPATH="/unavailable")
         self.fresh("first")
         status = self.call("first", "plugin_status", {})["structuredContent"]
-        runtime = self.repository / "plugins/scene-forge/runtime"
+        runtime = plugin / "runtime"
         bundle = json.loads((runtime / "bundle.json").read_text())
         self.provenance = {
             "observed_at": datetime.now(timezone.utc).isoformat(),
@@ -173,8 +175,8 @@ class Handoff:
         finally:
             for native in self.clients.values():
                 native.close()
-            self.cli("remove", SELECTOR)
-            self.cli("marketplace", "remove", "scene-forge-repository")
+            self.cli("remove", self.selector)
+            self.cli("marketplace", "remove", self.marketplace)
 
 
 def main():
