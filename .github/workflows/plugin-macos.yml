@@ -16,26 +16,56 @@ on:
       - '.nvmrc'
       - '*lock*'
   push:
-    branches:
-      - candidate/macos-preview
+    tags:
+      - 'plugin-v*'
   workflow_dispatch:
-    inputs:
-      sign:
-        description: 'Sign and submit to Apple using the protected plugin-signing environment'
-        type: boolean
-        default: false
 permissions:
   contents: read
 jobs:
-  candidate:
-    # Native hosted build baseline; this does not lower the plugin's macOS 27 floor.
-    runs-on: macos-15
-    environment: ${{ (inputs.sign || (github.event_name == 'push' && github.ref == 'refs/heads/candidate/macos-preview')) && 'plugin-signing' || 'plugin-candidate' }}
-    env:
-      FORGE_BUILD_MODE: production
-      FORGE_SIGN_CANDIDATE: ${{ inputs.sign || (github.event_name == 'push' && github.ref == 'refs/heads/candidate/macos-preview') }}
+  release-source:
+    if: github.event_name == 'push' && github.ref_type == 'tag' && !github.event.deleted
+    runs-on: ubuntu-24.04
+    outputs:
+      revision: ${{ steps.validate.outputs.revision }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify release tag and main ancestry
+        id: validate
+        run: |
+          set -euo pipefail
+          if ! git merge-base --is-ancestor HEAD refs/remotes/origin/main; then
+            echo 'Plugin release tags must point to a commit on main.' >&2
+            exit 1
+          fi
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          version = json.loads(Path('plugin/plugin.json').read_text())['version']
+          expected = f'plugin-v{version}'
+          if os.environ['GITHUB_REF_NAME'] != expected:
+              raise SystemExit(f'Plugin release tag must match {expected}.')
+          PY
+          echo "revision=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  candidate:
+    needs: release-source
+    if: ${{ !cancelled() && (github.event_name != 'push' || needs.release-source.result == 'success') }}
+    # Native hosted build baseline; this does not lower the plugin's macOS 27 floor.
+    runs-on: macos-15
+    environment: ${{ github.event_name == 'push' && github.ref_type == 'tag' && 'plugin-signing' || 'plugin-candidate' }}
+    env:
+      FORGE_BUILD_MODE: production
+      FORGE_SIGN_CANDIDATE: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.release-source.outputs.revision || github.sha }}
       - name: Require native ARM64
         run: test "$(uname -m)" = arm64
       - uses: actions/setup-python@v6
@@ -87,7 +117,7 @@ jobs:
           python runtime/build.py --wheel "dist/$FORGE_WHEEL" --python-archive build/runtime-inputs/python.tar.zst --output build/runtime "${signing[@]}"
       - name: Verify actual archive and retain candidate metadata
         run: |
-          poetry run python runtime/release.py --bundle "build/runtime/$FORGE_RUNTIME_NAME" --output build/plugin-candidate --revision "$GITHUB_SHA" --python build/runtime/build-env/bin/python
+          poetry run python runtime/release.py --bundle "build/runtime/$FORGE_RUNTIME_NAME" --output build/plugin-candidate --revision "$(git rev-parse HEAD)" --python build/runtime/build-env/bin/python
       - name: Frozen browser acceptance from extracted and relocated release
         run: |
           npx playwright install chromium

@@ -6,7 +6,7 @@ candidate for [#263](https://github.com/cliffom/gbc-scene-forge/issues/263).
 It stages downloadable Actions artifacts for qualification. Publishing the
 GitHub release and distribution repository follows milestone integration. Issue
 PRs retain Forge 0.46.1 until integration assesses the product release.
-Plugin candidate 0.1.0-alpha.9 uses the `gbc-scene-forge-macos` ID for the macOS
+Plugin candidate 0.1.0-alpha.10 uses the `gbc-scene-forge-macos` ID for the macOS
 listing. It includes the GBC Scene Forge name and icon in Codex, game-folder
 onboarding from PR #282, and the artwork Redo and
 stale-checkpoint recovery from PR #279. The earlier candidate results remain in
@@ -98,7 +98,7 @@ Verify a separately obtained archive before installation, using a trusted digest
 
 ```sh
 build/runtime-candidate/build-env/bin/python runtime/release.py \
-  --archive /absolute/path/to/gbc-scene-forge-0.1.0-alpha.9-macos-arm64.tar.gz \
+  --archive /absolute/path/to/gbc-scene-forge-0.1.0-alpha.10-macos-arm64.tar.gz \
   --sha256 EXPECTED_SHA256 --output build/download-check \
   --codex /absolute/path/to/codex
 ```
@@ -132,7 +132,7 @@ repository directory (the service does not accept the distribution's tar archive
 
 ```sh
 ditto -c -k --keepParent \
-  build/plugin-candidate/gbc-scene-forge-0.1.0-alpha.9-macos-arm64 \
+  build/plugin-candidate/gbc-scene-forge-0.1.0-alpha.10-macos-arm64 \
   build/forge-notary.zip
 xcrun notarytool submit build/forge-notary.zip \
   --keychain-profile forge-notary --wait --output-format json
@@ -162,11 +162,16 @@ example, with macOS `ditto`) before Archive Utility extraction. Inspect quaranti
 again on the extracted runtime and client-managed copy; a missing marker must not
 be reported as a successful quarantined-launch test.
 
-Use the dedicated `candidate/macos-preview` branch for the protected signing
-run. A push to that branch triggers signing while the milestone workflow lives
-outside the default branch. Manual dispatch can select signing once GitHub
-recognizes the workflow on the default branch. Configure the `plugin-signing`
-GitHub environment to allow the candidate branch and require reviewer approval.
+Push an annotated `plugin-v<version>` tag from a verified commit on `main`.
+Use the exact version from `plugin/plugin.json`. The workflow checks the tag
+version and verifies that its commit is in `origin/main` before requesting
+approval. After approval, the signing job builds that exact commit. PR checks
+and manual dispatch build unsigned candidates.
+
+Configure `plugin-signing` to require reviewer approval and permit deployment
+from tags matching `plugin-v*`. Verify the signed archive before publishing its
+GitHub prerelease or advancing the marketplace pin. The candidate branch was
+used during initial rollout and can be retired after a tagged signing run passes.
 Store these credentials as environment secrets:
 
 | Secret | Purpose |
