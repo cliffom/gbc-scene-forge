@@ -937,3 +937,22 @@ input.inspector-identity {width:100%;padding:0;border:0;background:transparent;c
 .inspector-section .layer-row {padding:6px}
 .inspector-section .layer-hint {font-size:10px}
 #object-findings {max-height:min(300px,40vh);overflow:auto}
+#world-dialog {width: min(1440px, calc(100vw - 32px));}
+.world-workspace {display:grid;grid-template-columns:minmax(0,1fr) 210px;border-block:1px solid var(--line);margin:12px 0}
+.world-canvas {min-width:0;padding:12px 16px 0 0}
+.world-camera {display:flex;align-items:center;gap:4px;margin-bottom:8px}
+.world-camera h3 {margin-right:auto}
+#world-map {height:clamp(240px,49dvh,660px);cursor:grab;background-color:var(--bg);background-image:radial-gradient(var(--line) 1px,transparent 1px);background-size:16px 16px}
+#world-map rect {fill:var(--panel);stroke:var(--line)}
+#world-map g[aria-pressed="true"] rect,#world-map g:focus rect {stroke:var(--accent)}
+.world-inspector {padding:14px;border-inline-start:1px solid var(--line)}
+.world-inspector h3 {margin:0 0 14px}
+.world-position {gap:8px}
+.world-position input {width:74px}
+#world-connections {margin:12px 0}
+#world-connections summary {cursor:pointer}
+@media(max-width:700px){
+  .world-workspace {grid-template-columns:minmax(0,1fr)}
+  .world-inspector {border-inline:0;border-top:1px solid var(--line)}
+  .world-canvas {padding-inline:0}
+}

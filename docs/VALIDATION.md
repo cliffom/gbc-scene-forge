@@ -15,6 +15,13 @@ preserve the pre-consolidation records, including the
 and [rendering checks](https://github.com/cliffom/gbc-scene-forge/blob/5d0d98c939947f2dcdddcc7e49f96834679a08f0/docs/evaluations/canvas-repainting.md).
 Dates, revisions and environments missing from the originals remain unknown.
 
+## World desk scene round trip (#299)
+
+- **Scope:** Local implementation based on `33b0340`, November 26, 2026. Desktop Chrome and a disposable copy of the bundled two-scene demo.
+- **Method:** The [browser walkthrough](../tests/playwright/planning/world-desk.spec.ts) drags a scene, pans and zooms, enters Riverside, paints a tile, returns to the map and reopens Riverside by keyboard. It compares card bounds and the viewBox, reads the saved map, exercises Undo/Redo and tries each dirty-scene switch choice.
+- **Result:** Scene focus and both card bounds were restored. Undo reversed the retained edit. Explicit save and discard produced the expected file contents. A forced on-disk scene change rejected the save and left the draft available. [World desk screenshot](screenshots/world-view/world-desk.png).
+- **Limits:** Desktop mouse and keyboard at a fixed viewport. The test covers in-session camera restoration. Separate multi-tab draft tests initially encountered the new landing in secondary tabs and passed after their scene-workspace setup was applied to those tabs.
+
 ## Protected macOS plugin alpha.6 candidate and clean-Mac launch
 
 - **Scope:** Plugin 0.1.0-alpha.6 with Forge 0.46.1, built from clean revision

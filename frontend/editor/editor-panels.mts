@@ -40,6 +40,7 @@ export interface Ports {
   layerAction: (work: (editor: LayerEditor) => void, clearSelection?: boolean) => void;
   syncPanCursor: () => void;
   requestSceneOpen: (id: string) => void;
+  activateScene: () => Promise<boolean>;
   filterPalette: () => void;
   viewport: HTMLElement;
   discard: () => Promise<boolean>;
@@ -340,8 +341,10 @@ export function createPanelsController({
 
   const worldView = createWorldView(
     async () => {
+      const revision = workspaceState.revision;
+      const world = workspaceState.project?.world ?? decodeWorld(undefined);
       const report = await api('world-report', record, {
-        project_revision: workspaceState.revision,
+        project_revision: revision,
         ...(sceneSession.loaded && sceneSession.editor
           ? {
               scene_id: sceneSession.loaded.id,
@@ -351,11 +354,12 @@ export function createPanelsController({
           : {}),
       });
       return {
-        world: workspaceState.project?.world ?? decodeWorld(undefined),
+        world,
         snapshot: decodeWorldSnapshot(report),
+        revision,
       };
     },
-    async (world, sceneRevisions) => {
+    async (world, sceneRevisions, revision) => {
       if (activity.busy) {
         throw Error('Wait for the current operation.');
       }
@@ -365,17 +369,21 @@ export function createPanelsController({
         const result = await api('save-world', record, {
           world,
           scene_revisions: sceneRevisions,
-          project_revision: workspaceState.revision,
+          project_revision: revision,
         });
         workspaceState.project = decodeProject(result.project);
         workspaceState.revision = string(result.revision);
         status.show('World saved. Open scene edits and history are preserved.');
+        return workspaceState.revision;
       } finally {
         activity.busy = false;
         ports.update();
       }
     },
-    (endpoint) => {
+    async (endpoint) => {
+      if (activity.document === 'artwork' && !(await ports.activateScene())) {
+        return;
+      }
       pendingWorldEndpoint = endpoint;
       if (endpoint.scene === sceneSession.loaded?.id) {
         focusWorldEndpoint();
@@ -391,7 +399,8 @@ export function createPanelsController({
     lifetime,
   );
 
-  lifetime.assign(button('show-world'), 'onclick', () => void ports.run(() => worldView.open()));
+  const openWorld = (projectEntry = false) => worldView.open(sceneSession.loaded?.id, projectEntry);
+  lifetime.assign(button('show-world'), 'onclick', () => void ports.run(openWorld));
 
   const diagnosticsView = createDiagnosticsView(
     () => ({
@@ -713,6 +722,7 @@ export function createPanelsController({
     lifetime,
   );
   return {
+    openWorld,
     blockoutView,
     focusWorldEndpoint,
     focusDiagnostic,

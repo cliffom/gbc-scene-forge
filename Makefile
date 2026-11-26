@@ -125,7 +125,7 @@ test-diagnostics-browser: frontend
 	CHROME="$(CHROME)" $(NPM) exec -- playwright test --config tests/playwright/playwright.config.ts diagnostics.spec.ts
 
 test-world-browser: frontend
-	CHROME="$(CHROME)" $(NPM) exec -- playwright test --config tests/playwright/playwright.config.ts world.spec.ts
+	CHROME="$(CHROME)" $(NPM) exec -- playwright test --config tests/playwright/playwright.config.ts world.spec.ts world-desk.spec.ts
 
 test-definitions-browser: frontend
 	CHROME="$(CHROME)" $(NPM) exec -- playwright test --config tests/playwright/playwright.config.ts definitions.spec.ts

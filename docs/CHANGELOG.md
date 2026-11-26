@@ -6,6 +6,11 @@ Their commands and feature scope describe their historical version; use the
 in [validation](VALIDATION.md), priorities in the [roadmap](ROADMAP.md), and build
 and publication procedures in [releasing](RELEASING.md).
 
+## 0.48.0 — World desk
+
+[Release notes](RELEASE-0.48.0.md). Projects open on the world map. Pan, zoom,
+open a scene and return to the same place with its draft and Undo history intact.
+
 ## 0.47.1 — Matching Codex and Forge release versions
 
 [Release notes](RELEASE-0.47.1.md). Codex displays `0.47.1` for the macOS plugin

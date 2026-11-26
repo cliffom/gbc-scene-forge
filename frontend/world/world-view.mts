@@ -20,8 +20,8 @@ const input = (id: string) => typed(id, HTMLInputElement);
 const select = (id: string) => typed(id, HTMLSelectElement);
 const button = (id: string) => typed(id, HTMLButtonElement);
 export function createWorldView(
-  load: () => Promise<{ world: World; snapshot: WorldSnapshot }>,
-  save: (world: World, revisions: Record<string, string>) => Promise<void>,
+  load: () => Promise<{ world: World; snapshot: WorldSnapshot; revision: string }>,
+  save: (world: World, revisions: Record<string, string>, revision: string) => Promise<string>,
   navigate: (endpoint: Endpoint) => void,
   lifetime: EditorLifetime = new EditorLifetime(),
 ) {
@@ -43,6 +43,97 @@ export function createWorldView(
     changed = false;
   let drag: { id: string; start: DOMPoint; x: number; y: number; pointer: number } | null = null;
   let original = '';
+  let revision = '';
+  let fitted = false;
+  let moved = false;
+  let pan: { pointer: number; start: DOMPoint } | null = null;
+  function point(x: number, y: number) {
+    const matrix = svg.getScreenCTM();
+    if (!matrix) {
+      throw Error('World map is not visible.');
+    }
+    return new DOMPoint(x, y).matrixTransform(matrix.inverse());
+  }
+  function zoom(factor: number, anchor: DOMPoint) {
+    const box = svg.viewBox.baseVal;
+    const ratio = Math.min(1000000, Math.max(100, box.width * factor)) / box.width;
+    svg.setAttribute(
+      'viewBox',
+      [
+        anchor.x + (box.x - anchor.x) * ratio,
+        anchor.y + (box.y - anchor.y) * ratio,
+        box.width * ratio,
+        box.height * ratio,
+      ].join(' '),
+    );
+  }
+  svg.addEventListener(
+    'wheel',
+    (event) => {
+      event.preventDefault();
+      if (!drag && !pan) {
+        zoom(Math.exp(Math.sign(event.deltaY) * 0.15), point(event.clientX, event.clientY));
+      }
+    },
+    { passive: false, signal: lifetime.signal },
+  );
+  function card(target: EventTarget | null) {
+    return target instanceof Element ? target.closest<SVGGElement>('g[data-scene]') : null;
+  }
+  svg.addEventListener(
+    'pointerdown',
+    (event) => {
+      if (working || !event.isPrimary || event.button !== 0) {
+        return;
+      }
+      const node = card(event.target);
+      const id = node?.dataset.scene;
+      const start = point(event.clientX, event.clientY);
+      if (node && id) {
+        event.preventDefault();
+        choose(id);
+        node.focus({ preventScroll: true });
+        drag = { id, start, ...position(id), pointer: event.pointerId };
+        moved = false;
+      } else {
+        pan = { pointer: event.pointerId, start };
+        lifetime.capture(svg, event.pointerId);
+      }
+    },
+    { signal: lifetime.signal },
+  );
+  svg.addEventListener(
+    'dblclick',
+    (event) => {
+      const id = card(event.target)?.dataset.scene;
+      if (id && !working && !moved) {
+        follow({ scene: id, object: 0 });
+      }
+    },
+    { signal: lifetime.signal },
+  );
+  svg.addEventListener(
+    'keydown',
+    (event) => {
+      const id = card(event.target)?.dataset.scene;
+      if (!working && id && (event.key === 'Enter' || event.key === ' ')) {
+        event.preventDefault();
+        choose(id);
+        button('world-open').focus();
+      }
+    },
+    { signal: lifetime.signal },
+  );
+  for (const [id, factor] of [
+    ['world-zoom-in', 0.8],
+    ['world-zoom-out', 1.25],
+  ] as const) {
+    lifetime.assign(button(id), 'onclick', () => {
+      const box = svg.viewBox.baseVal;
+      zoom(factor, new DOMPoint(box.x + box.width / 2, box.y + box.height / 2));
+    });
+  }
+  lifetime.assign(button('world-fit'), 'onclick', () => renderMap(true));
   function controls() {
     if (lifetime.disposed) {
       return;
@@ -85,8 +176,11 @@ export function createWorldView(
     const p = position(id);
     input('world-x').value = id ? String(p.x) : '';
     input('world-y').value = id ? String(p.y) : '';
-    get('world-selected').textContent =
-      snapshot.scenes.find((s) => s.id === id)?.name ?? 'Choose a scene';
+    const scene = snapshot.scenes.find((s) => s.id === id);
+    get('world-selected').textContent = scene?.name ?? 'No scenes yet';
+    get('world-scene-info').textContent = scene
+      ? `${scene.width} × ${scene.height} cells · ${scene.grid}px grid`
+      : 'Use the scene workspace to create your first scene.';
     for (const node of svg.querySelectorAll('[data-scene]')) {
       node.setAttribute('aria-pressed', String(node.getAttribute('data-scene') === selected));
     }
@@ -106,7 +200,7 @@ export function createWorldView(
     }
     return node;
   }
-  function renderMap(fit = true) {
+  function renderMap(fit = false) {
     svg.replaceChildren();
     const defs = make('defs', {}),
       marker = make('marker', {
@@ -121,7 +215,8 @@ export function createWorldView(
     marker.append(make('path', { d: 'M 0 0 L 10 5 L 0 10 z', fill: '#88badb' }));
     defs.append(marker);
     svg.append(defs);
-    if (fit) {
+    if (fit || !fitted) {
+      fitted = true;
       const ps = snapshot.scenes.map((s) => position(s.id));
       const left = Math.min(0, ...ps.map((p) => p.x)) - 40,
         top = Math.min(0, ...ps.map((p) => p.y)) - 40;
@@ -181,48 +276,20 @@ export function createWorldView(
         make('text', { x: '14', y: '80', class: 'world-meta' }, `${scene.objects.length} objects`),
         make('title', {}, scene.name),
       );
-      node.addEventListener(
-        'pointerdown',
-        (event) => {
-          if (working || event.button !== 0) {
-            return;
-          }
-          event.preventDefault();
-          choose(scene.id);
-          const matrix = svg.getScreenCTM();
-          if (!matrix) {
-            return;
-          }
-          drag = {
-            id: scene.id,
-            start: new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()),
-            ...p,
-            pointer: event.pointerId,
-          };
-          lifetime.capture(svg, event.pointerId);
-        },
-        { signal: lifetime.signal },
-      );
-      node.addEventListener(
-        'keydown',
-        (event) => {
-          if (working) {
-            return;
-          }
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            choose(scene.id);
-          }
-        },
-        { signal: lifetime.signal },
-      );
       svg.append(node);
     }
   }
   svg.addEventListener(
     'pointermove',
     (event) => {
-      if (!drag || working) {
+      if (pan?.pointer === event.pointerId) {
+        const current = point(event.clientX, event.clientY);
+        const box = svg.viewBox.baseVal;
+        box.x += pan.start.x - current.x;
+        box.y += pan.start.y - current.y;
+        return;
+      }
+      if (!drag || drag.pointer !== event.pointerId || working) {
         return;
       }
       const matrix = svg.getScreenCTM();
@@ -230,6 +297,13 @@ export function createWorldView(
         return;
       }
       const p = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
+      if (!moved) {
+        if (Math.hypot(p.x - drag.start.x, p.y - drag.start.y) * matrix.a < 4) {
+          return;
+        }
+        moved = true;
+        lifetime.capture(svg, event.pointerId);
+      }
       world.positions[drag.id] = {
         x: Math.max(-100000, Math.min(100000, Math.round(drag.x + p.x - drag.start.x))),
         y: Math.max(-100000, Math.min(100000, Math.round(drag.y + p.y - drag.start.y))),
@@ -240,12 +314,23 @@ export function createWorldView(
     },
     { signal: lifetime.signal },
   );
-  const stopDrag = () => {
-    if (drag) {
+  const stopDrag = (event: PointerEvent) => {
+    if (pan?.pointer === event.pointerId) {
+      pan = null;
+    }
+    if (drag?.pointer === event.pointerId) {
       drag = null;
-      renderMap();
     }
   };
+  svg.addEventListener(
+    'pointerleave',
+    (event) => {
+      if (!svg.hasPointerCapture(event.pointerId)) {
+        stopDrag(event);
+      }
+    },
+    { signal: lifetime.signal },
+  );
   svg.addEventListener('pointerup', stopDrag, { signal: lifetime.signal });
   svg.addEventListener('pointercancel', stopDrag, { signal: lifetime.signal });
   svg.addEventListener('lostpointercapture', stopDrag, { signal: lifetime.signal });
@@ -319,9 +404,6 @@ export function createWorldView(
   function follow(endpoint: Endpoint) {
     if (!snapshot.scenes.some((s) => s.id === endpoint.scene)) {
       error('The endpoint scene is missing. Edit this connection to choose a replacement.');
-      return;
-    }
-    if (!discard()) {
       return;
     }
     dialog.close();
@@ -455,7 +537,7 @@ export function createWorldView(
       for (const scene of snapshot.scenes) {
         candidate.positions[scene.id] = position(scene.id);
       }
-      await save(candidate, snapshot.revisions);
+      revision = await save(candidate, snapshot.revisions, revision);
       world = candidate;
       original = JSON.stringify(world);
       changed = false;
@@ -472,12 +554,15 @@ export function createWorldView(
   }
   lifetime.assign(button('world-close'), 'onclick', () => {
     if (!working && discard()) {
+      changed = false;
       dialog.close();
     }
   });
   lifetime.assign(dialog, 'oncancel', (event) => {
     if (working || !discard()) {
       event.preventDefault();
+    } else {
+      changed = false;
     }
   });
   lifetime.assign(button('world-open'), 'onclick', () => {
@@ -488,7 +573,7 @@ export function createWorldView(
   window.addEventListener(
     'beforeunload',
     (event) => {
-      if (dialog.open && changed) {
+      if (changed) {
         event.preventDefault();
         event.returnValue = '';
       }
@@ -496,22 +581,61 @@ export function createWorldView(
     { signal: lifetime.signal },
   );
   return {
-    async open() {
+    async open(activeScene?: string, projectEntry = false) {
       try {
-        const data = await load();
-        world = structuredClone(data.world);
-        snapshot = data.snapshot;
-        original = JSON.stringify(world);
-        changed = false;
-        selected = '';
-        drag = null;
-        working = false;
         get('world-error').textContent = '';
+        const data = await load().catch((cause: unknown) => {
+          if (!changed) {
+            throw cause;
+          }
+          // Keep the captured draft accessible for inspection or explicit discard.
+          error(cause);
+          return null;
+        });
+        if (lifetime.disposed) {
+          return;
+        }
+        if (data) {
+          const savedWorld = JSON.stringify(data.world);
+          if (!changed) {
+            world = structuredClone(data.world);
+            original = savedWorld;
+          }
+          // A placement-only draft is independent of tile edits saved during a scene visit.
+          // Never advance its guards over a changed world or a removed scene.
+          const placementOnly =
+            savedWorld === original &&
+            JSON.stringify(world.connections) === JSON.stringify(data.world.connections) &&
+            Object.keys(world.positions).every((id) => Object.hasOwn(data.snapshot.revisions, id));
+          if (
+            !changed ||
+            placementOnly ||
+            (revision === data.revision &&
+              Object.entries(snapshot.revisions).every(
+                ([id, base]) => data.snapshot.revisions[id] === base,
+              ))
+          ) {
+            snapshot = data.snapshot;
+            revision = data.revision;
+          } else {
+            error(
+              'The saved project changed during this world edit. Close the map and discard the world draft to reload the saved layout.',
+            );
+          }
+        }
+        const preferred = activeScene ?? selected;
+        selected = snapshot.scenes.some((s) => s.id === preferred)
+          ? preferred
+          : (snapshot.scenes[0]?.id ?? '');
+        drag = null;
+        pan = null;
         renderMap();
         renderLinks();
         edit();
-        choose('');
+        choose(selected);
+        button('world-close').textContent = projectEntry ? 'Scene workspace' : 'Close map';
         dialog.showModal();
+        svg.querySelector<SVGElement>('[aria-pressed="true"]')?.focus({ preventScroll: true });
       } catch (e) {
         error(e);
         throw e;

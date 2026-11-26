@@ -94,6 +94,7 @@ Test ownership and commands are in [test organization](../tests/README.md).
 
 ## Release notes
 
+- [Scene Forge 0.48.0](RELEASE-0.48.0.md) — World desk navigation.
 - [Scene Forge 0.47.1](RELEASE-0.47.1.md) — matching Codex and Forge release versions.
 - [Scene Forge 0.47.0](RELEASE-0.47.0.md) — self-contained Codex plugin preview for macOS Apple Silicon.
 - [Scene Forge 0.46.1](RELEASE-0.46.1.md) — consistent inactive buttons and hover feedback.

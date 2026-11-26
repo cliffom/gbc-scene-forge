@@ -24,7 +24,8 @@ unsaved edits through history asks whether to keep editing or discard and open.
 Canceling keeps the active scene and its address. Normal scene switching retains
 its Save and open / Discard and open / Keep editing choices. Busy operations,
 active gestures and open dialogs prevent history from replacing the editor.
-A project address without a scene continues to open the scene chooser.
+A project address without a scene opens World desk. Select a card and choose **Open scene**,
+or double-click a card. **Back to world map** keeps the current scene document open.
 
 The browser acceptance fixture reopened from its scene URL:
 

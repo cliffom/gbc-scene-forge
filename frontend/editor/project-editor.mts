@@ -436,6 +436,7 @@ export function mountProjectEditor() {
       sourceMetadataChoices: (...args) => artworkController.sourceMetadataChoices(...args),
       layerAction: (...args) => layersController.layerAction(...args),
       syncPanCursor: (...args) => gesturesController.syncPanCursor(...args),
+      activateScene: () => pixelEditor.activateScene(),
       requestSceneOpen: (...args) => sceneActionsController.requestSceneOpen(...args),
 
       filterPalette: (...args) => artworkController.filterPalette(...args),
@@ -951,6 +952,11 @@ export function mountProjectEditor() {
       } else if (new URLSearchParams(location.search).get('guide') === '1') {
         history.replaceState(history.state, '', location.pathname);
         firstSceneGuide.continueInProject();
+      } else if (
+        location.pathname === projectBase + '/' &&
+        !document.querySelector('dialog[open]')
+      ) {
+        await panelsController.openWorld(true);
       }
     }
   }).finally(() => {
