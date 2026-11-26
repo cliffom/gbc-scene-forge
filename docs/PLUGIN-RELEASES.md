@@ -11,7 +11,7 @@ Plugin candidate 0.1.0-alpha.10 uses the `gbc-scene-forge-macos` ID for the macO
 listing. It includes the GBC Scene Forge name and icon in Codex, game-folder
 onboarding from PR #282, and the artwork Redo and
 stale-checkpoint recovery from PR #279. The earlier candidate results remain in
-[validation](VALIDATION.md). Each distinct candidate uses its own plugin version.
+[validation](VALIDATION.md).
 
 ## Platform and client boundaries
 
@@ -163,12 +163,12 @@ example, with macOS `ditto`) before Archive Utility extraction. Inspect quaranti
 again on the extracted runtime and client-managed copy; a missing marker must not
 be reported as a successful quarantined-launch test.
 
-Push an annotated `v<semver>` tag from a verified commit on `main`. Use the
-version in `pyproject.toml` for a Forge release or `plugin/plugin.json` for a
-plugin-only release. Both trigger macOS signing. The workflow checks the tag
-format, version and `origin/main` ancestry before requesting approval. After
-approval, it builds that exact commit. PR checks and manual dispatch build
-unsigned candidates.
+Push an annotated `v<semver>` tag from a verified commit on `main`. The Forge
+package and runtime versions, `plugin/plugin.json` version, and runtime pin in
+`plugin/compatibility.json` must match the tag without its `v` prefix. The
+workflow checks the tag format, versions and `origin/main` ancestry before
+requesting approval. After approval, it builds that exact commit. PR checks and
+manual dispatch build unsigned candidates.
 
 Configure `plugin-signing` to require reviewer approval and permit deployment
 from tags matching `v*`. Verify the signed archive before publishing the GitHub
