@@ -162,16 +162,17 @@ example, with macOS `ditto`) before Archive Utility extraction. Inspect quaranti
 again on the extracted runtime and client-managed copy; a missing marker must not
 be reported as a successful quarantined-launch test.
 
-Push an annotated `plugin-v<version>` tag from a verified commit on `main`.
-Use the exact version from `plugin/plugin.json`. The workflow checks the tag
-version and verifies that its commit is in `origin/main` before requesting
-approval. After approval, the signing job builds that exact commit. PR checks
-and manual dispatch build unsigned candidates.
+Push an annotated `v<semver>` tag from a verified commit on `main`. Use the
+version in `pyproject.toml` for a Forge release or `plugin/plugin.json` for a
+plugin-only release. Both trigger macOS signing. The workflow checks the tag
+format, version and `origin/main` ancestry before requesting approval. After
+approval, it builds that exact commit. PR checks and manual dispatch build
+unsigned candidates.
 
 Configure `plugin-signing` to require reviewer approval and permit deployment
-from tags matching `plugin-v*`. Verify the signed archive before publishing its
-GitHub prerelease or advancing the marketplace pin. The candidate branch was
-used during initial rollout and can be retired after a tagged signing run passes.
+from tags matching `v*`. Verify the signed archive before publishing the GitHub
+release or advancing the marketplace pin. Use the [tagged bundle procedure](PLUGIN-DISTRIBUTION.md#publish-a-bundle)
+to retain the bundle with that release.
 Store these credentials as environment secrets:
 
 | Secret | Purpose |

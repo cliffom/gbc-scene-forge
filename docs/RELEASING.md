@@ -130,7 +130,8 @@ that publisher is set up, validate the built wheel with `make check-dist` and th
 Chrome fixture suite, then run the workflow for `pypi`. Verify a fresh PyPI install
 with `tests/packaging/package_smoke.py` after publication. The workflow rebuilds and
 checks the distributions, checks the tag against the package version, then uploads
-only those verified artifacts. Pushing a tag alone does not publish.
+only those verified artifacts. Pushing the tag starts the approved macOS signing
+workflow. Package publishing remains a separate manual dispatch.
 
 ## Release verification
 
@@ -159,13 +160,12 @@ remain separate from local validation.
 
 Milestone 25's [repository plugin packager](PLUGIN-DISTRIBUTION.md) stages immutable
 platform-specific marketplaces and archives from an already built runtime.
-Its prerelease plugin version is independent of the Forge wheel version; the
-compatibility resource pins their combination. Issue PRs target the milestone
-branch and do not bump or publish Forge. The milestone integration assesses the
-next unpublished product version after its acceptance gates pass. The
-[macOS plugin candidate procedure](PLUGIN-RELEASES.md) describes native CI,
-archive evidence and protected signing/notarization configuration. Final platform
-qualification and publishing remain #263; public directory submission remains #265.
+The plugin version is independent of the Forge wheel version. A `v<semver>` tag
+on `main` can match the Forge version for a product release or the plugin version
+for a plugin-only release. Both start the protected
+[macOS signing workflow](PLUGIN-RELEASES.md). Publish the resulting bundle under an
+immutable [bundle tag linked from the GitHub release](PLUGIN-DISTRIBUTION.md#publish-a-bundle).
+Public directory submission remains #265.
 
 ## Internal refactors
 
