@@ -1,0 +1,234 @@
+"""Semantic MCP tool inventory and thin, dependency-free project adapter.
+
+The optional transport owns protocol/schema validation. This module also remains
+usable by ordinary Python tests without installing any MCP dependencies.
+"""
+
+import base64
+from collections import OrderedDict
+
+from gbc_scene_forge.artwork import dimensions
+from gbc_scene_forge.core.serialization import record_bytes
+from gbc_scene_forge.core.validation import require
+from gbc_scene_forge.project.application import Project
+from gbc_scene_forge.project.workspaces import ProjectRoot
+from gbc_scene_forge.scenes import authoring, rendering
+from gbc_scene_forge.storage.files import digest
+
+from . import artwork
+from .schemas import DEFERRED, TOOLS
+
+MAX_ARTIFACT = 16 * 1024 * 1024
+MAX_CACHE = 24 * 1024 * 1024
+
+
+def validate_arguments(name, arguments):
+    if name in artwork.NAMES:
+        require(
+            len(record_bytes(arguments)) <= dimensions.MAX_CANDIDATE_BYTES + 2 * 1024 * 1024,
+            "Artwork tool input exceeds 26 MiB; use compact handles and bounded pixel batches",
+        )
+    else:
+        authoring.bounded(arguments)
+    definition = next((t for t in TOOLS if t["name"] == name), None)
+    require(definition is not None, "Unsupported capability; inspect capabilities/tools/list")
+    shape = definition["inputSchema"]
+    require(
+        isinstance(arguments, dict)
+        and set(shape["required"]) <= set(arguments)
+        and not set(arguments) - set(shape["properties"]),
+        "Invalid tool arguments",
+    )
+
+
+class Adapter:
+    def __init__(self, path, *, single_project=False, recover=True, create_root=True):
+        self.single = Project(path, recover=recover) if single_project else None
+        self.workspace = None if single_project else ProjectRoot(path, create=create_root)
+        self.artifacts = OrderedDict()
+
+    def project(self, directory):
+        if self.single:
+            require(directory == "project", "The declared single project is named 'project'")
+            return Project(self.single.root)
+        return Project(self.workspace.path(directory))
+
+    def artifact(self, data, mime, name):
+        require(len(data) <= MAX_ARTIFACT, "MCP artifact exceeds 16 MiB; export in the browser")
+        uri = f"forge-artifact://snapshot/{digest(data)}/{name}"
+        self.artifacts[uri] = (data, mime)
+        self.artifacts.move_to_end(uri)
+        while sum(len(value[0]) for value in self.artifacts.values()) > MAX_CACHE:
+            self.artifacts.popitem(last=False)
+        return {"uri": uri, "name": name, "mimeType": mime, "size": len(data)}
+
+    def read_artifact(self, uri):
+        require(uri in self.artifacts, "Unknown or expired session artifact; generate it again")
+        data, mime = self.artifacts[uri]
+        if mime == "image/svg+xml":
+            return {"uri": uri, "mimeType": mime, "text": data.decode()}
+        return {"uri": uri, "mimeType": mime, "blob": base64.b64encode(data).decode()}
+
+    @staticmethod
+    def capabilities():
+        return {
+            "version": 1,
+            "transport": "stdio",
+            "tools": [t["name"] for t in TOOLS],
+            "deferred": DEFERRED,
+            "max_operations": authoring.MAX_OPERATIONS,
+            "max_tile_edits": authoring.MAX_TILE_EDITS,
+            "max_input_bytes": authoring.MAX_INPUT,
+            "max_artifact_bytes": MAX_ARTIFACT,
+            "max_view_dimension": rendering.MAX_DIMENSION,
+            "max_view_pixels": rendering.MAX_PIXELS,
+            "max_source_pixels_per_view": rendering.MAX_SOURCE_PIXELS,
+            "max_composited_pixels_per_view": rendering.MAX_WORK,
+            "artifact_cache_bytes": MAX_CACHE,
+            "artwork": artwork.capabilities(),
+            "history": "Saved writes only. Browser drafts and Undo remain independent.",
+        }
+
+    def call(self, name, arguments):
+        validate_arguments(name, arguments)
+        a = arguments
+        if name == "capabilities":
+            return self.capabilities()
+        if name == "list_projects":
+            return (
+                {"projects": [{"directory": "project", **self.single.catalog()}]}
+                if self.single
+                else self.workspace.catalog()
+            )
+        if name == "create_project":
+            require(self.workspace is not None, "Project creation requires --project-root")
+            directory = self.workspace.create(a["name"], starter=a.get("starter", "empty"))
+            return {"directory": directory, **self.project(directory).catalog()}
+        project = self.project(a["project"])
+        if name == "get_project":
+            return project.catalog()
+        if name == "get_scene":
+            with project.store.read_session() as session:
+                revision = session.revision
+                return {
+                    **session.scene(a["scene_id"]),
+                    "project_revision": revision,
+                }
+        if name in artwork.NAMES:
+            return artwork.call(self, project, name, a)
+        revision = a["project_revision"]
+        if name in ("create_blockout_scene", "create_scene"):
+            result = (
+                project.planning.create_blockout(a["name"], a.get("options", {}), revision)
+                if name == "create_blockout_scene"
+                else project.scenes.create(a["name"], a["width"], a["height"], a["grid"], revision)
+            )
+            return {**result, "project_revision": project.catalog()["revision"]}
+        if name in ("edit_scene", "save_scene"):
+            return project.scenes.edit(
+                a["scene_id"],
+                revision,
+                a["scene_revision"],
+                operations=a["operations"] if name == "edit_scene" else None,
+                scene=a.get("scene"),
+                dry_run=a.get("dry_run", False),
+            )
+        if name == "place_stamp":
+            return project.scenes.place_stamp(
+                a["scene_id"],
+                revision,
+                a["scene_revision"],
+                a["stamp_id"],
+                a["x"],
+                a["y"],
+                dry_run=a.get("dry_run", False),
+            )
+        if name in ("rename_scene", "duplicate_scene"):
+            operation = (
+                project.scenes.rename if name == "rename_scene" else project.scenes.duplicate
+            )
+            return operation(a["scene_id"], a["name"], a["scene_revision"], revision)
+        if name == "delete_scene":
+            return project.scenes.delete(
+                a["scene_id"],
+                a["scene_revision"],
+                revision,
+                dry_run=a.get("dry_run", False),
+                confirm_broken_links=a.get("confirm_broken_links", False),
+            )
+        if name == "review_blockout":
+            result = project.planning.review_blockout(
+                a["scene_id"], revision, a["scene_revision"], a.get("scene"), a.get("camera_id")
+            )
+            for view in ("overview", "camera"):
+                svg = result.pop(f"{view}_svg")
+                result[f"{view}_resource"] = self.artifact(
+                    svg.encode(), "image/svg+xml", f"{view}.svg"
+                )
+            return {**result, "units": "pixels"}
+        if name == "import_atlas":
+            return project.artwork.import_bundle(
+                a["bundle"],
+                revision,
+                reimport=a.get("reimport", False),
+                dry_run=a.get("dry_run", False),
+            )
+        if name in ("review_artwork", "review_scene"):
+            review = (
+                project.scenes.review_scene
+                if name == "review_scene"
+                else project.scenes.review_artwork
+            )
+            result = review(
+                a["scene_id"],
+                revision,
+                a["scene_revision"],
+                camera_id=a.get("camera_id"),
+                overview=a.get("overview"),
+                scene=a.get("scene"),
+                **({"filters": a.get("filters")} if name == "review_scene" else {}),
+            )
+            for view in ("overview", "camera"):
+                if f"{view}_png" not in result and f"{view}_svg" not in result:
+                    continue
+                if name == "review_scene":
+                    result[f"{view}_resource"] = self.artifact(
+                        result.pop(f"{view}_svg").encode(), "image/svg+xml", f"{view}.svg"
+                    )
+                else:
+                    result[f"{view}_resource"] = self.artifact(
+                        result.pop(f"{view}_png"), "image/png", f"{view}.png"
+                    )
+            return result
+        if name == "diagnostics":
+            return project.reports.diagnostics(revision, a.get("options"))
+        if name == "palette_report":
+            return project.reports.palettes(a["scene_id"], revision, a["scene_revision"])
+        if name == "export_bundle":
+            require(
+                a["scope"] == "project" or {"scene_id", "scene_revision"} <= set(a),
+                "Scene exports require scene_id and scene_revision",
+            )
+            payload, filename = project.export_bundle(
+                a["scope"], revision, a.get("scene_id"), scene_revision=a.get("scene_revision")
+            )
+            return {
+                "filename": filename,
+                "project_revision": revision,
+                "resource": self.artifact(payload, "application/zip", "project.zip"),
+            }
+        if name == "save_object_definition":
+            return project.objects.save_definition(a["definition"], revision)
+        if name == "delete_object_definition":
+            return project.objects.delete_definition(
+                a["definition_id"], revision, dry_run=a.get("dry_run", False)
+            )
+        if name == "delete_stamp":
+            return project.objects.delete_stamp(
+                a["stamp_id"], revision, dry_run=a.get("dry_run", False)
+            )
+        if name == "save_world":
+            return project.planning.save_world(a["world"], revision, a["scene_revisions"])
+        if name == "save_stamp":
+            return project.objects.save_stamp(a["name"], a["scene"], a["slots"], revision)
+        raise ValueError("Unsupported capability")

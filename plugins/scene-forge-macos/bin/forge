@@ -1,0 +1,12 @@
+#!/bin/sh
+set -eu
+root=$(CDPATH= cd -- "${0%/*}/.." && pwd)
+if [ "$(/usr/bin/uname -s)" != Darwin ] || [ "$(/usr/bin/uname -m)" != arm64 ]; then
+  echo 'Scene Forge: this plugin requires local macOS Apple Silicon. Install a matching platform bundle when available; Windows, Linux, WSL and remote hosts are not supported by this artifact.' >&2
+  exit 2
+fi
+if [ ! -f "$root/install.json" ] || [ ! -x "$root/runtime/forge" ]; then
+  echo 'Scene Forge: incomplete installation. Restore a complete versioned repository bundle, reinstall the plugin and start a new conversation. No runtime is downloaded at launch.' >&2
+  exit 2
+fi
+exec "$root/runtime/forge" "$@"

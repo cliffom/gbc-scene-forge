@@ -1,0 +1,66 @@
+{
+  "type": "tileset",
+  "version": "1.10",
+  "name": "sample sprites",
+  "tilewidth": 8,
+  "tileheight": 16,
+  "tilecount": 2,
+  "columns": 0,
+  "margin": 0,
+  "spacing": 0,
+  "objectalignment": "bottomleft",
+  "tiles": [
+    {
+      "id": 0,
+      "image": "sprites/0.png",
+      "imagewidth": 8,
+      "imageheight": 16,
+      "properties": [
+        {
+          "name": "forge:asset",
+          "type": "string",
+          "value": "sample/hero_idle"
+        },
+        {
+          "name": "forge:animation",
+          "type": "string",
+          "value": "idle"
+        }
+      ],
+      "animation": [
+        {
+          "tileid": 0,
+          "duration": 400
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "image": "sprites/1.png",
+      "imagewidth": 8,
+      "imageheight": 16,
+      "properties": [
+        {
+          "name": "forge:asset",
+          "type": "string",
+          "value": "sample/hero_step"
+        },
+        {
+          "name": "forge:animation",
+          "type": "string",
+          "value": "walk"
+        }
+      ],
+      "animation": [
+        {
+          "tileid": 1,
+          "duration": 160
+        },
+        {
+          "tileid": 0,
+          "duration": 160
+        }
+      ]
+    }
+  ]
+}

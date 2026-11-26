@@ -1,0 +1,20 @@
+{
+  "name": "scene-forge-repository",
+  "interface": {
+    "displayName": "GBC Scene Forge builds"
+  },
+  "plugins": [
+    {
+      "name": "scene-forge-macos",
+      "source": {
+        "source": "local",
+        "path": "./plugins/scene-forge-macos"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

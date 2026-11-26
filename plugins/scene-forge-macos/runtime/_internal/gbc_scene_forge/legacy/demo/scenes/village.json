@@ -1,0 +1,17 @@
+{
+  "name": "Village square",
+  "cells": [
+    ["tree", "tree", "tree", "tree", "tree", "tree", "tree", "tree", "tree", "tree", "tree", "tree", "tree", "tree", "tree", "tree"],
+    ["tree", "grass", "flowers", "grass", "grass", "grass", "grass", "path", "path", "grass", "grass", "grass", "grass", "flowers", "grass", "tree"],
+    ["tree", "grass", "roof", "roof", "roof", "roof", "grass", "path", "path", "grass", "roof", "roof", "roof", "roof", "grass", "tree"],
+    ["tree", "grass", "roof", "roof", "roof", "roof", "grass", "path", "path", "grass", "roof", "roof", "roof", "roof", "grass", "tree"],
+    ["tree", "grass", "wall", "wall", "wall", "wall", "grass", "path", "path", "grass", "wall", "wall", "wall", "wall", "grass", "tree"],
+    ["tree", "grass", "wall", "wall", "door", "wall", "grass", "path", "path", "grass", "wall", "wall", "door", "wall", "grass", "tree"],
+    ["tree", "grass", "grass", "path", "path", "path", "path", "path", "path", "path", "path", "grass", "grass", "grass", "grass", "tree"],
+    ["tree", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "path", "tree"],
+    ["tree", "grass", "flowers", "grass", "grass", "grass", "grass", "path", "path", "grass", "grass", "grass", "flowers", "grass", "grass", "tree"],
+    ["tree", "grass", "grass", "grass", "flowers", "grass", "grass", "path", "path", "grass", "flowers", "grass", "grass", "grass", "grass", "tree"],
+    ["tree", "grass", "grass", "grass", "grass", "grass", "grass", "path", "path", "grass", "grass", "grass", "grass", "grass", "grass", "tree"],
+    ["tree", "tree", "tree", "tree", "tree", "tree", "tree", "path", "path", "tree", "tree", "tree", "tree", "tree", "tree", "tree"]
+  ]
+}
