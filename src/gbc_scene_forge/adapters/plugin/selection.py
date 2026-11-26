@@ -26,8 +26,8 @@ def locations():
             Path(os.environ.get("LOCALAPPDATA", home / "AppData/Local")) / "Scene Forge/Cache",
         )
     return (
-        Path(os.environ.get("XDG_CONFIG_HOME", home / ".config")) / "scene-forge",
-        Path(os.environ.get("XDG_CACHE_HOME", home / ".cache")) / "scene-forge",
+        Path(os.environ.get("XDG_CONFIG_HOME", home / ".config")) / "gbc-scene-forge",
+        Path(os.environ.get("XDG_CACHE_HOME", home / ".cache")) / "gbc-scene-forge",
     )
 
 

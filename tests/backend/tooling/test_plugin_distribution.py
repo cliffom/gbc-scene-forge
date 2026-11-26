@@ -45,7 +45,7 @@ class PluginDistributionTests(unittest.TestCase):
 
     def package(self, output="output"):
         destination, archive = packager.package(self.bundle, self.root / output)
-        return destination / "plugins/scene-forge-macos", archive
+        return destination / "plugins/gbc-scene-forge-macos", archive
 
     def test_build_verification_can_skip_only_host_check(self):
         plugin, _ = self.package()
@@ -61,7 +61,7 @@ class PluginDistributionTests(unittest.TestCase):
         plugin, archive = self.package()
         installed = distribution.verify(plugin)
         self.assertEqual(installed["runtime_version"], __version__)
-        self.assertEqual(installed["plugin"], "scene-forge-macos")
+        self.assertEqual(installed["plugin"], "gbc-scene-forge-macos")
         self.assertTrue((plugin / "skills/forge-start/SKILL.md").is_file())
         self.assertEqual(
             json.loads((plugin / "mcp.json").read_text())["mcpServers"]["forge"]["args"],
@@ -70,13 +70,13 @@ class PluginDistributionTests(unittest.TestCase):
         extracted = self.root / "extracted café"
         shutil.unpack_archive(archive, extracted, filter="data")
         repository = next(extracted.iterdir())
-        moved = repository / "plugins/scene-forge-macos"
+        moved = repository / "plugins/gbc-scene-forge-macos"
         marketplace = json.loads((repository / ".agents/plugins/marketplace.json").read_text())
         [listing] = marketplace["plugins"]
-        self.assertEqual(marketplace["name"], "scene-forge-repository")
+        self.assertEqual(marketplace["name"], "gbc-scene-forge-repository")
         self.assertEqual(listing["name"], installed["plugin"])
         self.assertEqual(
-            listing["source"], {"source": "local", "path": "./plugins/scene-forge-macos"}
+            listing["source"], {"source": "local", "path": "./plugins/gbc-scene-forge-macos"}
         )
         self.assertEqual(distribution.verify(moved), installed)
         interface = json.loads((moved / "plugin.json").read_text())["extensions"]["com.openai"][
@@ -103,18 +103,20 @@ class PluginDistributionTests(unittest.TestCase):
         plugin, _ = self.package()
         receipt_path = plugin / "install.json"
         receipt = json.loads(receipt_path.read_text())
-        for filename, key in (("plugin.json", "name"), ("compatibility.json", "plugin")):
-            path = plugin / filename
-            data = json.loads(path.read_text())
-            data[key] = "scene-forge"
-            path.write_text(json.dumps(data))
-        receipt["plugin"] = "scene-forge"
-        receipt["files"] = distribution.inventory(plugin)
-        receipt["build_id"] = distribution.build_id(receipt["files"])
-        receipt_path.write_text(json.dumps(receipt))
-        self.assertEqual(distribution.verify(plugin)["plugin"], "scene-forge")
+        for old_id in ("scene-forge", "scene-forge-macos"):
+            with self.subTest(old_id=old_id):
+                for filename, key in (("plugin.json", "name"), ("compatibility.json", "plugin")):
+                    path = plugin / filename
+                    data = json.loads(path.read_text())
+                    data[key] = old_id
+                    path.write_text(json.dumps(data))
+                receipt["plugin"] = old_id
+                receipt["files"] = distribution.inventory(plugin)
+                receipt["build_id"] = distribution.build_id(receipt["files"])
+                receipt_path.write_text(json.dumps(receipt))
+                self.assertEqual(distribution.verify(plugin)["plugin"], old_id)
 
-        receipt["plugin"] = "scene-forge-macos"
+        receipt["plugin"] = "gbc-scene-forge-macos"
         receipt_path.write_text(json.dumps(receipt))
         with self.assertRaisesRegex(ValueError, "Incompatible"):
             distribution.verify(plugin)

@@ -52,7 +52,7 @@ def package(bundle, output):
     if identity["runtime_version"] != contract["runtime_version"]:
         raise ValueError("Runtime executable does not match the compatibility contract")
     output.mkdir(parents=True, exist_ok=True)
-    name = f"scene-forge-{manifest['version']}-{contract['target']}"
+    name = f"gbc-scene-forge-{manifest['version']}-{contract['target']}"
     destination = output / name
     archive = output / (name + ".tar.gz")
     if destination.exists() or archive.exists():
@@ -60,7 +60,7 @@ def package(bundle, output):
             "Versioned output exists; use a new version/output, never replace in place"
         )
     verifier = distribution()
-    with tempfile.TemporaryDirectory(prefix=".scene-forge-staging-", dir=output) as temporary:
+    with tempfile.TemporaryDirectory(prefix=".gbc-scene-forge-staging-", dir=output) as temporary:
         staging = Path(temporary)
         market = staging / name
         plugin = market / plugin_path

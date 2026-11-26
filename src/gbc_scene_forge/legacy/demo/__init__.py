@@ -69,7 +69,7 @@ def tile_pixel(tile, x, y, light="day"):
 
 
 class DemoConnector:
-    identity = "scene-forge-demo"
+    identity = "gbc-scene-forge-demo"
     contract_version = 1
 
     def __init__(self, root):
