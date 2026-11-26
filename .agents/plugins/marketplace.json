@@ -1,14 +1,14 @@
 {
-  "name": "scene-forge-repository",
+  "name": "gbc-scene-forge-repository",
   "interface": {
     "displayName": "GBC Scene Forge builds"
   },
   "plugins": [
     {
-      "name": "scene-forge-macos",
+      "name": "gbc-scene-forge-macos",
       "source": {
         "source": "local",
-        "path": "./plugins/scene-forge-macos"
+        "path": "./plugins/gbc-scene-forge-macos"
       },
       "policy": {
         "installation": "AVAILABLE",

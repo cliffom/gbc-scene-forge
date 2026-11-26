@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "plugin": "scene-forge-macos",
-  "plugin_version": "0.1.0-alpha.8",
+  "plugin": "gbc-scene-forge-macos",
+  "plugin_version": "0.1.0-alpha.9",
   "runtime_version": "0.46.1",
   "target": "macos-arm64",
-  "build_id": "43a45d21684aa65fe2b1d3c93184aa0e5138bc9431469708159b1fe53e55fc62",
+  "build_id": "c200622e71fc0aed98746069d05c5a6eff13fc29e1a789883a822ea29971ec17",
   "files": {
     "LICENSE": {
       "sha256": "e6609b53d533dedf1fd4646298248ce1a5abe8373f023a96631640918f28e43f",
@@ -19,7 +19,7 @@
       "executable": true
     },
     "compatibility.json": {
-      "sha256": "b4ad989705483f077424d4c175eae30e2a34153d36e3c73ea71431766bd521fc",
+      "sha256": "cfab059d0e9e17c7b8455fb01f4be650fd875b2cffde9f7d12ca2b699cab845c",
       "executable": false
     },
     "mcp.json": {
@@ -27,7 +27,7 @@
       "executable": false
     },
     "plugin.json": {
-      "sha256": "90b0150cf38d865292acb24a2e176177bc378d1df5f6af1aefb4df09caea139f",
+      "sha256": "187040fefb22046efef290bca4ef4051e73acaecd976e194e543e9c2ea42d041",
       "executable": false
     },
     "runtime/_internal/attrs-26.1.0.dist-info/INSTALLER": {
@@ -163,11 +163,11 @@
       "executable": false
     },
     "runtime/_internal/gbc_scene_forge/adapters/plugin/distribution.py": {
-      "sha256": "845c595b89447b2d0319191f507782a29c540d3d3f879a46ed174cdb7ea51cde",
+      "sha256": "b8f943ad5c0fe93f856a3d3e068cf96cfb6642b2a3430afb69bd758d0b080e31",
       "executable": false
     },
     "runtime/_internal/gbc_scene_forge/adapters/plugin/selection.py": {
-      "sha256": "4979658587816030bfa707736e73e806e18a192ab248aeb13201151bcd0d427a",
+      "sha256": "b8eeec5376c48f285f489c145c3c211efdf488665c0a1bea3498a02bc9ac8613",
       "executable": false
     },
     "runtime/_internal/gbc_scene_forge/adapters/plugin/session.py": {
@@ -459,7 +459,7 @@
       "executable": false
     },
     "runtime/_internal/gbc_scene_forge/legacy/demo/__init__.py": {
-      "sha256": "949c53ebe9bff25f7780b4af34c8eab4a107ca3a2e40f9a4700d9e88ff53ee7f",
+      "sha256": "023e6d03085a7ec050ff61bf83c151dc5973a8f16c956b0f3cd9986934e912ad",
       "executable": false
     },
     "runtime/_internal/gbc_scene_forge/legacy/demo/__main__.py": {
@@ -667,7 +667,7 @@
       "executable": false
     },
     "runtime/_internal/gbc_scene_forge-0.46.1.dist-info/RECORD": {
-      "sha256": "27ae2a3ed75b0fdd418fa1e2c1f3b70908829b3cece87aba3219351c53fc35ae",
+      "sha256": "772827e6795757e28aba71dca7e07fdab50a236d91eb9b857dd841c6318e07ca",
       "executable": false
     },
     "runtime/_internal/gbc_scene_forge-0.46.1.dist-info/REQUESTED": {
@@ -691,7 +691,7 @@
       "executable": false
     },
     "runtime/_internal/gbc_scene_forge-0.46.1.dist-info/uv_cache.json": {
-      "sha256": "c9862c5fb95aa81e45577b81739d439f0967cc96027a57867dfc2007508ad821",
+      "sha256": "639dea2d491d6b6e54c056041053eaaab25f75630b3a312ec060fdfdeeb655c5",
       "executable": false
     },
     "runtime/_internal/jsonschema/benchmarks/issue232/issue.json": {
@@ -807,7 +807,7 @@
       "executable": false
     },
     "runtime/_internal/libpython3.13.dylib": {
-      "sha256": "911db0454c0e9dbaf9d357522a61ffae58e4bb4b1325317b9c52fd5d3b94dd1c",
+      "sha256": "2bb736e7b97af16563aacb1cdea977e38c56c7baa211e786cc6692b705ba3114",
       "executable": true
     },
     "runtime/_internal/mcp-1.30.0.dist-info/INSTALLER": {
@@ -1295,11 +1295,11 @@
       "executable": false
     },
     "runtime/_internal/pydantic_core/_pydantic_core.cpython-313-darwin.so": {
-      "sha256": "0621822fd45cef12ba9ff50e463d75ff160d8583b2f7e1c16833b4461e2776dc",
+      "sha256": "5674ced2a5f4c7b6553e995178ac290ae723254c3ff119e52f3fdc779f7a3908",
       "executable": true
     },
     "runtime/_internal/rpds/rpds.cpython-313-darwin.so": {
-      "sha256": "e5c4bbc544c20eb1842c27c42c60303e3bddbc3f837267b44dd7f7b470ce8ba1",
+      "sha256": "aa85631010590a66640b4de2bfc7a4893d2c91908bd4a7c3a6ab63b2432e5732",
       "executable": true
     },
     "runtime/_internal/setuptools/_vendor/jaraco/text/Lorem ipsum.txt": {
@@ -1307,11 +1307,11 @@
       "executable": false
     },
     "runtime/bundle.json": {
-      "sha256": "47cc6ab1fb9b52a7f8e9cc7c33b4e3df928b095807a18bc62c24be8469f16ef3",
+      "sha256": "cba1c0e73a0d6f3dec891517e3ef30971610b7ad642b132ab42fbf694d10992d",
       "executable": false
     },
     "runtime/forge": {
-      "sha256": "097253b9f56d8f5109f0c3d7183522e7bcf437c1774300cb0d58309e0d355e80",
+      "sha256": "da9239e3281ad9384a6d455a817797ae3bcabeb6e04bb3bec5cbd43934d937a6",
       "executable": true
     },
     "runtime/notices/PYTHON-LICENSE.txt": {
