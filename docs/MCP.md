@@ -53,7 +53,7 @@ Python environment. For clients using a `mcpServers` configuration:
 ```json
 {
   "mcpServers": {
-    "scene-forge": {
+    "gbc-scene-forge": {
       "command": "/absolute/path/to/environment/bin/gbc-scene-forge-mcp",
       "args": ["--project-root", "/absolute/path/to/projects"]
     }

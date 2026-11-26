@@ -3804,10 +3804,13 @@ in [Windows x64 #283](https://github.com/cliffom/gbc-scene-forge/issues/283) and
 - [x] Verify the [signed alpha.7 archive](https://github.com/cliffom/gbc-scene-forge/actions/runs/45722180810)
   and confirm that isolated desktop Codex reads the GBC Scene Forge name and
   resolves both icon fields from the installed plugin.
-- [ ] Verify signed alpha.8 installs and launches under `scene-forge-macos`,
-  and confirm users can reopen existing projects after replacing the old plugin ID.
-- [ ] Smoke-check the published marketplace and release download, including
-  archive selection and matching its SHA-256 to the verified candidate.
+- [x] Verify signed alpha.8 installs and launches under `scene-forge-macos`, can
+  reopen an existing project after replacing the old ID, and matches the
+  published download. The [milestone integration PR](https://github.com/cliffom/gbc-scene-forge/pull/288)
+  records the clean-Mac confirmation and signed candidate evidence.
+- [ ] Verify signed alpha.9 installs and launches under the prefixed plugin and
+  marketplace IDs, then test a fresh install and an update through the catalog
+  on `main`.
 
 ### Plugin authoring quality and interaction cost (#262)
 

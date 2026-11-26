@@ -124,7 +124,7 @@ def verify(root, *, check_host=True):
         require(
             contract["schema_version"] == receipt["schema_version"] == 1
             and manifest["name"] == contract["plugin"] == receipt["plugin"]
-            and receipt["plugin"] in ("scene-forge-macos", "scene-forge")
+            and receipt["plugin"] in ("gbc-scene-forge-macos", "scene-forge-macos", "scene-forge")
             and manifest["version"] == receipt["plugin_version"]
             and contract["runtime_version"] == receipt["runtime_version"] == __version__
             and contract["project_format"] == contract["selection_format"] == 1
