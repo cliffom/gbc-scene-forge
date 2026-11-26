@@ -52,7 +52,7 @@ jobs:
           brew install zstd
       - name: Read versioned artifact names
         run: |
-          python -c 'import json, os, tomllib; v=tomllib.load(open("pyproject.toml", "rb"))["project"]["version"]; p=json.load(open("plugin/plugin.json"))["version"]; f=open(os.environ["GITHUB_ENV"], "a"); f.write(f"FORGE_RUNTIME_NAME=forge-{v}-macos-arm64\nFORGE_WHEEL=gbc_scene_forge-{v}-py3-none-any.whl\nFORGE_PLUGIN_NAME=scene-forge-{p}-macos-arm64\n")'
+          python -c 'import json, os, tomllib; v=tomllib.load(open("pyproject.toml", "rb"))["project"]["version"]; p=json.load(open("plugin/plugin.json"))["version"]; f=open(os.environ["GITHUB_ENV"], "a"); f.write(f"FORGE_RUNTIME_NAME=forge-{v}-macos-arm64\nFORGE_WHEEL=gbc_scene_forge-{v}-py3-none-any.whl\nFORGE_PLUGIN_NAME=gbc-scene-forge-{p}-macos-arm64\n")'
       - name: Fetch pinned CPython input
         run: |
           mkdir -p build/runtime-inputs
@@ -111,7 +111,7 @@ jobs:
           security delete-keychain "$RUNNER_TEMP/forge-signing.keychain-db"
       - uses: actions/upload-artifact@v7.0.2
         with:
-          name: scene-forge-macos-arm64-candidate
+          name: gbc-scene-forge-macos-arm64-candidate
           retention-days: 30
           if-no-files-found: error
           path: |
@@ -125,7 +125,7 @@ jobs:
       - uses: actions/upload-artifact@v7.0.2
         if: ${{ always() }}
         with:
-          name: scene-forge-macos-arm64-evidence
+          name: gbc-scene-forge-macos-arm64-evidence
           retention-days: 30
           if-no-files-found: warn
           path: |

@@ -1,8 +1,7 @@
 # Repository plugin distribution
 
-Milestone 25 builds a repository marketplace with stable identity
-`scene-forge-macos@scene-forge-repository`. In Codex it appears as **GBC Scene Forge**
-with the project's pixel-art anvil icon. This is unpublished integration work.
+The next preview installs as `gbc-scene-forge-macos@gbc-scene-forge-repository`.
+In Codex it appears as **GBC Scene Forge** with the project's pixel-art anvil icon.
 The initial artifact requires **local macOS 27.0+ on Apple Silicon**, with Codex
 CLI/app-server **0.167.1** as its tested client baseline. The conservative OS floor
 bounds this artifact to the observed major OS; older macOS has not been tested.
@@ -38,30 +37,32 @@ First [build and verify the runtime](RUNTIME-BUNDLES.md), then:
 
 ```sh
 make package-plugin PYTHON=.venv/bin/python BUNDLE=build/runtime/forge-0.46.1-macos-arm64
-codex plugin marketplace add "$PWD/build/plugin-repository/scene-forge-0.1.0-alpha.8-macos-arm64"
-codex plugin add scene-forge-macos@scene-forge-repository
+codex plugin marketplace add "$PWD/build/plugin-repository/gbc-scene-forge-0.1.0-alpha.9-macos-arm64"
+codex plugin add gbc-scene-forge-macos@gbc-scene-forge-repository
 ```
 
 The [packager](../runtime/package_plugin.py) produces a versioned directory and
 matching `.tar.gz`. The directory is a complete repository source, containing
-`.agents/plugins/marketplace.json` and `plugins/scene-forge-macos/` with launcher, skills,
+`.agents/plugins/marketplace.json` and `plugins/gbc-scene-forge-macos/` with launcher, skills,
 compatibility resource, frozen runtime, production editor, demo and notices.
 This source checkout itself does not contain the native binary. Extract archives
 preserving executable modes/internal symlinks, move the entire directory to its
 final location, then register it. Keep the source available while configured.
 
-The planned Git distribution uses the `distribution/plugins` ref and one catalog
-with a distinct listing and bundled runtime for each supported platform. The
-initial ref uses **the generated directory's contents** at its root, preserving
-modes and symlinks. Once published, register the ref and install the macOS listing:
+The Git marketplace on `main` will list the latest released build for each
+supported platform. Each catalog entry pins a released bundle by Git commit
+using `git-subdir`. Store the generated plugin directories on `distribution/plugins`
+with their executable modes and symlinks intact. Once the alpha.9 catalog is
+published, register the repository and install the macOS listing:
 
 ```sh
-codex plugin marketplace add cliffom/gbc-scene-forge --ref distribution/plugins
-codex plugin add scene-forge-macos@scene-forge-repository
+codex plugin marketplace add cliffom/gbc-scene-forge
+codex plugin add gbc-scene-forge-macos@gbc-scene-forge-repository
 ```
 
-Qualify each additional platform before adding its listing and bundle. Publishing
-the distribution ref and release archives are separate operations. The
+For each release, verify and publish the signed bundle before updating its catalog
+pin on `main`. Keep the other platform entries on their current release commits.
+Qualify each additional platform before adding its listing and bundle. The
 [macOS candidate procedure](PLUGIN-RELEASES.md) covers signing/notarization setup;
 actual download/quarantine and client acceptance remain #263 gates.
 Packaging publishes nothing.
@@ -103,16 +104,16 @@ separate versioned source directories do not preserve running cache files. Never
 overwrite running resources or reuse a plugin version for different bytes.
 For local sources, remove the old marketplace registration, add
 the new directory with the same catalog identity, then run
-`codex plugin add scene-forge-macos@scene-forge-repository`. Git sources use
-`codex plugin marketplace upgrade scene-forge-repository` before adding the update.
+`codex plugin add gbc-scene-forge-macos@gbc-scene-forge-repository`. Git sources use
+`codex plugin marketplace upgrade gbc-scene-forge-repository` before adding the update.
 Start a fresh conversation to load its skills/MCP; refresh does not update a running
 session.
 
-Alpha.7 and earlier used `scene-forge@scene-forge-repository`. When moving to
-alpha.8, explicitly remove that old plugin with `codex plugin remove
-scene-forge@scene-forge-repository`, then register the new source and install
-`scene-forge-macos@scene-forge-repository`. The new ID is a separate Codex
-installation. Select or reopen the same game folder to continue authoring there.
+When moving to alpha.9, remove the older plugin and marketplace before adding the
+new source. Alpha.8 used `scene-forge-macos@scene-forge-repository`. Alpha.7 and
+earlier used `scene-forge@scene-forge-repository`. Run `codex plugin remove` with
+the installed selector, then run `codex plugin marketplace remove scene-forge-repository`.
+Select or reopen the same game folder after installing the new plugin.
 
 MCP sessions pin their installation and reject changes before tool dispatch.
 Managed browsers check their pinned installation before project requests.
@@ -146,12 +147,12 @@ runtime.
 Finish or export unpublished work before removing old caches. Removing files
 from a running installation can make its tools/browser unavailable; guards reject
 replacement resources. Disable through the client UI or its tested plugin-enabled
-configuration (`[plugins."scene-forge-macos@scene-forge-repository"]`, `enabled = false`
+configuration (`[plugins."gbc-scene-forge-macos@gbc-scene-forge-repository"]`, `enabled = false`
 in the user configuration). The tested app-server plugin loader did not apply the
 generic `-c` override; persisted configuration did disable it in a new conversation.
-Uninstall with `codex plugin remove scene-forge-macos@scene-forge-repository`;
+Uninstall with `codex plugin remove gbc-scene-forge-macos@gbc-scene-forge-repository`;
 remove the source registration separately with
-`codex plugin marketplace remove scene-forge-repository`. Disable/uninstall does
+`codex plugin marketplace remove gbc-scene-forge-repository`. Disable/uninstall does
 not itself stop an existing browser. Use its explicit stop flow first when needed.
 
 Projects/retained candidates remain in the chosen directory. Selection settings
@@ -169,7 +170,7 @@ Run the macOS-only isolated client harness without changing personal client stat
 
 ```sh
 .venv/bin/python tests/packaging/plugin_distribution_smoke.py \
-  --archive build/plugin-repository/scene-forge-0.1.0-alpha.8-macos-arm64.tar.gz \
+  --archive build/plugin-repository/gbc-scene-forge-0.1.0-alpha.9-macos-arm64.tar.gz \
   --codex /absolute/path/to/codex --output build/plugin-distribution-check
 ```
 
