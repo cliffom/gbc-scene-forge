@@ -156,7 +156,7 @@ disabled appearance.
 Disabled buttons keep that appearance when hovered; enabled actions retain their
 hover feedback and modified documents retain the accented Save action.
 **Scene actions** contains create, rename, duplicate, resize/crop, revert and delete. **Project tools** starts with
-**Export…**, followed by World view, Diagnostics and optional GBC palette checks.
+**Export…**, Diagnostics and optional GBC palette checks. The document bar opens the world map.
 The shared strip above the contextual drawing tools routes Undo/Redo, clipboard,
 deselection and transforms to the active document; unavailable commands are disabled.
 Text fields retain native editing shortcuts and modal dialogs retain focus.
@@ -956,15 +956,21 @@ links require a Forge version that supports this feature.
 
 ## World view and scene connections
 
-![World layout with a two-way scene connection](screenshots/world-view/world.png)
+![World desk with Riverside selected and Courtyard visible](screenshots/world-view/world-desk.png)
 
-Choose **Project tools → World view & connections…** to arrange the project's scenes and
-connect their exit/trigger and entrance objects. Drag a scene card, or select it
+Opening a project starts in **World desk**. Select a scene card and choose **Open scene**,
+or double-click the card. Drag the background to pan, scroll to zoom around the pointer,
+or use the zoom buttons and **Fit map**. **Back to world map** restores the camera and
+focuses the active card. Opening the same scene again retains unsaved edits and Undo
+history. Opening a different scene offers **Save and open**, **Discard and open**,
+or **Keep editing** when the current scene has unsaved edits.
+
+Expand **Connections and endpoint checks** to link exit/trigger and entrance objects. Drag a scene card, or select it
 and enter whole X/Y coordinates, then choose **Set position**. Keyboard users can
 Tab to a scene card and select it with Enter or Space. Coordinates describe the
 world diagram, independently of scene dimensions, tile grids and runtime units.
-Choose **Save world** to commit the layout and connections. Closing or following
-a link with unsaved world changes asks before discarding them.
+Choose **Save world** to commit the layout and connections. Opening a scene retains pending world edits. Explicitly closing the map with pending
+world changes asks before discarding them.
 
 Give a connection a name, choose its source scene/object and destination
 scene/object, and select **One-way** or **Two-way**. **Add connection** stages the

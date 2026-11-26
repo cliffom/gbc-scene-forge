@@ -36,8 +36,8 @@ separate from repository distribution (#265).
 First [build and verify the runtime](RUNTIME-BUNDLES.md), then:
 
 ```sh
-make package-plugin PYTHON=.venv/bin/python BUNDLE=build/runtime/forge-0.47.1-macos-arm64
-codex plugin marketplace add "$PWD/build/plugin-repository/gbc-scene-forge-0.47.1-macos-arm64"
+make package-plugin PYTHON=.venv/bin/python BUNDLE=build/runtime/forge-0.48.0-macos-arm64
+codex plugin marketplace add "$PWD/build/plugin-repository/gbc-scene-forge-0.48.0-macos-arm64"
 codex plugin add gbc-scene-forge-macos@gbc-scene-forge-repository
 ```
 
@@ -75,7 +75,7 @@ build ID. `--version` retains the ordinary Forge runtime version.
    tag for the GitHub release.
 2. Commit the verified bundle in a disposable Git checkout. Preserve executable
    modes and symlinks. Publish an annotated `gbc-scene-forge-bundle-<release-tag>-<target>`
-   tag at that commit, such as `gbc-scene-forge-bundle-v0.47.1-macos-arm64`.
+   tag at that commit, such as `gbc-scene-forge-bundle-v0.48.0-macos-arm64`.
    GitHub tag protection prevents moving or deleting the published tag.
 3. Attach the exact signed archive, checksums and verification evidence to the
    GitHub release. Link the immutable bundle tag in the release notes.
@@ -181,7 +181,7 @@ Run the macOS-only isolated client harness without changing personal client stat
 
 ```sh
 .venv/bin/python tests/packaging/plugin_distribution_smoke.py \
-  --archive build/plugin-repository/gbc-scene-forge-0.47.1-macos-arm64.tar.gz \
+  --archive build/plugin-repository/gbc-scene-forge-0.48.0-macos-arm64.tar.gz \
   --codex /absolute/path/to/codex --output build/plugin-distribution-check
 ```
 

@@ -65,6 +65,11 @@ print(json.dumps(ids))
       "document.getElementById('world-dialog').open && !document.getElementById('show-world').disabled",
     );
   };
+  const expandConnections = async () => {
+    if (!(await page.locator('#world-links').isVisible())) {
+      await page.locator('#world-connections summary').click();
+    }
+  };
   const saveWorld = async () => {
     await click('world-save');
     await wait("document.getElementById('world-state').textContent==='World saved'");
@@ -103,6 +108,7 @@ print(json.dumps(ids))
   await set('world-x', '-140');
   await set('world-y', '60');
   await click('world-position');
+  await expandConnections();
   await set('world-link-name', 'Forest passage');
   await set('world-source-scene', first);
   await set('world-source-object', '1');
@@ -273,6 +279,7 @@ print(json.dumps(ids))
     String(await evaluate("document.getElementById('world-findings').textContent")),
     /Scene is missing/,
   );
+  await expandConnections();
   await page.setViewportSize({ width: 600, height: 900 });
   await wait(
     "document.getElementById('world-dialog').scrollWidth<=document.getElementById('world-dialog').clientWidth",

@@ -18,9 +18,11 @@ type Workspace = {
 
 export const test = base.extend<{
   projectMode: 'empty' | 'sample';
+  initialDesk: 'scene' | 'world';
   workspace: Workspace;
   forge: Forge;
 }>({
+  initialDesk: ['scene', { option: true }],
   projectMode: ['empty', { option: true }],
   // Playwright requires a destructured fixture parameter, even without dependencies.
   // eslint-disable-next-line no-empty-pattern
@@ -137,10 +139,10 @@ export const test = base.extend<{
     const url = await workspace.start(root, false, projectMode === 'sample');
     await use({ root, url, python });
   },
-  page: async ({ page }, use, testInfo) => {
+  page: async ({ page, initialDesk }, use, testInfo) => {
     const messages: string[] = [];
     const errors: string[] = [];
-    const observe = (observed: Page) => {
+    const observe = async (observed: Page) => {
       observed.on('dialog', (dialog) => {
         if (dialog.type() === 'beforeunload') {
           void dialog.accept();
@@ -154,8 +156,16 @@ export const test = base.extend<{
       observed.on('pageerror', (error) => {
         errors.push(error.stack ?? error.message);
       });
+      // Scene-focused suites start at the existing scene workspace. Exercise the
+      // project landing and its map controls explicitly in the world-desk suite.
+      if (initialDesk === 'scene') {
+        const entry = observed
+          .locator('#world-dialog[open] #world-close')
+          .filter({ hasText: /^Scene workspace$/ });
+        await observed.addLocatorHandler(entry, () => entry.click());
+      }
     };
-    observe(page);
+    await observe(page);
     page.context().on('page', observe);
     try {
       await use(page);
