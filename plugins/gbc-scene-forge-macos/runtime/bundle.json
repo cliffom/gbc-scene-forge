@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "version": "0.47.1",
+  "target": "macos-arm64",
+  "host": "macOS-15.8.2-arm64-arm-64bit-Mach-O",
+  "os_libraries": [
+    "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+    "/System/Library/Frameworks/SystemConfiguration.framework/Versions/A/SystemConfiguration",
+    "/usr/lib/libSystem.B.dylib",
+    "/usr/lib/libedit.3.dylib",
+    "/usr/lib/libiconv.2.dylib",
+    "/usr/lib/libncurses.5.4.dylib",
+    "/usr/lib/libpanel.5.4.dylib",
+    "/usr/lib/libz.1.dylib"
+  ],
+  "config": {
+    "schema_version": 1,
+    "target": "macos-arm64",
+    "system": "Darwin",
+    "machine": "arm64",
+    "python_version": "3.13.13",
+    "python_build": "20260602",
+    "python_url": "https://github.com/astral-sh/python-build-standalone/releases/download/20260602/cpython-3.13.13%2B20260602-aarch64-apple-darwin-pgo%2Blto-full.tar.zst",
+    "python_sha256": "643c3645d34338230e7c8100457ed25ea1660216054de38238326847a055b9f8",
+    "uv_version": "0.13.7"
+  },
+  "wheel_sha256": "3f4fe36769179a0d3be23303bf8c8bf17f6e0fe05b775475489439ec35f8ae82",
+  "build_checkout": {
+    "revision": "ce054c18cddda213922cb54b2b8bd5bb28fd2d88",
+    "tracked_source_dirty": false,
+    "tracked_source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "wheel_source_revision": null,
+  "signing": "developer-id",
+  "inputs": {
+    "build-requirements.in": "4439c693c19271e4b0bdc56c641c36b3b06010b1b22eae6733cd244d752e85d5",
+    "build-requirements.txt": "240925835e333544c52a63c01e82b01a8543be38f00ae418ae29a703fee258b9",
+    "build.py": "653b2766376b8a606a6513ef24850cc62bbc13dea8af1843b102ce1133f86b6b",
+    "config.json": "7a8537271d08d029f66b5aaa8be9e713a6626ab927bb406c6b06b3d77f62d46d",
+    "entry.py": "cefcda329971aa437ab69eda2573717af1c7ec93688d76817739b50126ceeb78",
+    "notices.py": "0e0d34c4a8ae6baeb89d8c37e0308369b04a20c05ee68372be9f2fb76dd4acc1",
+    "package_plugin.py": "7105c79bec405b15717f007e414ab7d7fb3c3467e672038468cf56e0378766b5",
+    "provenance.py": "11be3fe1d7dc9afc2863f8ca86c7578ddd058ca88503376a71ef6da859d3e2f4",
+    "release.py": "4074f33b42c44f5a9fe303a24591d6c2c4afa764588c438d9988d96ce2e2a9cf",
+    "runtime-requirements.in": "4fe75062c5d424bbc86a8cd58c63ab19aeffe4f0a0e100022252c8032e12ee5b",
+    "runtime-requirements.txt": "fbef807e66e09ad61b7c74cf02ea53dba1eb20ab5e25efab777c96752ed6f2df"
+  },
+  "build_seconds": 17.909
+}

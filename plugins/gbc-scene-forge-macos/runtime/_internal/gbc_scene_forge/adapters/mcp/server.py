@@ -1,0 +1,165 @@
+"""Optional local stdio MCP transport. The ordinary editor never imports the SDK."""
+
+import argparse
+import asyncio
+import json
+import sys
+import time
+from pathlib import Path
+
+from gbc_scene_forge import __version__
+from gbc_scene_forge.adapters.mcp.artwork import NAMES as ARTWORK_TOOLS
+from gbc_scene_forge.adapters.mcp.tools import TOOLS, Adapter
+from gbc_scene_forge.core.errors import Conflict, TransactionBusy
+
+STARTUP_ATTEMPTS = 21
+STARTUP_DELAY = 0.1
+STARTUP_BUSY_MESSAGE = "Project busy during MCP startup; retrying for up to 2 seconds."
+
+
+def open_adapter(path, *, single_project=False):
+    """Bound only pre-session project opening; never retry a submitted tool."""
+    for attempt in range(STARTUP_ATTEMPTS):
+        try:
+            return Adapter(path, single_project=single_project)
+        except TransactionBusy as error:
+            if not single_project:
+                raise
+            if attempt == STARTUP_ATTEMPTS - 1:
+                raise TransactionBusy(
+                    "MCP startup failed: project remained busy after 21 attempts "
+                    "over 2 seconds of retry delays. Close the competing operation "
+                    "and reconnect; no tool was submitted."
+                ) from error
+            if attempt == 0:
+                print(STARTUP_BUSY_MESSAGE, file=sys.stderr, flush=True)
+            time.sleep(STARTUP_DELAY)
+
+
+def create_server(adapter):
+    from mcp import types
+    from mcp.server.lowlevel import Server
+    from mcp.server.lowlevel.helper_types import ReadResourceContents
+
+    server = Server(
+        "gbc-scene-forge",
+        version=__version__,
+        instructions="Local saved-project authoring. Inspect revisions before edits. Use dry_run and "
+        "review_blockout to review candidates; import_atlas uploads artwork and review_artwork "
+        "renders exact saved/candidate PNG views. place_stamp reuses saved compositions. "
+        "list_artwork discovers sources; create/open/duplicate_artwork and edit_artwork_pixels "
+        "prepare client-held artwork candidates. review_artwork_candidate returns PNG resources "
+        "and a receipt required by commit_artwork. Review again after pixel changes. "
+        "Browser drafts and Undo are independent; stale saves "
+        "conflict. Artifacts are immutable, session-scoped and may expire. No physics certification.",
+    )
+
+    @server.list_tools()
+    async def list_tools():
+        return [types.Tool(**tool) for tool in getattr(adapter, "tool_definitions", TOOLS)]
+
+    @server.call_tool()
+    async def call_tool(name, arguments):
+        # Synchronous operations intentionally serialize requests within this process;
+        # durable file guards arbitrate other MCP/browser processes.
+        try:
+            result = adapter.call(name, arguments)
+            content = [types.TextContent(type="text", text=json.dumps(result))]
+            for key in ("overview_resource", "camera_resource", "resource"):
+                if key in result:
+                    content.append(types.ResourceLink(type="resource_link", **result[key]))
+            for resource in result.get("resources", []):
+                content.append(types.ResourceLink(type="resource_link", **resource))
+            # At most two inline PNGs / 4 MiB decoded per response. Resource links
+            # remain available when images exceed this separate transport budget.
+            previews = result.get("resources", []) or [
+                result[k] for k in ("overview_resource", "camera_resource") if k in result
+            ]
+            preferred = [r for r in previews if "enlarged" in r["name"]] or previews
+            inline_bytes = 0
+            inline_count = 0
+            for resource in preferred:
+                if resource["mimeType"] != "image/png" or inline_count == 2:
+                    continue
+                if inline_bytes + resource["size"] > 4 * 1024 * 1024:
+                    continue
+                blob = adapter.read_artifact(resource["uri"])["blob"]
+                content.append(types.ImageContent(type="image", data=blob, mimeType="image/png"))
+                inline_bytes += resource["size"]
+                inline_count += 1
+            return types.CallToolResult(content=content, structuredContent=result)
+        except (ValueError, OSError, KeyError, TypeError, RecursionError) as error:
+            busy = name in ARTWORK_TOOLS and (
+                isinstance(error, TransactionBusy) or isinstance(error.__cause__, TransactionBusy)
+            )
+            result = {
+                "error": {
+                    "code": "busy"
+                    if busy
+                    else ("conflict" if isinstance(error, Conflict) else "invalid_request"),
+                    "message": str(error),
+                }
+            }
+            return types.CallToolResult(
+                content=[types.TextContent(type="text", text=json.dumps(result))],
+                structuredContent=result,
+                isError=True,
+            )
+
+    @server.list_resources()
+    async def list_resources():
+        return [
+            types.Resource(uri=uri, name=uri.rsplit("/", 1)[-1], mimeType=mime)
+            for uri, (_, mime) in adapter.artifacts.items()
+        ]
+
+    @server.read_resource()
+    async def read_resource(uri):
+        resource = adapter.read_artifact(str(uri))
+        return [
+            ReadResourceContents(
+                content=resource.get("text")
+                if "text" in resource
+                else adapter.artifacts[str(uri)][0],
+                mime_type=resource["mimeType"],
+            )
+        ]
+
+    return server
+
+
+async def run(adapter):
+    from mcp.server.stdio import stdio_server
+
+    server = create_server(adapter)
+    async with stdio_server() as (read, write):
+        await server.run(read, write, server.create_initialization_options())
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Expose declared Forge projects through local stdio MCP"
+    )
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
+        "--project", type=Path, help="One existing project (tool project name: project)"
+    )
+    group.add_argument("--project-root", type=Path, help="Declared parent directory of projects")
+    args = parser.parse_args()
+    try:
+        import mcp  # noqa: F401
+    except ImportError:
+        parser.error("Install MCP support with: pip install 'gbc-scene-forge[mcp]'")
+    try:
+        adapter = open_adapter(
+            args.project or args.project_root, single_project=args.project is not None
+        )
+        asyncio.run(run(adapter))
+    except (ValueError, OSError) as error:
+        parser.error(str(error))
+    except KeyboardInterrupt:
+        pass
+
+
+if __name__ == "__main__":
+    main()

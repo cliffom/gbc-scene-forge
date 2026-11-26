@@ -1,0 +1,189 @@
+"""Artwork use cases over guarded native project persistence."""
+
+import copy
+import json
+
+from gbc_scene_forge.artwork import atlas, png, tilesheet
+from gbc_scene_forge.artwork import metadata as tile_metadata
+from gbc_scene_forge.artwork.documents import ArtworkDocuments
+from gbc_scene_forge.artwork.review import ArtworkReview
+from gbc_scene_forge.core.errors import Conflict
+from gbc_scene_forge.core.records import NativeDocument
+from gbc_scene_forge.core.serialization import json_text
+from gbc_scene_forge.core.validation import require
+from gbc_scene_forge.formats import tiled
+from gbc_scene_forge.project.store import ProjectStore
+from gbc_scene_forge.storage.files import digest
+from gbc_scene_forge.storage.paths import safe_path
+
+
+class ArtworkService:
+    """Application operations owned by the artwork domain."""
+
+    def __init__(self, store: ProjectStore) -> None:
+        self.store = store
+        self.documents = ArtworkDocuments(store)
+        self.reviews = ArtworkReview(self.documents)
+
+    def set_metadata(
+        self, atlas_id: str, group: str, asset: str, value: NativeDocument, revision: str
+    ) -> NativeDocument:
+        """Save tile metadata and native tileset fields as one guarded operation."""
+        document = self.store.current(revision)
+        require(
+            isinstance(atlas_id, str) and atlas_id in document["atlases"],
+            "Choose an imported atlas",
+        )
+        entry = document["atlases"][atlas_id]
+        entry["tiles"].setdefault("sprites", atlas.sprite_mapping(entry))
+        width, height = tile_metadata.dimensions(entry, group, asset)
+        tile_metadata.check_metadata(value, width, height)
+        require(
+            group != "sprites" or "terrain_mask" not in value,
+            "Terrain transitions require a tile grid",
+        )
+        entry.setdefault("metadata", {}).setdefault(group, {})[asset] = copy.deepcopy(value)
+        filename = "sprites" if group == "sprites" else f"grid-{group}"
+        path = f"assets/{atlas_id}/{filename}.tsj"
+        changes = {}
+        if path in document["files"]:
+            source = json.loads(safe_path(self.store.root, path).read_bytes())
+        else:
+            require(group == "sprites", "Missing tileset dependency. Restore it before editing.")
+            width, _, pixels = png.decode(
+                safe_path(self.store.root, entry["png"]).read_bytes(), generic=True
+            )
+            changes = atlas.build_sprites(entry, width, pixels)
+            source = json.loads(changes[path])
+        changes[path] = json_text(tile_metadata.decorate(entry, group, source)).encode()
+        self.store.commit(document, revision, changes, {}, "Edit tile metadata")
+        return self.store.catalog()
+
+    def asset(self, path: str, revision: str | None = None) -> bytes:
+        """Read a declared PNG only when its manifest revision and digest match."""
+        with self.store.read_session() as session:
+            document, current = session.document, session.revision
+            if revision is not None and revision != current:
+                raise Conflict("Project assets changed. Reload the project before continuing.")
+            require(path in document["files"] and path.endswith(".png"), "Unknown image")
+            data = safe_path(self.store.root, path).read_bytes()
+            if digest(data) != document["files"][path]:
+                raise Conflict("Project asset changed on disk. Restore it or reimport the atlas.")
+            return data
+
+    def import_atlas(self, path: str, revision: str, *, reimport: bool = False) -> NativeDocument:
+        """Validate an explicit atlas path before preparing its guarded import."""
+        return self._import_bundle(atlas.load_bundle(path), revision, reimport=reimport)
+
+    def delete_atlas(self, atlas_id, revision, *, scene_guard=None, dry_run=False, plan=None):
+        from gbc_scene_forge.artwork.deletion import delete
+
+        return delete(
+            self.store, atlas_id, revision, scene_guard=scene_guard, dry_run=dry_run, plan=plan
+        )
+
+    def import_bundle(
+        self,
+        bundle: NativeDocument,
+        revision: str,
+        *,
+        reimport: bool = False,
+        dry_run: bool = False,
+    ) -> NativeDocument:
+        """Validate an uploaded atlas bundle before preparing its guarded import."""
+        require(type(reimport) is bool and type(dry_run) is bool, "Invalid import options")
+        return self._import_bundle(
+            atlas.load_uploaded_bundle(bundle), revision, reimport=reimport, dry_run=dry_run
+        )
+
+    def import_tilesheet(self, value, revision, *, reimport=False, dry_run=False):
+        require(type(reimport) is bool and type(dry_run) is bool, "Invalid import options")
+        return self._import_bundle(
+            tilesheet.bundle(value), revision, reimport=reimport, dry_run=dry_run
+        )
+
+    def _import_bundle(self, bundle, revision, *, reimport=False, dry_run=False):
+        manifest, image, width, pixels = bundle
+        require(
+            manifest.get("source_format") != "forge-rgba",
+            "Native artwork cannot be imported as an external atlas; "
+            "use editable documents or Forge ZIP transfer",
+        )
+        document = self.store.current(revision)
+        atlas_id = manifest["id"]
+        previous = document["atlases"].get(atlas_id)
+        require(
+            previous is None or reimport is True,
+            "Atlas ID already exists. Choose explicit reimport to replace it.",
+        )
+        require(previous is not None or not reimport, "Reimport requires an existing atlas ID")
+        report = {"atlas": atlas_id, "added": [], "changed": [], "removed": []}
+        require(
+            previous is None or "editable" not in previous,
+            "Native artwork cannot be reimported; save an editable candidate instead",
+        )
+        if previous:
+            require(
+                previous["manifest"].get("source_format") == manifest.get("source_format")
+                and previous["manifest"].get("slicing") == manifest.get("slicing"),
+                "Reimport must retain the input format, grid, margin and spacing",
+            )
+            old_regions = {r["name"]: r for r in previous["manifest"]["regions"]}
+            new_regions = {r["name"]: r for r in manifest["regions"]}
+            report["removed"] = sorted(set(old_regions) - set(new_regions))
+            incompatible = [
+                key
+                for key in old_regions.keys() & new_regions.keys()
+                if any(
+                    old_regions[key][field] != new_regions[key][field]
+                    for field in ("width", "height", "kind")
+                )
+            ]
+            require(
+                not report["removed"] and not incompatible,
+                f"Incompatible reimport: removed {report['removed']}; resized/kind changed {incompatible}",
+            )
+            report["added"] = sorted(set(new_regions) - set(old_regions))
+            report["changed"] = sorted(
+                key for key in old_regions if old_regions[key] != new_regions[key]
+            )
+            report["artwork_changed"] = digest(image) != document["files"][previous["png"]]
+            report["metadata_changed"] = previous["manifest"] != manifest
+        else:
+            report["added"] = [r["name"] for r in manifest["regions"]]
+        # Decode maps with the old tileset ranges before adding local IDs/atlases.
+        scenes = [self.store.load_scene(item["id"], document) for item in document["scenes"]]
+        entry, changes = atlas.build_assets(manifest, image, width, pixels, previous)
+        document["atlases"][atlas_id] = copy.deepcopy(entry)
+        expected = {}
+        for loaded in scenes:
+            path = f"scenes/{loaded['id']}.tmj"
+            changes[path] = json_text(tiled.encode(loaded["scene"], document)).encode()
+            expected[path] = loaded["revision"]
+        # Preflight exercises the same serialization and persistence limits as commit.
+        prepared = copy.deepcopy(document)
+        self.store.prepare_commit(prepared, dict(changes))
+        result = {
+            **report,
+            "regions": manifest["regions"],
+            "width": width,
+            "height": len(pixels) // (width * 4),
+            "dry_run": dry_run,
+            "project_revision": revision if dry_run else digest(json_text(prepared).encode()),
+            "scene_revisions": {
+                loaded["id"]: loaded["revision"]
+                if dry_run
+                else digest(changes[f"scenes/{loaded['id']}.tmj"])
+                for loaded in scenes
+            },
+        }
+        if dry_run:
+            with self.store.read_session(revision, verify_assets=True) as session:
+                for loaded in scenes:
+                    if session.scene(loaded["id"])["revision"] != loaded["revision"]:
+                        raise Conflict("Scene changed while preparing atlas import.")
+            return result
+        self.store.commit(
+            document, revision, changes, expected, "Reimport atlas" if previous else "Import atlas"
+        )
+        return result

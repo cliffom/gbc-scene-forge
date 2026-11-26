@@ -1,0 +1,1 @@
+"""Mcp domain namespace."""
