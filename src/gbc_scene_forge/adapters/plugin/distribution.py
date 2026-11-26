@@ -123,7 +123,8 @@ def verify(root, *, check_host=True):
         receipt = json.loads((root / "install.json").read_text())
         require(
             contract["schema_version"] == receipt["schema_version"] == 1
-            and manifest["name"] == contract["plugin"] == receipt["plugin"] == "scene-forge"
+            and manifest["name"] == contract["plugin"] == receipt["plugin"]
+            and receipt["plugin"] in ("scene-forge-macos", "scene-forge")
             and manifest["version"] == receipt["plugin_version"]
             and contract["runtime_version"] == receipt["runtime_version"] == __version__
             and contract["project_format"] == contract["selection_format"] == 1

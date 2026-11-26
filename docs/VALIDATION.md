@@ -3801,8 +3801,11 @@ in [Windows x64 #283](https://github.com/cliffom/gbc-scene-forge/issues/283) and
   See the [maintainer's alpha.6 confirmation](#maintainer-confirmation-of-alpha6-preview-acceptance).
 - [x] Verify candidate download and retain the archive and CI evidence beyond
   Actions artifact expiry per the [maintainer's confirmation](#maintainer-confirmation-of-alpha6-preview-acceptance).
-- [ ] Verify the newly signed alpha.7 archive and confirm that Codex displays
-  the GBC Scene Forge name and icon on installation from that archive.
+- [x] Verify the [signed alpha.7 archive](https://github.com/cliffom/gbc-scene-forge/actions/runs/45722180810)
+  and confirm that isolated desktop Codex reads the GBC Scene Forge name and
+  resolves both icon fields from the installed plugin.
+- [ ] Verify signed alpha.8 installs and launches under `scene-forge-macos`,
+  and confirm users can reopen existing projects after replacing the old plugin ID.
 - [ ] Smoke-check the published marketplace and release download, including
   archive selection and matching its SHA-256 to the verified candidate.
 

@@ -119,13 +119,13 @@ class ReleaseProvenanceTests(unittest.TestCase):
             bundle["wheel_source_revision"] = None
 
         def accepted(*args):
-            runtime = output / "relocated repository café/plugins/scene-forge/runtime"
+            runtime = output / "relocated repository café/plugins/scene-forge-macos/runtime"
             notices = runtime / "notices/python-packages"
             notices.mkdir(parents=True)
             (notices / "inventory.json").write_text("{}")
             (runtime / "bundle.json").write_text(json.dumps(bundle))
             (output / "archive-check.json").write_text("{}")
-            return {"installation": {}, "native_client": "not run"}
+            return {"installation": {"plugin": "scene-forge-macos"}, "native_client": "not run"}
 
         with (
             patch.object(release, "REPO", self.repo),

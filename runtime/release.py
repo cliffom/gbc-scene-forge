@@ -66,8 +66,10 @@ def check_archive(archive, expected_sha256, output, python, codex=None):
     repository = extract(archive, expected_sha256, output / "original extraction")
     moved = output / "relocated repository café"
     repository.rename(moved)
-    plugin = moved / "plugins/scene-forge"
+    [plugin] = (moved / "plugins").iterdir()
     installed = distribution().verify(plugin, check_host=False)
+    if not installed or plugin.name != installed["plugin"]:
+        raise ValueError("Archive plugin directory must match its installation identity")
     contract = json.loads((plugin / "compatibility.json").read_text())
     qualified = (platform.system(), platform.machine()) == ("Darwin", "arm64") and (
         tuple(map(int, platform.mac_ver()[0].split(".")[:2]))
@@ -203,7 +205,8 @@ def prepare(args):
     evidence = check_archive(
         archive, digest(archive), output, str(args.python.absolute()), args.codex
     )
-    plugin = output / "relocated repository café/plugins/scene-forge"
+    plugin_path = f"plugins/{evidence['installation']['plugin']}"
+    plugin = output / "relocated repository café" / plugin_path
     bundle = json.loads((plugin / "runtime/bundle.json").read_text())
     # Preserve the inventory and license provenance separately for release review.
     inventory = json.loads((plugin / "runtime/notices/python-packages/inventory.json").read_text())
@@ -213,8 +216,8 @@ def prepare(args):
             "python_packages": inventory,
             "python": bundle["config"],
             "system_libraries": bundle["os_libraries"],
-            "native_licenses": "plugins/scene-forge/runtime/notices/python-native/",
-            "frontend_notices": "plugins/scene-forge/runtime/notices/frontend.txt",
+            "native_licenses": f"{plugin_path}/runtime/notices/python-native/",
+            "frontend_notices": f"{plugin_path}/runtime/notices/frontend.txt",
             "scope": "build environment superset; complete license files are in the archive",
         },
     )
