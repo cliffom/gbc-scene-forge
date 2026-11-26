@@ -19,7 +19,14 @@ from pathlib import Path
 
 from plugin_lifecycle_smoke import Client
 
-SELECTOR = "scene-forge@scene-forge-repository"
+
+def marketplace_installation(repository):
+    catalog = json.loads((repository / ".agents/plugins/marketplace.json").read_text())
+    [plugin] = (repository / "plugins").iterdir()
+    [entry] = catalog["plugins"]
+    assert entry["name"] == plugin.name
+    assert entry["source"] == {"source": "local", "path": f"./plugins/{plugin.name}"}
+    return catalog["name"], plugin
 
 
 def files(root):
@@ -146,11 +153,13 @@ def exercise(archive, codex, output):
     with tarfile.open(archive) as stream:
         stream.extractall(source, filter="data")
     original = next(source.iterdir())
-    original_plugin = original / "plugins/scene-forge"
+    marketplace, original_plugin = marketplace_installation(original)
+    plugin_id = original_plugin.name
+    selector = f"{plugin_id}@{marketplace}"
     version = json.loads((original_plugin / "plugin.json").read_text())["version"]
     cli("marketplace", "add", str(original))
-    cli("add", SELECTOR)
-    installed = state / "plugins/cache/scene-forge-repository/scene-forge" / version
+    cli("add", selector)
+    installed = state / "plugins/cache" / marketplace / plugin_id / version
     assert (installed / "runtime/forge").exists(), list(
         (state / "plugins/cache").rglob("plugin.json")
     )
@@ -209,15 +218,15 @@ def exercise(archive, codex, output):
         details = native.rpc(
             "plugin/read",
             {
-                "pluginName": "scene-forge",
+                "pluginName": plugin_id,
                 "marketplacePath": str(original / ".agents/plugins/marketplace.json"),
             },
         )
         (output / "plugin-detail.json").write_text(json.dumps(details, indent=2) + "\n")
         assert {
-            "scene-forge:forge-start",
-            "scene-forge:forge-artwork",
-            "scene-forge:forge-animation",
+            f"{plugin_id}:forge-start",
+            f"{plugin_id}:forge-artwork",
+            f"{plugin_id}:forge-animation",
         } <= {skill["name"] for skill in details["plugin"]["skills"]}
         assert "forge" in details["plugin"]["mcpServers"]
         # A partial new source is rejected by the installed runtime before selection access.
@@ -236,7 +245,7 @@ def exercise(archive, codex, output):
         # A second plugin release with identical Forge version but distinct content identity.
         update = output / "synthetic updated source"
         shutil.copytree(original, update, symlinks=True)
-        updated_plugin = update / "plugins/scene-forge"
+        updated_plugin = update / "plugins" / plugin_id
         manifest_path = updated_plugin / "plugin.json"
         manifest = json.loads(manifest_path.read_text())
         version = manifest["version"].split("+", 1)[0]
@@ -253,9 +262,9 @@ def exercise(archive, codex, output):
             json.dumps(receipt["files"], sort_keys=True).encode()
         ).hexdigest()
         receipt_path.write_text(json.dumps(receipt, indent=2) + "\n")
-        cli("marketplace", "remove", "scene-forge-repository")
+        cli("marketplace", "remove", marketplace)
         cli("marketplace", "add", str(update))
-        cli("add", SELECTOR)
+        cli("add", selector)
         current = NativeClient(codex, runtime_env, output)
         clients.append(current)
         assert current.status()["installation"]["plugin_version"] == updated_version
@@ -303,9 +312,9 @@ def exercise(archive, codex, output):
         finally:
             config_path.write_text(previous_config)
         # Rollback reselects the previous complete repository, without a format migration.
-        cli("marketplace", "remove", "scene-forge-repository")
+        cli("marketplace", "remove", marketplace)
         cli("marketplace", "add", str(original))
-        cli("add", SELECTOR)
+        cli("add", selector)
         rollback = NativeClient(codex, runtime_env, output)
         clients.append(rollback)
         assert rollback.status()["installation"] == identity
@@ -314,14 +323,14 @@ def exercise(archive, codex, output):
         for client in clients:
             client.close()
         clients.clear()
-        cli("remove", SELECTOR)
+        cli("remove", selector)
         assert not installed.parent.exists(), "Uninstall left the plugin cache behind"
         removed = NativeClient(codex, runtime_env, output)
         try:
             assert removed.servers() == []
         finally:
             removed.close()
-        cli("marketplace", "remove", "scene-forge-repository")
+        cli("marketplace", "remove", marketplace)
         assert owned == {
             "projects": files(projects),
             "settings": files(settings),

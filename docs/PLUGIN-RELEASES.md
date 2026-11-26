@@ -6,8 +6,9 @@ candidate for [#263](https://github.com/cliffom/gbc-scene-forge/issues/263).
 It stages downloadable Actions artifacts for qualification. Publishing the
 GitHub release and distribution repository follows milestone integration. Issue
 PRs retain Forge 0.46.1 until integration assesses the product release.
-Plugin candidate 0.1.0-alpha.7 includes the GBC Scene Forge name and icon in
-Codex, the game-folder onboarding from PR #282, and the artwork Redo and
+Plugin candidate 0.1.0-alpha.8 uses the `scene-forge-macos` ID for the macOS
+listing. It includes the GBC Scene Forge name and icon in Codex, game-folder
+onboarding from PR #282, and the artwork Redo and
 stale-checkpoint recovery from PR #279. The earlier candidate results remain in
 [validation](VALIDATION.md). Each distinct candidate uses its own plugin version.
 
@@ -97,7 +98,7 @@ Verify a separately obtained archive before installation, using a trusted digest
 
 ```sh
 build/runtime-candidate/build-env/bin/python runtime/release.py \
-  --archive /absolute/path/to/scene-forge-0.1.0-alpha.7-macos-arm64.tar.gz \
+  --archive /absolute/path/to/scene-forge-0.1.0-alpha.8-macos-arm64.tar.gz \
   --sha256 EXPECTED_SHA256 --output build/download-check \
   --codex /absolute/path/to/codex
 ```
@@ -131,7 +132,7 @@ repository directory (the service does not accept the distribution's tar archive
 
 ```sh
 ditto -c -k --keepParent \
-  build/plugin-candidate/scene-forge-0.1.0-alpha.7-macos-arm64 \
+  build/plugin-candidate/scene-forge-0.1.0-alpha.8-macos-arm64 \
   build/forge-notary.zip
 xcrun notarytool submit build/forge-notary.zip \
   --keychain-profile forge-notary --wait --output-format json
