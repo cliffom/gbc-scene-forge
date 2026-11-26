@@ -69,10 +69,10 @@ build ID. `--version` retains the ordinary Forge runtime version.
 
 ## Publish a bundle
 
-1. Cut the `v<semver>` source tag from `main` and complete the
-   [macOS signing and archive checks](PLUGIN-RELEASES.md). Use the same source
-   tag for the GitHub release. When the Forge runtime version changes, update
-   the plugin compatibility pin and use a fresh plugin version for the bundle.
+1. Set the Forge package, runtime, plugin manifest, and plugin compatibility pin to
+   the same version. Cut the matching `v<semver>` source tag from `main`, complete
+   the [macOS signing and archive checks](PLUGIN-RELEASES.md), and use that source
+   tag for the GitHub release.
 2. Commit the verified bundle in a disposable Git checkout. Preserve executable
    modes and symlinks. Publish an annotated `gbc-scene-forge-bundle-<release-tag>-<target>`
    tag at that commit, such as `gbc-scene-forge-bundle-v0.47.0-macos-arm64`.

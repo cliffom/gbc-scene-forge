@@ -160,11 +160,12 @@ remain separate from local validation.
 
 Milestone 25's [repository plugin packager](PLUGIN-DISTRIBUTION.md) stages immutable
 platform-specific marketplaces and archives from an already built runtime.
-The plugin version is independent of the Forge wheel version. A `v<semver>` tag
-on `main` can match the Forge version for a product release or the plugin version
-for a plugin-only release. Both start the protected
-[macOS signing workflow](PLUGIN-RELEASES.md). Publish the resulting bundle under an
-immutable [bundle tag linked from the GitHub release](PLUGIN-DISTRIBUTION.md#publish-a-bundle).
+Use the same version for the Forge wheel, runtime, Codex plugin manifest, and plugin
+compatibility pin. Tag that version on `main` with a `v` prefix. Codex shows the
+manifest version, so a tag like `v0.48.0` appears as `0.48.0` in Codex. The tag
+starts the protected [macOS signing workflow](PLUGIN-RELEASES.md). Publish the
+resulting bundle under an immutable
+[bundle tag linked from the GitHub release](PLUGIN-DISTRIBUTION.md#publish-a-bundle).
 Public directory submission remains #265.
 
 ## Internal refactors

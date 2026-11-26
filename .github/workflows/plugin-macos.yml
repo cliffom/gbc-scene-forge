@@ -45,6 +45,7 @@ jobs:
           import json
           import os
           import re
+          import runpy
           import tomllib
           from pathlib import Path
 
@@ -56,10 +57,15 @@ jobs:
           if not re.fullmatch(semver, tag):
               raise SystemExit('Release tags must be v-prefixed SemVer.')
 
-          forge = tomllib.loads(Path('pyproject.toml').read_text())['project']['version']
-          plugin = json.loads(Path('plugin/plugin.json').read_text())['version']
-          if tag not in {f'v{forge}', f'v{plugin}'}:
-              raise SystemExit(f'Release tag must match the Forge version v{forge} or the plugin version v{plugin}.')
+          versions = {
+              'Forge package': tomllib.loads(Path('pyproject.toml').read_text())['project']['version'],
+              'Forge runtime': runpy.run_path('src/gbc_scene_forge/__init__.py')['__version__'],
+              'Codex plugin': json.loads(Path('plugin/plugin.json').read_text())['version'],
+              'Plugin runtime pin': json.loads(Path('plugin/compatibility.json').read_text())['runtime_version'],
+          }
+          for component, version in versions.items():
+              if tag != f'v{version}':
+                  raise SystemExit(f'{component} version {version} must match release tag {tag}.')
           PY
           echo "revision=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
