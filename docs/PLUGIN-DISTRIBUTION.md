@@ -37,7 +37,7 @@ First [build and verify the runtime](RUNTIME-BUNDLES.md), then:
 
 ```sh
 make package-plugin PYTHON=.venv/bin/python BUNDLE=build/runtime/forge-0.46.1-macos-arm64
-codex plugin marketplace add "$PWD/build/plugin-repository/gbc-scene-forge-0.1.0-alpha.9-macos-arm64"
+codex plugin marketplace add "$PWD/build/plugin-repository/gbc-scene-forge-0.1.0-alpha.10-macos-arm64"
 codex plugin add gbc-scene-forge-macos@gbc-scene-forge-repository
 ```
 
@@ -171,7 +171,7 @@ Run the macOS-only isolated client harness without changing personal client stat
 
 ```sh
 .venv/bin/python tests/packaging/plugin_distribution_smoke.py \
-  --archive build/plugin-repository/gbc-scene-forge-0.1.0-alpha.9-macos-arm64.tar.gz \
+  --archive build/plugin-repository/gbc-scene-forge-0.1.0-alpha.10-macos-arm64.tar.gz \
   --codex /absolute/path/to/codex --output build/plugin-distribution-check
 ```
 
