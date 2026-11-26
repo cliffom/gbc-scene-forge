@@ -37,7 +37,7 @@ First [build and verify the runtime](RUNTIME-BUNDLES.md), then:
 
 ```sh
 make package-plugin PYTHON=.venv/bin/python BUNDLE=build/runtime/forge-0.46.1-macos-arm64
-codex plugin marketplace add "$PWD/build/plugin-repository/gbc-scene-forge-0.1.0-alpha.9-macos-arm64"
+codex plugin marketplace add "$PWD/build/plugin-repository/gbc-scene-forge-0.1.0-alpha.10-macos-arm64"
 codex plugin add gbc-scene-forge-macos@gbc-scene-forge-repository
 ```
 
@@ -58,20 +58,30 @@ codex plugin marketplace add cliffom/gbc-scene-forge
 codex plugin add gbc-scene-forge-macos@gbc-scene-forge-repository
 ```
 
-Each entry uses `git-subdir` to pin a verified bundle by commit. Store the
-generated plugin directories on `distribution/plugins` with their executable
-modes and symlinks intact. For each release, publish an immutable tag for the
-verified bundle, then update that platform's catalog pin on `main` through a PR.
-Keep the other platform entries on their current release commits. Qualify each
-additional platform before adding its listing and bundle. The
-[macOS candidate procedure](PLUGIN-RELEASES.md) covers signing/notarization setup;
-actual download/quarantine and client acceptance remain #263 gates.
-Packaging publishes nothing.
+Each entry uses `git-subdir` to pin a verified bundle by commit. For a checkout
+registered with the old `distribution/plugins` ref, remove that marketplace
+registration and add the default marketplace using the commands above.
 
 The client copies the plugin into its managed cache; runtime launch uses only that
 copy. Start with [project selection](PLUGIN-START.md). `bin/forge --identity` and
 `plugin_status.installation` expose plugin/runtime versions, target and content
 build ID. `--version` retains the ordinary Forge runtime version.
+
+## Publish a bundle
+
+1. Cut the `v<semver>` source tag from `main` and complete the
+   [macOS signing and archive checks](PLUGIN-RELEASES.md). Use the same source
+   tag for the GitHub release. When the Forge runtime version changes, update
+   the plugin compatibility pin and use a fresh plugin version for the bundle.
+2. Commit the verified bundle in a disposable Git checkout. Preserve executable
+   modes and symlinks. Publish an annotated `gbc-scene-forge-bundle-<release-tag>-<target>`
+   tag at that commit, such as `gbc-scene-forge-bundle-v0.1.0-alpha.10-macos-arm64`.
+   GitHub tag protection prevents moving or deleting the published tag.
+3. Attach the exact signed archive, checksums and verification evidence to the
+   GitHub release. Link the immutable bundle tag in the release notes.
+4. Update that platform's pin on `main` through a PR. Keep other platform entries
+   at their current release commits. Verify installation from the default catalog
+   and compare the public release download with the signed archive.
 
 ## Compatibility and incomplete installations
 
@@ -171,7 +181,7 @@ Run the macOS-only isolated client harness without changing personal client stat
 
 ```sh
 .venv/bin/python tests/packaging/plugin_distribution_smoke.py \
-  --archive build/plugin-repository/gbc-scene-forge-0.1.0-alpha.9-macos-arm64.tar.gz \
+  --archive build/plugin-repository/gbc-scene-forge-0.1.0-alpha.10-macos-arm64.tar.gz \
   --codex /absolute/path/to/codex --output build/plugin-distribution-check
 ```
 
