@@ -16,12 +16,26 @@ MCP server lets agents author and review the same project alongside the browser.
 
 ![Riverside in the current scene editor, with the artwork Library and scene Inspector](docs/screenshots/standalone-demo.png)
 
-## Start editing
+## Use with Codex
 
-Install with **Python 3.10 or newer**:
+The **GBC Scene Forge** plugin preview supports local Codex on **macOS 27 or
+newer on Apple Silicon**. It includes its own runtime. Register the repository
+marketplace and install the macOS listing:
 
 ```sh
-python -m pip install --upgrade gbc-scene-forge==0.46.1
+codex plugin marketplace add cliffom/gbc-scene-forge
+codex plugin add gbc-scene-forge-macos@gbc-scene-forge-repository
+```
+
+Start a new conversation and ask GBC Scene Forge to open or create a project.
+See the [plugin guide](docs/PLUGIN-START.md) and [installation and update guide](docs/PLUGIN-DISTRIBUTION.md).
+
+## Start editing
+
+Install the release wheel with **Python 3.10 or newer**:
+
+```sh
+python -m pip install --upgrade https://github.com/cliffom/gbc-scene-forge/releases/download/v0.47.0/gbc_scene_forge-0.47.0-py3-none-any.whl
 gbc-scene-forge
 ```
 
@@ -141,7 +155,7 @@ blockout planning, bounded atlas import/reimport, rendering and review through t
 same project services as the browser.
 
 ```sh
-python -m pip install --upgrade 'gbc-scene-forge[mcp]==0.46.1'
+python -m pip install --upgrade 'gbc-scene-forge[mcp] @ https://github.com/cliffom/gbc-scene-forge/releases/download/v0.47.0/gbc_scene_forge-0.47.0-py3-none-any.whl'
 gbc-scene-forge-mcp --project-root /absolute/path/to/projects
 ```
 
@@ -271,7 +285,7 @@ the prebuilt UI. See the [backend architecture](docs/ARCHITECTURE.md),
 for ownership and contracts.
 
 Use the [documentation index](docs/README.md) and [documentation policy](docs/DOCUMENTATION.md).
-Run `make docs-check` for every change. See the [0.46.1 release notes](docs/RELEASE-0.46.1.md)
+Run `make docs-check` for every change. See the [0.47.0 release notes](docs/RELEASE-0.47.0.md)
 and [building and releasing](docs/RELEASING.md) for release procedures.
 
 ## License
