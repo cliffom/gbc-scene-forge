@@ -6,7 +6,7 @@ import type { Page } from '@playwright/test';
 import { test, expect } from '../support/browser-fixtures.ts';
 import { revealArtworkControl } from '../support/artwork-controls.ts';
 
-async function setup(
+async function loadProject(
   page: Page,
   workspace: { folder: string; python: string; start: (root: string) => Promise<string> },
 ) {
@@ -28,9 +28,47 @@ a.save(a.create('image','Single artwork','sprite',24,12,p.catalog()['revision'])
     root,
   ]);
   await page.goto(await workspace.start(root));
+}
+
+async function setup(page: Page, workspace: Parameters<typeof loadProject>[1]) {
+  await loadProject(page, workspace);
   await page.locator('[data-asset="player/f0"]').click();
   await expect(page.locator('#art-document-state')).toHaveText('Saved');
 }
+
+test('the first artwork click opens the document after editor startup', async ({
+  page,
+  workspace,
+}) => {
+  let markStartupRequest!: () => void;
+  const startupRequest = new Promise<void>((resolve) => (markStartupRequest = resolve));
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => (release = resolve));
+  let projectRequests = 0;
+  await page.route('**/api/project', async (route) => {
+    // Startup reads the preview settings after it renders the artwork library.
+    if (++projectRequests === 2) {
+      markStartupRequest();
+      await gate;
+    }
+    await route.continue();
+  });
+
+  const frame = page.locator('[data-asset="player/f0"]');
+  try {
+    await loadProject(page, workspace);
+    await startupRequest;
+    await expect(frame).toBeVisible();
+    await expect(frame).toBeDisabled({ timeout: 2000 });
+  } finally {
+    release();
+  }
+
+  await expect(frame).toBeEnabled();
+  await frame.click();
+  await expect(page.locator('#art-document-state')).toHaveText('Saved');
+  await expect(page.locator('#art-frame')).toHaveValue('f0');
+});
 
 for (const viewport of [
   { width: 1440, height: 900 },
