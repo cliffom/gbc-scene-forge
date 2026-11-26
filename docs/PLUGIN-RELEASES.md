@@ -45,12 +45,12 @@ Application identity already authorized in the build keychain:
 ```sh
 FORGE_BUILD_MODE=production make build check-dist
 .venv/bin/python runtime/build.py \
-  --wheel dist/gbc_scene_forge-0.47.0-py3-none-any.whl \
+  --wheel dist/gbc_scene_forge-0.47.1-py3-none-any.whl \
   --python-archive build/runtime-inputs/python.tar.zst \
   --output build/runtime-candidate --uv uv \
   --codesign-identity 'Developer ID Application: YOUR IDENTITY'
 .venv/bin/python runtime/release.py \
-  --bundle build/runtime-candidate/forge-0.47.0-macos-arm64 \
+  --bundle build/runtime-candidate/forge-0.47.1-macos-arm64 \
   --output build/plugin-candidate --revision "$(git rev-parse HEAD)" \
   --python build/runtime-candidate/build-env/bin/python \
   --codex /absolute/path/to/codex
@@ -99,7 +99,7 @@ Verify a separately obtained archive before installation, using a trusted digest
 
 ```sh
 build/runtime-candidate/build-env/bin/python runtime/release.py \
-  --archive /absolute/path/to/gbc-scene-forge-0.1.0-alpha.11-macos-arm64.tar.gz \
+  --archive /absolute/path/to/gbc-scene-forge-0.47.1-macos-arm64.tar.gz \
   --sha256 EXPECTED_SHA256 --output build/download-check \
   --codex /absolute/path/to/codex
 ```
@@ -133,7 +133,7 @@ repository directory (the service does not accept the distribution's tar archive
 
 ```sh
 ditto -c -k --keepParent \
-  build/plugin-candidate/gbc-scene-forge-0.1.0-alpha.11-macos-arm64 \
+  build/plugin-candidate/gbc-scene-forge-0.47.1-macos-arm64 \
   build/forge-notary.zip
 xcrun notarytool submit build/forge-notary.zip \
   --keychain-profile forge-notary --wait --output-format json
